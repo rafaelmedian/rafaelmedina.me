@@ -8,5 +8,4 @@
 	<li>GulpJS - $ npm i -g gulp</li>
 	<li>npm i - in work folder</li>
 	<li>gulp - Run.</li>
-	<li></li>
 </ul>
