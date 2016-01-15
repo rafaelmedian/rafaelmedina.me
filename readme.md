@@ -4,9 +4,7 @@
 
 <ol>
 	<li>Ruby installer for Windows - <a target="_blank" href="http://rubyinstaller.org/">rubyinstaller.org</a></li>
-	<li>Jekyll - $ gem install jekyll</li>
-	<li>redcarpet - $ gem install redcarpet</li>
-	<li>rouge - $ gem install rouge</li>
+	<li>Install gems - $ gem install jekyll redcarpet rouge</li>
 	<li>NodeJS - use the installer</li>
 	<li>GulpJS - $ npm i -g gulp</li>
 	<li>npm i - in work folder</li>
