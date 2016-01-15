@@ -2,7 +2,7 @@
 
 <p>Windows, Mac, Linux worked.</p>
 
-<ul>
+<ol>
 	<li>Jekyll    - $ gem install jekyll</li>
 	<li>redcarpet - $ gem install redcarpet</li>
 	<li>rouge     - $ gem install rouge</li>
@@ -10,4 +10,4 @@
 	<li>GulpJS    - $ npm i -g gulp</li>
 	<li>npm i     - in work folder</li>
 	<li>gulp      - Run.</li>
-</ul>
+</ol>
