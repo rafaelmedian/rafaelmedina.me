@@ -1,0 +1,24 @@
+.nav
+  font-size: 1.05em
+  list-style: none
+  padding-left: 0
+  margin-bottom: 0
+  color: $black-1
+  text-decoration: none
+  margin-top: $header-padding
+  margin-bottom: $header-padding
+
+  li
+    display: inline-block
+
+  li + li
+    margin-left: 6vw
+
+$breakpoint-tablet: 768px
+
+$mq-mobile-landscape	: 480px !default;
+
+@media (max-width : $mq-mobile-landscape)
+  nav
+    text-align: right
+    margin-left: 1vh

@@ -1,4 +1,146 @@
-name: Your New Jekyll Site
-markdown: redcarpet
-highlighter: rouge # or pygments or null
-exclude: ["node_modules", "gulpfile.js", "package.json"]
+
+
+# ============================
+# Environment
+# ============================
+environment: development
+
+# ============================
+# Site
+# ============================
+title: Rafael Medina Digital Product Designer
+baseurl: ""
+url: "//"
+url_protocol: "http:"
+description: "Rafael Medina is a Digital Product Designer"
+
+# ============================
+# URLs
+# ============================
+# labs_url: "http://labs.jonsuh.local"
+# cdn_url: ""
+
+# ============================
+# Author
+# ============================
+name: Rafael Medina Digital Product Designer
+author:
+  name     : Rafael Medina
+  firstname: Rafael
+  lastname : Medina
+  nickname : zxhadow
+
+email       : hello@rafaelmedina.me
+email_secure: ""
+social:
+  codepen      : "http://codepen.io/zxhadow"
+  dribbble     : "https://dribbble.com/zxhadow"
+  facebook     : "https://facebook.com/zxhadow"
+  flickr       : "https://flickr.com/zxhadow"
+  github       : "https://github.com/zxhadow"
+  google       : "https://plus.google.com/+zxhadow"
+  linkedin     : "http://linkedin.com/zxhadow"
+  instagram    : "http://instagram.com/zxhadow"
+  paypal       : "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JBKMWV5MHLZZW"
+  stackoverflow: "http://stackoverflow.com/users/879081/zxhadow"
+  twitter      : "https://twitter.com/zxhadow"
+  username     : zxhadow
+
+# amazon_tag: jonsuhcom-20
+
+# ============================
+# Backwards compatibility
+# ============================
+# relative_permalinks: false
+
+# ============================
+# Outputting
+# ============================
+# paginate     : 5
+# permalink    : /blog/:title
+# paginate_path: /blog/page/:num
+# timezone     :      null
+
+# quiet:    false
+# defaults: []
+
+# ============================
+# Where things are
+# ============================
+# source:      .
+# destination: ./_site
+# plugins:     ./_plugins
+# layouts:     ./_layouts
+# data_source: ./_data
+# collections:
+#   posts_deprecated:
+#     output: true
+#     permalink: /blog/:path/
+#   work:
+#     output: true
+#     permalink: /work/:path/
+
+# ============================
+# Handling reading
+# ============================
+# safe:         false
+# include:      [".htaccess"]
+exclude: [
+  "assets/sass",
+  "assets/js/src",
+  "assets/js/vendor",
+  "bower.json",
+  "bower_components",
+  "Capfile",
+  "config",
+  "Gemfile",
+  "Gemfile.lock",
+  "gulpfile.js",
+  "node_modules",
+  "package.json",
+]
+# keep_files:   [".git", ".svn"]
+encoding:     "utf-8"
+# markdown_ext: "markdown,mkdown,mkdn,mkd,md"
+# textile_ext:  "textile"
+
+# ============================
+# Filtering
+# ============================
+show_drafts: true
+# limit_posts: 0
+future:      true
+# unpublished: false
+
+# ============================
+# Plugins
+# ============================
+# whitelist: []
+# gems:      []
+
+# ============================
+# Conversion
+# ============================
+markdown         : redcarpet
+highlighter      : rouge
+# lsi              : true
+excerpt_separator: <!--more-->
+
+# ============================
+# Markdown Processors
+# ============================
+kramdown:
+  auto_ids:      true
+  # footnote_nr:   1
+  # entity_output: as_char
+  # toc_levels:    1..6
+  # smart_quotes:  lsquo,rsquo,ldquo,rdquo
+  # use_coderay:   false
+
+  # coderay:
+  #   coderay_wrap:              div
+  #   coderay_line_numbers:      inline
+  #   coderay_line_number_start: 1
+  #   coderay_tab_width:         4
+  #   coderay_bold_every:        10
+  #   coderay_css:               style

@@ -1,7 +1,16 @@
-@import "bourbon";
-@import "reset";
-@import "syntax";
 
-@import "3_fonts";
-@import "2_vars";
-@import "1_common";
+@import "0-tools/bourbon/bourbon";
+@import "0-tools/normalize";
+
+@import "0-tools/bootstrap/stylesheets/bootstrap/variables";
+@import "0-tools/bootstrap/stylesheets/bootstrap/mixins/grid-framework";
+@import "0-tools/bootstrap/stylesheets/bootstrap/mixins/grid";
+@import "0-tools/bootstrap/stylesheets/bootstrap/grid";
+
+
+@import "1-base/vars";
+@import "1-base/base";
+@import "1-base/typography";
+
+@import "2-module/nav";
+@import "2-module/section";

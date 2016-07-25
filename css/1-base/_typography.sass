@@ -1,0 +1,118 @@
+//	Typography
+
+@font-face
+  font-family: 'Circular Std'
+  src: url("/css/fonts/circular/CircularStd-Bold.eot?#iefix") format("embedded-opentype"), url("/css/fonts/circular/CircularStd-Bold.otf") format("opentype"), url("/css/fonts/circular/CircularStd-Bold.woff") format("woff"), url("/css/fonts/circular/CircularStd-Bold.ttf") format("truetype"), url("/css/fonts/circular/CircularStd-Bold.svg#CircularStd-Bold") format("svg")
+  font-weight: 700
+  font-style: normal
+
+.circular
+  font-family: 'Circular Std', 'Helvetica Neue', Helvetica, sans-serif
+
+.mail
+  margin-top: 0
+
+.gigantic, .huge, .large, .bigger, .big,
+h1, h2, h3, h4, h5, h6
+  color: $black-0
+  font-weight: bold
+
+.gigantic
+  font-size: 2.25
+  line-height: 1.6
+  letter-spacing: -2px
+
+.huge, h1
+  font-size: 2.7em
+  line-height: 1.6
+
+.large, h2
+  font-size: 2em
+  line-height: 1.14
+
+.bigger, h3
+  font-size: 1.5em
+  line-height: 1.38
+
+.big, h4
+  font-size: 1.25em
+  line-height: 1.38
+
+.small, small
+  font-size: 1em
+  line-height: 1.2
+
+p, .subtitle
+  font-size: 1.143em
+
+p
+  margin: 0 0 20px 0
+
+em
+  font-style: italic
+
+strong
+  font-weight: bold
+
+hr
+  border: solid #dddddd
+  border-width: 1px 0 0
+  clear: both
+  margin: 10px 0 30px
+  height: 0
+
+// Links
+
+a
+  color: $black-6
+  text-decoration: none
+  outline: 0
+
+
+
+a:hover, a:focus
+  color: lighten($link-color, 20%)
+
+
+.bold
+  font-weight: 900
+
+.black-0
+  color: $black-0
+
+.black-1
+  color: $black-1
+
+.black-9
+  color: $black-9
+
+.black-6
+  color: $black-6
+
+a.text-underline-0
+  text-decoration: none
+  padding-bottom: 4px
+  background: linear-gradient(to right, rgb(0,0,0) 0%, rgb(0,0,0) 100%)
+  background-size: 1px 4px
+  background-position: 0 100%
+  background-repeat: repeat-x
+
+a.text-underline-1
+  text-decoration: none
+  color: rgb(102,102,102)
+  padding-bottom: 1px
+  background: linear-gradient(to right, rgb(102,102,102) 0%, rgb(102,102,102) 100%)
+  background-size: 1px 1px
+  background-position: 0 100%
+  background-repeat: repeat-x
+
+.sc-link
+  line-height: 2.2em
+  font-size: 1.2em
+
+
+$mq-mobile-landscape	: 480px !default
+
+@media (max-width : $mq-mobile-landscape)
+  .mail
+    font-size: 7vw
