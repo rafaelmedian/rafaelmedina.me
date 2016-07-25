@@ -1,12 +1,18 @@
-<h1>jekyll-gulp-autoprefixer-sass-bourbon-jade-browser-sync</h1>
+# Hello, Good Evening, and Welcome
+Welcome to the innards of [my website](http://rafaelmedina.me).
+ 
+## Installation
+If you want to run this site locally:
 
-<p>Windows, Mac, Linux worked.</p>
+- `git clone` it somewhere
+- Create a file called `_config_local.yml` with the following contents:
+  ```
+  production: false
+  ```
+- Run `npm install` and then `gulp`
+- Party.
 
-<ol>
-	<li>Ruby installer for Windows - <a target="_blank" href="http://rubyinstaller.org/">rubyinstaller.org</a></li>
-	<li>Install gems - $ gem install jekyll redcarpet rouge</li>
-	<li>NodeJS - use the installer</li>
-	<li>GulpJS - $ npm i -g gulp</li>
-	<li>npm i - in work folder</li>
-	<li>gulp - Run.</li>
-</ol>
+If you're running this site in production, you'll obviously need to change `_config_local.yml` to read `production: true`.
+
+## Who This Repo is For
+This repo is mostly for me. I, like many of you, host my code on GitHub for reasons of portability, ease of work, and peace of mind. Beyond my own needs, I have also open-sourced this repo for you, the reader (and most likely developer), to explore the things that make my site tick.
