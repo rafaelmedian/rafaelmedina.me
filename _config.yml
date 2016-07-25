@@ -9,8 +9,8 @@ environment: development
 # Site
 # ============================
 title: Rafael Medina Digital Product Designer
-baseurl: "/rafaelmedina.me/"
-url: "/rafaelmedina.me/"
+baseurl: ""
+url: ""
 url_protocol: "http:"
 description: "Rafael Medina is a Digital Product Designer"
 
