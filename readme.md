@@ -1,5 +1,5 @@
 # Hello, Good Evening, and Welcome
-Welcome to the innards of new personal [website](http://rafaelmedina.me). Right now there is just a placeholder.
+Welcome to the innards of new personal website. Right now there is just a placeholder.
 
 ## About 
 Will be uploaded soon.
