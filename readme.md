@@ -1,5 +1,18 @@
 # Hello, Good Evening, and Welcome
 Welcome to the innards of [my website](http://rafaelmedina.me).
+
+## About 
+Will be uploaded soon.
+
+* **Done:**
+	* Home
+	* Blog feed
+	
+* **Next Steps:**
+	* Refactor Sass 
+	* About Me
+	* Colors
+	* Ajax and animations
  
 ## Installation
 If you want to run this site locally:
