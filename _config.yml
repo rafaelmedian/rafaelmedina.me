@@ -9,8 +9,13 @@ environment: development
 # Site
 # ============================
 title: Rafael Medina Digital Product Designer
+# baseurl: /rafaelmedina.me
 baseurl: ""
+<<<<<<< HEAD
 url: ""
+=======
+url: "/rafaelmedina.me/"
+>>>>>>> gh-pages
 url_protocol: "http:"
 description: "Rafael Medina is a Digital Product Designer"
 
@@ -121,7 +126,7 @@ future:      true
 # ============================
 # Conversion
 # ============================
-markdown         : redcarpet
+markdown         : kramdown
 highlighter      : rouge
 # lsi              : true
 excerpt_separator: <!--more-->
