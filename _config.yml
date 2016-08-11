@@ -11,11 +11,7 @@ environment: development
 title: Rafael Medina Digital Product Designer
 # baseurl: /rafaelmedina.me
 baseurl: ""
-<<<<<<< HEAD
-url: ""
-=======
 url: "/rafaelmedina.me/"
->>>>>>> gh-pages
 url_protocol: "http:"
 description: "Rafael Medina is a Digital Product Designer"
 
