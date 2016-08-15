@@ -318,7 +318,7 @@
                         <use mask="url(#mask-31)" xlink:href="#path-28"></use>
                     </g>
                     <g id="Group-4" mask="url(#mask-30)">
-                        <g transform="translate(27.000000, 84.000000)">
+                        <g transform="translate(27.000000, 89.000000)">
                             <g id="Bar-/-Status-Bar" transform="translate(4.000000, 0.000000)">
                                 <path d="M9.75,13.5 C11.2687831,13.5 12.5,12.2687831 12.5,10.75 C12.5,9.23121694 11.2687831,8 9.75,8 C8.23121694,8 7,9.23121694 7,10.75 C7,12.2687831 8.23121694,13.5 9.75,13.5 Z M16.75,13.5 C18.2687831,13.5 19.5,12.2687831 19.5,10.75 C19.5,9.23121694 18.2687831,8 16.75,8 C15.2312169,8 14,9.23121694 14,10.75 C14,12.2687831 15.2312169,13.5 16.75,13.5 Z M23.75,13.5 C25.2687831,13.5 26.5,12.2687831 26.5,10.75 C26.5,9.23121694 25.2687831,8 23.75,8 C22.2312169,8 21,9.23121694 21,10.75 C21,12.2687831 22.2312169,13.5 23.75,13.5 Z M30.75,13.5 C32.2687831,13.5 33.5,12.2687831 33.5,10.75 C33.5,9.23121694 32.2687831,8 30.75,8 C29.2312169,8 28,9.23121694 28,10.75 C28,12.2687831 29.2312169,13.5 30.75,13.5 Z M30.75,13 C31.9926407,13 33,11.9926407 33,10.75 C33,9.50735931 31.9926407,8.5 30.75,8.5 C29.5073593,8.5 28.5,9.50735931 28.5,10.75 C28.5,11.9926407 29.5073593,13 30.75,13 Z M37.75,13.5 C39.2687831,13.5 40.5,12.2687831 40.5,10.75 C40.5,9.23121694 39.2687831,8 37.75,8 C36.2312169,8 35,9.23121694 35,10.75 C35,12.2687831 36.2312169,13.5 37.75,13.5 Z M37.75,13 C38.9926407,13 40,11.9926407 40,10.75 C40,9.50735931 38.9926407,8.5 37.75,8.5 C36.5073593,8.5 35.5,9.50735931 35.5,10.75 C35.5,11.9926407 36.5073593,13 37.75,13 Z" id="Mobile-Signal" fill="#87888C" fill-rule="evenodd"></path>
                                 <text id="Treble" font-family=".SFNSText-Regular, .SF NS Text" font-size="13" font-weight="normal" letter-spacing="0.216666669" fill="#87888C">
@@ -344,8 +344,9 @@
                                     <use fill="black" fill-opacity="1" filter="url(#filter-33)" xlink:href="#path-32"></use>
                                     <use fill="#35BAF2" fill-rule="evenodd" xlink:href="#path-32"></use>
                                 </g>
-                                <text id="Loguearse" font-family="Lato-Bold, Lato" font-size="18" font-weight="bold" fill="#FFFFFF">
-                                    <tspan x="96" y="34">Loguearse</tspan>
+                                <text id="Loguearse" font-family="Lato-Bold, Lato" font-size="18" font-weight="bold" letter-spacing="1.28999996" fill="#FFFFFF">
+                                    <tspan x="91" y="34">Loguears</tspan>
+                                    <tspan x="173.473" y="34">e</tspan>
                                 </text>
                             </g>
                             <g id="Group-2" stroke-width="1" fill-rule="evenodd" transform="translate(56.000000, 477.000000)">
@@ -659,8 +660,8 @@
                             </g>
                             <g id="date" stroke-width="1" fill="none" fill-rule="evenodd" transform="translate(39.000000, 320.000000)">
                                 <path d="M0.49999997,52.4952381 L307.5,52.4952381" id="line" stroke="#1D1D26" stroke-linecap="square" opacity="0.1"></path>
-                                <text id="admin@infblvd.com" font-family="Lato-Regular, Lato" font-size="14" font-weight="normal" line-spacing="14" fill="#1D1D26">
-                                    <tspan x="5" y="36.7142857">admin@infblvd.com</tspan>
+                                <text id="admin@rafaelmedina.m" font-family="Lato-Regular, Lato" font-size="14" font-weight="normal" line-spacing="14" fill="#1D1D26">
+                                    <tspan x="5" y="36.7142857">admin@rafaelmedina.me</tspan>
                                 </text>
                                 <text id="CORREO-ELECTRONICO" opacity="0.5" font-family="Lato-Regular, Lato" font-size="10" font-weight="normal" line-spacing="10" letter-spacing="1" fill="#1D1D26">
                                     <tspan x="5" y="10">CORREO ELECTRONICO</tspan>
