@@ -1,0 +1,843 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1399px" height="1294px" viewBox="0 0 1399 1294" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 39.1 (31720) - http://www.bohemiancoding.com/sketch -->
+    <title>webpack-preview</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="1052" height="1145" rx="4.51249994"></rect>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-3">
+            <feOffset dx="0" dy="28" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="22" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0.149019608   0 0 0 0 0.196078431   0 0 0 0 0.219607843  0 0 0 0.16 0" type="matrix" in="shadowBlurOuter1" result="shadowMatrixOuter1"></feColorMatrix>
+            <feOffset dx="0" dy="14" in="SourceAlpha" result="shadowOffsetOuter2"></feOffset>
+            <feGaussianBlur stdDeviation="11" in="shadowOffsetOuter2" result="shadowBlurOuter2"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0.149019608   0 0 0 0 0.196078431   0 0 0 0 0.219607843  0 0 0 0.24 0" type="matrix" in="shadowBlurOuter2" result="shadowMatrixOuter2"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="shadowMatrixOuter2"></feMergeNode>
+            </feMerge>
+        </filter>
+        <rect id="path-4" x="0" y="0" width="1052" height="1103.46215"></rect>
+        <radialGradient cx="50%" cy="50%" fx="50%" fy="50%" r="50%" id="radialGradient-6">
+            <stop stop-color="#93B4E7" offset="0%"></stop>
+            <stop stop-color="#B9D1F8" offset="59.2733578%"></stop>
+            <stop stop-color="#9CB6E0" offset="100%"></stop>
+        </radialGradient>
+        <rect id="path-7" x="840.696996" y="82.1727129" width="54.1802575" height="22.5749211"></rect>
+        <mask id="mask-8" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="54.1802575" height="22.5749211" fill="white">
+            <use xlink:href="#path-7"></use>
+        </mask>
+        <rect id="path-9" x="0" y="0" width="1062.83605" height="1257.87461"></rect>
+        <linearGradient x1="138.750228%" y1="-18.9602718%" x2="50%" y2="100%" id="linearGradient-11">
+            <stop stop-color="#A4C5EF" offset="0%"></stop>
+            <stop stop-color="#6B93D9" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="138.019867%" y1="-15.4427937%" x2="50%" y2="100%" id="linearGradient-12">
+            <stop stop-color="#BDD4EF" offset="0%"></stop>
+            <stop stop-color="#88A8DA" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="-16.0569414%" x2="50%" y2="100%" id="linearGradient-13">
+            <stop stop-color="#A8C7F0" offset="0%"></stop>
+            <stop stop-color="#6F95DB" offset="100%"></stop>
+        </linearGradient>
+        <rect id="path-14" x="0" y="-1.28252962e-14" width="469.562232" height="192.338328" rx="4.51249994"></rect>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-15">
+            <feOffset dx="0" dy="9" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="14" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.16 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <radialGradient cx="50%" cy="50%" fx="50%" fy="50%" r="50%" id="radialGradient-16">
+            <stop stop-color="#FF5F56" offset="0%"></stop>
+            <stop stop-color="#FF5C54" offset="100%"></stop>
+        </radialGradient>
+        <radialGradient cx="50%" cy="50%" fx="50%" fy="50%" r="50%" id="radialGradient-17">
+            <stop stop-color="#FFBD2E" offset="0%"></stop>
+            <stop stop-color="#FFC12C" offset="100%"></stop>
+        </radialGradient>
+        <radialGradient cx="50%" cy="50%" fx="50%" fy="50%" r="50%" id="radialGradient-18">
+            <stop stop-color="#27C93F" offset="0%"></stop>
+            <stop stop-color="#26CE3F" offset="100%"></stop>
+        </radialGradient>
+        <rect id="path-19" x="0" y="-1.13686838e-13" width="479.495279" height="192.338328" rx="4.51249994"></rect>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-20">
+            <feOffset dx="0" dy="9" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="14" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.356176404 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <mask id="mask-21" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="479.495279" height="192.338328" fill="white">
+            <use xlink:href="#path-19"></use>
+        </mask>
+        <path d="M3.60368664,100.139952 C1.58017233,100.363985 0,102.079177 0,104.161834 L0,128.53828 C0,130.617918 1.57663522,132.336137 3.60368664,132.560205 L3.60368664,169.589287 C1.58017233,169.814005 0,171.534442 0,173.623468 L0,223.22944 C0,225.313516 1.57663522,227.03865 3.60368664,227.263638 L3.60368664,241.744361 C1.58017233,241.969079 0,243.689516 0,245.778542 L0,295.384514 C0,297.468591 1.57663522,299.193724 3.60368664,299.418712 L3.60368664,754.891866 C3.60368664,774.841037 19.7696515,791 39.7113797,791 L350.387699,791 C370.333247,791 386.495392,774.833838 386.495392,754.891866 L386.495392,227.263638 C386.643293,227.280054 386.793593,227.288483 386.945853,227.288483 C389.18034,227.288483 391,225.471188 391,223.22944 L391,173.623468 C391,171.387329 389.184896,169.564424 386.945853,169.564424 C386.793626,169.564424 386.643324,169.572859 386.495392,169.589287 L386.495392,36.1081344 C386.495392,16.1589635 370.329427,0 350.387699,0 L39.7113797,0 C19.7658315,0 3.60368664,16.1661624 3.60368664,36.1081344 L3.60368664,100.139952 Z" id="path-22"></path>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-23">
+            <feOffset dx="0" dy="28" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="22" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0.149019608   0 0 0 0 0.196078431   0 0 0 0 0.219607843  0 0 0 0.16 0" type="matrix" in="shadowBlurOuter1" result="shadowMatrixOuter1"></feColorMatrix>
+            <feOffset dx="0" dy="14" in="SourceAlpha" result="shadowOffsetOuter2"></feOffset>
+            <feGaussianBlur stdDeviation="11" in="shadowOffsetOuter2" result="shadowBlurOuter2"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0.149019608   0 0 0 0 0.196078431   0 0 0 0 0.219607843  0 0 0 0.24 0" type="matrix" in="shadowBlurOuter2" result="shadowMatrixOuter2"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="shadowMatrixOuter2"></feMergeNode>
+            </feMerge>
+        </filter>
+        <rect id="path-24" x="165.769585" y="709.825542" width="59.4608295" height="59.5279361" rx="29.7304147"></rect>
+        <mask id="mask-25" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="59.4608295" height="59.5279361" fill="white">
+            <use xlink:href="#path-24"></use>
+        </mask>
+        <ellipse id="path-26" cx="197.301843" cy="25.2542759" rx="5.40552995" ry="5.41163056"></ellipse>
+        <mask id="mask-27" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="10.8110599" height="10.8232611" fill="white">
+            <use xlink:href="#path-26"></use>
+        </mask>
+        <ellipse id="path-28" cx="135.58871" cy="50.0575827" rx="6.75691244" ry="6.7645382"></ellipse>
+        <mask id="mask-29" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="13.5138249" height="13.5290764" fill="white">
+            <use xlink:href="#path-28"></use>
+        </mask>
+        <rect id="path-30" x="165.769585" y="45.9988597" width="61.2626728" height="8.11744584" rx="4.05872292"></rect>
+        <mask id="mask-31" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="61.2626728" height="8.11744584" fill="white">
+            <use xlink:href="#path-30"></use>
+        </mask>
+        <rect id="path-32" x="25.2258065" y="74.8608894" width="341.449309" height="607.004561" rx="2.70749997"></rect>
+        <mask id="mask-33" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="-1.80499998" y="-1.80499998" width="345.059309" height="610.614561">
+            <rect x="23.4208065" y="73.0558894" width="345.059309" height="610.614561" fill="white"></rect>
+            <use xlink:href="#path-32" fill="black"></use>
+        </mask>
+        <mask id="mask-35" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="-1.80499998" y="-1.80499998" width="345.059309" height="610.614561">
+            <rect x="23.4208065" y="73.0558894" width="345.059309" height="610.614561" fill="white"></rect>
+            <use xlink:href="#path-32" fill="black"></use>
+        </mask>
+        <rect id="path-36" x="0" y="-6.41264811e-15" width="234.239631" height="96.5074116" rx="2.25624997"></rect>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-37">
+            <feOffset dx="0" dy="5" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="6.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.16 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <rect id="path-38" x="0" y="0" width="239.645161" height="96.5074116" rx="2.25624997"></rect>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-39">
+            <feOffset dx="0" dy="5" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="6.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.356176404 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <mask id="mask-40" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="239.645161" height="96.5074116" fill="white">
+            <use xlink:href="#path-38"></use>
+        </mask>
+        <rect id="path-41" x="0" y="0" width="54.0552995" height="22.5484607"></rect>
+        <mask id="mask-42" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="54.0552995" height="22.5484607" fill="white">
+            <use xlink:href="#path-41"></use>
+        </mask>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-2-Copy-2" transform="translate(-331.000000, -105.000000)">
+            <g id="webpack-preview" transform="translate(375.000000, 121.000000)">
+                <g id="browser" transform="translate(259.000000, 0.000000)">
+                    <mask id="mask-2" fill="white">
+                        <use xlink:href="#path-1"></use>
+                    </mask>
+                    <g id="Mask">
+                        <use fill="black" fill-opacity="1" filter="url(#filter-3)" xlink:href="#path-1"></use>
+                        <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-1"></use>
+                    </g>
+                    <g id="Group-5" mask="url(#mask-2)">
+                        <g transform="translate(0.000000, 42.440852)">
+                            <mask id="mask-5" fill="white">
+                                <use xlink:href="#path-4"></use>
+                            </mask>
+                            <g id="Mask" stroke="none" fill="none"></g>
+                            <g id="Group-5" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" mask="url(#mask-5)">
+                                <g transform="translate(0.000000, -48.761830)">
+                                    <text id="License:-MIT-V-1.0.1" stroke="none" font-family="SFUIText-Light, SF UI Text" font-size="10.8299999" font-weight="300">
+                                        <tspan x="913.840343" y="95.7847003" fill="#9B9B9B">License: </tspan>
+                                        <tspan x="958.910699" y="95.7847003" font-family="SFUIText-Bold, SF UI Text" font-weight="bold" fill="#9B9B9B">MIT</tspan>
+                                        <tspan x="979.439049" y="95.7847003" fill="#4990E2">     </tspan>
+                                        <tspan x="994.087046" y="95.7847003" fill="#434446">V 1.0.1</tspan>
+                                    </text>
+                                    <g id="webpack" opacity="0.290228545" stroke="none" stroke-width="1" fill-rule="evenodd" transform="translate(580.631760, 0.000000)">
+                                        <g id="Group">
+                                            <polygon id="Shape" fill="url(#radialGradient-6)" points="43.3551579 0.154248571 0.100879398 25.126938 0.100879398 75.0723171 43.3551579 100.045161 86.6095902 75.0723171 86.6095902 25.126938"></polygon>
+                                            <polygon id="Shape" fill="url(#radialGradient-6)" points="43.3551579 0.154248571 0.100879398 25.126938 0.100879398 75.0723171 43.3551579 100.045161 86.6095902 75.0723171 86.6095902 25.126938"></polygon>
+                                            <polygon id="Shape" fill="#6F95DB" points="43.3556204 25.4857202 21.9057915 37.869721 21.9057915 62.6378769 43.3556204 75.0220318 64.8057581 62.6378769 64.8057581 37.869721"></polygon>
+                                            <polygon id="Shape" fill="#6F95DB" points="43.3556204 25.4857202 21.9057915 37.869721 21.9057915 62.6378769 43.3556204 75.0220318 64.8057581 62.6378769 64.8057581 37.869721"></polygon>
+                                            <g id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                                <polygon points="43.344206 0 0 25.1425171 43.344206 48.7425484 86.688412 25.2967657"></polygon>
+                                            </g>
+                                            <g transform="translate(0.000000, 51.981769)" id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                                <polygon points="43.344206 0 0 22.9830371 43.344206 47.9713056 86.5341622 22.8287886"></polygon>
+                                            </g>
+                                        </g>
+                                    </g>
+                                    <use id="Rectangle" stroke="#979797" mask="url(#mask-8)" stroke-width="1.80499998" xlink:href="#path-7"></use>
+                                    <text id="GitHub" stroke="none" font-family="SFUIText-Regular, SF UI Text" font-size="10.8299999" font-weight="normal">
+                                        <tspan x="849.727039" y="97.590694" fill="#9B9B9B">GitHub</tspan>
+                                    </text>
+                                    <g id="Group-4" stroke="none" stroke-width="1" fill-rule="evenodd" transform="translate(0.000000, 47.858833)">
+                                        <mask id="mask-10" fill="white">
+                                            <use xlink:href="#path-9"></use>
+                                        </mask>
+                                        <g id="Mask"></g>
+                                        <g mask="url(#mask-10)">
+                                            <g transform="translate(-18.060086, 65.918770)">
+                                                <g id="webpack" opacity="0.177122201" stroke-width="1" fill-rule="evenodd" transform="translate(868.690129, 130.934543)">
+                                                    <g id="Group">
+                                                        <polygon id="Shape" fill="url(#radialGradient-6)" points="115.613754 0.411329524 0.269011727 67.0051681 0.269011727 200.192846 115.613754 266.787095 230.958907 200.192846 230.958907 67.0051681"></polygon>
+                                                        <polygon id="Shape" fill="url(#radialGradient-6)" points="115.613754 0.411329524 0.269011727 67.0051681 0.269011727 200.192846 115.613754 266.787095 230.958907 200.192846 230.958907 67.0051681"></polygon>
+                                                        <polygon id="Shape" fill="#6F95DB" points="115.614988 67.9619206 58.4154441 100.985923 58.4154441 167.034338 115.614988 200.058752 172.815355 167.034338 172.815355 100.985923"></polygon>
+                                                        <polygon id="Shape" fill="#6F95DB" points="115.614988 67.9619206 58.4154441 100.985923 58.4154441 167.034338 115.614988 200.058752 172.815355 167.034338 172.815355 100.985923"></polygon>
+                                                        <g id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                                            <polygon points="115.584549 0 0 67.0467124 115.584549 129.980129 231.169099 67.4580419"></polygon>
+                                                        </g>
+                                                        <g transform="translate(0.000000, 138.618050)" id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                                            <polygon points="115.584549 0 0 61.288099 115.584549 127.923482 230.757766 60.8767695"></polygon>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                                <g id="webpack" opacity="0.604769123" stroke-width="1" fill-rule="evenodd">
+                                                    <g id="Group">
+                                                        <polygon id="Shape" fill="url(#radialGradient-6)" points="43.3551579 0.154248571 0.100879398 25.126938 0.100879398 75.0723171 43.3551579 100.045161 86.6095902 75.0723171 86.6095902 25.126938"></polygon>
+                                                        <polygon id="Shape" fill="url(#radialGradient-6)" points="43.3551579 0.154248571 0.100879398 25.126938 0.100879398 75.0723171 43.3551579 100.045161 86.6095902 75.0723171 86.6095902 25.126938"></polygon>
+                                                        <polygon id="Shape" fill="#6F95DB" points="43.3556204 25.4857202 21.9057915 37.869721 21.9057915 62.6378769 43.3556204 75.0220318 64.8057581 62.6378769 64.8057581 37.869721"></polygon>
+                                                        <polygon id="Shape" fill="#6F95DB" points="43.3556204 25.4857202 21.9057915 37.869721 21.9057915 62.6378769 43.3556204 75.0220318 64.8057581 62.6378769 64.8057581 37.869721"></polygon>
+                                                        <g id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                                            <polygon points="43.344206 0 0 25.1425171 43.344206 48.7425484 86.688412 25.2967657"></polygon>
+                                                        </g>
+                                                        <g transform="translate(0.000000, 51.981769)" id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                                            <polygon points="43.344206 0 0 22.9830371 43.344206 47.9713056 86.5341622 22.8287886"></polygon>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                                <g id="webpack" opacity="0.101737407" stroke-width="1" fill-rule="evenodd" transform="translate(71.337339, 371.131703)">
+                                                    <g id="Group">
+                                                        <polygon id="Shape" fill="url(#radialGradient-6)" points="43.3551579 0.154248571 0.100879398 25.126938 0.100879398 75.0723171 43.3551579 100.045161 86.6095902 75.0723171 86.6095902 25.126938"></polygon>
+                                                        <polygon id="Shape" fill="url(#radialGradient-6)" points="43.3551579 0.154248571 0.100879398 25.126938 0.100879398 75.0723171 43.3551579 100.045161 86.6095902 75.0723171 86.6095902 25.126938"></polygon>
+                                                        <polygon id="Shape" fill="#6F95DB" points="43.3556204 25.4857202 21.9057915 37.869721 21.9057915 62.6378769 43.3556204 75.0220318 64.8057581 62.6378769 64.8057581 37.869721"></polygon>
+                                                        <polygon id="Shape" fill="#6F95DB" points="43.3556204 25.4857202 21.9057915 37.869721 21.9057915 62.6378769 43.3556204 75.0220318 64.8057581 62.6378769 64.8057581 37.869721"></polygon>
+                                                        <g id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                                            <polygon points="43.344206 0 0 25.1425171 43.344206 48.7425484 86.688412 25.2967657"></polygon>
+                                                        </g>
+                                                        <g transform="translate(0.000000, 51.981769)" id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                                            <polygon points="43.344206 0 0 22.9830371 43.344206 47.9713056 86.5341622 22.8287886"></polygon>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                                <g id="Logo-container" stroke-width="1" fill-rule="evenodd" transform="translate(457.823176, 154.412461)">
+                                                    <g id="logo" transform="translate(28.896137, 0.000000)">
+                                                        <polygon id="Shape" stroke="url(#linearGradient-11)" stroke-width="4.51249994" points="28.8960859 0 0 16.7054159 0 50.1162477 28.8960859 66.8217666 57.7922747 50.1162477 57.7922747 16.7054159"></polygon>
+                                                        <polygon id="Shape" stroke="url(#linearGradient-12)" stroke-width="4.51249994" points="97.5244121 0 68.6283262 16.7054159 68.6283262 50.1162477 97.5244121 66.8217666 126.420601 50.1162477 126.420601 16.7054159"></polygon>
+                                                        <polygon id="Shape" fill="url(#linearGradient-13)" points="14.4480687 24.606612 14.4480687 41.3120537 28.8960334 49.6648265 43.344206 41.3120537 43.344206 24.606612 28.8960334 16.2539432"></polygon>
+                                                        <g id="Group" fill-opacity="0.1" fill="#FFFFFF">
+                                                            <polygon id="Shape" points="28.8961373 0 0 16.7616781 28.8961373 32.4950323 57.7922747 16.8645105"></polygon>
+                                                        </g>
+                                                        <g id="Group" transform="translate(0.000000, 34.313880)" fill-opacity="0.1" fill="#FFFFFF">
+                                                            <polygon id="Shape" points="28.8961373 0 0 15.5378279 28.8961373 32.4313052 57.6894415 15.4335472"></polygon>
+                                                        </g>
+                                                    </g>
+                                                    <g id="logo-title" transform="translate(0.000000, 85.784700)" fill="#000000">
+                                                        <text id="config-webpack-plugi" font-family="SFUIText-Medium, SF UI Text" font-size="16.2449998" font-weight="400">
+                                                            <tspan x="0.903004292" y="15">config-webpack-plugin</tspan>
+                                                        </text>
+                                                        <text id="Merge-a-configuratio" font-family="SFUIText-Light, SF UI Text" font-size="10.8299999" font-weight="300">
+                                                            <tspan x="15.0781641" y="36.1869085">Merge a configuration file with </tspan>
+                                                            <tspan x="34.593845" y="49.1869085">environment variables.</tspan>
+                                                        </text>
+                                                    </g>
+                                                </g>
+                                                <text id="#-config-webpack-plu" font-family="Hack-Bold, Hack" font-size="10.8299999" font-weight="bold">
+                                                    <tspan x="188.727897" y="916.608833" fill="#434446"># config-webpack-plugin</tspan>
+                                                    <tspan x="188.727897" y="929.608833" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="942.608833" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">&gt; </tspan>
+                                                    <tspan x="201.768317" y="942.608833" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">💫</tspan>
+                                                    <tspan x="215.768317" y="942.608833" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> Merge a configuration file with environment variables.</tspan>
+                                                    <tspan x="574.37986" y="942.608833" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="960.608833" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="973.608833" fill="#434446">## How it works?</tspan>
+                                                    <tspan x="188.727897" y="986.608833" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="999.608833" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1012.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">The `config-webpack-plugin` will **intercept a JS configuration file** during webpack's compilation time. </tspan>
+                                                    <tspan x="188.727897" y="1025.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">The specified configuration file will be modified with any matching **environment variables**.</tspan>
+                                                    <tspan x="188.727897" y="1038.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1051.60883" fill="#434446">## Installation</tspan>
+                                                    <tspan x="188.727897" y="1064.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1077.60883" fill="#434446">```sh</tspan>
+                                                    <tspan x="188.727897" y="1090.60883" fill="#4990E2">npm install config-webpack-plugin --save-dev</tspan>
+                                                    <tspan x="475.617132" y="1090.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1103.60883" fill="#434446">```</tspan>
+                                                    <tspan x="188.727897" y="1116.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1129.60883" fill="#434446">## Usage</tspan>
+                                                    <tspan x="188.727897" y="1142.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1155.60883" fill="#434446">```js</tspan>
+                                                    <tspan x="188.727897" y="1168.60883" fill="#4990E2">const ConfigPlugin = require('config-webpack-plugin');</tspan>
+                                                    <tspan x="188.727897" y="1181.60883" fill="#4990E2"></tspan>
+                                                    <tspan x="188.727897" y="1194.60883" fill="#4990E2">module.exports = {</tspan>
+                                                    <tspan x="188.727897" y="1207.60883" fill="#4990E2">    // ...</tspan>
+                                                    <tspan x="188.727897" y="1220.60883" fill="#4990E2">    plugins: [</tspan>
+                                                    <tspan x="188.727897" y="1233.60883" fill="#4990E2">        new ConfigPlugin('./config')</tspan>
+                                                    <tspan x="188.727897" y="1246.60883" fill="#4990E2">    ]</tspan>
+                                                    <tspan x="188.727897" y="1259.60883" fill="#4990E2">    // ...</tspan>
+                                                    <tspan x="188.727897" y="1272.60883" fill="#4990E2">}</tspan>
+                                                    <tspan x="195.248107" y="1272.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1285.60883" fill="#434446">```</tspan>
+                                                    <tspan x="188.727897" y="1298.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1311.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">*That's it!* The first and unique parameter is a string containing the relative path of the configuration </tspan>
+                                                    <tspan x="188.727897" y="1324.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">file you want for `config-webpack-plugin` to intercept.</tspan>
+                                                    <tspan x="547.33944" y="1324.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1337.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1350.60883" fill="#434446">### What is a configuration file?</tspan>
+                                                    <tspan x="188.727897" y="1363.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1376.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">Currently, `config-webpack-plugin` support a simple type of JS configuration file that export an object </tspan>
+                                                    <tspan x="188.727897" y="1389.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">where key-value pairs represents key-value configurations:</tspan>
+                                                    <tspan x="566.90007" y="1389.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1402.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1415.60883" fill="#434446">```js</tspan>
+                                                    <tspan x="188.727897" y="1428.60883" fill="#434446">module.exports = {</tspan>
+                                                    <tspan x="188.727897" y="1441.60883" fill="#434446">    API_BASE_URL: 'http://localhost/',</tspan>
+                                                    <tspan x="188.727897" y="1454.60883" fill="#434446">    NODE_ENV: 'development',</tspan>
+                                                    <tspan x="188.727897" y="1467.60883" fill="#434446">    AUTH_SPOOFED: true,</tspan>
+                                                    <tspan x="188.727897" y="1480.60883" fill="#434446">}</tspan>
+                                                    <tspan x="188.727897" y="1493.60883" fill="#434446">```</tspan>
+                                                    <tspan x="188.727897" y="1506.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1519.60883" fill="#434446">## Development</tspan>
+                                                    <tspan x="188.727897" y="1532.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1545.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">If you want to collaborate with the development of `config-webpack-plugin` you need to have installed </tspan>
+                                                    <tspan x="188.727897" y="1558.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">NodeJS 6 and Gulp. Then follow these instructions to make my life easier:</tspan>
+                                                    <tspan x="188.727897" y="1571.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1584.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> 1. Fork this repo.</tspan>
+                                                    <tspan x="188.727897" y="1597.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> 2. Clone your forked repo.</tspan>
+                                                    <tspan x="188.727897" y="1610.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> 3. Create a _feature branch_ with: `git checkout -b feature/&lt;name-of-feature&gt;`.</tspan>
+                                                    <tspan x="188.727897" y="1623.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> 4. Create a pull request **to be merged into `develop` branch**.</tspan>
+                                                    <tspan x="188.727897" y="1636.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1649.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> &gt; </tspan>
+                                                    <tspan x="208.288527" y="1649.60883" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">💁</tspan>
+                                                    <tspan x="222.288527" y="1649.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> Please, do not submit PR to be merged into `master` branch.</tspan>
+                                                    <tspan x="613.501119" y="1649.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1667.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1680.60883" fill="#434446">### Roadmap</tspan>
+                                                    <tspan x="188.727897" y="1693.60883" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1706.60883" fill="#434446"> - </tspan>
+                                                    <tspan x="208.288527" y="1706.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">[ ] Add test. Please!</tspan>
+                                                    <tspan x="188.727897" y="1719.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> - [ ] Add CI. Please!</tspan>
+                                                    <tspan x="188.727897" y="1732.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> - [ ] Support multiple file (`new ConfigPlugin(['./config.default.js', '.config.local.js'])`).</tspan>
+                                                    <tspan x="188.727897" y="1745.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> - [ ] Support JSON file too </tspan>
+                                                    <tspan x="377.813983" y="1745.60883" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">♥️</tspan>
+                                                    <tspan x="391.813983" y="1745.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">, because they are prettiest for configuration.</tspan>
+                                                    <tspan x="188.727897" y="1763.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"></tspan>
+                                                    <tspan x="188.727897" y="1776.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> &gt; </tspan>
+                                                    <tspan x="208.288527" y="1776.60883" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">💁</tspan>
+                                                    <tspan x="222.288527" y="1776.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> Do you want to suggest a feature? [</tspan>
+                                                    <tspan x="457.016082" y="1776.60883" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">➕</tspan>
+                                                    <tspan x="471.016082" y="1776.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> Add a suggestion](https://github.com/rmariuzzo/config-webpack-</tspan>
+                                                    <tspan x="188.727897" y="1794.60883" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">plugin/issues/new).</tspan>
+                                                </text>
+                                                <image id="Bitmap" x="188.727897" y="858.75" width="102.942489" height="18.0599369" xlink:href="data:image/png;base64,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"></image>
+                                                <image id="Bitmap" x="296.787411" y="858.75" width="72.2403433" height="18.0599369" xlink:href="data:image/png;base64,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"></image>
+                                                <image id="Bitmap" x="374.144778" y="858.75" width="94.8154506" height="18.0599369" xlink:href="data:image/png;base64,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"></image>
+                                                <image id="Bitmap" x="474.077253" y="858.75" width="158.928755" height="18.0599369" xlink:href="data:image/png;base64,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"></image>
+                                                <g id="Group-3" stroke-width="1" fill-rule="evenodd" transform="translate(188.727897, 421.699527)">
+                                                    <g id="Dark-Code-Editor-Window">
+                                                        <g id="Base-+-Header">
+                                                            <g id="Base">
+                                                                <use fill="black" fill-opacity="1" filter="url(#filter-15)" xlink:href="#path-14"></use>
+                                                                <use fill="#353B46" fill-rule="evenodd" xlink:href="#path-14"></use>
+                                                            </g>
+                                                        </g>
+                                                        <text id="Line-Numbers" opacity="0.8" font-family="Hack-Regular, Hack" font-size="12.6349998" font-weight="normal" fill="#858585">
+                                                            <tspan x="17.6772086" y="44.5078864">1</tspan>
+                                                            <tspan x="17.6772086" y="63.1178864">2</tspan>
+                                                            <tspan x="17.6772086" y="81.7278863">3</tspan>
+                                                            <tspan x="17.6772086" y="100.337886">4</tspan>
+                                                            <tspan x="17.6772086" y="118.947886">5</tspan>
+                                                            <tspan x="17.6772086" y="137.557886">6</tspan>
+                                                            <tspan x="17.6772086" y="156.167886">7</tspan>
+                                                            <tspan x="17.6772086" y="174.777886">8</tspan>
+                                                        </text>
+                                                        <text id="code" font-family="Hack-Regular, Hack" font-size="11.7324999" font-weight="normal">
+                                                            <tspan x="49.6652361" y="61.5678233" fill="#F77669">const</tspan>
+                                                            <tspan x="84.9830396" y="61.5678233" fill="#89DDFF"> ConfigPlugin </tspan>
+                                                            <tspan x="183.872889" y="61.5678233" fill="#B88ADA">=</tspan>
+                                                            <tspan x="190.93645" y="61.5678233" fill="#89DDFF"> </tspan>
+                                                            <tspan x="198.000011" y="61.5678233" fill="#F3E090">require</tspan>
+                                                            <tspan x="247.444936" y="61.5678233" fill="#F0F0F0">(</tspan>
+                                                            <tspan x="254.508496" y="61.5678233" fill="#B1D284">'webpack-config-plugin'</tspan>
+                                                            <tspan x="416.970393" y="61.5678233" fill="#F0F0F0">);</tspan>
+                                                            <tspan x="431.097514" y="61.5678233" fill="#89DDFF"></tspan>
+                                                            <tspan x="49.6652361" y="79.1778233" fill="#89DDFF"></tspan>
+                                                            <tspan x="49.6652361" y="96.7878233" fill="#89DDFF">module</tspan>
+                                                            <tspan x="92.0466003" y="96.7878233" fill="#F0F0F0">.</tspan>
+                                                            <tspan x="99.110161" y="96.7878233" fill="#F5E290">exports</tspan>
+                                                            <tspan x="148.555086" y="96.7878233" fill="#89DDFF"> </tspan>
+                                                            <tspan x="155.618647" y="96.7878233" fill="#B88ADA">=</tspan>
+                                                            <tspan x="162.682207" y="96.7878233" fill="#89DDFF"> {</tspan>
+                                                            <tspan x="49.6652361" y="114.397823" fill="#89DDFF">    </tspan>
+                                                            <tspan x="77.9194789" y="114.397823" fill="#535353">// Among other stuff...</tspan>
+                                                            <tspan x="240.381375" y="114.397823" fill="#89DDFF"></tspan>
+                                                            <tspan x="49.6652361" y="132.007823" fill="#89DDFF">    </tspan>
+                                                            <tspan x="77.9194789" y="132.007823" fill="#BCE08A">plugins</tspan>
+                                                            <tspan x="127.364404" y="132.007823" fill="#F0F0F0">:</tspan>
+                                                            <tspan x="134.427964" y="132.007823" fill="#89DDFF"> </tspan>
+                                                            <tspan x="141.491525" y="132.007823" fill="#F0F0F0">[</tspan>
+                                                            <tspan x="148.555086" y="132.007823" fill="#89DDFF"> </tspan>
+                                                            <tspan x="155.618647" y="132.007823" fill="#FA8071">new</tspan>
+                                                            <tspan x="176.809329" y="132.007823" fill="#89DDFF"> ConfigPlugin</tspan>
+                                                            <tspan x="268.635618" y="132.007823" fill="#F0F0F0">(</tspan>
+                                                            <tspan x="275.699179" y="132.007823" fill="#BCE08A">'./config'</tspan>
+                                                            <tspan x="346.334786" y="132.007823" fill="#F0F0F0">) ]</tspan>
+                                                            <tspan x="367.525468" y="132.007823" fill="#89DDFF"></tspan>
+                                                            <tspan x="49.6652361" y="149.617823" fill="#89DDFF">}</tspan>
+                                                        </text>
+                                                    </g>
+                                                    <g id="Multiple-Tabs">
+                                                        <path d="M4.51553622,0 C2.02167443,0 0,2.02865746 0,4.50721298 L0,25.0491323 L469.562232,25.0491323 L469.562232,4.50721298 C469.562232,2.01794799 467.545483,0 465.046696,0 L4.51553622,0 Z" id="Base" fill="#636872"></path>
+                                                        <g id="Group" transform="translate(84.882403, 0.000000)">
+                                                            <rect id="Rectangle" fill="#353B46" x="0" y="0" width="192.339914" height="27.9929022"></rect>
+                                                            <g id="Console-Title" transform="translate(48.762232, 6.320978)" font-weight="normal" font-family=".SFNSText-Regular, .SF NS Text" fill="#FFFFFF" font-size="12">
+                                                                <g id="title">
+                                                                    <text id="bash">
+                                                                        <tspan x="0" y="12">webpack.config.js</tspan>
+                                                                    </text>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                        <g id="Console-Title" opacity="0.34923041" transform="translate(350.365665, 6.320978)" font-weight="normal" font-family=".SFNSText-Regular, .SF NS Text" fill="#FFFFFF" font-size="12">
+                                                            <g id="title">
+                                                                <text id="bash">
+                                                                    <tspan x="0" y="12">config.js</tspan>
+                                                                </text>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                    <g id="Editor-Header" transform="translate(14.448069, 7.223975)">
+                                                        <g id="App-Header">
+                                                            <g id="Window-Controls">
+                                                                <g>
+                                                                    <circle id="Close" stroke="#E0443E" stroke-width="0.5" fill="url(#radialGradient-16)" cx="6" cy="6" r="6"></circle>
+                                                                    <circle id="Minimize" stroke="#DEA123" stroke-width="0.5" fill="url(#radialGradient-17)" cx="26" cy="6" r="6"></circle>
+                                                                    <circle id="Maximize" stroke="#1AAB29" stroke-width="0.5" fill="url(#radialGradient-18)" cx="46" cy="6" r="6"></circle>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                                <g id="Group-2" stroke-width="1" fill-rule="evenodd" transform="translate(379.261803, 592.365931)">
+                                                    <g id="Background">
+                                                        <use fill="black" fill-opacity="1" filter="url(#filter-20)" xlink:href="#path-19"></use>
+                                                        <use stroke="#4A4A4A" mask="url(#mask-21)" stroke-width="1" fill="#000000" fill-rule="evenodd" xlink:href="#path-19"></use>
+                                                    </g>
+                                                    <g id="Multiple-Tabs" transform="translate(0.000000, -0.000000)">
+                                                        <path d="M4.5159974,0 C2.0218809,0 0,2.02865746 0,4.50721298 L0,25.0491323 L479.495279,25.0491323 L479.495279,4.50721298 C479.495279,2.01794799 477.474526,0 474.979282,0 L4.5159974,0 Z" id="Base" fill="#4A4A4A"></path>
+                                                        <rect id="Rectangle" fill="#000000" x="89.3974249" y="0" width="195.048927" height="25.0491323"></rect>
+                                                        <g id="Console-Title" transform="translate(158.928755, 6.320978)" font-weight="normal" font-family=".SFNSText-Regular, .SF NS Text" fill="#FFFFFF" font-size="12">
+                                                            <g id="title">
+                                                                <text id="bash">
+                                                                    <tspan x="0" y="12">my-project</tspan>
+                                                                </text>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                    <g id="Terminal" transform="translate(16.254077, 39.731861)">
+                                                        <g id="Command-Line">
+                                                            <text id="$-my-project-npm-ins" font-family="Hack-Regular, Hack" font-size="10.8299999" font-weight="normal" line-spacing="16.2449998">
+                                                                <tspan x="0" y="10" fill="#FFFFFF">$  </tspan>
+                                                                <tspan x="19.5606296" y="10" fill="#06FFC8">my-project</tspan>
+                                                                <tspan x="84.7627284" y="10" fill="#FFFFFF"> npm install config-webpack-plugin --save-dev</tspan>
+                                                                <tspan x="0" y="26.2449998" fill="#FFFFFF">config-webpack-plugin@1.0.1 node_modules/config-webpack-plugin</tspan>
+                                                            </text>
+                                                            <rect id="Rectangle-2" x="378.358798" y="1.80599369" width="6.32103004" height="13.5449527"></rect>
+                                                        </g>
+                                                    </g>
+                                                    <g id="Terminal" transform="translate(16.254077, 75.851735)">
+                                                        <g id="Command-Line">
+                                                            <text id="$-my-project-webpack" font-family="Hack-Regular, Hack" font-size="10.8299999" font-weight="normal" line-spacing="16.2449998">
+                                                                <tspan x="0" y="10" fill="#FFFFFF">$  </tspan>
+                                                                <tspan x="19.5606296" y="10" fill="#06FFC7">my-project </tspan>
+                                                                <tspan x="91.2829383" y="10" fill="#FFFFFF">webpack </tspan>
+                                                            </text>
+                                                            <rect id="Rectangle-2" fill="#9B9B9B" x="137.256652" y="1.80599369" width="6.32103004" height="13.5449527"></rect>
+                                                        </g>
+                                                    </g>
+                                                    <g id="Console-Header" transform="translate(14.448069, 8.126972)">
+                                                        <g id="Window-Controls">
+                                                            <g>
+                                                                <circle id="Close" stroke="#E0443E" stroke-width="0.5" fill="url(#radialGradient-16)" cx="6" cy="6" r="6"></circle>
+                                                                <circle id="Minimize" stroke="#DEA123" stroke-width="0.5" fill="url(#radialGradient-17)" cx="26" cy="6" r="6"></circle>
+                                                                <circle id="Maximize" stroke="#1AAB29" stroke-width="0.5" fill="url(#radialGradient-18)" cx="46" cy="6" r="6"></circle>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                    <g id="Console-Title" opacity="0.345499067" transform="translate(369.328755, 6.320978)" font-weight="normal" font-family=".SFNSText-Regular, .SF NS Text" fill="#FFFFFF" font-size="12">
+                                                        <g id="title">
+                                                            <text id="bash">
+                                                                <tspan x="0" y="12">zsh</tspan>
+                                                            </text>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                    </g>
+                    <rect id="Rectangle-2" fill="#E0E0E0" mask="url(#mask-2)" x="0" y="44.6238142" width="1052" height="0.949442855"></rect>
+                    <ellipse id="Oval-1" fill="#E0E0E0" mask="url(#mask-2)" cx="23.7364621" cy="22.7866285" rx="8.54512635" ry="8.5449857"></ellipse>
+                    <ellipse id="Oval-2" fill="#E0E0E0" mask="url(#mask-2)" cx="53.1696751" cy="22.7866285" rx="8.54512635" ry="8.5449857"></ellipse>
+                    <ellipse id="Oval-3" fill="#E0E0E0" mask="url(#mask-2)" cx="82.6028881" cy="22.7866285" rx="8.54512635" ry="8.5449857"></ellipse>
+                </g>
+                <g id="mobile-device" transform="translate(0.000000, 415.000000)">
+                    <g id="Combined-Shape">
+                        <use fill="black" fill-opacity="1" filter="url(#filter-23)" xlink:href="#path-22"></use>
+                        <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-22"></use>
+                    </g>
+                    <use id="btn-5" stroke="#E0E0E0" mask="url(#mask-25)" stroke-width="1.80499998" fill="#F9F9F9" xlink:href="#path-24"></use>
+                    <use id="sen" stroke="#F9F9F9" mask="url(#mask-27)" stroke-width="1.80499998" fill="#E0E0E0" xlink:href="#path-26"></use>
+                    <use id="cam" stroke="#F9F9F9" mask="url(#mask-29)" stroke-width="1.80499998" fill="#E0E0E0" xlink:href="#path-28"></use>
+                    <use id="mic" stroke="#F9F9F9" mask="url(#mask-31)" stroke-width="1.80499998" fill="#E0E0E0" xlink:href="#path-30"></use>
+                    <mask id="mask-34" fill="white">
+                        <use xlink:href="#path-32"></use>
+                    </mask>
+                    <g id="your-screen" stroke="#E0E0E0" mask="url(#mask-33)" stroke-width="3.60999995">
+                        <use mask="url(#mask-35)" xlink:href="#path-32"></use>
+                    </g>
+                    <text id="#-config-webpack-plu" mask="url(#mask-34)" font-family="Hack-Bold, Hack" font-size="10.8299999" font-weight="bold">
+                        <tspan x="52.2534562" y="653.984036" fill="#434446"># config-webpack-plugin</tspan>
+                        <tspan x="52.2534562" y="666.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="679.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">&gt; </tspan>
+                        <tspan x="65.293876" y="679.984036" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">💫</tspan>
+                        <tspan x="79.293876" y="679.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> Merge a configuration file with </tspan>
+                        <tspan x="52.2534562" y="697.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">environment variables.</tspan>
+                        <tspan x="195.698074" y="697.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="710.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="723.984036" fill="#434446">## How it works?</tspan>
+                        <tspan x="52.2534562" y="736.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="749.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="762.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">The `config-webpack-plugin` will </tspan>
+                        <tspan x="52.2534562" y="775.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">**intercept a JS configuration file** </tspan>
+                        <tspan x="52.2534562" y="788.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">during webpack's compilation time. The </tspan>
+                        <tspan x="52.2534562" y="801.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">specified configuration file will be </tspan>
+                        <tspan x="52.2534562" y="814.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">modified with any matching </tspan>
+                        <tspan x="52.2534562" y="827.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">**environment variables**.</tspan>
+                        <tspan x="52.2534562" y="840.984036" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="853.984036" fill="#434446">## Installation</tspan>
+                        <tspan x="52.2534562" y="866.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="879.984036" fill="#434446">```sh</tspan>
+                        <tspan x="52.2534562" y="892.984036" fill="#4990E2">npm install config-webpack-plugin --</tspan>
+                        <tspan x="52.2534562" y="905.984036" fill="#4990E2">save-dev</tspan>
+                        <tspan x="104.415135" y="905.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="918.984036" fill="#434446">```</tspan>
+                        <tspan x="52.2534562" y="931.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="944.984036" fill="#434446">## Usage</tspan>
+                        <tspan x="52.2534562" y="957.984036" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="970.984036" fill="#434446">```js</tspan>
+                        <tspan x="52.2534562" y="983.984036" fill="#4990E2">const ConfigPlugin = require('config-</tspan>
+                        <tspan x="52.2534562" y="996.984036" fill="#4990E2">webpack-plugin');</tspan>
+                        <tspan x="52.2534562" y="1009.98404" fill="#4990E2"></tspan>
+                        <tspan x="52.2534562" y="1022.98404" fill="#4990E2">module.exports = {</tspan>
+                        <tspan x="52.2534562" y="1035.98404" fill="#4990E2">    // ...</tspan>
+                        <tspan x="52.2534562" y="1048.98404" fill="#4990E2">    plugins: [</tspan>
+                        <tspan x="52.2534562" y="1061.98404" fill="#4990E2">        new ConfigPlugin('./config')</tspan>
+                        <tspan x="52.2534562" y="1074.98404" fill="#4990E2">    ]</tspan>
+                        <tspan x="52.2534562" y="1087.98404" fill="#4990E2">    // ...</tspan>
+                        <tspan x="52.2534562" y="1100.98404" fill="#4990E2">}</tspan>
+                        <tspan x="58.7736661" y="1100.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1113.98404" fill="#434446">```</tspan>
+                        <tspan x="52.2534562" y="1126.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1139.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">*That's it!* The first and unique </tspan>
+                        <tspan x="52.2534562" y="1152.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">parameter is a string containing the </tspan>
+                        <tspan x="52.2534562" y="1165.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">relative path of the configuration file </tspan>
+                        <tspan x="52.2534562" y="1178.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">you want for `config-webpack-plugin` to </tspan>
+                        <tspan x="52.2534562" y="1191.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">intercept.</tspan>
+                        <tspan x="117.455555" y="1191.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1204.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1217.98404" fill="#434446">### What is a configuration file?</tspan>
+                        <tspan x="52.2534562" y="1230.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1243.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">Currently, `config-webpack-plugin` </tspan>
+                        <tspan x="52.2534562" y="1256.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">support a simple type of JS </tspan>
+                        <tspan x="52.2534562" y="1269.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">configuration file that export an </tspan>
+                        <tspan x="52.2534562" y="1282.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">object where key-value pairs represents </tspan>
+                        <tspan x="52.2534562" y="1295.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">key-value configurations:</tspan>
+                        <tspan x="215.258703" y="1295.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1308.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1321.98404" fill="#434446">```js</tspan>
+                        <tspan x="52.2534562" y="1334.98404" fill="#434446">module.exports = {</tspan>
+                        <tspan x="52.2534562" y="1347.98404" fill="#434446">    API_BASE_URL: 'http://localhost/',</tspan>
+                        <tspan x="52.2534562" y="1360.98404" fill="#434446">    NODE_ENV: 'development',</tspan>
+                        <tspan x="52.2534562" y="1373.98404" fill="#434446">    AUTH_SPOOFED: true,</tspan>
+                        <tspan x="52.2534562" y="1386.98404" fill="#434446">}</tspan>
+                        <tspan x="52.2534562" y="1399.98404" fill="#434446">```</tspan>
+                        <tspan x="52.2534562" y="1412.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1425.98404" fill="#434446">## Development</tspan>
+                        <tspan x="52.2534562" y="1438.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1451.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">If you want to collaborate with the </tspan>
+                        <tspan x="52.2534562" y="1464.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">development of `config-webpack-plugin` </tspan>
+                        <tspan x="52.2534562" y="1477.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">you need to have installed NodeJS 6 and </tspan>
+                        <tspan x="52.2534562" y="1490.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">Gulp. Then follow these instructions to </tspan>
+                        <tspan x="52.2534562" y="1503.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">make my life easier:</tspan>
+                        <tspan x="52.2534562" y="1516.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1529.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> 1. Fork this repo.</tspan>
+                        <tspan x="52.2534562" y="1542.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> 2. Clone your forked repo.</tspan>
+                        <tspan x="52.2534562" y="1555.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> 3. Create a _feature branch_ with: </tspan>
+                        <tspan x="52.2534562" y="1568.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">`git checkout -b feature/&lt;name-of-</tspan>
+                        <tspan x="52.2534562" y="1581.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">feature&gt;`.</tspan>
+                        <tspan x="52.2534562" y="1594.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> 4. Create a pull request **to be </tspan>
+                        <tspan x="52.2534562" y="1607.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">merged into `develop` branch**.</tspan>
+                        <tspan x="52.2534562" y="1620.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1633.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> &gt; </tspan>
+                        <tspan x="71.8140859" y="1633.98404" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">💁</tspan>
+                        <tspan x="85.8140859" y="1633.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> Please, do not submit PR to be </tspan>
+                        <tspan x="52.2534562" y="1651.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">merged into `master` branch.</tspan>
+                        <tspan x="234.819333" y="1651.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1664.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1677.98404" fill="#434446">### Roadmap</tspan>
+                        <tspan x="52.2534562" y="1690.98404" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1703.98404" fill="#434446"> - </tspan>
+                        <tspan x="71.8140859" y="1703.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">[ ] Add test. Please!</tspan>
+                        <tspan x="52.2534562" y="1716.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> - [ ] Add CI. Please!</tspan>
+                        <tspan x="52.2534562" y="1729.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> - [ ] Support multiple file (`new </tspan>
+                        <tspan x="52.2534562" y="1742.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">ConfigPlugin(['./config.default.js', </tspan>
+                        <tspan x="52.2534562" y="1755.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">'.config.local.js'])`).</tspan>
+                        <tspan x="52.2534562" y="1768.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> - [ ] Support JSON file too </tspan>
+                        <tspan x="241.339543" y="1768.98404" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">♥️</tspan>
+                        <tspan x="255.339543" y="1768.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">, </tspan>
+                        <tspan x="52.2534562" y="1786.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">because they are prettiest for </tspan>
+                        <tspan x="52.2534562" y="1799.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">configuration.</tspan>
+                        <tspan x="52.2534562" y="1812.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"></tspan>
+                        <tspan x="52.2534562" y="1825.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> &gt; </tspan>
+                        <tspan x="71.8140859" y="1825.98404" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">💁</tspan>
+                        <tspan x="85.8140859" y="1825.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> Do you want to suggest a feature? </tspan>
+                        <tspan x="52.2534562" y="1843.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">[</tspan>
+                        <tspan x="58.7736661" y="1843.98404" font-family="AppleColorEmoji, Apple Color Emoji" font-weight="normal" fill="#434446">➕</tspan>
+                        <tspan x="72.7736661" y="1843.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446"> Add a suggestion](https://</tspan>
+                        <tspan x="52.2534562" y="1861.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">github.com/rmariuzzo/config-webpack-</tspan>
+                        <tspan x="52.2534562" y="1874.98404" font-family="Hack-Regular, Hack" font-weight="normal" fill="#434446">plugin/issues/new).</tspan>
+                    </text>
+                    <g id="Group-2" mask="url(#mask-34)">
+                        <g transform="translate(46.847926, 587.161916)" id="Bitmap">
+                            <image x="0" y="0" width="102.705069" height="18.0387685" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHIAAAAUCAYAAABRcGk6AAAABGdBTUEAA1teXP8meAAACVdJREFUaAXtWAtUlMcV/v5/HyyPhUV2NRpBRBQPWFRiEAzi+oi0R42x2ihCUyPHWh9todVqTz1tNHqo1tRnT0utrdpqK7UJRq1QrO9QDeaIQgwiEhATQdgA8lqWfXTuLD/9QR7bRI2cZPb8uzNz73xz535z78y/wqJFi3QajWabKIovA9Cx56kttUuzn1rbvjDDHPZ9TQ5bitLNzW2fIAizHQ7HF2aLqxP3BRtdXcuj0xMWaSAIyr5CIi38KyK7pt8BYbayLzmnL9natcsfW6/uKyIfm2+fLHAfI9L+WLwTrjXiev3ZR4r9qDG/G/Ar3DOX4Nj933Zpp0jpytUnJSUFa9as6VWfXaCwYcMGJCYm9qrr6tykZ38MT6zvK1g3Yh9mGZb1iB/hHYe08FxM7hffox7Z6Cqmq+vRiFoY/WZjlDa627n/r4j08vKCh4dHr5cOcrqfnx9In+qPqjxKLMmmS6bjGG6JQrHteo+2NrXWQ6fSw2K19KhHuK5iSjb09kvrtjqssLR2P3eXREZFRWHBggXQarV8jurqahQUFGDw4MHsoisg7fdpqLhXgfz8fMTFxfE+UjSZTNixYwcSEhOgUqkwZswY7NmzB7m5uXhQ/wDRUdFITU3FvXv3EL8wvr1tnGzEpNhJfAzhFBUVYfPmzVTtUByOjqk1KWATpvb/Fpqt9fBVD4DNYcP7tWcwyicKHqIXWu0tOHx3J96q2IGNI99CqHdkO97N+jz89MOZCNO9gJigqbhd9h40qjj8MHgb6iwmDNQM4bq3G/Pxi8L5SGH9AvusGJaKFcJm/LX81/j6gEQY3AZxPZo7x3QC20qWu4S5+oNv8HE/GLoLsYaXIEIBlhuRfT8dvyv9MUZ6jsePhu+GXj2w3WYitLMPJGGXqXXOnDlgfxBgyZIlOHDgAJqamnDmzBlUVVWhprYGh/92GNnZ2SCCz58/j61bt3I9X19fsD8YkP2vbFitVtwqvoVDhw4hJycHbmo3uLu7c9LJIKmt0+lgNE5GeXk55s+fj6ysLJY+7HzXOw3vPvWrHBpoRA9UN91H2rupeGCuQaTvNNyuvoG9l95kbhdhNHyTY5XUFuIf1/Zh7bHX8O+idxCiHYPX/DdAcIjwUHozHC2vuwnuUDvcsP+9ncj/5AqCPEdhgu4lnC49xh19+qPjSM9Pw7n7b6PIlI+0nF/iJ++8imLTDbygn4mvaSe5hDnNLxFzn0lm9s3B6eJjiNqlw5XyC5jGNmYUmy85eCd0SgMO5O7ia7HaW8EW1K1fuoxIIk6v12Pjxo24e/cutm/fjpqaGjQ3N3OCT548yQkJCgpCTEwMJkyYAFEhchmlU4pem82G+gf1yMzMhEKhwOjRo/nmIYJ5qmC/VFpaWmCxtGBI4BC+IUpLS7H+9fVg/zZxufyLxskLx2EL3Hh1MWpU5ZhingUPtRfeLFyJT4U7mFw3A14abz5fmbkQ80Ysx8vh34YoiBzGoPJnsstczlhiv+QrAX8oSMW7LYdR+LERmwYe4iTfNOcy+WLcsuYis+5PUKhE1FgrEP/8UniyjaAQnBE1xD0UleY7LmE+p5vK7XguIAZZy0oAlnCYF/lZ6Kd+BhdLM3HEvIltNB8k2JcxA7t/l+4yIletWoVz587xHTh27Fju4IiICE6U3W7nxFDErly5Ev4B/jh16hSSFiehtKyU60jOJtKIRCrkdBor1S0Wlu/Zp6GhAcuXLUf+9Xx+pk6cOBF79+4FRTeN6fCwlTKU9odV2IYSofVl0aRkTmA2kUO9vL0gqFhbybYwK3p1AJYOXw+1qMHBvF2IPzgeZmsTdxybgOuQLVLd4Gfg47213k4Z0xFEpx7zM0SGPW9QCmYGfAfVjRX4zaX12Hp6rdNW+/9wesNUOdQ8+5wuPYoLpf/EhfKT+MuV3bhdX8A3lOjB5mVzsSXxaCRj5OuX10VyrvyhG+eWLVt4Gl2xfAXS09O5g+jyQsRQKgwLC0NsbCxPlRR1R44c4Wnx2UHP8kgk59vsNgQGBiI4OBjh4eFQKpWcVIpgo9GIyPGRsFltCAkJwRtvvIGzZ88iKSkJedfyeDRSGpbbRfUOpHIC2khgdZLRMvlipbaziaHuo5hjRNypu4XjjbuxMu7nUCs07XjOQc7N5hzvrDuIFN7R1mb4Eb6TMdb7RQxQB3LRVdNFVHkWY9a4Bc67AhvitIWJZXUyj9svw7xadZFnhyD9COz/5HW833AKEcFRrE9Ac2sjO2ufxxjtVLzqv45vws7rl7cfSq0k9PT0xLx58/hD1paUlODEiRPcUDrHVq9ezS82ly9fxpQpU3gE0bjW1lZOJKXmgvwCREZGYt26dcjLy0NGRgbGjRuHGTNmcAc0NbOIYIV0DQYDkpOT+UM4dKaWlZU5HcO1nF8k61AkR7F+ktHNzs4uHazhdFobsf8xZeBW1fcxun800vsXw2I3cxirg7KCs9D4DvVO7ZxP38bHdWsRrZ+OKP2LOFSyDTVN1Zg7bAnmYgkarQ84kI3Z0AFHjt8Jc+/dn8FfGYLxgUb8PbaYa9IFLavyIDKK9iE+bAXWhx1sQ3D+POSDNqmQkJAgzds+oLGxkb8+UDTRDZPOSSlC6JwkgujGSlHi4+OD0NBQfhmidElnG72iUN3f35/Xb968yW+kdXV1mD59OiorK3Ht2jU+nlJobW1te/RSSqesQLfezqV2WWaHLqvZgfoyC3xD3Hh/S60NzdUsawQ722YTI5YdxR4DlDDX2DBBnA+Vwg1ZFX+EtZnZPkwNpUaE6QbDGKlmmYfdvNvqCpaWKSLlbcKOVr4Cs70BH3hnoamyFTP8voeqhgpcbswAzd8vTNMBpzdMS4MNrbc9MWnobLZRPsKHLRfgM5SlXLYf9VWhGK2PwYnCP6PBUoN+oWqoPJ1HVQdHsIawcOHCh4gkJTnz9MohLyST+vhOZm06nzoXCUPSJTmRT215H/X3hENyKp2JdPa6/m23Oc9ouph91kL2U5HWa2OY5B6p/ZlxyTZmlnQRIxx+e2fdChfsfSi1dmWIRIhcJu8jUuRtuR7V5TKJQHmfpN8bDi3sc5U2/j4XTtueljDaLsDc6Y/DNsKX5uoJ3yUiewJ4krKuyH+S8z+tc7EToI6IPMoMnP20Gim3q7t/NeQ6X8Y6S/cZInshX8QWf5Q16r6MTujra7bZ7fttQmPyfwFw2WtzbgXAuAAAAABJRU5ErkJggg=="></image>
+                            <image x="107.810292" y="0" width="72.0737327" height="18.0387685" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAUCAYAAAAa2LrXAAAABGdBTUEAA1teXP8meAAABdhJREFUWAntV2tsk1UYfr5e1o5u62UXtmWAYbMwQJdNJYGg8gN1EnSI/MDNyxRFDDHx+kcTIQSIkIA/GGYhuEuyZAkMBIluMdkwXhKZGxtQNbABG8vuLe0uLe3afvW8Z3xd2brZD5rQRE9yei7v877nPc/3vuecCqWlpQatVvuVQqHYCMDA6gMrxx9+84GtLXdhnxiocoypP1RpNJoqQRCKAoGAXBtRx8eCD5FuSimg1JA0IahihTxyXIyBjxgpgYRjH7xIFUtfPZZ8iYRIgR15/xMYCVNzYGKKwHtN4e15afD4RFT+aZ11q4Y4Jd56hOH8Io60D86KI4EcbEwRKDeFT21ainXZJggsl/jGNSocau2fHIT8vvtoGr58NhsqxSSwND8dj1e0hyCmunKwpKXMz8/fNaX+YHsWU37EDhx7PhtFuam40n8LO0/8jJvWMdRdG8eQW5xh4/jmXLBbE+8da4CfReAacwYy41X44ZrjvrCkHDYC2bsQe/bugcgWMxqNYG9EjIyM4ODBg7DZbFxGyvokPZdZrVbs378fWVlZ2LZtG5xOJ1JSUuiWQkdHB++bTCY+bm5uxtGjR0l9RgmNwEydCufffgytvaPYWPc3x5YXZuPl5al4/eRfWG9OxrVBOwrKfoWQwJ6vvXZArZlh86UcI5LnqfGjpQe1tgT89MsAnsvPxuoFSdyfUAU5WElPQU6Hq+x9iMTERDQ2NvKq1+uxYcMGjiWZVqNFfX09GhoaQOSwBzknk2REeFVVFTo7O2E2m+HxeFBZVYnh4WEUFBTwjxJuTWac3ga89o170XtrDGsXG7DcpEWiWsALS1JgHb2N5Hg1dOxMy55vhHPvi3B+9hRufvIkXs1NDupLdnRMj1J8wM3sCgr0e5VwuDygeQkjtXKwks6sBCoVSrS0tKC6uhq1tbVwu91QKpVMLwCStbW18fmamhoMDAwgPT2dy+jL0FxTUxOuX7/O5+rq6nCu6RwuXrrIbcTHx/P5cCSGzlU2d0PFNv3+E5nYys4xA0u7mpYuOD1eHgCNl7vwypGz2Pftb9BrlPj86UUz7Do9Po69NOgMymzOCdDfhtC1qC8HK+nOSiCtStGkUql4ZQ/u4ILTZYShQkapUPpSFKrVaj6WjgEinsU7vF5v0JbkSLj2a4sd/Y5xPJNjwmt5GSxy3Nh9fhDz1EoeVTddwGlHInZfduNKnx1GrRoLE9V32+YeAKsWTR4hCWoFFpgS4BfDZJ4cLNsr+awQRRHTq0QEtSSTxmRf6lNKU4pv2bKFE9bd3R2USXp3/GGbFbgdaUzt9DWldUhXqpRyJ9p6kJ6owdI0Hc629wAKFU5eHcbo7QlsysvC+sVGlKzIgDnDiKFRF7pGPDi9eRn6PlqNN9h52XDDzrHrcpKRm6zFzjULWCSr8UeXla8jByv5FdrOGYG0UQlMfSo0pgjKycnB4cOHUVhYiJ6eHt6fREz+Sjga0Rko2WHqIf0psqbkd8/t+r0ftjEXXCwVD7UMct3xiQC++O4CtCoBp4rz8M2mZRhjhH58pp3L57MLyKBVQa9VYHxCxL76i0jSKnFh+0rsWLUQnQN2vPP9VdnYcD4KJSUlk3kXunvWt9vt0Ol0iIuL4xJpTJFXVlaG1tZWVFRUgM6zvr4+3tICQ0NDSE1N5Sns9/v5xZGWlsbHPp8PDoeDR+y05fjwhHlruGkEbL2Azwth/kNBeUD0Qxy8gR0rF8HN7FZabIApk0W7AoFxB8ThbigWroBA5zbzQ+zvwKdrl+CW043KKy4ISezCYUUONrh4SEcoLi4OS2AI5q4uEVZeXg6LxYIDBw5wGaVoNMpsBM5lO8COGCoCO3P/rRCRdHhGExv2HTiXIy6Xi0ceRZJUKPKiUe7Jzp2PF5HuHZKjiZVNIBFFb0OKumhFnkR+RBuTwDHQsot8hAg8w3wpkuOPRFy0NxylQJazlfvCCqJ4WsFuyFJm5Qx7Rozcl7X/mrIoVotO1wf/ACkUTAbys4pAAAAAAElFTkSuQmCC"></image>
+                            <image x="0" y="23.4503991" width="94.5967742" height="18.0387685" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGkAAAAUCAYAAACOPhMlAAAABGdBTUEAA1teXP8meAAACXNJREFUaAXtWHtUVMcZ/917973Aossu+AA0AUUJj1IVQdpwiJ6cxEStj/husaCGRI8ataftqUnV1NYYFaM20aOpNSqm1EStrdiYxKS0omJiokcpYDAIHESQXR7Lsuze7cws97q7LJo/0kY5/c6ZnZnvPd8338zc5bKzs0M1Gs1WnuenAAglrU+AZfEHD/863OI+m9u1QqFWq/dxHDfZ7XY//IvyWkHfWA+XrQHHKfpigmiu+kaSyDrATVbcbzEasQtJndWIctyG2dnM9mqDoh+qVSZ8oY6CnVd67d8HZ3i/dT04nt7Xk9B7JmloVxMmtl6AQWz30WRwtCPWUYNRtnL8NXg0qpRGH/qDMOlDSQJPFxOoDXE0Yo71TI8E0QQET1mJwe9UwWgeyHgiuiwBdeTk5CArKysgLZBNCRcXF8dkoqOjkZeXh2HDhvXQMWrUKCxcuBDkTu1B8+gRCb5vtIBJUrsceKatVC4IRUQsDPPWIepII2ucRoeum+UyfXprCaiMFGTa0+ClpKRgxIgRPnhvnkDjsWPHYsWKFZgwYQLCw8ORnJyMqKioHjri4+OZ/v79+/egUb3id9C2xZ/B7sTSb912wOMumdxB0hGnjBmD8FfexZ09a3B7cx5LTOiM5RBtrXKSKC+VOat5RMbRQLlcLtjtdhZE8sxnY5mhl0FpaSmioqNQVVUFrVYLURSZHqrPG9ptniPY6XQy/d40Ovbn96f/N+af3DwBhVv5rdsOmKTorkZ5DaEzV7OqsX1yQMZ1fvkRwtcfR7+cDbj9mxkMT2X+pR4q87AkiS6MHDkSu3fvBvkOQ2NjIzZu3MgqY9GiRThUcAjF/yhm1SLNW6wtSE9LR3V1Ndrb7t6FVF9ubi5SU1OZLmrI4XAwe4ESQo86b3g17n1E6mKg4NXQ8jo4RDt2Va3Bx00FeDXuPYwMGSOz/7v1En5x7RmEKiOwNu4wIrUxjGYT2/BG5Uoir8eCIWsQQh5QFBo6a/HyteeQaE6FVgjCIct6ovN9DCb2BE6AXghh9g7X5ONo/Q7E6VOxetib6Kc0M3mH2ImzTSexrWoJm/v/BDzuwl0Wdu8M3PUlXJYGtJzY4yMntjXBUpjvgwsXrWwH0YBJjTIIgoCTJ0+iqKgIRqMRObk5TE6lUkGj1si7TprTZNIK0mq0sn6qb/z48UhLS0NFZQW2bNmCK1eugCe6JVv369XQIUgRis9q/4m9JZuZ7rmRq5j8V5YyHPliH37+lwX4sPw4hgcnY0HkOuQN2YhB2kew9cyvsO7UUtRabiBMOQizB68klzmPOe9kMF22zjaoeC1JhgFBpFFfqL1gYu9qw+d4u2QLeCiQZZrBaCtjdzK+PSWvY0/JJkIToIG+17UErCS6ArfNCvIdJQfqvoPu5Eh81FGBF3Dx4kUUFBQwdGJiIkxhpl6dCRRoKkjxKd9PAT3atr+xHW1tbUhKSmJVKslIdqWe4r1B4BSob7mJDRXzICg5xN4cgXFRTyJa+xi+tpdh+rAXMCVxPniOZ2ImZSRa7FYSQB7Z45ajpr0Sf6vejw9b92O8cSbMIYOwecZBfN1Wjg2fLUaDptyzLiJNbUv2fn31OQgqDpmWpxGkDUF80A9IhZpQXF2E487XoSNJnSe+SGR6P6IDVlI9b0Db3/egblEChFAzQiZ6dr+0aD7IiNAZy6Qp66mMFDCppwT6gFAoFHKjOCmA9k7PfUWDLoFE8+ajY1p19H6iFUeB3nekZnvYlGyTpwOh3m1kQpJD/NBx4MinnVrn+b4zCCYsjl1LKkGDg5e2Y/bBVNidNhBRbCl7HgUX34LV1oTY4EQsS3wNS2K2YdGn43C6/BhxAhhjzMJbmR8hrd9ksjDmGrMr29N77PFkY1DQ8kGsV2gIXkHqQCDT7lrw9td7zNOF+7cbfH+miP5Y3t0EZXQcdI/PgzZtOmvh649B7GhH895fynxUxluPFGyDwcDwU6dORVhYGGpqauQkjR41GrS65syZQ4qWkwNOlUrBlsZlZWVQKpWYNGkSk6GV5BY9SfK2K40lebknUVMLWiQHP4GnTLlINmagsf0WlCQ5HKmWamsFTrTvwJInX4ZK8BzD65MLERkZiYWfpuNnp2fDKToRpojA7zM/xi3hOuafTsGBz3eyaqPHoATS2iXf2bw7gSV3jqOVVOj3wh7H89Gb8ErcIWgEnbxe2V9SWtI44HF3QRiAsc4qGNw2dFWeR/2qCdCPnw/Dj15gflgKt0GbME7yCVZOByrj71xXVxdiYmKwf/9+xltfX4/8/HxWVXV1dUhISGCto6OD0WmAe4PCwkJ2xGVmZoI2CvThIC2EIbx+vH2haBcJsEHVD2vjDzKuVocV68/n4obqPCpuL0WSOQ1/MleyC54yON0OaFw6ZJgn4oNnm5iM1d6Mw1/twMrHtmLuoy+xRgmVt6/iPfIoyAqbzviYT91lJflBq54BqZpNF5Zj9Zh8PDVgPloczeTJ7lm3xOthvPvLzZ07t1v6LpKOYlzN+KnjnC+ye0Y/Zg3Tl7LkOesrsFOVjlrygvEHq9XK7g/6zUMfBOfOnYNer2dsNpsNGRkZLNDFxcXseW42m1lFNTQ0wGQy+YypvLfMqVOn2AODficFAktekQ96e0IxNG4dJv1hBDKHTsM521EERyqZDXuzC+n8TCgFNU7Vvw1nhwjDoyq4yXHWXObA08N/wnSdsR5A0GAlOhpcGNCegOGmZNS2VOG6hug2KmBvcoLsBejCfcdU2Jv2w/4zIVoFHCnZi9npL2LZ6N/i7K0i/O66x46P42TCkaMmYJIoY6xowbSuy6yi/AXpnFbQAWUyavjgQGQZJ+0QeqR5A60civPHe/P4j7+pjH+S3kwiG0QRhB9fjGfHL026N4guz27mBV885QlEY7ufihB26bHhre9e45diduOJiGkyC63QVaXPog7XZJz3IOBxJzGUcwZsU47FaFcdhop3EOFuYaR6LgRV5A66IAyEjd5+fi8pSd6/l5Il4aXk+OMleqD+m8pIR4ik488Vu9iHJsOTveJPp8Gm0ANPkb3ResNTmXvAxss5uHztEoz6cHI/kSO09jXoB5M49gLcrFmzeq2kXmQeCnRz3kkfP93dlcIFqBQfxv/RRHSSMqSRJxuGV3RnO4Bt8jay0koib0mQ92PfAv9/HKRq6IH/jpbNnt7dtu/lEznej/KdnZ3ZhPcYmZCv1//DgxQBlyj+0cW1L/8PJOzPQNIx2YUAAAAASUVORK5CYII="></image>
+                            <image x="99.1013825" y="23.4503991" width="158.562212" height="18.0387685" xlink:href="data:image/png;base64,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"></image>
+                        </g>
+                    </g>
+                    <g id="Group-5" mask="url(#mask-34)">
+                        <g transform="translate(3.603687, 104.624857)">
+                            <g id="webpack" opacity="0.177122201" transform="translate(262.168203, 172.270239)">
+                                <g id="Group">
+                                    <polygon id="Shape" fill="url(#radialGradient-6)" points="61.2781522 0.21791568 0.142582875 35.4982464 0.142582875 106.058908 61.2781522 141.339456 122.413939 106.058908 122.413939 35.4982464"></polygon>
+                                    <polygon id="Shape" fill="url(#radialGradient-6)" points="61.2781522 0.21791568 0.142582875 35.4982464 0.142582875 106.058908 61.2781522 141.339456 122.413939 106.058908 122.413939 35.4982464"></polygon>
+                                    <polygon id="Shape" fill="#6F95DB" points="61.278806 36.0051183 30.9616316 53.5006965 30.9616316 88.492071 61.278806 105.987867 91.5964167 88.492071 91.5964167 53.5006965"></polygon>
+                                    <polygon id="Shape" fill="#6F95DB" points="61.278806 36.0051183 30.9616316 53.5006965 30.9616316 88.492071 61.278806 105.987867 91.5964167 88.492071 91.5964167 53.5006965"></polygon>
+                                    <g id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                        <polygon points="61.2626728 0 0 35.5202559 61.2626728 68.8613547 122.525346 35.7381715"></polygon>
+                                    </g>
+                                    <g transform="translate(0.000000, 73.437584)" id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                        <polygon points="61.2626728 0 0 32.4694363 61.2626728 67.7717763 122.307329 32.2515207"></polygon>
+                                    </g>
+                                </g>
+                            </g>
+                            <g id="webpack" opacity="0.101737407" transform="translate(35.135945, 314.776511)">
+                                <g id="Group">
+                                    <polygon id="Shape" fill="url(#radialGradient-6)" points="43.2551662 0.154067774 0.100646736 25.0974863 0.100646736 74.9843235 43.2551662 99.9278959 86.4098393 74.9843235 86.4098393 25.0974863"></polygon>
+                                    <polygon id="Shape" fill="url(#radialGradient-6)" points="43.2551662 0.154067774 0.100646736 25.0974863 0.100646736 74.9843235 43.2551662 99.9278959 86.4098393 74.9843235 86.4098393 25.0974863"></polygon>
+                                    <polygon id="Shape" fill="#6F95DB" points="43.2556277 25.455848 21.8552694 37.8253332 21.8552694 62.5644579 43.2556277 74.9340971 64.6562941 62.5644579 64.6562941 37.8253332"></polygon>
+                                    <polygon id="Shape" fill="#6F95DB" points="43.2556277 25.455848 21.8552694 37.8253332 21.8552694 62.5644579 43.2556277 74.9340971 64.6562941 62.5644579 64.6562941 37.8253332"></polygon>
+                                    <g id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                        <polygon points="43.2442396 0 0 25.1130471 43.2442396 48.6854164 86.4884793 25.2671149"></polygon>
+                                    </g>
+                                    <g transform="translate(0.000000, 51.920840)" id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                        <polygon points="43.2442396 0 0 22.9560983 43.2442396 47.9150775 86.3345852 22.8020305"></polygon>
+                                    </g>
+                                </g>
+                            </g>
+                            <g id="webpack" opacity="0.604769123" transform="translate(0.000000, 32.469783)">
+                                <g id="Group">
+                                    <polygon id="Shape" fill="url(#radialGradient-6)" points="34.6942479 0.123804461 0.0807270691 20.1676229 0.0807270691 60.25526 34.6942479 80.299202 69.3078919 60.25526 69.3078919 20.1676229"></polygon>
+                                    <polygon id="Shape" fill="url(#radialGradient-6)" points="34.6942479 0.123804461 0.0807270691 20.1676229 0.0807270691 60.25526 34.6942479 80.299202 69.3078919 60.25526 69.3078919 20.1676229"></polygon>
+                                    <polygon id="Shape" fill="#6F95DB" points="34.6946181 20.4555921 17.5297473 30.395357 17.5297473 50.2750108 34.6946181 60.2148995 51.8597359 50.2750108 51.8597359 30.395357"></polygon>
+                                    <polygon id="Shape" fill="#6F95DB" points="34.6946181 20.4555921 17.5297473 30.395357 17.5297473 50.2750108 34.6946181 60.2148995 51.8597359 50.2750108 51.8597359 30.395357"></polygon>
+                                    <g id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                        <polygon points="34.6854839 0 0 20.1801272 34.6854839 39.1222096 69.3709677 20.3039316"></polygon>
+                                    </g>
+                                    <g transform="translate(0.000000, 41.722103)" id="Shape" fill-opacity="0.1" fill="#FFFFFF">
+                                        <polygon points="34.6854839 0 0 18.4468647 34.6854839 38.5031873 69.2475319 18.3230603"></polygon>
+                                    </g>
+                                </g>
+                            </g>
+                            <g id="Logo-container" transform="translate(102.705069, 86.586089)">
+                                <g id="logo" transform="translate(26.003072, 0.000000)">
+                                    <polygon id="Shape" stroke="url(#linearGradient-11)" stroke-width="4.06124995" points="26.0030259 0 0 15.0392067 0 45.1176201 26.0030259 60.1569195 52.0061444 45.1176201 52.0061444 15.0392067"></polygon>
+                                    <polygon id="Shape" stroke="url(#linearGradient-12)" stroke-width="4.06124995" points="87.7603224 0 61.7572965 15.0392067 61.7572965 45.1176201 87.7603224 60.1569195 113.763441 45.1176201 113.763441 15.0392067"></polygon>
+                                    <polygon id="Shape" fill="url(#linearGradient-13)" points="13.0015361 22.1523323 13.0015361 37.1915622 26.0029786 44.711224 39.0046083 37.1915622 39.0046083 22.1523323 26.0029786 14.6327642"></polygon>
+                                    <g id="Group" fill-opacity="0.1" fill="#FFFFFF">
+                                        <polygon id="Shape" points="26.0030722 0 0 15.0898573 26.0030722 29.2539563 52.0061444 15.1824331"></polygon>
+                                    </g>
+                                    <g id="Group" transform="translate(0.000000, 30.891391)" fill-opacity="0.1" fill="#FFFFFF">
+                                        <polygon id="Shape" points="26.0030722 0 0 13.9880747 26.0030722 29.1965854 51.9136068 13.894195"></polygon>
+                                    </g>
+                                </g>
+                                <g id="logo-title" transform="translate(0.000000, 77.228478)" fill="#000000">
+                                    <text id="config-webpack-plugi" font-family="SFUIText-Medium, SF UI Text" font-size="14.6204998" font-weight="400">
+                                        <tspan x="0.812596006" y="14">config-webpack-plugin</tspan>
+                                    </text>
+                                    <text id="Merge-a-configuratio" font-family="SFUIText-Light, SF UI Text" font-size="9.74699988" font-weight="300">
+                                        <tspan x="13.5594003" y="32.575009">Merge a configuration file with </tspan>
+                                        <tspan x="31.1235131" y="43.575009">environment variables.</tspan>
+                                    </text>
+                                </g>
+                            </g>
+                            <g id="Group-3" transform="translate(53.154378, 261.562144)">
+                                <g id="Dark-Code-Editor-Window">
+                                    <g id="Base-+-Header">
+                                        <g id="Base">
+                                            <use fill="black" fill-opacity="1" filter="url(#filter-37)" xlink:href="#path-36"></use>
+                                            <use fill="#353B46" fill-rule="evenodd" xlink:href="#path-36"></use>
+                                        </g>
+                                    </g>
+                                    <text id="Line-Numbers" opacity="0.8" font-family="Hack-Regular, Hack" font-size="6.31749992" font-weight="normal" fill="#858585">
+                                        <tspan x="8.80944746" y="22.3111118">1</tspan>
+                                        <tspan x="8.80944746" y="31.1161118">2</tspan>
+                                        <tspan x="8.80944746" y="39.9211118">3</tspan>
+                                        <tspan x="8.80944746" y="48.7261118">4</tspan>
+                                        <tspan x="8.80944746" y="57.5311117">5</tspan>
+                                        <tspan x="8.80944746" y="66.3361117">6</tspan>
+                                        <tspan x="8.80944746" y="75.1411117">7</tspan>
+                                        <tspan x="8.80944746" y="83.9461117">8</tspan>
+                                    </text>
+                                    <text id="code" font-family="Hack-Regular, Hack" font-size="5.86624993" font-weight="normal">
+                                        <tspan x="24.7753456" y="30.3728406" fill="#F77669">const</tspan>
+                                        <tspan x="42.4342474" y="30.3728406" fill="#89DDFF"> ConfigPlugin </tspan>
+                                        <tspan x="91.8791723" y="30.3728406" fill="#B88ADA">=</tspan>
+                                        <tspan x="95.4109526" y="30.3728406" fill="#89DDFF"> </tspan>
+                                        <tspan x="98.942733" y="30.3728406" fill="#F3E090">require</tspan>
+                                        <tspan x="123.665195" y="30.3728406" fill="#F0F0F0">(</tspan>
+                                        <tspan x="127.196976" y="30.3728406" fill="#B1D284">'webpack-config-plugin'</tspan>
+                                        <tspan x="208.427924" y="30.3728406" fill="#F0F0F0">);</tspan>
+                                        <tspan x="215.491485" y="30.3728406" fill="#89DDFF"></tspan>
+                                        <tspan x="24.7753456" y="38.1778406" fill="#89DDFF"></tspan>
+                                        <tspan x="24.7753456" y="45.9828406" fill="#89DDFF">module</tspan>
+                                        <tspan x="45.9660277" y="45.9828406" fill="#F0F0F0">.</tspan>
+                                        <tspan x="49.4978081" y="45.9828406" fill="#F5E290">exports</tspan>
+                                        <tspan x="74.2202705" y="45.9828406" fill="#89DDFF"> </tspan>
+                                        <tspan x="77.7520509" y="45.9828406" fill="#B88ADA">=</tspan>
+                                        <tspan x="81.2838312" y="45.9828406" fill="#89DDFF"> {</tspan>
+                                        <tspan x="24.7753456" y="53.7878405" fill="#89DDFF">    </tspan>
+                                        <tspan x="38.902467" y="53.7878405" fill="#535353">// Among other stuff...</tspan>
+                                        <tspan x="120.133415" y="53.7878405" fill="#89DDFF"></tspan>
+                                        <tspan x="24.7753456" y="61.5928405" fill="#89DDFF">    </tspan>
+                                        <tspan x="38.902467" y="61.5928405" fill="#BCE08A">plugins</tspan>
+                                        <tspan x="63.6249295" y="61.5928405" fill="#F0F0F0">:</tspan>
+                                        <tspan x="67.1567098" y="61.5928405" fill="#89DDFF"> </tspan>
+                                        <tspan x="70.6884902" y="61.5928405" fill="#F0F0F0">[</tspan>
+                                        <tspan x="74.2202705" y="61.5928405" fill="#89DDFF"> </tspan>
+                                        <tspan x="77.7520509" y="61.5928405" fill="#FA8071">new</tspan>
+                                        <tspan x="88.3473919" y="61.5928405" fill="#89DDFF"> ConfigPlugin</tspan>
+                                        <tspan x="134.260537" y="61.5928405" fill="#F0F0F0">(</tspan>
+                                        <tspan x="137.792317" y="61.5928405" fill="#BCE08A">'./config'</tspan>
+                                        <tspan x="173.11012" y="61.5928405" fill="#F0F0F0">) ]</tspan>
+                                        <tspan x="183.705461" y="61.5928405" fill="#89DDFF"></tspan>
+                                        <tspan x="24.7753456" y="69.3978405" fill="#89DDFF">}</tspan>
+                                    </text>
+                                </g>
+                                <g id="Multiple-Tabs">
+                                    <path d="M2.26190411,0 C1.01268897,0 0,1.00729672 0,2.24701697 L0,12.5686177 L234.239631,12.5686177 L234.239631,2.24701697 C234.239631,1.00602377 233.220896,0 231.977727,0 L2.26190411,0 Z" id="Base" fill="#636872"></path>
+                                    <g id="Group" transform="translate(42.343318, 0.000000)">
+                                        <rect id="Rectangle" fill="#353B46" x="0" y="0" width="95.9481567" height="14.0456796"></rect>
+                                        <g id="Tabs-(Single)" transform="translate(20.721198, 3.171605)" font-size="6.31749992" font-family=".SFNSText-Regular, .SF NS Text" fill="#FFFFFF" font-weight="normal">
+                                            <g id="title">
+                                                <text id="bash">
+                                                    <tspan x="0" y="6">webpack.config.js</tspan>
+                                                </text>
+                                            </g>
+                                        </g>
+                                    </g>
+                                    <g id="Tabs-(Single)" opacity="0.34923041" transform="translate(170.274194, 2.269667)" font-size="6.31749992" font-family=".SFNSText-Regular, .SF NS Text" fill="#FFFFFF" font-weight="normal">
+                                        <g id="title">
+                                            <text id="bash">
+                                                <tspan x="0" y="6">config.js</tspan>
+                                            </text>
+                                        </g>
+                                    </g>
+                                </g>
+                                <g id="Editor-Header" transform="translate(7.207373, 3.624692)">
+                                    <g id="App-Header">
+                                        <g id="Window-Controls">
+                                            <g>
+                                                <circle id="Close" stroke="#E0443E" stroke-width="0.5" fill="url(#radialGradient-16)" cx="6" cy="6" r="6"></circle>
+                                                <circle id="Minimize" stroke="#DEA123" stroke-width="0.5" fill="url(#radialGradient-17)" cx="26" cy="6" r="6"></circle>
+                                                <circle id="Maximize" stroke="#1AAB29" stroke-width="0.5" fill="url(#radialGradient-18)" cx="46" cy="6" r="6"></circle>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                            <g id="Group-2" transform="translate(85.587558, 350.854048)">
+                                <g id="Background">
+                                    <use fill="black" fill-opacity="1" filter="url(#filter-39)" xlink:href="#path-38"></use>
+                                    <use stroke="#4A4A4A" mask="url(#mask-40)" stroke-width="1" fill="#000000" fill-rule="evenodd" xlink:href="#path-38"></use>
+                                </g>
+                                <g id="Multiple-Tabs">
+                                    <path d="M2.25703354,0 C1.01050833,0 0,1.00729672 0,2.24701697 L0,12.5686177 L239.645161,12.5686177 L239.645161,2.24701697 C239.645161,1.00602377 238.628796,0 237.388128,0 L2.25703354,0 Z" id="Base" fill="#4A4A4A"></path>
+                                    <rect id="Rectangle" fill="#000000" x="45.0460829" y="0" width="97.4827775" height="12.5686177"></rect>
+                                    <g id="Tabs-(Single)" transform="translate(79.430411, 2.269667)" font-size="6.31749992" font-family=".SFNSText-Regular, .SF NS Text" fill="#FFFFFF" font-weight="normal">
+                                        <g id="title">
+                                            <text id="bash">
+                                                <tspan x="0" y="6">my-project</tspan>
+                                            </text>
+                                        </g>
+                                    </g>
+                                </g>
+                                <g id="Terminal" transform="translate(8.123565, 19.935803)">
+                                    <g id="Command-Line">
+                                        <text id="$-my-project-npm-ins" font-family="Hack-Regular, Hack" font-size="5.41499993" font-weight="normal" line-spacing="8.1224999">
+                                            <tspan x="0" y="5" fill="#FFFFFF">$  </tspan>
+                                            <tspan x="9.78031482" y="5" fill="#06FFC8">my-project</tspan>
+                                            <tspan x="42.3813642" y="5" fill="#FFFFFF"> npm install config-webpack-plugin --save-dev</tspan>
+                                            <tspan x="0" y="13.1224999" fill="#FFFFFF">config-webpack-plugin@1.0.1 node_modules/config-webpack-plugin</tspan>
+                                        </text>
+                                        <rect id="Rectangle-2" x="189.098536" y="0.906172879" width="3.15916408" height="6.79629659"></rect>
+                                    </g>
+                                </g>
+                                <g id="Terminal" transform="translate(8.123565, 38.059261)">
+                                    <g id="Command-Line">
+                                        <text id="$-my-project-webpack" font-family="Hack-Regular, Hack" font-size="5.41499993" font-weight="normal" line-spacing="8.1224999">
+                                            <tspan x="0" y="5" fill="#FFFFFF">$  </tspan>
+                                            <tspan x="9.78031482" y="5" fill="#06FFC7">my-project </tspan>
+                                            <tspan x="45.6414692" y="5" fill="#FFFFFF">webpack </tspan>
+                                        </text>
+                                        <rect id="Rectangle-2" fill="#9B9B9B" x="68.5989916" y="0.906172879" width="3.15916408" height="6.79629659"></rect>
+                                    </g>
+                                </g>
+                                <g id="Console-Header" transform="translate(7.220946, 4.077778)">
+                                    <g id="Window-Controls">
+                                        <g>
+                                            <circle id="Close" stroke="#E0443E" stroke-width="0.5" fill="url(#radialGradient-16)" cx="6" cy="6" r="6"></circle>
+                                            <circle id="Minimize" stroke="#DEA123" stroke-width="0.5" fill="url(#radialGradient-17)" cx="26" cy="6" r="6"></circle>
+                                            <circle id="Maximize" stroke="#1AAB29" stroke-width="0.5" fill="url(#radialGradient-18)" cx="46" cy="6" r="6"></circle>
+                                        </g>
+                                    </g>
+                                </g>
+                                <g id="Tabs-(Single)" opacity="0.345499067" transform="translate(184.585444, 2.269667)" font-size="6.31749992" font-family=".SFNSText-Regular, .SF NS Text" fill="#FFFFFF" font-weight="normal">
+                                    <g id="title">
+                                        <text id="bash">
+                                            <tspan x="0" y="6">zsh</tspan>
+                                        </text>
+                                    </g>
+                                </g>
+                            </g>
+                            <g id="Group-4" transform="translate(87.389401, 0.000000)">
+                                <text id="License:-MIT-V-1.0.1" font-family="SFUIText-Light, SF UI Text" font-size="10.8299999" font-weight="300">
+                                    <tspan x="72.9746544" y="13.6077537" fill="#9B9B9B">License: </tspan>
+                                    <tspan x="118.04501" y="13.6077537" font-family="SFUIText-Bold, SF UI Text" font-weight="bold" fill="#9B9B9B">MIT</tspan>
+                                    <tspan x="138.57336" y="13.6077537" fill="#4990E2">     </tspan>
+                                    <tspan x="153.221357" y="13.6077537" fill="#434446">V 1.0.1</tspan>
+                                </text>
+                                <use id="Rectangle" stroke="#979797" mask="url(#mask-42)" stroke-width="1.80499998" xlink:href="#path-41"></use>
+                                <text id="GitHub" font-family="SFUIText-Regular, SF UI Text" font-size="10.8299999" font-weight="normal" fill="#9B9B9B">
+                                    <tspan x="9.00921659" y="15.4116306">GitHub</tspan>
+                                </text>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
