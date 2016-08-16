@@ -1,5 +1,5 @@
 .nav
-  font-size: 1.05em
+  font-size: 1em
   list-style: none
   padding-left: 0
   margin-bottom: 0
@@ -19,6 +19,11 @@ $breakpoint-tablet: 768px
 $mq-mobile-landscape	: 480px !default
 
 @media (max-width : $mq-mobile-landscape)
-  nav
+  .nav
     text-align: right
-    margin-left: 1vh
+    margin-left: 0
+    margin-right: 0
+    padding: 0
+
+    li + li
+      margin-left: 0

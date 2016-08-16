@@ -9,7 +9,7 @@ environment: development
 # Site
 # ============================
 description: "Rafael Medina is a Digital Product Designer living in Santo Domingo, DR"
-title: Rafael Medina Digital Product Designer
+title: Rafael Medina — Digital Product Designer
 # baseurl: /rafaelmedina.me
 baseurl: ""
 url: "/rafaelmedina.me/"
