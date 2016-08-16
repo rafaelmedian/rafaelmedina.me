@@ -1,19 +1,22 @@
 # Hello, Good Evening, and Welcome
 Welcome to the innards of new personal website. Right now there is just a placeholder.
 
-## About 
+## About
 Will be uploaded soon.
 
 * **Done:**
 	* Home
 	* Blog feed
-	
-* **Next Steps:**
-	* Refactor Sass 
+
+* **Process**
 	* About Me
+	* Work
+
+* **Next Steps:**
+	* Refactor Sass
 	* Colors
 	* Ajax and animations
- 
+
 ## Installation
 If you want to run this site locally:
 
