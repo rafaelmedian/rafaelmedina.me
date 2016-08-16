@@ -2,11 +2,11 @@
 @import "0-tools/bourbon/bourbon";
 @import "0-tools/normalize";
 
-@import "0-tools/bootstrap/stylesheets/bootstrap/variables";
-@import "0-tools/bootstrap/stylesheets/bootstrap/mixins/grid-framework";
-@import "0-tools/bootstrap/stylesheets/bootstrap/mixins/grid";
-@import "0-tools/bootstrap/stylesheets/bootstrap/grid";
-
+// @import "0-tools/bootstrap/stylesheets/bootstrap/variables";
+// @import "0-tools/bootstrap/stylesheets/bootstrap/mixins/grid-framework";
+// @import "0-tools/bootstrap/stylesheets/bootstrap/mixins/grid";
+// @import "0-tools/bootstrap/stylesheets/bootstrap/grid";
+@import "0-tools/bootstrap/stylesheets/bootstrap";
 
 @import "1-base/vars";
 @import "1-base/base";
