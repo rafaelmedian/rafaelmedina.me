@@ -1,13 +1,23 @@
 //	Typography
 
+// @include font-face('CircularStd-Bold', fonts/circular)
+
 @font-face
   font-family: 'Circular Std'
-  src: url("/css/fonts/circular/CircularStd-Bold.eot?#iefix") format("embedded-opentype")
-  font-weight: 700
+  src: url('./{{base.url}}/circular/CircularStd-Bold.eot')
+  src: url('CircularStd-Bold.eot?#iefix') format('embedded-opentype'), url('./{{base.url}}/circular/CircularStd-Bold.woff') format('woff'), url('./{{base.url}}/circular/CircularStd-Bold.ttf') format('truetype'), url('./{{base.url}}/circular/CircularStd-Bold.svg#fontname') format('svg')
+  font-weight: normal
   font-style: normal
 
+
+// @font-face
+//   font-family: 'Circular Std'
+//   src: url("{{ base.url }}/css/fonts/circular/CircularStd-Bold.eot?#iefix") format("embedded-opentype")
+//   font-weight: 700
+//   font-style: normal
+
 .circular
-  font-family: 'Circular Std', 'Helvetica Neue', Helvetica, sans-serif
+  font-family: 'Circular Std', 'Roboto', 'Helvetica Neue', Helvetica, sans-serif
 
 .mail
   margin-top: 0
