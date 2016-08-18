@@ -31,3 +31,12 @@ body
   color: $black-1
   -webkit-font-smoothing: antialiased
   -webkit-text-size-adjust: 100%
+
+$font-name: "Circular Std"
+$font-path-file-name: '../fonts/circular/CircularStd-Bold'
+
+// font_name font
+@font-face
+  font-family: $font-name
+  src: url( $font-path-file-name +'.eot')
+  src: url( $font-path-file-name +'.eot?#iefix') format('embedded-opentype'), url($font-path-file-name+'.woff') format('woff'), url($font-path-file-name+'.ttf') format('truetype'), url($font-path-file-name+'.svg#font_name') format('svg')
