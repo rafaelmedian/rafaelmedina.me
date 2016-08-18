@@ -14,7 +14,19 @@ $header-logo-mask: url(../img/content/nav/header-logo-mask.png)
 $header-padding: 25px
 
 
+
+
 //fonts
+
+$font-name: "Circular Std"
+$font-path-file-name: '../fonts/circular/CircularStd-Bold'
+
+// font_name font
+@font-face
+  font-family: $font-name
+  src: url( $font-path-file-name +'.eot')
+  src: url( $font-path-file-name +'.eot?#iefix') format('embedded-opentype'), url($font-path-file-name+'.woff') format('woff'), url($font-path-file-name+'.ttf') format('truetype'), url($font-path-file-name+'.svg#font_name') format('svg')
+
 $roboto-mono: 'Roboto Mono'
 $helvetica: HelveticaNeue-Light
 $font_2: Helvetica Neue Light
