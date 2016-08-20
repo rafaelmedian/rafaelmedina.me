@@ -3,6 +3,8 @@ $black-0: #000000
 $black-1: #111111
 $black-6: #666666
 $black-9: #999999
+
+
 $transparent-grey: rgba(6, 8, 8, .1)
 $text-selected: #545454
 
@@ -18,15 +20,25 @@ $header-padding: 25px
 
 //fonts
 
-$font-name: "Circular Std"
-$font-path-file-name: '../fonts/circular/CircularStd-Bold'
+$circular: "Circular Std"
+$font-path-circular: '../fonts/circular/CircularStd-Bold'
 
 // font_name font
 @font-face
-  font-family: $font-name
-  src: url( $font-path-file-name +'.eot')
-  src: url( $font-path-file-name +'.eot?#iefix') format('embedded-opentype'), url($font-path-file-name+'.woff') format('woff'), url($font-path-file-name+'.ttf') format('truetype'), url($font-path-file-name+'.svg#font_name') format('svg')
+  font-family: $circular
+  src: url( $font-path-circular +'.eot')
+  src: url( $font-path-circular +'.eot?#iefix') format('embedded-opentype'), url($font-path-circular+'.woff') format('woff'), url($font-path-circular+'.ttf') format('truetype'), url($font-path-circular+'.svg#font_name') format('svg')
 
+
+
+$SF-UI: "SF UI"
+$font-path-SF-UI: '../fonts/SanFranciscoFont/SanFranciscoDisplay-Regular'
+
+// font_name font
+@font-face
+  font-family: $SF-UI
+  src: url( $font-path-SF-UI +'.otf')
+  
 $roboto-mono: 'Roboto Mono'
 $helvetica: HelveticaNeue-Light
 $font_2: Helvetica Neue Light
