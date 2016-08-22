@@ -16,7 +16,7 @@ header#home-top.nav
       .col-md-9.col-xs-10
         .row.nav
           .col-md-4.col-xs-4
-            a(href='{{site.baseurl}}/about.html') About
+            a(href='{{site.baseurl}}/about.html' class="{% if page.url == '/about.html' %}current{% endif%}") About
           .col-md-4.col-xs-4
             a(href='{{site.baseurl}}/library.html') Bookshelf
           .col-md-4.col-xs-4
