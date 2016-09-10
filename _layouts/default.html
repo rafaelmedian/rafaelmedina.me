@@ -23,8 +23,11 @@
 
   {{ content }}
 
-  {% include footer.html %}
-
+  {% if page.url == '/' %}
+    {% include footer-index.html %}
+  {% else %}
+    {% include footer.html %}
+  {% endif %}
 </body>
 
 </html>
