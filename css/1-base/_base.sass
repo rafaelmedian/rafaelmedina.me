@@ -6,10 +6,10 @@
   +transition(all, .2s)
 
 \::selection
-  background: $white
+  background: #bbbbbb
 
 \::-moz-selection
-  background: $white
+  background: #bbbbbb
 
 img::selection
   background: transparent
@@ -18,31 +18,30 @@ img::-moz-selection
   background: transparent
 
 body
-  -webkit-tap-highlight-color: $white
+  -webkit-tap-highlight-color: $black-0
 
-// Basic Styles
+hr
+  margin: 0px 0px 0px 0px !important
 
 html,
 body
   min-height: 100vh
 
-
-
 body
-  background: #111111
+  background: #ffffff
   font-size: 14px
   line-height: 1.6
   font-family: $Inconsolata, monospace
-  color: lighten($white, 90%)
+  color: lighten(#000, 10%)
   -webkit-font-smoothing: antialiased
   -webkit-text-size-adjust: 100%
   text-rendering: optimizeLegibility
 
 @media (min-width: 992px)
-  .col-md-2
+  .padding-left-0
     padding-left: 0
 
-  .col-md-3
+  .col-md-2
     padding-left: 0
 
   .col-md-6

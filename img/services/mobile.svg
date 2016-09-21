@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="123px" height="140px" viewBox="0 0 123 140" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 40 (33762) - http://www.bohemiancoding.com/sketch -->
+    <title>mobile</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <rect id="path-1" x="81" y="59" width="42" height="81" rx="4"></rect>
+        <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="42" height="81" fill="white">
+            <use xlink:href="#path-1"></use>
+        </mask>
+    </defs>
+    <g id="Website" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Desktop-HD-whithout-images-black-Copy-7" transform="translate(-513.000000, -692.000000)">
+            <g id="mobile" transform="translate(513.000000, 692.000000)">
+                <path d="M1,118.994896 C1,120.65964 2.33730254,122 3.99116665,122 L91.0088333,122 C92.6568784,122 94,120.65338 94,118.994896 L94,4.00510362 C94,2.34036016 92.6626975,1 91.0088333,1 L3.99116665,1 C2.34312164,1 1,2.34661998 1,4.00510362 L1,118.994896 Z M3.99116665,0 L91.0088333,0 C93.2130938,0 95,1.78618025 95,4.00510362 L95,118.994896 C95,121.206854 93.2079801,123 91.0088333,123 L3.99116665,123 C1.78690618,123 0,121.21382 0,118.994896 L0,4.00510362 C0,1.79314597 1.79201988,0 3.99116665,0 Z" id="Rectangle-9" fill="#5E5E5E"></path>
+                <path d="M82,135.997022 C82,137.658925 83.3441848,139 85.0081112,139 L118.991889,139 C120.655506,139 122,137.656478 122,135.997022 L122,63.0029779 C122,61.341075 120.655815,60 118.991889,60 L85.0081112,60 C83.344494,60 82,61.3435224 82,63.0029779 L82,135.997022 Z M85.0081112,59 L118.991889,59 C121.205508,59 123,60.7862013 123,63.0029779 L123,135.997022 C123,138.207806 121.208748,140 118.991889,140 L85.0081112,140 C82.7944925,140 81,138.213799 81,135.997022 L81,63.0029779 C81,60.7921942 82.7912518,59 85.0081112,59 Z" id="Rectangle-9" fill="#5E5E5E"></path>
+                <use id="Rectangle-9" stroke="#5E5E5E" mask="url(#mask-2)" stroke-width="2" fill="#F2F2F2" xlink:href="#path-1"></use>
+                <circle id="Oval" fill="#B2B2B2" cx="102" cy="132" r="3"></circle>
+                <circle id="Oval" fill="#D8D8D8" cx="46" cy="112" r="3"></circle>
+            </g>
+        </g>
+    </g>
+</svg>

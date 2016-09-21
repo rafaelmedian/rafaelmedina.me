@@ -1,18 +1,18 @@
 //	Typography
 
-
 .circular
-  font-family: 'Circular Std', 'Roboto', 'Helvetica Neue', Helvetica, sans-serif
+  font-family: 'Circular Std', 'Helvetica Neue', Helvetica, sans-serif
 
 .mail
   margin-top: 0
 
 .title
   margin-bottom: 25px
-  line-height: 1.2em
+  line-height: 1.19em
 
 .subtitle
-  font-size: 1.9em
+  margin-top: 50px
+  font-size: 1.4em
   opacity: .8
 
 .social-title
@@ -28,10 +28,9 @@
   span
     margin: 0 15px
 
-
 .gigantic, .huge, .large, .bigger, .big,
 h1, h2, h3, h4, h5, h6
-  color: $white
+  color: $black-0
   font-weight: bold
 
 .gigantic
@@ -40,7 +39,7 @@ h1, h2, h3, h4, h5, h6
   letter-spacing: -2px
 
 .huge, h1
-  font-size: 4em
+  font-size: 3em
   line-height: 1.6
 
 .large, h2
@@ -80,50 +79,49 @@ hr
 // Links
 
 a
-  color: lighten($white, 50%)
+  color: lighten($black-0, 50%)
   text-decoration: none
   outline: 0
 
 a:hover, a:focus
-  color: lighten($white, 30%)
+  color: lighten($black-0, 30%)
   +transition(all, .15s)
 
 .bold
   font-weight: 900
 
 .color-0
-  color: $white
+  color: $black-0
 
 .color-1
-  color: lighten($white, 10%)
+  color: lighten($black-0, 10%)
 
 .color-9
-  color: lighten($white, 90%)
+  color: lighten($black-0, 90%)
 
 .color-6
-  color: lighten($white, 60%)
+  color: lighten($black-0, 60%)
 
 a.text-underline-0
   text-decoration: none
   padding-bottom: 4px
-  background: linear-gradient(to right, rgb(255,255,255) 0%, rgb(255,255,255) 100%)
-  background-size: 1px 4px
+  background: linear-gradient(to right, rgb(0,0,0) 0%, rgb(0,0,0) 100%)
+  background-size: 1px 2px
   background-position: 0 100%
   background-repeat: repeat-x
 
 a.text-underline-1
   text-decoration: none
-  color: lighten($white, 10%)
+  color: lighten($black-0, 10%)
   padding-bottom: 1px
-  background: linear-gradient(to right, rgb(255,255,255) 0%, rgb(255,255,255) 100%)
-  background-size: 1px 2px
+  background: linear-gradient(to right, rgb(0,0,0) 0%, rgb(0,0,0) 100%)
+  background-size: 1px 1px
   background-position: 0 100%
   background-repeat: repeat-x
 
 .sc-link
   line-height: 2.2em
   font-size: 1.2em
-
 
 $mq-mobile-landscape	: 480px !default
 
