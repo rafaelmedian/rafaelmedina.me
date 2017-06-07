@@ -49,11 +49,18 @@ img
   //     opacity: .5
 
 
-.list
-  &:hover a>div>div
-    opacity: 0.10
-  .post:hover > div
-    opacity: 1
+.work:active
+  background-color: rgba(0, 0, 0, 0.2)
+
+
+// .list
+//   &:hover a>div>div
+//     opacity: 0.10
+//   .post:hover > div
+//     opacity: 1
+
+.work:hover
+  opacity: .20
 
 .work-image:hover
   opacity: 0.7
@@ -64,23 +71,26 @@ img
 /******* LIST *****/
 .work
   white-space: nowrap
-  h4
-    font-size: 1.65em
-  h5
-    font-size: 1.25em
 
 .work:hover
   cursor: pointer
 
 .work-project-title
   font-size: 1.6em
+  line-height: 1em
+
+@media (max-width : $mq-mobile-landscape)
+  .work-project-title
+    font-size: 1.4em
 
 .work-project-subtitle
   color: #676767
   font-size: 1.25em
+  line-height: 1.26em
 
 .work-line
   border-bottom: 1px solid rgba(#000, .4)
 
 .work-linehigh
-  line-height: 125px
+  padding-top: 3em
+  padding-bottom: 3em
