@@ -1,11 +1,3 @@
-// img
-//   margin: 0 auto
-//   max-width: 100%
-//   width: 80%
-//   height: auto
-//   display: block
-//   margin-top: 1em
-
 img
   margin: 2em auto
   max-width: 100%
@@ -17,6 +9,9 @@ img
   background-color: #add2ff
   display: flex
   align-items: center
+
+.project-photo
+  margin-bottom: 1em
 
 .project-text
   margin-bottom: 2vw
@@ -45,19 +40,8 @@ img
   .post:hover > div
     opacity: 1
 
-  // .works:hover
-  //     opacity: .5
-
-
 .work:active
   background-color: rgba(0, 0, 0, 0.2)
-
-
-// .list
-//   &:hover a>div>div
-//     opacity: 0.10
-//   .post:hover > div
-//     opacity: 1
 
 .work:hover
   opacity: .20
@@ -87,6 +71,28 @@ img
   color: #676767
   font-size: 1.25em
   line-height: 1.26em
+
+.tags
+  content: " "
+  display: table
+  margin-bottom: 1.25rem
+
+.tag
+  display: block
+  float: left
+
+  color: rgba(#000, .4)
+  font-weight: bold
+  line-height: 1
+  letter-spacing: .1em
+  text-transform: uppercase
+
+  padding: 0.25rem 0.6rem
+  border-radius: .125rem
+  margin-right: .45rem
+  margin-bottom: .45rem
+
+  border: solid 1px rgba(#000, .4)
 
 .work-line
   border-bottom: 1px solid rgba(#000, .4)
