@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="393" height="229" viewBox="0 0 393 229">
+  <g fill="none" fill-rule="evenodd" transform="translate(0 -1)">
+    <g fill="#FF9797" transform="translate(0 2)">
+      <rect width="272.454" height="85" x=".546" fill-opacity=".495" opacity=".2"/>
+      <rect width="272.454" height="85" x=".546" fill-opacity=".495" opacity=".2"/>
+      <rect width="14.742" height="85" fill-opacity=".75"/>
+      <rect width="14.742" height="85" x="23.478" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="46.956" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="70.434" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="93.912" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="117.39" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="140.868" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="164.346" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="187.824" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="211.302" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="234.78" fill-opacity=".495"/>
+      <rect width="14.742" height="85" x="258.258" fill-opacity=".75"/>
+    </g>
+    <g fill="#FF9797" transform="translate(0 115)">
+      <rect width="198.602" height="52" x=".398" fill-opacity=".495" opacity=".2"/>
+      <rect width="198.602" height="52" x=".398" fill-opacity=".495" opacity=".2"/>
+      <rect width="10.746" height="52" fill-opacity=".75"/>
+      <rect width="10.746" height="52" x="17.114" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="34.228" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="51.342" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="68.456" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="85.57" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="102.684" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="119.798" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="136.912" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="154.026" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="171.14" fill-opacity=".495"/>
+      <rect width="10.746" height="52" x="188.254" fill-opacity=".75"/>
+    </g>
+    <g font-size="7.84" transform="translate(290)">
+      <g transform="translate(1 61.57)">
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="46.439" y="7.56">24px</tspan>
+        </text>
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".471" y="8">GUTTER</tspan> <tspan x="34.796" y="8">:</tspan>
+        </text>
+      </g>
+      <g transform="translate(0 46.177)">
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="85.519" y="7">70px</tspan>
+        </text>
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".914" y="8">COLUMNS WIDTH</tspan> <tspan x="74.541" y="8">:</tspan>
+        </text>
+      </g>
+      <g transform="translate(1 30.785)">
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="54.727" y="7.56">12</tspan>
+        </text>
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".343" y="8">COLUMNS</tspan> <tspan x="43.283" y="8">:</tspan>
+        </text>
+      </g>
+      <g transform="translate(1)">
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".143" y="8">TOTAL WIDTH</tspan> <tspan x="57.559" y="8">:</tspan>
+        </text>
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="68.614" y="7">1920px</tspan>
+        </text>
+      </g>
+      <g transform="translate(1 15.392)">
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="44.807" y="7">40px</tspan>
+        </text>
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".486" y="8">OFFSET</tspan> <tspan x="33.368" y="8">:</tspan>
+        </text>
+      </g>
+    </g>
+    <g font-size="7.84" transform="translate(216 114)">
+      <g transform="translate(1 40.078)">
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="46.496" y="7.59">5px</tspan>
+        </text>
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".471" y="8.03">GUTTER</tspan> <tspan x="34.796" y="8.03">:</tspan>
+        </text>
+      </g>
+      <g transform="translate(0 26.902)">
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="85.519" y="7.027">50px</tspan>
+        </text>
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".914" y="8.03">COLUMNS WIDTH</tspan> <tspan x="74.541" y="8.03">:</tspan>
+        </text>
+      </g>
+      <g transform="translate(1)">
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".143" y="8.03">TOTAL WIDTH</tspan> <tspan x="57.559" y="8.03">:</tspan>
+        </text>
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="68.686" y="7.027">768px</tspan>
+        </text>
+      </g>
+      <g transform="translate(1 13.176)">
+        <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+          <tspan x="44.864" y="7.027">0px</tspan>
+        </text>
+        <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+          <tspan x=".486" y="8.03">OFFSET</tspan> <tspan x="33.368" y="8.03">:</tspan>
+        </text>
+      </g>
+    </g>
+    <g transform="translate(0 194)">
+      <g fill="#FF9797" transform="translate(0 1.635)">
+        <rect width="127.167" height="34.326" x=".255" fill-opacity=".495" opacity=".2"/>
+        <rect width="127.167" height="34.326" x=".255" fill-opacity=".495" opacity=".2"/>
+        <rect width="6.881" height="34.326" fill-opacity=".75"/>
+        <rect width="6.881" height="34.326" x="10.958" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="21.917" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="32.875" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="43.833" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="54.791" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="65.75" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="76.708" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="87.666" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="98.625" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="109.583" fill-opacity=".495"/>
+        <rect width="6.881" height="34.326" x="120.541" fill-opacity=".75"/>
+      </g>
+      <g font-size="7.84" transform="translate(145.562)">
+        <g transform="translate(0 13.485)">
+          <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+            <tspan x="85.008" y="7">22px</tspan>
+          </text>
+          <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+            <tspan x=".109" y="8">COLUMNS WIDTH</tspan> <tspan x="73.736" y="8">:</tspan>
+          </text>
+        </g>
+        <g>
+          <text fill="#475066" font-family="HelveticaNeue-Medium, Helvetica Neue" font-weight="400" letter-spacing=".493">
+            <tspan x=".297" y="8">TOTAL WIDTH</tspan> <tspan x="57.713" y="8">:</tspan>
+          </text>
+          <text fill="#15101C" fill-opacity=".5" font-family="HelveticaNeue, Helvetica Neue">
+            <tspan x="69.102" y="7">320px</tspan>
+          </text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
