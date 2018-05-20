@@ -75,7 +75,6 @@ gulp.task('jade', function() {
     .pipe(gulp.dest('_includes'));
 });
 
-
 /*
 ** JS Task
 */
