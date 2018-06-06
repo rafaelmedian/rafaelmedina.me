@@ -6,14 +6,17 @@
 // @import "0-tools/bootstrap/stylesheets/bootstrap/mixins/grid-framework";
 // @import "0-tools/bootstrap/stylesheets/bootstrap/mixins/grid";
 // @import "0-tools/bootstrap/stylesheets/bootstrap/grid";
-@import "0-tools/bootstrap/stylesheets/bootstrap";
+
 
 @import "1-base/vars";
 @import "1-base/mixins";
+
+@import "0-tools/bootstrap/stylesheets/bootstrap";
 @import "1-base/base";
 @import "1-base/helpers";
 @import "1-base/typography";
 @import "1-base/animations";
+
 
 @import "2-module/nav";
 @import "2-module/intro";
