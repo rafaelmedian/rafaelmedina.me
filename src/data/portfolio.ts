@@ -4,6 +4,7 @@ import card03 from "../assets/cards/card-03.svg"
 import card04 from "../assets/cards/card-04.svg"
 import card05 from "../assets/cards/card-05.svg"
 import card06 from "../assets/cards/card-06.svg"
+import profilePhoto from "../assets/profile-photo-placeholder.svg"
 
 export type CardKind = "project" | "about" | "contact"
 
@@ -27,8 +28,10 @@ export type SiteLinks = {
 }
 
 export const siteProfile = {
-  name: "Rafa",
+  name: "Rafael Medina",
+  title: "product designer and creator",
   intro: "I design clear digital products with strong visual systems.",
+  photo: profilePhoto,
 }
 
 export const siteLinks: SiteLinks = {

@@ -25,13 +25,17 @@ function App() {
       <button
         type="button"
         onClick={() => setTheme((currentTheme) => (currentTheme === "dark" ? "light" : "dark"))}
-        className="fixed right-5 top-4 z-modal inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-[var(--control-bg)] px-4 text-sm font-semibold text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition-colors duration-150 ease-out hover:bg-[var(--control-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklab,var(--accent)_72%,transparent)] sm:right-8 lg:right-12"
+        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-5 z-modal inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-[var(--control-bg)] px-4 text-sm font-semibold text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition-colors duration-150 ease-out hover:bg-[var(--control-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklab,var(--accent)_72%,transparent)] sm:left-8 sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] lg:left-12"
         aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
       >
         {theme === "dark" ? "Light" : "Dark"}
       </button>
       <main className="relative z-dock mx-auto flex w-full max-w-[1800px] flex-col gap-14 px-5 pb-12 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-8 sm:pb-16 lg:px-12">
-        <SiteHeader name={siteProfile.name} intro={siteProfile.intro} />
+        <SiteHeader
+          name={siteProfile.name}
+          title={siteProfile.title}
+          photo={siteProfile.photo}
+        />
         <PortfolioGrid cards={portfolioCards} />
       </main>
 
