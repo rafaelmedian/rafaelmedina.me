@@ -14,16 +14,16 @@ export function PortfolioCard({ card, className }: PortfolioCardProps) {
         className,
       )}
     >
-      <p className="tabular-nums text-sm font-medium text-stone-500">{card.category}</p>
+      <p className="tabular-nums text-sm font-medium text-[var(--muted)]">{card.category}</p>
       <h2 className="mt-3 max-w-[18ch] text-balance text-2xl font-semibold leading-tight text-[var(--ink)] sm:text-[1.9rem]">
         {card.title}
       </h2>
-      <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.42),inset_0_-1px_0_rgba(148,163,184,0.25)]">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[var(--media-inset)]">
         <img src={card.image} alt="" className="h-44 w-full object-cover sm:h-52" />
       </div>
       <span
         aria-hidden="true"
-        className="absolute bottom-5 right-5 inline-flex size-9 rounded-full border border-stone-300 bg-white text-stone-500 shadow-[0_1px_1px_rgba(0,0,0,0.1),0_6px_14px_-10px_rgba(0,0,0,0.24)]"
+        className="absolute bottom-5 right-5 inline-flex size-9 rounded-full border border-[var(--border)] bg-[var(--control-bg)] text-[var(--muted)] shadow-[0_1px_1px_rgba(0,0,0,0.1),0_6px_14px_-10px_rgba(0,0,0,0.24)]"
       >
         <svg
           viewBox="0 0 24 24"
