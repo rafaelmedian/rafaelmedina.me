@@ -86,6 +86,59 @@ body {
   transition: background-color 220ms ease, color 220ms ease;
 }
 
+.canvas-root {
+  background: var(--canvas);
+}
+
+.canvas-viewport {
+  user-select: none;
+}
+
+.canvas-world {
+  isolation: isolate;
+}
+
+.center-main-card {
+  border-color: color-mix(in oklab, var(--accent) 20%, var(--border));
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in oklab, var(--surface) 82%, var(--accent-soft)) 0%,
+      var(--surface) 58%
+    );
+  backdrop-filter: blur(4px);
+}
+
+.canvas-link-card {
+  border-color: var(--border);
+  background:
+    linear-gradient(155deg, color-mix(in oklab, var(--surface) 85%, var(--accent-soft)) 0%, var(--surface) 55%);
+  box-shadow: var(--card-shadow);
+  transition:
+    box-shadow 220ms cubic-bezier(0.2, 0.65, 0.2, 1),
+    transform 220ms cubic-bezier(0.2, 0.65, 0.2, 1),
+    border-color 180ms ease;
+}
+
+.canvas-link-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px) scale(1.015);
+  border-color: color-mix(in oklab, var(--accent) 22%, var(--border));
+}
+
+.canvas-video-card {
+  border-color: color-mix(in oklab, var(--ink) 18%, var(--border));
+  box-shadow: var(--card-shadow);
+  transition:
+    box-shadow 220ms cubic-bezier(0.2, 0.65, 0.2, 1),
+    transform 220ms cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+
+.canvas-video-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px) scale(1.015);
+}
+
 .project-card {
   border-color: var(--border);
   background: var(--surface);

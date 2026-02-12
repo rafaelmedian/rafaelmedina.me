@@ -4,7 +4,7 @@ import card03 from "../assets/cards/card-03.svg"
 import card04 from "../assets/cards/card-04.svg"
 import card05 from "../assets/cards/card-05.svg"
 import card06 from "../assets/cards/card-06.svg"
-import profilePhoto from "../assets/profile-photo-placeholder.svg"
+import profilePhoto from "../assets/profile-photo.png"
 
 export type CardKind = "project" | "about" | "contact"
 

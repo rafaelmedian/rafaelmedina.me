@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react"
 import { Agentation } from "agentation"
-import { PortfolioGrid } from "./components/PortfolioGrid"
-import { SiteFooter } from "./components/SiteFooter"
-import { SiteHeader } from "./components/SiteHeader"
-import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
+import { InfiniteCanvasBoard } from "./components/InfiniteCanvasBoard"
+import { portfolioCards, siteProfile } from "./data/portfolio"
 
 type Theme = "light" | "dark"
 
@@ -30,16 +28,9 @@ function App() {
       >
         {theme === "dark" ? "Light" : "Dark"}
       </button>
-      <main className="relative z-dock mx-auto flex w-full max-w-[1800px] flex-col gap-14 px-5 pb-12 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-8 sm:pb-16 lg:px-12">
-        <SiteHeader
-          name={siteProfile.name}
-          title={siteProfile.title}
-          photo={siteProfile.photo}
-        />
-        <PortfolioGrid cards={portfolioCards} />
+      <main className="relative z-dock">
+        <InfiniteCanvasBoard cards={portfolioCards} profile={siteProfile} />
       </main>
-
-      <SiteFooter links={siteLinks} />
       {import.meta.env.DEV ? <Agentation /> : null}
     </div>
   )
