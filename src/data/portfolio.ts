@@ -1,12 +1,10 @@
-import card01 from "../assets/cards/card-01.svg"
 import card02 from "../assets/cards/card-02.svg"
-import card03 from "../assets/cards/card-03.svg"
 import card04 from "../assets/cards/card-04.svg"
 import card05 from "../assets/cards/card-05.svg"
 import card06 from "../assets/cards/card-06.svg"
 import profilePhoto from "../assets/profile-photo.png"
 
-export type CardKind = "project" | "about" | "contact"
+export type CardKind = "project" | "about" | "contact" | "preview" | "info"
 
 export type PortfolioCard = {
   id: string
@@ -19,9 +17,12 @@ export type PortfolioCard = {
   ctaLabel: string
   ctaHref: string
   ctaExternal: boolean
+  previewAspectRatio?: number
 }
 
 export type SiteLinks = {
+  dribbble: string
+  x: string
   github: string
   linkedin: string
   email: string
@@ -29,12 +30,22 @@ export type SiteLinks = {
 
 export const siteProfile = {
   name: "Rafael Medina",
-  title: "product designer and creator",
-  intro: "I design clear digital products with strong visual systems.",
+  title: "Product Designer",
+  intro:
+    "Hey I'm Rafael, a product designer and maker based in Miami. For over 10 years, I've helped teams design products that balance clarity, visual craft, and practical outcomes.",
+  previouslyLabel: "Previously",
+  previouslyText: "Product designer for SaaS teams and startup builders.",
+  nowLabel: "Now",
+  nowText: "Freelancing, experimenting with AI workflows, and building design systems.",
+  availability: "Available for work",
+  contactLabel: "Get in touch",
+  contactHref: "mailto:hello@rafaelmedina.me",
   photo: profilePhoto,
 }
 
 export const siteLinks: SiteLinks = {
+  dribbble: "https://dribbble.com/rafaelmedina",
+  x: "https://x.com/rafaelmedina",
   github: "https://github.com/rafaelmedina",
   linkedin: "https://www.linkedin.com/in/rafaelmedina",
   email: "hello@rafaelmedina.me",
@@ -42,81 +53,198 @@ export const siteLinks: SiteLinks = {
 
 export const portfolioCards: PortfolioCard[] = [
   {
-    id: "project-visual-system",
-    kind: "project",
-    category: "Design System · 2026",
-    title: "Visual Language for a Finance Platform",
-    summary: "Built a modular UI language with reusable card and data patterns.",
-    detail:
-      "Created a complete interface system with reusable sections, consistent states, and a clear type rhythm. The system reduced design drift and improved handoff speed across product teams.",
-    image: card01,
-    ctaLabel: "Open case study",
-    ctaHref: "https://github.com/rafaelmedina",
+    id: "preview-shot-21",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 21",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    previewAspectRatio: 4 / 3,
+  },
+  {
+    id: "preview-shot-9",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 9",
+    summary: "",
+    detail: "",
+    image: "/Projects/shot-small-9.webm",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    previewAspectRatio: 0.74,
+  },
+  {
+    id: "preview-shot-16",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 16",
+    summary: "",
+    detail: "",
+    image: "/Projects/shot-small-16.webm",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    previewAspectRatio: 1.85,
+  },
+  {
+    id: "preview-shot-1",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 1",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+  },
+  {
+    id: "preview-shot-14",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 14",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+  },
+  {
+    id: "preview-shot-15",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 15",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+  },
+  {
+    id: "preview-shot-19",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 19",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+  },
+  {
+    id: "preview-shot-20",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 20",
+    summary: "",
+    detail: "",
+    image: "/Projects/shot-small-20.webm",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+  },
+  {
+    id: "preview-shot-22",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 22",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+  },
+  {
+    id: "preview-shot-23",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 23",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+  },
+  {
+    id: "widget-music",
+    kind: "info",
+    category: "Widget",
+    title: "Music Player",
+    summary: "A focused listening mix for design sessions.",
+    detail: "Ambient and electronic tracks for deep work and prototyping.",
+    image: "",
+    ctaLabel: "Spotify Embed",
+    ctaHref: "https://open.spotify.com/embed/playlist/37i9dQZF1DX4WYpdgoIcn6?utm_source=generator",
     ctaExternal: true,
   },
   {
-    id: "project-dashboard-rebuild",
-    kind: "project",
-    category: "Product Design · 2025",
-    title: "Ops Dashboard Rebuild",
-    summary: "Redesigned a dense workflow into a calm, action-first workspace.",
-    detail:
-      "Mapped high-frequency tasks, simplified hierarchy, and introduced expandable detail views. The redesign improved scan speed and reduced misclicks in daily operations.",
+    id: "widget-map",
+    kind: "info",
+    category: "Widget",
+    title: "Map",
+    summary: "Current location and nearby context.",
+    detail: "Map snapshot centered on Miami, FL.",
+    image: "",
+    ctaLabel: "Open in Maps",
+    ctaHref: "https://maps.google.com/?q=Miami,FL",
+    ctaExternal: true,
+  },
+  {
+    id: "info-cv",
+    kind: "info",
+    category: "CV",
+    title: "Curriculum Vitae",
+    summary: "Experience, projects, and selected work history.",
+    detail: "A concise overview of product design roles, outcomes, and capabilities.",
     image: card02,
-    ctaLabel: "View process",
-    ctaHref: "https://github.com/rafaelmedina",
-    ctaExternal: true,
-  },
-  {
-    id: "project-mobile-flow",
-    kind: "project",
-    category: "Mobile UX · 2025",
-    title: "Guided Mobile Onboarding",
-    summary: "Designed a lightweight onboarding flow with higher completion quality.",
-    detail:
-      "Built a progressive sequence with clear checkpoints, concise copy, and transparent progress. The flow was optimized for short sessions and reduced abandonment during setup.",
-    image: card03,
-    ctaLabel: "Read notes",
-    ctaHref: "https://github.com/rafaelmedina",
-    ctaExternal: true,
-  },
-  {
-    id: "project-prototype-lab",
-    kind: "project",
-    category: "Interaction Design · 2024",
-    title: "Prototype Lab",
-    summary: "Rapid prototyping system for validating concepts before engineering.",
-    detail:
-      "Established a fast prototyping cadence with reusable blocks and realistic motion guidance. This helped teams align on behavior early and cut late-stage rework.",
-    image: card04,
-    ctaLabel: "Explore prototype",
-    ctaHref: "https://github.com/rafaelmedina",
-    ctaExternal: true,
-  },
-  {
-    id: "about-me",
-    kind: "about",
-    category: "About",
-    title: "How I Work",
-    summary: "I focus on practical craft, clear systems, and measurable outcomes.",
-    detail:
-      "My approach combines product strategy, visual design, and interaction detail. I prefer simple interfaces with strong hierarchy, clear copy, and behavior that feels reliable under real use.",
-    image: card05,
-    ctaLabel: "Connect on LinkedIn",
+    ctaLabel: "Open LinkedIn",
     ctaHref: siteLinks.linkedin,
     ctaExternal: true,
   },
   {
-    id: "contact-now",
-    kind: "contact",
-    category: "Now",
-    title: "Available for Select Collaborations",
-    summary: "Open to product design, interface systems, and portfolio projects.",
-    detail:
-      "If you are building a product and need design direction with execution rigor, reach out. I am currently taking a small number of focused engagements.",
+    id: "info-about",
+    kind: "info",
+    category: "About",
+    title: "About",
+    summary: "Product designer focused on clarity, systems, and practical craft.",
+    detail: "I design dependable experiences with clean hierarchy and thoughtful interaction.",
+    image: card05,
+    ctaLabel: "About Profile",
+    ctaHref: siteLinks.linkedin,
+    ctaExternal: true,
+  },
+  {
+    id: "info-notes",
+    kind: "info",
+    category: "Notes",
+    title: "Design Notes",
+    summary: "Short notes on process, interaction ideas, and UI experiments.",
+    detail: "A running collection of observations, rationale, and implementation details.",
+    image: card04,
+    ctaLabel: "View GitHub",
+    ctaHref: siteLinks.github,
+    ctaExternal: true,
+  },
+  {
+    id: "info-social",
+    kind: "info",
+    category: "Social",
+    title: "Basic Social Links",
+    summary: "Email, GitHub, and LinkedIn for quick contact.",
+    detail: "Reach out by email or connect via GitHub and LinkedIn.",
     image: card06,
-    ctaLabel: "Send email",
-    ctaHref: `mailto:${siteLinks.email}`,
-    ctaExternal: false,
+    ctaLabel: "Open LinkedIn",
+    ctaHref: siteLinks.linkedin,
+    ctaExternal: true,
   },
 ]
