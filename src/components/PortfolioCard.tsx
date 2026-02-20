@@ -56,9 +56,9 @@ export function PortfolioCard({ card, variant = "editorial", className }: Portfo
         <>
           <div className="pointer-events-none absolute inset-0">
             <img src={card.image} alt="" className="h-full w-full object-cover opacity-[0.17]" />
-            <div className="absolute inset-0 bg-[linear-gradient(150deg,color-mix(in_oklab,var(--surface)_74%,transparent),var(--surface)_58%)]" />
+            <div className="absolute inset-0 bg-[color-mix(in_oklab,var(--surface)_78%,transparent)]" />
           </div>
-          <div className="relative z-[1]">
+          <div className="relative z-base">
             <p className="tabular-nums text-sm font-semibold text-[var(--accent-strong)]">{card.category}</p>
             <h2 className="mt-4 max-w-[15ch] text-balance text-[1.95rem] font-semibold leading-[1.06] text-[var(--ink)]">
               {card.title}

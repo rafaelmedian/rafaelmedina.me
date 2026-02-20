@@ -11,15 +11,15 @@ export function SiteHeader({ name, title, photo }: SiteHeaderProps) {
         <img
           src={photo}
           alt={`${name} profile`}
-          className="h-16 w-16 shrink-0 rounded-full object-cover ring-1 ring-[var(--border)] sm:h-20 sm:w-20"
+          className="size-16 shrink-0 rounded-full object-cover ring-1 ring-[var(--border)] sm:size-20"
         />
         <div className="space-y-1">
-          <h1 className="text-balance text-[clamp(1.25rem,1.9vw,2rem)] font-semibold leading-[1.08] tracking-[-0.02em] text-[var(--ink)]">
+          <h1 className="text-balance text-[clamp(1.25rem,1.9vw,2rem)] font-semibold leading-[1.08] text-[var(--ink)]">
             {name}
           </h1>
           <p className="text-pretty text-[clamp(0.9rem,1.1vw,1.12rem)] font-medium leading-[1.2] text-[var(--muted)]">
             <span>{title}</span>
-            <span className="mx-2 inline-block h-1 w-1 rounded-full bg-[var(--accent)] align-middle" />
+            <span className="mx-2 inline-block size-1 rounded-full bg-[var(--accent)] align-middle" />
             <span className="text-[var(--muted-strong)]">open to collaborations</span>
           </p>
         </div>

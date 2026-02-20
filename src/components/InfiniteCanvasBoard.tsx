@@ -568,10 +568,7 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
         onDragStartCapture={onDragStartCapture}
         onWheel={onWheel}
       >
-        <div
-          className="canvas-world absolute left-0 top-0 will-change-transform"
-          style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0)` }}
-        >
+        <div className="canvas-world absolute left-0 top-0" style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0)` }}>
           {repeatedItems.map((item) => (
             <div
               key={item.renderKey}
@@ -612,7 +609,7 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
                         {profile.intro}
                       </p>
 
-                      <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--muted)_28%,#d5d7db)] px-3 py-1.5 text-[14px] font-medium uppercase tracking-[0.02em] text-[color-mix(in_oklab,var(--muted)_72%,#6f737a)]">
+                      <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--muted)_28%,#d5d7db)] px-3 py-1.5 text-[14px] font-medium uppercase text-[color-mix(in_oklab,var(--muted)_72%,#6f737a)]">
                         <span className="size-2 rounded-full bg-[#29d463]" aria-hidden="true" />
                         {profile.availability}
                       </div>
@@ -620,7 +617,7 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
                       <div className="mt-5 flex flex-wrap items-center gap-2.5">
                         <a
                           href={profile.contactHref}
-                          className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--ink)_28%,#1f2937)] bg-[color-mix(in_oklab,var(--ink)_84%,#111)] px-4 py-2 text-[14px] font-semibold text-white no-underline transition-opacity duration-150 ease-out hover:opacity-85"
+                          className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--ink)_28%,var(--border))] bg-[var(--ink)] px-4 py-2 text-[14px] font-semibold text-[var(--canvas)] no-underline transition-opacity duration-150 ease-out hover:opacity-85"
                         >
                           {profile.contactLabel}
                           <svg viewBox="0 0 20 20" aria-hidden="true" className="size-4">
@@ -629,7 +626,7 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
                         </a>
                         <a
                           href={`mailto:${links.email}`}
-                          className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--muted)_25%,#d5d7db)] bg-white px-4 py-2 text-[14px] font-semibold text-[var(--ink)] no-underline transition-opacity duration-150 ease-out hover:opacity-85"
+                          className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--muted)_25%,var(--border))] bg-[var(--surface)] px-4 py-2 text-[14px] font-semibold text-[var(--ink)] no-underline transition-opacity duration-150 ease-out hover:opacity-85"
                         >
                           {links.email}
                           <svg viewBox="0 0 20 20" aria-hidden="true" className="size-4 text-[var(--muted)]">
@@ -642,7 +639,7 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
 
                     <div className="flex min-w-0 flex-col justify-center gap-4">
                       <div>
-                        <p className="text-[14px] font-medium uppercase tracking-[0.06em] text-[color-mix(in_oklab,var(--muted)_68%,#8b8f96)]">
+                        <p className="text-[14px] font-medium uppercase text-[color-mix(in_oklab,var(--muted)_68%,#8b8f96)]">
                           {profile.previouslyLabel}
                         </p>
                         <p className="mt-1 text-pretty text-[14px] leading-[1.45] text-[color-mix(in_oklab,var(--muted)_76%,#6f737a)]">
@@ -651,7 +648,7 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
                       </div>
 
                       <div>
-                        <p className="text-[14px] font-medium uppercase tracking-[0.06em] text-[color-mix(in_oklab,var(--muted)_68%,#8b8f96)]">
+                        <p className="text-[14px] font-medium uppercase text-[color-mix(in_oklab,var(--muted)_68%,#8b8f96)]">
                           {profile.nowLabel}
                         </p>
                         <p className="mt-1 text-pretty text-[14px] leading-[1.45] text-[color-mix(in_oklab,var(--muted)_76%,#6f737a)]">
@@ -751,7 +748,7 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
         </div>
       </div>
 
-      <div className="pointer-events-none absolute right-5 top-[calc(1rem+env(safe-area-inset-top))] z-30 rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_86%,transparent)] px-4 py-2 text-xs font-medium tracking-[0.03em] text-[var(--muted)] backdrop-blur-sm sm:right-8 sm:top-[calc(1.25rem+env(safe-area-inset-top))]">
+      <div className="pointer-events-none absolute right-5 top-[calc(1rem+env(safe-area-inset-top))] z-overlay rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_86%,transparent)] px-4 py-2 text-xs font-medium text-[var(--muted)] backdrop-blur-sm sm:right-8 sm:top-[calc(1.25rem+env(safe-area-inset-top))]">
         Drag, scroll, or use WASD keys
       </div>
     </section>
