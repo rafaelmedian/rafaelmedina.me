@@ -18,6 +18,7 @@ export type PortfolioCard = {
   ctaHref: string
   ctaExternal: boolean
   previewAspectRatio?: number
+  masonrySpan?: "sm" | "lg"
 }
 
 export type SiteLinks = {
