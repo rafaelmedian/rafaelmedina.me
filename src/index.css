@@ -85,6 +85,41 @@ body {
   color: var(--ink);
 }
 
+.skip-link {
+  position: fixed;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 120;
+  transform: translateY(-160%);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--canvas);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: transform 150ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+:where(a, button, input, textarea, select, summary, label, [role="button"], [tabindex]:not([tabindex="-1"])) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgb(124 218 51 / 0.24);
+}
+
+:where(a, button, input, textarea, select, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent) 75%, white);
+  outline-offset: 2px;
+}
+
+:where(h1, h2, h3, h4, h5, h6, #about, #feed, #contact) {
+  scroll-margin-top: 5rem;
+}
+
 .canvas-root {
   background: var(--canvas);
 }
@@ -326,4 +361,15 @@ img {
 
 #root {
   min-height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

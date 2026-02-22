@@ -9,7 +9,10 @@ function App() {
       data-theme="light"
       className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]"
     >
-      <main className="relative z-dock">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+      <main id="main-content" tabIndex={-1} className="relative z-dock">
         <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
       </main>
       {import.meta.env.DEV ? <Agentation /> : null}
