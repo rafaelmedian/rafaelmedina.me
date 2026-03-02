@@ -185,6 +185,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
             {isCopySuccess ? "Email copied to clipboard" : ""}
           </span>
 
+          <a href="/resume.pdf" download className="mosaic-copy-button mosaic-download-button">
+            Download Resume
+          </a>
+
           <p className="mosaic-fee" id="contact">
             Contact fee:
             <span>$1,000,000</span>

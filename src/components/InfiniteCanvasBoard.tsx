@@ -617,7 +617,7 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
                       <div className="mt-5 flex flex-wrap items-center gap-2.5">
                         <a
                           href={profile.contactHref}
-                          className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--ink)_28%,var(--border))] bg-[var(--ink)] px-4 py-2 text-[14px] font-semibold text-[var(--canvas)] no-underline transition-opacity duration-150 ease-out hover:opacity-85"
+                          className="mosaic-pill-cta no-underline"
                         >
                           {profile.contactLabel}
                           <svg viewBox="0 0 20 20" aria-hidden="true" className="size-4">
