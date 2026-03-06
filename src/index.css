@@ -390,12 +390,17 @@ img {
   padding: 2rem 1.6rem 1.4rem;
   background: #f4f4f4;
   border: 1px solid #e7e7e8;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .mosaic-profile-head {
   display: flex;
   align-items: flex-start;
   gap: 0.95rem;
+  padding-inline: 0.25rem;
+  max-width: 18.375rem;
 }
 
 .mosaic-avatar {
@@ -434,7 +439,7 @@ img {
 
 .mosaic-profile-summary {
   margin: 1.45rem 0 0;
-  max-width: 30ch;
+  max-width: 25.8125rem;
   font-size: 1rem;
   line-height: 1.7;
   letter-spacing: -0.03125rem;
@@ -461,6 +466,7 @@ img {
   flex-wrap: nowrap;
   gap: 0.56rem;
   align-items: center;
+  max-width: 25.8125rem;
 }
 
 .mosaic-contact-pill {
@@ -468,7 +474,7 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.15rem;
+  min-height: 2.1875rem;
   border-radius: 999px;
   border: 1px solid #dedee0;
   padding: 0 1rem;
@@ -778,11 +784,32 @@ img {
   line-height: 1.7;
   letter-spacing: -0.03125rem;
   color: #838383;
+  max-width: 25.8125rem;
 }
 
 .mosaic-fee span {
+  position: relative;
+  display: inline-block;
   color: #a8a8a8;
   text-decoration: line-through;
+}
+
+.mosaic-fee span::after {
+  content: "";
+  position: absolute;
+  left: -0.25rem;
+  right: -0.25rem;
+  top: 50%;
+  height: 1.95rem;
+  transform: translateY(-54%) rotate(-3deg);
+  border-radius: 0.25rem;
+  background: rgb(242 242 242 / 0.86);
+  clip-path: polygon(1% 40%, 9% 28%, 24% 34%, 44% 24%, 66% 30%, 86% 26%, 99% 36%, 94% 72%, 70% 78%, 45% 71%, 24% 84%, 5% 78%);
+  z-index: 0;
+}
+
+.mosaic-fee span {
+  z-index: 1;
 }
 
 .mosaic-fee strong {
@@ -1278,7 +1305,7 @@ img {
     grid-column: 1;
     grid-row: 1;
     min-height: 430px;
-    padding: 2.9rem 2.35rem 1.85rem;
+    padding: 4.56rem 2.5rem 3rem;
   }
 
   .mosaic-feature-card {
