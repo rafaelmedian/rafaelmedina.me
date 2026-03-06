@@ -107,8 +107,22 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
   const featureReadMoreHref = useMemo(() => openLinkSafely(links.linkedin), [links.linkedin])
   const studioLinkHref = useMemo(() => openLinkSafely(links.x), [links.x])
+  const telegramHref = "https://t.me/rafaelmedina"
   const phonePreviewLabel = featuredPhone?.title ?? "Vertical project preview"
   const widePreviewLabel = featuredWide?.title ?? "Wide project preview"
+  const puntaCanaTimeLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "America/Santo_Domingo",
+      })
+        .format(new Date())
+        .replace(/\s/g, "")
+        .toLowerCase(),
+    [],
+  )
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
@@ -143,56 +157,46 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         <article id="about" className="mosaic-tile mosaic-profile">
           <header className="mosaic-profile-head">
             <img src={profile.photo} alt={`${profile.name} portrait`} className="mosaic-avatar" loading="eager" decoding="async" />
-            <div className="mosaic-profile-title">
-              <h2>{profile.name} - Software Designer and Engineer</h2>
-              <p>Santo Domingo</p>
+            <div className="mosaic-profile-meta">
+              <h2>{profile.name}</h2>
+              <p className="mosaic-profile-subtitle">Software Designer</p>
+              <p className="mosaic-profile-location">Punta Cana · {puntaCanaTimeLabel} local time</p>
             </div>
           </header>
 
-          <ul className="mosaic-profile-links" aria-label="Social links">
-            <li>
-              {studioLinkHref ? (
-                <a href={studioLinkHref} target="_blank" rel="noreferrer">
-                  @rafaelmedina on X
-                </a>
-              ) : (
-                <span>@rafaelmedina on X</span>
-              )}
-            </li>
-            <li>
-              <a href={links.linkedin} target="_blank" rel="noreferrer">
-                LinkedIn
+          <p className="mosaic-profile-summary">
+            <span className="mosaic-profile-highlight">Currently avaialable for work.</span> Built{" "}
+            <a href="https://matcha.xyz" target="_blank" rel="noreferrer" className="mosaic-profile-link">
+              matcha.xyz.
+            </a>
+          </p>
+          <p className="mosaic-profile-summary mosaic-profile-summary-followup">
+            Designed Matcha.xyz from scratch, built websites, created storyboards, designed marketing things, coded stuff.
+          </p>
+
+          <div className="mosaic-profile-actions" aria-label="Profile contact actions">
+            <button type="button" className="mosaic-contact-pill mosaic-contact-pill-default" onClick={handleCopyEmail}>
+              {isCopySuccess ? "Email copied" : "Copy email"}
+            </button>
+            <a href={telegramHref} target="_blank" rel="noreferrer" className="mosaic-contact-pill mosaic-contact-pill-telegram">
+              Telegram
+            </a>
+            {studioLinkHref ? (
+              <a href={studioLinkHref} target="_blank" rel="noreferrer" className="mosaic-contact-pill mosaic-contact-pill-dark">
+                x(Twitter)
               </a>
-            </li>
-            <li>
-              <a href={profile.contactHref}>{links.email}</a>
-            </li>
-          </ul>
-
-          <p className="mosaic-role">Independent Software designer</p>
-          <p className="mosaic-bio">{profile.intro}</p>
-          <p className="mosaic-bio">
-            {profile.previouslyLabel}: {profile.previouslyText}
-          </p>
-          <p className="mosaic-bio">
-            {profile.nowLabel}: {profile.nowText}
-          </p>
-
-          <button type="button" className="mosaic-copy-button" onClick={handleCopyEmail}>
-            {isCopySuccess ? "Email copied" : "Copy Email"}
-          </button>
+            ) : (
+              <span className="mosaic-contact-pill mosaic-contact-pill-dark" role="text">
+                x(Twitter)
+              </span>
+            )}
+          </div>
           <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
             {isCopySuccess ? "Email copied to clipboard" : ""}
           </span>
 
-          <a href="/resume.pdf" download className="mosaic-copy-button mosaic-download-button">
-            Download Resume
-          </a>
-
           <p className="mosaic-fee" id="contact">
-            Contact fee:
-            <span>$1,000,000</span>
-            <strong>free</strong>
+            My contact fee is <span>$1,000,000</span> is free!
           </p>
         </article>
 

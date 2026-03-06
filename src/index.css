@@ -387,36 +387,142 @@ img {
 
 .mosaic-profile {
   min-height: 340px;
-  padding: 1.3rem 1rem;
-  background: transparent;
+  padding: 2rem 1.6rem 1.4rem;
+  background: #f4f4f4;
+  border: 1px solid #e7e7e8;
 }
 
 .mosaic-profile-head {
   display: flex;
-  align-items: center;
-  gap: 0.85rem;
+  align-items: flex-start;
+  gap: 0.95rem;
 }
 
 .mosaic-avatar {
-  width: 3.4rem;
-  height: 3.4rem;
+  width: 2.65rem;
+  height: 2.7rem;
   border-radius: 999px;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
-.mosaic-profile-title h2 {
+.mosaic-profile-meta h2 {
   margin: 0;
-  font-family: "Fraunces", "Georgia", serif;
-  font-size: 1.16rem;
+  font-family: "Manrope", "SF Pro Rounded", "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1rem;
   font-weight: 600;
-  line-height: 1.1;
-  color: #17181b;
+  line-height: 1.7;
+  letter-spacing: -0.03125rem;
+  color: #2d2d2d;
 }
 
-.mosaic-profile-title p {
-  margin: 0.28rem 0 0;
-  font-size: 0.78rem;
-  color: #6a6e74;
+.mosaic-profile-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: -0.03125rem;
+  color: #838383;
+}
+
+.mosaic-profile-location {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: -0.03125rem;
+  color: #838383;
+}
+
+.mosaic-profile-summary {
+  margin: 1.45rem 0 0;
+  max-width: 30ch;
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: -0.03125rem;
+  color: #2d2d2d;
+}
+
+.mosaic-profile-summary-followup {
+  margin-top: 0;
+}
+
+.mosaic-profile-highlight {
+  background: #e7f5f8;
+  padding-inline: 0.12rem;
+}
+
+.mosaic-profile-link {
+  color: #2d2d2d;
+  text-underline-offset: 3px;
+}
+
+.mosaic-profile-actions {
+  margin-top: 1.55rem;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.56rem;
+  align-items: center;
+}
+
+.mosaic-contact-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.15rem;
+  border-radius: 999px;
+  border: 1px solid #dedee0;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.7;
+  letter-spacing: -0.03125rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+  white-space: nowrap;
+}
+
+.mosaic-contact-pill-default,
+.mosaic-contact-pill-telegram {
+  background: linear-gradient(180deg, #f4f4f4 0%, #ffffff 70%);
+  box-shadow:
+    0 1px 5px rgb(46 42 42 / 0.08),
+    inset 0 -1px 6px rgb(179 179 179 / 0.45),
+    inset 0 -5px 4px rgb(251 251 251 / 0.3),
+    inset 0 -1px 1px rgb(118 118 118 / 0.2),
+    inset 0 -6px 2px #ffffff;
+}
+
+.mosaic-contact-pill-default {
+  min-width: 6.4375rem;
+  border: 0;
+  color: #2d2d2d;
+}
+
+.mosaic-contact-pill-telegram {
+  min-width: 5.5625rem;
+  color: #138ed0;
+}
+
+.mosaic-contact-pill-dark {
+  min-width: 5.25rem;
+  border-color: #000000;
+  background: linear-gradient(180deg, #171717 0%, #000000 100%);
+  box-shadow:
+    0 1px 10px rgb(0 0 0 / 0.15),
+    inset 0 -6px 2px rgb(0 0 0 / 0.38),
+    inset 0 -2px 6px rgb(255 255 255 / 0.75),
+    inset 0 -4px 16px rgb(0 0 0 / 0.3);
+  color: #ffffff;
+}
+
+.mosaic-contact-pill:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+.mosaic-contact-pill:active {
+  transform: translateY(0);
 }
 
 .mosaic-profile-links {
@@ -667,21 +773,21 @@ img {
 }
 
 .mosaic-fee {
-  margin: 0.92rem 0 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-  color: #6b6f76;
+  margin: 0.72rem 0 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: -0.03125rem;
+  color: #838383;
 }
 
 .mosaic-fee span {
+  color: #a8a8a8;
   text-decoration: line-through;
 }
 
 .mosaic-fee strong {
-  color: #30343b;
-  font-weight: 600;
+  color: #838383;
+  font-weight: 400;
 }
 
 .mosaic-feature-card {
@@ -1172,7 +1278,7 @@ img {
     grid-column: 1;
     grid-row: 1;
     min-height: 430px;
-    padding-inline: 1.05rem 1.3rem;
+    padding: 2.9rem 2.35rem 1.85rem;
   }
 
   .mosaic-feature-card {
@@ -1226,11 +1332,11 @@ img {
   }
 
   .mosaic-profile {
-    padding-right: 1.5rem;
+    padding-right: 2.8rem;
   }
 
-  .mosaic-profile-title h2 {
-    font-size: 1.24rem;
+  .mosaic-profile-meta h2 {
+    font-size: 1rem;
   }
 
   .mosaic-note-card {
@@ -1268,6 +1374,10 @@ img {
 }
 
 @media (max-width: 639.98px) {
+  .mosaic-profile-actions {
+    flex-wrap: wrap;
+  }
+
   .preview-gallery-popup {
     border-radius: 20px;
     padding: 0.68rem;
