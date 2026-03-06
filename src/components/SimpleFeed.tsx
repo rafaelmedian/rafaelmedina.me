@@ -66,6 +66,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [isCopySuccess, setIsCopySuccess] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
+  const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
+    new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "America/Santo_Domingo",
+    })
+      .format(new Date())
+      .replace(/\s/g, "")
+      .toLowerCase(),
+  )
 
   const previews = useMemo(() => cards.filter((card) => card.kind === "preview"), [cards])
   const featuredPhone = useMemo(
@@ -110,20 +121,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const telegramHref = "https://t.me/rafaelmedina"
   const phonePreviewLabel = featuredPhone?.title ?? "Vertical project preview"
   const widePreviewLabel = featuredWide?.title ?? "Wide project preview"
-  const puntaCanaTimeLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-        timeZone: "America/Santo_Domingo",
-      })
-        .format(new Date())
-        .replace(/\s/g, "")
-        .toLowerCase(),
-    [],
-  )
-
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
 
@@ -138,6 +135,24 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
     mediaQuery.addListener(syncPreference)
     return () => mediaQuery.removeListener(syncPreference)
+  }, [])
+
+  useEffect(() => {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "America/Santo_Domingo",
+    })
+
+    const updatePuntaCanaTime = () => {
+      setPuntaCanaTimeLabel(formatter.format(new Date()).replace(/\s/g, "").toLowerCase())
+    }
+
+    updatePuntaCanaTime()
+    const intervalId = window.setInterval(updatePuntaCanaTime, 30_000)
+
+    return () => window.clearInterval(intervalId)
   }, [])
 
   const handleCopyEmail = async () => {
@@ -165,7 +180,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           </header>
 
           <p className="mosaic-profile-summary">
-            <span className="mosaic-profile-highlight">Currently avaialable for work.</span> Built{" "}
+            <span className="mosaic-profile-highlight">Currently available for work.</span> Built{" "}
             <a href="https://matcha.xyz" target="_blank" rel="noreferrer" className="mosaic-profile-link">
               matcha.xyz.
             </a>
@@ -176,18 +191,27 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
           <div className="mosaic-profile-actions" aria-label="Profile contact actions">
             <button type="button" className="mosaic-contact-pill mosaic-contact-pill-default" onClick={handleCopyEmail}>
-              {isCopySuccess ? "Email copied" : "Copy email"}
+              <span className="mosaic-contact-pill-default-label">{isCopySuccess ? "Email copied" : "Copy email"}</span>
             </button>
             <a href={telegramHref} target="_blank" rel="noreferrer" className="mosaic-contact-pill mosaic-contact-pill-telegram">
-              Telegram
+              <span className="mosaic-contact-pill-content mosaic-contact-pill-content-telegram">
+                <img src="/icons/telegram.png" alt="" className="mosaic-contact-pill-icon mosaic-contact-pill-icon-telegram" />
+                <span className="mosaic-contact-pill-telegram-label">Message</span>
+              </span>
             </a>
             {studioLinkHref ? (
               <a href={studioLinkHref} target="_blank" rel="noreferrer" className="mosaic-contact-pill mosaic-contact-pill-dark">
-                x(Twitter)
+                <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
+                  <img src="/icons/x.svg" alt="" className="mosaic-contact-pill-icon mosaic-contact-pill-icon-x" />
+                  <span className="mosaic-contact-pill-dark-label">Follow</span>
+                </span>
               </a>
             ) : (
               <span className="mosaic-contact-pill mosaic-contact-pill-dark" role="text">
-                x(Twitter)
+                <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
+                  <img src="/icons/x.svg" alt="" className="mosaic-contact-pill-icon mosaic-contact-pill-icon-x" />
+                  <span className="mosaic-contact-pill-dark-label">Follow</span>
+                </span>
               </span>
             )}
           </div>
