@@ -1,20 +1,11 @@
 import { Agentation } from "agentation"
 
-import { SimpleFeed } from "./components/SimpleFeed"
-import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
+import { Portfolio2026 } from "./components/Portfolio2026"
 
 function App() {
   return (
-    <div
-      data-theme="light"
-      className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]"
-    >
-      <a href="#main-content" className="skip-link">
-        Skip to content
-      </a>
-      <main id="main-content" tabIndex={-1} className="relative z-dock">
-        <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
-      </main>
+    <div className="min-h-dvh bg-[var(--p26-canvas)] text-[var(--p26-ink)]">
+      <Portfolio2026 />
       {import.meta.env.DEV ? <Agentation /> : null}
     </div>
   )
