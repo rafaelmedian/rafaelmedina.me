@@ -13,7 +13,7 @@
   <rect width="720" height="720" rx="360" fill="url(#halo)" />
   <circle cx="360" cy="318" r="142" fill="#E2E8F0" fill-opacity="0.16" />
   <path d="M147 592c26-108 114-179 213-179s187 71 213 179" fill="#E2E8F0" fill-opacity="0.16" />
-  <text x="50%" y="91%" dominant-baseline="middle" text-anchor="middle" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="700" letter-spacing="8">
+  <text x="50%" y="91%" dominant-baseline="middle" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="56" font-weight="700" letter-spacing="8">
     RM
   </text>
 </svg>
