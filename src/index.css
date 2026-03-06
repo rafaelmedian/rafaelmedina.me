@@ -380,6 +380,17 @@ img {
   padding-inline: clamp(0.85rem, 2.8vw, 2.2rem);
 }
 
+.mosaic-hero {
+  min-height: clamp(17rem, 42vh, 25rem);
+  display: grid;
+  place-items: center;
+  padding-block: clamp(1.6rem, 5vw, 3.2rem);
+}
+
+.mosaic-hero-profile {
+  width: min(100%, 25.8125rem);
+}
+
 .mosaic-board {
   display: grid;
   grid-template-columns: 1fr;
@@ -1220,6 +1231,10 @@ img {
   background: transparent;
 }
 
+.mosaic-work-featured {
+  margin-bottom: 0.92rem;
+}
+
 .mosaic-work-grid {
   margin: 0;
   padding: 0;
@@ -1268,6 +1283,10 @@ img {
   cursor: pointer;
   text-align: left;
   transition: transform 200ms ease, border-color 200ms ease;
+}
+
+.mosaic-work-card-featured {
+  min-height: clamp(16rem, 45vw, 31rem);
 }
 
 .mosaic-work-card:hover {
@@ -1320,6 +1339,15 @@ img {
   font-size: 0.8rem;
   letter-spacing: 0.02em;
   font-weight: 700;
+}
+
+.mosaic-work-overlay-featured {
+  padding: 1.45rem 1.3rem 1.1rem;
+}
+
+.mosaic-work-overlay-featured strong {
+  font-size: clamp(0.95rem, 1.08vw, 1.07rem);
+  letter-spacing: 0.015em;
 }
 
 .mosaic-work-bridge {
@@ -1543,21 +1571,20 @@ img {
     padding-inline: clamp(1.1rem, 3.4vw, 2.9rem);
   }
 
+  .mosaic-hero {
+    min-height: clamp(22rem, 50vh, 33rem);
+    padding-block: clamp(2rem, 5vw, 3.4rem);
+  }
+
   .mosaic-board {
     grid-template-columns: minmax(280px, 2fr) minmax(280px, 2fr) minmax(180px, 1fr);
     gap: 1rem;
   }
 
-  .mosaic-profile {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 430px;
-    padding: 4.56rem 2.5rem 3rem;
-  }
-
   .mosaic-feature-card {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 430px;
   }
 
   .mosaic-empty-card {
@@ -1567,19 +1594,19 @@ img {
 
   .mosaic-phone-card {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
     min-height: 430px;
   }
 
   .mosaic-note-panel {
-    grid-column: 2;
+    grid-column: 2 / span 2;
     grid-row: 2;
     min-height: 430px;
   }
 
   .mosaic-dashboard-card {
-    grid-column: 3;
-    grid-row: 2;
+    grid-column: 2;
+    grid-row: 1;
     min-height: 430px;
   }
 
@@ -1587,6 +1614,10 @@ img {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
     grid-auto-rows: minmax(11.5rem, auto);
+  }
+
+  .mosaic-work-featured {
+    margin-bottom: 1rem;
   }
 
   .mosaic-work-item-wide {
@@ -1603,10 +1634,6 @@ img {
 @media (min-width: 1320px) {
   .mosaic-board {
     grid-template-columns: minmax(320px, 2fr) minmax(320px, 2fr) minmax(200px, 1fr);
-  }
-
-  .mosaic-profile {
-    padding-right: 2.8rem;
   }
 
   .mosaic-profile-meta h2 {
@@ -1631,45 +1658,53 @@ img {
 }
 
 @media (min-width: 700px) and (max-width: 899.98px) {
+  .mosaic-hero {
+    min-height: clamp(18rem, 40vh, 24rem);
+    padding-block: clamp(1.7rem, 4vw, 2.5rem);
+  }
+
   .mosaic-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
   }
 
-  .mosaic-profile {
-    grid-column: 1 / -1;
-    min-height: 360px;
-    padding: 2.5rem 2rem 2rem;
-  }
-
   .mosaic-feature-card {
-    grid-column: 1;
+    grid-column: 2;
+    grid-row: 2;
     min-height: 340px;
   }
 
   .mosaic-empty-card {
-    grid-column: 2;
+    grid-column: 1;
+    grid-row: 2;
     min-height: 340px;
   }
 
   .mosaic-phone-card {
     grid-column: 1;
+    grid-row: 1;
     min-height: 360px;
   }
 
   .mosaic-note-panel {
-    grid-column: 2;
-    min-height: 360px;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    min-height: 340px;
   }
 
   .mosaic-dashboard-card {
-    grid-column: 1 / -1;
+    grid-column: 2;
+    grid-row: 1;
     min-height: 360px;
   }
 
   .mosaic-work-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: minmax(12.2rem, auto);
+  }
+
+  .mosaic-work-featured {
+    margin-bottom: 1rem;
   }
 
   .mosaic-work-item-wide {

@@ -37,6 +37,8 @@ type WorkTile =
       id: string
     }
 
+type WorkPreviewTile = Extract<WorkTile, { kind: "preview" }>
+
 const floatingNav = [
   { label: "About", href: "#about", isActive: true },
   { label: "Featured", href: "#featured" },
@@ -116,11 +118,55 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     return nextTiles
   }, [workPreviewCards])
 
+  const featuredWorkTile = useMemo<WorkPreviewTile | null>(() => {
+    for (const tile of workTiles) {
+      if (tile.kind === "preview") return tile
+    }
+    return null
+  }, [workTiles])
+
+  const gridWorkTiles = useMemo(() => {
+    if (!featuredWorkTile) return workTiles
+
+    return workTiles.filter(
+      (tile) => !(tile.kind === "preview" && tile.previewIndex === featuredWorkTile.previewIndex),
+    )
+  }, [workTiles, featuredWorkTile])
+
   const featureReadMoreHref = useMemo(() => openLinkSafely(links.linkedin), [links.linkedin])
   const studioLinkHref = useMemo(() => openLinkSafely(links.x), [links.x])
   const telegramHref = "https://t.me/rafaelmedina"
   const phonePreviewLabel = featuredPhone?.title ?? "Vertical project preview"
   const widePreviewLabel = featuredWide?.title ?? "Wide project preview"
+  const featuredWorkInsetMedia = featuredWorkTile ? shouldInsetWorkMedia(featuredWorkTile.card) : false
+
+  const renderWorkMedia = (card: PortfolioCard, insetMedia: boolean, mediaLabel: string) => {
+    if (isVideoPreviewSource(card.image)) {
+      return (
+        <video
+          src={card.image}
+          muted
+          loop={!prefersReducedMotion}
+          autoPlay={!prefersReducedMotion}
+          playsInline
+          preload={prefersReducedMotion ? "none" : "metadata"}
+          aria-label={mediaLabel}
+          className={`mosaic-work-media ${insetMedia ? "mosaic-work-media-inset" : ""}`}
+        />
+      )
+    }
+
+    return (
+      <img
+        src={card.image}
+        alt={mediaLabel}
+        loading="lazy"
+        decoding="async"
+        className={`mosaic-work-media ${insetMedia ? "mosaic-work-media-inset" : ""}`}
+      />
+    )
+  }
+
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
 
@@ -168,16 +214,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   return (
     <section className="mosaic-shell">
       <h1 className="sr-only">{profile.name} portfolio</h1>
-      <div className="mosaic-board">
-        <article id="about" className="mosaic-tile mosaic-profile">
-          <header className="mosaic-profile-head">
+      <header id="about" className="mosaic-hero">
+        <div className="mosaic-hero-profile">
+          <div className="mosaic-profile-head">
             <img src={profile.photo} alt={`${profile.name} portrait`} className="mosaic-avatar" loading="eager" decoding="async" />
             <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
               <p className="mosaic-profile-subtitle">Software Designer</p>
               <p className="mosaic-profile-location">Punta Cana · {puntaCanaTimeLabel} local time</p>
             </div>
-          </header>
+          </div>
 
           <p className="mosaic-profile-summary">
             <span className="mosaic-profile-highlight">Currently available for work.</span> Built{" "}
@@ -222,8 +268,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           <p className="mosaic-fee" id="contact">
             My contact fee is <span>$1,000,000</span> is free!
           </p>
-        </article>
+        </div>
+      </header>
 
+      <div className="mosaic-board">
         <article id="featured" className="mosaic-tile mosaic-feature-card">
           <div className="mosaic-note-card">
             <p className="mosaic-note-date">Nov 23</p>
@@ -301,8 +349,27 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
         <article id="work" className="mosaic-work">
           <h2 className="sr-only">Selected work</h2>
+          {featuredWorkTile ? (
+            <section className="mosaic-work-featured" aria-label="Featured work preview">
+              <button
+                type="button"
+                className="mosaic-work-card mosaic-work-card-featured"
+                onClick={() => setActiveWorkPreviewIndex(featuredWorkTile.previewIndex)}
+                aria-label={`Open ${featuredWorkTile.card.title} preview ${featuredWorkTile.previewIndex + 1} of ${workPreviewCards.length}`}
+              >
+                <span
+                  className={`mosaic-work-media-shell ${featuredWorkInsetMedia ? "mosaic-work-media-shell-inset" : ""}`}
+                >
+                  {renderWorkMedia(featuredWorkTile.card, featuredWorkInsetMedia, featuredWorkTile.card.title)}
+                </span>
+                <span className="mosaic-work-overlay mosaic-work-overlay-featured">
+                  <strong>{featuredWorkTile.card.title}</strong>
+                </span>
+              </button>
+            </section>
+          ) : null}
           <ul className="mosaic-work-grid" aria-label="Selected work previews">
-            {workTiles.map((tile) => {
+            {gridWorkTiles.map((tile) => {
               const sizeClass = `mosaic-work-item mosaic-work-item-${tile.span}`
 
               if (tile.kind === "bridge") {
@@ -334,26 +401,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                     aria-label={`Open ${tile.card.title} preview ${tile.previewIndex + 1} of ${workPreviewCards.length}`}
                   >
                     <span className={`mosaic-work-media-shell ${insetMedia ? "mosaic-work-media-shell-inset" : ""}`}>
-                      {isVideoPreviewSource(tile.card.image) ? (
-                        <video
-                          src={tile.card.image}
-                          muted
-                          loop={!prefersReducedMotion}
-                          autoPlay={!prefersReducedMotion}
-                          playsInline
-                          preload={prefersReducedMotion ? "none" : "metadata"}
-                          aria-label={tile.card.title}
-                          className={`mosaic-work-media ${insetMedia ? "mosaic-work-media-inset" : ""}`}
-                        />
-                      ) : (
-                        <img
-                          src={tile.card.image}
-                          alt={tile.card.title}
-                          loading="lazy"
-                          decoding="async"
-                          className={`mosaic-work-media ${insetMedia ? "mosaic-work-media-inset" : ""}`}
-                        />
-                      )}
+                      {renderWorkMedia(tile.card, insetMedia, tile.card.title)}
                     </span>
                     <span className="mosaic-work-overlay">
                       <strong>{tile.card.title}</strong>
