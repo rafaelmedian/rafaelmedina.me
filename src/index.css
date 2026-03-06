@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
 @import "./styles/portfolio-2026.css";
 
 @tailwind base;
@@ -19,9 +19,9 @@ body,
 
 body {
   margin: 0;
-  font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
-  background: var(--fg26-canvas);
-  color: var(--fg26-ink);
+  font-family: "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
+  background: var(--p26-canvas);
+  color: var(--p26-ink);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
