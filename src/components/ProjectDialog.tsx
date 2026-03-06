@@ -2,14 +2,15 @@ import { Dialog } from "@base-ui/react/dialog"
 
 import type { PortfolioCard as PortfolioCardType } from "../data/portfolio"
 import { cn } from "../lib/cn"
-import { PortfolioCard } from "./PortfolioCard"
+import { PortfolioCard, type PortfolioCardVariant } from "./PortfolioCard"
 
 export type ProjectDialogProps = {
   card: PortfolioCardType
+  cardVariant?: PortfolioCardVariant
   className?: string
 }
 
-export function ProjectDialog({ card, className }: ProjectDialogProps) {
+export function ProjectDialog({ card, cardVariant, className }: ProjectDialogProps) {
   const linkAttributes = card.ctaExternal
     ? {
         target: "_blank",
@@ -27,7 +28,8 @@ export function ProjectDialog({ card, className }: ProjectDialogProps) {
       >
         <PortfolioCard
           card={card}
-          className="transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-active:scale-[0.99] motion-reduce:transition-none"
+          variant={cardVariant}
+          className="transition-transform duration-200 ease-out motion-reduce:transition-none"
         />
       </Dialog.Trigger>
 

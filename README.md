@@ -71,3 +71,13 @@ export default defineConfig([
   },
 ])
 ```
+
+## Mapbox setup
+
+The contact map uses Mapbox when a token is available.
+
+1. Copy `.env.example` to `.env`.
+2. Set `VITE_MAPBOX_TOKEN` to your Mapbox public token (`pk...`).
+3. Restart the Vite dev server.
+
+If no token is set (or Mapbox fails), the UI falls back to an OpenStreetMap embed.

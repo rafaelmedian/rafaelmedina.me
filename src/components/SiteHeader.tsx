@@ -1,22 +1,29 @@
 type SiteHeaderProps = {
   name: string
-  intro: string
+  title: string
+  photo: string
 }
 
-export function SiteHeader({ name, intro }: SiteHeaderProps) {
+export function SiteHeader({ name, title, photo }: SiteHeaderProps) {
   return (
-    <header className="space-y-6 pt-6 text-center sm:space-y-7 sm:pt-8">
-      <div className="space-y-4">
-        <h1 className="mx-auto max-w-3xl text-balance text-4xl font-semibold leading-[1.04] text-[var(--ink)] sm:text-5xl">
-          <span className="inline-block rounded-none bg-[var(--accent)] px-3 py-1 text-[var(--ink-on-accent)]">
+    <header className="space-y-5 pt-5 sm:space-y-6 sm:pt-6">
+      <div className="flex w-full max-w-5xl items-center gap-3 sm:gap-4">
+        <img
+          src={photo}
+          alt={`${name} profile`}
+          className="size-16 shrink-0 rounded-full object-cover ring-1 ring-[var(--border)] sm:size-20"
+        />
+        <div className="space-y-1">
+          <h1 className="text-balance text-[clamp(1.25rem,1.9vw,2rem)] font-semibold leading-[1.08] text-[var(--ink)]">
             {name}
-          </span>
-          <span className="ml-3">Product designer</span>
-        </h1>
+          </h1>
+          <p className="text-pretty text-[clamp(0.9rem,1.1vw,1.12rem)] font-medium leading-[1.2] text-[var(--muted)]">
+            <span>{title}</span>
+            <span className="mx-2 inline-block size-1 rounded-full bg-[var(--accent)] align-middle" />
+            <span className="text-[var(--muted-strong)]">open to collaborations</span>
+          </p>
+        </div>
       </div>
-      <p className="mx-auto max-w-2xl text-pretty text-base leading-relaxed text-[var(--muted-strong)] sm:text-lg">
-        {intro}
-      </p>
     </header>
   )
 }
