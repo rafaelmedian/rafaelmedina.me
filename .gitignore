@@ -1,9 +1,0 @@
-<<<<<<< HEAD
-_site
-.idea
-node_modules
-=======
-_site/
-.sass-cache/
-.jekyll-metadata
->>>>>>> origin/gh-pages
