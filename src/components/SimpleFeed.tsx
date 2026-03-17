@@ -185,6 +185,8 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const phonePreviewLabel = featuredPhone?.title ?? "Vertical project preview"
   const widePreviewLabel = featuredWide?.title ?? "Wide project preview"
   const featuredWorkInsetMedia = featuredWorkTile ? shouldInsetWorkMedia(featuredWorkTile.card) : false
+  const shellClassName = `mosaic-shell${showProjects ? "" : " mosaic-shell-hero-only"}`
+  const heroClassName = `mosaic-hero${showProjects ? "" : " mosaic-hero-hero-only"}`
 
   const renderWorkMedia = (card: PortfolioCard, insetMedia: boolean, mediaLabel: string) => {
     if (isVideoPreviewSource(card.image)) {
@@ -255,10 +257,10 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   }, [])
 
   return (
-    <section className="mosaic-shell">
+    <section className={shellClassName}>
       <h1 className="sr-only">{profile.name} portfolio</h1>
-      <header id="about" className="mosaic-hero">
-        <div className="mosaic-hero-profile">
+      <header id="about" className={heroClassName}>
+        <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-head">
             <img src={profile.photo} alt={`${profile.name} portrait`} className="mosaic-avatar" loading="eager" decoding="async" />
             <div className="mosaic-profile-meta">
@@ -275,7 +277,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
             In college, I co-founded{" "}
             <a
-              href="https://www.wework.com/ideas/community-stories/member-spotlight/turtle-creating-app-students-students"
+              href="https://www.youtube.com/watch?v=IAHmu0lhcIs&t=1s"
               target="_blank"
               rel="noreferrer"
               className="mosaic-profile-link"
@@ -288,7 +290,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
                 <span className="mosaic-company-inline-hover-logo-wrap">
                   <img
-                    src="/logos/Google_2015_logo.svg"
+                    src="/logos/Google_logo.svg"
                     alt=""
                     loading="eager"
                     decoding="async"
@@ -298,8 +300,13 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               </span>
             </a>
             , helped design{" "}
-            <a href="https://patrol.so" target="_blank" rel="noreferrer" className="mosaic-profile-link">
-              Patrol
+            <a href="https://patrol.so" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
+              <span className="mosaic-company-inline-name">Patrol</span>
+              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
+                <span className="mosaic-company-inline-hover-logo-wrap">
+                  <img src="/logos/patrol.svg" alt="" loading="eager" decoding="async" className="mosaic-company-inline-hover-logo" />
+                </span>
+              </span>
             </a>
             /
             <a href="https://protector.so" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
@@ -330,8 +337,13 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               Moody&apos;s
             </a>
             , and helped push the web3 industry forward at{" "}
-            <a href="https://matcha.xyz" target="_blank" rel="noreferrer" className="mosaic-profile-link">
-              Matcha.xyz
+            <a href="https://matcha.xyz" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
+              <span className="mosaic-company-inline-name">Matcha.xyz</span>
+              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
+                <span className="mosaic-company-inline-hover-logo-wrap">
+                  <img src="/logos/matcha.svg" alt="" loading="eager" decoding="async" className="mosaic-company-inline-hover-logo" />
+                </span>
+              </span>
             </a>
             .
           </p>

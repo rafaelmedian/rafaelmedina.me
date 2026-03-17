@@ -414,7 +414,12 @@ img {
   margin: 0;
   width: 100%;
   padding-block: 0;
-  padding-inline: 0;
+  padding-inline: clamp(1rem, 5vw, 1.5rem);
+}
+
+.mosaic-shell-hero-only {
+  min-height: 100dvh;
+  display: grid;
 }
 
 .mosaic-hero {
@@ -424,8 +429,55 @@ img {
   padding-block: clamp(1.6rem, 5vw, 3.2rem);
 }
 
+.mosaic-hero-hero-only {
+  min-height: 100dvh;
+  margin: 0;
+  padding-block: 0;
+}
+
 .mosaic-hero-profile {
   width: min(100%, 32.8125rem);
+}
+
+.mosaic-hero-profile-animated > * {
+  animation: mosaic-intro-rise 620ms var(--ease-smooth) both;
+  will-change: opacity, transform;
+}
+
+.mosaic-hero-profile-animated > :nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.mosaic-hero-profile-animated > :nth-child(2) {
+  animation-delay: 110ms;
+}
+
+.mosaic-hero-profile-animated > :nth-child(3) {
+  animation-delay: 170ms;
+}
+
+.mosaic-hero-profile-animated > :nth-child(4) {
+  animation-delay: 230ms;
+}
+
+.mosaic-hero-profile-animated > :nth-child(5) {
+  animation-delay: 290ms;
+}
+
+.mosaic-hero-profile-animated > :nth-child(6) {
+  animation-delay: 350ms;
+}
+
+@keyframes mosaic-intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.8rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .mosaic-board {
@@ -1963,10 +2015,19 @@ img {
     padding-inline: 0;
   }
 
+  .mosaic-shell-hero-only {
+    min-height: 100dvh;
+  }
+
   .mosaic-hero {
     min-height: clamp(22rem, 50vh, 33rem);
     margin: 90px 0;
     padding-block: 0;
+  }
+
+  .mosaic-hero-hero-only {
+    min-height: 100dvh;
+    margin: 0;
   }
 
   .mosaic-board {
@@ -2051,6 +2112,10 @@ img {
 }
 
 @media (min-width: 700px) and (max-width: 899.98px) {
+  .mosaic-shell {
+    padding-inline: 0;
+  }
+
   .mosaic-hero {
     min-height: clamp(18rem, 40vh, 24rem);
     padding-block: clamp(1.7rem, 4vw, 2.5rem);
