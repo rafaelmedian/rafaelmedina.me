@@ -31,7 +31,7 @@ export type SiteLinks = {
 
 export const siteProfile = {
   name: "Rafael Medina",
-  title: "Product Designer",
+  title: "Product Designer, Freelance",
   intro:
     "Hey I'm Rafael, a product designer and maker based in Miami. For over 10 years, I've helped teams design products that balance clarity, visual craft, and practical outcomes.",
   previouslyLabel: "Previously",
@@ -40,16 +40,16 @@ export const siteProfile = {
   nowText: "Freelancing, experimenting with AI workflows, and building design systems.",
   availability: "Available for work",
   contactLabel: "Get in touch",
-  contactHref: "mailto:hello@rafaelmedina.me",
+  contactHref: "mailto:hey@rafaelmedina.me",
   photo: profilePhoto,
 }
 
 export const siteLinks: SiteLinks = {
   dribbble: "https://dribbble.com/rafaelmedina",
-  x: "https://x.com/rafaelmedina",
+  x: "https://x.com/rafaelmedian",
   github: "https://github.com/rafaelmedina",
   linkedin: "https://www.linkedin.com/in/rafaelmedina",
-  email: "hello@rafaelmedina.me",
+  email: "hey@rafaelmedina.me",
 }
 
 export const portfolioCards: PortfolioCard[] = [

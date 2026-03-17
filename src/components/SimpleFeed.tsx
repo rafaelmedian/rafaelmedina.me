@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import type { PortfolioCard, SiteLinks } from "../data/portfolio"
 import { PreviewGalleryDialog } from "./PreviewGalleryDialog"
+import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type SiteProfile = {
   name: string
@@ -21,6 +22,7 @@ type SimpleFeedProps = {
   cards: PortfolioCard[]
   profile: SiteProfile
   links: SiteLinks
+  showProjects?: boolean
 }
 
 type WorkTile =
@@ -39,14 +41,15 @@ type WorkTile =
 
 type WorkPreviewTile = Extract<WorkTile, { kind: "preview" }>
 
-const floatingNav = [
-  { label: "About", href: "#about", isActive: true },
-  { label: "Featured", href: "#featured" },
-  { label: "Work", href: "#work" },
-  { label: "Contact", href: "#contact" },
-]
-
 const lowerWorkPattern: Array<"sm" | "wide" | "tall"> = ["tall", "sm", "sm", "wide", "sm", "tall", "wide", "sm", "sm", "wide", "sm", "sm"]
+
+const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+  timeZone: "America/Santo_Domingo",
+  timeZoneName: "short",
+})
 
 function isVideoPreviewSource(source: string) {
   return source.toLowerCase().endsWith(".webm")
@@ -64,21 +67,65 @@ function shouldInsetWorkMedia(card: PortfolioCard) {
   return ratio > 1.45 || ratio < 0.82
 }
 
-export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
-  const [isCopySuccess, setIsCopySuccess] = useState(false)
+function formatPuntaCanaLocalTime(date = new Date()) {
+  return puntaCanaTimeFormatter.format(date).replace(/\s([AP]M)\s/, (_, meridiem: string) => `${meridiem.toLowerCase()} `)
+}
+
+function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion: boolean }) {
+  const [displayedLabel, setDisplayedLabel] = useState(label)
+  const [incomingLabel, setIncomingLabel] = useState<string | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const animationTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (label === displayedLabel) return
+
+    if (reducedMotion) {
+      setDisplayedLabel(label)
+      setIncomingLabel(null)
+      setIsAnimating(false)
+      return
+    }
+
+    if (animationTimeoutRef.current !== null) {
+      window.clearTimeout(animationTimeoutRef.current)
+    }
+
+    setIncomingLabel(label)
+
+    const frameId = window.requestAnimationFrame(() => {
+      setIsAnimating(true)
+      animationTimeoutRef.current = window.setTimeout(() => {
+        setDisplayedLabel(label)
+        setIncomingLabel(null)
+        setIsAnimating(false)
+        animationTimeoutRef.current = null
+      }, 240)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      if (animationTimeoutRef.current !== null) {
+        window.clearTimeout(animationTimeoutRef.current)
+        animationTimeoutRef.current = null
+      }
+    }
+  }, [displayedLabel, label, reducedMotion])
+
+  return (
+    <span className={`mosaic-live-time ${isAnimating ? "is-animating" : ""}`} aria-live="polite" aria-atomic="true">
+      <span className="mosaic-live-time-track">
+        <span className="mosaic-live-time-value mosaic-live-time-value-current">{displayedLabel}</span>
+        {incomingLabel ? <span className="mosaic-live-time-value mosaic-live-time-value-next">{incomingLabel}</span> : null}
+      </span>
+    </span>
+  )
+}
+
+export function SimpleFeed({ cards, profile, links, showProjects = true }: SimpleFeedProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
-  const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
-    new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "America/Santo_Domingo",
-    })
-      .format(new Date())
-      .replace(/\s/g, "")
-      .toLowerCase(),
-  )
+  const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() => formatPuntaCanaLocalTime())
 
   const previews = useMemo(() => cards.filter((card) => card.kind === "preview"), [cards])
   const featuredPhone = useMemo(
@@ -135,7 +182,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
   const featureReadMoreHref = useMemo(() => openLinkSafely(links.linkedin), [links.linkedin])
   const studioLinkHref = useMemo(() => openLinkSafely(links.x), [links.x])
-  const telegramHref = "https://t.me/rafaelmedina"
   const phonePreviewLabel = featuredPhone?.title ?? "Vertical project preview"
   const widePreviewLabel = featuredWide?.title ?? "Wide project preview"
   const featuredWorkInsetMedia = featuredWorkTile ? shouldInsetWorkMedia(featuredWorkTile.card) : false
@@ -184,32 +230,29 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   }, [])
 
   useEffect(() => {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "America/Santo_Domingo",
-    })
+    let intervalId: number | undefined
+    let timeoutId: number | undefined
 
     const updatePuntaCanaTime = () => {
-      setPuntaCanaTimeLabel(formatter.format(new Date()).replace(/\s/g, "").toLowerCase())
+      setPuntaCanaTimeLabel(formatPuntaCanaLocalTime())
     }
 
     updatePuntaCanaTime()
-    const intervalId = window.setInterval(updatePuntaCanaTime, 30_000)
-
-    return () => window.clearInterval(intervalId)
-  }, [])
-
-  const handleCopyEmail = async () => {
-    try {
-      await navigator.clipboard.writeText(links.email)
-      setIsCopySuccess(true)
-      window.setTimeout(() => setIsCopySuccess(false), 1800)
-    } catch {
-      window.location.href = profile.contactHref
+    const scheduleLiveUpdate = () => {
+      const msUntilNextMinute = 60_000 - (Date.now() % 60_000)
+      timeoutId = window.setTimeout(() => {
+        updatePuntaCanaTime()
+        intervalId = window.setInterval(updatePuntaCanaTime, 60_000)
+      }, msUntilNextMinute)
     }
-  }
+
+    scheduleLiveUpdate()
+
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId)
+      if (intervalId) window.clearInterval(intervalId)
+    }
+  }, [])
 
   return (
     <section className="mosaic-shell">
@@ -220,224 +263,256 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
             <img src={profile.photo} alt={`${profile.name} portrait`} className="mosaic-avatar" loading="eager" decoding="async" />
             <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
-              <p className="mosaic-profile-subtitle">Software Designer</p>
-              <p className="mosaic-profile-location">Punta Cana · {puntaCanaTimeLabel} local time</p>
+              <p className="mosaic-profile-subtitle">{profile.title}</p>
+              <p className="mosaic-profile-location">
+                Punta Cana · Local time: <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+              </p>
             </div>
           </div>
-
-          <p className="mosaic-profile-summary">
-            <span className="mosaic-profile-highlight">Currently available for work.</span> Built{" "}
-            <a href="https://matcha.xyz" target="_blank" rel="noreferrer" className="mosaic-profile-link">
-              matcha.xyz.
-            </a>
+          <p className="mosaic-profile-summary mosaic-profile-summary-followup">
+            Born in Santo Domingo, I went to college in Washington, DC and am now in the process of moving to NYC.
           </p>
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
-            Designed Matcha.xyz from scratch, built websites, created storyboards, designed marketing things, coded stuff.
-          </p>
-
-          <div className="mosaic-profile-actions" aria-label="Profile contact actions">
-            <button type="button" className="mosaic-contact-pill mosaic-contact-pill-default" onClick={handleCopyEmail}>
-              <span className="mosaic-contact-pill-default-label">{isCopySuccess ? "Email copied" : "Copy email"}</span>
-            </button>
-            <a href={telegramHref} target="_blank" rel="noreferrer" className="mosaic-contact-pill mosaic-contact-pill-telegram">
-              <span className="mosaic-contact-pill-content mosaic-contact-pill-content-telegram">
-                <img src="/icons/telegram.png" alt="" className="mosaic-contact-pill-icon mosaic-contact-pill-icon-telegram" />
-                <span className="mosaic-contact-pill-telegram-label">Message</span>
+            In college, I co-founded{" "}
+            <a
+              href="https://www.wework.com/ideas/community-stories/member-spotlight/turtle-creating-app-students-students"
+              target="_blank"
+              rel="noreferrer"
+              className="mosaic-profile-link"
+            >
+              Turtle
+            </a>
+            , a tool for college students to meet other students, designed a tool for teachers to find trainers at{" "}
+            <a href="https://www.google.com" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
+              <span className="mosaic-company-inline-name">Google</span>
+              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
+                <span className="mosaic-company-inline-hover-logo-wrap">
+                  <img
+                    src="/logos/Google_2015_logo.svg"
+                    alt=""
+                    loading="eager"
+                    decoding="async"
+                    className="mosaic-company-inline-hover-logo"
+                  />
+                </span>
               </span>
             </a>
-            {studioLinkHref ? (
-              <a href={studioLinkHref} target="_blank" rel="noreferrer" className="mosaic-contact-pill mosaic-contact-pill-dark">
-                <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
-                  <img src="/icons/x.svg" alt="" className="mosaic-contact-pill-icon mosaic-contact-pill-icon-x" />
-                  <span className="mosaic-contact-pill-dark-label">Follow</span>
-                </span>
-              </a>
-            ) : (
-              <span className="mosaic-contact-pill mosaic-contact-pill-dark" role="text">
-                <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
-                  <img src="/icons/x.svg" alt="" className="mosaic-contact-pill-icon mosaic-contact-pill-icon-x" />
-                  <span className="mosaic-contact-pill-dark-label">Follow</span>
+            , helped design{" "}
+            <a href="https://patrol.so" target="_blank" rel="noreferrer" className="mosaic-profile-link">
+              Patrol
+            </a>
+            /
+            <a href="https://protector.so" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
+              <span className="mosaic-company-inline-name">Protector</span>
+              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
+                <span className="mosaic-company-inline-hover-logo-wrap">
+                  <img
+                    src="/logos/protector.svg"
+                    alt=""
+                    loading="eager"
+                    decoding="async"
+                    className="mosaic-company-inline-hover-logo"
+                  />
                 </span>
               </span>
-            )}
-          </div>
-          <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-            {isCopySuccess ? "Email copied to clipboard" : ""}
-          </span>
-
-          <p className="mosaic-fee" id="contact">
-            My contact fee is <span>$1,000,000</span> is free!
+            </a>
+            , redesigned developer tools with{" "}
+            <a href="https://www.twilio.com" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
+              <span className="mosaic-company-inline-name">Twilio</span>
+              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
+                <span className="mosaic-company-inline-hover-logo-wrap">
+                  <img src="/logos/twilio.svg" alt="" loading="eager" decoding="async" className="mosaic-company-inline-hover-logo" />
+                </span>
+              </span>
+            </a>
+            , built financial tools with{" "}
+            <a href="https://www.moodys.com" target="_blank" rel="noreferrer" className="mosaic-profile-link">
+              Moody&apos;s
+            </a>
+            , and helped push the web3 industry forward at{" "}
+            <a href="https://matcha.xyz" target="_blank" rel="noreferrer" className="mosaic-profile-link">
+              Matcha.xyz
+            </a>
+            .
+          </p>
+          <p className="mosaic-profile-summary mosaic-profile-summary-followup">
+            I&apos;ve also been fortunate to work with teams at <WorkedWithCompaniesInline />.
+          </p>
+          <p className="mosaic-profile-summary mosaic-profile-summary-followup">
+            I&apos;ve worked in product design since 2015 and now freelance on focused, high-impact projects.
+          </p>
+          <p className="mosaic-profile-summary mosaic-profile-summary-followup">
+            You can reach me at{" "}
+            <a href={studioLinkHref ?? links.x} target="_blank" rel="noreferrer" className="mosaic-profile-link">
+              @rafaelmedian
+            </a>{" "}
+            or{" "}
+            <a href={`mailto:${links.email}`} className="mosaic-profile-link">
+              {links.email}
+            </a>
           </p>
         </div>
       </header>
 
-      <div className="mosaic-board">
-        <article id="featured" className="mosaic-tile mosaic-feature-card">
-          <div className="mosaic-note-card">
-            <p className="mosaic-note-date">Nov 23</p>
-            <h2>LLMs for house plants?</h2>
-            <p>
-              It&apos;s been five incredibly turbulent days at the leading AI tech company, with the exit and then return of CEO...
-            </p>
-            {featureReadMoreHref ? (
-              <a href={featureReadMoreHref} target="_blank" rel="noreferrer" className="mosaic-note-link">
-                Read more
-              </a>
-            ) : null}
-          </div>
-        </article>
+      {showProjects ? (
+        <>
+          <div className="mosaic-board">
+            <article id="featured" className="mosaic-tile mosaic-feature-card">
+              <div className="mosaic-note-card">
+                <p className="mosaic-note-date">Nov 23</p>
+                <h2>LLMs for house plants?</h2>
+                <p>
+                  It&apos;s been five incredibly turbulent days at the leading AI tech company, with the exit and then return of CEO...
+                </p>
+                {featureReadMoreHref ? (
+                  <a href={featureReadMoreHref} target="_blank" rel="noreferrer" className="mosaic-note-link">
+                    Read more
+                  </a>
+                ) : null}
+              </div>
+            </article>
 
-        <article className="mosaic-tile mosaic-empty-card" aria-label="Open space panel">
-          <span className="mosaic-doodle mosaic-doodle-top">o_o</span>
-          <span className="mosaic-doodle mosaic-doodle-bottom">\\^_^/</span>
-        </article>
+            <article className="mosaic-tile mosaic-empty-card" aria-label="Open space panel">
+              <span className="mosaic-doodle mosaic-doodle-top">o_o</span>
+              <span className="mosaic-doodle mosaic-doodle-bottom">\\^_^/</span>
+            </article>
 
-        <article className="mosaic-tile mosaic-phone-card" aria-label={phonePreviewLabel}>
-          <div className="mosaic-phone-shell">
-            {featuredPhone ? (
-              isVideoPreviewSource(featuredPhone.image) ? (
-                <video
-                  src={featuredPhone.image}
-                  muted
-                  loop={!prefersReducedMotion}
-                  autoPlay={!prefersReducedMotion}
-                  playsInline
-                  preload={prefersReducedMotion ? "none" : "metadata"}
-                  controls={prefersReducedMotion}
-                  aria-label={phonePreviewLabel}
-                  className="mosaic-phone-media"
-                />
-              ) : (
-                <img src={featuredPhone.image} alt={phonePreviewLabel} loading="lazy" decoding="async" className="mosaic-phone-media" />
-              )
-            ) : (
-              <div className="mosaic-media-fallback">Preview coming soon</div>
-            )}
-          </div>
-        </article>
+            <article className="mosaic-tile mosaic-phone-card" aria-label={phonePreviewLabel}>
+              <div className="mosaic-phone-shell">
+                {featuredPhone ? (
+                  isVideoPreviewSource(featuredPhone.image) ? (
+                    <video
+                      src={featuredPhone.image}
+                      muted
+                      loop={!prefersReducedMotion}
+                      autoPlay={!prefersReducedMotion}
+                      playsInline
+                      preload={prefersReducedMotion ? "none" : "metadata"}
+                      controls={prefersReducedMotion}
+                      aria-label={phonePreviewLabel}
+                      className="mosaic-phone-media"
+                    />
+                  ) : (
+                    <img src={featuredPhone.image} alt={phonePreviewLabel} loading="lazy" decoding="async" className="mosaic-phone-media" />
+                  )
+                ) : (
+                  <div className="mosaic-media-fallback">Preview coming soon</div>
+                )}
+              </div>
+            </article>
 
-        <article className="mosaic-tile mosaic-note-panel">
-          <div className="mosaic-micro-card">
-            <h2>Blogging about plants</h2>
-            <p>I find joy and inspiration in my ever-growing collection of plants. They make my space feel like home.</p>
-          </div>
-        </article>
+            <article className="mosaic-tile mosaic-note-panel">
+              <div className="mosaic-micro-card">
+                <h2>Blogging about plants</h2>
+                <p>I find joy and inspiration in my ever-growing collection of plants. They make my space feel like home.</p>
+              </div>
+            </article>
 
-        <article className="mosaic-tile mosaic-dashboard-card" aria-label={widePreviewLabel}>
-          <div className="mosaic-wide-shell">
-            {featuredWide ? (
-              isVideoPreviewSource(featuredWide.image) ? (
-                <video
-                  src={featuredWide.image}
-                  muted
-                  loop={!prefersReducedMotion}
-                  autoPlay={!prefersReducedMotion}
-                  playsInline
-                  preload={prefersReducedMotion ? "none" : "metadata"}
-                  controls={prefersReducedMotion}
-                  aria-label={widePreviewLabel}
-                  className="mosaic-wide-media"
-                />
-              ) : (
-                <img src={featuredWide.image} alt={widePreviewLabel} loading="lazy" decoding="async" className="mosaic-wide-media" />
-              )
-            ) : (
-              <div className="mosaic-media-fallback">Project preview</div>
-            )}
-          </div>
-        </article>
+            <article className="mosaic-tile mosaic-dashboard-card" aria-label={widePreviewLabel}>
+              <div className="mosaic-wide-shell">
+                {featuredWide ? (
+                  isVideoPreviewSource(featuredWide.image) ? (
+                    <video
+                      src={featuredWide.image}
+                      muted
+                      loop={!prefersReducedMotion}
+                      autoPlay={!prefersReducedMotion}
+                      playsInline
+                      preload={prefersReducedMotion ? "none" : "metadata"}
+                      controls={prefersReducedMotion}
+                      aria-label={widePreviewLabel}
+                      className="mosaic-wide-media"
+                    />
+                  ) : (
+                    <img src={featuredWide.image} alt={widePreviewLabel} loading="lazy" decoding="async" className="mosaic-wide-media" />
+                  )
+                ) : (
+                  <div className="mosaic-media-fallback">Project preview</div>
+                )}
+              </div>
+            </article>
 
-        <article id="work" className="mosaic-work">
-          <h2 className="sr-only">Selected work</h2>
-          {featuredWorkTile ? (
-            <section className="mosaic-work-featured" aria-label="Featured work preview">
-              <button
-                type="button"
-                className="mosaic-work-card mosaic-work-card-featured"
-                onClick={() => setActiveWorkPreviewIndex(featuredWorkTile.previewIndex)}
-                aria-label={`Open ${featuredWorkTile.card.title} preview ${featuredWorkTile.previewIndex + 1} of ${workPreviewCards.length}`}
-              >
-                <span
-                  className={`mosaic-work-media-shell ${featuredWorkInsetMedia ? "mosaic-work-media-shell-inset" : ""}`}
-                >
-                  {renderWorkMedia(featuredWorkTile.card, featuredWorkInsetMedia, featuredWorkTile.card.title)}
-                </span>
-                <span className="mosaic-work-overlay mosaic-work-overlay-featured">
-                  <strong>{featuredWorkTile.card.title}</strong>
-                </span>
-              </button>
-            </section>
-          ) : null}
-          <ul className="mosaic-work-grid" aria-label="Selected work previews">
-            {gridWorkTiles.map((tile) => {
-              const sizeClass = `mosaic-work-item mosaic-work-item-${tile.span}`
-
-              if (tile.kind === "bridge") {
-                return (
-                  <li key={tile.id} className={sizeClass}>
-                    <div
-                      className="mosaic-work-bridge mosaic-work-bridge-signature"
-                      aria-hidden="false"
-                    >
-                      <div className="mosaic-work-signature-stack" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                      <p>{profile.name} - Software Designer and Engineer</p>
-                    </div>
-                  </li>
-                )
-              }
-
-              const insetMedia = shouldInsetWorkMedia(tile.card)
-
-              return (
-                <li key={`${tile.card.id}-${tile.previewIndex}`} className={sizeClass}>
+            <article id="work" className="mosaic-work">
+              <h2 className="sr-only">Selected work</h2>
+              {featuredWorkTile ? (
+                <section className="mosaic-work-featured" aria-label="Featured work preview">
                   <button
                     type="button"
-                    className="mosaic-work-card"
-                    onClick={() => setActiveWorkPreviewIndex(tile.previewIndex)}
-                    aria-label={`Open ${tile.card.title} preview ${tile.previewIndex + 1} of ${workPreviewCards.length}`}
+                    className="mosaic-work-card mosaic-work-card-featured"
+                    onClick={() => setActiveWorkPreviewIndex(featuredWorkTile.previewIndex)}
+                    aria-label={`Open ${featuredWorkTile.card.title} preview ${featuredWorkTile.previewIndex + 1} of ${workPreviewCards.length}`}
                   >
-                    <span className={`mosaic-work-media-shell ${insetMedia ? "mosaic-work-media-shell-inset" : ""}`}>
-                      {renderWorkMedia(tile.card, insetMedia, tile.card.title)}
+                    <span
+                      className={`mosaic-work-media-shell ${featuredWorkInsetMedia ? "mosaic-work-media-shell-inset" : ""}`}
+                    >
+                      {renderWorkMedia(featuredWorkTile.card, featuredWorkInsetMedia, featuredWorkTile.card.title)}
                     </span>
-                    <span className="mosaic-work-overlay">
-                      <strong>{tile.card.title}</strong>
+                    <span className="mosaic-work-overlay mosaic-work-overlay-featured">
+                      <strong>{featuredWorkTile.card.title}</strong>
                     </span>
                   </button>
-                </li>
-              )
-            })}
-          </ul>
-        </article>
-      </div>
+                </section>
+              ) : null}
+              <ul className="mosaic-work-grid" aria-label="Selected work previews">
+                {gridWorkTiles.map((tile) => {
+                  const sizeClass = `mosaic-work-item mosaic-work-item-${tile.span}`
 
-      <nav aria-label="Primary" className="mosaic-floating-nav">
-        <ul>
-          {floatingNav.map((item) => (
-            <li key={`${item.label}-${item.href}`}>
-              <a href={item.href} aria-current={item.isActive ? "page" : undefined}>
-                {item.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+                  if (tile.kind === "bridge") {
+                    return (
+                      <li key={tile.id} className={sizeClass}>
+                        <div
+                          className="mosaic-work-bridge mosaic-work-bridge-signature"
+                          aria-hidden="false"
+                        >
+                          <div className="mosaic-work-signature-stack" aria-hidden="true">
+                            <span />
+                            <span />
+                            <span />
+                          </div>
+                          <p>{profile.name} - Software Designer and Engineer</p>
+                        </div>
+                      </li>
+                    )
+                  }
 
-      <PreviewGalleryDialog
-        cards={workPreviewCards}
-        open={activeWorkPreviewIndex != null && activeWorkPreviewIndex < workPreviewCards.length}
-        selectedIndex={activeWorkPreviewIndex ?? 0}
-        prefersReducedMotion={prefersReducedMotion}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            setActiveWorkPreviewIndex(null)
-          }
-        }}
-        onSelectedIndexChange={setActiveWorkPreviewIndex}
-      />
+                  const insetMedia = shouldInsetWorkMedia(tile.card)
+
+                  return (
+                    <li key={`${tile.card.id}-${tile.previewIndex}`} className={sizeClass}>
+                      <button
+                        type="button"
+                        className="mosaic-work-card"
+                        onClick={() => setActiveWorkPreviewIndex(tile.previewIndex)}
+                        aria-label={`Open ${tile.card.title} preview ${tile.previewIndex + 1} of ${workPreviewCards.length}`}
+                      >
+                        <span className={`mosaic-work-media-shell ${insetMedia ? "mosaic-work-media-shell-inset" : ""}`}>
+                          {renderWorkMedia(tile.card, insetMedia, tile.card.title)}
+                        </span>
+                        <span className="mosaic-work-overlay">
+                          <strong>{tile.card.title}</strong>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </article>
+          </div>
+
+          <PreviewGalleryDialog
+            cards={workPreviewCards}
+            open={activeWorkPreviewIndex != null && activeWorkPreviewIndex < workPreviewCards.length}
+            selectedIndex={activeWorkPreviewIndex ?? 0}
+            prefersReducedMotion={prefersReducedMotion}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) {
+                setActiveWorkPreviewIndex(null)
+              }
+            }}
+            onSelectedIndexChange={setActiveWorkPreviewIndex}
+          />
+        </>
+      ) : null}
     </section>
   )
 }
