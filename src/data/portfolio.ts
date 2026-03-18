@@ -31,7 +31,7 @@ export type SiteLinks = {
 
 export const siteProfile = {
   name: "Rafael Medina",
-  title: "Product Designer, Freelance",
+  title: "Freelance Product Designer",
   intro:
     "Hey I'm Rafael, a product designer and maker based in Miami. For over 10 years, I've helped teams design products that balance clarity, visual craft, and practical outcomes.",
   previouslyLabel: "Previously",

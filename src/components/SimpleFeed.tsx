@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import type { PortfolioCard, SiteLinks } from "../data/portfolio"
+import { HoverLogoLink } from "./HoverLogoLink"
+import { HoverVideoLink } from "./HoverVideoLink"
 import { PreviewGalleryDialog } from "./PreviewGalleryDialog"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
@@ -68,7 +70,7 @@ function shouldInsetWorkMedia(card: PortfolioCard) {
 }
 
 function formatPuntaCanaLocalTime(date = new Date()) {
-  return puntaCanaTimeFormatter.format(date).replace(/\s([AP]M)\s/, (_, meridiem: string) => `${meridiem.toLowerCase()} `)
+  return puntaCanaTimeFormatter.format(date)
 }
 
 function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion: boolean }) {
@@ -265,101 +267,95 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
             <img src={profile.photo} alt={`${profile.name} portrait`} className="mosaic-avatar" loading="eager" decoding="async" />
             <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
-              <p className="mosaic-profile-subtitle">{profile.title}</p>
+              <p className="mosaic-profile-subtitle">
+                {profile.title}
+                <span className="mosaic-profile-status-separator" aria-hidden="true">
+                  ·
+                </span>
+                <span className="mosaic-profile-status-tag" aria-label="Currently available">
+                  Available
+                </span>
+              </p>
               <p className="mosaic-profile-location">
-                Punta Cana · Local time: <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+                Punta Cana · <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
               </p>
             </div>
           </div>
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
-            Born in Santo Domingo, I went to college in Washington, DC and am now in the process of moving to NYC.
+            Born in Santo Domingo, educated in Washington, DC, and now moving to NYC.
+          </p>
+          <p className="mosaic-profile-summary mosaic-profile-summary-followup mosaic-profile-summary-companies">
+            Over the past decade, I&apos;ve designed products with teams at <WorkedWithCompaniesInline />.
           </p>
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
-            In college, I co-founded{" "}
-            <a
+            My work started in college, where I co-founded{" "}
+            <HoverVideoLink
               href="https://www.youtube.com/watch?v=IAHmu0lhcIs&t=1s"
-              target="_blank"
-              rel="noreferrer"
               className="mosaic-profile-link"
+              embedUrl="https://www.youtube-nocookie.com/embed/IAHmu0lhcIs?autoplay=1&mute=1&controls=0&loop=1&playlist=IAHmu0lhcIs&modestbranding=1&rel=0&playsinline=1"
+              previewTitle="Turtle project preview"
             >
               Turtle
-            </a>
-            , a tool for college students to meet other students, designed a tool for teachers to find trainers at{" "}
-            <a href="https://www.google.com" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
-              <span className="mosaic-company-inline-name">Google</span>
-              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
-                <span className="mosaic-company-inline-hover-logo-wrap">
-                  <img
-                    src="/logos/Google_logo.svg"
-                    alt=""
-                    loading="eager"
-                    decoding="async"
-                    className="mosaic-company-inline-hover-logo"
-                  />
-                </span>
-              </span>
-            </a>
-            , helped design{" "}
-            <a href="https://patrol.so" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
-              <span className="mosaic-company-inline-name">Patrol</span>
-              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
-                <span className="mosaic-company-inline-hover-logo-wrap">
-                  <img src="/logos/patrol.svg" alt="" loading="eager" decoding="async" className="mosaic-company-inline-hover-logo" />
-                </span>
-              </span>
-            </a>
-            /
-            <a href="https://protector.so" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
-              <span className="mosaic-company-inline-name">Protector</span>
-              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
-                <span className="mosaic-company-inline-hover-logo-wrap">
-                  <img
-                    src="/logos/protector.svg"
-                    alt=""
-                    loading="eager"
-                    decoding="async"
-                    className="mosaic-company-inline-hover-logo"
-                  />
-                </span>
-              </span>
-            </a>
-            , redesigned developer tools with{" "}
-            <a href="https://www.twilio.com" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
-              <span className="mosaic-company-inline-name">Twilio</span>
-              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
-                <span className="mosaic-company-inline-hover-logo-wrap">
-                  <img src="/logos/twilio.svg" alt="" loading="eager" decoding="async" className="mosaic-company-inline-hover-logo" />
-                </span>
-              </span>
-            </a>
-            , built financial tools with{" "}
-            <a href="https://www.moodys.com" target="_blank" rel="noreferrer" className="mosaic-profile-link">
+            </HoverVideoLink>
+            , a tool for college students to meet each other. Since then, I&apos;ve designed products like{" "}
+            <span className="mosaic-inline-nowrap">
+              <HoverLogoLink
+                href="https://patrol.so"
+                logoUrls={["/logos/patrol.svg"]}
+                className="mosaic-profile-link mosaic-profile-link-with-logo"
+              >
+                Patrol
+              </HoverLogoLink>
+              /
+              <HoverLogoLink
+                href="https://protector.so"
+                logoUrls={["/logos/protector.svg"]}
+                className="mosaic-profile-link mosaic-profile-link-with-logo"
+              >
+                Protector
+              </HoverLogoLink>
+            </span>
+            , rethought developer tools at{" "}
+            <HoverLogoLink
+              href="https://www.twilio.com"
+              logoUrls={["/logos/twilio.svg"]}
+              className="mosaic-profile-link mosaic-profile-link-with-logo"
+            >
+              Twilio
+            </HoverLogoLink>
+            , built financial products at{" "}
+            <HoverLogoLink
+              href="https://www.moodys.com"
+              logoUrls={["/logos/moodys.png"]}
+              className="mosaic-profile-link mosaic-profile-link-with-logo"
+            >
               Moody&apos;s
-            </a>
-            , and helped push the web3 industry forward at{" "}
-            <a href="https://matcha.xyz" target="_blank" rel="noreferrer" className="mosaic-profile-link mosaic-profile-link-with-logo">
-              <span className="mosaic-company-inline-name">Matcha.xyz</span>
-              <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
-                <span className="mosaic-company-inline-hover-logo-wrap">
-                  <img src="/logos/matcha.svg" alt="" loading="eager" decoding="async" className="mosaic-company-inline-hover-logo" />
-                </span>
-              </span>
-            </a>
-            .
+            </HoverLogoLink>
+            , and helped shape{" "}
+            <HoverLogoLink
+              href="https://matcha.xyz"
+              logoUrls={["/logos/matcha.svg"]}
+              className="mosaic-profile-link mosaic-profile-link-with-logo"
+            >
+              Matcha.xyz
+            </HoverLogoLink>
+            {" "}for four and a half years.
           </p>
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
-            I&apos;ve also been fortunate to work with teams at <WorkedWithCompaniesInline />.
-          </p>
-          <p className="mosaic-profile-summary mosaic-profile-summary-followup">
-            I&apos;ve worked in product design since 2015 and now freelance on focused, high-impact projects.
+            Today I freelance on focused, high-impact projects.
           </p>
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
             You can reach me at{" "}
-            <a href={studioLinkHref ?? links.x} target="_blank" rel="noreferrer" className="mosaic-profile-link">
+            <a
+              href={studioLinkHref ?? links.x}
+              target="_blank"
+              rel="noreferrer"
+              className="mosaic-profile-link mosaic-profile-link-x-cursor"
+            >
               @rafaelmedian
             </a>{" "}
             or{" "}
-            <a href={`mailto:${links.email}`} className="mosaic-profile-link">
+            <a href={`mailto:${links.email}`} className="mosaic-profile-link mosaic-profile-link-email-cursor">
               {links.email}
             </a>
           </p>

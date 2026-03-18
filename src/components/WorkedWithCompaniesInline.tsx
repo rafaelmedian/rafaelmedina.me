@@ -1,3 +1,5 @@
+import { HoverLogoLink } from "./HoverLogoLink"
+
 type WorkedWithCompany = {
   name: string
   logoUrls: string[]
@@ -21,6 +23,11 @@ export const workedWithCompanies: WorkedWithCompany[] = [
     href: "https://www.twilio.com",
   },
   {
+    name: "Google",
+    logoUrls: ["/logos/Google_logo.svg"],
+    href: "https://www.google.com",
+  },
+  {
     name: "Onit",
     logoUrls: ["/logos/onit.png"],
     href: "https://www.onit.com",
@@ -37,23 +44,15 @@ export function WorkedWithCompaniesInline() {
     <span className="mosaic-company-inline-list" aria-label="Companies I have worked with">
       {workedWithCompanies.map((company, index) => (
         <span key={company.name} className="mosaic-company-inline-item">
-          <a
+          <HoverLogoLink
             href={company.href}
-            target="_blank"
-            rel="noreferrer"
+            logoUrls={company.logoUrls}
             className="mosaic-company-inline-link"
-            aria-label={`${company.name} website`}
+            ariaLabel={`${company.name} website`}
             title={company.name}
           >
-            <span className="mosaic-company-inline-name">{company.name}</span>
-            <span className="mosaic-company-inline-hover-logos" aria-hidden="true">
-              {company.logoUrls.map((logoUrl) => (
-                <span key={`${company.name}-${logoUrl}`} className="mosaic-company-inline-hover-logo-wrap">
-                  <img src={logoUrl} alt="" loading="eager" decoding="async" className="mosaic-company-inline-hover-logo" />
-                </span>
-              ))}
-            </span>
-          </a>
+            {company.name}
+          </HoverLogoLink>
           {index < workedWithCompanies.length - 2 ? ", " : index === workedWithCompanies.length - 2 ? ", and " : ""}
         </span>
       ))}
