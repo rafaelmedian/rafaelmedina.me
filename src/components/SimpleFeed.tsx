@@ -284,9 +284,6 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
             Born in Santo Domingo, educated in Washington, DC, and now moving to NYC.
           </p>
-          <p className="mosaic-profile-summary mosaic-profile-summary-followup mosaic-profile-summary-companies">
-            Over the past decade, I&apos;ve designed products with teams at <WorkedWithCompaniesInline />.
-          </p>
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
             My work started in college, where I co-founded{" "}
             <HoverVideoLink
@@ -340,6 +337,9 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               Matcha.xyz
             </HoverLogoLink>
             {" "}for four and a half years.
+          </p>
+          <p className="mosaic-profile-summary mosaic-profile-summary-followup mosaic-profile-summary-companies">
+            Over the past decade, I&apos;ve designed products with teams at <WorkedWithCompaniesInline />.
           </p>
           <p className="mosaic-profile-summary mosaic-profile-summary-followup">
             Today I freelance on focused, high-impact projects.
