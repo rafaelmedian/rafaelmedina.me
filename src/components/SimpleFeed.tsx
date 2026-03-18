@@ -350,12 +350,12 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               href={studioLinkHref ?? links.x}
               target="_blank"
               rel="noreferrer"
-              className="mosaic-profile-link mosaic-profile-link-x-cursor"
+              className="mosaic-profile-link"
             >
               @rafaelmedian
             </a>{" "}
             or{" "}
-            <a href={`mailto:${links.email}`} className="mosaic-profile-link mosaic-profile-link-email-cursor">
+            <a href={`mailto:${links.email}`} className="mosaic-profile-link">
               {links.email}
             </a>
           </p>
