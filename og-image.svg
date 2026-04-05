@@ -1,15 +1,11 @@
-<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="630" fill="#F5F5F4"/>
-  <text
-    x="116"
-    y="328"
-    fill="#171717"
-    font-size="108"
-    font-family="Inter, Arial, sans-serif"
-    font-weight="700"
-    letter-spacing="-0.06em"
-    text-anchor="start"
-  >
-    Rafael Medina
-  </text>
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1200" fill="#FFFFFF" />
+  <image
+    x="240"
+    y="240"
+    width="720"
+    height="720"
+    href="/profile.jpeg"
+    preserveAspectRatio="xMidYMid slice"
+  />
 </svg>
