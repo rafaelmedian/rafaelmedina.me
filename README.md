@@ -81,3 +81,18 @@ The contact map uses Mapbox when a token is available.
 3. Restart the Vite dev server.
 
 If no token is set (or Mapbox fails), the UI falls back to an OpenStreetMap embed.
+
+## Analytics setup
+
+Google Analytics 4 is wired in as an optional client-side integration.
+
+1. Set `VITE_GA_MEASUREMENT_ID` in `.env` or your GitHub Pages build environment.
+2. Use your GA4 web stream measurement ID, which looks like `G-XXXXXXXXXX`.
+3. Run a production build and deploy as usual.
+
+When the measurement ID is present, the site records:
+
+- initial page views
+- browser history/hash page changes
+- outbound, `mailto:`, and download link clicks
+- work preview opens from the portfolio grid

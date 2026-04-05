@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import type { PortfolioCard, SiteLinks } from "../data/portfolio"
+import { trackEvent } from "../lib/analytics"
 import { HoverLogoLink } from "./HoverLogoLink"
 import { HoverVideoLink } from "./HoverVideoLink"
 import { PreviewGalleryDialog } from "./PreviewGalleryDialog"
@@ -71,6 +72,16 @@ function shouldInsetWorkMedia(card: PortfolioCard) {
 
 function formatPuntaCanaLocalTime(date = new Date()) {
   return puntaCanaTimeFormatter.format(date)
+}
+
+function openPreview(card: PortfolioCard, previewIndex: number, placement: "featured" | "grid", setActiveWorkPreviewIndex: (value: number) => void) {
+  trackEvent("work_preview_open", {
+    preview_id: card.id,
+    preview_title: card.title,
+    preview_index: previewIndex + 1,
+    preview_placement: placement,
+  })
+  setActiveWorkPreviewIndex(previewIndex)
 }
 
 function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion: boolean }) {
@@ -447,7 +458,9 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                   <button
                     type="button"
                     className="mosaic-work-card mosaic-work-card-featured"
-                    onClick={() => setActiveWorkPreviewIndex(featuredWorkTile.previewIndex)}
+                    onClick={() =>
+                      openPreview(featuredWorkTile.card, featuredWorkTile.previewIndex, "featured", setActiveWorkPreviewIndex)
+                    }
                     aria-label={`Open ${featuredWorkTile.card.title} preview ${featuredWorkTile.previewIndex + 1} of ${workPreviewCards.length}`}
                   >
                     <span
@@ -490,7 +503,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                       <button
                         type="button"
                         className="mosaic-work-card"
-                        onClick={() => setActiveWorkPreviewIndex(tile.previewIndex)}
+                        onClick={() => openPreview(tile.card, tile.previewIndex, "grid", setActiveWorkPreviewIndex)}
                         aria-label={`Open ${tile.card.title} preview ${tile.previewIndex + 1} of ${workPreviewCards.length}`}
                       >
                         <span className={`mosaic-work-media-shell ${insetMedia ? "mosaic-work-media-shell-inset" : ""}`}>
