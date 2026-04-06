@@ -96,3 +96,17 @@ When the measurement ID is present, the site records:
 - browser history/hash page changes
 - outbound, `mailto:`, and download link clicks
 - work preview opens from the portfolio grid
+
+## Vercel Analytics setup
+
+Vercel Web Analytics is also wired into the app, but it is disabled by default.
+
+1. Set `VITE_ENABLE_VERCEL_ANALYTICS=true` when you are deploying through Vercel, or provide a Vercel observability base path/client config if you are proxying the analytics endpoints.
+2. Enable Web Analytics for the project in Vercel.
+3. Deploy again.
+
+Notes:
+
+- On GitHub Pages, the GA4 integration above is the working analytics path unless you explicitly provide Vercel analytics endpoints.
+- Vercel automatically handles page views through its injected script.
+- Custom interaction events are also forwarded to Vercel when the integration is enabled.

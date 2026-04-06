@@ -1,8 +1,10 @@
+import { Analytics as VercelAnalytics } from "@vercel/analytics/react"
 import { Agentation } from "agentation"
 
 import { SimpleFeed } from "./components/SimpleFeed"
 import { StyleguidePage } from "./components/StyleguidePage"
 import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
+import { shouldEnableVercelAnalytics } from "./lib/analytics"
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -28,6 +30,7 @@ function App() {
           <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} showProjects={false} />
         </main>
       )}
+      {shouldEnableVercelAnalytics() ? <VercelAnalytics /> : null}
       {import.meta.env.DEV ? <Agentation /> : null}
     </div>
   )

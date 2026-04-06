@@ -1,3 +1,5 @@
+import { track as trackVercelAnalyticsEvent } from "@vercel/analytics"
+
 declare global {
   interface Window {
     dataLayer?: unknown[]
@@ -7,10 +9,25 @@ declare global {
 }
 
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID?.trim()
+const VERCEL_ANALYTICS_ENABLED = import.meta.env.VITE_ENABLE_VERCEL_ANALYTICS === "true"
+const VERCEL_ANALYTICS_BASEPATH = import.meta.env.VITE_VERCEL_OBSERVABILITY_BASEPATH?.trim()
+const VERCEL_ANALYTICS_CLIENT_CONFIG = import.meta.env.VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG?.trim()
 const GOOGLE_TAG_SRC = "https://www.googletagmanager.com/gtag/js"
 
-function isAnalyticsEnabled() {
-  return typeof window !== "undefined" && typeof document !== "undefined" && Boolean(GA_MEASUREMENT_ID)
+function isBrowserAnalyticsContext() {
+  return typeof window !== "undefined" && typeof document !== "undefined"
+}
+
+function isGoogleAnalyticsEnabled() {
+  return isBrowserAnalyticsContext() && Boolean(GA_MEASUREMENT_ID)
+}
+
+export function shouldEnableVercelAnalytics() {
+  return Boolean(VERCEL_ANALYTICS_ENABLED || VERCEL_ANALYTICS_BASEPATH || VERCEL_ANALYTICS_CLIENT_CONFIG)
+}
+
+function hasClientEventTracking() {
+  return isBrowserAnalyticsContext() && (isGoogleAnalyticsEnabled() || shouldEnableVercelAnalytics())
 }
 
 function ensureGoogleTagScript() {
@@ -51,13 +68,23 @@ function getPageViewPayload() {
   }
 }
 
-export function trackEvent(eventName: string, params: Record<string, string | number | boolean | null | undefined> = {}) {
-  if (!isAnalyticsEnabled() || !window.gtag) return
+function trackGoogleAnalyticsEvent(
+  eventName: string,
+  params: Record<string, string | number | boolean | null | undefined> = {},
+) {
+  if (!isGoogleAnalyticsEnabled() || !window.gtag) return
   window.gtag("event", eventName, params)
 }
 
+export function trackEvent(eventName: string, params: Record<string, string | number | boolean | null | undefined> = {}) {
+  trackGoogleAnalyticsEvent(eventName, params)
+
+  if (!shouldEnableVercelAnalytics()) return
+  trackVercelAnalyticsEvent(eventName, params)
+}
+
 export function trackPageView() {
-  trackEvent("page_view", getPageViewPayload())
+  trackGoogleAnalyticsEvent("page_view", getPageViewPayload())
 }
 
 function trackLinkClick(event: MouseEvent) {
@@ -95,11 +122,15 @@ function attachAnalyticsListeners() {
 }
 
 export function startAnalytics() {
-  if (!isAnalyticsEnabled() || window.__analyticsStarted) return
+  if (!hasClientEventTracking() || window.__analyticsStarted) return
 
-  ensureGoogleTagScript()
-  ensureGoogleTagClient()
+  if (isGoogleAnalyticsEnabled()) {
+    ensureGoogleTagScript()
+    ensureGoogleTagClient()
+  }
   attachAnalyticsListeners()
-  trackPageView()
+  if (isGoogleAnalyticsEnabled()) {
+    trackPageView()
+  }
   window.__analyticsStarted = true
 }
