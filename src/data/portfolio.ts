@@ -19,6 +19,8 @@ export type PortfolioCard = {
   ctaExternal: boolean
   previewAspectRatio?: number
   masonrySpan?: "sm" | "lg"
+  homePlacement?: "featured-phone" | "featured-wide" | "featured-poster" | "grid"
+  homeOrder?: number
 }
 
 export type SiteLinks = {
@@ -29,9 +31,63 @@ export type SiteLinks = {
   email: string
 }
 
+export type HomeRowItem = {
+  cardId: string
+  span?: number
+  width?: string
+  fit?: "cover" | "contain"
+  mediaMaxHeight?: string
+}
+
+export type HomeRow = {
+  id: string
+  height?: string
+  gap?: string
+  items: HomeRowItem[]
+}
+
+export const homeRows: HomeRow[] = [
+  {
+    id: "row-featured",
+    height: "clamp(300px, 32vw, 400px)",
+    items: [
+      { cardId: "preview-shot-9", span: 2 },
+      { cardId: "preview-shot-16", span: 2 },
+      { cardId: "preview-popparazi-v1", span: 1, fit: "contain", mediaMaxHeight: "84%" },
+    ],
+  },
+  {
+    id: "row-2",
+    height: "clamp(260px, 28vw, 340px)",
+    items: [
+      { cardId: "preview-shot-14", span: 1 },
+      { cardId: "preview-protector", span: 2 },
+      { cardId: "preview-shot-20", span: 1 },
+    ],
+  },
+  {
+    id: "row-3",
+    height: "clamp(240px, 26vw, 320px)",
+    items: [
+      { cardId: "preview-shot-21", span: 1 },
+      { cardId: "preview-shot-1", span: 1 },
+      { cardId: "preview-shot-15", span: 1 },
+    ],
+  },
+  {
+    id: "row-4",
+    height: "clamp(240px, 26vw, 320px)",
+    items: [
+      { cardId: "preview-shot-19", span: 1 },
+      { cardId: "preview-shot-22", span: 1 },
+      { cardId: "preview-shot-23", span: 1 },
+    ],
+  },
+]
+
 export const siteProfile = {
   name: "Rafael Medina",
-  title: "Freelance Product Designer",
+  title: "Product Designer, Freelance",
   intro:
     "Hey I'm Rafael, a product designer and maker based in Miami. For over 10 years, I've helped teams design products that balance clarity, visual craft, and practical outcomes.",
   previouslyLabel: "Previously",
@@ -54,19 +110,6 @@ export const siteLinks: SiteLinks = {
 
 export const portfolioCards: PortfolioCard[] = [
   {
-    id: "preview-shot-21",
-    kind: "preview",
-    category: "Preview",
-    title: "Shot Preview 21",
-    summary: "",
-    detail: "",
-    image: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg",
-    ctaLabel: "",
-    ctaHref: "#",
-    ctaExternal: false,
-    previewAspectRatio: 4 / 3,
-  },
-  {
     id: "preview-shot-9",
     kind: "preview",
     category: "Preview",
@@ -78,31 +121,7 @@ export const portfolioCards: PortfolioCard[] = [
     ctaHref: "#",
     ctaExternal: false,
     previewAspectRatio: 0.74,
-  },
-  {
-    id: "preview-shot-16",
-    kind: "preview",
-    category: "Preview",
-    title: "Shot Preview 16",
-    summary: "",
-    detail: "",
-    image: "/Projects/shot-small-16.webm",
-    ctaLabel: "",
-    ctaHref: "#",
-    ctaExternal: false,
-    previewAspectRatio: 1.85,
-  },
-  {
-    id: "preview-shot-1",
-    kind: "preview",
-    category: "Preview",
-    title: "Shot Preview 1",
-    summary: "",
-    detail: "",
-    image: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg",
-    ctaLabel: "",
-    ctaHref: "#",
-    ctaExternal: false,
+    homePlacement: "featured-phone",
   },
   {
     id: "preview-shot-14",
@@ -115,30 +134,7 @@ export const portfolioCards: PortfolioCard[] = [
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
-  },
-  {
-    id: "preview-shot-15",
-    kind: "preview",
-    category: "Preview",
-    title: "Shot Preview 15",
-    summary: "",
-    detail: "",
-    image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
-    ctaLabel: "",
-    ctaHref: "#",
-    ctaExternal: false,
-  },
-  {
-    id: "preview-shot-19",
-    kind: "preview",
-    category: "Preview",
-    title: "Shot Preview 19",
-    summary: "",
-    detail: "",
-    image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
-    ctaLabel: "",
-    ctaHref: "#",
-    ctaExternal: false,
+    homeOrder: 1,
   },
   {
     id: "preview-shot-20",
@@ -151,6 +147,104 @@ export const portfolioCards: PortfolioCard[] = [
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
+    homeOrder: 10,
+  },
+  {
+    id: "preview-shot-16",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 16",
+    summary: "",
+    detail: "",
+    image: "/Projects/shot-small-16.webm",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    previewAspectRatio: 0.8,
+    masonrySpan: "sm",
+    homePlacement: "featured-wide",
+  },
+  {
+    id: "preview-protector",
+    kind: "preview",
+    category: "Preview",
+    title: "Protector",
+    summary: "",
+    detail: "",
+    image: "/Projects/protector.png",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    previewAspectRatio: 1354 / 1025,
+    homeOrder: 3,
+  },
+  {
+    id: "preview-popparazi-v1",
+    kind: "preview",
+    category: "Preview",
+    title: "Popparazi V1",
+    summary: "",
+    detail: "",
+    image: "/Projects/popparazi_v1.png",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    previewAspectRatio: 0.46,
+    masonrySpan: "sm",
+    homePlacement: "featured-poster",
+  },
+  {
+    id: "preview-shot-21",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 21",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    previewAspectRatio: 4 / 3,
+    homeOrder: 8,
+  },
+  {
+    id: "preview-shot-1",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 1",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    homeOrder: 5,
+  },
+  {
+    id: "preview-shot-15",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 15",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    homeOrder: 6,
+  },
+  {
+    id: "preview-shot-19",
+    kind: "preview",
+    category: "Preview",
+    title: "Shot Preview 19",
+    summary: "",
+    detail: "",
+    image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
+    ctaLabel: "",
+    ctaHref: "#",
+    ctaExternal: false,
+    homeOrder: 4,
   },
   {
     id: "preview-shot-22",
@@ -163,6 +257,7 @@ export const portfolioCards: PortfolioCard[] = [
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
+    homeOrder: 7,
   },
   {
     id: "preview-shot-23",
@@ -175,6 +270,7 @@ export const portfolioCards: PortfolioCard[] = [
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
+    homeOrder: 9,
   },
   {
     id: "widget-music",
