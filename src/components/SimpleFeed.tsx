@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
 
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
@@ -61,6 +61,38 @@ function openPreview(card: PortfolioCard, previewIndex: number, setActiveWorkPre
   setActiveWorkPreviewIndex(previewIndex)
 }
 
+function getPaginationTotal(card: PortfolioCard) {
+  return card.pagination && card.pagination.total > 1 ? card.pagination.total : 0
+}
+
+function getPaginationImage(card: PortfolioCard, screenIndex: number) {
+  const images = card.pagination?.images ?? []
+  if (images.length === 0) return card.image
+  return images[screenIndex] ?? images[screenIndex % images.length] ?? card.image
+}
+
+function paginatePreviewCard(
+  card: PortfolioCard,
+  currentScreenIndex: number,
+  paginationTotal: number,
+  setPaginatedPreviewIndexes: Dispatch<SetStateAction<Record<string, number>>>,
+) {
+  const nextScreenIndex = (currentScreenIndex + 1) % paginationTotal
+
+  trackEvent("work_preview_paginate", {
+    preview_id: card.id,
+    preview_title: card.title,
+    preview_screen_index: nextScreenIndex + 1,
+    preview_screen_total: paginationTotal,
+    preview_placement: "grid",
+  })
+
+  setPaginatedPreviewIndexes((current) => ({
+    ...current,
+    [card.id]: ((current[card.id] ?? currentScreenIndex) + 1) % paginationTotal,
+  }))
+}
+
 function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion: boolean }) {
   const [displayedLabel, setDisplayedLabel] = useState(label)
   const [incomingLabel, setIncomingLabel] = useState<string | null>(null)
@@ -111,6 +143,7 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
 export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
+  const [paginatedPreviewIndexes, setPaginatedPreviewIndexes] = useState<Record<string, number>>({})
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() => formatPuntaCanaLocalTime())
   const workRowsRef = useRef<HTMLDivElement | null>(null)
   const workItemRefs = useRef(new Map<string, HTMLDivElement>())
@@ -145,25 +178,26 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
   const shellClassName = `mosaic-shell${showProjects ? "" : " mosaic-shell-hero-only"}`
   const heroClassName = `mosaic-hero${showProjects ? "" : " mosaic-hero-hero-only"}`
 
-  const renderRowMedia = (card: PortfolioCard) => {
-    if (isVideoPreviewSource(card.image)) {
+  const renderRowMedia = (card: PortfolioCard, source = card.image, label = card.title) => {
+    if (isVideoPreviewSource(source)) {
       return (
         <video
-          src={card.image}
+          src={source}
           muted
           loop={!prefersReducedMotion}
           autoPlay={!prefersReducedMotion}
           playsInline
           preload={prefersReducedMotion ? "none" : "metadata"}
-          aria-label={card.title}
+          aria-label={label}
           className="mosaic-row-media"
         />
       )
     }
     return (
       <img
-        src={card.image}
-        alt={card.title}
+        key={source}
+        src={source}
+        alt={label}
         loading="lazy"
         decoding="async"
         className="mosaic-row-media"
@@ -295,6 +329,15 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
                   <div key={row.id} className="mosaic-row" style={rowStyle}>
                     {row.items.map((item) => {
                       const itemKey = `${item.card.id}-${item.previewIndex}`
+                      const paginationTotal = getPaginationTotal(item.card)
+                      const isPaginatedCard = paginationTotal > 1
+                      const paginationScreenIndex = isPaginatedCard
+                        ? (paginatedPreviewIndexes[item.card.id] ?? 0) % paginationTotal
+                        : 0
+                      const mediaSource = isPaginatedCard ? getPaginationImage(item.card, paginationScreenIndex) : item.card.image
+                      const mediaLabel = isPaginatedCard
+                        ? `${item.card.title} screen ${paginationScreenIndex + 1} of ${paginationTotal}`
+                        : item.card.title
                       const itemStyle = {
                         "--row-span": item.span,
                         "--reveal-index": item.previewIndex,
@@ -316,11 +359,37 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
                         >
                           <button
                             type="button"
-                            className="mosaic-row-card"
-                            onClick={() => openPreview(item.card, item.previewIndex, setActiveWorkPreviewIndex)}
-                            aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
+                            className={`mosaic-row-card${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
+                            onClick={() => {
+                              if (isPaginatedCard) {
+                                paginatePreviewCard(
+                                  item.card,
+                                  paginationScreenIndex,
+                                  paginationTotal,
+                                  setPaginatedPreviewIndexes,
+                                )
+                                return
+                              }
+
+                              openPreview(item.card, item.previewIndex, setActiveWorkPreviewIndex)
+                            }}
+                            aria-label={
+                              isPaginatedCard
+                                ? `Show next ${item.card.title} screen, currently screen ${paginationScreenIndex + 1} of ${paginationTotal}`
+                                : `Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`
+                            }
                           >
-                            {renderRowMedia(item.card)}
+                            {renderRowMedia(item.card, mediaSource, mediaLabel)}
+                            {isPaginatedCard ? (
+                              <span className="mosaic-row-card-pagination" aria-hidden="true">
+                                {Array.from({ length: paginationTotal }).map((_, dotIndex) => (
+                                  <span
+                                    key={`${item.card.id}-pagination-${dotIndex}`}
+                                    className={`mosaic-row-card-pagination-dot${dotIndex === paginationScreenIndex ? " is-active" : ""}`}
+                                  />
+                                ))}
+                              </span>
+                            ) : null}
                           </button>
                         </div>
                       )

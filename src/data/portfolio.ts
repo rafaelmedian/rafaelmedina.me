@@ -21,6 +21,10 @@ export type PortfolioCard = {
   masonrySpan?: "sm" | "lg"
   homePlacement?: "featured-phone" | "featured-wide" | "featured-poster" | "grid"
   homeOrder?: number
+  pagination?: {
+    total: number
+    images: string[]
+  }
 }
 
 export type SiteLinks = {
@@ -192,6 +196,10 @@ export const portfolioCards: PortfolioCard[] = [
     previewAspectRatio: 0.46,
     masonrySpan: "sm",
     homePlacement: "featured-poster",
+    pagination: {
+      total: 4,
+      images: ["/Projects/popparazi_v1.png"],
+    },
   },
   {
     id: "preview-shot-21",
