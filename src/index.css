@@ -1584,6 +1584,7 @@ img {
   display: flex;
   gap: var(--row-gap);
   align-items: stretch;
+  height: var(--row-height, 320px);
   min-height: var(--row-height, 320px);
 }
 
@@ -1698,11 +1699,13 @@ img {
 @media (max-width: 699.98px) {
   .mosaic-row {
     flex-direction: column;
+    height: auto;
     min-height: 0;
   }
 
   .mosaic-row-item {
     flex: 1 1 auto;
+    height: var(--row-height, 240px);
     min-height: var(--row-height, 240px);
   }
 }

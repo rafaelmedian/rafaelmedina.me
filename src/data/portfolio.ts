@@ -50,10 +50,12 @@ export type HomeRow = {
   items: HomeRowItem[]
 }
 
+const homeTileRowHeight = "clamp(300px, 32vw, 400px)"
+
 export const homeRows: HomeRow[] = [
   {
     id: "row-featured",
-    height: "clamp(300px, 32vw, 400px)",
+    height: homeTileRowHeight,
     items: [
       { cardId: "preview-shot-9", span: 2 },
       { cardId: "preview-shot-16", span: 2 },
@@ -62,7 +64,7 @@ export const homeRows: HomeRow[] = [
   },
   {
     id: "row-2",
-    height: "clamp(260px, 28vw, 340px)",
+    height: homeTileRowHeight,
     items: [
       { cardId: "preview-shot-14", span: 1 },
       { cardId: "preview-protector", span: 2 },
@@ -71,7 +73,7 @@ export const homeRows: HomeRow[] = [
   },
   {
     id: "row-3",
-    height: "clamp(240px, 26vw, 320px)",
+    height: homeTileRowHeight,
     items: [
       { cardId: "preview-shot-21", span: 1 },
       { cardId: "preview-shot-1", span: 1 },
@@ -80,7 +82,7 @@ export const homeRows: HomeRow[] = [
   },
   {
     id: "row-4",
-    height: "clamp(240px, 26vw, 320px)",
+    height: homeTileRowHeight,
     items: [
       { cardId: "preview-shot-19", span: 1 },
       { cardId: "preview-shot-22", span: 1 },
@@ -117,7 +119,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-9",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 9",
+    title: "Matcha - Multiwallet flow",
     summary: "",
     detail: "",
     image: "/Projects/shot-small-9.webm",
@@ -131,7 +133,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-14",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 14",
+    title: "Matcha - Mobile Screens",
     summary: "",
     detail: "",
     image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
@@ -144,7 +146,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-20",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 20",
+    title: "Matcha - Security Audit",
     summary: "",
     detail: "",
     image: "/Projects/shot-small-20.webm",
@@ -157,7 +159,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-16",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 16",
+    title: "Matcha - Homepage",
     summary: "",
     detail: "",
     image: "/Projects/shot-small-16.webm",
@@ -205,7 +207,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-21",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 21",
+    title: "Matcha - Token Page",
     summary: "",
     detail: "",
     image: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg",
@@ -219,7 +221,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-1",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 1",
+    title: "Matcha Trade Page",
     summary: "",
     detail: "",
     image: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg",
@@ -232,7 +234,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-15",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 15",
+    title: "Matcha - Mobile navigation",
     summary: "",
     detail: "",
     image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
