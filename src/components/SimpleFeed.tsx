@@ -142,7 +142,7 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
 
 function SocialCorner({ links }: { links: SiteLinks }) {
   const socialLinks = [
-    { label: "X", href: links.x, external: true },
+    { label: "X.com", href: links.x, external: true },
     { label: "Telegram", href: links.telegram, external: true },
     { label: "Email", href: `mailto:${links.email}`, external: false },
   ]
