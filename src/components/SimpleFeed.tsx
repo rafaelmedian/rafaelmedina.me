@@ -177,6 +177,9 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [paginatedPreviewIndexes, setPaginatedPreviewIndexes] = useState<Record<string, number>>({})
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() => formatPuntaCanaLocalTime())
+  const [loadedSources, setLoadedSources] = useState<Set<string>>(() => new Set())
+  const markLoaded = (src: string) =>
+    setLoadedSources((prev) => (prev.has(src) ? prev : new Set(prev).add(src)))
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -212,7 +215,13 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const shellClassName = `mosaic-shell${showProjects ? "" : " mosaic-shell-hero-only"}`
   const heroClassName = `mosaic-hero${showProjects ? "" : " mosaic-hero-hero-only"}`
 
-  const renderRowMedia = (card: PortfolioCard, source = card.image, label = card.title) => {
+  const renderRowMedia = (
+    card: PortfolioCard,
+    source = card.image,
+    label = card.title,
+    eager = false,
+  ) => {
+    const dataLoaded = loadedSources.has(source) ? "true" : "false"
     if (isVideoPreviewSource(source)) {
       return (
         <video
@@ -224,6 +233,8 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           preload={prefersReducedMotion ? "none" : "metadata"}
           aria-label={label}
           className="mosaic-row-media"
+          data-loaded={dataLoaded}
+          onLoadedData={() => markLoaded(source)}
         />
       )
     }
@@ -232,9 +243,17 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
         key={source}
         src={source}
         alt={label}
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
         decoding="async"
+        fetchPriority={eager ? "high" : "auto"}
         className="mosaic-row-media"
+        data-loaded={dataLoaded}
+        onLoad={(event) => {
+          if (event.currentTarget.naturalWidth > 0) markLoaded(source)
+        }}
+        ref={(el) => {
+          if (el && el.complete && el.naturalWidth > 0) markLoaded(source)
+        }}
       />
     )
   }
@@ -311,11 +330,12 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           <article id="work" className="mosaic-work">
             <h2 className="sr-only">Selected work</h2>
             <div className="mosaic-rows" aria-label="Selected work previews">
-              {rowsRender.map((row) => {
+              {rowsRender.map((row, rowIndex) => {
                 const rowStyle = {
                   ...(row.height ? { "--row-height": row.height } : {}),
                   ...(row.gap ? { "--row-gap": row.gap } : {}),
                 } as CSSProperties
+                const eagerRow = rowIndex === 0
                 return (
                   <div key={row.id} className="mosaic-row" style={rowStyle}>
                     {row.items.map((item) => {
@@ -362,7 +382,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                                 : `Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`
                             }
                           >
-                            {renderRowMedia(item.card, mediaSource, mediaLabel)}
+                            {renderRowMedia(item.card, mediaSource, mediaLabel, eagerRow)}
                             <span className="mosaic-row-card-title" aria-hidden="true">
                               {item.card.title}
                             </span>

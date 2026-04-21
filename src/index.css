@@ -1916,7 +1916,7 @@ img {
 }
 
 .mosaic-row-card-paginated .mosaic-row-media {
-  transition: opacity 180ms ease;
+  transition: opacity 180ms ease, filter 180ms ease;
 }
 
 .mosaic-row-card-pagination {
@@ -1952,6 +1952,15 @@ img {
   height: 100%;
   display: block;
   object-fit: cover;
+  opacity: 0;
+  filter: blur(14px);
+  transition: opacity 360ms ease-out, filter 360ms ease-out;
+  will-change: opacity, filter;
+}
+
+.mosaic-row-media[data-loaded="true"] {
+  opacity: 1;
+  filter: blur(0);
 }
 
 .mosaic-row-card-preview-protector .mosaic-row-media {
@@ -2658,6 +2667,12 @@ img {
   .mosaic-row-card-title,
   .canvas-preview-title,
   .mosaic-row-card-pagination-dot {
+    transition: none;
+  }
+
+  .mosaic-row-media {
+    opacity: 1;
+    filter: none;
     transition: none;
   }
 
