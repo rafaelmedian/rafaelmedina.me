@@ -18,6 +18,7 @@ export type PortfolioCard = {
   ctaHref: string
   ctaExternal: boolean
   previewAspectRatio?: number
+  previewMediaPaddingBlock?: string
   masonrySpan?: "sm" | "lg"
   homePlacement?: "featured-phone" | "featured-wide" | "featured-poster" | "grid"
   homeOrder?: number
@@ -30,6 +31,7 @@ export type PortfolioCard = {
 export type SiteLinks = {
   dribbble: string
   x: string
+  telegram: string
   github: string
   linkedin: string
   email: string
@@ -109,6 +111,7 @@ export const siteProfile = {
 export const siteLinks: SiteLinks = {
   dribbble: "https://dribbble.com/rafaelmedina",
   x: "https://x.com/rafaelmedian",
+  telegram: "https://t.me/rafaelmedian",
   github: "https://github.com/rafaelmedina",
   linkedin: "https://www.linkedin.com/in/rafaelmedina",
   email: "hey@rafaelmedina.me",
@@ -196,12 +199,9 @@ export const portfolioCards: PortfolioCard[] = [
     ctaHref: "#",
     ctaExternal: false,
     previewAspectRatio: 0.46,
+    previewMediaPaddingBlock: "clamp(0.7rem, 1.6vw, 1.4rem)",
     masonrySpan: "sm",
     homePlacement: "featured-poster",
-    pagination: {
-      total: 4,
-      images: ["/Projects/popparazi_v1.png"],
-    },
   },
   {
     id: "preview-shot-21",
@@ -247,7 +247,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-19",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 19",
+    title: "Matcha Trade module",
     summary: "",
     detail: "",
     image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
@@ -260,7 +260,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-22",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 22",
+    title: "Matcha Dark mode",
     summary: "",
     detail: "",
     image: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg",
@@ -273,7 +273,7 @@ export const portfolioCards: PortfolioCard[] = [
     id: "preview-shot-23",
     kind: "preview",
     category: "Preview",
-    title: "Shot Preview 23",
+    title: "Matcha Pro",
     summary: "",
     detail: "",
     image: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg",

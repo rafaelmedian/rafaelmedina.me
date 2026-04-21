@@ -1,4 +1,5 @@
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react"
+import { SoundProvider } from "@web-kits/audio/react"
 import { Agentation } from "agentation"
 
 import { SimpleFeed } from "./components/SimpleFeed"
@@ -16,23 +17,25 @@ function App() {
   const isStyleguidePage = currentPath === "/styleguide"
 
   return (
-    <div
-      data-theme="light"
-      className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]"
-    >
-      <a href="#main-content" className="skip-link">
-        Skip to content
-      </a>
-      {isStyleguidePage ? (
-        <StyleguidePage links={siteLinks} name={siteProfile.name} />
-      ) : (
-        <main id="main-content" tabIndex={-1} className="relative z-dock">
-          <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} showProjects={false} />
-        </main>
-      )}
-      {shouldEnableVercelAnalytics() ? <VercelAnalytics /> : null}
-      {import.meta.env.DEV ? <Agentation /> : null}
-    </div>
+    <SoundProvider volume={0.6}>
+      <div
+        data-theme="light"
+        className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]"
+      >
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
+        {isStyleguidePage ? (
+          <StyleguidePage links={siteLinks} name={siteProfile.name} />
+        ) : (
+          <main id="main-content" tabIndex={-1} className="relative z-dock">
+            <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} showProjects />
+          </main>
+        )}
+        {shouldEnableVercelAnalytics() ? <VercelAnalytics /> : null}
+        {import.meta.env.DEV ? <Agentation /> : null}
+      </div>
+    </SoundProvider>
   )
 }
 

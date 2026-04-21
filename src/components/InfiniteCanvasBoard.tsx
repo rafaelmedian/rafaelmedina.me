@@ -683,6 +683,9 @@ export function InfiniteCanvasBoard({ cards, profile, links }: InfiniteCanvasBoa
                       />
                     )}
                   </div>
+                  <span className="canvas-preview-title" aria-hidden="true">
+                    {item.card.title}
+                  </span>
                 </div>
               ) : item.mode === "link" ? (
                 <div className="canvas-link-shell flex h-full w-full items-center justify-center overflow-hidden rounded-[24px] p-2 sm:p-3">

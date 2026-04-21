@@ -50,7 +50,7 @@ export function StyleguidePage({ links, name }: StyleguidePageProps) {
             <h2>Contact action row</h2>
           </div>
           <div className="styleguide-specimen styleguide-specimen-wide">
-            <ContactActionRow email={links.email} contactHref={`mailto:${links.email}`} telegramHref="https://t.me/rafaelmedian" xHref={links.x} />
+            <ContactActionRow email={links.email} contactHref={`mailto:${links.email}`} telegramHref={links.telegram} xHref={links.x} />
           </div>
           <div className="styleguide-notes-grid">
             <article className="styleguide-note-card">

@@ -1,7 +1,10 @@
 import { Dialog } from "@base-ui/react/dialog"
+import { useSound } from "@web-kits/audio/react"
+import { X } from "lucide-react"
 
 import type { PortfolioCard as PortfolioCardType } from "../data/portfolio"
 import { cn } from "../lib/cn"
+import { openSound } from "../lib/sounds"
 import { PortfolioCard, type PortfolioCardVariant } from "./PortfolioCard"
 
 export type ProjectDialogProps = {
@@ -11,6 +14,7 @@ export type ProjectDialogProps = {
 }
 
 export function ProjectDialog({ card, cardVariant, className }: ProjectDialogProps) {
+  const playOpen = useSound(openSound)
   const linkAttributes = card.ctaExternal
     ? {
         target: "_blank",
@@ -19,7 +23,11 @@ export function ProjectDialog({ card, cardVariant, className }: ProjectDialogPro
     : {}
 
   return (
-    <Dialog.Root>
+    <Dialog.Root
+      onOpenChange={(isOpen) => {
+        if (isOpen) playOpen()
+      }}
+    >
       <Dialog.Trigger
         className={cn(
           "group w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklab,var(--accent)_72%,transparent)] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent",
@@ -41,16 +49,9 @@ export function ProjectDialog({ card, cardVariant, className }: ProjectDialogPro
             <Dialog.Popup className="relative h-[80vh] max-h-[80vh] w-[80vw] max-w-[80vw] overflow-y-auto rounded-[1.25rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl outline-none transition duration-200 ease-out data-[ending-style]:translate-y-1 data-[ending-style]:opacity-0 data-[starting-style]:translate-y-1 data-[starting-style]:opacity-0 motion-reduce:transition-none sm:rounded-[1.5rem] sm:p-9">
               <Dialog.Close
                 aria-label={`Close details for ${card.title}`}
-                className="absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--control-bg)] text-[var(--muted)] transition-colors duration-150 ease-out hover:bg-[var(--control-hover)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklab,var(--accent)_72%,transparent)] motion-reduce:transition-none sm:right-6 sm:top-6"
+                className="project-dialog-close absolute right-4 top-4 inline-flex size-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--control-bg)] text-[var(--muted)] transition-[transform,background-color,color] duration-200 ease-out hover:-translate-y-1 hover:translate-x-1 hover:bg-[var(--control-hover)] hover:text-[var(--ink)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklab,var(--accent)_72%,transparent)] motion-reduce:transition-none sm:right-6 sm:top-6"
               >
-                <svg aria-hidden="true" viewBox="0 0 20 20" className="size-5">
-                  <path
-                    d="M5 5L15 15M15 5L5 15"
-                    stroke="currentColor"
-                    strokeWidth="1.9"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                <X aria-hidden="true" strokeWidth={2} className="size-5" />
               </Dialog.Close>
 
               <div className="grid gap-7 sm:grid-cols-[1.05fr_0.95fr] sm:items-start">

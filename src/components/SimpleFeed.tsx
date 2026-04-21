@@ -51,14 +51,14 @@ function formatPuntaCanaLocalTime(date = new Date()) {
   return puntaCanaTimeFormatter.format(date).replace(/\s?([AP])M(?=\s|$)/, (_, meridiem: string) => `${meridiem.toLowerCase()}m`)
 }
 
-function openPreview(card: PortfolioCard, previewIndex: number, setActiveWorkPreviewIndex: (value: number) => void) {
+function openPreview(card: PortfolioCard, previewIndex: number, setSelectedWorkPreviewIndex: (value: number) => void) {
   trackEvent("work_preview_open", {
     preview_id: card.id,
     preview_title: card.title,
     preview_index: previewIndex + 1,
     preview_placement: "grid",
   })
-  setActiveWorkPreviewIndex(previewIndex)
+  setSelectedWorkPreviewIndex(previewIndex)
 }
 
 function getPaginationTotal(card: PortfolioCard) {
@@ -140,14 +140,43 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
   )
 }
 
-export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedProps) {
+function SocialCorner({ links }: { links: SiteLinks }) {
+  const socialLinks = [
+    { label: "X", href: links.x, external: true },
+    { label: "Telegram", href: links.telegram, external: true },
+    { label: "Email", href: `mailto:${links.email}`, external: false },
+  ]
+
+  return (
+    <nav className="mosaic-social-corner" aria-label="Social links">
+      {socialLinks.map((link) => (
+        <a
+          key={link.label}
+          href={link.href}
+          target={link.external ? "_blank" : undefined}
+          rel={link.external ? "noreferrer" : undefined}
+          className="mosaic-social-link"
+          onClick={() => {
+            trackEvent("social_link_click", {
+              social_label: link.label,
+              social_href: link.href,
+              social_placement: "top_corner",
+            })
+          }}
+        >
+          {link.label}
+        </a>
+      ))}
+    </nav>
+  )
+}
+
+export function SimpleFeed({ cards, profile, links, showProjects = true }: SimpleFeedProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
+  const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [paginatedPreviewIndexes, setPaginatedPreviewIndexes] = useState<Record<string, number>>({})
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() => formatPuntaCanaLocalTime())
-  const workRowsRef = useRef<HTMLDivElement | null>(null)
-  const workItemRefs = useRef(new Map<string, HTMLDivElement>())
-
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -174,6 +203,11 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
     () => rowsRender.flatMap((row) => row.items.map((item) => item.card)),
     [rowsRender],
   )
+  const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(flatWorkCards.length - 1, 0))
+  const setSelectedWorkPreviewIndex = (index: number) => {
+    setLastWorkPreviewIndex(index)
+    setActiveWorkPreviewIndex(index)
+  }
 
   const shellClassName = `mosaic-shell${showProjects ? "" : " mosaic-shell-hero-only"}`
   const heroClassName = `mosaic-hero${showProjects ? "" : " mosaic-hero-hero-only"}`
@@ -246,62 +280,19 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
     }
   }, [])
 
-  useEffect(() => {
-    if (!showProjects || prefersReducedMotion) return
-    if (typeof window === "undefined") return
-
-    const items = Array.from(workItemRefs.current.values())
-    if (items.length === 0) return
-
-    const revealVisibleItems = () => {
-      const viewportHeight = window.innerHeight
-      let hasPendingItems = false
-
-      items.forEach((item) => {
-        if (item.classList.contains("is-visible")) return
-
-        const rect = item.getBoundingClientRect()
-        const revealThreshold = viewportHeight * 0.9
-
-        if (rect.top <= revealThreshold && rect.bottom >= viewportHeight * 0.08) {
-          item.classList.add("is-visible")
-          return
-        }
-
-        hasPendingItems = true
-      })
-
-      return hasPendingItems
-    }
-
-    let frameId: number | null = null
-
-    const tick = () => {
-      const hasPendingItems = revealVisibleItems()
-
-      if (hasPendingItems) {
-        frameId = window.requestAnimationFrame(tick)
-      } else {
-        frameId = null
-      }
-    }
-
-    tick()
-
-    return () => {
-      if (frameId != null) {
-        window.cancelAnimationFrame(frameId)
-      }
-    }
-  }, [prefersReducedMotion, showProjects, rowsRender])
-
   return (
     <section className={shellClassName}>
       <h1 className="sr-only">{profile.name} portfolio</h1>
+      <SocialCorner links={links} />
       <header id="about" className={heroClassName}>
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-info">
-            <img src={profile.photo} alt={`${profile.name} portrait`} className="mosaic-avatar" loading="eager" decoding="async" />
+            <div className="mosaic-avatar mosaic-avatar-coin" role="img" aria-label={`${profile.name} portrait`}>
+              <div className="mosaic-avatar-coin-inner">
+                <img src={profile.photo} alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
+                <img src={profile.photo} alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
+              </div>
+            </div>
             <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
               <p className="mosaic-profile-subtitle">{profile.title}</p>
@@ -319,7 +310,7 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
         <>
           <article id="work" className="mosaic-work">
             <h2 className="sr-only">Selected work</h2>
-            <div ref={workRowsRef} className="mosaic-rows" aria-label="Selected work previews">
+            <div className="mosaic-rows" aria-label="Selected work previews">
               {rowsRender.map((row) => {
                 const rowStyle = {
                   ...(row.height ? { "--row-height": row.height } : {}),
@@ -340,26 +331,18 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
                         : item.card.title
                       const itemStyle = {
                         "--row-span": item.span,
-                        "--reveal-index": item.previewIndex,
                         ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
                         ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
                       } as CSSProperties
                       return (
                         <div
                           key={itemKey}
-                          className={`mosaic-row-item mosaic-row-item-fit-${item.fit}${prefersReducedMotion ? " is-visible" : ""}`}
+                          className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
                           style={itemStyle}
-                          ref={(node) => {
-                            if (node) {
-                              workItemRefs.current.set(itemKey, node)
-                            } else {
-                              workItemRefs.current.delete(itemKey)
-                            }
-                          }}
                         >
                           <button
                             type="button"
-                            className={`mosaic-row-card${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
+                            className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
                             onClick={() => {
                               if (isPaginatedCard) {
                                 paginatePreviewCard(
@@ -371,7 +354,7 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
                                 return
                               }
 
-                              openPreview(item.card, item.previewIndex, setActiveWorkPreviewIndex)
+                              openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
                             }}
                             aria-label={
                               isPaginatedCard
@@ -380,6 +363,9 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
                             }
                           >
                             {renderRowMedia(item.card, mediaSource, mediaLabel)}
+                            <span className="mosaic-row-card-title" aria-hidden="true">
+                              {item.card.title}
+                            </span>
                             {isPaginatedCard ? (
                               <span className="mosaic-row-card-pagination" aria-hidden="true">
                                 {Array.from({ length: paginationTotal }).map((_, dotIndex) => (
@@ -403,14 +389,14 @@ export function SimpleFeed({ cards, profile, showProjects = true }: SimpleFeedPr
           <PreviewGalleryDialog
             cards={flatWorkCards}
             open={activeWorkPreviewIndex != null && activeWorkPreviewIndex < flatWorkCards.length}
-            selectedIndex={activeWorkPreviewIndex ?? 0}
+            selectedIndex={selectedWorkPreviewIndex}
             prefersReducedMotion={prefersReducedMotion}
             onOpenChange={(nextOpen) => {
               if (!nextOpen) {
                 setActiveWorkPreviewIndex(null)
               }
             }}
-            onSelectedIndexChange={setActiveWorkPreviewIndex}
+            onSelectedIndexChange={setSelectedWorkPreviewIndex}
           />
         </>
       ) : null}
