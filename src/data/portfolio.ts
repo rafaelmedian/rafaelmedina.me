@@ -52,7 +52,7 @@ export type HomeRow = {
   items: HomeRowItem[]
 }
 
-const homeTileRowHeight = "clamp(300px, 32vw, 400px)"
+const homeTileRowHeight = "max(300px, 32vw)"
 
 export const homeRows: HomeRow[] = [
   {
