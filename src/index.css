@@ -2637,6 +2637,135 @@ img {
     min-height: 100dvh;
     margin: 0;
   }
+
+  .mosaic-shell-split {
+    display: grid;
+    grid-template-columns: clamp(20rem, 29.2vw, 31.5rem) minmax(0, 1fr);
+    column-gap: clamp(4rem, 9.6vw, 10.375rem);
+    min-height: 100dvh;
+    align-items: start;
+    padding-inline: 0;
+  }
+
+  .mosaic-shell-split .mosaic-hero {
+    position: sticky;
+    top: 0;
+    min-height: 100dvh;
+    margin: 0;
+    padding: clamp(3.5rem, 7.25vh, 4.5rem) 1.5rem 5.5rem;
+    place-items: start;
+  }
+
+  .mosaic-shell-split .mosaic-hero:has(.mosaic-work-history-chip-expanded) {
+    min-height: 100dvh;
+    padding: clamp(3.5rem, 7.25vh, 4.5rem) 1.5rem 5.5rem;
+  }
+
+  .mosaic-shell-split .mosaic-hero-profile {
+    width: min(100%, 30rem);
+    align-content: start;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .mosaic-shell-split .mosaic-profile-info,
+  .mosaic-shell-split .mosaic-profile-meta,
+  .mosaic-shell-split .mosaic-work-history {
+    align-items: flex-start;
+  }
+
+  .mosaic-shell-split .mosaic-profile-info,
+  .mosaic-shell-split .mosaic-work-history {
+    width: 100%;
+  }
+
+  .mosaic-shell-split .mosaic-profile-subtitle,
+  .mosaic-shell-split .mosaic-work-history-line {
+    justify-content: flex-start;
+  }
+
+  .mosaic-shell-split .mosaic-profile-location {
+    text-align: left;
+  }
+
+  .mosaic-shell-split .mosaic-social-corner {
+    position: fixed;
+    left: 1.5rem;
+    right: auto;
+    top: auto;
+    bottom: 2rem;
+    justify-content: flex-start;
+    gap: 1.25rem;
+  }
+
+  .mosaic-shell-split .mosaic-social-link {
+    min-height: 2rem;
+    padding-inline: 0;
+  }
+
+  .mosaic-shell-split .mosaic-work {
+    grid-column: 2;
+    min-width: 0;
+    padding: 2.5rem 2.5rem 4rem 0;
+  }
+
+  .mosaic-shell-split .mosaic-rows {
+    padding: 0;
+    gap: 1rem;
+  }
+
+  .mosaic-shell-split .mosaic-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    height: auto;
+    min-height: 0;
+    gap: 1rem;
+  }
+
+  .mosaic-shell-split .mosaic-row-item {
+    min-height: clamp(28rem, 34vw, 36.75rem);
+  }
+
+  .mosaic-shell-split .mosaic-row-featured .mosaic-row-item:nth-child(-n + 2),
+  .mosaic-shell-split .mosaic-row .mosaic-row-item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .mosaic-shell-split .mosaic-row-featured .mosaic-row-item:nth-child(-n + 2) {
+    min-height: clamp(28rem, 32vw, 35rem);
+  }
+
+  .mosaic-shell-split .mosaic-row-card {
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    border-color: rgb(0 0 0 / 0.05);
+    background: #eeeef0;
+    padding: clamp(1rem, 3vw, 4rem);
+  }
+
+  .mosaic-shell-split .mosaic-row-card > * {
+    grid-area: 1 / 1;
+  }
+
+  .mosaic-shell-split .mosaic-row-media,
+  .mosaic-shell-split .mosaic-row-item-fit-contain .mosaic-row-media {
+    width: auto;
+    max-width: min(78%, 42rem);
+    height: auto;
+    max-height: 82%;
+    object-fit: contain;
+  }
+
+  .mosaic-shell-split .mosaic-row-item-fit-contain .mosaic-row-card {
+    padding: clamp(1rem, 3vw, 4rem);
+  }
+
+  .mosaic-shell-split .mosaic-row-card-preview-protector .mosaic-row-media {
+    max-width: min(88%, 46rem);
+    object-position: center;
+    transform: none;
+  }
 }
 
 @media (min-width: 1320px) {

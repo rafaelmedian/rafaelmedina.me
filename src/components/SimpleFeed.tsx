@@ -212,7 +212,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     setActiveWorkPreviewIndex(index)
   }
 
-  const shellClassName = `mosaic-shell${showProjects ? "" : " mosaic-shell-hero-only"}`
+  const shellClassName = `mosaic-shell${showProjects ? " mosaic-shell-split" : " mosaic-shell-hero-only"}`
   const heroClassName = `mosaic-hero${showProjects ? "" : " mosaic-hero-hero-only"}`
 
   const renderRowMedia = (
@@ -337,7 +337,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 } as CSSProperties
                 const eagerRow = rowIndex === 0
                 return (
-                  <div key={row.id} className="mosaic-row" style={rowStyle}>
+                  <div key={row.id} className={`mosaic-row mosaic-${row.id}`} style={rowStyle}>
                     {row.items.map((item) => {
                       const itemKey = `${item.card.id}-${item.previewIndex}`
                       const paginationTotal = getPaginationTotal(item.card)
