@@ -643,9 +643,9 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
               {recentCollapsedLabel}
             </button>
           )}
+          <span className="mosaic-work-history-copy">Previously at</span>
         </div>
         <div className="mosaic-work-history-line" aria-label="Previous companies">
-          <span className="mosaic-work-history-copy">Previously at</span>
           {previousCompanies.map(renderCompanyButton)}
           {isMoreInfoActive ? (
             <>
