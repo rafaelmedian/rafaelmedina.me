@@ -2714,10 +2714,21 @@ img {
     width: 100%;
     gap: 0.25rem 0.3rem;
     line-height: 1.6;
+    text-align: left;
   }
 
   .mosaic-shell-split .mosaic-work-history-line:first-child {
     flex-wrap: nowrap;
+  }
+
+  .mosaic-shell-split .mosaic-work-history-line[aria-label="Previous companies"],
+  .mosaic-shell-split .mosaic-work-history-line[aria-label="Previous companies"] .mosaic-work-history-chip-expanded {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .mosaic-shell-split .mosaic-work-history-line[aria-label="Previous companies"] .mosaic-work-history-chip-expanded {
+    max-width: 100%;
   }
 
   .mosaic-shell-split .mosaic-work-history-copy {
