@@ -2718,17 +2718,25 @@ img {
   }
 
   .mosaic-shell-split .mosaic-work-history-line:first-child {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
 
-  .mosaic-shell-split .mosaic-work-history-line[aria-label="Previous companies"],
-  .mosaic-shell-split .mosaic-work-history-line[aria-label="Previous companies"] .mosaic-work-history-chip-expanded {
+  .mosaic-shell-split .mosaic-work-history-chip-expanded,
+  .mosaic-shell-split .mosaic-work-history-chip-expanded-segment,
+  .mosaic-shell-split .mosaic-work-history-line[aria-label="Previous companies"] {
+    align-items: flex-start;
     justify-content: flex-start;
     text-align: left;
   }
 
-  .mosaic-shell-split .mosaic-work-history-line[aria-label="Previous companies"] .mosaic-work-history-chip-expanded {
+  .mosaic-shell-split .mosaic-work-history-chip-expanded,
+  .mosaic-shell-split .mosaic-work-history-chip-expanded-segment,
+  .mosaic-shell-split .mosaic-work-history-chip-expanded-segment-primary {
     max-width: 100%;
+  }
+
+  .mosaic-shell-split .mosaic-work-history-chip-expanded-segment .mosaic-work-history-chip-copy {
+    text-align: left;
   }
 
   .mosaic-shell-split .mosaic-work-history-copy {
