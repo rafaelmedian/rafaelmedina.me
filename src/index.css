@@ -2669,7 +2669,16 @@ img {
     width: min(100%, 27.5rem);
     align-content: start;
     justify-items: start;
+    font-size: 0.875rem;
     text-align: left;
+  }
+
+  .mosaic-shell-split .mosaic-profile-meta h2,
+  .mosaic-shell-split .mosaic-profile-subtitle,
+  .mosaic-shell-split .mosaic-profile-location,
+  .mosaic-shell-split .mosaic-work-history {
+    font-size: 0.875rem;
+    letter-spacing: 0;
   }
 
   .mosaic-shell-split .mosaic-profile-info,
@@ -2691,7 +2700,7 @@ img {
   .mosaic-shell-split .mosaic-profile-location {
     max-width: 27rem;
     margin-top: 2rem;
-    line-height: 1.65;
+    line-height: 1.6;
     text-align: left;
   }
 
@@ -2704,7 +2713,7 @@ img {
   .mosaic-shell-split .mosaic-work-history-line {
     width: 100%;
     gap: 0.25rem 0.3rem;
-    line-height: 1.55;
+    line-height: 1.6;
   }
 
   .mosaic-shell-split .mosaic-work-history-line:first-child {
@@ -2712,7 +2721,7 @@ img {
   }
 
   .mosaic-shell-split .mosaic-work-history-copy {
-    line-height: 1.7;
+    line-height: 1.6;
   }
 
   .mosaic-shell-split .mosaic-work-history-chip {
