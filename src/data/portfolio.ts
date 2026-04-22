@@ -61,32 +61,44 @@ export const homeRows: HomeRow[] = [
     items: [
       { cardId: "preview-shot-9", span: 2 },
       { cardId: "preview-shot-16", span: 2 },
-      { cardId: "preview-popparazi-v1", span: 1, fit: "contain", mediaMaxHeight: "84%" },
     ],
   },
   {
     id: "row-2",
     height: homeTileRowHeight,
     items: [
-      { cardId: "preview-shot-14", span: 1 },
-      { cardId: "preview-protector", span: 2 },
-      { cardId: "preview-shot-20", span: 1 },
+      { cardId: "preview-popparazi-v1", span: 1, fit: "contain", mediaMaxHeight: "84%" },
+      { cardId: "preview-protector", span: 1 },
     ],
   },
   {
     id: "row-3",
     height: homeTileRowHeight,
     items: [
-      { cardId: "preview-shot-21", span: 1 },
-      { cardId: "preview-shot-1", span: 1 },
-      { cardId: "preview-shot-15", span: 1 },
+      { cardId: "preview-shot-14", span: 1 },
+      { cardId: "preview-shot-20", span: 1 },
     ],
   },
   {
     id: "row-4",
     height: homeTileRowHeight,
     items: [
+      { cardId: "preview-shot-21", span: 1 },
+      { cardId: "preview-shot-1", span: 1 },
+    ],
+  },
+  {
+    id: "row-5",
+    height: homeTileRowHeight,
+    items: [
+      { cardId: "preview-shot-15", span: 1 },
       { cardId: "preview-shot-19", span: 1 },
+    ],
+  },
+  {
+    id: "row-6",
+    height: homeTileRowHeight,
+    items: [
       { cardId: "preview-shot-22", span: 1 },
       { cardId: "preview-shot-23", span: 1 },
     ],

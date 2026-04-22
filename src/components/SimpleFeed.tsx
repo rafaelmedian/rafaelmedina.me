@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
 
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
@@ -171,6 +171,35 @@ function SocialCorner({ links }: { links: SiteLinks }) {
   )
 }
 
+function SplitPortfolioQuote() {
+  return (
+    <article className="mosaic-split-quote" aria-label="Portfolio testimonial">
+      <blockquote>
+        <p>
+          Previously I did a bunch of stuff at 0x. Designed Matcha.xyz from scratch, built websites, created storyboards,{" "}
+          <strong>designed marketing things, coded stuff.</strong>
+        </p>
+        <footer>
+          <span className="mosaic-split-quote-avatars" aria-hidden="true">
+            <span />
+            <span />
+          </span>
+          <span className="mosaic-split-quote-credit">
+            <strong>Simon Rico & Jakub</strong>
+            <span>Product Designer at 0x</span>
+          </span>
+        </footer>
+      </blockquote>
+      <div className="mosaic-split-quote-dots" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+    </article>
+  )
+}
+
 export function SimpleFeed({ cards, profile, links, showProjects = true }: SimpleFeedProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
@@ -337,70 +366,73 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 } as CSSProperties
                 const eagerRow = rowIndex === 0
                 return (
-                  <div key={row.id} className={`mosaic-row mosaic-${row.id}`} style={rowStyle}>
-                    {row.items.map((item) => {
-                      const itemKey = `${item.card.id}-${item.previewIndex}`
-                      const paginationTotal = getPaginationTotal(item.card)
-                      const isPaginatedCard = paginationTotal > 1
-                      const paginationScreenIndex = isPaginatedCard
-                        ? (paginatedPreviewIndexes[item.card.id] ?? 0) % paginationTotal
-                        : 0
-                      const mediaSource = isPaginatedCard ? getPaginationImage(item.card, paginationScreenIndex) : item.card.image
-                      const mediaLabel = isPaginatedCard
-                        ? `${item.card.title} screen ${paginationScreenIndex + 1} of ${paginationTotal}`
-                        : item.card.title
-                      const itemStyle = {
-                        "--row-span": item.span,
-                        ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
-                        ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
-                      } as CSSProperties
-                      return (
-                        <div
-                          key={itemKey}
-                          className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
-                          style={itemStyle}
-                        >
-                          <button
-                            type="button"
-                            className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
-                            onClick={() => {
-                              if (isPaginatedCard) {
-                                paginatePreviewCard(
-                                  item.card,
-                                  paginationScreenIndex,
-                                  paginationTotal,
-                                  setPaginatedPreviewIndexes,
-                                )
-                                return
-                              }
-
-                              openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
-                            }}
-                            aria-label={
-                              isPaginatedCard
-                                ? `Show next ${item.card.title} screen, currently screen ${paginationScreenIndex + 1} of ${paginationTotal}`
-                                : `Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`
-                            }
+                  <Fragment key={row.id}>
+                    <div className={`mosaic-row mosaic-${row.id}`} style={rowStyle}>
+                      {row.items.map((item) => {
+                        const itemKey = `${item.card.id}-${item.previewIndex}`
+                        const paginationTotal = getPaginationTotal(item.card)
+                        const isPaginatedCard = paginationTotal > 1
+                        const paginationScreenIndex = isPaginatedCard
+                          ? (paginatedPreviewIndexes[item.card.id] ?? 0) % paginationTotal
+                          : 0
+                        const mediaSource = isPaginatedCard ? getPaginationImage(item.card, paginationScreenIndex) : item.card.image
+                        const mediaLabel = isPaginatedCard
+                          ? `${item.card.title} screen ${paginationScreenIndex + 1} of ${paginationTotal}`
+                          : item.card.title
+                        const itemStyle = {
+                          "--row-span": item.span,
+                          ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
+                          ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
+                        } as CSSProperties
+                        return (
+                          <div
+                            key={itemKey}
+                            className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
+                            style={itemStyle}
                           >
-                            {renderRowMedia(item.card, mediaSource, mediaLabel, eagerRow)}
-                            <span className="mosaic-row-card-title" aria-hidden="true">
-                              {item.card.title}
-                            </span>
-                            {isPaginatedCard ? (
-                              <span className="mosaic-row-card-pagination" aria-hidden="true">
-                                {Array.from({ length: paginationTotal }).map((_, dotIndex) => (
-                                  <span
-                                    key={`${item.card.id}-pagination-${dotIndex}`}
-                                    className={`mosaic-row-card-pagination-dot${dotIndex === paginationScreenIndex ? " is-active" : ""}`}
-                                  />
-                                ))}
+                            <button
+                              type="button"
+                              className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
+                              onClick={() => {
+                                if (isPaginatedCard) {
+                                  paginatePreviewCard(
+                                    item.card,
+                                    paginationScreenIndex,
+                                    paginationTotal,
+                                    setPaginatedPreviewIndexes,
+                                  )
+                                  return
+                                }
+
+                                openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
+                              }}
+                              aria-label={
+                                isPaginatedCard
+                                  ? `Show next ${item.card.title} screen, currently screen ${paginationScreenIndex + 1} of ${paginationTotal}`
+                                  : `Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`
+                              }
+                            >
+                              {renderRowMedia(item.card, mediaSource, mediaLabel, eagerRow)}
+                              <span className="mosaic-row-card-title" aria-hidden="true">
+                                {item.card.title}
                               </span>
-                            ) : null}
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
+                              {isPaginatedCard ? (
+                                <span className="mosaic-row-card-pagination" aria-hidden="true">
+                                  {Array.from({ length: paginationTotal }).map((_, dotIndex) => (
+                                    <span
+                                      key={`${item.card.id}-pagination-${dotIndex}`}
+                                      className={`mosaic-row-card-pagination-dot${dotIndex === paginationScreenIndex ? " is-active" : ""}`}
+                                    />
+                                  ))}
+                                </span>
+                              ) : null}
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {rowIndex === 0 ? <SplitPortfolioQuote /> : null}
+                  </Fragment>
                 )
               })}
             </div>
