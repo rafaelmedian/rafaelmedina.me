@@ -163,7 +163,7 @@ body * {
   outline-offset: 2px;
 }
 
-:where(h1, h2, h3, h4, h5, h6, #about, #feed, #work, #contact) {
+:where(h1, h2, h3, h4, h5, h6, #home, #about, #resume, #feed, #work, #contact) {
   scroll-margin-top: 5rem;
 }
 
@@ -387,6 +387,10 @@ body * {
     transform 220ms cubic-bezier(0.2, 0, 0, 1);
 }
 
+.mosaic-row-card-title {
+  font-size: 12px;
+}
+
 .canvas-preview-card:hover .canvas-preview-title,
 .canvas-preview-card:focus-visible .canvas-preview-title,
 .mosaic-row-card:hover .mosaic-row-card-title,
@@ -471,11 +475,6 @@ img {
     padding-block 260ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.mosaic-hero:has(.mosaic-work-history-chip-expanded) {
-  min-height: calc(clamp(17rem, 42vh, 25rem) + 5.75rem);
-  padding-block: clamp(2.4rem, 6vw, 4rem);
-}
-
 .mosaic-hero-hero-only {
   min-height: 100dvh;
   margin: 0;
@@ -501,6 +500,12 @@ img {
   max-width: calc(100vw - 1.5rem);
 }
 
+.mosaic-social-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
 .mosaic-social-link {
   position: relative;
   display: inline-flex;
@@ -522,9 +527,32 @@ img {
     transform 160ms ease;
 }
 
+.mosaic-social-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .mosaic-social-link:hover,
 .mosaic-social-link:focus-visible {
   color: #2d2d2d;
+}
+
+.mosaic-social-tab.is-active {
+  color: #2d2d2d;
+  font-weight: 500;
+}
+
+.mosaic-social-tab.is-active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0.42rem;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.42;
 }
 
 .mosaic-social-link:active {
@@ -621,10 +649,17 @@ img {
 }
 
 .mosaic-avatar-coin {
+  appearance: none;
   position: relative;
+  display: block;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  line-height: 0;
   perspective: 600px;
   object-fit: unset;
   cursor: pointer;
+  transition: transform 140ms ease;
 }
 
 .mosaic-avatar-coin-inner {
@@ -637,8 +672,18 @@ img {
 }
 
 .mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
-.mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
+.mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner,
+.mosaic-avatar-coin.is-active .mosaic-avatar-coin-inner {
   transform: rotateY(180deg);
+}
+
+.mosaic-avatar-coin:active {
+  transform: scale(0.96);
+}
+
+.mosaic-avatar-coin:focus-visible {
+  outline: 2px solid #9ea6b5;
+  outline-offset: 4px;
 }
 
 .mosaic-avatar-face {
@@ -661,8 +706,13 @@ img {
     transition: none;
   }
   .mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
+  .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner,
+  .mosaic-avatar-coin.is-active .mosaic-avatar-coin-inner {
     transform: none;
+  }
+
+  .mosaic-avatar-coin {
+    transition: none;
   }
 }
 
@@ -733,6 +783,73 @@ img {
 .mosaic-profile-location > span[aria-hidden="true"] {
   color: #a4a4a4;
   margin-inline: 0.25rem;
+}
+
+.mosaic-profile-screen {
+  width: min(100%, 64rem);
+  display: flex;
+  justify-content: center;
+}
+
+.mosaic-profile-work-screen {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: mosaic-profile-screen-enter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mosaic-profile-about-screen {
+  margin-top: 1.5rem;
+  width: min(100%, 42rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+  text-align: left;
+  animation: mosaic-profile-screen-enter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mosaic-profile-resume-screen {
+  margin-top: 1.85rem;
+  width: min(100%, 42rem);
+  animation: mosaic-profile-screen-enter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mosaic-profile-about-copy {
+  margin: 0;
+  max-width: 38rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  letter-spacing: -0.00563rem;
+  color: #2d2d2d;
+  text-wrap: pretty;
+}
+
+.mosaic-profile-about-copy-muted {
+  color: #6f6f6f;
+}
+
+@keyframes mosaic-profile-screen-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.55rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-profile-work-screen,
+  .mosaic-profile-about-screen,
+  .mosaic-profile-resume-screen {
+    animation: none;
+  }
 }
 
 .mosaic-live-time {
@@ -825,297 +942,195 @@ img {
 
 .mosaic-work-history {
   margin-top: 1.5rem;
-  width: min(100%, 64rem);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  color: #838383;
+  width: min(100%, 36rem);
+  color: #303030;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+}
+
+.mosaic-work-resume {
+  display: grid;
+  gap: 0.68rem;
+}
+
+.mosaic-work-resume-header {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.mosaic-work-resume-kicker {
+  margin: 0;
+  color: #868686;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.mosaic-work-resume-header h3 {
+  margin: 0;
+  color: #181818;
   font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.7;
-  letter-spacing: -0.005rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
-.mosaic-work-history-line {
+.mosaic-work-resume-list {
+  position: relative;
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosaic-work-resume-list::before {
+  content: "";
+  position: absolute;
+  top: 1.18rem;
+  bottom: 1.18rem;
+  left: 0.94rem;
+  width: 1px;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.02), rgb(0 0 0 / 0.12) 12%, rgb(0 0 0 / 0.12) 88%, rgb(0 0 0 / 0.02));
+}
+
+.mosaic-work-resume-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.9rem minmax(0, 1fr);
+  gap: 0.66rem;
+  padding-block: 0.48rem;
+}
+
+.mosaic-work-resume-marker {
+  position: relative;
+  z-index: 1;
   display: flex;
-  flex-wrap: wrap;
+  justify-content: center;
+  padding-top: 0.08rem;
+}
+
+.mosaic-work-resume-logo-cluster {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.9rem;
+}
+
+.mosaic-work-resume-logo-frame {
+  display: inline-flex;
+  width: 1.65rem;
+  height: 1.65rem;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-}
-
-.mosaic-work-history-copy {
-  color: #838383;
-  white-space: nowrap;
-}
-
-.mosaic-work-history-chip {
-  appearance: none;
-  border: 1px solid #f2f2f2;
   border-radius: 8px;
-  background: #f2f2f2;
-  color: #2d2d2d;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 1.7em;
-  padding: 0 0.375rem;
-  font: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    inline-size 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 160ms ease;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.06),
+    0 0.45rem 1rem rgb(0 0 0 / 0.07);
+  padding: 0.37rem;
 }
 
-.mosaic-work-history-chip:hover,
-.mosaic-work-history-chip:focus-visible,
-.mosaic-work-history-chip[aria-expanded="true"] {
-  background: #e9e9e9;
-  border-color: #e9e9e9;
-  color: #171717;
+.mosaic-work-resume-logo-frame + .mosaic-work-resume-logo-frame {
+  margin-left: -0.64rem;
 }
 
-.mosaic-work-history-chip:hover {
-  transform: translateY(-1px);
-}
-
-.mosaic-work-history-chip:active {
-  transform: translateY(0);
-}
-
-.mosaic-work-history-chip:focus-visible {
-  outline: 2px solid #9ea6b5;
-  outline-offset: 2px;
-}
-
-.mosaic-work-history-chip-more {
-  min-width: 1.7em;
-}
-
-.mosaic-work-history-chip-expanded {
-  max-width: min(100%, 34rem);
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.08rem 0.2rem;
-  white-space: normal;
-  text-align: center;
-  transform-origin: center center;
-  animation: mosaic-expanded-chip-enter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: opacity, transform, clip-path;
-}
-
-.mosaic-work-history-chip-expanded-segment {
-  max-width: min(100%, 32rem);
-  align-items: baseline;
-  flex-wrap: nowrap;
-  overflow: hidden;
-}
-
-.mosaic-work-history-chip-expanded-segment:hover {
-  transform: none;
-}
-
-.mosaic-work-history-chip-expanded-collapsible {
-  cursor: pointer;
-}
-
-.mosaic-work-history-chip-expanded-segment .mosaic-work-history-chip-copy {
-  white-space: nowrap;
-}
-
-.mosaic-work-history-chip-expanded-segment-primary {
-  max-width: min(100%, 28rem);
-}
-
-.mosaic-work-history-chip-expanded-info {
-  max-width: min(100%, 44rem);
-  flex-wrap: wrap;
-}
-
-.mosaic-work-history-chip-expanded-info .mosaic-work-history-chip-copy {
-  white-space: normal;
-}
-
-.mosaic-work-history-inline-link {
-  color: inherit;
-  text-decoration-line: underline;
-  text-decoration-color: #c8c8c8;
-  text-decoration-thickness: 0.0625rem;
-  text-underline-offset: 0.11em;
-}
-
-.mosaic-work-history-inline-link:hover,
-.mosaic-work-history-inline-link:focus-visible {
-  color: #111111;
-  text-decoration-color: #9b9b9b;
-}
-
-.mosaic-work-history-expanded-break {
-  flex-basis: 100%;
-  width: 0;
-  height: 0;
-}
-
-.mosaic-work-history-expanded-logos {
-  display: inline-flex;
-  align-items: center;
-  margin-inline: 0.08rem 0.06rem;
-  animation: mosaic-expanded-logo-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.mosaic-work-history-expanded-logo-wrap {
-  display: inline-flex;
-  width: 1.35rem;
-  height: 1.35rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05);
-  padding: 0.29rem;
-  vertical-align: middle;
-}
-
-.mosaic-work-history-expanded-logo-wrap + .mosaic-work-history-expanded-logo-wrap {
-  margin-left: -0.26rem;
-}
-
-.mosaic-work-history-expanded-logo {
+.mosaic-work-resume-logo {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.mosaic-work-history-chip-copy {
+.mosaic-work-resume-body {
   min-width: 0;
-  display: inline;
-  color: #2d2d2d;
-  font: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  overflow-wrap: anywhere;
+  display: grid;
+  gap: 0.24rem;
 }
 
-.mosaic-work-history-inline-word {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(0.28em);
-  animation: mosaic-inline-word-type 190ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: opacity, transform;
+.mosaic-work-resume-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.65rem;
 }
 
-.mosaic-work-history-chip-collapsing {
-  pointer-events: none;
-  transform-origin: left center;
-  animation: mosaic-expanded-chip-collapse var(--mosaic-collapse-duration, 190ms) cubic-bezier(0.16, 1, 0.3, 1) both;
+.mosaic-work-resume-title-group {
+  min-width: 0;
+  display: grid;
+  gap: 0.08rem;
 }
 
-.mosaic-work-history-chip-collapsing .mosaic-work-history-expanded-logos {
-  animation: mosaic-expanded-logo-collapse 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--mosaic-collapse-logo-delay, 0ms);
+.mosaic-work-resume-companies {
+  color: #1c1c1c;
+  font-size: 0.92rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.25;
 }
 
-.mosaic-work-history-chip-collapsing .mosaic-work-history-inline-word {
-  animation: mosaic-inline-word-collapse 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: calc(var(--mosaic-collapse-word-index, 0) * 48ms);
+.mosaic-work-resume-company {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: rgb(0 0 0 / 0.18);
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.16em;
+  transition:
+    color 160ms ease,
+    text-decoration-color 160ms ease;
 }
 
-@keyframes mosaic-expanded-chip-enter {
-  from {
-    opacity: 0;
-    transform: scaleX(0.94);
-  }
-
-  to {
-    opacity: 1;
-    transform: scaleX(1);
-  }
+.mosaic-work-resume-company:hover,
+.mosaic-work-resume-company:focus-visible {
+  color: #000;
+  text-decoration-color: rgb(0 0 0 / 0.46);
 }
 
-@keyframes mosaic-expanded-chip-collapse {
-  0%,
-  68% {
-    opacity: 1;
-    clip-path: inset(0 0 0 0 round 8px);
-    transform: scaleX(1) scaleY(1);
-  }
-
-  100% {
-    opacity: 0;
-    clip-path: inset(0 100% 0 0 round 8px);
-    transform: scaleX(0.94);
-  }
+.mosaic-work-resume-company:focus-visible {
+  outline: 2px solid #9ea6b5;
+  outline-offset: 3px;
+  border-radius: 0.2rem;
 }
 
-@keyframes mosaic-expanded-logo-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.82);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.mosaic-work-resume-role,
+.mosaic-work-resume-period,
+.mosaic-work-resume-summary {
+  color: #727272;
+  font-size: 0.78rem;
+  letter-spacing: 0;
+  line-height: 1.35;
 }
 
-@keyframes mosaic-expanded-logo-collapse {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: scale(0.72);
-  }
+.mosaic-work-resume-role {
+  display: block;
 }
 
-@keyframes mosaic-inline-word-type {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.mosaic-work-resume-period {
+  justify-self: end;
+  border-radius: 999px;
+  background: #f1f1f1;
+  padding: 0.22rem 0.46rem;
+  color: #5f5f5f;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-@keyframes mosaic-inline-word-collapse {
-  from {
-    opacity: 1;
-    transform: translateY(0) scaleX(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateY(0.28em);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mosaic-work-history-chip-expanded,
-  .mosaic-work-history-chip-collapsing,
-  .mosaic-work-history-expanded-logos,
-  .mosaic-work-history-inline-word {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
+.mosaic-work-resume-summary {
+  max-width: 31rem;
+  margin: 0;
+  color: #4f4f4f;
+  text-wrap: pretty;
 }
 
 @media (max-width: 520px) {
-  .mosaic-work-history-chip-expanded-segment {
-    flex-wrap: wrap;
+  .mosaic-work-resume-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
   }
 
-  .mosaic-work-history-chip-expanded-segment .mosaic-work-history-chip-copy {
-    white-space: normal;
+  .mosaic-work-resume-period {
+    justify-self: start;
   }
 }
 
@@ -1851,6 +1866,420 @@ img {
   background: transparent;
 }
 
+.mosaic-work-resume-layout {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: start;
+}
+
+.mosaic-work-index {
+  width: min(100%, 42rem);
+  margin-top: clamp(2.5rem, 6vh, 4.5rem);
+}
+
+.mosaic-work-index-heading {
+  display: grid;
+  gap: 0.9rem;
+  margin-bottom: clamp(1.45rem, 4vh, 2.8rem);
+}
+
+.mosaic-work-index-heading p {
+  margin: 0;
+  color: #a0a0a0;
+  font-size: clamp(1rem, 1.3vw, 1.22rem);
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.mosaic-work-index-heading h2 {
+  margin: 0;
+  max-width: 20ch;
+  color: #222222;
+  font-size: clamp(1.55rem, 2.45vw, 2.35rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.mosaic-work-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosaic-work-list-item {
+  border-top: 1px solid rgb(0 0 0 / 0.07);
+}
+
+.mosaic-work-list-item:last-child {
+  border-bottom: 1px solid rgb(0 0 0 / 0.07);
+}
+
+.mosaic-work-list-button {
+  appearance: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(4.2rem, 0.24fr) minmax(0, 1fr);
+  gap: clamp(0.9rem, 1.9vw, 1.7rem);
+  border: 0;
+  background: transparent;
+  padding: 1.15rem 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mosaic-work-list-year {
+  color: #a2a2a2;
+  font-size: clamp(0.95rem, 1.25vw, 1.16rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.24;
+  transition: color 160ms ease;
+}
+
+.mosaic-work-list-body {
+  min-width: 0;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.mosaic-work-list-title-row {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.62rem;
+}
+
+.mosaic-work-list-title {
+  color: #2d2d2d;
+  font-size: clamp(1rem, 1.35vw, 1.2rem);
+  font-weight: 500;
+  line-height: 1.16;
+  text-decoration-line: underline;
+  text-decoration-color: rgb(0 0 0 / 0.26);
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.14em;
+  transition:
+    color 160ms ease,
+    text-decoration-color 160ms ease;
+}
+
+.mosaic-work-list-client {
+  color: #a0a0a0;
+  font-size: clamp(0.92rem, 1.1vw, 1.02rem);
+  line-height: 1.2;
+}
+
+.mosaic-work-list-client::before {
+  content: "-";
+  margin-right: 0.42rem;
+  color: #c6c6c6;
+}
+
+.mosaic-work-list-discipline {
+  color: #9b9b9b;
+  font-size: clamp(0.9rem, 1.05vw, 1rem);
+  line-height: 1.25;
+}
+
+.mosaic-work-list-count {
+  color: #7b7b7b;
+  font-size: clamp(0.82rem, 0.95vw, 0.92rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.mosaic-work-list-summary {
+  max-width: 38rem;
+  color: #444444;
+  font-size: clamp(0.95rem, 1.14vw, 1.04rem);
+  line-height: 1.36;
+  text-wrap: pretty;
+}
+
+.mosaic-work-list-button:hover .mosaic-work-list-title,
+.mosaic-work-list-button:focus-visible .mosaic-work-list-title,
+.mosaic-work-list-button.is-selected .mosaic-work-list-title {
+  color: #111111;
+  text-decoration-color: rgb(0 0 0 / 0.62);
+}
+
+.mosaic-work-list-button:hover .mosaic-work-list-year,
+.mosaic-work-list-button:focus-visible .mosaic-work-list-year,
+.mosaic-work-list-button.is-selected .mosaic-work-list-year {
+  color: #5f5f5f;
+}
+
+.mosaic-work-list-button:focus-visible {
+  outline: 2px solid #9ea6b5;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.mosaic-work-preview {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.mosaic-work-preview-card {
+  appearance: none;
+  width: 100%;
+  min-height: clamp(25rem, 58vh, 43rem);
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(0 0 0 / 0.06);
+  border-radius: 8px;
+  background: #eeeef0;
+  padding: clamp(1.2rem, 4vw, 4.5rem);
+  overflow: hidden;
+  cursor: zoom-in;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.mosaic-work-preview-card:hover,
+.mosaic-work-preview-card:focus-visible {
+  border-color: rgb(0 0 0 / 0.1);
+  background: #e9e9eb;
+  box-shadow: 0 22px 50px -38px rgb(0 0 0 / 0.45);
+}
+
+.mosaic-work-preview-card:active {
+  transform: scale(0.96);
+}
+
+.mosaic-work-preview-card:focus-visible {
+  outline: 2px solid #9ea6b5;
+  outline-offset: 4px;
+}
+
+.mosaic-work-preview-card-empty {
+  cursor: default;
+  place-items: stretch;
+  background: linear-gradient(180deg, #f4f4f6 0%, #ececef 100%);
+}
+
+.mosaic-work-preview-empty-copy {
+  height: 100%;
+  display: grid;
+  align-content: end;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.mosaic-work-preview-empty-copy span {
+  color: #8a8a8a;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.mosaic-work-preview-empty-copy strong {
+  color: #2a2a2a;
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  font-weight: 500;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.mosaic-work-preview-empty-copy p {
+  max-width: 28rem;
+  margin: 0;
+  color: #555555;
+  font-size: 0.98rem;
+  line-height: 1.42;
+  text-wrap: pretty;
+}
+
+.mosaic-work-preview-media {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: min(70vh, 36rem);
+  display: block;
+  object-fit: contain;
+  opacity: 0;
+  filter: blur(14px);
+  transition:
+    opacity 260ms ease-out,
+    filter 260ms ease-out;
+}
+
+.mosaic-work-preview-media[data-loaded="true"] {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.mosaic-work-preview-card-preview-protector .mosaic-work-preview-media {
+  width: 100%;
+  max-width: none;
+  object-fit: contain;
+}
+
+.mosaic-work-preview-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #8f8f8f;
+  font-size: 0.86rem;
+  line-height: 1.25;
+}
+
+.mosaic-work-preview-caption span {
+  font-variant-numeric: tabular-nums;
+}
+
+.mosaic-work-preview-caption strong {
+  color: #555555;
+  font-weight: 500;
+  text-align: right;
+}
+
+.mosaic-resume-list {
+  width: min(100%, 56rem);
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mosaic-resume-item {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: clamp(1.4rem, 4vw, 4.4rem);
+  padding-block: clamp(1.25rem, 3.5vh, 2.2rem);
+  border-top: 1px solid rgb(0 0 0 / 0.055);
+}
+
+.mosaic-resume-item:first-child {
+  border-top: 0;
+}
+
+.mosaic-resume-year {
+  color: #9d9d9d;
+  font-size: clamp(1.08rem, 1.6vw, 1.42rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.mosaic-resume-body {
+  min-width: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.mosaic-resume-title-row {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.8rem;
+}
+
+.mosaic-resume-title {
+  color: #292929;
+  font-size: clamp(1.08rem, 1.62vw, 1.42rem);
+  font-weight: 500;
+  line-height: 1.15;
+  text-decoration-line: underline;
+  text-decoration-color: rgb(0 0 0 / 0.34);
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.16em;
+}
+
+.mosaic-resume-client {
+  color: #9f9f9f;
+  font-size: clamp(1.04rem, 1.46vw, 1.34rem);
+  line-height: 1.15;
+}
+
+.mosaic-resume-client::before {
+  content: "-";
+  margin-right: 0.8rem;
+  color: #c4c4c4;
+}
+
+.mosaic-resume-discipline,
+.mosaic-resume-summary {
+  margin: 0;
+  letter-spacing: 0;
+  text-wrap: pretty;
+}
+
+.mosaic-resume-discipline {
+  color: #989898;
+  font-size: clamp(1.04rem, 1.5vw, 1.35rem);
+  line-height: 1.22;
+}
+
+.mosaic-resume-summary {
+  max-width: 41rem;
+  color: #2f2f2f;
+  font-size: clamp(1.02rem, 1.35vw, 1.25rem);
+  line-height: 1.35;
+}
+
+.mosaic-resume-previews {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 1.95fr) minmax(7rem, 1.04fr);
+  gap: 0.5rem;
+  margin-top: 0.28rem;
+}
+
+.mosaic-resume-preview {
+  appearance: none;
+  min-width: 0;
+  height: clamp(6rem, 15vw, 10.8rem);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: #f4f4f4;
+  padding: 0;
+  overflow: hidden;
+  cursor: zoom-in;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.mosaic-resume-preview:hover,
+.mosaic-resume-preview:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.13),
+    0 1rem 2rem -1.6rem rgb(0 0 0 / 0.4);
+}
+
+.mosaic-resume-preview:active {
+  transform: scale(0.96);
+}
+
+.mosaic-resume-preview:focus-visible {
+  outline: 2px solid #9ea6b5;
+  outline-offset: 4px;
+}
+
+.mosaic-resume-preview-media {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.mosaic-resume-preview-media[data-loaded="true"] {
+  opacity: 1;
+}
+
 .mosaic-rows {
   --row-gap: 1rem;
   display: flex;
@@ -1992,6 +2421,59 @@ img {
 }
 
 @media (max-width: 699.98px) {
+  .mosaic-work-resume-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mosaic-work-index {
+    margin-top: 2rem;
+  }
+
+  .mosaic-work-index-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .mosaic-work-list-button {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+    padding-block: 1rem;
+    text-align: center;
+  }
+
+  .mosaic-work-list-title-row {
+    justify-content: center;
+  }
+
+  .mosaic-work-list-summary {
+    margin-inline: auto;
+  }
+
+  .mosaic-work-preview {
+    position: relative;
+    top: auto;
+  }
+
+  .mosaic-work-preview-card {
+    min-height: 24rem;
+  }
+
+  .mosaic-resume-list {
+    width: 100%;
+  }
+
+  .mosaic-resume-item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .mosaic-resume-previews {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mosaic-resume-preview {
+    height: clamp(5.2rem, 24vw, 7.5rem);
+  }
+
   .mosaic-row {
     flex-direction: column;
     height: auto;
@@ -2632,11 +3114,6 @@ img {
     padding-block: 0;
   }
 
-  .mosaic-hero:has(.mosaic-work-history-chip-expanded) {
-    min-height: 31rem;
-    padding-block: 1.5rem;
-  }
-
   .mosaic-hero-hero-only {
     min-height: 100dvh;
     margin: 0;
@@ -2644,29 +3121,34 @@ img {
 
   .mosaic-shell-split {
     display: grid;
-    grid-template-columns: clamp(20rem, 29.2vw, 31.5rem) minmax(0, 1fr);
-    column-gap: clamp(4rem, 9.6vw, 10.375rem);
+    grid-template-columns: clamp(22rem, 36vw, 39rem) minmax(0, 1fr);
+    column-gap: clamp(2.5rem, 5vw, 5.5rem);
+    height: 100dvh;
     min-height: 100dvh;
     align-items: start;
+    overflow: hidden;
     padding-inline: 0;
   }
 
+  .mosaic-shell-tab-resume.mosaic-shell-split {
+    grid-template-columns: clamp(18rem, 28vw, 26rem) minmax(0, 1fr);
+    column-gap: clamp(2rem, 4vw, 4rem);
+  }
+
   .mosaic-shell-split .mosaic-hero {
-    position: sticky;
-    top: 0;
+    position: relative;
+    height: 100dvh;
     min-height: 100dvh;
     margin: 0;
-    padding: clamp(3.5rem, 7.25vh, 4.5rem) 1.5rem 5.5rem;
+    padding: clamp(3.5rem, 7.25vh, 4.5rem) 1.5rem 6rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     place-items: start;
   }
 
-  .mosaic-shell-split .mosaic-hero:has(.mosaic-work-history-chip-expanded) {
-    min-height: 100dvh;
-    padding: clamp(3.5rem, 7.25vh, 4.5rem) 1.5rem 5.5rem;
-  }
-
   .mosaic-shell-split .mosaic-hero-profile {
-    width: min(100%, 27.5rem);
+    width: min(100%, 36rem);
     align-content: start;
     justify-items: start;
     font-size: 0.875rem;
@@ -2693,66 +3175,34 @@ img {
   }
 
   .mosaic-shell-split .mosaic-profile-subtitle,
-  .mosaic-shell-split .mosaic-work-history-line {
+  .mosaic-shell-split .mosaic-work-resume-header {
     justify-content: flex-start;
   }
 
   .mosaic-shell-split .mosaic-profile-location {
-    max-width: 27rem;
+    max-width: 34rem;
     margin-top: 2rem;
     line-height: 1.6;
     text-align: left;
   }
 
+  .mosaic-shell-split .mosaic-profile-work-screen .mosaic-profile-location {
+    margin-top: 0.7rem;
+    line-height: 1.35;
+  }
+
   .mosaic-shell-split .mosaic-work-history {
-    max-width: 27.5rem;
+    max-width: 36rem;
     margin-top: 1.9rem;
     gap: 0.38rem;
-  }
-
-  .mosaic-shell-split .mosaic-work-history-line {
-    width: 100%;
-    gap: 0.25rem 0.3rem;
-    line-height: 1.6;
-    text-align: left;
-  }
-
-  .mosaic-shell-split .mosaic-work-history-line:first-child {
-    flex-wrap: wrap;
-  }
-
-  .mosaic-shell-split .mosaic-work-history-chip-expanded,
-  .mosaic-shell-split .mosaic-work-history-chip-expanded-segment,
-  .mosaic-shell-split .mosaic-work-history-line[aria-label="Previous companies"] {
-    align-items: flex-start;
-    justify-content: flex-start;
-    text-align: left;
-  }
-
-  .mosaic-shell-split .mosaic-work-history-chip-expanded,
-  .mosaic-shell-split .mosaic-work-history-chip-expanded-segment,
-  .mosaic-shell-split .mosaic-work-history-chip-expanded-segment-primary {
-    max-width: 100%;
-  }
-
-  .mosaic-shell-split .mosaic-work-history-chip-expanded-segment .mosaic-work-history-chip-copy {
-    text-align: left;
-  }
-
-  .mosaic-shell-split .mosaic-work-history-copy {
-    line-height: 1.6;
-  }
-
-  .mosaic-shell-split .mosaic-work-history-chip {
-    min-height: 1.58em;
   }
 
   .mosaic-shell-split .mosaic-social-corner {
     position: fixed;
     left: 1.5rem;
     right: auto;
-    top: auto;
-    bottom: 2rem;
+    top: 1rem;
+    bottom: auto;
     justify-content: flex-start;
     gap: 1.25rem;
   }
@@ -2765,7 +3215,35 @@ img {
   .mosaic-shell-split .mosaic-work {
     grid-column: 2;
     min-width: 0;
+    height: 100dvh;
+    display: grid;
+    align-items: start;
+    overflow: hidden;
+    overscroll-behavior: contain;
     padding: 2.5rem 2.5rem 4rem 0;
+  }
+
+  .mosaic-shell-tab-resume.mosaic-shell-split .mosaic-work {
+    padding-right: 1.5rem;
+  }
+
+  .mosaic-shell-split .mosaic-work-resume-layout {
+    grid-template-columns: minmax(18rem, 32rem) minmax(0, 1fr);
+  }
+
+  .mosaic-shell-tab-home.mosaic-shell-split .mosaic-work {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .mosaic-shell-tab-resume.mosaic-shell-split .mosaic-work {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .mosaic-shell-split .mosaic-work-preview {
+    position: sticky;
+    top: 2.5rem;
   }
 
   .mosaic-shell-split .mosaic-rows {
@@ -2968,6 +3446,11 @@ img {
   .mosaic-row-media {
     opacity: 1;
     filter: none;
+    transition: none;
+  }
+
+  .mosaic-resume-preview-media {
+    opacity: 1;
     transition: none;
   }
 
