@@ -1,13 +1,18 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
 
-import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
+import { homeRows, type PortfolioCard, type ResumeEducation, type ResumeExperience, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { PreviewGalleryDialog } from "./PreviewGalleryDialog"
 
 type SiteProfile = {
   name: string
   title: string
+  resumeTitle?: string
   intro: string
+  resumeLead?: string
+  resumeExperience?: ResumeExperience[]
+  resumeEducation?: ResumeEducation[]
+  resumeSkills?: string
   previouslyLabel?: string
   previouslyText?: string
   nowLabel?: string
@@ -535,8 +540,19 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const renderWorkIndexList = () => (
     <div className="mosaic-work-index-list">
       <div className="mosaic-work-index-heading">
-        <p>Resume</p>
-        <h2>Selected product work</h2>
+        <h2>Selected work</h2>
+      </div>
+      <div className="mosaic-resume-intro">
+        <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
+          {profile.resumeLead}
+        </p>
+        <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
+          Full profile:{" "}
+          <a href={links.linkedin} target="_blank" rel="noreferrer" className="mosaic-profile-link">
+            linkedin.com/in/rafaelmedian
+          </a>
+          .
+        </p>
       </div>
       <ol className="mosaic-work-list" aria-label="Selected work">
         {resumeWorkItems.map((item, index) => {
@@ -554,12 +570,14 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               >
                 <span className="mosaic-work-list-year">{item.year}</span>
                 <span className="mosaic-work-list-body">
-                  <span className="mosaic-work-list-title-row">
-                    <span className="mosaic-work-list-title">{item.title}</span>
-                    <span className="mosaic-work-list-client">{item.client}</span>
+                  <span className="mosaic-work-list-header">
+                    <span className="mosaic-work-list-title-group">
+                      <span className="mosaic-work-list-title">{item.title}</span>
+                      <span className="mosaic-work-list-client">{item.client}</span>
+                    </span>
+                    <span className="mosaic-work-list-count">{getProjectCountLabel(item.projectCount)}</span>
                   </span>
                   <span className="mosaic-work-list-discipline">{item.discipline}</span>
-                  <span className="mosaic-work-list-count">{getProjectCountLabel(item.projectCount)}</span>
                   <span className="mosaic-work-list-summary">{item.summary}</span>
                 </span>
               </button>
@@ -683,7 +701,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
             </button>
             <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
-              <p className="mosaic-profile-subtitle">{profile.title}</p>
+              <p className="mosaic-profile-subtitle">{isHomeTab ? profile.title : profile.resumeTitle ?? profile.title}</p>
             </div>
           </div>
           <div className="mosaic-profile-screen" aria-live="polite" data-screen={activeTab}>
@@ -703,7 +721,11 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
                   These days I freelance on focused, high-impact projects. Reach me at{" "}
                   <a href="https://x.com/rafaelmedian" target="_blank" rel="noreferrer" className="mosaic-profile-link">
-                    @rafaelmedian
+                    x.com
+                  </a>{" "}
+                  ,{" "}
+                  <a href={links.linkedin} target="_blank" rel="noreferrer" className="mosaic-profile-link">
+                    linkedin.com/in/rafaelmedian
                   </a>{" "}
                   ,{" "}
                   <a href={links.telegram} target="_blank" rel="noreferrer" className="mosaic-profile-link">
@@ -719,6 +741,41 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
             ) : (
               <div id="resume" className="mosaic-profile-resume-screen" role="tabpanel" aria-labelledby="portfolio-resume-tab">
                 {renderWorkIndexList()}
+                {profile.resumeExperience?.length ? (
+                  <section className="mosaic-resume-section" aria-labelledby="resume-experience-heading">
+                    <h3 id="resume-experience-heading">Experience</h3>
+                    <ul className="mosaic-resume-detail-list">
+                      {profile.resumeExperience.map((entry) => (
+                        <li key={`${entry.company}-${entry.period}`} className="mosaic-resume-detail-item">
+                          <div className="mosaic-resume-detail-header">
+                            <span className="mosaic-resume-detail-title">{entry.company}</span>
+                            <span className="mosaic-resume-detail-period">{entry.period}</span>
+                          </div>
+                          <p className="mosaic-resume-detail-role">{entry.role}</p>
+                          <p className="mosaic-resume-detail-summary">{entry.summary}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+                {profile.resumeEducation?.length || profile.resumeSkills ? (
+                  <section className="mosaic-resume-section" aria-labelledby="resume-education-heading">
+                    <h3 id="resume-education-heading">Education + tools</h3>
+                    {profile.resumeEducation?.length ? (
+                      <ul className="mosaic-resume-detail-list">
+                        {profile.resumeEducation.map((entry) => (
+                          <li key={entry.school} className="mosaic-resume-detail-item">
+                            <div className="mosaic-resume-detail-header">
+                              <span className="mosaic-resume-detail-title">{entry.school}</span>
+                            </div>
+                            <p className="mosaic-resume-detail-summary">{entry.detail}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {profile.resumeSkills ? <p className="mosaic-resume-detail-skills">{profile.resumeSkills}</p> : null}
+                  </section>
+                ) : null}
               </div>
             )}
           </div>

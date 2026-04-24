@@ -485,6 +485,7 @@ img {
   width: min(calc(100vw - 2rem), 64rem);
   display: grid;
   justify-items: center;
+  padding-top: clamp(2.25rem, 5vw, 3.5rem);
   text-align: center;
 }
 
@@ -547,6 +548,10 @@ img {
     box-shadow 160ms ease,
     color 160ms ease,
     transform 160ms ease;
+}
+
+#portfolio-home-tab {
+  padding-inline-start: 0.94rem;
 }
 
 .mosaic-social-link:hover,
@@ -801,7 +806,7 @@ img {
 .mosaic-profile-screen {
   width: min(100%, 64rem);
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .mosaic-profile-screen[data-screen="resume"] {
@@ -830,7 +835,245 @@ img {
 .mosaic-profile-resume-screen {
   margin-top: 1.85rem;
   width: min(100%, 42rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   animation: mosaic-profile-screen-enter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mosaic-work-index-list {
+  width: min(100%, 40rem);
+  display: grid;
+  gap: 0.45rem;
+  text-align: left;
+}
+
+.mosaic-resume-intro {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.2rem;
+}
+
+.mosaic-resume-section {
+  width: min(100%, 40rem);
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.mosaic-resume-section h3 {
+  margin: 0;
+  color: #171717;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.mosaic-resume-detail-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+}
+
+.mosaic-resume-detail-item {
+  padding: 0.78rem 0;
+  border-bottom: 1px solid rgb(0 0 0 / 0.08);
+}
+
+.mosaic-resume-detail-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.mosaic-resume-detail-title {
+  color: #181818;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.mosaic-resume-detail-period,
+.mosaic-resume-detail-role,
+.mosaic-resume-detail-summary,
+.mosaic-resume-detail-skills {
+  margin: 0;
+  color: #6d6d6d;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.mosaic-resume-detail-period {
+  white-space: nowrap;
+}
+
+.mosaic-resume-detail-role {
+  margin-top: 0.08rem;
+  color: #5f5f5f;
+}
+
+.mosaic-resume-detail-summary {
+  margin-top: 0.16rem;
+}
+
+.mosaic-resume-detail-skills {
+  margin: 0.1rem 0 0;
+}
+
+.mosaic-work-index-heading {
+  display: grid;
+  gap: 0;
+  justify-items: start;
+}
+
+.mosaic-work-index-kicker {
+  display: none;
+}
+
+.mosaic-work-index-heading-copy {
+  display: contents;
+}
+
+.mosaic-work-index-heading h2,
+.mosaic-work-index-heading-copy h2 {
+  margin: 0;
+  color: #171717;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.mosaic-work-index-intro {
+  display: none;
+}
+
+.mosaic-work-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+}
+
+.mosaic-work-list-item {
+  margin: 0;
+}
+
+.mosaic-work-list-button {
+  width: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.8rem;
+  border: 0;
+  border-radius: 0;
+  padding: 0.78rem 0;
+  background: transparent;
+  box-shadow: none;
+  border-bottom: 1px solid rgb(0 0 0 / 0.08);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.mosaic-work-list-button:hover,
+.mosaic-work-list-button:focus-visible {
+  background: transparent;
+  box-shadow: none;
+}
+
+.mosaic-work-list-button:focus-visible {
+  outline: 2px solid #9ea6b5;
+  outline-offset: 3px;
+}
+
+.mosaic-work-list-button:active {
+  opacity: 0.72;
+}
+
+.mosaic-work-list-button.is-selected {
+  background: transparent;
+  box-shadow: none;
+}
+
+.mosaic-work-list-year {
+  min-width: 3.1rem;
+  padding-top: 0.08rem;
+  color: #8a8a8a;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mosaic-work-list-body {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.mosaic-work-list-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.6rem;
+}
+
+.mosaic-work-list-title-group {
+  min-width: 0;
+  display: grid;
+  gap: 0.08rem;
+}
+
+.mosaic-work-list-title {
+  color: #181818;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.mosaic-work-list-client {
+  color: #6d6d6d;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.mosaic-work-list-discipline {
+  color: #5f5f5f;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.mosaic-work-list-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #686868;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.mosaic-work-list-summary {
+  color: #7a7a7a;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-wrap: pretty;
 }
 
 .mosaic-profile-about-copy {
@@ -2162,6 +2405,35 @@ img {
 }
 
 @media (max-width: 699.98px) {
+  .mosaic-work-list-button {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.88rem 0;
+  }
+
+  .mosaic-work-list-year {
+    min-width: 0;
+    padding-top: 0;
+  }
+
+  .mosaic-work-list-header {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .mosaic-work-list-count {
+    justify-self: start;
+  }
+
+  .mosaic-resume-detail-header {
+    grid-template-columns: 1fr;
+    gap: 0.18rem;
+  }
+
+  .mosaic-resume-detail-period {
+    white-space: normal;
+  }
+
   .mosaic-resume-list {
     width: 100%;
   }
@@ -2857,6 +3129,7 @@ img {
     margin-top: 0.9rem;
     align-content: start;
     justify-items: start;
+    padding-top: 0;
     font-size: 0.875rem;
     text-align: left;
   }
@@ -2941,6 +3214,10 @@ img {
     padding-inline: 0.72rem;
   }
 
+  .mosaic-shell-split #portfolio-home-tab {
+    padding-inline-start: 0.9rem;
+  }
+
   .mosaic-shell-split .mosaic-work {
     grid-column: 2;
     min-width: 0;
@@ -2964,6 +3241,12 @@ img {
   .mosaic-shell-tab-resume.mosaic-shell-split .mosaic-work {
     overflow-y: auto;
     scrollbar-gutter: stable;
+  }
+
+  .mosaic-shell-split .mosaic-profile-resume-screen,
+  .mosaic-shell-split .mosaic-work-index-list,
+  .mosaic-shell-split .mosaic-work-index-heading {
+    width: 100%;
   }
 
   .mosaic-shell-split .mosaic-rows {
@@ -3185,6 +3468,10 @@ img {
 @media (max-width: 639.98px) {
   .mosaic-hero {
     padding-top: 4.4rem;
+  }
+
+  .mosaic-hero-profile {
+    padding-top: 1.25rem;
   }
 
   .mosaic-social-corner {

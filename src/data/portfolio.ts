@@ -52,6 +52,18 @@ export type HomeRow = {
   items: HomeRowItem[]
 }
 
+export type ResumeExperience = {
+  company: string
+  role: string
+  period: string
+  summary: string
+}
+
+export type ResumeEducation = {
+  school: string
+  detail: string
+}
+
 const homeTileRowHeight = "max(300px, 32vw)"
 
 export const homeRows: HomeRow[] = [
@@ -108,8 +120,60 @@ export const homeRows: HomeRow[] = [
 export const siteProfile = {
   name: "Rafael Medina",
   title: "Product Designer, Freelance",
+  resumeTitle: "10+ years of experience, available for work",
   intro:
     "Hey I'm Rafael, a product designer and maker based in Miami. For over 10 years, I've helped teams design products that balance clarity, visual craft, and practical outcomes.",
+  resumeLead:
+    "Senior product designer focused on web, mobile, and developer tools, with recent work across DeFi, fintech, growth, and front-end implementation.",
+  resumeExperience: [
+    {
+      company: "0x Project",
+      role: "Senior Product Designer",
+      period: "Dec 2021 - Mar 2026",
+      summary:
+        "Redesigned Matcha.xyz from the ground up, shipped the 0x API dashboard in five weeks, and supported monetization and developer adoption across product and marketing.",
+    },
+    {
+      company: "BoldVoice",
+      role: "Product Designer, contract",
+      period: "Jul 2021 - Dec 2021",
+      summary:
+        "Worked as the sole designer on a 50K+ user accent training app, partnering closely with one developer on high-ROI growth experiments.",
+    },
+    {
+      company: "Moody's",
+      role: "Product Designer, contract",
+      period: "Jan 2021 - Jul 2021",
+      summary:
+        "Improved financial analysis tools, company profiles, and government entity workflows for institutional analysts.",
+    },
+    {
+      company: "TM [Chainlink, Twilio, Onit]",
+      role: "Product Designer & front-end developer",
+      period: "Dec 2018 - Dec 2020",
+      summary:
+        "Redesigned Twilio developer tools, collaborated on Chainlink internal tools and brand systems, and rebuilt Onit's drag-and-drop logic builder in React.",
+    },
+    {
+      company: "Incubeta / Google Edu Directory",
+      role: "Product Designer, contract",
+      period: "Jan 2018 - May 2018",
+      summary:
+        "Designed Google Edu Directory to connect schools worldwide with certified Google trainers.",
+    },
+  ] as ResumeExperience[],
+  resumeEducation: [
+    {
+      school: "Northern Virginia Community College",
+      detail: "Computer Science, 2016 - 2018. CCI Program and U.S. State Department scholarship recipient.",
+    },
+    {
+      school: "ITLA",
+      detail: "Associate's in Computer Science, 2015. GPA 3.8 and full scholarship.",
+    },
+  ] as ResumeEducation[],
+  resumeSkills:
+    "Figma, prototyping, web/mobile, Jitter, Rive, TypeScript, React, Webflow, Framer, and AI-assisted development with tools like Cursor, Claude Code, and Codex.",
   previouslyLabel: "Previously",
   previouslyText: "Product designer for SaaS teams and startup builders.",
   nowLabel: "Now",
@@ -125,7 +189,7 @@ export const siteLinks: SiteLinks = {
   x: "https://x.com/rafaelmedian",
   telegram: "https://t.me/rafaelmedian",
   github: "https://github.com/rafaelmedina",
-  linkedin: "https://www.linkedin.com/in/rafaelmedina",
+  linkedin: "https://www.linkedin.com/in/rafaelmedian/",
   email: "hey@rafaelmedina.me",
 }
 
