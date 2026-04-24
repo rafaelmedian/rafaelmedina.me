@@ -3,7 +3,6 @@ import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, typ
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { PreviewGalleryDialog } from "./PreviewGalleryDialog"
-import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type SiteProfile = {
   name: string
@@ -27,6 +26,29 @@ type SimpleFeedProps = {
 }
 
 type RowFit = "cover" | "contain"
+type FeedTab = "home" | "resume"
+
+type WorkListItem = {
+  card: PortfolioCard
+  previewIndex: number
+  year: string
+  client: string
+  discipline: string
+  summary: string
+}
+
+type ResumeWorkItem = {
+  id: string
+  title: string
+  card: PortfolioCard
+  previewIndex: number
+  previewIndexes: number[]
+  year: string
+  client: string
+  discipline: string
+  summary: string
+  projectCount: number
+}
 
 const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
@@ -35,6 +57,11 @@ const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Santo_Domingo",
   timeZoneName: "short",
 })
+
+function getInitialFeedTab(showProjects: boolean): FeedTab {
+  if (!showProjects || typeof window === "undefined") return "home"
+  return window.location.hash === "#resume" ? "resume" : "home"
+}
 
 function isVideoPreviewSource(source: string) {
   return source.toLowerCase().endsWith(".webm")
@@ -51,12 +78,17 @@ function formatPuntaCanaLocalTime(date = new Date()) {
   return puntaCanaTimeFormatter.format(date).replace(/\s?([AP])M(?=\s|$)/, (_, meridiem: string) => `${meridiem.toLowerCase()}m`)
 }
 
-function openPreview(card: PortfolioCard, previewIndex: number, setSelectedWorkPreviewIndex: (value: number) => void) {
+function openPreview(
+  card: PortfolioCard,
+  previewIndex: number,
+  setSelectedWorkPreviewIndex: (value: number) => void,
+  placement: "home_grid" | "resume_preview" | "resume_item" = "resume_preview",
+) {
   trackEvent("work_preview_open", {
     preview_id: card.id,
     preview_title: card.title,
     preview_index: previewIndex + 1,
-    preview_placement: "grid",
+    preview_placement: placement,
   })
   setSelectedWorkPreviewIndex(previewIndex)
 }
@@ -91,6 +123,10 @@ function paginatePreviewCard(
     ...current,
     [card.id]: ((current[card.id] ?? currentScreenIndex) + 1) % paginationTotal,
   }))
+}
+
+function getProjectCountLabel(total: number) {
+  return `${total} project ${total === 1 ? "image" : "images"}`
 }
 
 function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion: boolean }) {
@@ -140,70 +176,192 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
   )
 }
 
-function SocialCorner({ links }: { links: SiteLinks }) {
-  const socialLinks = [
-    { label: "X.com", href: links.x, external: true },
-    { label: "Telegram", href: links.telegram, external: true },
-    { label: "Email", href: `mailto:${links.email}`, external: false },
-  ]
-
+function SocialCorner({ activeTab, onTabChange, showTabs }: { activeTab: FeedTab; onTabChange: (tab: FeedTab) => void; showTabs: boolean }) {
   return (
-    <nav className="mosaic-social-corner" aria-label="Social links">
-      {socialLinks.map((link) => (
-        <a
-          key={link.label}
-          href={link.href}
-          target={link.external ? "_blank" : undefined}
-          rel={link.external ? "noreferrer" : undefined}
-          className="mosaic-social-link"
-          onClick={() => {
-            trackEvent("social_link_click", {
-              social_label: link.label,
-              social_href: link.href,
-              social_placement: "top_corner",
-            })
-          }}
-        >
-          {link.label}
-        </a>
-      ))}
+    <nav className="mosaic-social-corner" aria-label="Portfolio sections">
+      {showTabs ? (
+        <div className="mosaic-social-tabs" role="tablist" aria-label="Portfolio sections">
+          {(["home", "resume"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              id={`portfolio-${tab}-tab`}
+              role="tab"
+              aria-selected={activeTab === tab}
+              className={`mosaic-social-link mosaic-social-tab${activeTab === tab ? " is-active" : ""}`}
+              onClick={() => onTabChange(tab)}
+            >
+              {tab === "home" ? "Home" : "Resume"}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </nav>
   )
 }
 
-function SplitPortfolioQuote() {
-  return (
-    <article className="mosaic-split-quote" aria-label="Portfolio testimonial">
-      <blockquote>
-        <p>
-          Previously I did a bunch of stuff at 0x. Designed Matcha.xyz from scratch, built websites, created storyboards,{" "}
-          <strong>designed marketing things, coded stuff.</strong>
-        </p>
-        <footer>
-          <span className="mosaic-split-quote-avatars" aria-hidden="true">
-            <span />
-            <span />
-          </span>
-          <span className="mosaic-split-quote-credit">
-            <strong>Simon Rico & Jakub</strong>
-            <span>Product Designer at 0x</span>
-          </span>
-        </footer>
-      </blockquote>
-      <div className="mosaic-split-quote-dots" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-    </article>
-  )
+const workItemMeta: Record<string, Omit<WorkListItem, "card" | "previewIndex">> = {
+  "preview-shot-9": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, prototyping",
+    summary: "A multiwallet switching flow for traders managing several connected accounts.",
+  },
+  "preview-shot-16": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, web",
+    summary: "Homepage explorations for making DEX routing feel clearer and more approachable.",
+  },
+  "preview-popparazi-v1": {
+    year: "2021",
+    client: "Popparazi",
+    discipline: "Product design, mobile",
+    summary: "Early social camera concepts for publishing through friends instead of feeds.",
+  },
+  "preview-protector": {
+    year: "2024",
+    client: "Protector",
+    discipline: "Product design, mobile",
+    summary: "Protection-focused product surfaces with a calmer path through sensitive moments.",
+  },
+  "preview-shot-14": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, mobile",
+    summary: "Mobile trading screens tuned for dense information, quick scanning, and confidence.",
+  },
+  "preview-shot-20": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, trust",
+    summary: "Security audit surfaces that explain risk without turning the product into paperwork.",
+  },
+  "preview-shot-21": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, markets",
+    summary: "Token detail pages for comparing market context before making a trade.",
+  },
+  "preview-shot-1": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, trading",
+    summary: "A trade page composition for quote review, route confidence, and execution clarity.",
+  },
+  "preview-shot-15": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, navigation",
+    summary: "Navigation patterns for moving through trading flows on smaller screens.",
+  },
+  "preview-shot-19": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, interface systems",
+    summary: "A modular trade component intended to stay legible across contexts.",
+  },
+  "preview-shot-22": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, visual systems",
+    summary: "Dark mode explorations for a trading interface that still feels precise and quiet.",
+  },
+  "preview-shot-23": {
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Product design, advanced trading",
+    summary: "Pro trading concepts for power users who need more density without more noise.",
+  },
+}
+
+const resumeWorkMeta = [
+  {
+    id: "matcha-0x",
+    title: "Matcha / 0x product work",
+    cardIds: [
+      "preview-shot-9",
+      "preview-shot-16",
+      "preview-shot-14",
+      "preview-shot-20",
+      "preview-shot-21",
+      "preview-shot-1",
+      "preview-shot-15",
+      "preview-shot-19",
+      "preview-shot-22",
+      "preview-shot-23",
+    ],
+    year: "2025",
+    client: "0x / Matcha",
+    discipline: "Trading, markets, trust, mobile",
+    summary: "A run of product surfaces across DEX trading, wallet flows, token pages, and interface systems.",
+  },
+  {
+    id: "popparazi",
+    title: "Popparazi V1",
+    cardIds: ["preview-popparazi-v1"],
+    year: "2021",
+    client: "Popparazi",
+    discipline: "Mobile social product",
+    summary: "Early social camera concepts for publishing through friends instead of feeds.",
+  },
+  {
+    id: "protector",
+    title: "Protector",
+    cardIds: ["preview-protector"],
+    year: "2024",
+    client: "Protector",
+    discipline: "Protection-focused mobile UX",
+    summary: "Protection-focused product surfaces with a calmer path through sensitive moments.",
+  },
+]
+
+function getWorkItem(card: PortfolioCard, previewIndex: number): WorkListItem {
+  const fallbackMeta = {
+    year: "2025",
+    client: card.category,
+    discipline: "Product design",
+    summary: card.summary || card.detail || "Selected product design work.",
+  }
+
+  return {
+    card,
+    previewIndex,
+    ...(workItemMeta[card.id] ?? fallbackMeta),
+  }
+}
+
+function getResumeWorkItems(workItems: WorkListItem[]): ResumeWorkItem[] {
+  return resumeWorkMeta.flatMap((caseMeta) => {
+    const caseWorkItems = caseMeta.cardIds.flatMap((cardId) => {
+      const workItem = workItems.find((candidate) => candidate.card.id === cardId)
+      return workItem ? [workItem] : []
+    })
+    const representativeWorkItem = caseWorkItems[0]
+    if (!representativeWorkItem) return []
+
+    return [
+      {
+        id: caseMeta.id,
+        title: caseMeta.title,
+        card: representativeWorkItem.card,
+        previewIndex: representativeWorkItem.previewIndex,
+        previewIndexes: caseWorkItems.map((item) => item.previewIndex),
+        year: caseMeta.year,
+        client: caseMeta.client,
+        discipline: caseMeta.discipline,
+        summary: caseMeta.summary,
+        projectCount: caseWorkItems.length,
+      },
+    ]
+  })
 }
 
 export function SimpleFeed({ cards, profile, links, showProjects = true }: SimpleFeedProps) {
+  const [activeTab, setActiveTab] = useState<FeedTab>(() => getInitialFeedTab(showProjects))
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
-  const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
+  const [selectedWorkIndex, setSelectedWorkIndex] = useState(0)
   const [paginatedPreviewIndexes, setPaginatedPreviewIndexes] = useState<Record<string, number>>({})
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() => formatPuntaCanaLocalTime())
   const [loadedSources, setLoadedSources] = useState<Set<string>>(() => new Set())
@@ -231,24 +389,32 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     })
   }, [cards])
 
-  const flatWorkCards = useMemo(
-    () => rowsRender.flatMap((row) => row.items.map((item) => item.card)),
+  const workListItems = useMemo(
+    () => rowsRender.flatMap((row) => row.items.map((item) => getWorkItem(item.card, item.previewIndex))),
     [rowsRender],
   )
-  const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(flatWorkCards.length - 1, 0))
+  const resumeWorkItems = useMemo(() => getResumeWorkItems(workListItems), [workListItems])
+  const flatWorkCards = useMemo(() => workListItems.map((item) => item.card), [workListItems])
+  const selectedWorkItem = resumeWorkItems[Math.min(selectedWorkIndex, Math.max(resumeWorkItems.length - 1, 0))]
+  const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? selectedWorkItem?.previewIndex ?? 0
   const setSelectedWorkPreviewIndex = (index: number) => {
-    setLastWorkPreviewIndex(index)
     setActiveWorkPreviewIndex(index)
   }
+  const setFeedTab = (nextTab: FeedTab) => {
+    setActiveTab(nextTab)
+    trackEvent("feed_tab_change", { tab: nextTab })
+  }
+  const isHomeTab = activeTab === "home"
 
-  const shellClassName = `mosaic-shell${showProjects ? " mosaic-shell-split" : " mosaic-shell-hero-only"}`
+  const shellClassName = `mosaic-shell${showProjects ? ` mosaic-shell-split mosaic-shell-tab-${activeTab}` : " mosaic-shell-hero-only"}`
   const heroClassName = `mosaic-hero${showProjects ? "" : " mosaic-hero-hero-only"}`
 
-  const renderRowMedia = (
+  const renderWorkMedia = (
     card: PortfolioCard,
     source = card.image,
     label = card.title,
     eager = false,
+    className = "mosaic-row-media",
   ) => {
     const dataLoaded = loadedSources.has(source) ? "true" : "false"
     if (isVideoPreviewSource(source)) {
@@ -261,7 +427,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           playsInline
           preload={prefersReducedMotion ? "none" : "metadata"}
           aria-label={label}
-          className="mosaic-row-media"
+          className={className}
           data-loaded={dataLoaded}
           onLoadedData={() => markLoaded(source)}
         />
@@ -275,7 +441,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
         loading={eager ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={eager ? "high" : "auto"}
-        className="mosaic-row-media"
+        className={className}
         data-loaded={dataLoaded}
         onLoad={(event) => {
           if (event.currentTarget.naturalWidth > 0) markLoaded(source)
@@ -286,6 +452,12 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
       />
     )
   }
+
+  useEffect(() => {
+    if (!showProjects) {
+      setActiveTab("home")
+    }
+  }, [showProjects])
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
@@ -328,114 +500,242 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     }
   }, [])
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !showProjects) return
+
+    const syncFromHash = () => {
+      setActiveTab(window.location.hash === "#resume" ? "resume" : "home")
+    }
+
+    window.addEventListener("hashchange", syncFromHash)
+    return () => window.removeEventListener("hashchange", syncFromHash)
+  }, [showProjects])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !showProjects) return
+
+    const nextUrl = `${window.location.pathname}${window.location.search}${activeTab === "resume" ? "#resume" : "#home"}`
+    window.history.replaceState(null, "", nextUrl)
+  }, [activeTab, showProjects])
+
+  const selectWorkItem = (index: number, source: "hover" | "focus" | "click") => {
+    setSelectedWorkIndex(index)
+
+    if (source === "click") {
+      const workItem = resumeWorkItems[index]
+      if (!workItem) return
+      trackEvent("work_preview_select", {
+        preview_id: workItem.id,
+        preview_title: workItem.title,
+        preview_index: workItem.previewIndex + 1,
+      })
+    }
+  }
+
+  const renderWorkIndexList = () => (
+    <div className="mosaic-work-index-list">
+      <div className="mosaic-work-index-heading">
+        <p>Resume</p>
+        <h2>Selected product work</h2>
+      </div>
+      <ol className="mosaic-work-list" aria-label="Selected work">
+        {resumeWorkItems.map((item, index) => {
+          const isSelected = item.id === selectedWorkItem?.id
+
+          return (
+            <li key={item.id} className="mosaic-work-list-item">
+              <button
+                type="button"
+                className={`mosaic-work-list-button${isSelected ? " is-selected" : ""}`}
+                aria-current={isSelected ? "true" : undefined}
+                onMouseEnter={() => selectWorkItem(index, "hover")}
+                onFocus={() => selectWorkItem(index, "focus")}
+                onClick={() => selectWorkItem(index, "click")}
+              >
+                <span className="mosaic-work-list-year">{item.year}</span>
+                <span className="mosaic-work-list-body">
+                  <span className="mosaic-work-list-title-row">
+                    <span className="mosaic-work-list-title">{item.title}</span>
+                    <span className="mosaic-work-list-client">{item.client}</span>
+                  </span>
+                  <span className="mosaic-work-list-discipline">{item.discipline}</span>
+                  <span className="mosaic-work-list-count">{getProjectCountLabel(item.projectCount)}</span>
+                  <span className="mosaic-work-list-summary">{item.summary}</span>
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+
+  const renderSelectedWorkPreview = () =>
+    selectedWorkItem ? (
+      <aside className="mosaic-work-preview" aria-live="polite" aria-label="Selected work preview">
+        <button
+          type="button"
+          className={`mosaic-work-preview-card mosaic-work-preview-card-${selectedWorkItem.card.id}`}
+          onClick={() => openPreview(selectedWorkItem.card, selectedWorkItem.previewIndex, setSelectedWorkPreviewIndex, "resume_preview")}
+          aria-label={`Open ${selectedWorkItem.title} preview ${selectedWorkItem.previewIndex + 1} of ${flatWorkCards.length}`}
+        >
+          {renderWorkMedia(
+            selectedWorkItem.card,
+            selectedWorkItem.card.image,
+            selectedWorkItem.title,
+            selectedWorkItem.previewIndex === 0,
+            "mosaic-work-preview-media",
+          )}
+        </button>
+        <div className="mosaic-work-preview-caption">
+          <span>{selectedWorkItem.year}</span>
+          <strong>{selectedWorkItem.title}</strong>
+        </div>
+      </aside>
+    ) : null
+
+  const renderHomeRows = () => (
+    <div className="mosaic-rows" aria-label="Selected work previews">
+      {rowsRender.map((row, rowIndex) => {
+        const rowStyle = {
+          ...(row.height ? { "--row-height": row.height } : {}),
+          ...(row.gap ? { "--row-gap": row.gap } : {}),
+        } as CSSProperties
+        const eagerRow = rowIndex === 0
+        return (
+          <Fragment key={row.id}>
+            <div className={`mosaic-row mosaic-${row.id}`} style={rowStyle}>
+              {row.items.map((item) => {
+                const itemKey = `${item.card.id}-${item.previewIndex}`
+                const paginationTotal = getPaginationTotal(item.card)
+                const isPaginatedCard = paginationTotal > 1
+                const paginationScreenIndex = isPaginatedCard ? (paginatedPreviewIndexes[item.card.id] ?? 0) % paginationTotal : 0
+                const mediaSource = isPaginatedCard ? getPaginationImage(item.card, paginationScreenIndex) : item.card.image
+                const mediaLabel = isPaginatedCard ? `${item.card.title} screen ${paginationScreenIndex + 1} of ${paginationTotal}` : item.card.title
+                const itemStyle = {
+                  "--row-span": item.span,
+                  ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
+                  ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
+                } as CSSProperties
+                return (
+                  <div key={itemKey} className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`} style={itemStyle}>
+                    <button
+                      type="button"
+                      className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
+                      onClick={() => {
+                        if (isPaginatedCard) {
+                          paginatePreviewCard(item.card, paginationScreenIndex, paginationTotal, setPaginatedPreviewIndexes)
+                          return
+                        }
+
+                        openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex, "home_grid")
+                      }}
+                      aria-label={
+                        isPaginatedCard
+                          ? `Show next ${item.card.title} screen, currently screen ${paginationScreenIndex + 1} of ${paginationTotal}`
+                          : `Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`
+                      }
+                    >
+                      {renderWorkMedia(item.card, mediaSource, mediaLabel, eagerRow)}
+                      <span className="mosaic-row-card-title" aria-hidden="true">
+                        {item.card.title}
+                      </span>
+                      {isPaginatedCard ? (
+                        <span className="mosaic-row-card-pagination" aria-hidden="true">
+                          {Array.from({ length: paginationTotal }).map((_, dotIndex) => (
+                            <span
+                              key={`${item.card.id}-pagination-${dotIndex}`}
+                              className={`mosaic-row-card-pagination-dot${dotIndex === paginationScreenIndex ? " is-active" : ""}`}
+                            />
+                          ))}
+                        </span>
+                      ) : null}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </Fragment>
+        )
+      })}
+    </div>
+  )
+
   return (
     <section className={shellClassName}>
       <h1 className="sr-only">{profile.name} portfolio</h1>
-      <SocialCorner links={links} />
+      <SocialCorner activeTab={activeTab} onTabChange={setFeedTab} showTabs={showProjects} />
       <header id="about" className={heroClassName}>
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
-          <div className="mosaic-profile-info">
-            <div className="mosaic-avatar mosaic-avatar-coin" role="img" aria-label={`${profile.name} portrait`}>
+          <div id="home" className="mosaic-profile-info">
+            <button
+              type="button"
+              className={`mosaic-avatar mosaic-avatar-coin${isHomeTab ? "" : " is-active"}`}
+              aria-label="Show home"
+              aria-controls="home-tab-panel"
+              aria-pressed={isHomeTab}
+              onClick={() => setFeedTab("home")}
+            >
               <div className="mosaic-avatar-coin-inner">
                 <img src={profile.photo} alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
                 <img src={profile.photo} alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
               </div>
-            </div>
+            </button>
             <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
               <p className="mosaic-profile-subtitle">{profile.title}</p>
             </div>
           </div>
-          <WorkedWithCompaniesInline variant="profile" />
-          <p className="mosaic-profile-location">
-            Punta Cana, soon NYC <span aria-hidden="true">·</span> Local time:{" "}
-            <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
-          </p>
+          <div className="mosaic-profile-screen" aria-live="polite" data-screen={activeTab}>
+            {isHomeTab ? (
+              <div id="home-tab-panel" className="mosaic-profile-about-screen" role="tabpanel" aria-labelledby="portfolio-home-tab">
+                <p className="mosaic-profile-about-copy">
+                  Born in Santo Domingo, shaped in DC, and now in the middle of a move to NYC.
+                </p>
+                <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
+                  I co-founded Turtle, a way for college students to meet each other; redesigned developer tools at Twilio; built financial workflows
+                  with Moody&apos;s; and helped push Web3 product craft forward at Matcha.xyz.
+                </p>
+                <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
+                  I&apos;ve also been fortunate to work with teams at 0x / Matcha, Moody&apos;s, Twilio, Onit, and Chainlink. Since 2015, I&apos;ve focused on
+                  product design for complex tools and high-trust workflows.
+                </p>
+                <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
+                  These days I freelance on focused, high-impact projects. Reach me at{" "}
+                  <a href="https://x.com/rafaelmedian" target="_blank" rel="noreferrer" className="mosaic-profile-link">
+                    @rafaelmedian
+                  </a>{" "}
+                  ,{" "}
+                  <a href={links.telegram} target="_blank" rel="noreferrer" className="mosaic-profile-link">
+                    Telegram
+                  </a>{" "}
+                  or{" "}
+                  <a href="mailto:hey@rafaelmedina.me" className="mosaic-profile-link">
+                    hey@rafaelmedina.me
+                  </a>
+                  .
+                </p>
+              </div>
+            ) : (
+              <div id="resume" className="mosaic-profile-resume-screen" role="tabpanel" aria-labelledby="portfolio-resume-tab">
+                {renderWorkIndexList()}
+              </div>
+            )}
+          </div>
+          {isHomeTab ? (
+            <p className="mosaic-profile-location">
+              Punta Cana, soon NYC <span aria-hidden="true">·</span> Local time:{" "}
+              <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+            </p>
+          ) : null}
         </div>
       </header>
 
       {showProjects ? (
         <>
-          <article id="work" className="mosaic-work">
-            <h2 className="sr-only">Selected work</h2>
-            <div className="mosaic-rows" aria-label="Selected work previews">
-              {rowsRender.map((row, rowIndex) => {
-                const rowStyle = {
-                  ...(row.height ? { "--row-height": row.height } : {}),
-                  ...(row.gap ? { "--row-gap": row.gap } : {}),
-                } as CSSProperties
-                const eagerRow = rowIndex === 0
-                return (
-                  <Fragment key={row.id}>
-                    <div className={`mosaic-row mosaic-${row.id}`} style={rowStyle}>
-                      {row.items.map((item) => {
-                        const itemKey = `${item.card.id}-${item.previewIndex}`
-                        const paginationTotal = getPaginationTotal(item.card)
-                        const isPaginatedCard = paginationTotal > 1
-                        const paginationScreenIndex = isPaginatedCard
-                          ? (paginatedPreviewIndexes[item.card.id] ?? 0) % paginationTotal
-                          : 0
-                        const mediaSource = isPaginatedCard ? getPaginationImage(item.card, paginationScreenIndex) : item.card.image
-                        const mediaLabel = isPaginatedCard
-                          ? `${item.card.title} screen ${paginationScreenIndex + 1} of ${paginationTotal}`
-                          : item.card.title
-                        const itemStyle = {
-                          "--row-span": item.span,
-                          ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
-                          ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
-                        } as CSSProperties
-                        return (
-                          <div
-                            key={itemKey}
-                            className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
-                            style={itemStyle}
-                          >
-                            <button
-                              type="button"
-                              className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
-                              onClick={() => {
-                                if (isPaginatedCard) {
-                                  paginatePreviewCard(
-                                    item.card,
-                                    paginationScreenIndex,
-                                    paginationTotal,
-                                    setPaginatedPreviewIndexes,
-                                  )
-                                  return
-                                }
-
-                                openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
-                              }}
-                              aria-label={
-                                isPaginatedCard
-                                  ? `Show next ${item.card.title} screen, currently screen ${paginationScreenIndex + 1} of ${paginationTotal}`
-                                  : `Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`
-                              }
-                            >
-                              {renderRowMedia(item.card, mediaSource, mediaLabel, eagerRow)}
-                              <span className="mosaic-row-card-title" aria-hidden="true">
-                                {item.card.title}
-                              </span>
-                              {isPaginatedCard ? (
-                                <span className="mosaic-row-card-pagination" aria-hidden="true">
-                                  {Array.from({ length: paginationTotal }).map((_, dotIndex) => (
-                                    <span
-                                      key={`${item.card.id}-pagination-${dotIndex}`}
-                                      className={`mosaic-row-card-pagination-dot${dotIndex === paginationScreenIndex ? " is-active" : ""}`}
-                                    />
-                                  ))}
-                                </span>
-                              ) : null}
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    {rowIndex === 0 ? <SplitPortfolioQuote /> : null}
-                  </Fragment>
-                )
-              })}
-            </div>
+          <article id="work" className="mosaic-work" aria-label={isHomeTab ? "Home project list" : "Resume project preview"}>
+            <h2 className="sr-only">{isHomeTab ? "Selected work" : "Selected resume project preview"}</h2>
+            {isHomeTab ? renderHomeRows() : renderSelectedWorkPreview()}
           </article>
 
           <PreviewGalleryDialog
@@ -448,7 +748,11 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 setActiveWorkPreviewIndex(null)
               }
             }}
-            onSelectedIndexChange={setSelectedWorkPreviewIndex}
+            onSelectedIndexChange={(nextIndex) => {
+              setSelectedWorkPreviewIndex(nextIndex)
+              const nextResumeIndex = resumeWorkItems.findIndex((item) => item.previewIndexes.includes(nextIndex))
+              setSelectedWorkIndex(nextResumeIndex >= 0 ? nextResumeIndex : 0)
+            }}
           />
         </>
       ) : null}
