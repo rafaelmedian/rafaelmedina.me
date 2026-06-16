@@ -130,10 +130,6 @@ function paginatePreviewCard(
   }))
 }
 
-function getProjectCountLabel(total: number) {
-  return `${total} project ${total === 1 ? "image" : "images"}`
-}
-
 function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion: boolean }) {
   const [displayedLabel, setDisplayedLabel] = useState(label)
   const [incomingLabel, setIncomingLabel] = useState<string | null>(null)
@@ -399,6 +395,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     [rowsRender],
   )
   const resumeWorkItems = useMemo(() => getResumeWorkItems(workListItems), [workListItems])
+  const resumeWorkIndexById = useMemo(() => new Map(resumeWorkItems.map((item, index) => [item.id, index])), [resumeWorkItems])
   const flatWorkCards = useMemo(() => workListItems.map((item) => item.card), [workListItems])
   const selectedWorkItem = resumeWorkItems[Math.min(selectedWorkIndex, Math.max(resumeWorkItems.length - 1, 0))]
   const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? selectedWorkItem?.previewIndex ?? 0
@@ -536,57 +533,6 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
       })
     }
   }
-
-  const renderWorkIndexList = () => (
-    <div className="mosaic-work-index-list">
-      <div className="mosaic-work-index-heading">
-        <h2>Selected work</h2>
-      </div>
-      <div className="mosaic-resume-intro">
-        <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
-          {profile.resumeLead}
-        </p>
-        <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
-          Full profile:{" "}
-          <a href={links.linkedin} target="_blank" rel="noreferrer" className="mosaic-profile-link">
-            linkedin.com/in/rafaelmedian
-          </a>
-          .
-        </p>
-      </div>
-      <ol className="mosaic-work-list" aria-label="Selected work">
-        {resumeWorkItems.map((item, index) => {
-          const isSelected = item.id === selectedWorkItem?.id
-
-          return (
-            <li key={item.id} className="mosaic-work-list-item">
-              <button
-                type="button"
-                className={`mosaic-work-list-button${isSelected ? " is-selected" : ""}`}
-                aria-current={isSelected ? "true" : undefined}
-                onMouseEnter={() => selectWorkItem(index, "hover")}
-                onFocus={() => selectWorkItem(index, "focus")}
-                onClick={() => selectWorkItem(index, "click")}
-              >
-                <span className="mosaic-work-list-year">{item.year}</span>
-                <span className="mosaic-work-list-body">
-                  <span className="mosaic-work-list-header">
-                    <span className="mosaic-work-list-title-group">
-                      <span className="mosaic-work-list-title">{item.title}</span>
-                      <span className="mosaic-work-list-client">{item.client}</span>
-                    </span>
-                    <span className="mosaic-work-list-count">{getProjectCountLabel(item.projectCount)}</span>
-                  </span>
-                  <span className="mosaic-work-list-discipline">{item.discipline}</span>
-                  <span className="mosaic-work-list-summary">{item.summary}</span>
-                </span>
-              </button>
-            </li>
-          )
-        })}
-      </ol>
-    </div>
-  )
 
   const renderSelectedWorkPreview = () =>
     selectedWorkItem ? (
@@ -740,21 +686,63 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               </div>
             ) : (
               <div id="resume" className="mosaic-profile-resume-screen" role="tabpanel" aria-labelledby="portfolio-resume-tab">
-                {renderWorkIndexList()}
+                <div className="mosaic-resume-intro">
+                  <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">{profile.resumeLead}</p>
+                  <p className="mosaic-profile-about-copy mosaic-profile-about-copy-muted">
+                    Full profile:{" "}
+                    <a href={links.linkedin} target="_blank" rel="noreferrer" className="mosaic-profile-link">
+                      linkedin.com/in/rafaelmedian
+                    </a>
+                    .
+                  </p>
+                </div>
                 {profile.resumeExperience?.length ? (
                   <section className="mosaic-resume-section" aria-labelledby="resume-experience-heading">
                     <h3 id="resume-experience-heading">Experience</h3>
                     <ul className="mosaic-resume-detail-list">
-                      {profile.resumeExperience.map((entry) => (
-                        <li key={`${entry.company}-${entry.period}`} className="mosaic-resume-detail-item">
-                          <div className="mosaic-resume-detail-header">
-                            <span className="mosaic-resume-detail-title">{entry.company}</span>
-                            <span className="mosaic-resume-detail-period">{entry.period}</span>
-                          </div>
-                          <p className="mosaic-resume-detail-role">{entry.role}</p>
-                          <p className="mosaic-resume-detail-summary">{entry.summary}</p>
-                        </li>
-                      ))}
+                      {profile.resumeExperience.map((entry) => {
+                        const relatedWorkIndex = entry.relatedCaseStudyId != null ? resumeWorkIndexById.get(entry.relatedCaseStudyId) : undefined
+                        const relatedWorkItem = relatedWorkIndex != null ? resumeWorkItems[relatedWorkIndex] : undefined
+                        const isInteractive = relatedWorkIndex != null && relatedWorkItem != null
+                        const isSelected = relatedWorkItem?.id === selectedWorkItem?.id
+
+                        return (
+                          <li
+                            key={`${entry.company}-${entry.period}`}
+                            className={`mosaic-resume-detail-item${isInteractive ? " has-preview" : ""}${isSelected ? " is-selected" : ""}`}
+                          >
+                            {isInteractive && relatedWorkIndex != null ? (
+                              <button
+                                type="button"
+                                className="mosaic-resume-detail-button"
+                                aria-current={isSelected ? "true" : undefined}
+                                onMouseEnter={() => selectWorkItem(relatedWorkIndex, "hover")}
+                                onFocus={() => selectWorkItem(relatedWorkIndex, "focus")}
+                                onClick={() => selectWorkItem(relatedWorkIndex, "click")}
+                              >
+                                <div className="mosaic-resume-detail-header">
+                                  <span className="mosaic-resume-detail-title">{entry.company}</span>
+                                  <span className="mosaic-resume-detail-period">{entry.period}</span>
+                                </div>
+                                <p className="mosaic-resume-detail-role">{entry.role}</p>
+                                <p className="mosaic-resume-detail-summary">{entry.summary}</p>
+                                <p className="mosaic-resume-detail-preview-meta">
+                                  Previewing {relatedWorkItem.title.toLowerCase()}.
+                                </p>
+                              </button>
+                            ) : (
+                              <>
+                                <div className="mosaic-resume-detail-header">
+                                  <span className="mosaic-resume-detail-title">{entry.company}</span>
+                                  <span className="mosaic-resume-detail-period">{entry.period}</span>
+                                </div>
+                                <p className="mosaic-resume-detail-role">{entry.role}</p>
+                                <p className="mosaic-resume-detail-summary">{entry.summary}</p>
+                              </>
+                            )}
+                          </li>
+                        )
+                      })}
                     </ul>
                   </section>
                 ) : null}

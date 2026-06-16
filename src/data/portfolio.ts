@@ -57,6 +57,7 @@ export type ResumeExperience = {
   role: string
   period: string
   summary: string
+  relatedCaseStudyId?: string
 }
 
 export type ResumeEducation = {
@@ -130,6 +131,7 @@ export const siteProfile = {
       company: "0x Project",
       role: "Senior Product Designer",
       period: "Dec 2021 - Mar 2026",
+      relatedCaseStudyId: "matcha-0x",
       summary:
         "Redesigned Matcha.xyz from the ground up, shipped the 0x API dashboard in five weeks, and supported monetization and developer adoption across product and marketing.",
     },
