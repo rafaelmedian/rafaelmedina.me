@@ -152,3 +152,15 @@ for (const viewport of [
     ).toBe(false)
   })
 }
+
+test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 })
+  await page.goto("/")
+
+  const shell = await page.locator(".mosaic-shell").boundingBox()
+  const firstRow = await page.locator(".mosaic-row").first().boundingBox()
+  expect(shell).not.toBeNull()
+  expect(shell!.width).toBeLessThanOrEqual(1560)
+  expect(firstRow).not.toBeNull()
+  expect(firstRow!.height).toBeLessThanOrEqual(260)
+})
