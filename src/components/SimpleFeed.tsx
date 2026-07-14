@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
 
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
-import { PreviewGalleryDialog } from "./PreviewGalleryDialog"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
+
+const PreviewGalleryDialog = lazy(() =>
+  import("./PreviewGalleryDialog").then((module) => ({ default: module.PreviewGalleryDialog })),
+)
 
 type SiteProfile = {
   name: string
@@ -28,6 +31,17 @@ type SimpleFeedProps = {
 
 type RowFit = "cover" | "contain"
 
+type RowVideoMediaProps = {
+  source: string
+  poster?: string
+  label: string
+  width?: number
+  height?: number
+  prefersReducedMotion: boolean
+  loaded: boolean
+  onLoaded: () => void
+}
+
 const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
@@ -36,8 +50,83 @@ const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
   timeZoneName: "short",
 })
 
+declare global {
+  var __PRERENDERED_AT__: number | undefined
+}
+
 function isVideoPreviewSource(source: string) {
   return source.toLowerCase().endsWith(".webm")
+}
+
+function RowVideoMedia({
+  source,
+  poster,
+  label,
+  width,
+  height,
+  prefersReducedMotion,
+  loaded,
+  onLoaded,
+}: RowVideoMediaProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const supportsIntersectionObserver = typeof window !== "undefined" && "IntersectionObserver" in window
+  const [shouldLoad, setShouldLoad] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !supportsIntersectionObserver) return
+
+    const loadObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoad(true)
+          loadObserver.disconnect()
+        }
+      },
+      { rootMargin: "400px 0px" },
+    )
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.1 },
+    )
+
+    loadObserver.observe(video)
+    visibilityObserver.observe(video)
+    return () => {
+      loadObserver.disconnect()
+      visibilityObserver.disconnect()
+    }
+  }, [supportsIntersectionObserver])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    if (!prefersReducedMotion && shouldLoad && isVisible) {
+      void video.play().catch(() => undefined)
+    } else {
+      video.pause()
+    }
+  }, [isVisible, prefersReducedMotion, shouldLoad])
+
+  return (
+    <video
+      ref={videoRef}
+      src={shouldLoad ? source : undefined}
+      poster={poster}
+      width={width}
+      height={height}
+      muted
+      loop={!prefersReducedMotion}
+      playsInline
+      preload={shouldLoad && !prefersReducedMotion ? "metadata" : "none"}
+      aria-label={label}
+      className="mosaic-row-media"
+      data-loaded={poster || loaded ? "true" : "false"}
+      onLoadedData={onLoaded}
+    />
+  )
 }
 
 function defaultFitForCard(card: PortfolioCard): RowFit {
@@ -176,7 +265,9 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [paginatedPreviewIndexes, setPaginatedPreviewIndexes] = useState<Record<string, number>>({})
-  const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() => formatPuntaCanaLocalTime())
+  const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
+    formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
+  )
   const [loadedSources, setLoadedSources] = useState<Set<string>>(() => new Set())
   const markLoaded = (src: string) =>
     setLoadedSources((prev) => (prev.has(src) ? prev : new Set(prev).add(src)))
@@ -224,17 +315,15 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     const dataLoaded = loadedSources.has(source) ? "true" : "false"
     if (isVideoPreviewSource(source)) {
       return (
-        <video
-          src={source}
-          muted
-          loop={!prefersReducedMotion}
-          autoPlay={!prefersReducedMotion}
-          playsInline
-          preload={prefersReducedMotion ? "none" : "metadata"}
-          aria-label={label}
-          className="mosaic-row-media"
-          data-loaded={dataLoaded}
-          onLoadedData={() => markLoaded(source)}
+        <RowVideoMedia
+          source={source}
+          poster={card.previewPoster}
+          label={label}
+          width={card.previewWidth}
+          height={card.previewHeight}
+          prefersReducedMotion={prefersReducedMotion}
+          loaded={dataLoaded === "true"}
+          onLoaded={() => markLoaded(source)}
         />
       )
     }
@@ -243,6 +332,8 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
         key={source}
         src={source}
         alt={label}
+        width={card.previewWidth}
+        height={card.previewHeight}
         loading={eager ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={eager ? "high" : "auto"}
@@ -308,8 +399,8 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           <div className="mosaic-profile-info">
             <div className="mosaic-avatar mosaic-avatar-coin" role="img" aria-label={`${profile.name} portrait`}>
               <div className="mosaic-avatar-coin-inner">
-                <img src={profile.photo} alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
-                <img src={profile.photo} alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
+                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
+                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
               </div>
             </div>
             <div className="mosaic-profile-meta">
@@ -406,18 +497,22 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
             </div>
           </article>
 
-          <PreviewGalleryDialog
-            cards={flatWorkCards}
-            open={activeWorkPreviewIndex != null && activeWorkPreviewIndex < flatWorkCards.length}
-            selectedIndex={selectedWorkPreviewIndex}
-            prefersReducedMotion={prefersReducedMotion}
-            onOpenChange={(nextOpen) => {
-              if (!nextOpen) {
-                setActiveWorkPreviewIndex(null)
-              }
-            }}
-            onSelectedIndexChange={setSelectedWorkPreviewIndex}
-          />
+          {activeWorkPreviewIndex != null && activeWorkPreviewIndex < flatWorkCards.length ? (
+            <Suspense fallback={null}>
+              <PreviewGalleryDialog
+                cards={flatWorkCards}
+                open
+                selectedIndex={selectedWorkPreviewIndex}
+                prefersReducedMotion={prefersReducedMotion}
+                onOpenChange={(nextOpen) => {
+                  if (!nextOpen) {
+                    setActiveWorkPreviewIndex(null)
+                  }
+                }}
+                onSelectedIndexChange={setSelectedWorkPreviewIndex}
+              />
+            </Suspense>
+          ) : null}
         </>
       ) : null}
     </section>

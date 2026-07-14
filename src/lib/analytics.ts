@@ -1,5 +1,3 @@
-import { track as trackVercelAnalyticsEvent } from "@vercel/analytics"
-
 declare global {
   interface Window {
     dataLayer?: unknown[]
@@ -80,7 +78,7 @@ export function trackEvent(eventName: string, params: Record<string, string | nu
   trackGoogleAnalyticsEvent(eventName, params)
 
   if (!shouldEnableVercelAnalytics()) return
-  trackVercelAnalyticsEvent(eventName, params)
+  void import("@vercel/analytics").then(({ track }) => track(eventName, params))
 }
 
 export function trackPageView() {

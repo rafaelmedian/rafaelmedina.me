@@ -14,7 +14,7 @@ export type ProjectDialogProps = {
 }
 
 export function ProjectDialog({ card, cardVariant, className }: ProjectDialogProps) {
-  const playOpen = useSound(openSound)
+  const playOpen = useSound(openSound, { volume: 0.6 })
   const linkAttributes = card.ctaExternal
     ? {
         target: "_blank",

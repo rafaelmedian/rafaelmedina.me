@@ -391,12 +391,10 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       keyPrefix: string,
       {
         links = {},
-        onLinkedWordClick,
         isCollapsing = false,
         collapseDelayOffset = 0,
       }: {
         links?: Record<string, string>
-        onLinkedWordClick?: () => void
         isCollapsing?: boolean
         collapseDelayOffset?: number
       } = {},
@@ -426,10 +424,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
                 rel="noreferrer"
                 className={className}
                 style={collapseWordStyle}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onLinkedWordClick?.()
-                }}
               >
                 {children}
               </a>
@@ -475,6 +469,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       logoUrls,
       keyPrefix,
       expansionId,
+      collapsedLabel,
       links,
     }: {
       company: WorkedWithCompany
@@ -483,6 +478,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       logoUrls?: string[]
       keyPrefix: string
       expansionId: string
+      collapsedLabel: string
       links?: Record<string, string>
     }) => {
       const visibleWordCount = visibleWordCounts[expansionId] ?? 0
@@ -516,15 +512,25 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
                   segmentIndex === 0 ? " mosaic-work-history-chip-expanded-segment-primary" : ""
                 }${isCollapsing ? " mosaic-work-history-chip-collapsing" : ""}`}
                 style={getCollapseStyle(collapseStartWordCount, isCollapsing)}
-                onClick={() => closeExpansion(expansionId)}
               >
                 {segmentIndex === 0 ? renderExpandedLogos(company, logoUrls) : null}
                 {renderTypedWords(visibleWords, `${keyPrefix}-${segmentIndex}`, {
                   links,
-                  onLinkedWordClick: () => closeExpansion(expansionId),
                   isCollapsing,
                   collapseDelayOffset,
                 })}
+                {segmentIndex === 0 ? (
+                  <button
+                    type="button"
+                    className="mosaic-work-history-collapse"
+                    aria-label={`Collapse ${collapsedLabel} details`}
+                    aria-expanded="true"
+                    aria-controls={buttonId}
+                    onClick={() => closeExpansion(expansionId)}
+                  >
+                    <span aria-hidden="true">×</span>
+                  </button>
+                ) : null}
               </span>
             </Fragment>
           )
@@ -565,11 +571,9 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
                 isCollapsing ? " mosaic-work-history-chip-collapsing" : ""
               }`}
               style={getCollapseStyle(collapseStartWordCount, isCollapsing)}
-              onClick={() => closeExpansion(moreInfoId)}
             >
               {renderTypedWords(visibleWords, `${moreInfoId}-${segmentIndex}`, {
                 links: moreInfoLinks,
-                onLinkedWordClick: () => closeExpansion(moreInfoId),
                 isCollapsing,
                 collapseDelayOffset,
               })}
@@ -591,6 +595,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
           buttonId: companyDisclosureId,
           keyPrefix: company.id,
           expansionId: company.id,
+          collapsedLabel: company.compactName,
           links: expandedCompanyLinks[company.id],
         })
       }
@@ -629,6 +634,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
                 logoUrls: recentCompanies.flatMap((company) => company.logoUrls),
                 keyPrefix: recentGroupId,
                 expansionId: recentGroupId,
+                collapsedLabel: recentCollapsedLabel,
                 links: expandedCompanyLinks[recentGroupId],
               })}
             </>
@@ -638,6 +644,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
               className="mosaic-work-history-chip"
               aria-label={recentCollapsedLabel}
               aria-expanded="false"
+              aria-controls={`${disclosureId}-recent-expanded`}
               onClick={() => openExpansion(recentGroupId)}
             >
               {recentCollapsedLabel}

@@ -2,7 +2,7 @@ import card02 from "../assets/cards/card-02.svg"
 import card04 from "../assets/cards/card-04.svg"
 import card05 from "../assets/cards/card-05.svg"
 import card06 from "../assets/cards/card-06.svg"
-import profilePhoto from "../assets/profile-photo.png"
+import profilePhoto from "../assets/profile-photo.webp"
 
 export type CardKind = "project" | "about" | "contact" | "preview" | "info"
 
@@ -14,6 +14,9 @@ export type PortfolioCard = {
   summary: string
   detail: string
   image: string
+  previewWidth?: number
+  previewHeight?: number
+  previewPoster?: string
   ctaLabel: string
   ctaHref: string
   ctaExternal: boolean
@@ -126,6 +129,9 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/shot-small-9.webm",
+    previewWidth: 480,
+    previewHeight: 360,
+    previewPoster: "/Projects/shot-small-9-poster.webp",
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -140,6 +146,8 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -153,6 +161,9 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/shot-small-20.webm",
+    previewWidth: 640,
+    previewHeight: 480,
+    previewPoster: "/Projects/shot-small-20-poster.webp",
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -166,6 +177,9 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/shot-small-16.webm",
+    previewWidth: 640,
+    previewHeight: 480,
+    previewPoster: "/Projects/shot-small-16-poster.webp",
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -180,7 +194,9 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Protector",
     summary: "",
     detail: "",
-    image: "/Projects/protector.png",
+    image: "/Projects/protector.webp",
+    previewWidth: 1200,
+    previewHeight: 1328,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -194,7 +210,9 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Popparazi V1",
     summary: "",
     detail: "",
-    image: "/Projects/popparazi_v1.png",
+    image: "/Projects/popparazi_v1.webp",
+    previewWidth: 630,
+    previewHeight: 1314,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -211,6 +229,8 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -225,6 +245,8 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -238,6 +260,8 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -251,6 +275,8 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -264,6 +290,8 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,
@@ -277,6 +305,8 @@ export const portfolioCards: PortfolioCard[] = [
     summary: "",
     detail: "",
     image: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
     ctaLabel: "",
     ctaHref: "#",
     ctaExternal: false,

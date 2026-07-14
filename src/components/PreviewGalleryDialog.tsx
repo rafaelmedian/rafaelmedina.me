@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import type { PortfolioCard } from "../data/portfolio"
@@ -97,9 +97,9 @@ export function PreviewGalleryDialog({
       ]
     : []
 
-  const playOpen = useSound(openSound)
-  const playNext = useSound(nextSound)
-  const playBack = useSound(backSound)
+  const playOpen = useSound(openSound, { volume: 0.6 })
+  const playNext = useSound(nextSound, { volume: 0.6 })
+  const playBack = useSound(backSound, { volume: 0.6 })
 
   useEffect(() => {
     if (open && closeResetTimeoutRef.current !== null) {
@@ -266,6 +266,9 @@ export function PreviewGalleryDialog({
                 {activeCardIsVideo ? (
                   <video
                     src={activeCard.image}
+                    poster={activeCard.previewPoster}
+                    width={activeCard.previewWidth}
+                    height={activeCard.previewHeight}
                     muted
                     loop={!prefersReducedMotion}
                     autoPlay={!prefersReducedMotion}
@@ -276,8 +279,50 @@ export function PreviewGalleryDialog({
                     className="preview-gallery-media"
                   />
                 ) : (
-                  <img src={activeCard.image} alt={activeCard.title} className="preview-gallery-media" loading="eager" decoding="async" />
+                  <img
+                    src={activeCard.image}
+                    alt={activeCard.title}
+                    width={activeCard.previewWidth}
+                    height={activeCard.previewHeight}
+                    className="preview-gallery-media"
+                    loading="eager"
+                    decoding="async"
+                  />
                 )}
+              </div>
+
+              <div className="preview-gallery-toolbar">
+                <span className="preview-gallery-count">
+                  {safeIndex + 1} / {cards.length}
+                </span>
+
+                <div className="preview-gallery-controls" aria-label="Preview controls">
+                  <button
+                    type="button"
+                    className="preview-gallery-nav preview-gallery-nav-prev"
+                    aria-label="Previous preview"
+                    aria-keyshortcuts="ArrowUp ArrowLeft"
+                    onClick={() => moveBy(-1)}
+                    disabled={cards.length <= 1}
+                  >
+                    <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="preview-gallery-nav preview-gallery-nav-next"
+                    aria-label="Next preview"
+                    aria-keyshortcuts="ArrowDown ArrowRight"
+                    onClick={() => moveBy(1)}
+                    disabled={cards.length <= 1}
+                  >
+                    <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  </button>
+
+                  <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
+                    <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  </Dialog.Close>
+                </div>
               </div>
 
               <div className="preview-gallery-content">
@@ -286,9 +331,6 @@ export function PreviewGalleryDialog({
                     <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
                     <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
                   </div>
-                  <span className="preview-gallery-count">
-                    {safeIndex + 1} / {cards.length}
-                  </span>
                 </div>
 
                 <dl className="preview-gallery-details">
@@ -312,29 +354,6 @@ export function PreviewGalleryDialog({
               </div>
             </article>
 
-            <div className="preview-gallery-nav-stack">
-              <button
-                type="button"
-                className="preview-gallery-nav preview-gallery-nav-prev"
-                aria-label="Previous preview"
-                aria-keyshortcuts="ArrowUp ArrowLeft"
-                onClick={() => moveBy(-1)}
-                disabled={cards.length <= 1}
-              >
-                <ChevronUp aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-              </button>
-
-              <button
-                type="button"
-                className="preview-gallery-nav preview-gallery-nav-next"
-                aria-label="Next preview"
-                aria-keyshortcuts="ArrowDown ArrowRight"
-                onClick={() => moveBy(1)}
-                disabled={cards.length <= 1}
-              >
-                <ChevronDown aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-              </button>
-            </div>
           </Dialog.Popup>
         </div>
       </Dialog.Portal>

@@ -1,11 +1,18 @@
-import { Analytics as VercelAnalytics } from "@vercel/analytics/react"
-import { SoundProvider } from "@web-kits/audio/react"
-import { Agentation } from "agentation"
+import { lazy, Suspense } from "react"
 
 import { SimpleFeed } from "./components/SimpleFeed"
-import { StyleguidePage } from "./components/StyleguidePage"
 import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
 import { shouldEnableVercelAnalytics } from "./lib/analytics"
+
+const StyleguidePage = lazy(() =>
+  import("./components/StyleguidePage").then((module) => ({ default: module.StyleguidePage })),
+)
+const VercelAnalytics = lazy(() =>
+  import("@vercel/analytics/react").then((module) => ({ default: module.Analytics })),
+)
+const Agentation = import.meta.env.DEV
+  ? lazy(() => import("agentation").then((module) => ({ default: module.Agentation })))
+  : null
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -17,25 +24,33 @@ function App() {
   const isStyleguidePage = currentPath === "/styleguide"
 
   return (
-    <SoundProvider volume={0.6}>
-      <div
-        data-theme="light"
-        className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]"
-      >
+    <div
+      data-theme="light"
+      className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]"
+    >
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
         {isStyleguidePage ? (
-          <StyleguidePage links={siteLinks} name={siteProfile.name} />
+          <Suspense fallback={null}>
+            <StyleguidePage links={siteLinks} name={siteProfile.name} />
+          </Suspense>
         ) : (
           <main id="main-content" tabIndex={-1} className="relative z-dock">
             <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} showProjects />
           </main>
         )}
-        {shouldEnableVercelAnalytics() ? <VercelAnalytics /> : null}
-        {import.meta.env.DEV ? <Agentation /> : null}
-      </div>
-    </SoundProvider>
+        {shouldEnableVercelAnalytics() ? (
+          <Suspense fallback={null}>
+            <VercelAnalytics />
+          </Suspense>
+        ) : null}
+        {Agentation ? (
+          <Suspense fallback={null}>
+            <Agentation />
+          </Suspense>
+        ) : null}
+    </div>
   )
 }
 
