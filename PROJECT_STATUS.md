@@ -1,67 +1,25 @@
-# Project Status: Infinite Canvas Portfolio
+# Project Status
 
-Last updated: 2026-02-12
-Branch: `basic-bento-scroll`
+Last updated: 2026-07-19
 
-## Current Status
+## Current state
 
-### Completed
-- Canvas-first app shell is active (`App` renders `InfiniteCanvasBoard`).
-- Infinite draggable canvas is implemented:
-  - Mouse drag panning
-  - Trackpad wheel panning
-  - Drag threshold to distinguish click vs drag
-- Profile card is centered in world space and uses the new profile image.
-- Surrounding cards are arranged in an aligned bento/grid pattern.
-- Mixed card content modes are implemented:
-  - `image` cards open details modal
-  - `link` cards open external/internal links
-  - `video` cards render play-style cards and open target URLs
-- Visual system added for canvas:
-  - Atmospheric background
-  - Subtle grid/dot layer
-  - Link/video card styles matching existing design language
-- Modal-close conflict with canvas pointer handling was fixed.
+- The homepage renders `SimpleFeed` (`src/App.tsx` → `src/components/SimpleFeed.tsx`): profile hero with live Punta Cana clock, company history, and the selected-work mosaic (`showProjects` is on).
+- All card content and site links live in `src/data/portfolio.ts`.
+- `/styleguide` renders `StyleguidePage` in dev only; it is not deployed as a static route in production.
+- `npm run build` and `npm run lint` both pass.
 
-### In Progress / Open
-- Final balancing of bento spacing/density based on visual preference.
-- Curating which specific cards should map to `image`, `link`, and `video` modes.
-- Branch organization cleanup (user requested moving changes to another branch).
+## Branch layout
 
-## Technical Snapshot
+- `gh-pages` — default branch; holds only the **built** site (Vite `dist/` output plus `CNAME`). Deploys are commits/PRs to this branch.
+- `rafaelmedian/site-polish-source` — current **source** branch (this Vite + React + TypeScript app).
+- `archive/*` — retired history, including the pre-2026 Jekyll site (`archive/2020-12-21-master`) and the previous source branch (`archive/2026-04-21-main`).
 
-### Key files
-- `src/components/InfiniteCanvasBoard.tsx`
-- `src/App.tsx`
-- `src/index.css`
-- `src/data/portfolio.ts`
+## Not currently used
 
-### Data/behavior notes
-- Card mode assignment is currently deterministic in the canvas component via a repeating mode array.
-- Existing `PortfolioCard` and `ProjectDialog` remain reusable and are still used for image/detail cards.
+`InfiniteCanvasBoard`, `SiteHeader`, `SiteFooter`, `PortfolioGrid`, and `HoverVideoLink` are kept in `src/components/` but are not rendered by `App`. The infinite-canvas experience described in older versions of this file was replaced by the `SimpleFeed` mosaic.
 
-## Plan
+## Known follow-ups
 
-## Phase 1: Stabilize current experience
-1. Confirm final spacing target with 1-2 quick iterations (`GRID_GAP`, `GRID_UNIT`, layout map).
-2. Lock card mode distribution with intentional mapping per card intent.
-3. Verify interaction matrix:
-   - Drag on empty area
-   - Drag on card
-   - Click card to open
-   - Click close/backdrop to close modal
-
-## Phase 2: Content and polish
-1. Replace any placeholder link/video targets with real destinations.
-2. Add richer video metadata (optional label/duration) if needed.
-3. Refine helper UI text and visibility for first-time users.
-
-## Phase 3: QA and release prep
-1. Run `npm run build` and smoke test on desktop + mobile.
-2. Validate dark/light mode contrast for new card types.
-3. Create branch snapshot + commit with release note.
-
-## Suggested Next Actions
-1. Create a dedicated branch for this canvas work (name of your choice).
-2. Commit current changes as a milestone (e.g., `feat: v0.1 infinite canvas mixed card modes`).
-3. Continue with spacing/mode curation in small visual passes.
+- `src/assets/profile-photo.png` is ~960 kB — worth compressing.
+- Confirm `hey@rafaelmedina.me` receives mail (copy changed from the old `hello@` address).

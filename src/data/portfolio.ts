@@ -100,7 +100,7 @@ export const siteProfile = {
   name: "Rafael Medina",
   title: "Product Designer, Freelance",
   intro:
-    "Hey I'm Rafael, a product designer and maker based in Miami. For over 10 years, I've helped teams design products that balance clarity, visual craft, and practical outcomes.",
+    "Hey I'm Rafael, a product designer and maker based in Punta Cana. For over 10 years, I've helped teams design products that balance clarity, visual craft, and practical outcomes.",
   previouslyLabel: "Previously",
   previouslyText: "Product designer for SaaS teams and startup builders.",
   nowLabel: "Now",
@@ -112,11 +112,11 @@ export const siteProfile = {
 }
 
 export const siteLinks: SiteLinks = {
-  dribbble: "https://dribbble.com/rafaelmedina",
+  dribbble: "https://dribbble.com/rafaelmedian",
   x: "https://x.com/rafaelmedian",
   telegram: "https://t.me/rafaelmedian",
-  github: "https://github.com/rafaelmedina",
-  linkedin: "https://www.linkedin.com/in/rafaelmedina",
+  github: "https://github.com/rafaelmedian",
+  linkedin: "https://www.linkedin.com/in/rafaelmedian",
   email: "hey@rafaelmedina.me",
 }
 
@@ -330,10 +330,10 @@ export const portfolioCards: PortfolioCard[] = [
     category: "Widget",
     title: "Map",
     summary: "Current location and nearby context.",
-    detail: "Map snapshot centered on Miami, FL.",
+    detail: "Map snapshot centered on Punta Cana, Dominican Republic.",
     image: "",
     ctaLabel: "Open in Maps",
-    ctaHref: "https://maps.google.com/?q=Miami,FL",
+    ctaHref: "https://maps.google.com/?q=Punta+Cana,Dominican+Republic",
     ctaExternal: true,
   },
   {
