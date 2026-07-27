@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useRef, useState, type CSSProperties } from "react"
+import { Fragment, useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react"
 
 import { HoverLogoLink } from "./HoverLogoLink"
 
@@ -111,10 +111,7 @@ type WorkedWithCompaniesInlineProps = {
 
 const recentGroupId = "recent-0x-matcha"
 const moreInfoId = "more-info"
-const typingWordDelayMs = 48
-const collapseWordAnimationMs = 190
-const collapseWordStaggerMs = typingWordDelayMs
-const collapseSettleMs = 0
+const collapseAnimationMs = 140
 const recentExpandedSegments = [
   "0x.org and Matcha.xyz, shaping trading experiences",
   "for one of the clearest DEX products in crypto.",
@@ -170,54 +167,24 @@ function getExpandedSegmentsForCompanyId(companyId: string | null) {
   return companyExpandedSegments[companyId] ?? []
 }
 
-function getExpandedTextForCompanyId(companyId: string | null) {
-  if (!companyId) return ""
-  const expandedSegments = getExpandedSegmentsForCompanyId(companyId)
-  if (expandedSegments.length > 0) return expandedSegments.join(" ")
-  return workedWithCompanies.find((company) => company.id === companyId)?.expandedText ?? ""
-}
-
 function shouldReduceMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 }
 
-function getVisibleWordsForSegment(segments: string[], segmentIndex: number, visibleWordCount: number) {
-  const precedingWordCount = segments
+function getPrecedingWordCount(segments: string[], segmentIndex: number) {
+  return segments
     .slice(0, segmentIndex)
     .reduce((wordCount, segment) => wordCount + segment.split(" ").length, 0)
-  const segmentWords = segments[segmentIndex].split(" ")
-  const visibleSegmentWordCount = Math.max(0, Math.min(segmentWords.length, visibleWordCount - precedingWordCount))
-
-  return segmentWords.slice(0, visibleSegmentWordCount)
 }
 
-function getCollapseAnimationMs(visibleWordCount: number) {
-  return collapseWordAnimationMs + Math.max(0, visibleWordCount - 1) * collapseWordStaggerMs + collapseSettleMs
-}
-
-function getCollapseStyle(visibleWordCount: number, isCollapsing: boolean) {
-  if (!isCollapsing) return undefined
-
-  return {
-    "--mosaic-collapse-duration": `${getCollapseAnimationMs(visibleWordCount)}ms`,
-    "--mosaic-collapse-logo-delay": `${Math.max(0, visibleWordCount - 1) * collapseWordStaggerMs}ms`,
-  } as CSSProperties
-}
-
-function getCollapseWordStyle(collapseDelayIndex: number | undefined) {
-  if (collapseDelayIndex === undefined) return undefined
-
-  return {
-    "--mosaic-collapse-word-index": collapseDelayIndex,
-  } as CSSProperties
+function getWordStyle(wordIndex: number) {
+  return { "--mosaic-word-index": wordIndex } as CSSProperties
 }
 
 export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCompaniesInlineProps) {
   const disclosureId = useId()
   const [activeCompanyIds, setActiveCompanyIds] = useState<string[]>([])
   const [collapsingCompanyIds, setCollapsingCompanyIds] = useState<string[]>([])
-  const [collapseStartWordCounts, setCollapseStartWordCounts] = useState<Record<string, number>>({})
-  const [visibleWordCounts, setVisibleWordCounts] = useState<Record<string, number>>({})
   const collapseTimeoutIdsRef = useRef<Record<string, number>>({})
 
   useEffect(() => {
@@ -228,100 +195,10 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
     }
   }, [])
 
-  useEffect(() => {
-    const typingCompanyIds = activeCompanyIds.filter((companyId) => !collapsingCompanyIds.includes(companyId))
-
-    if (typingCompanyIds.length === 0 || shouldReduceMotion()) {
-      return
-    }
-
-    const hasPendingWords = typingCompanyIds.some((companyId) => {
-      const expandedText = getExpandedTextForCompanyId(companyId)
-      const wordCount = expandedText.split(" ").length
-      const visibleWordCount = visibleWordCounts[companyId] ?? 0
-
-      return expandedText && visibleWordCount > 0 && visibleWordCount < wordCount
-    })
-
-    if (!hasPendingWords) {
-      return
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setVisibleWordCounts((currentWordCounts) => {
-        let hasChanges = false
-        const nextWordCounts = { ...currentWordCounts }
-
-        typingCompanyIds.forEach((companyId) => {
-          const expandedText = getExpandedTextForCompanyId(companyId)
-          const wordCount = expandedText.split(" ").length
-          const currentWordCount = nextWordCounts[companyId] ?? 0
-
-          if (!expandedText || currentWordCount <= 0 || currentWordCount >= wordCount) {
-            return
-          }
-
-          nextWordCounts[companyId] = Math.min(currentWordCount + 1, wordCount)
-          hasChanges = true
-        })
-
-        return hasChanges ? nextWordCounts : currentWordCounts
-      })
-    }, typingWordDelayMs)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [activeCompanyIds, collapsingCompanyIds, visibleWordCounts])
-
-  useEffect(() => {
-    const shrinkingCompanyIds = collapsingCompanyIds.filter((companyId) => (visibleWordCounts[companyId] ?? 0) > 0)
-
-    if (shrinkingCompanyIds.length === 0 || shouldReduceMotion()) {
-      return
-    }
-
-    const isFirstCollapseTick = shrinkingCompanyIds.some(
-      (companyId) => visibleWordCounts[companyId] === collapseStartWordCounts[companyId],
-    )
-    const timeoutId = window.setTimeout(
-      () => {
-        setVisibleWordCounts((currentWordCounts) => {
-          let hasChanges = false
-          const nextWordCounts = { ...currentWordCounts }
-
-          shrinkingCompanyIds.forEach((companyId) => {
-            const currentWordCount = nextWordCounts[companyId] ?? 0
-
-            if (currentWordCount <= 0) {
-              return
-            }
-
-            nextWordCounts[companyId] = Math.max(0, currentWordCount - 1)
-            hasChanges = true
-          })
-
-          return hasChanges ? nextWordCounts : currentWordCounts
-        })
-      },
-      isFirstCollapseTick ? collapseWordAnimationMs : collapseWordStaggerMs,
-    )
-
-    return () => window.clearTimeout(timeoutId)
-  }, [collapseStartWordCounts, collapsingCompanyIds, visibleWordCounts])
-
   const closeExpansion = (companyId: string) => {
     const finishCollapse = () => {
       setActiveCompanyIds((currentCompanyIds) => currentCompanyIds.filter((currentCompanyId) => currentCompanyId !== companyId))
       setCollapsingCompanyIds((currentCompanyIds) => currentCompanyIds.filter((currentCompanyId) => currentCompanyId !== companyId))
-      setCollapseStartWordCounts((currentWordCounts) => {
-        const nextWordCounts = { ...currentWordCounts }
-        delete nextWordCounts[companyId]
-        return nextWordCounts
-      })
-      setVisibleWordCounts((currentWordCounts) => {
-        const nextWordCounts = { ...currentWordCounts }
-        delete nextWordCounts[companyId]
-        return nextWordCounts
-      })
       delete collapseTimeoutIdsRef.current[companyId]
     }
 
@@ -332,36 +209,16 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       return
     }
 
-    const visibleWordCountAtCollapse = visibleWordCounts[companyId] ?? 1
-    setCollapseStartWordCounts((currentWordCounts) => ({
-      ...currentWordCounts,
-      [companyId]: visibleWordCountAtCollapse,
-    }))
     setCollapsingCompanyIds((currentCompanyIds) =>
       currentCompanyIds.includes(companyId) ? currentCompanyIds : [...currentCompanyIds, companyId],
     )
-    collapseTimeoutIdsRef.current[companyId] = window.setTimeout(
-      finishCollapse,
-      getCollapseAnimationMs(visibleWordCounts[companyId] ?? 1),
-    )
+    collapseTimeoutIdsRef.current[companyId] = window.setTimeout(finishCollapse, collapseAnimationMs)
   }
 
   const openExpansion = (companyId: string) => {
     window.clearTimeout(collapseTimeoutIdsRef.current[companyId])
     delete collapseTimeoutIdsRef.current[companyId]
     setCollapsingCompanyIds((currentCompanyIds) => currentCompanyIds.filter((currentCompanyId) => currentCompanyId !== companyId))
-    setCollapseStartWordCounts((currentWordCounts) => {
-      const nextWordCounts = { ...currentWordCounts }
-      delete nextWordCounts[companyId]
-      return nextWordCounts
-    })
-
-    const expandedText = getExpandedTextForCompanyId(companyId)
-    const wordCount = expandedText.split(" ").length
-    setVisibleWordCounts((currentWordCounts) => ({
-      ...currentWordCounts,
-      [companyId]: shouldReduceMotion() ? wordCount : 1,
-    }))
     setActiveCompanyIds((currentCompanyIds) => (currentCompanyIds.includes(companyId) ? currentCompanyIds : [...currentCompanyIds, companyId]))
   }
 
@@ -386,18 +243,10 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       openExpansion(companyId)
     }
 
-    const renderTypedWords = (
+    const renderWords = (
       words: string[],
       keyPrefix: string,
-      {
-        links = {},
-        isCollapsing = false,
-        collapseDelayOffset = 0,
-      }: {
-        links?: Record<string, string>
-        isCollapsing?: boolean
-        collapseDelayOffset?: number
-      } = {},
+      { links = {}, wordIndexOffset = 0 }: { links?: Record<string, string>; wordIndexOffset?: number } = {},
     ) => {
       const hasLinkedWords = Object.keys(links).length > 0
 
@@ -406,9 +255,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
           {words.map((word, wordIndex) => {
             const href = links[word]
             const className = `mosaic-work-history-inline-word${href ? " mosaic-work-history-inline-link" : ""}`
-            const collapseWordStyle = getCollapseWordStyle(
-              isCollapsing ? collapseDelayOffset + words.length - wordIndex - 1 : undefined,
-            )
+            const wordStyle = getWordStyle(wordIndexOffset + wordIndex)
             const children = (
               <>
                 {word}
@@ -423,12 +270,13 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
                 target={href.startsWith("mailto:") ? undefined : "_blank"}
                 rel="noreferrer"
                 className={className}
-                style={collapseWordStyle}
+                style={wordStyle}
+                onClick={(event) => event.stopPropagation()}
               >
                 {children}
               </a>
             ) : (
-              <span key={`${keyPrefix}-${word}-${wordIndex}`} className={className} style={collapseWordStyle}>
+              <span key={`${keyPrefix}-${word}-${wordIndex}`} className={className} style={wordStyle}>
                 {children}
               </span>
             )
@@ -451,18 +299,21 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       )
     }
 
-    const renderTypedChipContent = (company: WorkedWithCompany, visibleWordCount: number) => {
-      const words = company.expandedText.split(" ").slice(0, visibleWordCount)
+    const renderExpandedChipContent = (company: WorkedWithCompany) => (
+      <>
+        {renderExpandedLogos(company)}
+        {renderWords(company.expandedText.split(" "), company.id)}
+      </>
+    )
 
-      return (
-        <>
-          {renderExpandedLogos(company)}
-          {renderTypedWords(words, company.id)}
-        </>
-      )
+    const handleCollapseKeyDown = (expansionId: string) => (event: KeyboardEvent<HTMLSpanElement>) => {
+      if (event.key !== "Enter" && event.key !== " ") return
+
+      event.preventDefault()
+      closeExpansion(expansionId)
     }
 
-    const renderExpandedSegmentButtons = ({
+    const renderExpandedSegments = ({
       company,
       segments,
       buttonId,
@@ -471,8 +322,9 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       expansionId,
       collapsedLabel,
       links,
+      extraClassName = "",
     }: {
-      company: WorkedWithCompany
+      company?: WorkedWithCompany
       segments: string[]
       buttonId: string
       logoUrls?: string[]
@@ -480,108 +332,46 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       expansionId: string
       collapsedLabel: string
       links?: Record<string, string>
+      extraClassName?: string
     }) => {
-      const visibleWordCount = visibleWordCounts[expansionId] ?? 0
       const isCollapsing = collapsingCompanyIds.includes(expansionId)
-      const collapseStartWordCount = collapseStartWordCounts[expansionId] ?? visibleWordCount
-      const visibleSegmentWords = segments.map((_, segmentIndex) => getVisibleWordsForSegment(segments, segmentIndex, visibleWordCount))
-      const collapseStartSegmentWords = segments.map((_, segmentIndex) =>
-        getVisibleWordsForSegment(segments, segmentIndex, collapseStartWordCount),
-      )
 
-      return (
-        segments.map((segment, segmentIndex) => {
-          const visibleWords = visibleSegmentWords[segmentIndex]
-          const collapseStartWords = collapseStartSegmentWords[segmentIndex]
-          const hasVisibleWords = visibleWords.length > 0
-          const collapseStartWordsAfterSegment = collapseStartSegmentWords
-            .slice(segmentIndex + 1)
-            .reduce((wordCount, segmentWords) => wordCount + segmentWords.length, 0)
-          const collapseDelayOffset = collapseStartWordsAfterSegment + collapseStartWords.length - visibleWords.length
-
-          if (segmentIndex > 0 && !hasVisibleWords) {
-            return null
-          }
-
-          return (
-            <Fragment key={`${keyPrefix}-${segment}`}>
-              {segmentIndex > 0 ? <span className="mosaic-work-history-expanded-break" aria-hidden="true" /> : null}
-              <span
-                id={segmentIndex === 0 ? buttonId : undefined}
-                className={`mosaic-work-history-chip mosaic-work-history-chip-expanded mosaic-work-history-chip-expanded-segment mosaic-work-history-chip-expanded-collapsible${
-                  segmentIndex === 0 ? " mosaic-work-history-chip-expanded-segment-primary" : ""
-                }${isCollapsing ? " mosaic-work-history-chip-collapsing" : ""}`}
-                style={getCollapseStyle(collapseStartWordCount, isCollapsing)}
-              >
-                {segmentIndex === 0 ? renderExpandedLogos(company, logoUrls) : null}
-                {renderTypedWords(visibleWords, `${keyPrefix}-${segmentIndex}`, {
-                  links,
-                  isCollapsing,
-                  collapseDelayOffset,
-                })}
-                {segmentIndex === 0 ? (
-                  <button
-                    type="button"
-                    className="mosaic-work-history-collapse"
-                    aria-label={`Collapse ${collapsedLabel} details`}
-                    aria-expanded="true"
-                    aria-controls={buttonId}
-                    onClick={() => closeExpansion(expansionId)}
-                  >
-                    <span aria-hidden="true">×</span>
-                  </button>
-                ) : null}
-              </span>
-            </Fragment>
-          )
-        })
-      )
+      return segments.map((segment, segmentIndex) => (
+        <Fragment key={`${keyPrefix}-${segment}`}>
+          {segmentIndex > 0 ? <span className="mosaic-work-history-expanded-break" aria-hidden="true" /> : null}
+          <span
+            id={segmentIndex === 0 ? buttonId : undefined}
+            role="button"
+            tabIndex={0}
+            aria-label={segmentIndex === 0 ? `Collapse ${collapsedLabel} details` : undefined}
+            aria-expanded={segmentIndex === 0 ? true : undefined}
+            aria-controls={segmentIndex === 0 ? buttonId : undefined}
+            className={`mosaic-work-history-chip mosaic-work-history-chip-expanded mosaic-work-history-chip-expanded-segment mosaic-work-history-chip-expanded-collapsible${
+              segmentIndex === 0 ? " mosaic-work-history-chip-expanded-segment-primary" : ""
+            }${extraClassName ? ` ${extraClassName}` : ""}${isCollapsing ? " mosaic-work-history-chip-collapsing" : ""}`}
+            onClick={() => closeExpansion(expansionId)}
+            onKeyDown={handleCollapseKeyDown(expansionId)}
+          >
+            {segmentIndex === 0 && company ? renderExpandedLogos(company, logoUrls) : null}
+            {renderWords(segment.split(" "), `${keyPrefix}-${segmentIndex}`, {
+              links,
+              wordIndexOffset: getPrecedingWordCount(segments, segmentIndex),
+            })}
+          </span>
+        </Fragment>
+      ))
     }
 
-    const renderMoreInfoExpansion = () => {
-      const visibleWordCount = visibleWordCounts[moreInfoId] ?? 0
-      const isCollapsing = collapsingCompanyIds.includes(moreInfoId)
-      const collapseStartWordCount = collapseStartWordCounts[moreInfoId] ?? visibleWordCount
-      const visibleSegmentWords = moreInfoSegments.map((_, segmentIndex) =>
-        getVisibleWordsForSegment(moreInfoSegments, segmentIndex, visibleWordCount),
-      )
-      const collapseStartSegmentWords = moreInfoSegments.map((_, segmentIndex) =>
-        getVisibleWordsForSegment(moreInfoSegments, segmentIndex, collapseStartWordCount),
-      )
-
-      return moreInfoSegments.map((segment, segmentIndex) => {
-        const visibleWords = visibleSegmentWords[segmentIndex]
-        const collapseStartWords = collapseStartSegmentWords[segmentIndex]
-        const hasVisibleWords = visibleWords.length > 0
-        const collapseStartWordsAfterSegment = collapseStartSegmentWords
-          .slice(segmentIndex + 1)
-          .reduce((wordCount, segmentWords) => wordCount + segmentWords.length, 0)
-        const collapseDelayOffset = collapseStartWordsAfterSegment + collapseStartWords.length - visibleWords.length
-
-        if (segmentIndex > 0 && !hasVisibleWords) {
-          return null
-        }
-
-        return (
-          <Fragment key={`${moreInfoId}-${segment}`}>
-            {segmentIndex > 0 ? <span className="mosaic-work-history-expanded-break" aria-hidden="true" /> : null}
-            <span
-              id={segmentIndex === 0 ? `${disclosureId}-more-info-expanded` : undefined}
-              className={`mosaic-work-history-chip mosaic-work-history-chip-expanded mosaic-work-history-chip-expanded-segment mosaic-work-history-chip-expanded-collapsible mosaic-work-history-chip-expanded-info${
-                isCollapsing ? " mosaic-work-history-chip-collapsing" : ""
-              }`}
-              style={getCollapseStyle(collapseStartWordCount, isCollapsing)}
-            >
-              {renderTypedWords(visibleWords, `${moreInfoId}-${segmentIndex}`, {
-                links: moreInfoLinks,
-                isCollapsing,
-                collapseDelayOffset,
-              })}
-            </span>
-          </Fragment>
-        )
+    const renderMoreInfoExpansion = () =>
+      renderExpandedSegments({
+        segments: moreInfoSegments,
+        buttonId: `${disclosureId}-more-info-expanded`,
+        keyPrefix: moreInfoId,
+        expansionId: moreInfoId,
+        collapsedLabel: "more info",
+        links: moreInfoLinks,
+        extraClassName: "mosaic-work-history-chip-expanded-info",
       })
-    }
 
     const renderCompanyButton = (company: WorkedWithCompany) => {
       const isActive = activeCompanyIds.includes(company.id)
@@ -589,7 +379,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       const expandedSegments = getExpandedSegmentsForCompanyId(company.id)
 
       if (isActive && expandedSegments.length > 0) {
-        return renderExpandedSegmentButtons({
+        return renderExpandedSegments({
           company,
           segments: expandedSegments,
           buttonId: companyDisclosureId,
@@ -608,15 +398,11 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
           className={`mosaic-work-history-chip${isActive ? " mosaic-work-history-chip-expanded" : ""}${
             collapsingCompanyIds.includes(company.id) ? " mosaic-work-history-chip-collapsing" : ""
           }`}
-          style={getCollapseStyle(
-            collapseStartWordCounts[company.id] ?? visibleWordCounts[company.id] ?? 0,
-            collapsingCompanyIds.includes(company.id),
-          )}
           aria-label={isActive ? company.expandedText : undefined}
           aria-expanded={isActive}
           onClick={() => toggleCompany(company.id)}
         >
-          {isActive ? renderTypedChipContent(company, visibleWordCounts[company.id] ?? 0) : company.compactName}
+          {isActive ? renderExpandedChipContent(company) : company.compactName}
         </button>
       )
     }
@@ -627,7 +413,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
           <span className="mosaic-work-history-copy">Recently at</span>
           {isRecentCompanyActive && recentExpandedCompany ? (
             <>
-              {renderExpandedSegmentButtons({
+              {renderExpandedSegments({
                 company: recentExpandedCompany,
                 segments: recentExpandedSegments,
                 buttonId: `${disclosureId}-recent-expanded`,
