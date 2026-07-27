@@ -725,9 +725,8 @@ img {
 }
 
 .mosaic-about {
-  display: grid;
-  justify-items: center;
-  padding: 0 clamp(1rem, 5vw, 2rem) clamp(3rem, 8vw, 5rem);
+  display: block;
+  padding: 0 clamp(16px, 3vw, 32px) clamp(3rem, 8vw, 5rem);
 }
 
 .mosaic-about:focus {
@@ -735,9 +734,9 @@ img {
 }
 
 .mosaic-about-body {
-  width: min(100%, 34rem);
+  width: 100%;
   display: grid;
-  gap: 1.05rem;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
   text-align: left;
 }
 
@@ -751,24 +750,33 @@ img {
   text-wrap: pretty;
 }
 
-.mosaic-about-lede {
+.mosaic-about-body .mosaic-about-lede {
+  max-width: 60rem;
+  font-size: clamp(1.25rem, 2.1vw, 1.75rem);
   font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.03rem;
   color: #2d2d2d;
+  text-wrap: balance;
+}
+
+.mosaic-about-columns {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 3rem);
 }
 
 .mosaic-about-facts {
-  margin: 0.5rem 0 0;
+  margin: 0;
   display: grid;
-  gap: 0.75rem;
+  gap: 1.25rem;
   border-top: 1px solid #e6e4e1;
-  padding-top: 1.25rem;
+  padding-top: clamp(1.25rem, 2.5vw, 2rem);
 }
 
 .mosaic-about-fact {
   display: grid;
-  grid-template-columns: 6rem minmax(0, 1fr);
-  gap: 0.5rem;
-  align-items: baseline;
+  gap: 0.35rem;
+  align-content: start;
 }
 
 .mosaic-about-fact dt {
@@ -804,9 +812,16 @@ img {
   color: #c0c0c0;
 }
 
-.mosaic-about-closing {
+.mosaic-about-footer {
+  display: grid;
+  gap: 1rem;
+  align-items: center;
   border-top: 1px solid #e6e4e1;
-  padding-top: 1.25rem;
+  padding-top: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.mosaic-about-closing {
+  max-width: 34rem;
 }
 
 .mosaic-about-back {
@@ -831,16 +846,25 @@ img {
   color: #2d2d2d;
 }
 
-@media (min-width: 900px) {
-  .mosaic-about {
-    padding-inline: clamp(16px, 3vw, 32px);
+@media (min-width: 700px) {
+  .mosaic-about-columns,
+  .mosaic-about-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mosaic-about-footer {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .mosaic-about-back {
+    justify-self: end;
   }
 }
 
-@media (max-width: 520px) {
-  .mosaic-about-fact {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.15rem;
+@media (min-width: 1100px) {
+  .mosaic-about-columns,
+  .mosaic-about-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
