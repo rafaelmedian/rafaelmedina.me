@@ -72,6 +72,52 @@ function positionRail(rail, gallery) {
   );
 }
 
+function getFocusableElements(container) {
+  return [...container.querySelectorAll("*")].filter(
+    (element) =>
+      element instanceof HTMLElement &&
+      element.tabIndex >= 0 &&
+      element.getClientRects().length > 0 &&
+      getComputedStyle(element).visibility !== "hidden",
+  );
+}
+
+function handleFocusLoop(event) {
+  if (event.key !== "Tab") return;
+
+  const gallery = document.querySelector(GALLERY_SELECTOR);
+  const rail = document.querySelector(`.${RAIL_CLASS}`);
+  const popup = gallery?.querySelector(".preview-gallery-popup");
+
+  if (!popup || !rail || getComputedStyle(rail).display === "none") return;
+
+  const popupElements = getFocusableElements(popup);
+  const railElements = getFocusableElements(rail);
+  const firstPopupElement = popupElements[0];
+  const lastPopupElement = popupElements.at(-1);
+  const firstRailElement = railElements[0];
+  const lastRailElement = railElements.at(-1);
+  const activeElement = document.activeElement;
+
+  let nextElement;
+
+  if (event.shiftKey && activeElement === firstPopupElement) {
+    nextElement = lastRailElement;
+  } else if (!event.shiftKey && activeElement === lastPopupElement) {
+    nextElement = firstRailElement;
+  } else if (event.shiftKey && activeElement === firstRailElement) {
+    nextElement = lastPopupElement;
+  } else if (!event.shiftKey && activeElement === lastRailElement) {
+    nextElement = firstPopupElement;
+  }
+
+  if (!nextElement) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  nextElement.focus();
+}
+
 function syncRail() {
   const gallery = document.querySelector(GALLERY_SELECTOR);
   const rail = document.querySelector(`.${RAIL_CLASS}`);
@@ -107,5 +153,6 @@ function syncRail() {
 
 const observer = new MutationObserver(syncRail);
 observer.observe(document.body, { childList: true, subtree: true });
+window.addEventListener("keydown", handleFocusLoop, { capture: true });
 window.addEventListener("resize", syncRail);
 syncRail();
