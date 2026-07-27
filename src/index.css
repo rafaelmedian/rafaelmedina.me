@@ -1868,6 +1868,15 @@ img {
   min-height: var(--row-height, 320px);
 }
 
+/* Taller cards on desktop. `--row-height` is set inline from the row data, so
+   `!important` is what it takes to win the cascade against an inline custom
+   property. Folding the breakpoint into the data model would be cleaner. */
+@media (min-width: 900px) {
+  .mosaic-row {
+    --row-height: 420px !important;
+  }
+}
+
 .mosaic-row-item {
   flex: var(--row-span, 1) 1 0;
   min-width: 0;

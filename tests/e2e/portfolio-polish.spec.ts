@@ -162,5 +162,6 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   expect(shell).not.toBeNull()
   expect(shell!.width).toBeLessThanOrEqual(1560)
   expect(firstRow).not.toBeNull()
-  expect(firstRow!.height).toBeLessThanOrEqual(260)
+  // Rows are a flat 420px from the 900px breakpoint up (see .mosaic-row in index.css).
+  expect(firstRow!.height).toBe(420)
 })
