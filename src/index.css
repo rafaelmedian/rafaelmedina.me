@@ -2088,6 +2088,7 @@ img {
 }
 
 .preview-gallery-shell {
+  --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
   position: fixed;
   inset: 0;
   z-index: 70;
@@ -2098,7 +2099,7 @@ img {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding:
-    max(clamp(1rem, 5vh, 3rem), env(safe-area-inset-top))
+    var(--preview-gallery-fixed-top)
     max(clamp(1rem, 3vw, 2.5rem), env(safe-area-inset-right))
     max(1rem, env(safe-area-inset-bottom))
     max(clamp(1rem, 3vw, 2.5rem), env(safe-area-inset-left));
@@ -2110,10 +2111,8 @@ img {
   width: min(544px, 100%);
   max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
   outline: none;
-  overflow-x: hidden;
-  overflow-y: auto;
   overscroll-behavior: contain;
-  border-radius: clamp(1.85rem, 4vw, 3.5rem);
+  border-radius: clamp(1.85rem, 4vw, 3.5rem) clamp(1.85rem, 4vw, 3.5rem) 28px 28px;
   cursor: default;
   opacity: 1;
   transform: translateY(0) scale(1);
@@ -2137,8 +2136,11 @@ img {
   --preview-gallery-card-padding: clamp(1.3rem, 2.4vw, 2rem);
   --preview-gallery-media-radius: 24px;
   --preview-gallery-card-radius: calc(var(--preview-gallery-media-radius) + var(--preview-gallery-card-padding));
-  overflow: visible;
-  border-radius: var(--preview-gallery-card-radius);
+  max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--preview-gallery-card-radius) var(--preview-gallery-card-radius) 28px 28px;
   border: 1px solid rgb(0 0 0 / 0.08);
   background: #ffffff;
   padding: var(--preview-gallery-card-padding);
@@ -2218,6 +2220,17 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+}
+
+.preview-gallery-rail {
+  position: absolute;
+  z-index: 1;
+  top: 128px;
+  left: calc(100% + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transform: translateY(-50%);
 }
 
 .preview-gallery-heading {
@@ -2747,8 +2760,21 @@ img {
 }
 
 @media (max-width: 699.98px), (hover: none), (pointer: coarse) {
+  .preview-gallery-shell {
+    --preview-gallery-fixed-top: max(clamp(1rem, 5vh, 3rem), env(safe-area-inset-top));
+  }
+
+  .preview-gallery-rail {
+    display: none;
+  }
+
   .preview-gallery-toolbar {
     display: flex;
+  }
+
+  .preview-gallery-toolbar .preview-gallery-nav-prev .preview-gallery-nav-icon,
+  .preview-gallery-toolbar .preview-gallery-nav-next .preview-gallery-nav-icon {
+    transform: rotate(90deg);
   }
 
   .mosaic-row-card-title {

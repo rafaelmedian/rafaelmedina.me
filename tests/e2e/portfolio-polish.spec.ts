@@ -74,6 +74,48 @@ test("returns focus to the originating project after closing the gallery", async
   await expect(trigger).toBeFocused()
 })
 
+test("keeps desktop gallery navigation fixed near the modal top", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const card = dialog.locator(".preview-gallery-card")
+  const rail = dialog.locator(".preview-gallery-rail")
+  const previous = rail.getByRole("button", { name: "Previous preview" })
+  const next = rail.getByRole("button", { name: "Next preview" })
+
+  await expect(rail).toBeVisible()
+  await expect(previous).toHaveAttribute("aria-keyshortcuts", "ArrowUp ArrowLeft")
+  await expect(next).toHaveAttribute("aria-keyshortcuts", "ArrowDown ArrowRight")
+  await expect(card).toHaveCSS("border-bottom-left-radius", "28px")
+  await expect(card).toHaveCSS("border-bottom-right-radius", "28px")
+
+  const initialDialogBox = await dialog.boundingBox()
+  const initialRailBox = await rail.boundingBox()
+  expect(initialDialogBox).not.toBeNull()
+  expect(initialRailBox).not.toBeNull()
+  expect(initialDialogBox!.y).toBeCloseTo(80, 0)
+  expect(initialRailBox!.x - (initialDialogBox!.x + initialDialogBox!.width)).toBeCloseTo(16, 0)
+  expect(initialRailBox!.y + initialRailBox!.height / 2 - initialDialogBox!.y).toBeCloseTo(128, 0)
+
+  await next.click()
+  await next.click()
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 12")
+
+  const changedDialogBox = await dialog.boundingBox()
+  const changedRailBox = await rail.boundingBox()
+  expect(changedDialogBox).not.toBeNull()
+  expect(changedRailBox).not.toBeNull()
+  expect(changedDialogBox!.y).toBeCloseTo(initialDialogBox!.y, 0)
+  expect(changedRailBox!.x).toBeCloseTo(initialRailBox!.x, 0)
+  expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
+
+  await previous.click()
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 12")
+})
+
 test("keeps a semantic disclosure control while work-history details are expanded", async ({ page }) => {
   await page.goto("/")
   const disclosure = page.getByRole("button", { name: "0x.org and Matcha.xyz" })

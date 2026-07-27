@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import type { PortfolioCard } from "../data/portfolio"
@@ -354,6 +354,29 @@ export function PreviewGalleryDialog({
               </div>
             </article>
 
+            <div className="preview-gallery-rail" role="group" aria-label="Preview navigation">
+              <button
+                type="button"
+                className="preview-gallery-nav preview-gallery-nav-prev"
+                aria-label="Previous preview"
+                aria-keyshortcuts="ArrowUp ArrowLeft"
+                onClick={() => moveBy(-1)}
+                disabled={cards.length <= 1}
+              >
+                <ChevronUp aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+              </button>
+
+              <button
+                type="button"
+                className="preview-gallery-nav preview-gallery-nav-next"
+                aria-label="Next preview"
+                aria-keyshortcuts="ArrowDown ArrowRight"
+                onClick={() => moveBy(1)}
+                disabled={cards.length <= 1}
+              >
+                <ChevronDown aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+              </button>
+            </div>
           </Dialog.Popup>
         </div>
       </Dialog.Portal>
