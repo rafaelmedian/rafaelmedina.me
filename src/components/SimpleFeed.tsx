@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
 
+import { AboutPanel } from "./AboutPanel"
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -268,6 +269,9 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
+  const [view, setView] = useState<"work" | "about">("work")
+  const [isSwapping, setIsSwapping] = useState(false)
+  const swapTimeoutRef = useRef<number | null>(null)
   const [loadedSources, setLoadedSources] = useState<Set<string>>(() => new Set())
   const markLoaded = (src: string) =>
     setLoadedSources((prev) => (prev.has(src) ? prev : new Set(prev).add(src)))
@@ -390,6 +394,44 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     }
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (swapTimeoutRef.current !== null) window.clearTimeout(swapTimeoutRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (view !== "about") return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") swapView("work")
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  })
+
+  function swapView(nextView: "work" | "about") {
+    if (nextView === view) return
+
+    trackEvent("hero_view_change", { hero_view: nextView, hero_view_trigger: "avatar" })
+
+    if (prefersReducedMotion) {
+      setView(nextView)
+      return
+    }
+
+    if (swapTimeoutRef.current !== null) window.clearTimeout(swapTimeoutRef.current)
+    setIsSwapping(true)
+    swapTimeoutRef.current = window.setTimeout(() => {
+      setView(nextView)
+      setIsSwapping(false)
+      swapTimeoutRef.current = null
+    }, 180)
+  }
+
+  const isAboutView = view === "about"
+
   return (
     <section className={shellClassName}>
       <h1 className="sr-only">{profile.name} portfolio</h1>
@@ -397,12 +439,19 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
       <header id="about" className={heroClassName}>
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-info">
-            <div className="mosaic-avatar mosaic-avatar-coin" role="img" aria-label={`${profile.name} portrait`}>
+            <button
+              type="button"
+              className={`mosaic-avatar mosaic-avatar-coin mosaic-avatar-button${isAboutView ? " is-flipped" : ""}`}
+              aria-expanded={isAboutView}
+              aria-controls="about-panel"
+              aria-label={isAboutView ? "Back to selected work" : `Read about ${profile.name}`}
+              onClick={() => swapView(isAboutView ? "work" : "about")}
+            >
               <div className="mosaic-avatar-coin-inner">
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
               </div>
-            </div>
+            </button>
             <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
               <p className="mosaic-profile-subtitle">{profile.title}</p>
@@ -417,7 +466,13 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
       </header>
 
       {showProjects ? (
-        <>
+        <div
+          key={view}
+          className={`mosaic-view${isSwapping ? " is-leaving" : ""}${prefersReducedMotion ? "" : " mosaic-view-animated"}`}
+        >
+          {isAboutView ? (
+            <AboutPanel links={links} onClose={() => swapView("work")} />
+          ) : (
           <article id="work" className="mosaic-work">
             <h2 className="sr-only">Selected work</h2>
             <div className="mosaic-rows" aria-label="Selected work previews">
@@ -496,8 +551,9 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               })}
             </div>
           </article>
+          )}
 
-          {activeWorkPreviewIndex != null && activeWorkPreviewIndex < flatWorkCards.length ? (
+          {!isAboutView && activeWorkPreviewIndex != null && activeWorkPreviewIndex < flatWorkCards.length ? (
             <Suspense fallback={null}>
               <PreviewGalleryDialog
                 cards={flatWorkCards}
@@ -513,7 +569,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               />
             </Suspense>
           ) : null}
-        </>
+        </div>
       ) : null}
     </section>
   )
