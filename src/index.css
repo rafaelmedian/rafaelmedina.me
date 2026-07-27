@@ -668,6 +668,52 @@ img {
   outline-offset: 3px;
 }
 
+.mosaic-avatar-hint {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.5rem);
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: #e5352b;
+  opacity: 0;
+  transform: translateY(-50%) translateX(-0.5rem) rotate(-3deg);
+  transform-origin: left center;
+  pointer-events: none;
+  width: max-content;
+  white-space: nowrap;
+  transition:
+    opacity 200ms var(--ease-smooth),
+    transform 260ms var(--ease-smooth);
+}
+
+.mosaic-avatar-button:hover .mosaic-avatar-hint,
+.mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0) rotate(-3deg);
+}
+
+.mosaic-avatar-hint-arrow {
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.mosaic-avatar-hint-label {
+  white-space: nowrap;
+  text-wrap: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01rem;
+  line-height: 1;
+}
+
+@media (max-width: 699.98px) {
+  .mosaic-avatar-hint {
+    display: none;
+  }
+}
+
 .mosaic-avatar-coin.is-flipped .mosaic-avatar-coin-inner {
   transform: rotateY(180deg);
 }
@@ -701,22 +747,69 @@ img {
 }
 
 .mosaic-view-animated {
-  animation: mosaic-view-enter 380ms var(--ease-smooth) both;
+  animation: mosaic-view-enter 460ms var(--ease-smooth) both;
   transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+    opacity 170ms cubic-bezier(0.4, 0, 1, 1),
+    transform 170ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.mosaic-view-animated.is-leaving,
+.mosaic-view-animated.is-leaving * {
+  animation: none !important;
 }
 
 .mosaic-view-animated.is-leaving {
-  animation: none;
   opacity: 0;
-  transform: translateY(0.375rem);
+  transform: translateY(0.25rem) scale(0.99);
+}
+
+/* Rows and about blocks trail in behind the container, so the swap reads as
+   content arriving rather than one block replacing another. */
+.mosaic-view-animated .mosaic-row,
+.mosaic-view-animated .mosaic-about-body > * {
+  animation: mosaic-intro-rise 520ms var(--ease-smooth) both;
+}
+
+.mosaic-view-animated .mosaic-row:nth-child(1),
+.mosaic-view-animated .mosaic-about-body > :nth-child(1) {
+  animation-delay: 90ms;
+}
+
+.mosaic-view-animated .mosaic-row:nth-child(2),
+.mosaic-view-animated .mosaic-about-body > :nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.mosaic-view-animated .mosaic-row:nth-child(3),
+.mosaic-view-animated .mosaic-about-body > :nth-child(3) {
+  animation-delay: 210ms;
+}
+
+.mosaic-view-animated .mosaic-row:nth-child(4),
+.mosaic-view-animated .mosaic-about-body > :nth-child(4) {
+  animation-delay: 270ms;
+}
+
+.mosaic-view-animated .mosaic-about-body > :nth-child(5) {
+  animation-delay: 320ms;
+}
+
+.mosaic-view-animated .mosaic-about-body > :nth-child(6) {
+  animation-delay: 365ms;
+}
+
+.mosaic-view-animated .mosaic-about-body > :nth-child(7) {
+  animation-delay: 405ms;
+}
+
+.mosaic-view-animated .mosaic-about-body > :nth-child(8) {
+  animation-delay: 440ms;
 }
 
 @keyframes mosaic-view-enter {
   from {
     opacity: 0;
-    transform: translateY(0.625rem);
+    transform: translateY(0.5rem) scale(0.995);
   }
   to {
     opacity: 1;

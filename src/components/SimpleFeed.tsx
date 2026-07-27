@@ -427,7 +427,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
       setView(nextView)
       setIsSwapping(false)
       swapTimeoutRef.current = null
-    }, 180)
+    }, 170)
   }
 
   const isAboutView = view === "about"
@@ -451,6 +451,25 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
               </div>
+              <span className="mosaic-avatar-hint" aria-hidden="true">
+                <svg
+                  className="mosaic-avatar-hint-arrow"
+                  width="64"
+                  height="30"
+                  viewBox="0 0 64 30"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M59 20C50 26 46 12 38 17C30 22 27 9 19 14C16 15.8 13 14.6 10 13" />
+                  <path d="M10 13 19 12.5M10 13 16.2 19.6" />
+                </svg>
+                <span className="mosaic-avatar-hint-label">
+                  {isAboutView ? "go back" : "read about me"}
+                </span>
+              </span>
             </button>
             <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
