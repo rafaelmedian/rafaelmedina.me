@@ -6,18 +6,18 @@ Increase every portfolio mosaic card row to 420px on desktop while preserving th
 
 ## Design
 
-The mosaic uses a shared `.mosaic-row` height for desktop layouts and a separate `.mosaic-row-item` height inside the existing `max-width: 699.98px` mobile breakpoint. Change the desktop fallback height from `320px` to `420px`. Leave the mobile fallback at `240px`.
+The mosaic supplies each row with an inline responsive `--row-height` custom property. Load a focused override stylesheet after the compiled bundle and set `--row-height` to `420px` with sufficient priority at `min-width: 900px`. Leave the existing responsive row sizing untouched below 900px.
 
 This keeps cards within each row aligned, preserves the current flex proportions and gaps, and avoids adding per-card or JavaScript sizing logic.
 
 ## Responsive Behavior
 
-- Viewports wider than 699.98px: mosaic rows and their cards are 420px tall.
-- Viewports at or below 699.98px: cards remain 240px tall and continue stacking vertically.
+- Viewports at or above 900px: mosaic rows and their cards are 420px tall.
+- Viewports below 900px: existing responsive sizing remains unchanged; at a 390px mobile viewport, cards remain 180px tall and continue stacking vertically.
 - Card media retains its current cover or contain behavior.
 
 ## Verification
 
-- Confirm the compiled stylesheet declares a 420px default for `.mosaic-row`.
-- Confirm the mobile breakpoint still declares 240px for `.mosaic-row-item`.
+- Confirm computed `.mosaic-row` and `.mosaic-row-card` heights are 420px at a 1440px viewport.
+- Confirm computed `.mosaic-row-item` and `.mosaic-row-card` heights remain 180px at a 390px viewport.
 - Preview the page at desktop and mobile widths to verify computed card heights and check for overflow or layout regressions.

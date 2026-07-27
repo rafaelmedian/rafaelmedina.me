@@ -1,0 +1,5 @@
+@media (min-width: 900px) {
+  .mosaic-row {
+    --row-height: 420px !important;
+  }
+}
