@@ -454,17 +454,17 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               <span className="mosaic-avatar-hint" aria-hidden="true">
                 <svg
                   className="mosaic-avatar-hint-arrow"
-                  width="64"
-                  height="30"
-                  viewBox="0 0 64 30"
+                  width="36"
+                  height="20"
+                  viewBox="0 0 36 20"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.7"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M59 20C50 26 46 12 38 17C30 22 27 9 19 14C16 15.8 13 14.6 10 13" />
-                  <path d="M10 13 19 12.5M10 13 16.2 19.6" />
+                  <path d="M33 5C23 4 11 7 4 15" />
+                  <path d="M4 15 10.8 13.4M4 15 6.5 8.5" />
                 </svg>
                 <span className="mosaic-avatar-hint-label">
                   {isAboutView ? "go back" : "read about me"}
