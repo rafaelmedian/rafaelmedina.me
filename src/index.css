@@ -2639,7 +2639,9 @@ img {
   .mosaic-hero {
     min-height: 25rem;
     margin: 0;
-    padding-block: 0;
+    /* Bottom padding only bites once expansions push past min-height, keeping
+       the profile off the mosaic when several chips are open. */
+    padding-block: 0 clamp(1.75rem, 3vw, 3rem);
   }
 
   .mosaic-hero-hero-only {
