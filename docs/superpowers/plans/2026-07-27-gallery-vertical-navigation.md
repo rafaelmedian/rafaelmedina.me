@@ -175,3 +175,123 @@ At a 390px by 844px viewport, reopen the gallery and verify:
 git add index.html assets/gallery-vertical-navigation.js assets/gallery-vertical-navigation.css docs/superpowers/plans/2026-07-27-gallery-vertical-navigation.md
 git commit -m "Add vertical gallery navigation"
 ```
+
+### Task 2: Lock the desktop modal and arrows to stable viewport anchors
+
+**Files:**
+- Modify: `index.html:77-79`
+- Modify: `assets/gallery-vertical-navigation.js:63-95`
+- Modify: `assets/gallery-vertical-navigation.css:1-31`
+- Test: rendered browser geometry against `index.html`
+
+**Interfaces:**
+- Consumes: `.preview-gallery-shell`, `.preview-gallery-popup`, `.preview-gallery-rail`, and the existing narrow-screen toolbar media query.
+- Produces: a desktop rail fixed at `50vh`, a modal top edge fixed at `8vh`, and a stable 16px horizontal gap between the modal and rail.
+
+- [x] **Step 1: Record the failing geometry across different projects**
+
+Serve the workspace and open the first project. Capture the modal and rail bounds, navigate to a project with a different card height, then capture them again:
+
+```js
+function geometry() {
+  const popup = document.querySelector(".preview-gallery-popup").getBoundingClientRect();
+  const rail = document.querySelector(".preview-gallery-rail").getBoundingClientRect();
+  return {
+    popupTop: popup.top,
+    railTop: rail.top,
+    railLeft: rail.left,
+  };
+}
+```
+
+Expected before the fix: `railTop` changes because `positionRail()` derives it from the current popup height.
+
+- [x] **Step 2: Remove card-height-based vertical positioning**
+
+Replace `positionRail(rail, gallery)` with horizontal-only positioning:
+
+```js
+function positionRail(rail, gallery) {
+  const popup = gallery.querySelector(".preview-gallery-popup");
+  if (!popup) return;
+
+  const bounds = popup.getBoundingClientRect();
+  rail.style.setProperty(
+    "--preview-gallery-rail-left",
+    `${bounds.right + 16}px`,
+  );
+}
+```
+
+Remove `observedPopup`, `popupSizeObserver`, and all `ResizeObserver` calls because project height must no longer influence the rail.
+
+- [x] **Step 3: Lock the desktop anchors in CSS**
+
+Update `assets/gallery-vertical-navigation.css`:
+
+```css
+.preview-gallery-shell {
+  padding-top: max(8vh, env(safe-area-inset-top));
+}
+
+.preview-gallery-rail {
+  top: 50vh;
+}
+```
+
+Keep `left: var(--preview-gallery-rail-left, calc(50% + 288px))`, the 44px button dimensions inherited from the gallery, and `transform: translateY(-50%)`.
+
+- [x] **Step 4: Preserve the narrow-screen layout**
+
+Inside the existing narrow/coarse-pointer media query, restore the gallery's original top padding and continue hiding the external rail:
+
+```css
+@media (max-width: 720px), (hover: none), (pointer: coarse) {
+  .preview-gallery-shell {
+    padding-top: max(clamp(1rem, 5vh, 3rem), env(safe-area-inset-top));
+  }
+
+  .preview-gallery-rail {
+    display: none;
+  }
+}
+```
+
+- [x] **Step 5: Run static verification**
+
+Run:
+
+```bash
+node --check assets/gallery-vertical-navigation.js
+rg -n 'gallery-vertical-navigation\\.(js|css)\\?v=2' index.html
+rg -n 'ResizeObserver|visibleTop|visibleBottom|preview-gallery-rail-top' assets/gallery-vertical-navigation.js assets/gallery-vertical-navigation.css
+git diff --check
+```
+
+Expected: `node --check` and `git diff --check` pass; the removed dynamic-positioning terms return no matches.
+
+- [x] **Step 6: Verify stable desktop geometry**
+
+At the default desktop viewport, compare projects 1, 3, 5, and 12:
+
+- `.preview-gallery-popup` has the same `top` value for every project.
+- `.preview-gallery-rail` has the same `top` and `left` values for every project.
+- The rail center equals `window.innerHeight * 0.5`.
+- The rail remains 16px from the modal's right edge.
+- The modal top is within 1px of `window.innerHeight * 0.08`, subject to safe-area spacing.
+
+- [x] **Step 7: Verify mobile remains unchanged**
+
+At 390px by 844px:
+
+- The external rail computes to `display: none`.
+- The existing toolbar remains visible with Up/Down icons.
+- Previous and next still wrap between `1 / 12` and `12 / 12`.
+- The document width remains 390px.
+
+- [ ] **Step 8: Commit the positioning fix**
+
+```bash
+git add index.html assets/gallery-vertical-navigation.js assets/gallery-vertical-navigation.css docs/superpowers/plans/2026-07-27-gallery-vertical-navigation.md
+git commit -m "Stabilize gallery modal positioning"
+```

@@ -66,23 +66,10 @@ function positionRail(rail, gallery) {
   if (!popup) return;
 
   const bounds = popup.getBoundingClientRect();
-  const visibleTop = Math.max(0, bounds.top);
-  const visibleBottom = Math.min(window.innerHeight, bounds.bottom);
-
-  rail.style.setProperty(
-    "--preview-gallery-rail-top",
-    `${(visibleTop + visibleBottom) / 2}px`,
-  );
   rail.style.setProperty(
     "--preview-gallery-rail-left",
     `${bounds.right + 16}px`,
   );
-
-  if (observedPopup !== popup) {
-    popupSizeObserver.disconnect();
-    popupSizeObserver.observe(popup);
-    observedPopup = popup;
-  }
 }
 
 function syncRail() {
@@ -90,8 +77,6 @@ function syncRail() {
   const rail = document.querySelector(`.${RAIL_CLASS}`);
 
   if (!gallery) {
-    popupSizeObserver.disconnect();
-    observedPopup = null;
     rail?.remove();
     return;
   }
@@ -120,10 +105,7 @@ function syncRail() {
   positionRail(nextRail, gallery);
 }
 
-let observedPopup = null;
-const popupSizeObserver = new ResizeObserver(syncRail);
 const observer = new MutationObserver(syncRail);
 observer.observe(document.body, { childList: true, subtree: true });
 window.addEventListener("resize", syncRail);
-window.addEventListener("scroll", syncRail, true);
 syncRail();

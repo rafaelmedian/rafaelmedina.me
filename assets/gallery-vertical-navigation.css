@@ -1,7 +1,11 @@
+.preview-gallery-shell {
+  padding-top: max(8vh, env(safe-area-inset-top));
+}
+
 .preview-gallery-rail {
   position: fixed;
   z-index: 71;
-  top: var(--preview-gallery-rail-top, 50%);
+  top: 50vh;
   left: var(--preview-gallery-rail-left, calc(50% + 288px));
   display: flex;
   flex-direction: column;
@@ -16,6 +20,10 @@
 }
 
 @media (max-width: 720px), (hover: none), (pointer: coarse) {
+  .preview-gallery-shell {
+    padding-top: max(clamp(1rem, 5vh, 3rem), env(safe-area-inset-top));
+  }
+
   .preview-gallery-rail {
     display: none;
   }
