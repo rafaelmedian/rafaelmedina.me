@@ -19,7 +19,7 @@ type AboutSticker = {
 }
 
 /**
- * Corner stickers for the about panel — snapshots from places, mementos, etc.
+ * Corner stickers for the about panel: snapshots from places, mementos, etc.
  * Drop images in `public/Stickers/` and add an entry per corner, e.g.
  *   { corner: "top-left", src: "/Stickers/punta-cana.webp", alt: "Punta Cana", rotate: -6 }
  * Empty corners simply render nothing. Stickers are decorative and are hidden
@@ -70,30 +70,29 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
         ))}
 
         <div className="mosaic-about-body">
-          <p className="mosaic-about-lede">Hey — I&rsquo;m Rafael.</p>
+          <p className="mosaic-about-lede">Hi, I&rsquo;m Rafael.</p>
           <p>
-            I&rsquo;ve spent more than ten years designing products, most of it in the messy middle:
-            working out what a thing should be, drawing it, prototyping it, and staying on until it
-            ships.
+            I&rsquo;ve been designing products for over ten years, mostly the unglamorous parts.
+            Working out what to build, drawing it, putting it in front of people, then sticking
+            around for the long tail of fixes after launch.
           </p>
           <p>
-            I prototype in code, because something you can click tells you more in a minute than
-            something you can only look at. That habit is most of how I work — build the smallest
-            real version, put it in front of people, and let it argue back.
+            I build my prototypes in code. Something you can click answers questions a static mockup
+            can&rsquo;t, and it settles an argument faster than a meeting does.
           </p>
           <p>
-            Most recently that&rsquo;s been with 0x and Matcha. Before that, stretches with
-            Moody&rsquo;s, Chainlink, Twilio, Onit, Google, and Protector and Patrol.
+            Most recently I worked with 0x and Matcha. Before that: Moody&rsquo;s, Chainlink,
+            Twilio, Onit, Google, and Protector and Patrol.
           </p>
 
           <dl className="mosaic-about-facts">
             <div className="mosaic-about-fact">
               <dt>Now</dt>
-              <dd>Freelance product design, between Punta Cana and NYC.</dd>
+              <dd>Freelance, splitting time between Punta Cana and NYC.</dd>
             </div>
             <div className="mosaic-about-fact">
               <dt>Lately</dt>
-              <dd>Interactive prototypes, AI workflows, and design systems.</dd>
+              <dd>Prototypes, AI tooling, and design systems.</dd>
             </div>
             <div className="mosaic-about-fact">
               <dt>Elsewhere</dt>
@@ -123,8 +122,7 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
           </dl>
 
           <p className="mosaic-about-closing">
-            I&rsquo;m taking on work right now. If you&rsquo;re building something that deserves
-            care,{" "}
+            I&rsquo;m taking on new work at the moment. If you&rsquo;re building something,{" "}
             <a
               href={`mailto:${links.email}`}
               className="mosaic-about-link"
@@ -136,7 +134,7 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
                 })
               }}
             >
-              say hello
+              send me an email
             </a>
             .
           </p>
