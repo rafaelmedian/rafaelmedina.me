@@ -295,3 +295,122 @@ At 390px by 844px:
 git add index.html assets/gallery-vertical-navigation.js assets/gallery-vertical-navigation.css docs/superpowers/plans/2026-07-27-gallery-vertical-navigation.md
 git commit -m "Stabilize gallery modal positioning"
 ```
+
+### Task 3: Move the fixed controls upward and tighten bottom corners
+
+**Files:**
+- Modify: `index.html:77-79`
+- Modify: `assets/gallery-vertical-navigation.css:1-39`
+- Modify: `docs/superpowers/plans/2026-07-27-gallery-vertical-navigation.md`
+- Test: rendered browser geometry and computed corner styles against `index.html`
+
+**Interfaces:**
+- Consumes: the fixed desktop modal top at `8vh`, `.preview-gallery-popup`, `.preview-gallery-card`, `.preview-gallery-rail`, and the narrow/coarse-pointer media query.
+- Produces: a rail centered 128px below the fixed modal top plus 28px bottom corners shared by the popup and card.
+
+- [x] **Step 1: Record the failing upper-anchor and radius checks**
+
+Open a desktop project and capture:
+
+```js
+const popup = document.querySelector(".preview-gallery-popup");
+const card = document.querySelector(".preview-gallery-card");
+const rail = document.querySelector(".preview-gallery-rail");
+const popupRect = popup.getBoundingClientRect();
+const railRect = rail.getBoundingClientRect();
+
+({
+  railOffset: railRect.top + railRect.height / 2 - popupRect.top,
+  popupBottomLeft: getComputedStyle(popup).borderBottomLeftRadius,
+  cardBottomLeft: getComputedStyle(card).borderBottomLeftRadius,
+});
+```
+
+Expected before the fix: `railOffset` is substantially larger than 128px and both bottom radii are larger than 28px.
+
+- [x] **Step 2: Move the fixed rail to the upper card**
+
+Define one shared desktop top custom property and derive both positions from it:
+
+```css
+:root {
+  --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
+}
+
+.preview-gallery-shell {
+  padding-top: var(--preview-gallery-fixed-top);
+}
+
+.preview-gallery-rail {
+  top: calc(var(--preview-gallery-fixed-top) + 128px);
+}
+```
+
+Keep `transform: translateY(-50%)`, so the center of the two-button stack—not its top edge—is exactly 128px below the modal top.
+
+- [x] **Step 3: Reduce only the modal bottom corners**
+
+Add:
+
+```css
+.preview-gallery-popup,
+.preview-gallery-card {
+  border-bottom-right-radius: 28px;
+  border-bottom-left-radius: 28px;
+}
+```
+
+Do not override the top corner radii.
+
+- [x] **Step 4: Preserve the narrow-screen behavior**
+
+Within the current narrow/coarse-pointer media query, leave the external rail hidden and retain the existing mobile top padding. The smaller 28px bottom corners remain active because they avoid clipping mismatches between popup and card.
+
+- [x] **Step 5: Increment the focused asset cache key**
+
+Update both focused asset URLs in `index.html` from `?v=2` to `?v=3`:
+
+```html
+<script type="module" src="/assets/gallery-vertical-navigation.js?v=3"></script>
+<link rel="stylesheet" href="/assets/gallery-vertical-navigation.css?v=3">
+```
+
+- [x] **Step 6: Run static verification**
+
+Run:
+
+```bash
+node --check assets/gallery-vertical-navigation.js
+rg -n 'gallery-vertical-navigation\\.(js|css)\\?v=3' index.html
+rg -n 'preview-gallery-fixed-top|128px|border-bottom-(right|left)-radius: 28px' assets/gallery-vertical-navigation.css
+git diff --check
+```
+
+Expected: all required declarations are present and both commands exit successfully.
+
+- [x] **Step 7: Verify desktop geometry and corners**
+
+For projects 1, 3, 5, and 12, confirm:
+
+- Modal top coordinates are identical.
+- Rail top and left coordinates are identical.
+- Rail center minus modal top is exactly 128px within 1px rounding tolerance.
+- Popup and card bottom-left and bottom-right radii compute to 28px.
+- Popup and card top radii remain larger than 28px.
+- The rail remains 16px from the modal's right edge.
+
+- [x] **Step 8: Verify the mobile regression**
+
+At 390px by 844px, confirm:
+
+- The external rail remains hidden.
+- The existing toolbar remains visible.
+- The document width remains 390px.
+- The popup and card bottom radii compute to 28px without clipping.
+
+- [ ] **Step 9: Commit the refinement**
+
+```bash
+git add index.html assets/gallery-vertical-navigation.css docs/superpowers/plans/2026-07-27-gallery-vertical-navigation.md
+git commit -m "Refine gallery modal controls"
+```

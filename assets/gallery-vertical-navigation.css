@@ -1,11 +1,21 @@
+:root {
+  --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
+}
+
 .preview-gallery-shell {
-  padding-top: max(8vh, env(safe-area-inset-top));
+  padding-top: var(--preview-gallery-fixed-top);
+}
+
+.preview-gallery-popup,
+.preview-gallery-card {
+  border-bottom-right-radius: 28px;
+  border-bottom-left-radius: 28px;
 }
 
 .preview-gallery-rail {
   position: fixed;
   z-index: 71;
-  top: 50vh;
+  top: calc(var(--preview-gallery-fixed-top) + 128px);
   left: var(--preview-gallery-rail-left, calc(50% + 288px));
   display: flex;
   flex-direction: column;
