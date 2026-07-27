@@ -1,19 +1,26 @@
 # Project Status
 
-Last updated: 2026-07-19
+Last updated: 2026-07-27
 
 ## Current state
 
 - The homepage renders `SimpleFeed` (`src/App.tsx` → `src/components/SimpleFeed.tsx`): profile hero with live Punta Cana clock, company history, and the selected-work mosaic (`showProjects` is on).
 - All card content and site links live in `src/data/portfolio.ts`.
 - `/styleguide` renders `StyleguidePage` in dev only; it is not deployed as a static route in production.
-- `npm run build` and `npm run lint` both pass.
+- `npm run lint`, `npm run build`, and `npm run test:e2e` all pass.
 
 ## Branch layout
 
-- `gh-pages` — default branch; holds only the **built** site (Vite `dist/` output plus `CNAME`). Deploys are commits/PRs to this branch.
-- `rafaelmedian/site-polish-source` — current **source** branch (this Vite + React + TypeScript app).
-- `archive/*` — retired history, including the pre-2026 Jekyll site (`archive/2020-12-21-master`) and the previous source branch (`archive/2026-04-21-main`).
+- `main` — default branch and the **only** branch that deploys. Holds this
+  source app; GitHub Actions builds it and publishes to Pages on every push.
+- `archive/*` — retired history, including the pre-2026 Jekyll site
+  (`archive/2020-12-21-master`) and older source branches.
+- `pre-ci-deploy` (tag) — the last hand-published `gh-pages` tree, kept as a
+  rollback reference.
+
+Feature branches are cut from `main` and merged back via PR. There is no longer
+a split between a "source" branch and a "built output" branch — that split is
+exactly what let the two drift apart.
 
 ## Not currently used
 
