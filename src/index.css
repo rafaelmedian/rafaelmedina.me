@@ -807,6 +807,34 @@ img {
   color: #2d2d2d;
 }
 
+.mosaic-about-hobbies {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.mosaic-about-hobbies li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
+  color: #2d2d2d;
+}
+
+.mosaic-about-hobby-emoji {
+  font-size: 1.0625rem;
+  line-height: 1;
+}
+
+.mosaic-about-hobby-note {
+  color: #a4a4a4;
+}
+
 .mosaic-about-facts {
   margin: 0.5rem 0 0;
   display: grid;
@@ -866,6 +894,7 @@ img {
   border: 0;
   background: none;
   padding: 0;
+  margin-bottom: 0.25rem;
   min-height: 2.5rem;
   display: inline-flex;
   align-items: center;
@@ -886,6 +915,10 @@ img {
   .mosaic-about-fact {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.15rem;
+  }
+
+  .mosaic-about-hobbies {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

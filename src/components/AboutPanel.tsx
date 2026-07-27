@@ -27,12 +27,22 @@ type AboutSticker = {
  */
 const aboutStickers: AboutSticker[] = []
 
+const hobbies = [
+  { emoji: "🥊", label: "kickboxing" },
+  { emoji: "🚵", label: "mountain biking" },
+  { emoji: "🏊", label: "lap swimming" },
+  { emoji: "🥾", label: "hiking" },
+  { emoji: "💃", label: "salsa", learning: true },
+  { emoji: "🥋", label: "jiu jitsu", learning: true },
+]
+
+/** `label` is what renders (lowercase, to match the panel); `name` is what analytics records. */
 const elsewhereLinks = (links: SiteLinks) => [
-  { label: "X", href: links.x },
-  { label: "Telegram", href: links.telegram },
-  { label: "GitHub", href: links.github },
-  { label: "LinkedIn", href: links.linkedin },
-  { label: "Dribbble", href: links.dribbble },
+  { label: "x", name: "X", href: links.x },
+  { label: "telegram", name: "Telegram", href: links.telegram },
+  { label: "github", name: "GitHub", href: links.github },
+  { label: "linkedin", name: "LinkedIn", href: links.linkedin },
+  { label: "dribbble", name: "Dribbble", href: links.dribbble },
 ]
 
 export function AboutPanel({ links, onClose }: AboutPanelProps) {
@@ -70,35 +80,53 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
         ))}
 
         <div className="mosaic-about-body">
-          <p className="mosaic-about-lede">Hi, I&rsquo;m Rafael.</p>
+          <button type="button" className="mosaic-about-back" onClick={onClose}>
+            <span aria-hidden="true">←</span> back
+          </button>
+
+          <p className="mosaic-about-lede">hi, i&rsquo;m rafael.</p>
           <p>
-            I&rsquo;ve been designing products for over ten years, mostly the unglamorous parts.
-            Working out what to build, drawing it, putting it in front of people, then sticking
+            i&rsquo;ve been designing products for over ten years, mostly the unglamorous parts.
+            working out what to build, drawing it, putting it in front of people, then sticking
             around for the long tail of fixes after launch.
           </p>
           <p>
-            I build my prototypes in code. Something you can click answers questions a static mockup
+            i build my prototypes in code. something you can click answers questions a static mockup
             can&rsquo;t, and it settles an argument faster than a meeting does.
           </p>
           <p>
-            Most recently I worked with 0x and Matcha. Before that: Moody&rsquo;s, Chainlink,
-            Twilio, Onit, Google, and Protector and Patrol.
+            outside of work i&rsquo;m usually moving, and i pick up something new every year. right
+            now that&rsquo;s salsa and jiu jitsu, both of which i am comfortably bad at.
           </p>
+
+          <ul className="mosaic-about-hobbies">
+            {hobbies.map((hobby) => (
+              <li key={hobby.label}>
+                <span className="mosaic-about-hobby-emoji" aria-hidden="true">
+                  {hobby.emoji}
+                </span>
+                {hobby.label}
+                {hobby.learning ? (
+                  <span className="mosaic-about-hobby-note"> (learning)</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
 
           <dl className="mosaic-about-facts">
             <div className="mosaic-about-fact">
-              <dt>Now</dt>
-              <dd>Freelance, splitting time between Punta Cana and NYC.</dd>
+              <dt>now</dt>
+              <dd>freelance, splitting time between punta cana and nyc.</dd>
             </div>
             <div className="mosaic-about-fact">
-              <dt>Lately</dt>
-              <dd>Prototypes, AI tooling, and design systems.</dd>
+              <dt>lately</dt>
+              <dd>prototypes, ai tooling, and design systems.</dd>
             </div>
             <div className="mosaic-about-fact">
-              <dt>Elsewhere</dt>
+              <dt>elsewhere</dt>
               <dd>
                 {elsewhereLinks(links).map((link, index) => (
-                  <span key={link.label}>
+                  <span key={link.name}>
                     {index > 0 ? <span aria-hidden="true"> · </span> : null}
                     <a
                       href={link.href}
@@ -107,7 +135,7 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
                       className="mosaic-about-link"
                       onClick={() => {
                         trackEvent("social_link_click", {
-                          social_label: link.label,
+                          social_label: link.name,
                           social_href: link.href,
                           social_placement: "about_panel",
                         })
@@ -122,7 +150,7 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
           </dl>
 
           <p className="mosaic-about-closing">
-            I&rsquo;m taking on new work at the moment. If you&rsquo;re building something,{" "}
+            i&rsquo;m taking on new work at the moment. if you&rsquo;re building something,{" "}
             <a
               href={`mailto:${links.email}`}
               className="mosaic-about-link"
@@ -138,10 +166,6 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
             </a>
             .
           </p>
-
-          <button type="button" className="mosaic-about-back" onClick={onClose}>
-            <span aria-hidden="true">←</span> Back to work
-          </button>
         </div>
       </div>
     </article>
