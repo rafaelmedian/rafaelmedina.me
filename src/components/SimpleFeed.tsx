@@ -410,7 +410,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           </div>
           <WorkedWithCompaniesInline variant="profile" />
           <p className="mosaic-profile-location">
-            Punta Cana, soon NYC <span aria-hidden="true">·</span> Local time:{" "}
+            Punta Cana & NYC <span aria-hidden="true">·</span> Local time:{" "}
             <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
           </p>
         </div>
