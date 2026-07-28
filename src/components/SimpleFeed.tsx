@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
 
 import { AboutPanel } from "./AboutPanel"
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
@@ -265,6 +265,8 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
+  const [hasOpenedWorkPreview, setHasOpenedWorkPreview] = useState(false)
+  const previewCardNodesRef = useRef(new Map<number, HTMLButtonElement>())
   const [paginatedPreviewIndexes, setPaginatedPreviewIndexes] = useState<Record<string, number>>({})
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
@@ -310,7 +312,23 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const setSelectedWorkPreviewIndex = (index: number) => {
     setLastWorkPreviewIndex(index)
     setActiveWorkPreviewIndex(index)
+    setHasOpenedWorkPreview(true)
   }
+
+  // The gallery grows out of (and shrinks back into) the card it represents, so
+  // it needs that card's live geometry at open and close time.
+  const getPreviewOriginRect = useCallback((index: number) => {
+    const node = previewCardNodesRef.current.get(index)
+    if (!node) return null
+
+    const rect = node.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) return null
+
+    // A card scrolled out of view would send the gallery flying off-screen, so
+    // only anchor to cards the viewer can actually see.
+    const onScreen = rect.bottom > 0 && rect.top < window.innerHeight
+    return onScreen ? rect : null
+  }, [])
 
   const shellClassName = `mosaic-shell${showProjects ? "" : " mosaic-shell-hero-only"}`
   const heroClassName = `mosaic-hero${showProjects ? "" : " mosaic-hero-hero-only"}`
@@ -550,6 +568,11 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                           >
                             <button
                               type="button"
+                              ref={(node) => {
+                                const nodes = previewCardNodesRef.current
+                                if (node) nodes.set(item.previewIndex, node)
+                                else nodes.delete(item.previewIndex)
+                              }}
                               className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
                               onClick={() => {
                                 if (isPaginatedCard) {
@@ -598,14 +621,17 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
 
           {/* Outside the swap wrapper: while that wrapper is mid-animation it has
               a transform, which would become the containing block for the
-              dialog's fixed positioning. */}
-          {!isAboutView && activeWorkPreviewIndex != null && activeWorkPreviewIndex < flatWorkCards.length ? (
+              dialog's fixed positioning. Stays mounted after the first open so
+              Base UI can run the close transition instead of the dialog
+              vanishing on unmount. */}
+          {!isAboutView && hasOpenedWorkPreview && flatWorkCards.length > 0 ? (
             <Suspense fallback={null}>
               <PreviewGalleryDialog
                 cards={flatWorkCards}
-                open
+                open={activeWorkPreviewIndex != null}
                 selectedIndex={selectedWorkPreviewIndex}
                 prefersReducedMotion={prefersReducedMotion}
+                getOriginRect={getPreviewOriginRect}
                 onOpenChange={(nextOpen) => {
                   if (!nextOpen) {
                     setActiveWorkPreviewIndex(null)
