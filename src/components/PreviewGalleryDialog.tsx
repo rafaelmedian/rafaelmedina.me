@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import type { PortfolioCard } from "../data/portfolio"
@@ -353,8 +353,36 @@ export function PreviewGalleryDialog({
                 </dl>
               </div>
             </article>
-
           </Dialog.Popup>
+
+          {/* A mouse affordance for desktop, where the toolbar is display:none
+              and paging is otherwise Arrow-keys-only. It sits outside the popup
+              (nothing else clears the popup's overflow), so the dialog's focus
+              trap cannot reach it — rather than fight the trap, keep it out of
+              the tab order and the a11y tree. Keyboard and AT users keep the
+              existing Arrow key handler, so this adds reach without taking any
+              away. */}
+          <div className="preview-gallery-rail" aria-hidden="true">
+            <button
+              type="button"
+              tabIndex={-1}
+              className="preview-gallery-nav preview-gallery-nav-previous"
+              onClick={() => moveBy(-1)}
+              disabled={cards.length <= 1}
+            >
+              <ChevronUp aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+            </button>
+
+            <button
+              type="button"
+              tabIndex={-1}
+              className="preview-gallery-nav preview-gallery-nav-next"
+              onClick={() => moveBy(1)}
+              disabled={cards.length <= 1}
+            >
+              <ChevronDown aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+            </button>
+          </div>
         </div>
       </Dialog.Portal>
     </Dialog.Root>

@@ -10,6 +10,7 @@
   --font-secondary: var(--font-newsreader, var(--font-fallback));
   --font-script: var(--font-benji-script, var(--font-fallback));
   --font-code: "SF Mono", "SFMono-Regular", "Consolas", "Liberation Mono", Menlo, Courier, monospace;
+  --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
   --font-body: var(--font-primary);
   --body-color: #111;
   --body-bg: #fdfdfc;
@@ -2103,6 +2104,61 @@ img {
     max(1rem, env(safe-area-inset-bottom))
     max(clamp(1rem, 3vw, 2.5rem), env(safe-area-inset-left));
   cursor: pointer;
+}
+
+/* Pin the popup to a stable offset where there is room for it, so paging
+   between previews of different heights does not shift it up and down. */
+@media (min-width: 721px) and (hover: hover) and (pointer: fine) {
+  .preview-gallery-shell {
+    padding-top: var(--preview-gallery-fixed-top);
+  }
+}
+
+/* Square off the bottom corners a little relative to the top, so the detail
+   block below the media does not read as a floating pill. */
+.preview-gallery-popup,
+.preview-gallery-card {
+  border-bottom-right-radius: 28px;
+  border-bottom-left-radius: 28px;
+}
+
+/* Vertical shortcut rail, pointer-only. The popup is a centred
+   min(544px, 100%), so half of it (272px) plus a 16px gutter puts the rail
+   just off its right edge without measuring anything at runtime. */
+.preview-gallery-rail {
+  position: fixed;
+  z-index: 71;
+  top: calc(var(--preview-gallery-fixed-top) + 128px);
+  left: calc(50% + 288px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transform: translateY(-50%);
+}
+
+.preview-gallery-rail .preview-gallery-nav {
+  background: rgb(255 255 255 / 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* No room beside the popup, and no pointer to use it: fall back to the
+   toolbar buttons, turned to match the vertical arrow-key model. */
+@media (max-width: 720px), (hover: none), (pointer: coarse) {
+  .preview-gallery-rail {
+    display: none;
+  }
+
+  .preview-gallery-toolbar .preview-gallery-nav-prev .preview-gallery-nav-icon,
+  .preview-gallery-toolbar .preview-gallery-nav-next .preview-gallery-nav-icon {
+    transform: rotate(90deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-gallery-rail .preview-gallery-nav {
+    transition: none;
+  }
 }
 
 .preview-gallery-popup {

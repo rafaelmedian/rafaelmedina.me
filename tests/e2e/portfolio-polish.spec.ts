@@ -153,6 +153,40 @@ for (const viewport of [
   })
 }
 
+test("offers a vertical gallery rail on desktop and hides it on touch layouts", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/")
+  await page.locator(".mosaic-row-card").first().click()
+
+  const rail = page.locator(".preview-gallery-rail")
+  const popup = page.locator(".preview-gallery-popup")
+  await expect(rail).toBeVisible()
+
+  // The rail is positioned purely in CSS; check it lands beside the popup.
+  const railBox = await rail.boundingBox()
+  const popupBox = await popup.boundingBox()
+  expect(Math.round(railBox!.x - (popupBox!.x + popupBox!.width))).toBe(16)
+
+  // The count lives in the toolbar, which is touch-only, so assert on the title.
+  const title = page.locator(".preview-gallery-title")
+  await expect(title).toHaveText("Matcha - Multiwallet flow")
+  await rail.locator("button").nth(1).click()
+  await expect(title).toHaveText("Matcha - Homepage")
+  await rail.locator("button").first().click()
+  await expect(title).toHaveText("Matcha - Multiwallet flow")
+
+  // Pointer-only affordance: the dialog focus trap cannot reach outside the
+  // popup, so the rail stays out of the tab order and the a11y tree while
+  // Arrow keys remain the keyboard path.
+  await expect(rail).toHaveAttribute("aria-hidden", "true")
+  expect(await rail.getByRole("button").count()).toBe(0)
+  await page.keyboard.press("ArrowDown")
+  await expect(title).toHaveText("Matcha - Homepage")
+
+  await page.setViewportSize(mobileViewport)
+  await expect(rail).toBeHidden()
+})
+
 test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 })
   await page.goto("/")
