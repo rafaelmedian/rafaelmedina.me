@@ -646,6 +646,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                               className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
                               onPointerEnter={isPaginatedCard ? undefined : prefetchPreviewGallery}
                               onPointerDown={isPaginatedCard ? undefined : prefetchPreviewGallery}
+                              onFocus={isPaginatedCard ? undefined : prefetchPreviewGallery}
                               onClick={() => {
                                 if (isPaginatedCard) {
                                   paginatePreviewCard(
