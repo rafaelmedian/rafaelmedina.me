@@ -24,12 +24,18 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
-  await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+  // All positional travel belongs to the wrapper, so the popup itself is never
+  // transformed while origin motion is on.
+  await expect(dialog).toHaveCSS("transform", "none")
 
   // The gallery flies in from the card it was opened from; measure it at rest.
   await page
     .locator(".preview-gallery-origin-wrap")
     .evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  // The counter-scale has to land exactly back on identity, or the content is
+  // left a fraction of a percent off its true size.
+  await expect(page.locator(".preview-gallery-card-inner")).toHaveCSS("transform", "none")
 
   for (const name of ["Previous preview", "Next preview", "Close preview"]) {
     const control = dialog.getByRole("button", { name })

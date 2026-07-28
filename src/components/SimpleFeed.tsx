@@ -5,9 +5,22 @@ import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
+const importPreviewGallery = () => import("./PreviewGalleryDialog")
+
 const PreviewGalleryDialog = lazy(() =>
-  import("./PreviewGalleryDialog").then((module) => ({ default: module.PreviewGalleryDialog })),
+  importPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })),
 )
+
+// The dialog is split out of the main bundle, so a cold first click pays the
+// fetch before anything moves. Warm it on the first hint of intent instead.
+let previewGalleryPreloaded = false
+function preloadPreviewGallery() {
+  if (previewGalleryPreloaded) return
+  previewGalleryPreloaded = true
+  void importPreviewGallery().catch(() => {
+    previewGalleryPreloaded = false
+  })
+}
 
 type SiteProfile = {
   name: string
@@ -574,6 +587,8 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                                 else nodes.delete(item.previewIndex)
                               }}
                               className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
+                              onPointerEnter={isPaginatedCard ? undefined : preloadPreviewGallery}
+                              onFocus={isPaginatedCard ? undefined : preloadPreviewGallery}
                               onClick={() => {
                                 if (isPaginatedCard) {
                                   paginatePreviewCard(

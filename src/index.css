@@ -2460,12 +2460,18 @@ img {
   cursor: pointer;
   backdrop-filter: blur(10px) saturate(0.92);
   -webkit-backdrop-filter: blur(10px) saturate(0.92);
-  transition: opacity 180ms ease-out;
+  /* Opacity only. Ramping `backdrop-filter` re-blurs the whole viewport every
+     frame, which is not worth it — a longer fade already takes off the snap. */
+  transition: opacity var(--pg-backdrop-in-ms, 180ms) ease-out;
 }
 
 .preview-gallery-backdrop[data-starting-style],
 .preview-gallery-backdrop[data-ending-style] {
   opacity: 0;
+}
+
+.preview-gallery-backdrop[data-ending-style] {
+  transition: opacity var(--pg-backdrop-out-ms, 150ms) ease-in;
 }
 
 .preview-gallery-shell {
@@ -2492,7 +2498,7 @@ img {
 }
 
 /* Carries the origin-aware travel (card -> centre) so the popup keeps its own
-   fade/scale transition. Driven by the Web Animations API in the dialog. */
+   fade. Driven by the Web Animations API in the dialog. */
 .preview-gallery-origin-wrap {
   display: flex;
   flex-direction: column;
@@ -2514,35 +2520,50 @@ img {
   transform: translateY(0) scale(1);
   transform-origin: center center;
   transition:
-    opacity 180ms ease-out,
-    transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    opacity var(--pg-content-in-ms, 140ms) ease-out,
+    transform var(--pg-open-ms, 200ms) var(--pg-open-ease, cubic-bezier(0.32, 0.8, 0.32, 1));
 }
 
+/* Fallback for when there is no card to travel from (it scrolled off-screen, or
+   motion is reduced): a plain lift, owned entirely by CSS. */
 .preview-gallery-popup[data-starting-style],
 .preview-gallery-popup[data-ending-style] {
   opacity: 0;
   transform: translateY(1.25rem) scale(0.96);
 }
 
+.preview-gallery-popup[data-ending-style] {
+  transition:
+    opacity var(--pg-content-out-ms, 120ms) ease-in,
+    transform var(--pg-close-ms, 150ms) var(--pg-close-ease, cubic-bezier(0.4, 0, 1, 1));
+}
+
+/* Shrinking a playing video reads as a glitch, so it only fades. */
 .preview-gallery-popup[data-preview-media="video"][data-ending-style] {
   transform: translateY(0) scale(1);
 }
 
 /* When the wrapper is doing the positional travel, the popup only cross-fades —
    its own translate/scale would fight the origin animation. */
+.preview-gallery-popup[data-origin-motion],
+.preview-gallery-popup[data-origin-motion][data-starting-style],
+.preview-gallery-popup[data-origin-motion][data-ending-style] {
+  transform: none;
+}
+
 .preview-gallery-popup[data-origin-motion] {
-  transition: opacity 150ms ease-out;
+  transition: opacity var(--pg-content-in-ms, 140ms) ease-out;
 }
 
 .preview-gallery-popup[data-origin-motion][data-starting-style] {
   opacity: 0;
-  transform: none;
 }
 
+/* Base UI unmounts the popup when this transition ends, so on close it has to
+   outlast the wrapper's travel rather than merely match the content fade. */
 .preview-gallery-popup[data-origin-motion][data-ending-style] {
   opacity: 0;
-  transform: none;
-  transition: opacity 220ms cubic-bezier(0.5, 0, 0.35, 1);
+  transition: opacity var(--pg-close-ms, 150ms) var(--pg-close-ease, cubic-bezier(0.4, 0, 1, 1));
 }
 
 .preview-gallery-card {
@@ -2561,13 +2582,34 @@ img {
   outline: none;
   opacity: 1;
   transform: translateY(0) scale(1);
+  /* This transition belongs to the between-previews switch below, which is
+     stepped by a JS timer — hence the shared duration. */
   transition:
-    opacity 180ms ease-out,
-    transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    opacity var(--pg-switch-ms, 190ms) ease-out,
+    transform var(--pg-switch-ms, 190ms) cubic-bezier(0.2, 0, 0, 1);
   box-shadow:
     0 1px 1px rgb(0 0 0 / 0.04),
     0 18px 44px -18px rgb(0 0 0 / 0.28),
     0 48px 92px -42px rgb(0 0 0 / 0.38);
+}
+
+/* The wrapper scales the surface down to the size of the card that was clicked;
+   this layer takes the exact reciprocal, so the media and the copy sit at final
+   size for the whole flight and the growing box just reveals them. Driven by
+   the Web Animations API in the dialog, in lockstep with the wrapper. */
+.preview-gallery-card-inner {
+  transform-origin: top center;
+}
+
+/* Mid-flight the counter-scaled content overflows its box, so the shell flags
+   the travel and the surface clips rather than flashing a scrollbar. */
+.preview-gallery-shell[data-origin-animating] .preview-gallery-card {
+  overflow: hidden;
+}
+
+.preview-gallery-shell[data-origin-animating] .preview-gallery-origin-wrap,
+.preview-gallery-shell[data-origin-animating] .preview-gallery-card-inner {
+  will-change: transform;
 }
 
 .preview-gallery-card-switch-out-up {
@@ -3152,9 +3194,6 @@ img {
   .preview-gallery-card {
     --preview-gallery-card-padding: 0.85rem;
     --preview-gallery-media-radius: 16px;
-  }
-
-  .preview-gallery-media-frame {
   }
 
   .preview-gallery-media {
