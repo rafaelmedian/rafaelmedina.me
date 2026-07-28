@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Handlee (SIL OFL 1.1), the handwriting face Figma ships. Used only for the
+   hover hint on the profile photo, so it loads lazily and falls back to a
+   system cursive. */
+@font-face {
+  font-family: "Handlee";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Handlee-Regular.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
   --font-fallback:
     "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
@@ -650,13 +663,381 @@ img {
   transform: rotateY(180deg) scaleX(-1);
 }
 
+.mosaic-avatar-button {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  display: block;
+  transition: transform 160ms var(--ease-smooth);
+}
+
+.mosaic-avatar-button:active {
+  transform: scale(0.94);
+}
+
+.mosaic-avatar-button:focus-visible {
+  outline: 2px solid #2d2d2d;
+  outline-offset: 3px;
+}
+
+.mosaic-avatar-hint {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.5rem);
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: #e5352b;
+  opacity: 0;
+  transform: translateY(-50%) translateX(-0.5rem) rotate(-3deg);
+  transform-origin: left center;
+  pointer-events: none;
+  width: max-content;
+  white-space: nowrap;
+  transition:
+    opacity 200ms var(--ease-smooth),
+    transform 260ms var(--ease-smooth);
+}
+
+.mosaic-avatar-button:hover .mosaic-avatar-hint,
+.mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0) rotate(-3deg);
+}
+
+.mosaic-avatar-hint-arrow {
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.mosaic-avatar-hint-label {
+  white-space: nowrap;
+  text-wrap: nowrap;
+  font-family: "Handlee", "Bradley Hand", "Segoe Print", cursive;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+  /* Handlee ships a single weight, so thicken the strokes instead of asking
+     for a faux-bold synthesis. */
+  -webkit-text-stroke: 0.45px currentColor;
+  /* Sit level with the tail of the arrow, which ends near the top of its box. */
+  transform: translateY(-4px);
+}
+
+@media (max-width: 699.98px) {
+  .mosaic-avatar-hint {
+    display: none;
+  }
+}
+
+.mosaic-avatar-coin.is-flipped .mosaic-avatar-coin-inner {
+  transform: rotateY(180deg);
+}
+
+.mosaic-avatar-coin.is-flipped:hover .mosaic-avatar-coin-inner,
+.mosaic-avatar-coin.is-flipped:focus-visible .mosaic-avatar-coin-inner {
+  transform: rotateY(360deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mosaic-avatar-coin-inner {
     transition: none;
   }
   .mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
+  .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner,
+  .mosaic-avatar-coin.is-flipped .mosaic-avatar-coin-inner,
+  .mosaic-avatar-coin.is-flipped:hover .mosaic-avatar-coin-inner,
+  .mosaic-avatar-coin.is-flipped:focus-visible .mosaic-avatar-coin-inner {
     transform: none;
+  }
+  .mosaic-avatar-button,
+  .mosaic-avatar-button:active {
+    transform: none;
+    transition: none;
+  }
+
+  /* Keep the hint's fade, drop its slide. */
+  .mosaic-avatar-hint,
+  .mosaic-avatar-button:hover .mosaic-avatar-hint,
+  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
+    transform: translateY(-50%) rotate(-3deg);
+    transition: opacity 120ms linear;
+  }
+}
+
+.mosaic-view {
+  opacity: 1;
+  transform: none;
+}
+
+.mosaic-view-animated {
+  animation: mosaic-view-enter 460ms var(--ease-smooth) both;
+  transition:
+    opacity 170ms cubic-bezier(0.4, 0, 1, 1),
+    transform 170ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.mosaic-view-animated.is-leaving,
+.mosaic-view-animated.is-leaving * {
+  animation: none !important;
+}
+
+.mosaic-view-animated.is-leaving {
+  opacity: 0;
+  transform: translateY(0.25rem) scale(0.99);
+}
+
+/* Rows and about blocks trail in behind the container, so the swap reads as
+   content arriving rather than one block replacing another. */
+.mosaic-view-animated .mosaic-row,
+.mosaic-view-animated .mosaic-about-body > * {
+  animation: mosaic-intro-rise 520ms var(--ease-smooth) both;
+}
+
+.mosaic-view-animated .mosaic-row:nth-child(1),
+.mosaic-view-animated .mosaic-about-body > :nth-child(1) {
+  animation-delay: 90ms;
+}
+
+.mosaic-view-animated .mosaic-row:nth-child(2),
+.mosaic-view-animated .mosaic-about-body > :nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.mosaic-view-animated .mosaic-row:nth-child(3),
+.mosaic-view-animated .mosaic-about-body > :nth-child(3) {
+  animation-delay: 210ms;
+}
+
+.mosaic-view-animated .mosaic-row:nth-child(4),
+.mosaic-view-animated .mosaic-about-body > :nth-child(4) {
+  animation-delay: 270ms;
+}
+
+.mosaic-view-animated .mosaic-about-body > :nth-child(5) {
+  animation-delay: 320ms;
+}
+
+.mosaic-view-animated .mosaic-about-body > :nth-child(6) {
+  animation-delay: 365ms;
+}
+
+.mosaic-view-animated .mosaic-about-body > :nth-child(7) {
+  animation-delay: 405ms;
+}
+
+.mosaic-view-animated .mosaic-about-body > :nth-child(8) {
+  animation-delay: 440ms;
+}
+
+@keyframes mosaic-view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.mosaic-about {
+  display: block;
+  padding: 0 clamp(16px, 3vw, 32px) clamp(3rem, 8vw, 5rem);
+}
+
+.mosaic-about:focus {
+  outline: none;
+}
+
+.mosaic-about-panel {
+  position: relative;
+  width: 100%;
+  min-height: clamp(26rem, 52vh, 38rem);
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  background: var(--mosaic-card-surface);
+  padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.25rem, 6vw, 5rem);
+  overflow: hidden;
+}
+
+.mosaic-about-sticker {
+  position: absolute;
+  width: clamp(4.5rem, 9vw, 8.25rem);
+  height: auto;
+  border-radius: 12px;
+  transform: rotate(var(--sticker-rotate, 0deg));
+  pointer-events: none;
+  user-select: none;
+}
+
+.mosaic-about-sticker-top-left {
+  top: clamp(1rem, 2.5vw, 2.5rem);
+  left: clamp(1rem, 2.5vw, 2.5rem);
+}
+
+.mosaic-about-sticker-top-right {
+  top: clamp(1rem, 2.5vw, 2.5rem);
+  right: clamp(1rem, 2.5vw, 2.5rem);
+}
+
+.mosaic-about-sticker-bottom-left {
+  bottom: clamp(1rem, 2.5vw, 2.5rem);
+  left: clamp(1rem, 2.5vw, 2.5rem);
+}
+
+.mosaic-about-sticker-bottom-right {
+  bottom: clamp(1rem, 2.5vw, 2.5rem);
+  right: clamp(1rem, 2.5vw, 2.5rem);
+}
+
+@media (max-width: 899.98px) {
+  .mosaic-about-sticker {
+    display: none;
+  }
+}
+
+.mosaic-about-body {
+  width: min(100%, 34rem);
+  display: grid;
+  gap: 1.05rem;
+  text-align: left;
+}
+
+.mosaic-about-body p {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: -0.005rem;
+  color: #545454;
+  text-wrap: pretty;
+}
+
+.mosaic-about-body .mosaic-about-lede {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.015rem;
+  color: #2d2d2d;
+}
+
+.mosaic-about-hobbies {
+  margin: 0 0 0.9rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.mosaic-about-hobbies li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
+  color: #2d2d2d;
+}
+
+.mosaic-about-hobby-emoji {
+  font-size: 1.0625rem;
+  line-height: 1;
+}
+
+.mosaic-about-hobby-note {
+  color: #a4a4a4;
+}
+
+.mosaic-about-facts {
+  margin: 0.5rem 0 0;
+  display: grid;
+  gap: 0.75rem;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding-top: 1.25rem;
+}
+
+.mosaic-about-fact {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.mosaic-about-fact dt {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #a4a4a4;
+}
+
+.mosaic-about-fact dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
+  color: #2d2d2d;
+}
+
+.mosaic-about-link {
+  color: #2d2d2d;
+  text-decoration-line: underline;
+  text-decoration-color: #c8c8c8;
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.16em;
+  transition: text-decoration-color 160ms ease;
+}
+
+.mosaic-about-link:hover,
+.mosaic-about-link:focus-visible {
+  text-decoration-color: #2d2d2d;
+}
+
+.mosaic-about-fact dd > span > span[aria-hidden="true"] {
+  color: #c0c0c0;
+}
+
+.mosaic-about-closing {
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding-top: 1.25rem;
+}
+
+.mosaic-about-back {
+  justify-self: start;
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-bottom: 0.25rem;
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-size: 0.875rem;
+  color: #838383;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.mosaic-about-back:hover,
+.mosaic-about-back:focus-visible {
+  color: #2d2d2d;
+}
+
+@media (max-width: 520px) {
+  .mosaic-about-fact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.15rem;
+  }
+
+  .mosaic-about-hobbies {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -2692,6 +3073,10 @@ img {
   .mosaic-hero-hero-only {
     min-height: 100dvh;
     margin: 0;
+  }
+
+  .mosaic-row {
+    --row-height: 420px !important;
   }
 }
 
