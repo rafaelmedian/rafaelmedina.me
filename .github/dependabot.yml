@@ -1,0 +1,34 @@
+version: 2
+
+# Security alerts were landing as a manual "go update everything" chore. This
+# lets Dependabot open the PRs instead. Updates are grouped so a routine week
+# is one PR to review, not eight.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # The build toolchain moves together and nothing here ships to the
+      # browser, so review it as one unit.
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      # Runtime deps do ship, so majors stay separate and get read on their own.
+      production-dependencies:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns:
+          - "*"
