@@ -715,7 +715,7 @@ img {
   white-space: nowrap;
   text-wrap: nowrap;
   font-family: "Handlee", "Bradley Hand", "Segoe Print", cursive;
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1;
@@ -723,7 +723,7 @@ img {
      for a faux-bold synthesis. */
   -webkit-text-stroke: 0.45px currentColor;
   /* Sit level with the tail of the arrow, which ends near the top of its box. */
-  transform: translateY(-2px);
+  transform: translateY(-4px);
 }
 
 @media (max-width: 699.98px) {
