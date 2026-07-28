@@ -5,8 +5,47 @@ import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
+type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
+
+let galleryModulePromise: Promise<PreviewGalleryModule> | null = null
+// Browsers cache failed module imports for the page lifetime. Keep the emitted
+// chunk URL so a later interaction can retry it under a fresh module-map key.
+let failedGalleryModuleUrl: string | null = null
+let galleryRetryAttempt = 0
+
+function findGalleryModuleUrl() {
+  if (typeof performance === "undefined") return null
+  const entries = performance.getEntriesByType("resource")
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const url = entries[index]?.name
+    if (url?.includes("PreviewGalleryDialog")) return url
+  }
+  return null
+}
+
+function loadPreviewGallery() {
+  if (galleryModulePromise) return galleryModulePromise
+
+  let modulePromise: Promise<PreviewGalleryModule>
+  if (failedGalleryModuleUrl) {
+    const retryUrl = new URL(failedGalleryModuleUrl)
+    retryUrl.searchParams.set("retry", String(++galleryRetryAttempt))
+    failedGalleryModuleUrl = null
+    modulePromise = import(/* @vite-ignore */ retryUrl.href) as Promise<PreviewGalleryModule>
+  } else {
+    modulePromise = import("./PreviewGalleryDialog")
+  }
+
+  galleryModulePromise = modulePromise.catch((error: unknown) => {
+    galleryModulePromise = null
+    failedGalleryModuleUrl = findGalleryModuleUrl()
+    throw error
+  })
+  return galleryModulePromise
+}
+
 const PreviewGalleryDialog = lazy(() =>
-  import("./PreviewGalleryDialog").then((module) => ({ default: module.PreviewGalleryDialog })),
+  loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })),
 )
 
 type SiteProfile = {
@@ -59,6 +98,34 @@ function isVideoPreviewSource(source: string) {
   return source.toLowerCase().endsWith(".webm")
 }
 
+type NetworkInformation = {
+  saveData?: boolean
+  effectiveType?: string
+}
+
+// Data Saver and 2g are the cases where an autoplaying loop is a liability
+// rather than a flourish: the poster already carries the frame, and the videos
+// are the heaviest thing on the page by a wide margin.
+function prefersLightweightMedia() {
+  if (typeof navigator === "undefined") return false
+  const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection
+  if (!connection) return false
+  return (
+    Boolean(connection.saveData) ||
+    connection.effectiveType === "slow-2g" ||
+    connection.effectiveType === "2g"
+  )
+}
+
+// The gallery is the point of the mosaic, but its chunk is the heaviest thing
+// we ship after the media itself. Fetching it on intent -- a hover, or the
+// pointerdown that precedes a tap -- keeps it off the initial load without
+// making the click wait for it.
+function prefetchPreviewGallery() {
+  if (prefersLightweightMedia()) return
+  void loadPreviewGallery().catch(() => undefined)
+}
+
 function RowVideoMedia({
   source,
   poster,
@@ -73,10 +140,13 @@ function RowVideoMedia({
   const supportsIntersectionObserver = typeof window !== "undefined" && "IntersectionObserver" in window
   const [shouldLoad, setShouldLoad] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
+  // Without a poster there is nothing to fall back to, so the video loads even
+  // on a metered connection.
+  const holdForLightweightMedia = Boolean(poster) && prefersLightweightMedia()
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video || !supportsIntersectionObserver) return
+    if (!video || !supportsIntersectionObserver || holdForLightweightMedia) return
 
     const loadObserver = new IntersectionObserver(
       ([entry]) => {
@@ -98,7 +168,7 @@ function RowVideoMedia({
       loadObserver.disconnect()
       visibilityObserver.disconnect()
     }
-  }, [supportsIntersectionObserver])
+  }, [holdForLightweightMedia, supportsIntersectionObserver])
 
   useEffect(() => {
     const video = videoRef.current
@@ -574,6 +644,8 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                                 else nodes.delete(item.previewIndex)
                               }}
                               className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
+                              onPointerEnter={isPaginatedCard ? undefined : prefetchPreviewGallery}
+                              onPointerDown={isPaginatedCard ? undefined : prefetchPreviewGallery}
                               onClick={() => {
                                 if (isPaginatedCard) {
                                   paginatePreviewCard(
