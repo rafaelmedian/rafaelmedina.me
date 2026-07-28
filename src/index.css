@@ -865,34 +865,38 @@ img {
   overflow: hidden;
 }
 
+/*
+ * A die-cut sticker: a thick white border cut around the emoji's own
+ * silhouette rather than a disc behind it. Real vinyl has a hard edge, so each
+ * white pass uses a zero blur radius and an offset instead — the eight
+ * directions chain into a solid, crisp dilation of the glyph's alpha channel.
+ * Only the cast shadow is blurred. Sizes are in `em` so the whole effect
+ * scales with the font size.
+ */
 .mosaic-about-sticker {
+  --sticker-cut:
+    drop-shadow(0.028em 0 0 #fff) drop-shadow(-0.028em 0 0 #fff) drop-shadow(0 0.028em 0 #fff)
+    drop-shadow(0 -0.028em 0 #fff) drop-shadow(0.02em 0.02em 0 #fff)
+    drop-shadow(-0.02em -0.02em 0 #fff) drop-shadow(0.02em -0.02em 0 #fff)
+    drop-shadow(-0.02em 0.02em 0 #fff);
+
   position: absolute;
-  width: clamp(4.5rem, 9vw, 8.25rem);
-  height: auto;
-  border-radius: 12px;
-  transform: rotate(var(--sticker-rotate, 0deg));
-  pointer-events: none;
+  font-size: clamp(2rem, 3.4vw, 3rem);
+  line-height: 1;
+  filter: var(--sticker-cut) drop-shadow(0.02em 0.045em 0.035em rgb(0 0 0 / 0.3));
+  transform: translate(var(--sticker-x, 0px), var(--sticker-y, 0px))
+    rotate(var(--sticker-rotate, 0deg));
+  cursor: grab;
+  touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
 }
 
-.mosaic-about-sticker-top-left {
-  top: clamp(1rem, 2.5vw, 2.5rem);
-  left: clamp(1rem, 2.5vw, 2.5rem);
-}
-
-.mosaic-about-sticker-top-right {
-  top: clamp(1rem, 2.5vw, 2.5rem);
-  right: clamp(1rem, 2.5vw, 2.5rem);
-}
-
-.mosaic-about-sticker-bottom-left {
-  bottom: clamp(1rem, 2.5vw, 2.5rem);
-  left: clamp(1rem, 2.5vw, 2.5rem);
-}
-
-.mosaic-about-sticker-bottom-right {
-  bottom: clamp(1rem, 2.5vw, 2.5rem);
-  right: clamp(1rem, 2.5vw, 2.5rem);
+.mosaic-about-sticker[data-dragging] {
+  cursor: grabbing;
+  transform: translate(var(--sticker-x, 0px), var(--sticker-y, 0px))
+    rotate(var(--sticker-rotate, 0deg)) scale(1.12);
+  filter: var(--sticker-cut) drop-shadow(0.04em 0.11em 0.1em rgb(0 0 0 / 0.3));
 }
 
 @media (max-width: 899.98px) {
