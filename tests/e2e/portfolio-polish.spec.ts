@@ -85,6 +85,32 @@ test("returns focus to the originating project after closing the gallery", async
   await expect(trigger).toBeFocused()
 })
 
+test("opens the gallery after an intent prefetch fails", async ({ page }) => {
+  const errors: string[] = []
+  page.on("pageerror", (error) => errors.push(error.message))
+
+  let releaseFailedPrefetch: (() => void) | undefined
+  const failedPrefetch = new Promise<void>((resolve) => {
+    releaseFailedPrefetch = resolve
+  })
+  const galleryChunk = "**/assets/PreviewGalleryDialog-*.js"
+
+  await page.route(galleryChunk, async (route) => {
+    await route.abort("failed")
+    releaseFailedPrefetch?.()
+  })
+  await page.goto("/")
+
+  const trigger = page.getByRole("button", { name: /Open Matcha - Mobile Screens preview/ })
+  await trigger.hover()
+  await failedPrefetch
+  await page.unroute(galleryChunk)
+  await trigger.click()
+
+  await expect(page.getByRole("dialog")).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 test("keeps desktop gallery navigation fixed near the modal top", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
