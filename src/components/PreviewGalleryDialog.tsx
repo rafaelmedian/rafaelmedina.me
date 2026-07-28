@@ -20,14 +20,14 @@ type PreviewSwitchDirection = "up" | "down"
 type PreviewSwitchPhase = "idle" | "out" | "in"
 
 const previewSwitchExitMs = 190
-const previewCloseResetMs = 320
+const previewCloseResetMs = 260
 
 // Origin-aware open/close: the popup travels from (and back to) the card that
 // was clicked, so the modal reads as that card growing into place.
-const originOpenMs = 460
-const originCloseMs = 280
-const originOpenEasing = "cubic-bezier(0.22, 1, 0.36, 1)"
-const originCloseEasing = "cubic-bezier(0.55, 0, 0.35, 1)"
+const originOpenMs = 320
+const originCloseMs = 210
+const originOpenEasing = "cubic-bezier(0.16, 1, 0.3, 1)"
+const originCloseEasing = "cubic-bezier(0.5, 0, 0.35, 1)"
 // Used when the anchor card is off-screen: a plain lift, no travel.
 const originFallbackTransform = "translate3d(0, 1.25rem, 0) scale(0.96)"
 
@@ -37,7 +37,9 @@ function getOriginTransform(originRect: DOMRect, targetRect: DOMRect) {
   if (targetRect.width <= 0 || targetRect.height <= 0) return null
   if (originRect.width <= 0 || originRect.height <= 0) return null
 
-  const scale = Math.min(Math.max(originRect.width / targetRect.width, 0.34), 1.06)
+  // Clamped tighter than a strict FLIP would be: the extremes read as a lurch,
+  // and the point is to hint at the origin, not to replay the geometry exactly.
+  const scale = Math.min(Math.max(originRect.width / targetRect.width, 0.55), 1.02)
   const dx = originRect.left + originRect.width / 2 - (targetRect.left + targetRect.width / 2)
   const dy = originRect.top + originRect.height / 2 - (targetRect.top + targetRect.height / 2)
 
@@ -126,9 +128,9 @@ export function PreviewGalleryDialog({
       ]
     : []
 
-  const playOpen = useSound(openSound, { volume: 0.6 })
-  const playNext = useSound(nextSound, { volume: 0.6 })
-  const playBack = useSound(backSound, { volume: 0.6 })
+  const playOpen = useSound(openSound, { volume: 0.3 })
+  const playNext = useSound(nextSound, { volume: 0.26 })
+  const playBack = useSound(backSound, { volume: 0.26 })
 
   useEffect(() => {
     if (open && closeResetTimeoutRef.current !== null) {

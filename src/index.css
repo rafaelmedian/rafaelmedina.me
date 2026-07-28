@@ -2531,7 +2531,7 @@ img {
 /* When the wrapper is doing the positional travel, the popup only cross-fades —
    its own translate/scale would fight the origin animation. */
 .preview-gallery-popup[data-origin-motion] {
-  transition: opacity 200ms ease-out;
+  transition: opacity 150ms ease-out;
 }
 
 .preview-gallery-popup[data-origin-motion][data-starting-style] {
@@ -2542,7 +2542,7 @@ img {
 .preview-gallery-popup[data-origin-motion][data-ending-style] {
   opacity: 0;
   transform: none;
-  transition: opacity 300ms cubic-bezier(0.55, 0, 0.35, 1);
+  transition: opacity 220ms cubic-bezier(0.5, 0, 0.35, 1);
 }
 
 .preview-gallery-card {
