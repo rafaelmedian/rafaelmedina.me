@@ -719,6 +719,11 @@ img {
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1;
+  /* Handlee ships a single weight, so thicken the strokes instead of asking
+     for a faux-bold synthesis. */
+  -webkit-text-stroke: 0.45px currentColor;
+  /* Sit level with the tail of the arrow, which ends near the top of its box. */
+  transform: translateY(-2px);
 }
 
 @media (max-width: 699.98px) {
