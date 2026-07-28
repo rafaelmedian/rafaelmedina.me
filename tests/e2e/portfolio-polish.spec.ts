@@ -167,13 +167,20 @@ test("offers a vertical gallery rail on desktop and hides it on touch layouts", 
   const popupBox = await popup.boundingBox()
   expect(Math.round(railBox!.x - (popupBox!.x + popupBox!.width))).toBe(16)
 
+  // moveBy() ignores input while a switch is animating, so wait for the card
+  // to settle between navigations rather than racing the transition.
+  const card = page.locator(".preview-gallery-card")
+  const settled = async () => expect(card).not.toHaveClass(/preview-gallery-card-switch/)
+
   // The count lives in the toolbar, which is touch-only, so assert on the title.
   const title = page.locator(".preview-gallery-title")
   await expect(title).toHaveText("Matcha - Multiwallet flow")
   await rail.locator("button").nth(1).click()
   await expect(title).toHaveText("Matcha - Homepage")
+  await settled()
   await rail.locator("button").first().click()
   await expect(title).toHaveText("Matcha - Multiwallet flow")
+  await settled()
 
   // Pointer-only affordance: the dialog focus trap cannot reach outside the
   // popup, so the rail stays out of the tab order and the a11y tree while
