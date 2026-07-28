@@ -2106,6 +2106,21 @@ img {
   cursor: pointer;
 }
 
+.preview-gallery-shell[data-origin-animating] {
+  overflow: hidden;
+}
+
+/* Carries the origin-aware travel (card -> centre) so the popup keeps its own
+   fade/scale transition. Driven by the Web Animations API in the dialog. */
+.preview-gallery-origin-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(544px, 100%);
+  min-height: 0;
+  transform-origin: center center;
+}
+
 .preview-gallery-popup {
   position: relative;
   width: min(544px, 100%);
@@ -2130,6 +2145,23 @@ img {
 
 .preview-gallery-popup[data-preview-media="video"][data-ending-style] {
   transform: translateY(0) scale(1);
+}
+
+/* When the wrapper is doing the positional travel, the popup only cross-fades —
+   its own translate/scale would fight the origin animation. */
+.preview-gallery-popup[data-origin-motion] {
+  transition: opacity 200ms ease-out;
+}
+
+.preview-gallery-popup[data-origin-motion][data-starting-style] {
+  opacity: 0;
+  transform: none;
+}
+
+.preview-gallery-popup[data-origin-motion][data-ending-style] {
+  opacity: 0;
+  transform: none;
+  transition: opacity 300ms cubic-bezier(0.55, 0, 0.35, 1);
 }
 
 .preview-gallery-card {

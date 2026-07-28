@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react"
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import type { PortfolioCard } from "../data/portfolio"
 import { backSound, nextSound, openSound } from "../lib/sounds"
@@ -13,13 +13,36 @@ type PreviewGalleryDialogProps = {
   prefersReducedMotion: boolean
   onOpenChange: (open: boolean) => void
   onSelectedIndexChange: (index: number) => void
+  getOriginRect?: (index: number) => DOMRect | null
 }
 
 type PreviewSwitchDirection = "up" | "down"
 type PreviewSwitchPhase = "idle" | "out" | "in"
 
 const previewSwitchExitMs = 190
-const previewCloseResetMs = 240
+const previewCloseResetMs = 320
+
+// Origin-aware open/close: the popup travels from (and back to) the card that
+// was clicked, so the modal reads as that card growing into place.
+const originOpenMs = 460
+const originCloseMs = 280
+const originOpenEasing = "cubic-bezier(0.22, 1, 0.36, 1)"
+const originCloseEasing = "cubic-bezier(0.55, 0, 0.35, 1)"
+// Used when the anchor card is off-screen: a plain lift, no travel.
+const originFallbackTransform = "translate3d(0, 1.25rem, 0) scale(0.96)"
+
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
+
+function getOriginTransform(originRect: DOMRect, targetRect: DOMRect) {
+  if (targetRect.width <= 0 || targetRect.height <= 0) return null
+  if (originRect.width <= 0 || originRect.height <= 0) return null
+
+  const scale = Math.min(Math.max(originRect.width / targetRect.width, 0.34), 1.06)
+  const dx = originRect.left + originRect.width / 2 - (targetRect.left + targetRect.width / 2)
+  const dy = originRect.top + originRect.height / 2 - (targetRect.top + targetRect.height / 2)
+
+  return `translate3d(${dx.toFixed(2)}px, ${dy.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`
+}
 
 function isVideoPreviewSource(source: string) {
   return source.toLowerCase().endsWith(".webm")
@@ -77,12 +100,18 @@ export function PreviewGalleryDialog({
   prefersReducedMotion,
   onOpenChange,
   onSelectedIndexChange,
+  getOriginRect,
 }: PreviewGalleryDialogProps) {
   const touchStartXRef = useRef<number | null>(null)
   const prevOpenRef = useRef(open)
   const switchTimeoutRef = useRef<number | null>(null)
   const switchFrameRef = useRef<number | null>(null)
   const closeResetTimeoutRef = useRef<number | null>(null)
+  const originWrapRef = useRef<HTMLDivElement | null>(null)
+  const originAnimationRef = useRef<Animation | null>(null)
+  // The portal mounts its contents in a later commit than the one that flips
+  // `open`, so the open animation keys off the node arriving, not off `open`.
+  const [originWrapNode, setOriginWrapNode] = useState<HTMLDivElement | null>(null)
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("down")
   const safeIndex = useMemo(() => wrapIndex(selectedIndex, cards.length), [cards.length, selectedIndex])
@@ -135,9 +164,75 @@ export function PreviewGalleryDialog({
     }
   }, [])
 
+  // Read through a ref so the animation callback stays stable: it must not be
+  // re-created (and re-fire the open effect) when the selected index changes.
+  const originInputsRef = useRef({ getOriginRect, prefersReducedMotion, safeIndex })
+
+  // Layout effect, and declared before the open effect below, so a click that
+  // changes the index and opens in the same commit animates from the new card.
+  useIsomorphicLayoutEffect(() => {
+    originInputsRef.current = { getOriginRect, prefersReducedMotion, safeIndex }
+  }, [getOriginRect, prefersReducedMotion, safeIndex])
+
+  const runOriginAnimation = useCallback((mode: "open" | "close") => {
+    const wrap = originWrapRef.current
+    const { getOriginRect: originRectAt, prefersReducedMotion: reducedMotion, safeIndex: index } =
+      originInputsRef.current
+    if (!wrap || reducedMotion || !originRectAt) return
+    if (typeof wrap.animate !== "function") return
+
+    originAnimationRef.current?.cancel()
+    originAnimationRef.current = null
+
+    // The wrapper sits at rest here (any in-flight animation was cancelled),
+    // so this is its untransformed target geometry.
+    const originRect = originRectAt(index)
+    const transform =
+      (originRect && getOriginTransform(originRect, wrap.getBoundingClientRect())) ?? originFallbackTransform
+
+    const frames = mode === "open" ? [transform, "none"] : ["none", transform]
+
+    const animation = wrap.animate(
+      frames.map((value) => ({ transform: value })),
+      {
+        duration: mode === "open" ? originOpenMs : originCloseMs,
+        easing: mode === "open" ? originOpenEasing : originCloseEasing,
+        fill: mode === "open" ? "none" : "forwards",
+      },
+    )
+    originAnimationRef.current = animation
+
+    // A translated child grows the scroll container, which would flash a
+    // scrollbar mid-flight. Lock the shell until the travel lands.
+    const shell = wrap.parentElement
+    shell?.setAttribute("data-origin-animating", "true")
+    if (mode === "open") {
+      animation.finished
+        .then(() => shell?.removeAttribute("data-origin-animating"))
+        .catch(() => undefined)
+    }
+  }, [])
+
+  const attachOriginWrap = useCallback((node: HTMLDivElement | null) => {
+    originWrapRef.current = node
+    setOriginWrapNode(node)
+  }, [])
+
+  useIsomorphicLayoutEffect(() => {
+    if (!open || !originWrapNode) return
+    runOriginAnimation("open")
+  }, [open, originWrapNode, runOriginAnimation])
+
+  useEffect(() => {
+    return () => {
+      originAnimationRef.current?.cancel()
+    }
+  }, [])
+
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) {
+        runOriginAnimation("close")
         cancelSwitchTransition()
         if (closeResetTimeoutRef.current !== null) {
           window.clearTimeout(closeResetTimeoutRef.current)
@@ -149,7 +244,7 @@ export function PreviewGalleryDialog({
       }
       onOpenChange(nextOpen)
     },
-    [cancelSwitchTransition, onOpenChange],
+    [cancelSwitchTransition, onOpenChange, runOriginAnimation],
   )
 
   const moveBy = useCallback(
@@ -217,6 +312,7 @@ export function PreviewGalleryDialog({
   if (!activeCard) return null
 
   const activeCardIsVideo = isVideoPreviewSource(activeCard.image)
+  const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
   const mediaFrameStyle = activeCard.previewMediaPaddingBlock
     ? ({ "--preview-gallery-media-padding-block": activeCard.previewMediaPaddingBlock } as CSSProperties)
     : undefined
@@ -236,148 +332,151 @@ export function PreviewGalleryDialog({
             }
           }}
         >
-          <Dialog.Popup
-            className="preview-gallery-popup"
-            data-preview-media={activeCardIsVideo ? "video" : "image"}
-            aria-label={`${activeCard.title} gallery preview`}
-          >
-            <article className={`preview-gallery-card${switchClassName}`}>
-              <div
-                className="preview-gallery-media-frame"
-                style={mediaFrameStyle}
-                onTouchStart={(event) => {
-                  touchStartXRef.current = event.changedTouches[0]?.clientX ?? null
-                }}
-                onTouchEnd={(event) => {
-                  const touchStartX = touchStartXRef.current
-                  if (touchStartX == null) return
+          <div className="preview-gallery-origin-wrap" ref={attachOriginWrap}>
+            <Dialog.Popup
+              className="preview-gallery-popup"
+              data-preview-media={activeCardIsVideo ? "video" : "image"}
+              data-origin-motion={originMotionEnabled ? "true" : undefined}
+              aria-label={`${activeCard.title} gallery preview`}
+            >
+              <article className={`preview-gallery-card${switchClassName}`}>
+                <div
+                  className="preview-gallery-media-frame"
+                  style={mediaFrameStyle}
+                  onTouchStart={(event) => {
+                    touchStartXRef.current = event.changedTouches[0]?.clientX ?? null
+                  }}
+                  onTouchEnd={(event) => {
+                    const touchStartX = touchStartXRef.current
+                    if (touchStartX == null) return
 
-                  const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX
-                  const delta = touchEndX - touchStartX
-                  const threshold = 56
+                    const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX
+                    const delta = touchEndX - touchStartX
+                    const threshold = 56
 
-                  if (Math.abs(delta) >= threshold) {
-                    moveBy(delta > 0 ? -1 : 1)
-                  }
+                    if (Math.abs(delta) >= threshold) {
+                      moveBy(delta > 0 ? -1 : 1)
+                    }
 
-                  touchStartXRef.current = null
-                }}
-              >
-                {activeCardIsVideo ? (
-                  <video
-                    src={activeCard.image}
-                    poster={activeCard.previewPoster}
-                    width={activeCard.previewWidth}
-                    height={activeCard.previewHeight}
-                    muted
-                    loop={!prefersReducedMotion}
-                    autoPlay={!prefersReducedMotion}
-                    playsInline
-                    preload={prefersReducedMotion ? "none" : "metadata"}
-                    controls
-                    aria-label={activeCard.title}
-                    className="preview-gallery-media"
-                  />
-                ) : (
-                  <img
-                    src={activeCard.image}
-                    alt={activeCard.title}
-                    width={activeCard.previewWidth}
-                    height={activeCard.previewHeight}
-                    className="preview-gallery-media"
-                    loading="eager"
-                    decoding="async"
-                  />
-                )}
-              </div>
-
-              <div className="preview-gallery-toolbar">
-                <span className="preview-gallery-count">
-                  {safeIndex + 1} / {cards.length}
-                </span>
-
-                <div className="preview-gallery-controls" aria-label="Preview controls">
-                  <button
-                    type="button"
-                    className="preview-gallery-nav preview-gallery-nav-prev"
-                    aria-label="Previous preview"
-                    aria-keyshortcuts="ArrowUp ArrowLeft"
-                    onClick={() => moveBy(-1)}
-                    disabled={cards.length <= 1}
-                  >
-                    <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="preview-gallery-nav preview-gallery-nav-next"
-                    aria-label="Next preview"
-                    aria-keyshortcuts="ArrowDown ArrowRight"
-                    onClick={() => moveBy(1)}
-                    disabled={cards.length <= 1}
-                  >
-                    <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-                  </button>
-
-                  <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
-                    <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-                  </Dialog.Close>
+                    touchStartXRef.current = null
+                  }}
+                >
+                  {activeCardIsVideo ? (
+                    <video
+                      src={activeCard.image}
+                      poster={activeCard.previewPoster}
+                      width={activeCard.previewWidth}
+                      height={activeCard.previewHeight}
+                      muted
+                      loop={!prefersReducedMotion}
+                      autoPlay={!prefersReducedMotion}
+                      playsInline
+                      preload={prefersReducedMotion ? "none" : "metadata"}
+                      controls
+                      aria-label={activeCard.title}
+                      className="preview-gallery-media"
+                    />
+                  ) : (
+                    <img
+                      src={activeCard.image}
+                      alt={activeCard.title}
+                      width={activeCard.previewWidth}
+                      height={activeCard.previewHeight}
+                      className="preview-gallery-media"
+                      loading="eager"
+                      decoding="async"
+                    />
+                  )}
                 </div>
-              </div>
 
-              <div className="preview-gallery-content">
-                <div className="preview-gallery-heading">
-                  <div>
-                    <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
-                    <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
+                <div className="preview-gallery-toolbar">
+                  <span className="preview-gallery-count">
+                    {safeIndex + 1} / {cards.length}
+                  </span>
+
+                  <div className="preview-gallery-controls" aria-label="Preview controls">
+                    <button
+                      type="button"
+                      className="preview-gallery-nav preview-gallery-nav-prev"
+                      aria-label="Previous preview"
+                      aria-keyshortcuts="ArrowUp ArrowLeft"
+                      onClick={() => moveBy(-1)}
+                      disabled={cards.length <= 1}
+                    >
+                      <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="preview-gallery-nav preview-gallery-nav-next"
+                      aria-label="Next preview"
+                      aria-keyshortcuts="ArrowDown ArrowRight"
+                      onClick={() => moveBy(1)}
+                      disabled={cards.length <= 1}
+                    >
+                      <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                    </button>
+
+                    <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
+                      <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                    </Dialog.Close>
                   </div>
                 </div>
 
-                <dl className="preview-gallery-details">
-                  {activeMetaRows.map(([label, value]) => (
-                    <div key={label} className="preview-gallery-detail-row">
-                      <dt>{label}</dt>
-                      <dd>{value}</dd>
+                <div className="preview-gallery-content">
+                  <div className="preview-gallery-heading">
+                    <div>
+                      <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                      <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
                     </div>
-                  ))}
-                  {activeLink ? (
-                    <div className="preview-gallery-detail-row">
-                      <dt>Link</dt>
-                      <dd>
-                        <a href={activeLink} target="_blank" rel="noreferrer">
-                          {activeLink.replace(/^https?:\/\//, "")}
-                        </a>
-                      </dd>
-                    </div>
-                  ) : null}
-                </dl>
+                  </div>
+
+                  <dl className="preview-gallery-details">
+                    {activeMetaRows.map(([label, value]) => (
+                      <div key={label} className="preview-gallery-detail-row">
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                    {activeLink ? (
+                      <div className="preview-gallery-detail-row">
+                        <dt>Link</dt>
+                        <dd>
+                          <a href={activeLink} target="_blank" rel="noreferrer">
+                            {activeLink.replace(/^https?:\/\//, "")}
+                          </a>
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                </div>
+              </article>
+
+              <div className="preview-gallery-rail" role="group" aria-label="Preview navigation">
+                <button
+                  type="button"
+                  className="preview-gallery-nav preview-gallery-nav-prev"
+                  aria-label="Previous preview"
+                  aria-keyshortcuts="ArrowUp ArrowLeft"
+                  onClick={() => moveBy(-1)}
+                  disabled={cards.length <= 1}
+                >
+                  <ChevronUp aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                </button>
+
+                <button
+                  type="button"
+                  className="preview-gallery-nav preview-gallery-nav-next"
+                  aria-label="Next preview"
+                  aria-keyshortcuts="ArrowDown ArrowRight"
+                  onClick={() => moveBy(1)}
+                  disabled={cards.length <= 1}
+                >
+                  <ChevronDown aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                </button>
               </div>
-            </article>
-
-            <div className="preview-gallery-rail" role="group" aria-label="Preview navigation">
-              <button
-                type="button"
-                className="preview-gallery-nav preview-gallery-nav-prev"
-                aria-label="Previous preview"
-                aria-keyshortcuts="ArrowUp ArrowLeft"
-                onClick={() => moveBy(-1)}
-                disabled={cards.length <= 1}
-              >
-                <ChevronUp aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-              </button>
-
-              <button
-                type="button"
-                className="preview-gallery-nav preview-gallery-nav-next"
-                aria-label="Next preview"
-                aria-keyshortcuts="ArrowDown ArrowRight"
-                onClick={() => moveBy(1)}
-                disabled={cards.length <= 1}
-              >
-                <ChevronDown aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-              </button>
-            </div>
-          </Dialog.Popup>
+            </Dialog.Popup>
+          </div>
         </div>
       </Dialog.Portal>
     </Dialog.Root>
