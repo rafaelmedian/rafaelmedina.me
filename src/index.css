@@ -757,6 +757,14 @@ img {
     transform: none;
     transition: none;
   }
+
+  /* Keep the hint's fade, drop its slide. */
+  .mosaic-avatar-hint,
+  .mosaic-avatar-button:hover .mosaic-avatar-hint,
+  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
+    transform: translateY(-50%) rotate(-3deg);
+    transition: opacity 120ms linear;
+  }
 }
 
 .mosaic-view {

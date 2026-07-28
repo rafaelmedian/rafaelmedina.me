@@ -271,7 +271,12 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   )
   const [view, setView] = useState<"work" | "about">("work")
   const [isSwapping, setIsSwapping] = useState(false)
+  // The swap animation is for swaps only. On first paint the work rows are
+  // already there, and animating them would fight the hero intro and leave the
+  // mosaic mid-scale for anything measuring it.
+  const [hasSwapped, setHasSwapped] = useState(false)
   const swapTimeoutRef = useRef<number | null>(null)
+  const avatarRef = useRef<HTMLButtonElement | null>(null)
   const [loadedSources, setLoadedSources] = useState<Set<string>>(() => new Set())
   const markLoaded = (src: string) =>
     setLoadedSources((prev) => (prev.has(src) ? prev : new Set(prev).add(src)))
@@ -409,24 +414,38 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- swapView is redeclared each render
+  }, [view, prefersReducedMotion])
 
   function swapView(nextView: "work" | "about") {
     if (nextView === view) return
 
     trackEvent("hero_view_change", { hero_view: nextView, hero_view_trigger: "avatar" })
 
+    // Closing from inside the panel (its back button, or Escape) unmounts
+    // whatever had focus, so hand it back to the photo that opened it.
+    const focusLeavesWithPanel =
+      nextView === "work" &&
+      document.activeElement instanceof Node &&
+      (document.getElementById("about-panel")?.contains(document.activeElement) ?? false)
+    const restoreFocus = () => {
+      if (focusLeavesWithPanel) avatarRef.current?.focus()
+    }
+
     if (prefersReducedMotion) {
       setView(nextView)
+      restoreFocus()
       return
     }
 
+    setHasSwapped(true)
     if (swapTimeoutRef.current !== null) window.clearTimeout(swapTimeoutRef.current)
     setIsSwapping(true)
     swapTimeoutRef.current = window.setTimeout(() => {
       setView(nextView)
       setIsSwapping(false)
       swapTimeoutRef.current = null
+      restoreFocus()
     }, 170)
   }
 
@@ -440,10 +459,11 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-info">
             <button
+              ref={avatarRef}
               type="button"
               className={`mosaic-avatar mosaic-avatar-coin mosaic-avatar-button${isAboutView ? " is-flipped" : ""}`}
               aria-expanded={isAboutView}
-              aria-controls="about-panel"
+              aria-controls={isAboutView ? "about-panel" : undefined}
               aria-label={isAboutView ? "Back to selected work" : `Read about ${profile.name}`}
               onClick={() => swapView(isAboutView ? "work" : "about")}
             >
@@ -485,93 +505,100 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
       </header>
 
       {showProjects ? (
-        <div
-          key={view}
-          className={`mosaic-view${isSwapping ? " is-leaving" : ""}${prefersReducedMotion ? "" : " mosaic-view-animated"}`}
-        >
+        <>
+          <div
+            key={view}
+            className={`mosaic-view${isSwapping ? " is-leaving" : ""}${
+              hasSwapped && !prefersReducedMotion ? " mosaic-view-animated" : ""
+            }`}
+          >
           {isAboutView ? (
             <AboutPanel links={links} onClose={() => swapView("work")} />
           ) : (
-          <article id="work" className="mosaic-work">
-            <h2 className="sr-only">Selected work</h2>
-            <div className="mosaic-rows" aria-label="Selected work previews">
-              {rowsRender.map((row, rowIndex) => {
-                const rowStyle = {
-                  ...(row.height ? { "--row-height": row.height } : {}),
-                  ...(row.gap ? { "--row-gap": row.gap } : {}),
-                } as CSSProperties
-                const eagerRow = rowIndex === 0
-                return (
-                  <div key={row.id} className="mosaic-row" style={rowStyle}>
-                    {row.items.map((item) => {
-                      const itemKey = `${item.card.id}-${item.previewIndex}`
-                      const paginationTotal = getPaginationTotal(item.card)
-                      const isPaginatedCard = paginationTotal > 1
-                      const paginationScreenIndex = isPaginatedCard
-                        ? (paginatedPreviewIndexes[item.card.id] ?? 0) % paginationTotal
-                        : 0
-                      const mediaSource = isPaginatedCard ? getPaginationImage(item.card, paginationScreenIndex) : item.card.image
-                      const mediaLabel = isPaginatedCard
-                        ? `${item.card.title} screen ${paginationScreenIndex + 1} of ${paginationTotal}`
-                        : item.card.title
-                      const itemStyle = {
-                        "--row-span": item.span,
-                        ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
-                        ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
-                      } as CSSProperties
-                      return (
-                        <div
-                          key={itemKey}
-                          className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
-                          style={itemStyle}
-                        >
-                          <button
-                            type="button"
-                            className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
-                            onClick={() => {
-                              if (isPaginatedCard) {
-                                paginatePreviewCard(
-                                  item.card,
-                                  paginationScreenIndex,
-                                  paginationTotal,
-                                  setPaginatedPreviewIndexes,
-                                )
-                                return
-                              }
-
-                              openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
-                            }}
-                            aria-label={
-                              isPaginatedCard
-                                ? `Show next ${item.card.title} screen, currently screen ${paginationScreenIndex + 1} of ${paginationTotal}`
-                                : `Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`
-                            }
+            <article id="work" className="mosaic-work">
+              <h2 className="sr-only">Selected work</h2>
+              <div className="mosaic-rows" aria-label="Selected work previews">
+                {rowsRender.map((row, rowIndex) => {
+                  const rowStyle = {
+                    ...(row.height ? { "--row-height": row.height } : {}),
+                    ...(row.gap ? { "--row-gap": row.gap } : {}),
+                  } as CSSProperties
+                  const eagerRow = rowIndex === 0
+                  return (
+                    <div key={row.id} className="mosaic-row" style={rowStyle}>
+                      {row.items.map((item) => {
+                        const itemKey = `${item.card.id}-${item.previewIndex}`
+                        const paginationTotal = getPaginationTotal(item.card)
+                        const isPaginatedCard = paginationTotal > 1
+                        const paginationScreenIndex = isPaginatedCard
+                          ? (paginatedPreviewIndexes[item.card.id] ?? 0) % paginationTotal
+                          : 0
+                        const mediaSource = isPaginatedCard ? getPaginationImage(item.card, paginationScreenIndex) : item.card.image
+                        const mediaLabel = isPaginatedCard
+                          ? `${item.card.title} screen ${paginationScreenIndex + 1} of ${paginationTotal}`
+                          : item.card.title
+                        const itemStyle = {
+                          "--row-span": item.span,
+                          ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
+                          ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
+                        } as CSSProperties
+                        return (
+                          <div
+                            key={itemKey}
+                            className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
+                            style={itemStyle}
                           >
-                            {renderRowMedia(item.card, mediaSource, mediaLabel, eagerRow)}
-                            <span className="mosaic-row-card-title" aria-hidden="true">
-                              {item.card.title}
-                            </span>
-                            {isPaginatedCard ? (
-                              <span className="mosaic-row-card-pagination" aria-hidden="true">
-                                {Array.from({ length: paginationTotal }).map((_, dotIndex) => (
-                                  <span
-                                    key={`${item.card.id}-pagination-${dotIndex}`}
-                                    className={`mosaic-row-card-pagination-dot${dotIndex === paginationScreenIndex ? " is-active" : ""}`}
-                                  />
-                                ))}
-                              </span>
-                            ) : null}
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-            </div>
-          </article>
-          )}
+                            <button
+                              type="button"
+                              className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
+                              onClick={() => {
+                                if (isPaginatedCard) {
+                                  paginatePreviewCard(
+                                    item.card,
+                                    paginationScreenIndex,
+                                    paginationTotal,
+                                    setPaginatedPreviewIndexes,
+                                  )
+                                  return
+                                }
 
+                                openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
+                              }}
+                              aria-label={
+                                isPaginatedCard
+                                  ? `Show next ${item.card.title} screen, currently screen ${paginationScreenIndex + 1} of ${paginationTotal}`
+                                  : `Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`
+                              }
+                            >
+                              {renderRowMedia(item.card, mediaSource, mediaLabel, eagerRow)}
+                              <span className="mosaic-row-card-title" aria-hidden="true">
+                                {item.card.title}
+                              </span>
+                              {isPaginatedCard ? (
+                                <span className="mosaic-row-card-pagination" aria-hidden="true">
+                                  {Array.from({ length: paginationTotal }).map((_, dotIndex) => (
+                                    <span
+                                      key={`${item.card.id}-pagination-${dotIndex}`}
+                                      className={`mosaic-row-card-pagination-dot${dotIndex === paginationScreenIndex ? " is-active" : ""}`}
+                                    />
+                                  ))}
+                                </span>
+                              ) : null}
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+              </div>
+            </article>
+          )}
+          </div>
+
+          {/* Outside the swap wrapper: while that wrapper is mid-animation it has
+              a transform, which would become the containing block for the
+              dialog's fixed positioning. */}
           {!isAboutView && activeWorkPreviewIndex != null && activeWorkPreviewIndex < flatWorkCards.length ? (
             <Suspense fallback={null}>
               <PreviewGalleryDialog
@@ -588,7 +615,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               />
             </Suspense>
           ) : null}
-        </div>
+        </>
       ) : null}
     </section>
   )
