@@ -17,6 +17,24 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
+test("operates the profile name disclosure from the keyboard and restores focus", async ({ page }) => {
+  await page.goto("/")
+  const trigger = page.locator(".mosaic-profile-meta")
+
+  await expect(trigger).toHaveAttribute("role", "button")
+  await expect(trigger).toHaveAttribute("aria-expanded", "false")
+  await trigger.focus()
+  await trigger.press("Enter")
+
+  await expect(page.locator("#about-panel")).toBeVisible()
+  await expect(page.locator("#about-panel")).toBeFocused()
+  await expect(trigger).toHaveAttribute("aria-expanded", "true")
+
+  await page.keyboard.press("Escape")
+  await expect(page.locator("#about-panel")).toBeHidden()
+  await expect(trigger).toBeFocused()
+})
+
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
