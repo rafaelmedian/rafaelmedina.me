@@ -1,6 +1,20 @@
-import { Fragment, useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react"
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FocusEvent,
+  type PointerEvent,
+} from "react"
 
+import { applyPointerTilt, popoverTilt, resetPointerTilt } from "../lib/pointerTilt"
 import { HoverLogoLink } from "./HoverLogoLink"
+
+const popoverTiltPrefix = "mosaic-popover"
 
 type WorkedWithCompany = {
   id: string
@@ -11,7 +25,6 @@ type WorkedWithCompany = {
   relationship: "recent" | "previous" | "additional"
   role: string
   description: string
-  expandedText: string
 }
 
 const workedWithCompanies: WorkedWithCompany[] = [
@@ -24,7 +37,6 @@ const workedWithCompanies: WorkedWithCompany[] = [
     relationship: "recent",
     role: "Product designer",
     description: "Designing product surfaces across the 0x ecosystem.",
-    expandedText: "0x.org and Matcha.xyz, shaping trading experiences for one of the clearest DEX products in crypto.",
   },
   {
     id: "matcha",
@@ -35,7 +47,6 @@ const workedWithCompanies: WorkedWithCompany[] = [
     relationship: "recent",
     role: "Product designer",
     description: "Shaping trading experiences for one of the clearest DEX products in crypto.",
-    expandedText: "0x.org and Matcha.xyz, shaping trading experiences for one of the clearest DEX products in crypto.",
   },
   {
     id: "moodys",
@@ -44,9 +55,8 @@ const workedWithCompanies: WorkedWithCompany[] = [
     logoUrls: ["/logos/moodys.png"],
     href: "https://www.moodys.com",
     relationship: "previous",
-    role: "Product designer",
+    role: "Frontend dev and designer",
     description: "Designed financial product workflows for data-dense, decision-heavy tools.",
-    expandedText: "Moody's, designed financial product workflows for data-dense, decision-heavy tools.",
   },
   {
     id: "twilio",
@@ -56,8 +66,7 @@ const workedWithCompanies: WorkedWithCompany[] = [
     href: "https://www.twilio.com",
     relationship: "previous",
     role: "Product designer",
-    description: "Worked on developer tools and communication platform experiences.",
-    expandedText: "Twilio, rethought developer tools and communication platform experiences.",
+    description: "Rethought developer tools and communication platform experiences.",
   },
   {
     id: "onit",
@@ -66,9 +75,8 @@ const workedWithCompanies: WorkedWithCompany[] = [
     logoUrls: ["/logos/onit.png"],
     href: "https://www.onit.com",
     relationship: "previous",
-    role: "Product designer",
+    role: "Frontend dev and designer",
     description: "Helped make legal operations software easier to navigate and understand.",
-    expandedText: "Onit, helped make legal operations software easier to navigate and understand.",
   },
   {
     id: "chainlink",
@@ -79,7 +87,6 @@ const workedWithCompanies: WorkedWithCompany[] = [
     relationship: "previous",
     role: "Product designer",
     description: "Contributed to Web3 infrastructure interfaces with a focus on clarity and trust.",
-    expandedText: "Chainlink, contributed to Web3 infrastructure interfaces with a focus on clarity and trust.",
   },
   {
     id: "google",
@@ -88,9 +95,8 @@ const workedWithCompanies: WorkedWithCompany[] = [
     logoUrls: ["/logos/Google_logo.svg"],
     href: "https://www.google.com",
     relationship: "additional",
-    role: "Product design collaborator",
+    role: "Design collab",
     description: "Worked alongside product teams on focused interface explorations.",
-    expandedText: "Google, worked alongside product teams on focused interface explorations.",
   },
   {
     id: "patrol",
@@ -99,9 +105,8 @@ const workedWithCompanies: WorkedWithCompany[] = [
     logoUrls: ["/logos/protector.svg", "/logos/patrol.svg"],
     href: "https://protector.so/",
     relationship: "additional",
-    role: "Product design collaborator",
+    role: "Design collab",
     description: "Shaped protection-focused mobile product experiences and interface explorations.",
-    expandedText: "Protector and Patrol, shaped protection-focused mobile product experiences and interface explorations.",
   },
 ]
 
@@ -109,353 +114,389 @@ type WorkedWithCompaniesInlineProps = {
   variant?: "sentence" | "profile"
 }
 
+type PopoverPosition = {
+  arrowX: number
+  side: "above" | "below"
+  x: number
+  y: number
+}
+
 const recentGroupId = "recent-0x-matcha"
-const moreInfoId = "more-info"
-const collapseAnimationMs = 140
-const recentExpandedSegments = [
-  "0x.org and Matcha.xyz, shaping trading experiences",
-  "for one of the clearest DEX products in crypto.",
-]
-const moreInfoSegments = [
-  "I've worked in product design since 2015 and now freelance on focused, high-impact projects.",
-  "You can reach me at @rafaelmedian or hey@rafaelmedina.me",
-]
-const moreInfoLinks: Record<string, string> = {
-  "@rafaelmedian": "https://x.com/rafaelmedian",
-  "hey@rafaelmedina.me": "mailto:hey@rafaelmedina.me",
-}
-const expandedCompanyLinks: Record<string, Record<string, string>> = {
-  [recentGroupId]: {
-    "0x.org": "https://0x.org",
-    "Matcha.xyz,": "https://matcha.xyz",
-  },
-  moodys: {
-    "Moody's,": "https://www.moodys.com",
-  },
-  chainlink: {
-    "Chainlink,": "https://chain.link",
-  },
-  twilio: {
-    "Twilio,": "https://www.twilio.com",
-  },
-  onit: {
-    "Onit,": "https://www.onit.com",
-  },
-  google: {
-    "Google,": "https://www.google.com",
-  },
-  patrol: {
-    Protector: "https://protector.so/",
-    "Patrol,": "https://patrol.so/",
-  },
-}
-const companyExpandedSegments: Record<string, string[]> = {
-  [recentGroupId]: recentExpandedSegments,
-  [moreInfoId]: moreInfoSegments,
-  "0x": recentExpandedSegments,
-  matcha: recentExpandedSegments,
-  moodys: ["Moody's, designed financial product workflows", "for data-dense, decision-heavy tools."],
-  twilio: ["Twilio, rethought developer tools", "and communication platform experiences."],
-  onit: ["Onit, helped make legal operations software", "easier to navigate and understand."],
-  chainlink: ["Chainlink, contributed to Web3 infrastructure interfaces", "with a focus on clarity and trust."],
-  google: ["Google, worked alongside product teams", "on focused interface explorations."],
-  patrol: ["Protector and Patrol, shaped protection-focused", "mobile product experiences and interface explorations."],
+const openDelayMs = 120
+const closeDelayMs = 180
+
+function isHoverCapable() {
+  return typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
 }
 
-function getExpandedSegmentsForCompanyId(companyId: string | null) {
-  if (!companyId) return []
-  return companyExpandedSegments[companyId] ?? []
-}
-
-function shouldReduceMotion() {
-  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
-}
-
-function getPrecedingWordCount(segments: string[], segmentIndex: number) {
-  return segments
-    .slice(0, segmentIndex)
-    .reduce((wordCount, segment) => wordCount + segment.split(" ").length, 0)
-}
-
-function getWordStyle(wordIndex: number) {
-  return { "--mosaic-word-index": wordIndex } as CSSProperties
+function WorkHistoryTrigger({
+  active,
+  company,
+  descriptionId,
+  popoverId,
+  onBlur,
+  onClick,
+  onFocus,
+  onPointerDown,
+  onPointerEnter,
+  onPointerLeave,
+  onPointerMove,
+  setTrigger,
+}: {
+  active: boolean
+  company: WorkedWithCompany
+  descriptionId: string
+  popoverId: string
+  onBlur: (event: FocusEvent<HTMLElement>) => void
+  onClick: (companyId: string) => void
+  onFocus: (companyId: string) => void
+  onPointerDown: (companyId: string) => void
+  onPointerEnter: (companyId: string) => void
+  onPointerLeave: (event: PointerEvent<HTMLButtonElement>) => void
+  onPointerMove: (event: PointerEvent<HTMLButtonElement>) => void
+  setTrigger: (companyId: string, element: HTMLButtonElement | null) => void
+}) {
+  return (
+    <button
+      ref={(element) => setTrigger(company.id, element)}
+      type="button"
+      className={`mosaic-work-history-chip${active ? " is-active" : ""}`}
+      aria-expanded={active}
+      aria-controls={popoverId}
+      aria-describedby={descriptionId}
+      onClick={() => onClick(company.id)}
+      onFocus={() => onFocus(company.id)}
+      onBlur={onBlur}
+      onPointerDown={() => onPointerDown(company.id)}
+      onPointerEnter={() => onPointerEnter(company.id)}
+      onPointerLeave={onPointerLeave}
+      onPointerMove={onPointerMove}
+    >
+      {company.compactName}
+    </button>
+  )
 }
 
 export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCompaniesInlineProps) {
-  const disclosureId = useId()
-  const [activeCompanyIds, setActiveCompanyIds] = useState<string[]>([])
-  const [collapsingCompanyIds, setCollapsingCompanyIds] = useState<string[]>([])
-  const collapseTimeoutIdsRef = useRef<Record<string, number>>({})
+  const popoverId = useId()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
+  const triggerRefs = useRef(new Map<string, HTMLButtonElement>())
+  const openTimeoutRef = useRef<number | undefined>(undefined)
+  const closeTimeoutRef = useRef<number | undefined>(undefined)
+  const pointerFocusCompanyIdRef = useRef<string | null>(null)
+  const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null)
+  const [isSwitchingCompany, setIsSwitchingCompany] = useState(false)
+  const [position, setPosition] = useState<PopoverPosition>({ arrowX: 192, side: "above", x: 192, y: 0 })
 
-  useEffect(() => {
-    const collapseTimeoutIds = collapseTimeoutIdsRef.current
-
-    return () => {
-      Object.values(collapseTimeoutIds).forEach((timeoutId) => window.clearTimeout(timeoutId))
-    }
-  }, [])
-
-  const closeExpansion = (companyId: string) => {
-    const finishCollapse = () => {
-      setActiveCompanyIds((currentCompanyIds) => currentCompanyIds.filter((currentCompanyId) => currentCompanyId !== companyId))
-      setCollapsingCompanyIds((currentCompanyIds) => currentCompanyIds.filter((currentCompanyId) => currentCompanyId !== companyId))
-      delete collapseTimeoutIdsRef.current[companyId]
-    }
-
-    window.clearTimeout(collapseTimeoutIdsRef.current[companyId])
-
-    if (shouldReduceMotion()) {
-      finishCollapse()
-      return
-    }
-
-    setCollapsingCompanyIds((currentCompanyIds) =>
-      currentCompanyIds.includes(companyId) ? currentCompanyIds : [...currentCompanyIds, companyId],
-    )
-    collapseTimeoutIdsRef.current[companyId] = window.setTimeout(finishCollapse, collapseAnimationMs)
-  }
-
-  const openExpansion = (companyId: string) => {
-    window.clearTimeout(collapseTimeoutIdsRef.current[companyId])
-    delete collapseTimeoutIdsRef.current[companyId]
-    setCollapsingCompanyIds((currentCompanyIds) => currentCompanyIds.filter((currentCompanyId) => currentCompanyId !== companyId))
-    setActiveCompanyIds((currentCompanyIds) => (currentCompanyIds.includes(companyId) ? currentCompanyIds : [...currentCompanyIds, companyId]))
-  }
-
-  if (variant === "profile") {
+  const profileCompanies = useMemo(() => {
     const recentCompanies = workedWithCompanies.filter((company) => company.relationship === "recent")
+    const recentCompany = recentCompanies[1] ?? recentCompanies[0]
+    const recentGroup: WorkedWithCompany | undefined = recentCompany
+      ? {
+          ...recentCompany,
+          id: recentGroupId,
+          name: "0x.org and Matcha.xyz",
+          compactName: "0x.org and Matcha.xyz",
+          logoUrls: recentCompanies.flatMap((company) => company.logoUrls),
+        }
+      : undefined
     const previousCompanyOrder = ["moodys", "chainlink", "twilio", "onit", "google", "patrol"]
     const previousCompanies = previousCompanyOrder.flatMap((companyId) => {
       const company = workedWithCompanies.find((candidate) => candidate.id === companyId)
       return company ? [company] : []
     })
-    const isRecentCompanyActive = activeCompanyIds.includes(recentGroupId)
-    const isMoreInfoActive = activeCompanyIds.includes(moreInfoId)
-    const recentExpandedCompany = recentCompanies[1] ?? recentCompanies[0]
-    const recentCollapsedLabel = "0x.org and Matcha.xyz"
 
-    const toggleCompany = (companyId: string) => {
-      if (activeCompanyIds.includes(companyId)) {
-        closeExpansion(companyId)
+    return { previousCompanies, recentGroup }
+  }, [])
+
+  const activeCompany =
+    activeCompanyId === recentGroupId
+      ? profileCompanies.recentGroup
+      : profileCompanies.previousCompanies.find((company) => company.id === activeCompanyId)
+
+  const clearOpenTimeout = () => window.clearTimeout(openTimeoutRef.current)
+  const clearCloseTimeout = () => window.clearTimeout(closeTimeoutRef.current)
+
+  const closePopover = useCallback(() => {
+    clearOpenTimeout()
+    clearCloseTimeout()
+    setIsSwitchingCompany(false)
+    setActiveCompanyId(null)
+    // Otherwise a keyboard-opened panel inherits the lean from the last hover.
+    if (containerRef.current) resetPointerTilt(containerRef.current, popoverTiltPrefix)
+  }, [])
+
+  const positionPopover = useCallback((companyId: string) => {
+    const container = containerRef.current
+    const popover = popoverRef.current
+    const trigger = triggerRefs.current.get(companyId)
+    if (!container || !popover || !trigger) return
+
+    const containerBox = container.getBoundingClientRect()
+    const triggerBox = trigger.getBoundingClientRect()
+    const popoverWidth = popover.offsetWidth
+    const popoverHeight = popover.offsetHeight
+    const gap = 10
+    const triggerCenter = triggerBox.left - containerBox.left + triggerBox.width / 2
+    const halfPopover = popoverWidth / 2
+    const x = Math.max(halfPopover, Math.min(triggerCenter, containerBox.width - halfPopover))
+    const spaceAbove = triggerBox.top
+    const spaceBelow = window.innerHeight - triggerBox.bottom
+    const side: PopoverPosition["side"] =
+      spaceAbove >= popoverHeight + gap || spaceAbove >= spaceBelow ? "above" : "below"
+    const y =
+      side === "above"
+        ? triggerBox.top - containerBox.top - gap
+        : triggerBox.bottom - containerBox.top + gap
+
+    setPosition({
+      arrowX: triggerCenter - (x - halfPopover),
+      side,
+      x,
+      y,
+    })
+  }, [])
+
+  useLayoutEffect(() => {
+    if (activeCompanyId) positionPopover(activeCompanyId)
+  }, [activeCompanyId, positionPopover])
+
+  useEffect(() => {
+    const handlePositionChange = () => {
+      if (activeCompanyId) positionPopover(activeCompanyId)
+    }
+    const handlePointerDown = (event: globalThis.PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) closePopover()
+    }
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape" || !activeCompanyId) return
+      const activeTrigger = triggerRefs.current.get(activeCompanyId)
+      closePopover()
+      activeTrigger?.focus()
+    }
+
+    window.addEventListener("resize", handlePositionChange)
+    window.addEventListener("scroll", handlePositionChange, { passive: true })
+    document.addEventListener("pointerdown", handlePointerDown)
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("resize", handlePositionChange)
+      window.removeEventListener("scroll", handlePositionChange)
+      document.removeEventListener("pointerdown", handlePointerDown)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [activeCompanyId, closePopover, positionPopover])
+
+  useEffect(
+    () => () => {
+      clearOpenTimeout()
+      clearCloseTimeout()
+    },
+    [],
+  )
+
+  if (variant === "profile") {
+    /** Let the panel fall flat once the cursor is no longer steering it. */
+    const settleTilt = () => {
+      if (containerRef.current) resetPointerTilt(containerRef.current, popoverTiltPrefix)
+    }
+
+    const openPopover = (companyId: string, delay = false) => {
+      clearCloseTimeout()
+      clearOpenTimeout()
+      if (!delay || activeCompanyId) {
+        setIsSwitchingCompany(activeCompanyId !== null && activeCompanyId !== companyId)
+        setActiveCompanyId(companyId)
         return
       }
-
-      openExpansion(companyId)
+      openTimeoutRef.current = window.setTimeout(() => {
+        setIsSwitchingCompany(false)
+        setActiveCompanyId(companyId)
+      }, openDelayMs)
     }
 
-    const renderWords = (
-      words: string[],
-      keyPrefix: string,
-      { links = {}, wordIndexOffset = 0 }: { links?: Record<string, string>; wordIndexOffset?: number } = {},
-    ) => {
-      const hasLinkedWords = Object.keys(links).length > 0
-
-      return (
-        <span className="mosaic-work-history-chip-copy" aria-hidden={hasLinkedWords ? undefined : true}>
-          {words.map((word, wordIndex) => {
-            const href = links[word]
-            const className = `mosaic-work-history-inline-word${href ? " mosaic-work-history-inline-link" : ""}`
-            const wordStyle = getWordStyle(wordIndexOffset + wordIndex)
-            const children = (
-              <>
-                {word}
-                {wordIndex < words.length - 1 ? "\u00a0" : ""}
-              </>
-            )
-
-            return href ? (
-              <a
-                key={`${keyPrefix}-${word}-${wordIndex}`}
-                href={href}
-                target={href.startsWith("mailto:") ? undefined : "_blank"}
-                rel="noreferrer"
-                className={className}
-                style={wordStyle}
-                onClick={(event) => event.stopPropagation()}
-              >
-                {children}
-              </a>
-            ) : (
-              <span key={`${keyPrefix}-${word}-${wordIndex}`} className={className} style={wordStyle}>
-                {children}
-              </span>
-            )
-          })}
-        </span>
-      )
+    const scheduleClose = () => {
+      clearOpenTimeout()
+      clearCloseTimeout()
+      closeTimeoutRef.current = window.setTimeout(() => {
+        setIsSwitchingCompany(false)
+        setActiveCompanyId(null)
+        settleTilt()
+      }, closeDelayMs)
     }
 
-    const renderExpandedLogos = (company: WorkedWithCompany, logoUrls = company.logoUrls) => {
-      if (logoUrls.length === 0) return null
-
-      return (
-        <span className="mosaic-work-history-expanded-logos" aria-hidden="true">
-          {logoUrls.map((logoUrl) => (
-            <span key={`${company.id}-${logoUrl}`} className="mosaic-work-history-expanded-logo-wrap">
-              <img src={logoUrl} alt="" loading="eager" decoding="async" className="mosaic-work-history-expanded-logo" />
-            </span>
-          ))}
-        </span>
-      )
+    const handleTriggerPointerEnter = (companyId: string) => {
+      if (isHoverCapable()) openPopover(companyId, true)
     }
 
-    const renderExpandedChipContent = (company: WorkedWithCompany) => (
-      <>
-        {renderExpandedLogos(company)}
-        {renderWords(company.expandedText.split(" "), company.id)}
-      </>
-    )
-
-    const handleCollapseKeyDown = (expansionId: string) => (event: KeyboardEvent<HTMLSpanElement>) => {
-      if (event.key !== "Enter" && event.key !== " ") return
-
-      event.preventDefault()
-      closeExpansion(expansionId)
+    const handleTriggerFocus = (companyId: string) => {
+      if (pointerFocusCompanyIdRef.current === companyId) return
+      openPopover(companyId)
     }
 
-    const renderExpandedSegments = ({
-      company,
-      segments,
-      buttonId,
-      logoUrls,
-      keyPrefix,
-      expansionId,
-      collapsedLabel,
-      links,
-      extraClassName = "",
-    }: {
-      company?: WorkedWithCompany
-      segments: string[]
-      buttonId: string
-      logoUrls?: string[]
-      keyPrefix: string
-      expansionId: string
-      collapsedLabel: string
-      links?: Record<string, string>
-      extraClassName?: string
-    }) => {
-      const isCollapsing = collapsingCompanyIds.includes(expansionId)
-
-      return segments.map((segment, segmentIndex) => (
-        <Fragment key={`${keyPrefix}-${segment}`}>
-          {segmentIndex > 0 ? <span className="mosaic-work-history-expanded-break" aria-hidden="true" /> : null}
-          <span
-            id={segmentIndex === 0 ? buttonId : undefined}
-            role="button"
-            tabIndex={0}
-            aria-label={segmentIndex === 0 ? `Collapse ${collapsedLabel} details` : undefined}
-            aria-expanded={segmentIndex === 0 ? true : undefined}
-            aria-controls={segmentIndex === 0 ? buttonId : undefined}
-            className={`mosaic-work-history-chip mosaic-work-history-chip-expanded mosaic-work-history-chip-expanded-segment mosaic-work-history-chip-expanded-collapsible${
-              segmentIndex === 0 ? " mosaic-work-history-chip-expanded-segment-primary" : ""
-            }${extraClassName ? ` ${extraClassName}` : ""}${isCollapsing ? " mosaic-work-history-chip-collapsing" : ""}`}
-            onClick={() => closeExpansion(expansionId)}
-            onKeyDown={handleCollapseKeyDown(expansionId)}
-          >
-            {segmentIndex === 0 && company ? renderExpandedLogos(company, logoUrls) : null}
-            {renderWords(segment.split(" "), `${keyPrefix}-${segmentIndex}`, {
-              links,
-              wordIndexOffset: getPrecedingWordCount(segments, segmentIndex),
-            })}
-          </span>
-        </Fragment>
-      ))
+    const handleTriggerPointerLeave = (event: PointerEvent<HTMLButtonElement>) => {
+      if (!isHoverCapable()) return
+      settleTilt()
+      const destination = event.relatedTarget
+      if (destination instanceof Node && popoverRef.current?.contains(destination)) return
+      scheduleClose()
     }
 
-    const renderMoreInfoExpansion = () =>
-      renderExpandedSegments({
-        segments: moreInfoSegments,
-        buttonId: `${disclosureId}-more-info-expanded`,
-        keyPrefix: moreInfoId,
-        expansionId: moreInfoId,
-        collapsedLabel: "more info",
-        links: moreInfoLinks,
-        extraClassName: "mosaic-work-history-chip-expanded-info",
+    // The popover is a sibling of the triggers, so measure the pointer against
+    // the word it is leaning away from but hang the variables on the shared
+    // container the popover can actually inherit from.
+    const handleTriggerPointerMove = (event: PointerEvent<HTMLButtonElement>) => {
+      const container = containerRef.current
+      if (!container || !isHoverCapable()) return
+
+      applyPointerTilt({
+        target: container,
+        box: event.currentTarget.getBoundingClientRect(),
+        pointer: event,
+        scales: popoverTilt,
+        prefix: popoverTiltPrefix,
       })
-
-    const renderCompanyButton = (company: WorkedWithCompany) => {
-      const isActive = activeCompanyIds.includes(company.id)
-      const companyDisclosureId = `${disclosureId}-${company.id}`
-      const expandedSegments = getExpandedSegmentsForCompanyId(company.id)
-
-      if (isActive && expandedSegments.length > 0) {
-        return renderExpandedSegments({
-          company,
-          segments: expandedSegments,
-          buttonId: companyDisclosureId,
-          keyPrefix: company.id,
-          expansionId: company.id,
-          collapsedLabel: company.compactName,
-          links: expandedCompanyLinks[company.id],
-        })
-      }
-
-      return (
-        <button
-          key={company.id}
-          id={isActive ? companyDisclosureId : undefined}
-          type="button"
-          className={`mosaic-work-history-chip${isActive ? " mosaic-work-history-chip-expanded" : ""}${
-            collapsingCompanyIds.includes(company.id) ? " mosaic-work-history-chip-collapsing" : ""
-          }`}
-          aria-label={isActive ? company.expandedText : undefined}
-          aria-expanded={isActive}
-          onClick={() => toggleCompany(company.id)}
-        >
-          {isActive ? renderExpandedChipContent(company) : company.compactName}
-        </button>
-      )
     }
+
+    const handleFocusLeave = (event: FocusEvent<HTMLElement>) => {
+      const destination = event.relatedTarget
+      if (destination instanceof Node && containerRef.current?.contains(destination)) return
+      closePopover()
+    }
+
+    const setTrigger = (companyId: string, element: HTMLButtonElement | null) => {
+      if (element) triggerRefs.current.set(companyId, element)
+      else triggerRefs.current.delete(companyId)
+    }
+
+    const handleTriggerClick = (companyId: string) => {
+      clearOpenTimeout()
+      clearCloseTimeout()
+      pointerFocusCompanyIdRef.current = null
+      const nextCompanyId = activeCompanyId === companyId ? null : companyId
+      setIsSwitchingCompany(activeCompanyId !== null && nextCompanyId !== null)
+      setActiveCompanyId(nextCompanyId)
+    }
+
+    const popoverStyle = {
+      "--mosaic-popover-arrow-x": `${position.arrowX}px`,
+      "--mosaic-popover-x": `${position.x}px`,
+      "--mosaic-popover-y": `${position.y}px`,
+    } as CSSProperties
 
     return (
-      <div className="mosaic-work-history" aria-label="Work history">
+      <div ref={containerRef} className="mosaic-work-history" aria-label="Work history">
         <div className="mosaic-work-history-line">
           <span className="mosaic-work-history-copy">Recently at</span>
-          {isRecentCompanyActive && recentExpandedCompany ? (
-            <>
-              {renderExpandedSegments({
-                company: recentExpandedCompany,
-                segments: recentExpandedSegments,
-                buttonId: `${disclosureId}-recent-expanded`,
-                logoUrls: recentCompanies.flatMap((company) => company.logoUrls),
-                keyPrefix: recentGroupId,
-                expansionId: recentGroupId,
-                collapsedLabel: recentCollapsedLabel,
-                links: expandedCompanyLinks[recentGroupId],
-              })}
-            </>
-          ) : (
-            <button
-              type="button"
-              className="mosaic-work-history-chip"
-              aria-label={recentCollapsedLabel}
-              aria-expanded="false"
-              aria-controls={`${disclosureId}-recent-expanded`}
-              onClick={() => openExpansion(recentGroupId)}
-            >
-              {recentCollapsedLabel}
-            </button>
-          )}
+          {profileCompanies.recentGroup ? (
+            <WorkHistoryTrigger
+              active={activeCompanyId === profileCompanies.recentGroup.id}
+              company={profileCompanies.recentGroup}
+              descriptionId={`${popoverId}-${profileCompanies.recentGroup.id}-description`}
+              popoverId={popoverId}
+              onBlur={handleFocusLeave}
+              onClick={handleTriggerClick}
+              onFocus={handleTriggerFocus}
+              onPointerDown={(companyId) => {
+                pointerFocusCompanyIdRef.current = companyId
+              }}
+              onPointerEnter={handleTriggerPointerEnter}
+              onPointerLeave={handleTriggerPointerLeave}
+              onPointerMove={handleTriggerPointerMove}
+              setTrigger={setTrigger}
+            />
+          ) : null}
           <span className="mosaic-work-history-copy">previously worked with and at</span>
         </div>
         <div className="mosaic-work-history-line" aria-label="Previous companies">
-          {previousCompanies.map(renderCompanyButton)}
-          {isMoreInfoActive ? (
-            <>
-              <span className="mosaic-work-history-expanded-break" aria-hidden="true" />
-              {renderMoreInfoExpansion()}
-            </>
-          ) : null}
-          <button
-            type="button"
-            className="mosaic-work-history-chip mosaic-work-history-chip-more"
-            aria-expanded={isMoreInfoActive}
-            aria-controls={isMoreInfoActive ? `${disclosureId}-more-info-expanded` : undefined}
-            onClick={() => toggleCompany(moreInfoId)}
-          >
-            ...
-          </button>
+          {profileCompanies.previousCompanies.map((company) => (
+            <WorkHistoryTrigger
+              key={company.id}
+              active={activeCompanyId === company.id}
+              company={company}
+              descriptionId={`${popoverId}-${company.id}-description`}
+              popoverId={popoverId}
+              onBlur={handleFocusLeave}
+              onClick={handleTriggerClick}
+              onFocus={handleTriggerFocus}
+              onPointerDown={(companyId) => {
+                pointerFocusCompanyIdRef.current = companyId
+              }}
+              onPointerEnter={handleTriggerPointerEnter}
+              onPointerLeave={handleTriggerPointerLeave}
+              onPointerMove={handleTriggerPointerMove}
+              setTrigger={setTrigger}
+            />
+          ))}
         </div>
+
+        <div
+          ref={popoverRef}
+          id={popoverId}
+          role="dialog"
+          aria-label={activeCompany ? `${activeCompany.name}, ${activeCompany.role}` : "Work history details"}
+          aria-hidden={activeCompany ? undefined : true}
+          className="mosaic-work-history-popover"
+          data-open={activeCompany ? "true" : "false"}
+          data-switching={isSwitchingCompany ? "true" : "false"}
+          data-side={position.side}
+          style={popoverStyle}
+          onFocus={() => clearCloseTimeout()}
+          onBlur={handleFocusLeave}
+          onPointerEnter={() => {
+            clearCloseTimeout()
+            // Reading the panel should not fight the lean it arrived with.
+            settleTilt()
+          }}
+          onPointerLeave={(event) => {
+            if (!isHoverCapable()) return
+            const destination = event.relatedTarget
+            if (destination instanceof Node && containerRef.current?.contains(destination)) return
+            scheduleClose()
+          }}
+        >
+          <span className="mosaic-work-history-popover-arrow" aria-hidden="true" />
+          {activeCompany ? (
+            <div key={activeCompany.id} className="mosaic-work-history-popover-content">
+              <div className="mosaic-work-history-popover-heading">
+                <span className="mosaic-work-history-popover-logos" aria-hidden="true">
+                  {activeCompany.logoUrls.map((logoUrl) => (
+                    <span key={`${activeCompany.id}-${logoUrl}`} className="mosaic-work-history-popover-logo-wrap">
+                      <img src={logoUrl} alt="" loading="eager" decoding="async" />
+                    </span>
+                  ))}
+                </span>
+                <span className="mosaic-work-history-popover-title">
+                  <span className="mosaic-work-history-popover-name">{activeCompany.name}</span>
+                  <span className="mosaic-work-history-popover-role">{activeCompany.role}</span>
+                </span>
+              </div>
+              <p className="mosaic-work-history-popover-description">{activeCompany.description}</p>
+              <a
+                href={activeCompany.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mosaic-work-history-popover-link"
+                aria-label={`Visit ${new URL(activeCompany.href).hostname.replace(/^www\./, "")}`}
+              >
+                {new URL(activeCompany.href).hostname.replace(/^www\./, "")}
+                <span aria-hidden="true">›</span>
+              </a>
+            </div>
+          ) : null}
+        </div>
+
+        <span className="sr-only">
+          {[profileCompanies.recentGroup, ...profileCompanies.previousCompanies].flatMap((company) =>
+            company ? (
+              <span key={company.id} id={`${popoverId}-${company.id}-description`}>
+                {company.role}. {company.description}
+              </span>
+            ) : [],
+          )}
+        </span>
       </div>
     )
   }

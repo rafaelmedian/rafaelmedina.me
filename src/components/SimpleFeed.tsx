@@ -5,8 +5,47 @@ import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
+type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
+
+let galleryModulePromise: Promise<PreviewGalleryModule> | null = null
+// Browsers cache failed module imports for the page lifetime. Keep the emitted
+// chunk URL so a later interaction can retry it under a fresh module-map key.
+let failedGalleryModuleUrl: string | null = null
+let galleryRetryAttempt = 0
+
+function findGalleryModuleUrl() {
+  if (typeof performance === "undefined") return null
+  const entries = performance.getEntriesByType("resource")
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const url = entries[index]?.name
+    if (url?.includes("PreviewGalleryDialog")) return url
+  }
+  return null
+}
+
+function loadPreviewGallery() {
+  if (galleryModulePromise) return galleryModulePromise
+
+  let modulePromise: Promise<PreviewGalleryModule>
+  if (failedGalleryModuleUrl) {
+    const retryUrl = new URL(failedGalleryModuleUrl)
+    retryUrl.searchParams.set("retry", String(++galleryRetryAttempt))
+    failedGalleryModuleUrl = null
+    modulePromise = import(/* @vite-ignore */ retryUrl.href) as Promise<PreviewGalleryModule>
+  } else {
+    modulePromise = import("./PreviewGalleryDialog")
+  }
+
+  galleryModulePromise = modulePromise.catch((error: unknown) => {
+    galleryModulePromise = null
+    failedGalleryModuleUrl = findGalleryModuleUrl()
+    throw error
+  })
+  return galleryModulePromise
+}
+
 const PreviewGalleryDialog = lazy(() =>
-  import("./PreviewGalleryDialog").then((module) => ({ default: module.PreviewGalleryDialog })),
+  loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })),
 )
 
 type SiteProfile = {
@@ -59,6 +98,34 @@ function isVideoPreviewSource(source: string) {
   return source.toLowerCase().endsWith(".webm")
 }
 
+type NetworkInformation = {
+  saveData?: boolean
+  effectiveType?: string
+}
+
+// Data Saver and 2g are the cases where an autoplaying loop is a liability
+// rather than a flourish: the poster already carries the frame, and the videos
+// are the heaviest thing on the page by a wide margin.
+function prefersLightweightMedia() {
+  if (typeof navigator === "undefined") return false
+  const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection
+  if (!connection) return false
+  return (
+    Boolean(connection.saveData) ||
+    connection.effectiveType === "slow-2g" ||
+    connection.effectiveType === "2g"
+  )
+}
+
+// The gallery is the point of the mosaic, but its chunk is the heaviest thing
+// we ship after the media itself. Fetching it on intent -- a hover, or the
+// pointerdown that precedes a tap -- keeps it off the initial load without
+// making the click wait for it.
+function prefetchPreviewGallery() {
+  if (prefersLightweightMedia()) return
+  void loadPreviewGallery().catch(() => undefined)
+}
+
 function RowVideoMedia({
   source,
   poster,
@@ -73,10 +140,13 @@ function RowVideoMedia({
   const supportsIntersectionObserver = typeof window !== "undefined" && "IntersectionObserver" in window
   const [shouldLoad, setShouldLoad] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
+  // Without a poster there is nothing to fall back to, so the video loads even
+  // on a metered connection.
+  const holdForLightweightMedia = Boolean(poster) && prefersLightweightMedia()
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video || !supportsIntersectionObserver) return
+    if (!video || !supportsIntersectionObserver || holdForLightweightMedia) return
 
     const loadObserver = new IntersectionObserver(
       ([entry]) => {
@@ -98,7 +168,7 @@ function RowVideoMedia({
       loadObserver.disconnect()
       visibilityObserver.disconnect()
     }
-  }, [supportsIntersectionObserver])
+  }, [holdForLightweightMedia, supportsIntersectionObserver])
 
   useEffect(() => {
     const video = videoRef.current
@@ -273,12 +343,18 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   )
   const [view, setView] = useState<"work" | "about">("work")
   const [isSwapping, setIsSwapping] = useState(false)
-  // The swap animation is for swaps only. On first paint the work rows are
-  // already there, and animating them would fight the hero intro and leave the
-  // mosaic mid-scale for anything measuring it.
+  // Two entrance systems share the mosaic, and `hasSwapped` picks between them:
+  // before the first swap the rows carry `.mosaic-work-intro` (the CSS-only
+  // first-load cascade, which has to be in the prerendered HTML), after it they
+  // carry `.mosaic-view-animated` (the swap stagger). Never both -- the swap
+  // animation scales the container, which would leave the mosaic mid-scale for
+  // anything measuring it if it also ran on load.
   const [hasSwapped, setHasSwapped] = useState(false)
+  const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const swapTimeoutRef = useRef<number | null>(null)
   const avatarRef = useRef<HTMLButtonElement | null>(null)
+  const viewTriggerRef = useRef<HTMLElement | null>(null)
+  const metaPointerRef = useRef<{ x: number; y: number } | null>(null)
   const [loadedSources, setLoadedSources] = useState<Set<string>>(() => new Set())
   const markLoaded = (src: string) =>
     setLoadedSources((prev) => (prev.has(src) ? prev : new Set(prev).add(src)))
@@ -380,7 +456,12 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
 
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const syncPreference = () => setPrefersReducedMotion(mediaQuery.matches)
+    const syncPreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches)
+      // Reduced motion suppresses animationend, so retire the one-shot marker
+      // here before a later preference change can start the intro mid-session.
+      if (mediaQuery.matches) setHasCompletedWorkIntro(true)
+    }
     syncPreference()
 
     if (typeof mediaQuery.addEventListener === "function") {
@@ -435,10 +516,10 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     // eslint-disable-next-line react-hooks/exhaustive-deps -- swapView is redeclared each render
   }, [view, prefersReducedMotion])
 
-  function swapView(nextView: "work" | "about") {
+  function swapView(nextView: "work" | "about", trigger = "avatar") {
     if (nextView === view) return
 
-    trackEvent("hero_view_change", { hero_view: nextView, hero_view_trigger: "avatar" })
+    trackEvent("hero_view_change", { hero_view: nextView, hero_view_trigger: trigger })
 
     // Closing from inside the panel (its back button, or Escape) unmounts
     // whatever had focus, so hand it back to the photo that opened it.
@@ -447,7 +528,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
       document.activeElement instanceof Node &&
       (document.getElementById("about-panel")?.contains(document.activeElement) ?? false)
     const restoreFocus = () => {
-      if (focusLeavesWithPanel) avatarRef.current?.focus()
+      if (focusLeavesWithPanel) (viewTriggerRef.current ?? avatarRef.current)?.focus()
     }
 
     if (prefersReducedMotion) {
@@ -483,7 +564,10 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               aria-expanded={isAboutView}
               aria-controls={isAboutView ? "about-panel" : undefined}
               aria-label={isAboutView ? "Back to selected work" : `Read about ${profile.name}`}
-              onClick={() => swapView(isAboutView ? "work" : "about")}
+              onClick={(event) => {
+                viewTriggerRef.current = event.currentTarget
+                swapView(isAboutView ? "work" : "about")
+              }}
             >
               <div className="mosaic-avatar-coin-inner">
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
@@ -509,7 +593,37 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 </span>
               </span>
             </button>
-            <div className="mosaic-profile-meta">
+            {/* Keep the semantic heading and selectable text while exposing this
+                second hit area as the same accessible disclosure control. */}
+            <div
+              className="mosaic-profile-meta"
+              role="button"
+              tabIndex={0}
+              aria-expanded={isAboutView}
+              aria-controls={isAboutView ? "about-panel" : undefined}
+              aria-label={isAboutView ? "Back to selected work" : `Read about ${profile.name}`}
+              onPointerDown={(event) => {
+                metaPointerRef.current = { x: event.clientX, y: event.clientY }
+              }}
+              onClick={(event) => {
+                // This text stays selectable, so only treat the click as a tap:
+                // a drag that travelled, or one that left a selection behind,
+                // was the reader highlighting their name, not toggling views.
+                const start = metaPointerRef.current
+                metaPointerRef.current = null
+                if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) return
+                const selection = window.getSelection()
+                if (selection && !selection.isCollapsed) return
+                viewTriggerRef.current = event.currentTarget
+                swapView(isAboutView ? "work" : "about", "profile-meta")
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") return
+                event.preventDefault()
+                viewTriggerRef.current = event.currentTarget
+                swapView(isAboutView ? "work" : "about", "profile-meta")
+              }}
+            >
               <h2>{profile.name}</h2>
               <p className="mosaic-profile-subtitle">{profile.title}</p>
             </div>
@@ -535,7 +649,15 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           ) : (
             <article id="work" className="mosaic-work">
               <h2 className="sr-only">Selected work</h2>
-              <div className="mosaic-rows" aria-label="Selected work previews">
+              {/* No `prefersReducedMotion` here on purpose: it is false on the
+                  server and on the first client render, so a JS gate would flash
+                  before the effect syncs. Reduced motion is handled in CSS. */}
+              <div
+                className={`mosaic-rows${
+                  hasSwapped || hasCompletedWorkIntro ? "" : " mosaic-work-intro"
+                }`}
+                aria-label="Selected work previews"
+              >
                 {rowsRender.map((row, rowIndex) => {
                   const rowStyle = {
                     ...(row.height ? { "--row-height": row.height } : {}),
@@ -544,7 +666,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                   const eagerRow = rowIndex === 0
                   return (
                     <div key={row.id} className="mosaic-row" style={rowStyle}>
-                      {row.items.map((item) => {
+                      {row.items.map((item, itemIndex) => {
                         const itemKey = `${item.card.id}-${item.previewIndex}`
                         const paginationTotal = getPaginationTotal(item.card)
                         const isPaginatedCard = paginationTotal > 1
@@ -557,6 +679,10 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                           : item.card.title
                         const itemStyle = {
                           "--row-span": item.span,
+                          // Feeds the first-load stagger in `.mosaic-work-intro`.
+                          // Inert without that class, so set unconditionally.
+                          "--work-intro-row": rowIndex,
+                          "--work-intro-col": itemIndex,
                           ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
                           ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
                         } as CSSProperties
@@ -565,6 +691,16 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                             key={itemKey}
                             className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
                             style={itemStyle}
+                            onAnimationEnd={
+                              rowIndex === rowsRender.length - 1 &&
+                              itemIndex === row.items.length - 1
+                                ? (event) => {
+                                    if (event.target === event.currentTarget) {
+                                      setHasCompletedWorkIntro(true)
+                                    }
+                                  }
+                                : undefined
+                            }
                           >
                             <button
                               type="button"
@@ -574,6 +710,9 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                                 else nodes.delete(item.previewIndex)
                               }}
                               className={`mosaic-row-card mosaic-row-card-${item.card.id}${isPaginatedCard ? " mosaic-row-card-paginated" : ""}`}
+                              onPointerEnter={isPaginatedCard ? undefined : prefetchPreviewGallery}
+                              onPointerDown={isPaginatedCard ? undefined : prefetchPreviewGallery}
+                              onFocus={isPaginatedCard ? undefined : prefetchPreviewGallery}
                               onClick={() => {
                                 if (isPaginatedCard) {
                                   paginatePreviewCard(

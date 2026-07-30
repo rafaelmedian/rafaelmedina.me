@@ -1,6 +1,17 @@
-import { expect, test } from "@playwright/test"
+import { expect, type Page, test } from "@playwright/test"
 
 const mobileViewport = { width: 390, height: 844 }
+
+// The work cards cascade in on first load, so a card clicked straight after
+// `goto` can still be sitting at its pre-start offset -- and the gallery grows
+// out of that card's live rect. Settle the cascade before touching a card.
+// Safe from hanging: nothing in index.css animates infinitely.
+const settleWorkCards = (page: Page) =>
+  page
+    .locator(".mosaic-rows")
+    .evaluate((element) =>
+      Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+    )
 
 test("hydrates the prerendered portfolio without browser errors", async ({ page, request }) => {
   const errors: string[] = []
@@ -17,19 +28,44 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
+test("operates the profile name disclosure from the keyboard and restores focus", async ({ page }) => {
+  await page.goto("/")
+  const trigger = page.locator(".mosaic-profile-meta")
+
+  await expect(trigger).toHaveAttribute("role", "button")
+  await expect(trigger).toHaveAttribute("aria-expanded", "false")
+  await trigger.focus()
+  await trigger.press("Enter")
+
+  await expect(page.locator("#about-panel")).toBeVisible()
+  await expect(page.locator("#about-panel")).toBeFocused()
+  await expect(trigger).toHaveAttribute("aria-expanded", "true")
+
+  await page.keyboard.press("Escape")
+  await expect(page.locator("#about-panel")).toBeHidden()
+  await expect(trigger).toBeFocused()
+})
+
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
+  await settleWorkCards(page)
   await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
-  await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+  // All positional travel belongs to the wrapper, so the popup itself is never
+  // transformed while origin motion is on.
+  await expect(dialog).toHaveCSS("transform", "none")
 
   // The gallery flies in from the card it was opened from; measure it at rest.
   await page
     .locator(".preview-gallery-origin-wrap")
     .evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  // The counter-scale has to land exactly back on identity, or the content is
+  // left a fraction of a percent off its true size.
+  await expect(page.locator(".preview-gallery-card-inner")).toHaveCSS("transform", "none")
 
   for (const name of ["Previous preview", "Next preview", "Close preview"]) {
     const control = dialog.getByRole("button", { name })
@@ -72,11 +108,39 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
 
 test("returns focus to the originating project after closing the gallery", async ({ page }) => {
   await page.goto("/")
+  await settleWorkCards(page)
   const trigger = page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ })
   await trigger.focus()
   await trigger.press("Enter")
   await page.keyboard.press("Escape")
   await expect(trigger).toBeFocused()
+})
+
+test("opens the gallery after an intent prefetch fails", async ({ page }) => {
+  const errors: string[] = []
+  page.on("pageerror", (error) => errors.push(error.message))
+
+  let releaseFailedPrefetch: (() => void) | undefined
+  const failedPrefetch = new Promise<void>((resolve) => {
+    releaseFailedPrefetch = resolve
+  })
+  const galleryChunk = "**/assets/PreviewGalleryDialog-*.js"
+
+  await page.route(galleryChunk, async (route) => {
+    await route.abort("failed")
+    releaseFailedPrefetch?.()
+  })
+  await page.goto("/")
+  await settleWorkCards(page)
+
+  const trigger = page.getByRole("button", { name: /Open Matcha - Mobile Screens preview/ })
+  await trigger.hover()
+  await failedPrefetch
+  await page.unroute(galleryChunk)
+  await trigger.click()
+
+  await expect(page.getByRole("dialog")).toBeVisible()
+  expect(errors).toEqual([])
 })
 
 test("lets keyboard users move and reset about stickers", async ({ page }) => {
@@ -169,20 +233,124 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 12")
 })
 
-test("keeps a semantic disclosure control while work-history details are expanded", async ({ page }) => {
+test("travels one role-bearing work-history popover between company triggers without shifting the page", async ({ page }) => {
   await page.goto("/")
-  const disclosure = page.getByRole("button", { name: "0x.org and Matcha.xyz" })
-  await disclosure.click()
+  const location = page.locator(".mosaic-profile-location")
+  await location.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const initialLocationBox = await location.boundingBox()
+  const popover = page.locator(".mosaic-work-history-popover")
+  const onit = page.getByRole("button", { name: "Onit" })
 
-  const expandedControl = page.getByRole("button", { name: "Collapse 0x.org and Matcha.xyz details" })
-  await expect(expandedControl).toHaveAttribute("aria-expanded", "true")
-  const controlledId = await expandedControl.getAttribute("aria-controls")
-  expect(controlledId).toBeTruthy()
-  await expect(page.locator(`#${controlledId}`)).toBeVisible()
+  await onit.hover()
+  await expect(popover).toBeVisible()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Onit")
+  await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
+  const visitLink = popover.getByRole("link", { name: "Visit onit.com" })
+  await expect(visitLink).toBeVisible()
+  await expect(popover).toHaveCSS("text-align", "left")
+  await expect(visitLink).toHaveCSS("background-color", "rgb(242, 242, 242)")
+  await expect(page.locator(".mosaic-work-history")).toHaveCSS("z-index", "40")
+  await expect(popover).toHaveAttribute("data-side", "above")
+  await expect(popover.locator(".mosaic-work-history-popover-arrow")).toHaveCSS("border-radius", "3px")
+  const longestPopoverTransition = await popover.evaluate((element) =>
+    Math.max(
+      ...getComputedStyle(element)
+        .transitionDuration.split(",")
+        .map((duration) => Number.parseFloat(duration) * (duration.includes("ms") ? 0.001 : 1)),
+    ),
+  )
+  expect(longestPopoverTransition).toBeLessThanOrEqual(0.14)
 
-  await expandedControl.focus()
-  await expandedControl.press("Enter")
-  await expect(page.getByRole("button", { name: "0x.org and Matcha.xyz" })).toBeVisible()
+  const onitPopoverBox = await popover.boundingBox()
+  const onitLocationBox = await location.boundingBox()
+  expect(initialLocationBox).not.toBeNull()
+  expect(onitPopoverBox).not.toBeNull()
+  expect(onitLocationBox!.y).toBeCloseTo(initialLocationBox!.y, 0)
+
+  await page.getByRole("button", { name: "Moody's" }).hover()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Moody's")
+  await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
+  expect(
+    await popover.evaluate(
+      (element) => element.getAnimations({ subtree: true }).filter((animation) => animation.playState !== "finished").length,
+    ),
+  ).toBe(0)
+  expect((await page.locator(".mosaic-work-history-popover").count())).toBe(1)
+  expect((await popover.boundingBox())!.x).not.toBe(onitPopoverBox!.x)
+  expect((await location.boundingBox())!.y).toBeCloseTo(initialLocationBox!.y, 0)
+
+  await page.getByRole("button", { name: "0x.org and Matcha.xyz" }).hover()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("0x.org and Matcha.xyz")
+
+  await page.getByRole("button", { name: "Google" }).hover()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Google")
+  await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
+
+  await page.getByRole("button", { name: "Protector and Patrol" }).hover()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Protector and Patrol")
+  await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
+})
+
+test("opens the work-history popover from the keyboard and toggles it on touch", async ({ page }) => {
+  await page.goto("/")
+  const onit = page.getByRole("button", { name: "Onit" })
+  const popover = page.locator(".mosaic-work-history-popover")
+
+  await onit.focus()
+  await expect(popover).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(popover).toBeHidden()
+  await expect(onit).toBeFocused()
+
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  const mobileOnit = page.getByRole("button", { name: "Onit" })
+  const mobilePopover = page.locator(".mosaic-work-history-popover")
+  await mobileOnit.click()
+  await expect(mobilePopover).toBeVisible()
+  await mobileOnit.click()
+  await expect(mobilePopover).toBeHidden()
+})
+
+test("keeps the work-history popover positioned with reduced motion", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const onit = page.getByRole("button", { name: "Onit" })
+  const popover = page.locator(".mosaic-work-history-popover")
+  await onit.focus()
+  await expect(popover).toBeVisible()
+
+  const triggerBox = await onit.boundingBox()
+  const popoverBox = await popover.boundingBox()
+  expect(triggerBox).not.toBeNull()
+  expect(popoverBox).not.toBeNull()
+  expect(popoverBox!.x).toBeGreaterThanOrEqual(0)
+  expect(popoverBox!.x + popoverBox!.width).toBeLessThanOrEqual(mobileViewport.width)
+  expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(triggerBox!.y)
+})
+
+test("moves the work-history popover below its trigger near the viewport top", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const onit = page.getByRole("button", { name: "Onit" })
+  const popover = page.locator(".mosaic-work-history-popover")
+  await onit.focus()
+  await expect(popover).toBeVisible()
+  await expect(popover).toHaveAttribute("data-side", "above")
+
+  await page.evaluate(() => window.scrollBy(0, 180))
+  await expect(popover).toHaveAttribute("data-side", "below")
+  await popover.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  const triggerBox = await onit.boundingBox()
+  const popoverBox = await popover.boundingBox()
+  expect(triggerBox).not.toBeNull()
+  expect(popoverBox).not.toBeNull()
+  expect(popoverBox!.y).toBeGreaterThanOrEqual(triggerBox!.y + triggerBox!.height)
+  expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
 test("shows project captions and contains Protector artwork on touch layouts", async ({ page }) => {
@@ -209,6 +377,11 @@ test("renders intrinsic media dimensions and does not autoplay under reduced mot
   const video = page.locator(".mosaic-row-card video.mosaic-row-media").first()
   await expect(video).toHaveAttribute("poster", /\S+/)
   expect(await video.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
+
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  const previewVideo = page.getByRole("dialog").locator("video")
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(true)
 })
 
 test("loads video sources near the viewport and pauses them after they leave it", async ({ page }) => {
@@ -259,4 +432,145 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   expect(firstRow).not.toBeNull()
   // Rows are a flat 420px from the 900px breakpoint up (see .mosaic-row in index.css).
   expect(firstRow!.height).toBe(420)
+})
+
+// The first-load card cascade is CSS driven off a class and two custom
+// properties in the prerendered HTML, because animations start at first paint
+// long before hydration. Moving any of it into an effect breaks this test.
+test("ships the work-card intro in the prerendered markup", async ({ request }) => {
+  const html = await (await request.get("/")).text()
+  expect(html).toContain("mosaic-work-intro")
+  expect(html).toContain("--work-intro-row:3")
+  expect(html).toContain("--work-intro-col:2")
+})
+
+test("keeps the work-card entrance free of scale and horizontal travel", async ({ page }) => {
+  await page.goto("/")
+
+  // Read the keyframe source rather than a live animation: the mosaic row height
+  // is asserted at exactly 420px above, and only opacity plus translateY leave
+  // that measurement alone.
+  const keyframes = await page.evaluate(() => {
+    const wanted = ["mosaic-intro-rise"]
+    const found: Record<string, string[]> = {}
+    for (const sheet of [...document.styleSheets]) {
+      for (const rule of [...sheet.cssRules]) {
+        if (rule instanceof CSSKeyframesRule && wanted.includes(rule.name)) {
+          found[rule.name] = [...rule.cssRules].map((frame) => (frame as CSSKeyframeRule).style.transform)
+        }
+      }
+    }
+    return found
+  })
+
+  expect(Object.keys(keyframes)).toEqual(["mosaic-intro-rise"])
+  for (const transforms of Object.values(keyframes)) {
+    for (const transform of transforms) {
+      expect(transform === "" || /^translateY\([^)]+\)$/.test(transform)).toBe(true)
+    }
+  }
+})
+
+// No work card may be on screen before the header is. The top row was once
+// exempted from the fade to protect LCP, which made it opaque at first paint --
+// cards visible above a header that had not arrived yet. That exemption costs
+// +1240ms of LCP to undo and is deliberately not coming back; see index.css.
+test("hides every work card at first paint, including the top row", async ({ page }) => {
+  await page.goto("/")
+
+  const rows = await page.evaluate(() =>
+    [...document.querySelectorAll(".mosaic-row")].map((row) => ({
+      names: [
+        ...new Set(
+          [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).animationName),
+        ),
+      ],
+      // The from-state is what is on screen at first paint, since every card
+      // holds it through its delay via `both`.
+      opacities: [
+        ...new Set(
+          [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).opacity),
+        ),
+      ],
+    })),
+  )
+
+  expect(rows.length).toBeGreaterThan(1)
+  for (const row of rows) {
+    expect(row.names).toEqual(["mosaic-intro-rise"])
+    expect(row.opacities).toEqual(["0"])
+  }
+})
+
+test("does not delay content behind an entrance under reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  // A one-shot read on purpose. The global reduced-motion reset zeroes
+  // animation-duration but not animation-delay, so a delayed `both`-filled
+  // entrance stays invisible for its whole delay -- and toHaveCSS would retry
+  // right past that window.
+  for (const selector of [".mosaic-row-item", ".mosaic-hero-profile-animated > *"]) {
+    const state = await page
+      .locator(selector)
+      .first()
+      .evaluate((element) => {
+        const style = getComputedStyle(element)
+        return { animationName: style.animationName, opacity: style.opacity }
+      })
+    expect(state.animationName).toBe("none")
+    expect(state.opacity).toBe("1")
+  }
+})
+
+test("does not replay the work-card intro when reduced motion is disabled later", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const rows = page.locator(".mosaic-rows")
+  await expect(rows).not.toHaveClass(/mosaic-work-intro/)
+
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  const states = await page.locator(".mosaic-row-item").evaluateAll((items) =>
+    items.map((item) => {
+      const style = getComputedStyle(item)
+      return { animationName: style.animationName, opacity: style.opacity }
+    }),
+  )
+
+  expect(states.every(({ animationName, opacity }) => animationName === "none" && opacity === "1")).toBe(true)
+})
+
+// The hero and the mosaic are two beats, not one. When the first card started
+// before the last hero item, the cascades overlapped and read as a single wash.
+test("starts the work-card intro after the hero cascade is fully in flight", async ({ page }) => {
+  await page.goto("/")
+
+  const { lastHeroDelay, firstCardDelay } = await page.evaluate(() => {
+    const delayOf = (element: Element) => parseFloat(getComputedStyle(element).animationDelay)
+    const hero = [...document.querySelectorAll(".mosaic-hero-profile-animated > *")]
+    const cards = [...document.querySelectorAll(".mosaic-row-item")]
+    return {
+      lastHeroDelay: Math.max(...hero.map(delayOf)),
+      firstCardDelay: Math.min(...cards.map(delayOf)),
+    }
+  })
+
+  expect(lastHeroDelay).toBeGreaterThan(0)
+  expect(firstCardDelay).toBeGreaterThan(lastHeroDelay)
+})
+
+test("keeps the work-card entrance inside its delay budget", async ({ page }) => {
+  await page.goto("/")
+
+  const maxDelay = await page.evaluate(() =>
+    Math.max(
+      ...[...document.querySelectorAll(".mosaic-row-item")].map((element) =>
+        parseFloat(getComputedStyle(element).animationDelay),
+      ),
+    ),
+  )
+  // Last card starts at 520ms + 3 x 70ms + 2 x 32ms = 754ms. The ceiling is
+  // deliberately loose -- it guards against a runaway intro, not the exact base.
+  expect(maxDelay).toBeLessThanOrEqual(0.85)
 })

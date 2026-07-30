@@ -538,33 +538,39 @@ img {
   transform: scale(0.96);
 }
 
+/* The hero has to lead the work cards. The top mosaic row now starts transparent
+   despite the +1240ms LCP cost described under `.mosaic-work-intro`, so the two
+   cascades need to remain distinct: every hero item is in flight by 200ms, the
+   first four have landed by 500ms, and the cards start lifting at 520ms before
+   the final hero item settles at ~580ms.
+   Keep the last delay plus the duration under `--work-intro-base` + 60ms. */
 .mosaic-hero-profile-animated > * {
-  animation: mosaic-intro-rise 620ms var(--ease-smooth) both;
+  animation: mosaic-intro-rise 380ms var(--ease-smooth) both;
   will-change: opacity, transform;
 }
 
 .mosaic-hero-profile-animated > :nth-child(1) {
-  animation-delay: 40ms;
+  animation-delay: 0ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(2) {
-  animation-delay: 110ms;
+  animation-delay: 40ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(3) {
-  animation-delay: 170ms;
+  animation-delay: 80ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(4) {
-  animation-delay: 230ms;
+  animation-delay: 120ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(5) {
-  animation-delay: 290ms;
+  animation-delay: 160ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(6) {
-  animation-delay: 350ms;
+  animation-delay: 200ms;
 }
 
 @keyframes mosaic-intro-rise {
@@ -617,6 +623,13 @@ img {
   display: flex;
   flex-direction: column;
   align-items: center;
+  cursor: pointer;
+}
+
+.mosaic-profile-meta:focus-visible {
+  outline: 2px solid #2d2d2d;
+  outline-offset: 3px;
+  border-radius: 0.2rem;
 }
 
 .mosaic-avatar {
@@ -741,6 +754,23 @@ img {
   transform: rotateY(360deg);
 }
 
+/* The name and title toggle the same view, so hovering them plays the photo's
+   flip and reveals its hint as if the photo itself were hovered. */
+.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-coin-inner {
+  transform: rotateY(180deg);
+}
+
+.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible))
+  .mosaic-avatar-coin.is-flipped
+  .mosaic-avatar-coin-inner {
+  transform: rotateY(360deg);
+}
+
+.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-hint {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0) rotate(-3deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mosaic-avatar-coin-inner {
     transition: none;
@@ -749,7 +779,11 @@ img {
   .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner,
   .mosaic-avatar-coin.is-flipped .mosaic-avatar-coin-inner,
   .mosaic-avatar-coin.is-flipped:hover .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin.is-flipped:focus-visible .mosaic-avatar-coin-inner {
+  .mosaic-avatar-coin.is-flipped:focus-visible .mosaic-avatar-coin-inner,
+  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-coin-inner,
+  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible))
+    .mosaic-avatar-coin.is-flipped
+    .mosaic-avatar-coin-inner {
     transform: none;
   }
   .mosaic-avatar-button,
@@ -761,7 +795,8 @@ img {
   /* Keep the hint's fade, drop its slide. */
   .mosaic-avatar-hint,
   .mosaic-avatar-button:hover .mosaic-avatar-hint,
-  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
+  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint,
+  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-hint {
     transform: translateY(-50%) rotate(-3deg);
     transition: opacity 120ms linear;
   }
@@ -842,6 +877,65 @@ img {
     transform: none;
   }
 }
+
+/* First-load entrance for the work cards. Unlike the swap stagger above, this
+   one has to exist in the prerendered HTML: CSS animations start at first paint,
+   long before hydration, so the class comes from `!hasSwapped` in SimpleFeed
+   rather than from an effect. `hasSwapped` drops the class on the first view
+   swap, handing the mosaic over to `.mosaic-view-animated` above -- the two
+   never overlap. Delays are data-driven from inline `--work-intro-row` and
+   `--work-intro-col` rather than nth-child, so all twelve cards stagger; the
+   swap rule above silently stops at nth-child(4).
+   Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
+   700px the rows collapse into one flex column, and a smaller row step would
+   make a card arrive before the card above it.
+   The base is tuned against the hero cascade above, which now runs 0ms to 200ms
+   delays at 380ms each. Under the previous 40ms-to-350ms hero schedule, the old
+   320ms card base let work begin before the last two hero items, so both
+   cascades read as one undifferentiated wash. The 520ms base now puts the first
+   card after every hero item is in flight and the first four have landed, so
+   the mosaic answers the hero instead of arriving with it. The steps are
+   tightened to pay for the later start -- the last card still begins under
+   800ms. */
+.mosaic-work-intro {
+  --work-intro-base: 520ms;
+  --work-intro-row-step: 70ms;
+  --work-intro-col-step: 32ms;
+}
+
+/* opacity and translateY only. A scale would change the measured box of
+   `.mosaic-row`, whose height is asserted at exactly 420px in
+   tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
+   stays under the 1rem row gap, so a rising card never covers the one below. */
+.mosaic-work-intro .mosaic-row-item {
+  animation: mosaic-intro-rise 480ms var(--ease-smooth) both;
+  animation-delay: calc(
+    var(--work-intro-base) +
+    var(--work-intro-row, 0) * var(--work-intro-row-step) +
+    var(--work-intro-col, 0) * var(--work-intro-col-step)
+  );
+}
+
+/* The top row used to be exempted from the fade (a transform-only
+   `mosaic-intro-lift` keyframe, now deleted) to protect LCP. That exemption
+   left it fully opaque at first paint, so the cards were on screen before the
+   header existed -- the one thing this entrance must not do. Every row fades
+   now.
+   Know what it costs. The LCP element is the row-0 video poster
+   (Projects/shot-small-9-poster.webp). Measured at Fast 3G + 4x CPU, cold
+   context: 845ms with the top row transform-only, 2085ms once it fades.
+   The +1240ms is FIXED, not tunable. The same element wins LCP either way, and
+   the penalty does not scale with the animation: base 520ms + 540ms duration,
+   base 520ms + 360ms, and base 60ms + 360ms (fade fully finished by 420ms) all
+   measured ~2085ms. Chrome defers an opacity-animated element's recorded paint
+   to a later repaint however brief the fade is. There is no timing that buys
+   the metric back -- the choice is binary, which is why the choreography above
+   is tuned purely for feel.
+   Perceptually the cards are on screen at ~1000ms (base + duration); the 2085ms
+   is the metric catching up afterwards. That is still inside the 2.5s "good"
+   threshold, but the headroom is thin -- re-measure before putting anything
+   else on the critical path, and do not try to win it back by shortening the
+   fade. That has been tried three ways and does nothing. */
 
 .mosaic-about {
   display: block;
@@ -1502,6 +1596,262 @@ img {
 
   .mosaic-work-history-chip-expanded-segment .mosaic-work-history-chip-copy {
     white-space: normal;
+  }
+}
+
+.mosaic-work-history {
+  position: relative;
+  z-index: 40;
+  min-height: auto;
+  overflow: visible;
+  isolation: isolate;
+
+  /* Pointer-relative tilt, written by handleTriggerPointerMove. Declared here
+     rather than on the popover because the popover is a sibling of the
+     triggers and inherits these through the shared container. */
+  --mosaic-popover-anchor-x: 0px;
+  --mosaic-popover-anchor-y: 0px;
+  --mosaic-popover-tilt-x: 0deg;
+  --mosaic-popover-tilt-y: 0deg;
+  --mosaic-popover-lift: 1;
+}
+
+.mosaic-work-history-popover {
+  --mosaic-popover-width: min(24rem, calc(100vw - 2rem));
+  position: absolute;
+  top: var(--mosaic-popover-y);
+  left: var(--mosaic-popover-x);
+  z-index: 4;
+  width: var(--mosaic-popover-width);
+  padding: 0.625rem 0.75rem;
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.06),
+    0 1px 2px -1px rgb(0 0 0 / 0.06),
+    0 8px 24px -8px rgb(0 0 0 / 0.12);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  /* Centring lives in the transform shorthand alongside the tilt. Using the
+     `translate:` longhand here instead would leave the lean on a separate
+     animation channel from the anchor slide, and the two would drift apart. */
+  transform:
+    perspective(1200px)
+    translate(calc(-50% + var(--mosaic-popover-anchor-x)), calc(-100% + var(--mosaic-popover-anchor-y)))
+    rotateX(var(--mosaic-popover-tilt-x))
+    rotateY(var(--mosaic-popover-tilt-y))
+    scale(var(--mosaic-popover-lift));
+  /* Hinge on the arrow edge, so the panel leans away from the word it points
+     at and the arrow stays pinned instead of swinging. */
+  transform-origin: center bottom;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition:
+    top 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 100ms ease,
+    visibility 100ms ease;
+}
+
+.mosaic-work-history-popover[data-side="below"] {
+  transform:
+    perspective(1200px)
+    translate(calc(-50% + var(--mosaic-popover-anchor-x)), var(--mosaic-popover-anchor-y))
+    rotateX(var(--mosaic-popover-tilt-x))
+    rotateY(var(--mosaic-popover-tilt-y))
+    scale(var(--mosaic-popover-lift));
+  transform-origin: center top;
+}
+
+.mosaic-work-history-popover[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    top 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 120ms ease;
+}
+
+.mosaic-work-history-popover[data-switching="true"],
+.mosaic-work-history-popover[data-switching="true"] .mosaic-work-history-popover-arrow {
+  transition: none;
+}
+
+.mosaic-work-history-popover[data-switching="true"] .mosaic-work-history-popover-content {
+  animation: none;
+}
+
+.mosaic-work-history-popover-arrow {
+  position: absolute;
+  left: var(--mosaic-popover-arrow-x);
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 3px;
+  background: #ffffff;
+  box-shadow: 2px 2px 0 rgb(0 0 0 / 0.06);
+  transform: rotate(45deg);
+  transition: left 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mosaic-work-history-popover[data-side="below"] .mosaic-work-history-popover-arrow {
+  top: -5px;
+  bottom: auto;
+  border-radius: 3px;
+  box-shadow: -2px -2px 0 rgb(0 0 0 / 0.06);
+}
+
+.mosaic-work-history-popover-content {
+  animation: mosaic-work-history-popover-swap 120ms ease both;
+}
+
+.mosaic-work-history-popover-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-bottom: 0.15rem;
+}
+
+.mosaic-work-history-popover-title {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35rem;
+}
+
+.mosaic-work-history-popover-name {
+  color: #171717;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.005rem;
+}
+
+.mosaic-work-history-popover-role {
+  color: #8a8a8a;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.mosaic-work-history-popover-role::before {
+  content: "·";
+  margin-right: 0.35rem;
+  color: #b5b5b5;
+}
+
+.mosaic-work-history-popover-description {
+  margin: 0;
+  color: #6f6f6f;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  letter-spacing: -0.005rem;
+  text-wrap: pretty;
+}
+
+.mosaic-work-history-popover-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.4rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  background: #f2f2f2;
+  color: #6f6f6f;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.mosaic-work-history-popover-link:hover {
+  background: #e9e9e9;
+  color: #171717;
+}
+
+.mosaic-work-history-popover-link:focus-visible {
+  outline: 2px solid #9ea6b5;
+  outline-offset: 2px;
+}
+
+.mosaic-work-history-popover-logos {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.mosaic-work-history-popover-logo-wrap {
+  display: inline-flex;
+  width: 1.35rem;
+  height: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.29rem;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05);
+}
+
+.mosaic-work-history-popover-logo-wrap + .mosaic-work-history-popover-logo-wrap {
+  margin-left: -0.26rem;
+}
+
+.mosaic-work-history-popover-logo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes mosaic-work-history-popover-swap {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-work-history-popover,
+  .mosaic-work-history-popover[data-open="true"],
+  .mosaic-work-history-popover-arrow {
+    transition-duration: 80ms;
+  }
+
+  .mosaic-work-history-popover {
+    transform: translate(-50%, -100%);
+  }
+
+  .mosaic-work-history-popover[data-side="below"] {
+    transform: translate(-50%, 0);
+  }
+
+  .mosaic-work-history-popover,
+  .mosaic-work-history-popover-content {
+    animation: none;
+    filter: none;
+  }
+
+  .mosaic-work-history-popover-content {
+    transform: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .mosaic-work-history-popover-arrow {
+    display: none;
   }
 }
 
@@ -2474,12 +2824,18 @@ img {
   cursor: pointer;
   backdrop-filter: blur(10px) saturate(0.92);
   -webkit-backdrop-filter: blur(10px) saturate(0.92);
-  transition: opacity 180ms ease-out;
+  /* Opacity only. Ramping `backdrop-filter` re-blurs the whole viewport every
+     frame, which is not worth it — a longer fade already takes off the snap. */
+  transition: opacity var(--pg-backdrop-in-ms, 180ms) ease-out;
 }
 
 .preview-gallery-backdrop[data-starting-style],
 .preview-gallery-backdrop[data-ending-style] {
   opacity: 0;
+}
+
+.preview-gallery-backdrop[data-ending-style] {
+  transition: opacity var(--pg-backdrop-out-ms, 150ms) ease-in;
 }
 
 .preview-gallery-shell {
@@ -2506,7 +2862,7 @@ img {
 }
 
 /* Carries the origin-aware travel (card -> centre) so the popup keeps its own
-   fade/scale transition. Driven by the Web Animations API in the dialog. */
+   fade. Driven by the Web Animations API in the dialog. */
 .preview-gallery-origin-wrap {
   display: flex;
   flex-direction: column;
@@ -2528,39 +2884,54 @@ img {
   transform: translateY(0) scale(1);
   transform-origin: center center;
   transition:
-    opacity 180ms ease-out,
-    transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    opacity var(--pg-content-in-ms, 140ms) ease-out,
+    transform var(--pg-open-ms, 200ms) var(--pg-open-ease, cubic-bezier(0.32, 0.8, 0.32, 1));
 }
 
+/* Fallback for when there is no card to travel from (it scrolled off-screen, or
+   motion is reduced): a plain lift, owned entirely by CSS. */
 .preview-gallery-popup[data-starting-style],
 .preview-gallery-popup[data-ending-style] {
   opacity: 0;
   transform: translateY(1.25rem) scale(0.96);
 }
 
+.preview-gallery-popup[data-ending-style] {
+  transition:
+    opacity var(--pg-content-out-ms, 120ms) ease-in,
+    transform var(--pg-close-ms, 150ms) var(--pg-close-ease, cubic-bezier(0.4, 0, 1, 1));
+}
+
+/* Shrinking a playing video reads as a glitch, so it only fades. */
 .preview-gallery-popup[data-preview-media="video"][data-ending-style] {
   transform: translateY(0) scale(1);
 }
 
 /* When the wrapper is doing the positional travel, the popup only cross-fades —
    its own translate/scale would fight the origin animation. */
+.preview-gallery-popup[data-origin-motion],
+.preview-gallery-popup[data-origin-motion][data-starting-style],
+.preview-gallery-popup[data-origin-motion][data-ending-style] {
+  transform: none;
+}
+
 .preview-gallery-popup[data-origin-motion] {
-  transition: opacity 150ms ease-out;
+  transition: opacity var(--pg-content-in-ms, 140ms) ease-out;
 }
 
 .preview-gallery-popup[data-origin-motion][data-starting-style] {
   opacity: 0;
-  transform: none;
 }
 
+/* Base UI unmounts the popup when this transition ends, so on close it has to
+   outlast the wrapper's travel rather than merely match the content fade. */
 .preview-gallery-popup[data-origin-motion][data-ending-style] {
   opacity: 0;
-  transform: none;
-  transition: opacity 220ms cubic-bezier(0.5, 0, 0.35, 1);
+  transition: opacity var(--pg-close-ms, 150ms) var(--pg-close-ease, cubic-bezier(0.4, 0, 1, 1));
 }
 
 .preview-gallery-card {
-  --preview-gallery-card-padding: clamp(1.3rem, 2.4vw, 2rem);
+  --preview-gallery-card-padding: clamp(1rem, 1.7vw, 1.4rem);
   --preview-gallery-media-radius: 24px;
   --preview-gallery-card-radius: calc(var(--preview-gallery-media-radius) + var(--preview-gallery-card-padding));
   max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
@@ -2575,13 +2946,34 @@ img {
   outline: none;
   opacity: 1;
   transform: translateY(0) scale(1);
+  /* This transition belongs to the between-previews switch below, which is
+     stepped by a JS timer — hence the shared duration. */
   transition:
-    opacity 180ms ease-out,
-    transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    opacity var(--pg-switch-ms, 190ms) ease-out,
+    transform var(--pg-switch-ms, 190ms) cubic-bezier(0.2, 0, 0, 1);
   box-shadow:
     0 1px 1px rgb(0 0 0 / 0.04),
     0 18px 44px -18px rgb(0 0 0 / 0.28),
     0 48px 92px -42px rgb(0 0 0 / 0.38);
+}
+
+/* The wrapper scales the surface down to the size of the card that was clicked;
+   this layer takes the exact reciprocal, so the media and the copy sit at final
+   size for the whole flight and the growing box just reveals them. Driven by
+   the Web Animations API in the dialog, in lockstep with the wrapper. */
+.preview-gallery-card-inner {
+  transform-origin: top center;
+}
+
+/* Mid-flight the counter-scaled content overflows its box, so the shell flags
+   the travel and the surface clips rather than flashing a scrollbar. */
+.preview-gallery-shell[data-origin-animating] .preview-gallery-card {
+  overflow: hidden;
+}
+
+.preview-gallery-shell[data-origin-animating] .preview-gallery-origin-wrap,
+.preview-gallery-shell[data-origin-animating] .preview-gallery-card-inner {
+  will-change: transform;
 }
 
 .preview-gallery-card-switch-out-up {
@@ -2670,7 +3062,7 @@ img {
 .preview-gallery-title {
   margin: 0;
   color: #171717;
-  font-size: clamp(1.15rem, 1.65vw, 1.45rem);
+  font-size: clamp(0.9375rem, 1.15vw, 1.0625rem);
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: 0;
@@ -2678,10 +3070,10 @@ img {
 }
 
 .preview-gallery-description {
-  margin: 0.58rem 0 0;
+  margin: 0.5rem 0 0;
   max-width: 46rem;
   color: #777777;
-  font-size: clamp(0.98rem, 1.35vw, 1.18rem);
+  font-size: clamp(0.8125rem, 0.9vw, 0.875rem);
   font-weight: 400;
   line-height: 1.45;
   letter-spacing: 0;
@@ -2716,22 +3108,81 @@ img {
   padding: 1rem 0;
 }
 
+/* The first row sits right under the description, which already reads as a
+   break — a rule there just draws a bar across the top of the list. */
+.preview-gallery-detail-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
 .preview-gallery-detail-row:last-child {
   padding-bottom: 0;
 }
 
 .preview-gallery-detail-row dt {
   color: #8a8a8a;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   line-height: 1.35;
 }
 
 .preview-gallery-detail-row dd {
   margin: 0;
   color: #171717;
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1.35;
   text-align: right;
+}
+
+.preview-gallery-people {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem 0.85rem;
+}
+
+/* Scoped past `.preview-gallery-detail-row a` below, which underlines every
+   anchor -- these read as chips like the hero's work-history pills instead:
+   no underline, a background that arrives on hover. */
+.preview-gallery-detail-row .preview-gallery-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* Pulled back out so the resting row lines up as if the chip had no padding. */
+  margin: -0.2rem -0.4rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  color: #171717;
+  text-decoration: none;
+  transition: background-color 160ms ease;
+}
+
+.preview-gallery-detail-row .preview-gallery-person:hover,
+.preview-gallery-detail-row .preview-gallery-person:focus-visible {
+  background: #f2f2f2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-gallery-detail-row .preview-gallery-person {
+    transition: none;
+  }
+}
+
+.preview-gallery-person-avatar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  object-fit: cover;
+  background: #ececec;
+  color: #6f6f6f;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
 }
 
 .preview-gallery-detail-row a {
@@ -3112,10 +3563,16 @@ img {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mosaic-row-item {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  /* The global reduced-motion reset at the bottom of this file zeroes
+     animation-duration but not animation-delay, so a delayed `both`-filled
+     entrance still holds its from-state -- invisible -- for the whole delay
+     window. These selectors have to match or beat the specificity of the rules
+     that set the animation, or those win despite coming earlier -- a bare
+     `.mosaic-row-item` reset would not reach `.mosaic-work-intro
+     .mosaic-row-item`. */
+  .mosaic-work-intro .mosaic-row-item,
+  .mosaic-hero-profile-animated > * {
+    animation: none;
   }
 
   .mosaic-row-card-paginated .mosaic-row-media,
@@ -3168,9 +3625,6 @@ img {
     --preview-gallery-media-radius: 16px;
   }
 
-  .preview-gallery-media-frame {
-  }
-
   .preview-gallery-media {
     max-height: 32vh;
   }
@@ -3183,6 +3637,10 @@ img {
 
   .preview-gallery-detail-row dd {
     text-align: left;
+  }
+
+  .preview-gallery-people {
+    justify-content: flex-start;
   }
 
   .preview-gallery-toolbar {
