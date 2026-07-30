@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react"
 
 import type { SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
@@ -10,6 +18,7 @@ type AboutPanelProps = {
 
 type AboutSticker = {
   emoji: string
+  label: string
   /** Percentage offsets from the panel edges. Only the two set here are applied. */
   top?: string
   bottom?: string
@@ -24,19 +33,28 @@ type AboutSticker = {
  * places, the drawing, the tooling, the code. The offsets are hand-picked
  * rather than randomised at runtime so the scatter stays put across
  * re-renders, and they sit in the panel's side gutters to stay clear of the
- * 34rem text column. Purely decorative, so they carry no alt text, and they
- * are hidden below 900px where the panel has no spare room for them.
+ * 34rem text column. Each sticker supports pointer dragging and keyboard
+ * movement, and they are hidden below 900px where the panel has no spare room.
  */
 const aboutStickers: AboutSticker[] = [
-  { emoji: "🌴", top: "7%", left: "7%", rotate: -12 },
-  { emoji: "🎨", top: "38%", left: "3%", rotate: 15 },
-  { emoji: "✏️", bottom: "28%", left: "9%", rotate: 14 },
-  { emoji: "🌊", bottom: "5%", left: "4%", rotate: -9 },
-  { emoji: "🗽", top: "10%", right: "8%", rotate: 9 },
-  { emoji: "💻", top: "40%", right: "3%", rotate: -6 },
-  { emoji: "🤖", bottom: "30%", right: "9%", rotate: 11 },
-  { emoji: "🛠️", bottom: "6%", right: "4%", rotate: -7 },
+  { emoji: "🌴", label: "Palm tree", top: "7%", left: "7%", rotate: -12 },
+  { emoji: "🎨", label: "Artist palette", top: "38%", left: "3%", rotate: 15 },
+  { emoji: "✏️", label: "Pencil", bottom: "28%", left: "9%", rotate: 14 },
+  { emoji: "🌊", label: "Ocean wave", bottom: "5%", left: "4%", rotate: -9 },
+  { emoji: "🗽", label: "Statue of Liberty", top: "10%", right: "8%", rotate: 9 },
+  { emoji: "💻", label: "Laptop", top: "40%", right: "3%", rotate: -6 },
+  { emoji: "🤖", label: "Robot", bottom: "30%", right: "9%", rotate: 11 },
+  { emoji: "🛠️", label: "Tools", bottom: "6%", right: "4%", rotate: -7 },
 ]
+
+type Offset = { x: number; y: number }
+
+type OffsetBounds = {
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+}
 
 type DragState = {
   emoji: string
@@ -45,33 +63,95 @@ type DragState = {
   originY: number
   startX: number
   startY: number
+  bounds: OffsetBounds
 }
 
-type Offset = { x: number; y: number }
+const keyboardMoveDistance = 16
+const stickerEdgeInset = 4
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
+function clampOffset(offset: Offset, bounds: OffsetBounds): Offset {
+  return {
+    x: clamp(offset.x, bounds.minX, bounds.maxX),
+    y: clamp(offset.y, bounds.minY, bounds.maxY),
+  }
+}
+
+function getOffsetBounds(element: HTMLButtonElement, offset: Offset): OffsetBounds | null {
+  const panel = element.parentElement
+  if (!panel) return null
+
+  const panelRect = panel.getBoundingClientRect()
+  const stickerRect = element.getBoundingClientRect()
+
+  return {
+    minX: offset.x + panelRect.left + stickerEdgeInset - stickerRect.left,
+    maxX: offset.x + panelRect.right - stickerEdgeInset - stickerRect.right,
+    minY: offset.y + panelRect.top + stickerEdgeInset - stickerRect.top,
+    maxY: offset.y + panelRect.bottom - stickerEdgeInset - stickerRect.bottom,
+  }
+}
 
 /**
- * Peel-and-move stickers. Each one keeps a translation offset in state, so a
- * drag survives re-renders but resets when the panel is closed and reopened.
- * The dragged sticker is raised above its siblings and stays raised after the
- * drop, which keeps a stack of overlapping stickers in the order they were
- * last touched.
+ * Peel-and-move stickers. Each one keeps a bounded translation offset in state,
+ * so pointer and keyboard movement survives re-renders but resets when the
+ * panel is closed and reopened. The active sticker is raised above its siblings
+ * and stays raised afterward, keeping overlaps in last-touched order.
  */
-function useStickerDrag() {
+function useStickerMovement() {
   const [offsets, setOffsets] = useState<Record<string, Offset>>({})
   const [order, setOrder] = useState<string[]>([])
   const [dragging, setDragging] = useState<string | null>(null)
   const dragRef = useRef<DragState | null>(null)
   /** Mirrors `offsets` so a drag can read the current position without a stale closure. */
   const offsetsRef = useRef<Record<string, Offset>>({})
+  const boundsRef = useRef<Record<string, OffsetBounds>>({})
 
-  const onPointerDown = useCallback((event: PointerEvent<HTMLSpanElement>, emoji: string) => {
+  useEffect(() => {
+    const invalidateBounds = () => {
+      boundsRef.current = {}
+    }
+
+    window.addEventListener("resize", invalidateBounds)
+    return () => window.removeEventListener("resize", invalidateBounds)
+  }, [])
+
+  const setStickerOffset = useCallback((emoji: string, offset: Offset) => {
+    offsetsRef.current = { ...offsetsRef.current, [emoji]: offset }
+    setOffsets(offsetsRef.current)
+  }, [])
+
+  const raiseSticker = useCallback((emoji: string) => {
+    setOrder((current) => [...current.filter((item) => item !== emoji), emoji])
+  }, [])
+
+  const getStickerBounds = useCallback(
+    (emoji: string, element: HTMLButtonElement, offset: Offset) => {
+      const cachedBounds = boundsRef.current[emoji]
+      if (cachedBounds) return cachedBounds
+
+      const bounds = getOffsetBounds(element, offset)
+      if (bounds) boundsRef.current = { ...boundsRef.current, [emoji]: bounds }
+      return bounds
+    },
+    [],
+  )
+
+  const onPointerDown = useCallback((event: PointerEvent<HTMLButtonElement>, emoji: string) => {
     // Left button / touch / pen only, so a right-click doesn't strand a drag.
     if (event.button !== 0) return
 
     event.preventDefault()
+    event.currentTarget.focus({ preventScroll: true })
     event.currentTarget.setPointerCapture(event.pointerId)
 
     const origin = offsetsRef.current[emoji] ?? { x: 0, y: 0 }
+    const bounds = getStickerBounds(emoji, event.currentTarget, origin)
+    if (!bounds) return
+
     dragRef.current = {
       emoji,
       pointerId: event.pointerId,
@@ -79,22 +159,29 @@ function useStickerDrag() {
       originY: origin.y,
       startX: event.clientX,
       startY: event.clientY,
+      bounds,
     }
     setDragging(emoji)
-    setOrder((current) => [...current.filter((item) => item !== emoji), emoji])
-  }, [])
+    raiseSticker(emoji)
+  }, [getStickerBounds, raiseSticker])
 
-  const onPointerMove = useCallback((event: PointerEvent<HTMLSpanElement>) => {
+  const onPointerMove = useCallback((event: PointerEvent<HTMLButtonElement>) => {
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
 
-    const x = drag.originX + (event.clientX - drag.startX)
-    const y = drag.originY + (event.clientY - drag.startY)
-    offsetsRef.current = { ...offsetsRef.current, [drag.emoji]: { x, y } }
-    setOffsets(offsetsRef.current)
-  }, [])
+    setStickerOffset(
+      drag.emoji,
+      clampOffset(
+        {
+          x: drag.originX + (event.clientX - drag.startX),
+          y: drag.originY + (event.clientY - drag.startY),
+        },
+        drag.bounds,
+      ),
+    )
+  }, [setStickerOffset])
 
-  const onPointerUp = useCallback((event: PointerEvent<HTMLSpanElement>) => {
+  const onPointerUp = useCallback((event: PointerEvent<HTMLButtonElement>) => {
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
 
@@ -102,7 +189,40 @@ function useStickerDrag() {
     setDragging(null)
   }, [])
 
-  return { offsets, order, dragging, onPointerDown, onPointerMove, onPointerUp }
+  const onKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>, emoji: string) => {
+      const movementByKey: Partial<Record<string, Offset>> = {
+        ArrowUp: { x: 0, y: -keyboardMoveDistance },
+        ArrowDown: { x: 0, y: keyboardMoveDistance },
+        ArrowLeft: { x: -keyboardMoveDistance, y: 0 },
+        ArrowRight: { x: keyboardMoveDistance, y: 0 },
+      }
+      const movement = movementByKey[event.key]
+      if (!movement && event.key !== "Home") return
+
+      event.preventDefault()
+      const origin = offsetsRef.current[emoji] ?? { x: 0, y: 0 }
+      const bounds = getStickerBounds(emoji, event.currentTarget, origin)
+      const nextOffset =
+        movement === undefined
+          ? { x: 0, y: 0 }
+          : { x: origin.x + movement.x, y: origin.y + movement.y }
+
+      setStickerOffset(emoji, bounds ? clampOffset(nextOffset, bounds) : nextOffset)
+      raiseSticker(emoji)
+    },
+    [getStickerBounds, raiseSticker, setStickerOffset],
+  )
+
+  return {
+    offsets,
+    order,
+    dragging,
+    onKeyDown,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+  }
 }
 
 const hobbies = [
@@ -125,7 +245,8 @@ const elsewhereLinks = (links: SiteLinks) => [
 
 export function AboutPanel({ links, onClose }: AboutPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
-  const { offsets, order, dragging, onPointerDown, onPointerMove, onPointerUp } = useStickerDrag()
+  const { offsets, order, dragging, onKeyDown, onPointerDown, onPointerMove, onPointerUp } =
+    useStickerMovement()
 
   useEffect(() => {
     panelRef.current?.focus({ preventScroll: true })
@@ -146,11 +267,14 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
           const stackIndex = order.indexOf(sticker.emoji)
 
           return (
-            <span
+            <button
               key={sticker.emoji}
-              aria-hidden="true"
+              type="button"
+              aria-label={`${sticker.label} sticker. Use arrow keys to move; Home to reset.`}
+              aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home"
               className="mosaic-about-sticker"
               data-dragging={dragging === sticker.emoji ? "" : undefined}
+              onKeyDown={(event) => onKeyDown(event, sticker.emoji)}
               onPointerDown={(event) => onPointerDown(event, sticker.emoji)}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
@@ -168,8 +292,8 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
                 } as CSSProperties
               }
             >
-              {sticker.emoji}
-            </span>
+              <span aria-hidden="true">{sticker.emoji}</span>
+            </button>
           )
         })}
 

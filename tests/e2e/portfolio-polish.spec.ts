@@ -143,6 +143,54 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   expect(errors).toEqual([])
 })
 
+test("lets keyboard users move and reset about stickers", async ({ page }) => {
+  await page.setViewportSize({ width: 1000, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.locator(".mosaic-avatar-button").click()
+
+  const sticker = page.getByRole("button", { name: /Palm tree sticker/ })
+  await expect(sticker).toBeVisible()
+  await sticker.focus()
+
+  const initialBox = await sticker.boundingBox()
+  expect(initialBox).not.toBeNull()
+
+  await sticker.press("ArrowRight")
+  await expect
+    .poll(async () => (await sticker.boundingBox())?.x)
+    .toBeGreaterThan(initialBox!.x)
+
+  await sticker.press("Home")
+  await expect.poll(async () => (await sticker.boundingBox())?.x).toBeCloseTo(initialBox!.x, 0)
+  await expect(sticker).toBeFocused()
+})
+
+test("keeps moved about stickers recoverable inside the panel", async ({ page }) => {
+  await page.setViewportSize({ width: 1000, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.locator(".mosaic-avatar-button").click()
+
+  const panel = page.locator(".mosaic-about-panel")
+  const sticker = page.getByRole("button", { name: /Palm tree sticker/ })
+  const panelBox = await panel.boundingBox()
+  const stickerBox = await sticker.boundingBox()
+  expect(panelBox).not.toBeNull()
+  expect(stickerBox).not.toBeNull()
+
+  await sticker.focus()
+  for (let step = 0; step < 100; step += 1) {
+    await sticker.press("ArrowRight")
+  }
+
+  const movedBox = await sticker.boundingBox()
+  expect(movedBox).not.toBeNull()
+  expect(movedBox!.x).toBeGreaterThan(stickerBox!.x + 500)
+  expect(movedBox!.x).toBeGreaterThanOrEqual(panelBox!.x)
+  expect(movedBox!.x + movedBox!.width).toBeLessThanOrEqual(panelBox!.x + panelBox!.width)
+})
+
 test("keeps desktop gallery navigation fixed near the modal top", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
