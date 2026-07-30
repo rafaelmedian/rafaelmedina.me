@@ -538,33 +538,39 @@ img {
   transform: scale(0.96);
 }
 
+/* The hero has to lead the work cards. The top mosaic row now starts transparent
+   despite the +1240ms LCP cost described under `.mosaic-work-intro`, so the two
+   cascades need to remain distinct: every hero item is in flight by 200ms, the
+   first four have landed by 500ms, and the cards start lifting at 520ms before
+   the final hero item settles at ~580ms.
+   Keep the last delay plus the duration under `--work-intro-base` + 60ms. */
 .mosaic-hero-profile-animated > * {
-  animation: mosaic-intro-rise 620ms var(--ease-smooth) both;
+  animation: mosaic-intro-rise 380ms var(--ease-smooth) both;
   will-change: opacity, transform;
 }
 
 .mosaic-hero-profile-animated > :nth-child(1) {
-  animation-delay: 40ms;
+  animation-delay: 0ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(2) {
-  animation-delay: 110ms;
+  animation-delay: 40ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(3) {
-  animation-delay: 170ms;
+  animation-delay: 80ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(4) {
-  animation-delay: 230ms;
+  animation-delay: 120ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(5) {
-  animation-delay: 290ms;
+  animation-delay: 160ms;
 }
 
 .mosaic-hero-profile-animated > :nth-child(6) {
-  animation-delay: 350ms;
+  animation-delay: 200ms;
 }
 
 @keyframes mosaic-intro-rise {
@@ -882,11 +888,19 @@ img {
    swap rule above silently stops at nth-child(4).
    Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
    700px the rows collapse into one flex column, and a smaller row step would
-   make a card arrive before the card above it. */
+   make a card arrive before the card above it.
+   The base is tuned against the hero cascade above, which now runs 0ms to 200ms
+   delays at 380ms each. Under the previous 40ms-to-350ms hero schedule, the old
+   320ms card base let work begin before the last two hero items, so both
+   cascades read as one undifferentiated wash. The 520ms base now puts the first
+   card after every hero item is in flight and the first four have landed, so
+   the mosaic answers the hero instead of arriving with it. The steps are
+   tightened to pay for the later start -- the last card still begins under
+   800ms. */
 .mosaic-work-intro {
-  --work-intro-base: 320ms;
-  --work-intro-row-step: 90ms;
-  --work-intro-col-step: 40ms;
+  --work-intro-base: 520ms;
+  --work-intro-row-step: 70ms;
+  --work-intro-col-step: 32ms;
 }
 
 /* opacity and translateY only. A scale would change the measured box of
@@ -894,7 +908,7 @@ img {
    tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
    stays under the 1rem row gap, so a rising card never covers the one below. */
 .mosaic-work-intro .mosaic-row-item {
-  animation: mosaic-intro-rise 540ms var(--ease-smooth) both;
+  animation: mosaic-intro-rise 480ms var(--ease-smooth) both;
   animation-delay: calc(
     var(--work-intro-base) +
     var(--work-intro-row, 0) * var(--work-intro-row-step) +
@@ -902,27 +916,26 @@ img {
   );
 }
 
-/* The top row carries the LCP element (the largest poster), and wrapping that
-   element in an opacity animation defers its recorded paint by ~300ms no matter
-   how short the delay is -- measured at Fast 3G + 4x CPU, LCP is ~384ms with no
-   entrance and ~696ms once the row-0 item fades, and shortening
-   `--work-intro-base` makes it no better. So the top row rises without fading.
-   Nothing is lost: `.mosaic-row-media` already owns a fade through its blur-up,
-   so the card still reads as arriving, and LCP measures ~376ms -- back at
-   baseline. Keep this row transform-only. */
-@keyframes mosaic-intro-lift {
-  from {
-    transform: translateY(0.8rem);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-.mosaic-work-intro .mosaic-row:first-child .mosaic-row-item {
-  animation-name: mosaic-intro-lift;
-}
+/* The top row used to be exempted from the fade (a transform-only
+   `mosaic-intro-lift` keyframe, now deleted) to protect LCP. That exemption
+   left it fully opaque at first paint, so the cards were on screen before the
+   header existed -- the one thing this entrance must not do. Every row fades
+   now.
+   Know what it costs. The LCP element is the row-0 video poster
+   (Projects/shot-small-9-poster.webp). Measured at Fast 3G + 4x CPU, cold
+   context: 845ms with the top row transform-only, 2085ms once it fades.
+   The +1240ms is FIXED, not tunable. The same element wins LCP either way, and
+   the penalty does not scale with the animation: base 520ms + 540ms duration,
+   base 520ms + 360ms, and base 60ms + 360ms (fade fully finished by 420ms) all
+   measured ~2085ms. Chrome defers an opacity-animated element's recorded paint
+   to a later repaint however brief the fade is. There is no timing that buys
+   the metric back -- the choice is binary, which is why the choreography above
+   is tuned purely for feel.
+   Perceptually the cards are on screen at ~1000ms (base + duration); the 2085ms
+   is the metric catching up afterwards. That is still inside the 2.5s "good"
+   threshold, but the headroom is thin -- re-measure before putting anything
+   else on the critical path, and do not try to win it back by shortening the
+   fade. That has been tried three ways and does nothing. */
 
 .mosaic-about {
   display: block;
@@ -3544,11 +3557,10 @@ img {
      animation-duration but not animation-delay, so a delayed `both`-filled
      entrance still holds its from-state -- invisible -- for the whole delay
      window. These selectors have to match or beat the specificity of the rules
-     that set the animation, or those win despite coming earlier -- the row-0
-     override in particular sets `animation-name` at a higher specificity than a
-     bare `.mosaic-row-item` reset could reach. */
+     that set the animation, or those win despite coming earlier -- a bare
+     `.mosaic-row-item` reset would not reach `.mosaic-work-intro
+     .mosaic-row-item`. */
   .mosaic-work-intro .mosaic-row-item,
-  .mosaic-work-intro .mosaic-row:first-child .mosaic-row-item,
   .mosaic-hero-profile-animated > * {
     animation: none;
   }
