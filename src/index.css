@@ -881,6 +881,16 @@ img {
     drop-shadow(-0.02em 0.02em 0 #fff);
 
   position: absolute;
+  display: grid;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
   font-size: clamp(2rem, 3.4vw, 3rem);
   line-height: 1;
   filter: var(--sticker-cut) drop-shadow(0.02em 0.045em 0.035em rgb(0 0 0 / 0.3));
