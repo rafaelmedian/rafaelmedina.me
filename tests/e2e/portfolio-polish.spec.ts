@@ -403,7 +403,7 @@ test("keeps the work-card entrance free of scale and horizontal travel", async (
   // is asserted at exactly 420px above, and only opacity plus translateY leave
   // that measurement alone.
   const keyframes = await page.evaluate(() => {
-    const wanted = ["mosaic-intro-rise", "mosaic-intro-lift"]
+    const wanted = ["mosaic-intro-rise"]
     const found: Record<string, string[]> = {}
     for (const sheet of [...document.styleSheets]) {
       for (const rule of [...sheet.cssRules]) {
@@ -415,7 +415,7 @@ test("keeps the work-card entrance free of scale and horizontal travel", async (
     return found
   })
 
-  expect(Object.keys(keyframes).sort()).toEqual(["mosaic-intro-lift", "mosaic-intro-rise"])
+  expect(Object.keys(keyframes)).toEqual(["mosaic-intro-rise"])
   for (const transforms of Object.values(keyframes)) {
     for (const transform of transforms) {
       expect(transform === "" || /^translateY\([^)]+\)$/.test(transform)).toBe(true)
@@ -423,10 +423,11 @@ test("keeps the work-card entrance free of scale and horizontal travel", async (
   }
 })
 
-// The top row holds the LCP element. Fading it defers the recorded paint by
-// ~300ms regardless of the delay, so that row rises without animating its own
-// opacity and lets the media blur-up own the fade. See index.css.
-test("keeps the top row of work cards out of the opacity entrance", async ({ page }) => {
+// No work card may be on screen before the header is. The top row was once
+// exempted from the fade to protect LCP, which made it opaque at first paint --
+// cards visible above a header that had not arrived yet. That exemption costs
+// +1240ms of LCP to undo and is deliberately not coming back; see index.css.
+test("hides every work card at first paint, including the top row", async ({ page }) => {
   await page.goto("/")
 
   const rows = await page.evaluate(() =>
@@ -436,13 +437,20 @@ test("keeps the top row of work cards out of the opacity entrance", async ({ pag
           [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).animationName),
         ),
       ],
+      // The from-state is what is on screen at first paint, since every card
+      // holds it through its delay via `both`.
+      opacities: [
+        ...new Set(
+          [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).opacity),
+        ),
+      ],
     })),
   )
 
   expect(rows.length).toBeGreaterThan(1)
-  expect(rows[0].names).toEqual(["mosaic-intro-lift"])
-  for (const row of rows.slice(1)) {
+  for (const row of rows) {
     expect(row.names).toEqual(["mosaic-intro-rise"])
+    expect(row.opacities).toEqual(["0"])
   }
 })
 
@@ -485,6 +493,25 @@ test("does not replay the work-card intro when reduced motion is disabled later"
   expect(states.every(({ animationName, opacity }) => animationName === "none" && opacity === "1")).toBe(true)
 })
 
+// The hero and the mosaic are two beats, not one. When the first card started
+// before the last hero item, the cascades overlapped and read as a single wash.
+test("starts the work-card intro after the hero cascade is fully in flight", async ({ page }) => {
+  await page.goto("/")
+
+  const { lastHeroDelay, firstCardDelay } = await page.evaluate(() => {
+    const delayOf = (element: Element) => parseFloat(getComputedStyle(element).animationDelay)
+    const hero = [...document.querySelectorAll(".mosaic-hero-profile-animated > *")]
+    const cards = [...document.querySelectorAll(".mosaic-row-item")]
+    return {
+      lastHeroDelay: Math.max(...hero.map(delayOf)),
+      firstCardDelay: Math.min(...cards.map(delayOf)),
+    }
+  })
+
+  expect(lastHeroDelay).toBeGreaterThan(0)
+  expect(firstCardDelay).toBeGreaterThan(lastHeroDelay)
+})
+
 test("keeps the work-card entrance inside its delay budget", async ({ page }) => {
   await page.goto("/")
 
@@ -495,7 +522,7 @@ test("keeps the work-card entrance inside its delay budget", async ({ page }) =>
       ),
     ),
   )
-  // Last card starts at 320ms + 3 x 90ms + 2 x 40ms = 670ms. The ceiling is
+  // Last card starts at 520ms + 3 x 70ms + 2 x 32ms = 754ms. The ceiling is
   // deliberately loose -- it guards against a runaway intro, not the exact base.
-  expect(maxDelay).toBeLessThanOrEqual(0.7)
+  expect(maxDelay).toBeLessThanOrEqual(0.85)
 })

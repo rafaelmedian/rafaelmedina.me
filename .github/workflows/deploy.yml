@@ -30,7 +30,11 @@ jobs:
 
       - run: npm ci
 
+      # Vite inlines this at build time. Unset means the analytics code is
+      # tree-shaken away and nothing is tracked.
       - run: npm run build
+        env:
+          VITE_GA_MEASUREMENT_ID: ${{ vars.VITE_GA_MEASUREMENT_ID }}
 
       - name: Check the custom domain survived the build
         run: |
