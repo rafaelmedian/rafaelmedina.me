@@ -1,5 +1,7 @@
 import type { PropsWithChildren } from "react"
 
+import { applyPointerTilt, logoChipTilt, nestedChipTilt, resetPointerTilt } from "../lib/pointerTilt"
+
 type HoverLogoLinkProps = PropsWithChildren<{
   href: string
   logoUrls: string[]
@@ -9,29 +11,18 @@ type HoverLogoLinkProps = PropsWithChildren<{
 }>
 
 function handlePointerMove(event: React.PointerEvent<HTMLAnchorElement>) {
-  const rect = event.currentTarget.getBoundingClientRect()
-  const relativeX = rect.width === 0 ? 0 : (event.clientX - rect.left) / rect.width - 0.5
-  const relativeY = rect.height === 0 ? 0 : (event.clientY - rect.top) / rect.height - 0.5
+  const target = event.currentTarget
+  const box = target.getBoundingClientRect()
 
-  event.currentTarget.style.setProperty("--mosaic-hover-anchor-x", `${(relativeX * 12).toFixed(2)}px`)
-  event.currentTarget.style.setProperty("--mosaic-hover-anchor-y", `${(relativeY * 4).toFixed(2)}px`)
-  event.currentTarget.style.setProperty("--mosaic-hover-tilt-x", `${(-relativeY * 4).toFixed(2)}deg`)
-  event.currentTarget.style.setProperty("--mosaic-hover-tilt-y", `${(relativeX * 8).toFixed(2)}deg`)
-  event.currentTarget.style.setProperty("--mosaic-hover-lift", `${(1 + Math.abs(relativeX) * 0.01).toFixed(3)}`)
-  event.currentTarget.style.setProperty("--mosaic-hover-chip-tilt-x", `${(-relativeY * 2).toFixed(2)}deg`)
-  event.currentTarget.style.setProperty("--mosaic-hover-chip-tilt-y", `${(relativeX * 4).toFixed(2)}deg`)
-  event.currentTarget.style.setProperty("--mosaic-hover-chip-lift", `${(1 + Math.abs(relativeX) * 0.006).toFixed(3)}`)
+  // The pill leans; the logos inside it lean half as much, so they parallax
+  // against their own container instead of moving as one rigid slab.
+  applyPointerTilt({ target, box, pointer: event, scales: logoChipTilt, prefix: "mosaic-hover" })
+  applyPointerTilt({ target, box, pointer: event, scales: nestedChipTilt, prefix: "mosaic-hover-chip" })
 }
 
 function resetPointerAnchor(event: React.PointerEvent<HTMLAnchorElement>) {
-  event.currentTarget.style.setProperty("--mosaic-hover-anchor-x", "0px")
-  event.currentTarget.style.setProperty("--mosaic-hover-anchor-y", "0px")
-  event.currentTarget.style.setProperty("--mosaic-hover-tilt-x", "0deg")
-  event.currentTarget.style.setProperty("--mosaic-hover-tilt-y", "0deg")
-  event.currentTarget.style.setProperty("--mosaic-hover-lift", "1")
-  event.currentTarget.style.setProperty("--mosaic-hover-chip-tilt-x", "0deg")
-  event.currentTarget.style.setProperty("--mosaic-hover-chip-tilt-y", "0deg")
-  event.currentTarget.style.setProperty("--mosaic-hover-chip-lift", "1")
+  resetPointerTilt(event.currentTarget, "mosaic-hover")
+  resetPointerTilt(event.currentTarget, "mosaic-hover-chip")
 }
 
 export function HoverLogoLink({ href, logoUrls, className, ariaLabel, title, children }: HoverLogoLinkProps) {

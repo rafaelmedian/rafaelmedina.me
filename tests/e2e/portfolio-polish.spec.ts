@@ -171,20 +171,124 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 12")
 })
 
-test("keeps a semantic disclosure control while work-history details are expanded", async ({ page }) => {
+test("travels one role-bearing work-history popover between company triggers without shifting the page", async ({ page }) => {
   await page.goto("/")
-  const disclosure = page.getByRole("button", { name: "0x.org and Matcha.xyz" })
-  await disclosure.click()
+  const location = page.locator(".mosaic-profile-location")
+  await location.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const initialLocationBox = await location.boundingBox()
+  const popover = page.locator(".mosaic-work-history-popover")
+  const onit = page.getByRole("button", { name: "Onit" })
 
-  const expandedControl = page.getByRole("button", { name: "Collapse 0x.org and Matcha.xyz details" })
-  await expect(expandedControl).toHaveAttribute("aria-expanded", "true")
-  const controlledId = await expandedControl.getAttribute("aria-controls")
-  expect(controlledId).toBeTruthy()
-  await expect(page.locator(`#${controlledId}`)).toBeVisible()
+  await onit.hover()
+  await expect(popover).toBeVisible()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Onit")
+  await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
+  const visitLink = popover.getByRole("link", { name: "Visit onit.com" })
+  await expect(visitLink).toBeVisible()
+  await expect(popover).toHaveCSS("text-align", "left")
+  await expect(visitLink).toHaveCSS("background-color", "rgb(242, 242, 242)")
+  await expect(page.locator(".mosaic-work-history")).toHaveCSS("z-index", "40")
+  await expect(popover).toHaveAttribute("data-side", "above")
+  await expect(popover.locator(".mosaic-work-history-popover-arrow")).toHaveCSS("border-radius", "3px")
+  const longestPopoverTransition = await popover.evaluate((element) =>
+    Math.max(
+      ...getComputedStyle(element)
+        .transitionDuration.split(",")
+        .map((duration) => Number.parseFloat(duration) * (duration.includes("ms") ? 0.001 : 1)),
+    ),
+  )
+  expect(longestPopoverTransition).toBeLessThanOrEqual(0.14)
 
-  await expandedControl.focus()
-  await expandedControl.press("Enter")
-  await expect(page.getByRole("button", { name: "0x.org and Matcha.xyz" })).toBeVisible()
+  const onitPopoverBox = await popover.boundingBox()
+  const onitLocationBox = await location.boundingBox()
+  expect(initialLocationBox).not.toBeNull()
+  expect(onitPopoverBox).not.toBeNull()
+  expect(onitLocationBox!.y).toBeCloseTo(initialLocationBox!.y, 0)
+
+  await page.getByRole("button", { name: "Moody's" }).hover()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Moody's")
+  await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
+  expect(
+    await popover.evaluate(
+      (element) => element.getAnimations({ subtree: true }).filter((animation) => animation.playState !== "finished").length,
+    ),
+  ).toBe(0)
+  expect((await page.locator(".mosaic-work-history-popover").count())).toBe(1)
+  expect((await popover.boundingBox())!.x).not.toBe(onitPopoverBox!.x)
+  expect((await location.boundingBox())!.y).toBeCloseTo(initialLocationBox!.y, 0)
+
+  await page.getByRole("button", { name: "0x.org and Matcha.xyz" }).hover()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("0x.org and Matcha.xyz")
+
+  await page.getByRole("button", { name: "Google" }).hover()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Google")
+  await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
+
+  await page.getByRole("button", { name: "Protector and Patrol" }).hover()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Protector and Patrol")
+  await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
+})
+
+test("opens the work-history popover from the keyboard and toggles it on touch", async ({ page }) => {
+  await page.goto("/")
+  const onit = page.getByRole("button", { name: "Onit" })
+  const popover = page.locator(".mosaic-work-history-popover")
+
+  await onit.focus()
+  await expect(popover).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(popover).toBeHidden()
+  await expect(onit).toBeFocused()
+
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  const mobileOnit = page.getByRole("button", { name: "Onit" })
+  const mobilePopover = page.locator(".mosaic-work-history-popover")
+  await mobileOnit.click()
+  await expect(mobilePopover).toBeVisible()
+  await mobileOnit.click()
+  await expect(mobilePopover).toBeHidden()
+})
+
+test("keeps the work-history popover positioned with reduced motion", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const onit = page.getByRole("button", { name: "Onit" })
+  const popover = page.locator(".mosaic-work-history-popover")
+  await onit.focus()
+  await expect(popover).toBeVisible()
+
+  const triggerBox = await onit.boundingBox()
+  const popoverBox = await popover.boundingBox()
+  expect(triggerBox).not.toBeNull()
+  expect(popoverBox).not.toBeNull()
+  expect(popoverBox!.x).toBeGreaterThanOrEqual(0)
+  expect(popoverBox!.x + popoverBox!.width).toBeLessThanOrEqual(mobileViewport.width)
+  expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(triggerBox!.y)
+})
+
+test("moves the work-history popover below its trigger near the viewport top", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const onit = page.getByRole("button", { name: "Onit" })
+  const popover = page.locator(".mosaic-work-history-popover")
+  await onit.focus()
+  await expect(popover).toBeVisible()
+  await expect(popover).toHaveAttribute("data-side", "above")
+
+  await page.evaluate(() => window.scrollBy(0, 180))
+  await expect(popover).toHaveAttribute("data-side", "below")
+  await popover.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  const triggerBox = await onit.boundingBox()
+  const popoverBox = await popover.boundingBox()
+  expect(triggerBox).not.toBeNull()
+  expect(popoverBox).not.toBeNull()
+  expect(popoverBox!.y).toBeGreaterThanOrEqual(triggerBox!.y + triggerBox!.height)
+  expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
 test("shows project captions and contains Protector artwork on touch layouts", async ({ page }) => {
