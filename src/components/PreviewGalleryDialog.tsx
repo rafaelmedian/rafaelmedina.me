@@ -3,7 +3,7 @@ import { useSound } from "@web-kits/audio/react"
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
-import type { PortfolioCard } from "../data/portfolio"
+import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { backSound, nextSound, openSound } from "../lib/sounds"
 
 type PreviewGalleryDialogProps = {
@@ -202,6 +202,22 @@ function getPreviewIndustry(card: PortfolioCard) {
   return "Product Design"
 }
 
+function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
+  // Simon was the only other designer on the homepage and multiwallet work.
+  if (card.title.includes("Homepage") || card.title.includes("Multiwallet")) return [collaborators.simon]
+  if (card.title.includes("Matcha")) return [collaborators.simon, collaborators.jakub]
+  if (card.title.includes("Protector") || card.title.includes("Popparazi")) return [collaborators.nick]
+  return []
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((part) => part[0] ?? "")
+    .join("")
+}
+
 function getPreviewLink(card: PortfolioCard) {
   if (card.ctaHref && card.ctaHref !== "#") return card.ctaHref
   if (card.title.includes("Matcha")) return "https://matcha.xyz"
@@ -235,10 +251,11 @@ export function PreviewGalleryDialog({
   const activeCard = cards[safeIndex]
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
   const activeLink = activeCard ? getPreviewLink(activeCard) : ""
+  const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
   const activeMetaRows = activeCard
     ? [
+        // No "Project" row — the dialog title directly above already says it.
         ["Product", getPreviewProduct(activeCard)],
-        ["Project", activeCard.title],
         ["Industry", getPreviewIndustry(activeCard)],
       ]
     : []
@@ -579,6 +596,42 @@ export function PreviewGalleryDialog({
                           <dd>{value}</dd>
                         </div>
                       ))}
+                      {activeCollaborators.length > 0 ? (
+                        <div className="preview-gallery-detail-row">
+                          <dt>Team</dt>
+                          <dd>
+                            <ul className="preview-gallery-people">
+                              {activeCollaborators.map((person) => (
+                                <li key={person.href}>
+                                  <a
+                                    className="preview-gallery-person"
+                                    href={person.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    {person.photo ? (
+                                      <img
+                                        className="preview-gallery-person-avatar"
+                                        src={person.photo}
+                                        alt=""
+                                        width={22}
+                                        height={22}
+                                        loading="lazy"
+                                        decoding="async"
+                                      />
+                                    ) : (
+                                      <span className="preview-gallery-person-avatar" aria-hidden="true">
+                                        {getInitials(person.name)}
+                                      </span>
+                                    )}
+                                    <span className="preview-gallery-person-name">{person.name}</span>
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </dd>
+                        </div>
+                      ) : null}
                       {activeLink ? (
                         <div className="preview-gallery-detail-row">
                           <dt>Link</dt>

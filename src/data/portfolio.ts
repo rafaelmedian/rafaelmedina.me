@@ -31,6 +31,19 @@ export type PortfolioCard = {
   }
 }
 
+export type Collaborator = {
+  name: string
+  href: string
+  /** Drop a square image in `public/people/` to replace the initials fallback. */
+  photo?: string
+}
+
+export const collaborators = {
+  nick: { name: "Nick Sarath", href: "https://www.linkedin.com/in/nicksarath", photo: "/people/nick.jpg" },
+  simon: { name: "Simon Rico", href: "https://www.linkedin.com/in/simonrico/", photo: "/people/simon.jpg" },
+  jakub: { name: "Jakub Antalik", href: "https://www.linkedin.com/in/jakubantalik/", photo: "/people/jakub.jpg" },
+} satisfies Record<string, Collaborator>
+
 export type SiteLinks = {
   dribbble: string
   x: string

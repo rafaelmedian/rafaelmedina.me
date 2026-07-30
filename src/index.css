@@ -2856,7 +2856,7 @@ img {
 }
 
 .preview-gallery-card {
-  --preview-gallery-card-padding: clamp(1.3rem, 2.4vw, 2rem);
+  --preview-gallery-card-padding: clamp(1rem, 1.7vw, 1.4rem);
   --preview-gallery-media-radius: 24px;
   --preview-gallery-card-radius: calc(var(--preview-gallery-media-radius) + var(--preview-gallery-card-padding));
   max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
@@ -2987,7 +2987,7 @@ img {
 .preview-gallery-title {
   margin: 0;
   color: #171717;
-  font-size: clamp(1.15rem, 1.65vw, 1.45rem);
+  font-size: clamp(0.9375rem, 1.15vw, 1.0625rem);
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: 0;
@@ -2995,10 +2995,10 @@ img {
 }
 
 .preview-gallery-description {
-  margin: 0.58rem 0 0;
+  margin: 0.5rem 0 0;
   max-width: 46rem;
   color: #777777;
-  font-size: clamp(0.98rem, 1.35vw, 1.18rem);
+  font-size: clamp(0.8125rem, 0.9vw, 0.875rem);
   font-weight: 400;
   line-height: 1.45;
   letter-spacing: 0;
@@ -3033,22 +3033,81 @@ img {
   padding: 1rem 0;
 }
 
+/* The first row sits right under the description, which already reads as a
+   break — a rule there just draws a bar across the top of the list. */
+.preview-gallery-detail-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
 .preview-gallery-detail-row:last-child {
   padding-bottom: 0;
 }
 
 .preview-gallery-detail-row dt {
   color: #8a8a8a;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   line-height: 1.35;
 }
 
 .preview-gallery-detail-row dd {
   margin: 0;
   color: #171717;
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1.35;
   text-align: right;
+}
+
+.preview-gallery-people {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem 0.85rem;
+}
+
+/* Scoped past `.preview-gallery-detail-row a` below, which underlines every
+   anchor -- these read as chips like the hero's work-history pills instead:
+   no underline, a background that arrives on hover. */
+.preview-gallery-detail-row .preview-gallery-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* Pulled back out so the resting row lines up as if the chip had no padding. */
+  margin: -0.2rem -0.4rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  color: #171717;
+  text-decoration: none;
+  transition: background-color 160ms ease;
+}
+
+.preview-gallery-detail-row .preview-gallery-person:hover,
+.preview-gallery-detail-row .preview-gallery-person:focus-visible {
+  background: #f2f2f2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-gallery-detail-row .preview-gallery-person {
+    transition: none;
+  }
+}
+
+.preview-gallery-person-avatar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  object-fit: cover;
+  background: #ececec;
+  color: #6f6f6f;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
 }
 
 .preview-gallery-detail-row a {
@@ -3497,6 +3556,10 @@ img {
 
   .preview-gallery-detail-row dd {
     text-align: left;
+  }
+
+  .preview-gallery-people {
+    justify-content: flex-start;
   }
 
   .preview-gallery-toolbar {
