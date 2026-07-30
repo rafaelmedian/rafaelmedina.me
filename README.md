@@ -12,7 +12,11 @@ npm run build    # type-check + production build into dist/
 npm run preview  # serve the production build locally
 ```
 
-Copy `.env.example` to `.env` for optional analytics/map configuration (`VITE_GA_MEASUREMENT_ID`, `VITE_ENABLE_VERCEL_ANALYTICS`, `VITE_MAPBOX_TOKEN`).
+Copy `.env.example` to `.env` for optional analytics/map configuration (`VITE_GA_MEASUREMENT_ID`, `VITE_MAPBOX_TOKEN`).
+
+Google Analytics only loads when `VITE_GA_MEASUREMENT_ID` is set at build time. In
+CI it comes from the `VITE_GA_MEASUREMENT_ID` repo variable; leave it unset locally
+and nothing is tracked in dev.
 
 ## Structure
 
