@@ -47,8 +47,13 @@ function ensureGoogleTagClient() {
   window.dataLayer = window.dataLayer ?? []
   window.gtag =
     window.gtag ??
-    function gtag(...args: unknown[]) {
-      window.dataLayer?.push(args)
+    // Must push the `arguments` object, not a rest-param array. gtag.js only
+    // treats `[object Arguments]` entries in dataLayer as commands; a plain
+    // array is read as a generic dataLayer push and silently ignored, so
+    // nothing is ever sent to Google.
+    function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer?.push(arguments)
     }
 
   window.gtag("js", new Date())
