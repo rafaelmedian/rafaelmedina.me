@@ -530,7 +530,7 @@ export function PreviewGalleryDialog({
                         autoPlay={!prefersReducedMotion}
                         playsInline
                         preload={prefersReducedMotion ? "none" : "metadata"}
-                        controls
+                        controls={prefersReducedMotion}
                         aria-label={activeCard.title}
                         className="preview-gallery-media"
                       />

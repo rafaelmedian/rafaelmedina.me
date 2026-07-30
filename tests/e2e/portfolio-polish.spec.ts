@@ -329,6 +329,11 @@ test("renders intrinsic media dimensions and does not autoplay under reduced mot
   const video = page.locator(".mosaic-row-card video.mosaic-row-media").first()
   await expect(video).toHaveAttribute("poster", /\S+/)
   expect(await video.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
+
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  const previewVideo = page.getByRole("dialog").locator("video")
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(true)
 })
 
 test("loads video sources near the viewport and pauses them after they leave it", async ({ page }) => {
