@@ -203,8 +203,22 @@ function getPreviewIndustry(card: PortfolioCard) {
 }
 
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
-  // Simon was the only other designer on the homepage and multiwallet work.
-  if (card.title.includes("Homepage") || card.title.includes("Multiwallet")) return [collaborators.simon]
+  const teammates = getPreviewTeammates(card)
+  // Credit myself alongside anyone I worked with; solo shots keep the Team row hidden.
+  return teammates.length > 0 ? [collaborators.rafael, ...teammates] : []
+}
+
+function getPreviewTeammates(card: PortfolioCard): Collaborator[] {
+  // Simon was the only other designer on the homepage, multiwallet, mobile nav and dark mode work.
+  if (
+    card.title.includes("Homepage") ||
+    card.title.includes("Multiwallet") ||
+    card.title.includes("Mobile navigation") ||
+    card.title.includes("Dark mode")
+  )
+    return [collaborators.simon]
+  // The token page and trade module were just Jakub and me.
+  if (card.title.includes("Token Page") || card.title.includes("Trade module")) return [collaborators.jakub]
   if (card.title.includes("Matcha")) return [collaborators.simon, collaborators.jakub]
   if (card.title.includes("Protector") || card.title.includes("Popparazi")) return [collaborators.nick]
   return []
