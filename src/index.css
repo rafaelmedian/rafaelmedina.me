@@ -617,6 +617,13 @@ img {
   display: flex;
   flex-direction: column;
   align-items: center;
+  cursor: pointer;
+}
+
+.mosaic-profile-meta:focus-visible {
+  outline: 2px solid #2d2d2d;
+  outline-offset: 3px;
+  border-radius: 0.2rem;
 }
 
 .mosaic-avatar {
@@ -741,6 +748,23 @@ img {
   transform: rotateY(360deg);
 }
 
+/* The name and title toggle the same view, so hovering them plays the photo's
+   flip and reveals its hint as if the photo itself were hovered. */
+.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-coin-inner {
+  transform: rotateY(180deg);
+}
+
+.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible))
+  .mosaic-avatar-coin.is-flipped
+  .mosaic-avatar-coin-inner {
+  transform: rotateY(360deg);
+}
+
+.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-hint {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0) rotate(-3deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mosaic-avatar-coin-inner {
     transition: none;
@@ -749,7 +773,11 @@ img {
   .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner,
   .mosaic-avatar-coin.is-flipped .mosaic-avatar-coin-inner,
   .mosaic-avatar-coin.is-flipped:hover .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin.is-flipped:focus-visible .mosaic-avatar-coin-inner {
+  .mosaic-avatar-coin.is-flipped:focus-visible .mosaic-avatar-coin-inner,
+  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-coin-inner,
+  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible))
+    .mosaic-avatar-coin.is-flipped
+    .mosaic-avatar-coin-inner {
     transform: none;
   }
   .mosaic-avatar-button,
@@ -761,7 +789,8 @@ img {
   /* Keep the hint's fade, drop its slide. */
   .mosaic-avatar-hint,
   .mosaic-avatar-button:hover .mosaic-avatar-hint,
-  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
+  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint,
+  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-hint {
     transform: translateY(-50%) rotate(-3deg);
     transition: opacity 120ms linear;
   }

@@ -349,6 +349,8 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const [hasSwapped, setHasSwapped] = useState(false)
   const swapTimeoutRef = useRef<number | null>(null)
   const avatarRef = useRef<HTMLButtonElement | null>(null)
+  const viewTriggerRef = useRef<HTMLElement | null>(null)
+  const metaPointerRef = useRef<{ x: number; y: number } | null>(null)
   const [loadedSources, setLoadedSources] = useState<Set<string>>(() => new Set())
   const markLoaded = (src: string) =>
     setLoadedSources((prev) => (prev.has(src) ? prev : new Set(prev).add(src)))
@@ -505,10 +507,10 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     // eslint-disable-next-line react-hooks/exhaustive-deps -- swapView is redeclared each render
   }, [view, prefersReducedMotion])
 
-  function swapView(nextView: "work" | "about") {
+  function swapView(nextView: "work" | "about", trigger = "avatar") {
     if (nextView === view) return
 
-    trackEvent("hero_view_change", { hero_view: nextView, hero_view_trigger: "avatar" })
+    trackEvent("hero_view_change", { hero_view: nextView, hero_view_trigger: trigger })
 
     // Closing from inside the panel (its back button, or Escape) unmounts
     // whatever had focus, so hand it back to the photo that opened it.
@@ -517,7 +519,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
       document.activeElement instanceof Node &&
       (document.getElementById("about-panel")?.contains(document.activeElement) ?? false)
     const restoreFocus = () => {
-      if (focusLeavesWithPanel) avatarRef.current?.focus()
+      if (focusLeavesWithPanel) (viewTriggerRef.current ?? avatarRef.current)?.focus()
     }
 
     if (prefersReducedMotion) {
@@ -553,7 +555,10 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               aria-expanded={isAboutView}
               aria-controls={isAboutView ? "about-panel" : undefined}
               aria-label={isAboutView ? "Back to selected work" : `Read about ${profile.name}`}
-              onClick={() => swapView(isAboutView ? "work" : "about")}
+              onClick={(event) => {
+                viewTriggerRef.current = event.currentTarget
+                swapView(isAboutView ? "work" : "about")
+              }}
             >
               <div className="mosaic-avatar-coin-inner">
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
@@ -579,7 +584,37 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 </span>
               </span>
             </button>
-            <div className="mosaic-profile-meta">
+            {/* Keep the semantic heading and selectable text while exposing this
+                second hit area as the same accessible disclosure control. */}
+            <div
+              className="mosaic-profile-meta"
+              role="button"
+              tabIndex={0}
+              aria-expanded={isAboutView}
+              aria-controls={isAboutView ? "about-panel" : undefined}
+              aria-label={isAboutView ? "Back to selected work" : `Read about ${profile.name}`}
+              onPointerDown={(event) => {
+                metaPointerRef.current = { x: event.clientX, y: event.clientY }
+              }}
+              onClick={(event) => {
+                // This text stays selectable, so only treat the click as a tap:
+                // a drag that travelled, or one that left a selection behind,
+                // was the reader highlighting their name, not toggling views.
+                const start = metaPointerRef.current
+                metaPointerRef.current = null
+                if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) return
+                const selection = window.getSelection()
+                if (selection && !selection.isCollapsed) return
+                viewTriggerRef.current = event.currentTarget
+                swapView(isAboutView ? "work" : "about", "profile-meta")
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") return
+                event.preventDefault()
+                viewTriggerRef.current = event.currentTarget
+                swapView(isAboutView ? "work" : "about", "profile-meta")
+              }}
+            >
               <h2>{profile.name}</h2>
               <p className="mosaic-profile-subtitle">{profile.title}</p>
             </div>
