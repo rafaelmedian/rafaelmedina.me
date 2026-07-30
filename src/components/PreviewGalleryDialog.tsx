@@ -203,11 +203,14 @@ function getPreviewIndustry(card: PortfolioCard) {
 }
 
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
+  // Rafael leads every project, so he always opens the list.
   // Simon was the only other designer on the homepage and multiwallet work.
-  if (card.title.includes("Homepage") || card.title.includes("Multiwallet")) return [collaborators.simon]
-  if (card.title.includes("Matcha")) return [collaborators.simon, collaborators.jakub]
-  if (card.title.includes("Protector") || card.title.includes("Popparazi")) return [collaborators.nick]
-  return []
+  if (card.title.includes("Homepage") || card.title.includes("Multiwallet"))
+    return [collaborators.rafael, collaborators.simon]
+  if (card.title.includes("Matcha")) return [collaborators.rafael, collaborators.simon, collaborators.jakub]
+  if (card.title.includes("Protector") || card.title.includes("Popparazi"))
+    return [collaborators.rafael, collaborators.nick]
+  return [collaborators.rafael]
 }
 
 function getInitials(name: string) {
