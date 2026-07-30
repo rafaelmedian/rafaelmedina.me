@@ -343,10 +343,14 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   )
   const [view, setView] = useState<"work" | "about">("work")
   const [isSwapping, setIsSwapping] = useState(false)
-  // The swap animation is for swaps only. On first paint the work rows are
-  // already there, and animating them would fight the hero intro and leave the
-  // mosaic mid-scale for anything measuring it.
+  // Two entrance systems share the mosaic, and `hasSwapped` picks between them:
+  // before the first swap the rows carry `.mosaic-work-intro` (the CSS-only
+  // first-load cascade, which has to be in the prerendered HTML), after it they
+  // carry `.mosaic-view-animated` (the swap stagger). Never both -- the swap
+  // animation scales the container, which would leave the mosaic mid-scale for
+  // anything measuring it if it also ran on load.
   const [hasSwapped, setHasSwapped] = useState(false)
+  const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const swapTimeoutRef = useRef<number | null>(null)
   const avatarRef = useRef<HTMLButtonElement | null>(null)
   const viewTriggerRef = useRef<HTMLElement | null>(null)
@@ -452,7 +456,12 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
 
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const syncPreference = () => setPrefersReducedMotion(mediaQuery.matches)
+    const syncPreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches)
+      // Reduced motion suppresses animationend, so retire the one-shot marker
+      // here before a later preference change can start the intro mid-session.
+      if (mediaQuery.matches) setHasCompletedWorkIntro(true)
+    }
     syncPreference()
 
     if (typeof mediaQuery.addEventListener === "function") {
@@ -640,7 +649,15 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           ) : (
             <article id="work" className="mosaic-work">
               <h2 className="sr-only">Selected work</h2>
-              <div className="mosaic-rows" aria-label="Selected work previews">
+              {/* No `prefersReducedMotion` here on purpose: it is false on the
+                  server and on the first client render, so a JS gate would flash
+                  before the effect syncs. Reduced motion is handled in CSS. */}
+              <div
+                className={`mosaic-rows${
+                  hasSwapped || hasCompletedWorkIntro ? "" : " mosaic-work-intro"
+                }`}
+                aria-label="Selected work previews"
+              >
                 {rowsRender.map((row, rowIndex) => {
                   const rowStyle = {
                     ...(row.height ? { "--row-height": row.height } : {}),
@@ -649,7 +666,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                   const eagerRow = rowIndex === 0
                   return (
                     <div key={row.id} className="mosaic-row" style={rowStyle}>
-                      {row.items.map((item) => {
+                      {row.items.map((item, itemIndex) => {
                         const itemKey = `${item.card.id}-${item.previewIndex}`
                         const paginationTotal = getPaginationTotal(item.card)
                         const isPaginatedCard = paginationTotal > 1
@@ -662,6 +679,10 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                           : item.card.title
                         const itemStyle = {
                           "--row-span": item.span,
+                          // Feeds the first-load stagger in `.mosaic-work-intro`.
+                          // Inert without that class, so set unconditionally.
+                          "--work-intro-row": rowIndex,
+                          "--work-intro-col": itemIndex,
                           ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
                           ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
                         } as CSSProperties
@@ -670,6 +691,16 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                             key={itemKey}
                             className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
                             style={itemStyle}
+                            onAnimationEnd={
+                              rowIndex === rowsRender.length - 1 &&
+                              itemIndex === row.items.length - 1
+                                ? (event) => {
+                                    if (event.target === event.currentTarget) {
+                                      setHasCompletedWorkIntro(true)
+                                    }
+                                  }
+                                : undefined
+                            }
                           >
                             <button
                               type="button"

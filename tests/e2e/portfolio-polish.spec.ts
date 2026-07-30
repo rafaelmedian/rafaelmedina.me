@@ -1,6 +1,17 @@
-import { expect, test } from "@playwright/test"
+import { expect, type Page, test } from "@playwright/test"
 
 const mobileViewport = { width: 390, height: 844 }
+
+// The work cards cascade in on first load, so a card clicked straight after
+// `goto` can still be sitting at its pre-start offset -- and the gallery grows
+// out of that card's live rect. Settle the cascade before touching a card.
+// Safe from hanging: nothing in index.css animates infinitely.
+const settleWorkCards = (page: Page) =>
+  page
+    .locator(".mosaic-rows")
+    .evaluate((element) =>
+      Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+    )
 
 test("hydrates the prerendered portfolio without browser errors", async ({ page, request }) => {
   const errors: string[] = []
@@ -38,6 +49,7 @@ test("operates the profile name disclosure from the keyboard and restores focus"
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
+  await settleWorkCards(page)
   await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
@@ -96,6 +108,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
 
 test("returns focus to the originating project after closing the gallery", async ({ page }) => {
   await page.goto("/")
+  await settleWorkCards(page)
   const trigger = page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ })
   await trigger.focus()
   await trigger.press("Enter")
@@ -118,6 +131,7 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
     releaseFailedPrefetch?.()
   })
   await page.goto("/")
+  await settleWorkCards(page)
 
   const trigger = page.getByRole("button", { name: /Open Matcha - Mobile Screens preview/ })
   await trigger.hover()
@@ -365,4 +379,118 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   expect(firstRow).not.toBeNull()
   // Rows are a flat 420px from the 900px breakpoint up (see .mosaic-row in index.css).
   expect(firstRow!.height).toBe(420)
+})
+
+// The first-load card cascade is CSS driven off a class and two custom
+// properties in the prerendered HTML, because animations start at first paint
+// long before hydration. Moving any of it into an effect breaks this test.
+test("ships the work-card intro in the prerendered markup", async ({ request }) => {
+  const html = await (await request.get("/")).text()
+  expect(html).toContain("mosaic-work-intro")
+  expect(html).toContain("--work-intro-row:3")
+  expect(html).toContain("--work-intro-col:2")
+})
+
+test("keeps the work-card entrance free of scale and horizontal travel", async ({ page }) => {
+  await page.goto("/")
+
+  // Read the keyframe source rather than a live animation: the mosaic row height
+  // is asserted at exactly 420px above, and only opacity plus translateY leave
+  // that measurement alone.
+  const keyframes = await page.evaluate(() => {
+    const wanted = ["mosaic-intro-rise", "mosaic-intro-lift"]
+    const found: Record<string, string[]> = {}
+    for (const sheet of [...document.styleSheets]) {
+      for (const rule of [...sheet.cssRules]) {
+        if (rule instanceof CSSKeyframesRule && wanted.includes(rule.name)) {
+          found[rule.name] = [...rule.cssRules].map((frame) => (frame as CSSKeyframeRule).style.transform)
+        }
+      }
+    }
+    return found
+  })
+
+  expect(Object.keys(keyframes).sort()).toEqual(["mosaic-intro-lift", "mosaic-intro-rise"])
+  for (const transforms of Object.values(keyframes)) {
+    for (const transform of transforms) {
+      expect(transform === "" || /^translateY\([^)]+\)$/.test(transform)).toBe(true)
+    }
+  }
+})
+
+// The top row holds the LCP element. Fading it defers the recorded paint by
+// ~300ms regardless of the delay, so that row rises without animating its own
+// opacity and lets the media blur-up own the fade. See index.css.
+test("keeps the top row of work cards out of the opacity entrance", async ({ page }) => {
+  await page.goto("/")
+
+  const rows = await page.evaluate(() =>
+    [...document.querySelectorAll(".mosaic-row")].map((row) => ({
+      names: [
+        ...new Set(
+          [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).animationName),
+        ),
+      ],
+    })),
+  )
+
+  expect(rows.length).toBeGreaterThan(1)
+  expect(rows[0].names).toEqual(["mosaic-intro-lift"])
+  for (const row of rows.slice(1)) {
+    expect(row.names).toEqual(["mosaic-intro-rise"])
+  }
+})
+
+test("does not delay content behind an entrance under reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  // A one-shot read on purpose. The global reduced-motion reset zeroes
+  // animation-duration but not animation-delay, so a delayed `both`-filled
+  // entrance stays invisible for its whole delay -- and toHaveCSS would retry
+  // right past that window.
+  for (const selector of [".mosaic-row-item", ".mosaic-hero-profile-animated > *"]) {
+    const state = await page
+      .locator(selector)
+      .first()
+      .evaluate((element) => {
+        const style = getComputedStyle(element)
+        return { animationName: style.animationName, opacity: style.opacity }
+      })
+    expect(state.animationName).toBe("none")
+    expect(state.opacity).toBe("1")
+  }
+})
+
+test("does not replay the work-card intro when reduced motion is disabled later", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const rows = page.locator(".mosaic-rows")
+  await expect(rows).not.toHaveClass(/mosaic-work-intro/)
+
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  const states = await page.locator(".mosaic-row-item").evaluateAll((items) =>
+    items.map((item) => {
+      const style = getComputedStyle(item)
+      return { animationName: style.animationName, opacity: style.opacity }
+    }),
+  )
+
+  expect(states.every(({ animationName, opacity }) => animationName === "none" && opacity === "1")).toBe(true)
+})
+
+test("keeps the work-card entrance inside its delay budget", async ({ page }) => {
+  await page.goto("/")
+
+  const maxDelay = await page.evaluate(() =>
+    Math.max(
+      ...[...document.querySelectorAll(".mosaic-row-item")].map((element) =>
+        parseFloat(getComputedStyle(element).animationDelay),
+      ),
+    ),
+  )
+  // Last card starts at 320ms + 3 x 90ms + 2 x 40ms = 670ms. The ceiling is
+  // deliberately loose -- it guards against a runaway intro, not the exact base.
+  expect(maxDelay).toBeLessThanOrEqual(0.7)
 })

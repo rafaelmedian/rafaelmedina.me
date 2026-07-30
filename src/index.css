@@ -872,6 +872,58 @@ img {
   }
 }
 
+/* First-load entrance for the work cards. Unlike the swap stagger above, this
+   one has to exist in the prerendered HTML: CSS animations start at first paint,
+   long before hydration, so the class comes from `!hasSwapped` in SimpleFeed
+   rather than from an effect. `hasSwapped` drops the class on the first view
+   swap, handing the mosaic over to `.mosaic-view-animated` above -- the two
+   never overlap. Delays are data-driven from inline `--work-intro-row` and
+   `--work-intro-col` rather than nth-child, so all twelve cards stagger; the
+   swap rule above silently stops at nth-child(4).
+   Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
+   700px the rows collapse into one flex column, and a smaller row step would
+   make a card arrive before the card above it. */
+.mosaic-work-intro {
+  --work-intro-base: 320ms;
+  --work-intro-row-step: 90ms;
+  --work-intro-col-step: 40ms;
+}
+
+/* opacity and translateY only. A scale would change the measured box of
+   `.mosaic-row`, whose height is asserted at exactly 420px in
+   tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
+   stays under the 1rem row gap, so a rising card never covers the one below. */
+.mosaic-work-intro .mosaic-row-item {
+  animation: mosaic-intro-rise 540ms var(--ease-smooth) both;
+  animation-delay: calc(
+    var(--work-intro-base) +
+    var(--work-intro-row, 0) * var(--work-intro-row-step) +
+    var(--work-intro-col, 0) * var(--work-intro-col-step)
+  );
+}
+
+/* The top row carries the LCP element (the largest poster), and wrapping that
+   element in an opacity animation defers its recorded paint by ~300ms no matter
+   how short the delay is -- measured at Fast 3G + 4x CPU, LCP is ~384ms with no
+   entrance and ~696ms once the row-0 item fades, and shortening
+   `--work-intro-base` makes it no better. So the top row rises without fading.
+   Nothing is lost: `.mosaic-row-media` already owns a fade through its blur-up,
+   so the card still reads as arriving, and LCP measures ~376ms -- back at
+   baseline. Keep this row transform-only. */
+@keyframes mosaic-intro-lift {
+  from {
+    transform: translateY(0.8rem);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.mosaic-work-intro .mosaic-row:first-child .mosaic-row-item {
+  animation-name: mosaic-intro-lift;
+}
+
 .mosaic-about {
   display: block;
   padding: 0 clamp(16px, 3vw, 32px) clamp(3rem, 8vw, 5rem);
@@ -3488,10 +3540,17 @@ img {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mosaic-row-item {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  /* The global reduced-motion reset at the bottom of this file zeroes
+     animation-duration but not animation-delay, so a delayed `both`-filled
+     entrance still holds its from-state -- invisible -- for the whole delay
+     window. These selectors have to match or beat the specificity of the rules
+     that set the animation, or those win despite coming earlier -- the row-0
+     override in particular sets `animation-name` at a higher specificity than a
+     bare `.mosaic-row-item` reset could reach. */
+  .mosaic-work-intro .mosaic-row-item,
+  .mosaic-work-intro .mosaic-row:first-child .mosaic-row-item,
+  .mosaic-hero-profile-animated > * {
+    animation: none;
   }
 
   .mosaic-row-card-paginated .mosaic-row-media,
