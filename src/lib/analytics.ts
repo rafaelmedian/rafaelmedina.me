@@ -7,9 +7,6 @@ declare global {
 }
 
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID?.trim()
-const VERCEL_ANALYTICS_ENABLED = import.meta.env.VITE_ENABLE_VERCEL_ANALYTICS === "true"
-const VERCEL_ANALYTICS_BASEPATH = import.meta.env.VITE_VERCEL_OBSERVABILITY_BASEPATH?.trim()
-const VERCEL_ANALYTICS_CLIENT_CONFIG = import.meta.env.VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG?.trim()
 const GOOGLE_TAG_SRC = "https://www.googletagmanager.com/gtag/js"
 
 function isBrowserAnalyticsContext() {
@@ -18,14 +15,6 @@ function isBrowserAnalyticsContext() {
 
 function isGoogleAnalyticsEnabled() {
   return isBrowserAnalyticsContext() && Boolean(GA_MEASUREMENT_ID)
-}
-
-export function shouldEnableVercelAnalytics() {
-  return Boolean(VERCEL_ANALYTICS_ENABLED || VERCEL_ANALYTICS_BASEPATH || VERCEL_ANALYTICS_CLIENT_CONFIG)
-}
-
-function hasClientEventTracking() {
-  return isBrowserAnalyticsContext() && (isGoogleAnalyticsEnabled() || shouldEnableVercelAnalytics())
 }
 
 function ensureGoogleTagScript() {
@@ -71,7 +60,7 @@ function getPageViewPayload() {
   }
 }
 
-function trackGoogleAnalyticsEvent(
+export function trackEvent(
   eventName: string,
   params: Record<string, string | number | boolean | null | undefined> = {},
 ) {
@@ -79,15 +68,8 @@ function trackGoogleAnalyticsEvent(
   window.gtag("event", eventName, params)
 }
 
-export function trackEvent(eventName: string, params: Record<string, string | number | boolean | null | undefined> = {}) {
-  trackGoogleAnalyticsEvent(eventName, params)
-
-  if (!shouldEnableVercelAnalytics()) return
-  void import("@vercel/analytics").then(({ track }) => track(eventName, params))
-}
-
 export function trackPageView() {
-  trackGoogleAnalyticsEvent("page_view", getPageViewPayload())
+  trackEvent("page_view", getPageViewPayload())
 }
 
 function trackLinkClick(event: MouseEvent) {
@@ -125,15 +107,11 @@ function attachAnalyticsListeners() {
 }
 
 export function startAnalytics() {
-  if (!hasClientEventTracking() || window.__analyticsStarted) return
+  if (!isGoogleAnalyticsEnabled() || window.__analyticsStarted) return
 
-  if (isGoogleAnalyticsEnabled()) {
-    ensureGoogleTagScript()
-    ensureGoogleTagClient()
-  }
+  ensureGoogleTagScript()
+  ensureGoogleTagClient()
   attachAnalyticsListeners()
-  if (isGoogleAnalyticsEnabled()) {
-    trackPageView()
-  }
+  trackPageView()
   window.__analyticsStarted = true
 }
