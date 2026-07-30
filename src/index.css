@@ -1495,6 +1495,262 @@ img {
   }
 }
 
+.mosaic-work-history {
+  position: relative;
+  z-index: 40;
+  min-height: auto;
+  overflow: visible;
+  isolation: isolate;
+
+  /* Pointer-relative tilt, written by handleTriggerPointerMove. Declared here
+     rather than on the popover because the popover is a sibling of the
+     triggers and inherits these through the shared container. */
+  --mosaic-popover-anchor-x: 0px;
+  --mosaic-popover-anchor-y: 0px;
+  --mosaic-popover-tilt-x: 0deg;
+  --mosaic-popover-tilt-y: 0deg;
+  --mosaic-popover-lift: 1;
+}
+
+.mosaic-work-history-popover {
+  --mosaic-popover-width: min(24rem, calc(100vw - 2rem));
+  position: absolute;
+  top: var(--mosaic-popover-y);
+  left: var(--mosaic-popover-x);
+  z-index: 4;
+  width: var(--mosaic-popover-width);
+  padding: 0.625rem 0.75rem;
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.06),
+    0 1px 2px -1px rgb(0 0 0 / 0.06),
+    0 8px 24px -8px rgb(0 0 0 / 0.12);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  /* Centring lives in the transform shorthand alongside the tilt. Using the
+     `translate:` longhand here instead would leave the lean on a separate
+     animation channel from the anchor slide, and the two would drift apart. */
+  transform:
+    perspective(1200px)
+    translate(calc(-50% + var(--mosaic-popover-anchor-x)), calc(-100% + var(--mosaic-popover-anchor-y)))
+    rotateX(var(--mosaic-popover-tilt-x))
+    rotateY(var(--mosaic-popover-tilt-y))
+    scale(var(--mosaic-popover-lift));
+  /* Hinge on the arrow edge, so the panel leans away from the word it points
+     at and the arrow stays pinned instead of swinging. */
+  transform-origin: center bottom;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition:
+    top 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 100ms ease,
+    visibility 100ms ease;
+}
+
+.mosaic-work-history-popover[data-side="below"] {
+  transform:
+    perspective(1200px)
+    translate(calc(-50% + var(--mosaic-popover-anchor-x)), var(--mosaic-popover-anchor-y))
+    rotateX(var(--mosaic-popover-tilt-x))
+    rotateY(var(--mosaic-popover-tilt-y))
+    scale(var(--mosaic-popover-lift));
+  transform-origin: center top;
+}
+
+.mosaic-work-history-popover[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    top 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 120ms ease;
+}
+
+.mosaic-work-history-popover[data-switching="true"],
+.mosaic-work-history-popover[data-switching="true"] .mosaic-work-history-popover-arrow {
+  transition: none;
+}
+
+.mosaic-work-history-popover[data-switching="true"] .mosaic-work-history-popover-content {
+  animation: none;
+}
+
+.mosaic-work-history-popover-arrow {
+  position: absolute;
+  left: var(--mosaic-popover-arrow-x);
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 3px;
+  background: #ffffff;
+  box-shadow: 2px 2px 0 rgb(0 0 0 / 0.06);
+  transform: rotate(45deg);
+  transition: left 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mosaic-work-history-popover[data-side="below"] .mosaic-work-history-popover-arrow {
+  top: -5px;
+  bottom: auto;
+  border-radius: 3px;
+  box-shadow: -2px -2px 0 rgb(0 0 0 / 0.06);
+}
+
+.mosaic-work-history-popover-content {
+  animation: mosaic-work-history-popover-swap 120ms ease both;
+}
+
+.mosaic-work-history-popover-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-bottom: 0.15rem;
+}
+
+.mosaic-work-history-popover-title {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35rem;
+}
+
+.mosaic-work-history-popover-name {
+  color: #171717;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.005rem;
+}
+
+.mosaic-work-history-popover-role {
+  color: #8a8a8a;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.mosaic-work-history-popover-role::before {
+  content: "·";
+  margin-right: 0.35rem;
+  color: #b5b5b5;
+}
+
+.mosaic-work-history-popover-description {
+  margin: 0;
+  color: #6f6f6f;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  letter-spacing: -0.005rem;
+  text-wrap: pretty;
+}
+
+.mosaic-work-history-popover-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.4rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  background: #f2f2f2;
+  color: #6f6f6f;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.mosaic-work-history-popover-link:hover {
+  background: #e9e9e9;
+  color: #171717;
+}
+
+.mosaic-work-history-popover-link:focus-visible {
+  outline: 2px solid #9ea6b5;
+  outline-offset: 2px;
+}
+
+.mosaic-work-history-popover-logos {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.mosaic-work-history-popover-logo-wrap {
+  display: inline-flex;
+  width: 1.35rem;
+  height: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.29rem;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05);
+}
+
+.mosaic-work-history-popover-logo-wrap + .mosaic-work-history-popover-logo-wrap {
+  margin-left: -0.26rem;
+}
+
+.mosaic-work-history-popover-logo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes mosaic-work-history-popover-swap {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-work-history-popover,
+  .mosaic-work-history-popover[data-open="true"],
+  .mosaic-work-history-popover-arrow {
+    transition-duration: 80ms;
+  }
+
+  .mosaic-work-history-popover {
+    transform: translate(-50%, -100%);
+  }
+
+  .mosaic-work-history-popover[data-side="below"] {
+    transform: translate(-50%, 0);
+  }
+
+  .mosaic-work-history-popover,
+  .mosaic-work-history-popover-content {
+    animation: none;
+    filter: none;
+  }
+
+  .mosaic-work-history-popover-content {
+    transform: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .mosaic-work-history-popover-arrow {
+    display: none;
+  }
+}
+
 .mosaic-company-inline-list {
   display: inline;
 }
