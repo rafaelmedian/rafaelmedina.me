@@ -20,10 +20,7 @@ function App() {
   const isStyleguidePage = currentPath === "/styleguide"
 
   return (
-    <div
-      data-theme="light"
-      className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]"
-    >
+    <div className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]">
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>

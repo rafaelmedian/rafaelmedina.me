@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-07-27
+Last updated: 2026-07-30
 
 ## Current state
 
@@ -22,11 +22,45 @@ Feature branches are cut from `main` and merged back via PR. There is no longer
 a split between a "source" branch and a "built output" branch — that split is
 exactly what let the two drift apart.
 
-## Not currently used
+## Dead code
 
-`InfiniteCanvasBoard`, `SiteHeader`, `SiteFooter`, `PortfolioGrid`, and `HoverVideoLink` are kept in `src/components/` but are not rendered by `App`. The infinite-canvas experience described in older versions of this file was replaced by the `SimpleFeed` mosaic.
+None currently. Every file under `src/` is reachable from `src/main.tsx` or
+`src/entry-server.tsx`.
+
+The infinite-canvas experience described in older versions of this file was
+replaced by the `SimpleFeed` mosaic; its components (`InfiniteCanvasBoard`,
+`PortfolioGrid`, `PortfolioCard`, `ProjectDialog`, `SiteHeader`, `SiteFooter`,
+`HoverVideoLink`) were deleted on 2026-07-30 along with their CSS. Recover from
+git history rather than re-adding stubs.
+
+## Theming
+
+There is no theme system. `:root` in `src/index.css` holds the only token set and
+the site is always light. The `[data-theme="dark"]` token block and the matching
+`data-theme="light"` attribute on the root `<div>` in `App.tsx` were removed on
+2026-07-30 — the dark block had no way to activate, so it was shipping to every
+visitor as dead bytes. Adding dark mode means reintroducing both halves, not just
+the CSS.
+
+Note that `.mosaic-contact-pill-dark` is unrelated: it is a live style for the
+dark-filled contact pill in `ContactActionRow`, not a theme hook.
+
+## Images
+
+`public/` images are compressed as tightly as their format allows:
+
+- `favicon-512.png` — 404 kB -> 288 kB, losslessly (`oxipng -o max --strip safe`,
+  verified pixel-identical). It must stay PNG: `index.html` declares
+  `type="image/png"` and `site.webmanifest` lists it as an icon.
+- `profile-header.png` -> `profile-header.jpg` — 1,051 kB -> 144 kB. It is a
+  photograph whose only reference is the JSON-LD `image` field, so PNG was the
+  wrong format. If you replace it, keep it JPEG and keep the reference in
+  `index.html` in sync.
 
 ## Known follow-ups
 
-- `src/assets/profile-photo.png` is ~960 kB — worth compressing.
 - Confirm `hey@rafaelmedina.me` receives mail (copy changed from the old `hello@` address).
+- `tests/e2e/portfolio-polish.spec.ts:430` ("hides every work card at first
+  paint") races the entrance animation and fails on a loaded machine — it failed
+  3/3 on an untouched `main` checkout while other workspaces were building. It is
+  flaky, not a regression; worth making it wait on a deterministic signal.
