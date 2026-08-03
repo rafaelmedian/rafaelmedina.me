@@ -1,6 +1,13 @@
-import { expect, type Page, test } from "@playwright/test"
+import { expect, type BrowserContext, type Page, test } from "@playwright/test"
 
 const mobileViewport = { width: 390, height: 844 }
+
+// Work-history chips point at real company sites; the assertions only care that
+// the browser went there, so serve a stub rather than depend on the network.
+const stubCompanySite = (context: BrowserContext) =>
+  context.route(/onit\.com/, (route) =>
+    route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Onit</title>" }),
+  )
 
 // The work cards cascade in on first load, so a card clicked straight after
 // `goto` can still be sitting at its pre-start offset -- and the gallery grows
@@ -239,7 +246,7 @@ test("travels one role-bearing work-history popover between company triggers wit
   await location.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
   const initialLocationBox = await location.boundingBox()
   const popover = page.locator(".mosaic-work-history-popover")
-  const onit = page.getByRole("button", { name: "Onit" })
+  const onit = page.getByRole("link", { name: "Onit", exact: true })
 
   await onit.hover()
   await expect(popover).toBeVisible()
@@ -267,7 +274,7 @@ test("travels one role-bearing work-history popover between company triggers wit
   expect(onitPopoverBox).not.toBeNull()
   expect(onitLocationBox!.y).toBeCloseTo(initialLocationBox!.y, 0)
 
-  await page.getByRole("button", { name: "Moody's" }).hover()
+  await page.getByRole("link", { name: "Moody's", exact: true }).hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Moody's")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
   expect(
@@ -279,21 +286,24 @@ test("travels one role-bearing work-history popover between company triggers wit
   expect((await popover.boundingBox())!.x).not.toBe(onitPopoverBox!.x)
   expect((await location.boundingBox())!.y).toBeCloseTo(initialLocationBox!.y, 0)
 
-  await page.getByRole("button", { name: "0x.org and Matcha.xyz" }).hover()
+  await page.getByRole("link", { name: "0x.org and Matcha.xyz", exact: true }).hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("0x.org and Matcha.xyz")
 
-  await page.getByRole("button", { name: "Google" }).hover()
+  await page.getByRole("link", { name: "Google", exact: true }).hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Google")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
 
-  await page.getByRole("button", { name: "Protector and Patrol" }).hover()
+  await page.getByRole("link", { name: "Protector and Patrol", exact: true }).hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Protector and Patrol")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
 })
 
-test("opens the work-history popover from the keyboard and toggles it on touch", async ({ page }) => {
+test("opens the work-history popover from the keyboard and links each chip to its company", async ({
+  context,
+  page,
+}) => {
   await page.goto("/")
-  const onit = page.getByRole("button", { name: "Onit" })
+  const onit = page.getByRole("link", { name: "Onit", exact: true })
   const popover = page.locator(".mosaic-work-history-popover")
 
   await onit.focus()
@@ -302,14 +312,57 @@ test("opens the work-history popover from the keyboard and toggles it on touch",
   await expect(popover).toBeHidden()
   await expect(onit).toBeFocused()
 
-  await page.setViewportSize(mobileViewport)
+  await expect(onit).toHaveAttribute("href", "https://www.onit.com")
+  await expect(onit).toHaveAttribute("target", "_blank")
+  await expect(page.getByRole("link", { name: "Google", exact: true })).toHaveAttribute("href", "https://www.google.com")
+
+  // Pointer users already saw the panel on hover, so the click travels.
+  await stubCompanySite(context)
+  const opened = page.waitForEvent("popup")
+  await onit.click()
+  const companyTab = await opened
+  await companyTab.waitForLoadState()
+  expect(companyTab.url()).toContain("onit.com")
+  await expect(companyTab).toHaveTitle("Onit")
+  await companyTab.close()
+})
+
+test("reveals the work-history popover for a touch pointer on a hover-capable device", async ({ page }) => {
   await page.goto("/")
-  const mobileOnit = page.getByRole("button", { name: "Onit" })
-  const mobilePopover = page.locator(".mosaic-work-history-popover")
-  await mobileOnit.click()
-  await expect(mobilePopover).toBeVisible()
-  await mobileOnit.click()
-  await expect(mobilePopover).toBeHidden()
+  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const popover = page.locator(".mosaic-work-history-popover")
+
+  await onit.evaluate((element) => {
+    element.addEventListener("click", (event) => event.preventDefault(), { once: true })
+    element.dispatchEvent(
+      new PointerEvent("click", { bubbles: true, cancelable: true, pointerType: "touch" }),
+    )
+  })
+
+  await expect(popover).toBeVisible()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Onit")
+})
+
+test("reveals the work-history popover on the first tap and follows the link on the second", async ({ browser }) => {
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, viewport: mobileViewport })
+  await stubCompanySite(context)
+  const page = await context.newPage()
+  await page.goto("/")
+
+  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const popover = page.locator(".mosaic-work-history-popover")
+
+  await onit.tap()
+  await expect(popover).toBeVisible()
+  await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Onit")
+
+  const opened = page.waitForEvent("popup")
+  await onit.tap()
+  const companyTab = await opened
+  await companyTab.waitForLoadState()
+  expect(companyTab.url()).toContain("onit.com")
+
+  await context.close()
 })
 
 test("keeps the work-history popover positioned with reduced motion", async ({ page }) => {
@@ -317,7 +370,7 @@ test("keeps the work-history popover positioned with reduced motion", async ({ p
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  const onit = page.getByRole("button", { name: "Onit" })
+  const onit = page.getByRole("link", { name: "Onit", exact: true })
   const popover = page.locator(".mosaic-work-history-popover")
   await onit.focus()
   await expect(popover).toBeVisible()
@@ -335,7 +388,7 @@ test("moves the work-history popover below its trigger near the viewport top", a
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const onit = page.getByRole("button", { name: "Onit" })
+  const onit = page.getByRole("link", { name: "Onit", exact: true })
   const popover = page.locator(".mosaic-work-history-popover")
   await onit.focus()
   await expect(popover).toBeVisible()
