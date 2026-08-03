@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
   type FocusEvent,
+  type MouseEvent,
   type PointerEvent,
 } from "react"
 
@@ -148,23 +149,25 @@ function WorkHistoryTrigger({
   descriptionId: string
   popoverId: string
   onBlur: (event: FocusEvent<HTMLElement>) => void
-  onClick: (companyId: string) => void
+  onClick: (companyId: string, event: MouseEvent<HTMLAnchorElement>) => void
   onFocus: (companyId: string) => void
   onPointerDown: (companyId: string) => void
   onPointerEnter: (companyId: string) => void
-  onPointerLeave: (event: PointerEvent<HTMLButtonElement>) => void
-  onPointerMove: (event: PointerEvent<HTMLButtonElement>) => void
-  setTrigger: (companyId: string, element: HTMLButtonElement | null) => void
+  onPointerLeave: (event: PointerEvent<HTMLAnchorElement>) => void
+  onPointerMove: (event: PointerEvent<HTMLAnchorElement>) => void
+  setTrigger: (companyId: string, element: HTMLAnchorElement | null) => void
 }) {
   return (
-    <button
+    <a
       ref={(element) => setTrigger(company.id, element)}
-      type="button"
+      href={company.href}
+      target="_blank"
+      rel="noreferrer"
       className={`mosaic-work-history-chip${active ? " is-active" : ""}`}
       aria-expanded={active}
       aria-controls={popoverId}
       aria-describedby={descriptionId}
-      onClick={() => onClick(company.id)}
+      onClick={(event) => onClick(company.id, event)}
       onFocus={() => onFocus(company.id)}
       onBlur={onBlur}
       onPointerDown={() => onPointerDown(company.id)}
@@ -173,7 +176,7 @@ function WorkHistoryTrigger({
       onPointerMove={onPointerMove}
     >
       {company.compactName}
-    </button>
+    </a>
   )
 }
 
@@ -181,7 +184,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
   const popoverId = useId()
   const containerRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
-  const triggerRefs = useRef(new Map<string, HTMLButtonElement>())
+  const triggerRefs = useRef(new Map<string, HTMLAnchorElement>())
   const openTimeoutRef = useRef<number | undefined>(undefined)
   const closeTimeoutRef = useRef<number | undefined>(undefined)
   const pointerFocusCompanyIdRef = useRef<string | null>(null)
@@ -336,7 +339,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       openPopover(companyId)
     }
 
-    const handleTriggerPointerLeave = (event: PointerEvent<HTMLButtonElement>) => {
+    const handleTriggerPointerLeave = (event: PointerEvent<HTMLAnchorElement>) => {
       if (!isHoverCapable()) return
       settleTilt()
       const destination = event.relatedTarget
@@ -347,7 +350,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
     // The popover is a sibling of the triggers, so measure the pointer against
     // the word it is leaning away from but hang the variables on the shared
     // container the popover can actually inherit from.
-    const handleTriggerPointerMove = (event: PointerEvent<HTMLButtonElement>) => {
+    const handleTriggerPointerMove = (event: PointerEvent<HTMLAnchorElement>) => {
       const container = containerRef.current
       if (!container || !isHoverCapable()) return
 
@@ -366,18 +369,29 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       closePopover()
     }
 
-    const setTrigger = (companyId: string, element: HTMLButtonElement | null) => {
+    const setTrigger = (companyId: string, element: HTMLAnchorElement | null) => {
       if (element) triggerRefs.current.set(companyId, element)
       else triggerRefs.current.delete(companyId)
     }
 
-    const handleTriggerClick = (companyId: string) => {
+    // The chip is a link to the company, but it is also the only way to reach
+    // the detail panel. Hover and keyboard users already get the panel for
+    // free, so they navigate on the first click; touch users get one tap to
+    // reveal the panel and a second to follow the link.
+    const handleTriggerClick = (companyId: string, event: MouseEvent<HTMLAnchorElement>) => {
       clearOpenTimeout()
       clearCloseTimeout()
       pointerFocusCompanyIdRef.current = null
-      const nextCompanyId = activeCompanyId === companyId ? null : companyId
-      setIsSwitchingCompany(activeCompanyId !== null && nextCompanyId !== null)
-      setActiveCompanyId(nextCompanyId)
+      const pointerType = (event.nativeEvent as globalThis.PointerEvent).pointerType
+
+      if ((pointerType === "touch" || !isHoverCapable()) && activeCompanyId !== companyId) {
+        event.preventDefault()
+        setIsSwitchingCompany(activeCompanyId !== null)
+        setActiveCompanyId(companyId)
+        return
+      }
+
+      closePopover()
     }
 
     const popoverStyle = {
