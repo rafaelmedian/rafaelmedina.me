@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react"
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type Dispatch, type SetStateAction } from "react"
 
 import { AboutPanel } from "./AboutPanel"
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
@@ -51,14 +51,6 @@ const PreviewGalleryDialog = lazy(() =>
 type SiteProfile = {
   name: string
   title: string
-  intro: string
-  previouslyLabel?: string
-  previouslyText?: string
-  nowLabel?: string
-  nowText?: string
-  availability: string
-  contactLabel: string
-  contactHref: string
   photo: string
 }
 
@@ -66,7 +58,6 @@ type SimpleFeedProps = {
   cards: PortfolioCard[]
   profile: SiteProfile
   links: SiteLinks
-  showProjects?: boolean
 }
 
 type RowFit = "cover" | "contain"
@@ -78,8 +69,6 @@ type RowVideoMediaProps = {
   width?: number
   height?: number
   prefersReducedMotion: boolean
-  loaded: boolean
-  onLoaded: () => void
 }
 
 const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -97,6 +86,15 @@ declare global {
 function isVideoPreviewSource(source: string) {
   return source.toLowerCase().endsWith(".webm")
 }
+
+// Support never changes for the life of the document, so there is nothing to
+// subscribe to.
+const subscribeToNothing = () => () => {}
+const hasIntersectionObserver = () => typeof window !== "undefined" && "IntersectionObserver" in window
+// The server assumes support so the prerendered markup ships no video `src` and
+// the mosaic stays lazy. A browser without it corrects on hydration, which is
+// what useSyncExternalStore is for.
+const hasIntersectionObserverOnServer = () => true
 
 type NetworkInformation = {
   saveData?: boolean
@@ -133,16 +131,25 @@ function RowVideoMedia({
   width,
   height,
   prefersReducedMotion,
-  loaded,
-  onLoaded,
 }: RowVideoMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const supportsIntersectionObserver = typeof window !== "undefined" && "IntersectionObserver" in window
-  const [shouldLoad, setShouldLoad] = useState(false)
-  const [isVisible, setIsVisible] = useState(false)
+  const supportsIntersectionObserver = useSyncExternalStore(
+    subscribeToNothing,
+    hasIntersectionObserver,
+    hasIntersectionObserverOnServer,
+  )
   // Without a poster there is nothing to fall back to, so the video loads even
   // on a metered connection.
   const holdForLightweightMedia = Boolean(poster) && prefersLightweightMedia()
+  const [shouldLoad, setShouldLoad] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  // With no observer to flip the state, `src` would stay undefined for the whole
+  // session and only the poster would ever show -- so fall back to loading up
+  // front instead.
+  const loadNow = shouldLoad || (!supportsIntersectionObserver && !holdForLightweightMedia)
+  const visibleNow = isVisible || !supportsIntersectionObserver
 
   useEffect(() => {
     const video = videoRef.current
@@ -174,28 +181,87 @@ function RowVideoMedia({
     const video = videoRef.current
     if (!video) return
 
-    if (!prefersReducedMotion && shouldLoad && isVisible) {
+    if (!prefersReducedMotion && loadNow && visibleNow) {
       void video.play().catch(() => undefined)
     } else {
       video.pause()
     }
-  }, [isVisible, prefersReducedMotion, shouldLoad])
+  }, [loadNow, prefersReducedMotion, visibleNow])
 
   return (
     <video
       ref={videoRef}
-      src={shouldLoad ? source : undefined}
+      src={loadNow ? source : undefined}
       poster={poster}
       width={width}
       height={height}
       muted
       loop={!prefersReducedMotion}
       playsInline
-      preload={shouldLoad && !prefersReducedMotion ? "metadata" : "none"}
+      preload={loadNow && !prefersReducedMotion ? "metadata" : "none"}
       aria-label={label}
       className="mosaic-row-media"
       data-loaded={poster || loaded ? "true" : "false"}
-      onLoadedData={onLoaded}
+      onLoadedData={() => setLoaded(true)}
+    />
+  )
+}
+
+// Each 1600x1200 shot-small source has `-480w`/`-960w` siblings generated next
+// to it. Grid tiles render at most ~446 CSS px (measured at 1440px and wider,
+// where the mosaic stops growing), so the full-size file is ~3.6x oversampled at
+// 1x and ~1.8x at 2x. The gallery dialog keeps loading the original.
+const previewVariantWidths = [480, 960]
+const hasPreviewVariants = (source: string) => /_shot-small-\d+\.jpg$/.test(source)
+
+// Measured tile widths: 317px at 390vw, 228px at 768, 393px at 1280, 446px at
+// 1440 and up.
+const previewSizes = "(max-width: 520px) 82vw, (max-width: 1400px) 31vw, 446px"
+
+function buildPreviewSrcSet(source: string, intrinsicWidth?: number) {
+  if (!hasPreviewVariants(source)) return undefined
+
+  const stem = source.slice(0, -".jpg".length)
+  const candidates = previewVariantWidths.map((width) => `${stem}-${width}w.jpg ${width}w`)
+  if (intrinsicWidth) candidates.push(`${source} ${intrinsicWidth}w`)
+  return candidates.join(", ")
+}
+
+type RowImageMediaProps = {
+  source: string
+  label: string
+  width?: number
+  height?: number
+  eager: boolean
+}
+
+// Owns its own loaded flag on purpose. Hoisting it into SimpleFeed meant every
+// one of the ~11 images re-rendered the entire mosaic when it decoded, which
+// re-ran the row/tile tree eleven times during load.
+function RowImageMedia({ source, label, width, height, eager }: RowImageMediaProps) {
+  const [loaded, setLoaded] = useState(false)
+  const srcSet = buildPreviewSrcSet(source, width)
+
+  return (
+    <img
+      src={source}
+      srcSet={srcSet}
+      sizes={srcSet ? previewSizes : undefined}
+      alt={label}
+      width={width}
+      height={height}
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      fetchPriority={eager ? "high" : "auto"}
+      className="mosaic-row-media"
+      data-loaded={loaded ? "true" : "false"}
+      onLoad={(event) => {
+        if (event.currentTarget.naturalWidth > 0) setLoaded(true)
+      }}
+      ref={(el) => {
+        // A cached image can finish before React attaches onLoad.
+        if (el && el.complete && el.naturalWidth > 0) setLoaded(true)
+      }}
     />
   )
 }
@@ -331,7 +397,7 @@ function SocialCorner({ links }: { links: SiteLinks }) {
   )
 }
 
-export function SimpleFeed({ cards, profile, links, showProjects = true }: SimpleFeedProps) {
+export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
@@ -355,9 +421,6 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const avatarRef = useRef<HTMLButtonElement | null>(null)
   const viewTriggerRef = useRef<HTMLElement | null>(null)
   const metaPointerRef = useRef<{ x: number; y: number } | null>(null)
-  const [loadedSources, setLoadedSources] = useState<Set<string>>(() => new Set())
-  const markLoaded = (src: string) =>
-    setLoadedSources((prev) => (prev.has(src) ? prev : new Set(prev).add(src)))
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -406,16 +469,12 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
     return onScreen ? rect : null
   }, [])
 
-  const shellClassName = `mosaic-shell${showProjects ? "" : " mosaic-shell-hero-only"}`
-  const heroClassName = `mosaic-hero${showProjects ? "" : " mosaic-hero-hero-only"}`
-
   const renderRowMedia = (
     card: PortfolioCard,
     source = card.image,
     label = card.title,
     eager = false,
   ) => {
-    const dataLoaded = loadedSources.has(source) ? "true" : "false"
     if (isVideoPreviewSource(source)) {
       return (
         <RowVideoMedia
@@ -425,29 +484,17 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
           width={card.previewWidth}
           height={card.previewHeight}
           prefersReducedMotion={prefersReducedMotion}
-          loaded={dataLoaded === "true"}
-          onLoaded={() => markLoaded(source)}
         />
       )
     }
     return (
-      <img
+      <RowImageMedia
         key={source}
-        src={source}
-        alt={label}
+        source={source}
+        label={label}
         width={card.previewWidth}
         height={card.previewHeight}
-        loading={eager ? "eager" : "lazy"}
-        decoding="async"
-        fetchPriority={eager ? "high" : "auto"}
-        className="mosaic-row-media"
-        data-loaded={dataLoaded}
-        onLoad={(event) => {
-          if (event.currentTarget.naturalWidth > 0) markLoaded(source)
-        }}
-        ref={(el) => {
-          if (el && el.complete && el.naturalWidth > 0) markLoaded(source)
-        }}
+        eager={eager}
       />
     )
   }
@@ -551,10 +598,10 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
   const isAboutView = view === "about"
 
   return (
-    <section className={shellClassName}>
+    <section className="mosaic-shell">
       <h1 className="sr-only">{profile.name} portfolio</h1>
       <SocialCorner links={links} />
-      <header id="about" className={heroClassName}>
+      <header id="about" className="mosaic-hero">
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-info">
             <button
@@ -593,15 +640,15 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 </span>
               </span>
             </button>
-            {/* Keep the semantic heading and selectable text while exposing this
-                second hit area as the same accessible disclosure control. */}
+            {/* A convenience hit area for pointers only -- deliberately not a
+                control. `role="button"` here would make its descendants
+                presentational, stripping the <h2> (the page's only visible
+                heading) from the accessibility tree and adding a second tab stop
+                with the same label as the avatar button above. Keyboard and
+                screen reader users get the identical disclosure from that
+                button, so this stays a plain div with a real heading inside. */}
             <div
               className="mosaic-profile-meta"
-              role="button"
-              tabIndex={0}
-              aria-expanded={isAboutView}
-              aria-controls={isAboutView ? "about-panel" : undefined}
-              aria-label={isAboutView ? "Back to selected work" : `Read about ${profile.name}`}
               onPointerDown={(event) => {
                 metaPointerRef.current = { x: event.clientX, y: event.clientY }
               }}
@@ -614,13 +661,9 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) return
                 const selection = window.getSelection()
                 if (selection && !selection.isCollapsed) return
-                viewTriggerRef.current = event.currentTarget
-                swapView(isAboutView ? "work" : "about", "profile-meta")
-              }}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter" && event.key !== " ") return
-                event.preventDefault()
-                viewTriggerRef.current = event.currentTarget
+                // Not a focus target, so leave `viewTriggerRef` alone and let the
+                // about panel return focus to the avatar button on close.
+                viewTriggerRef.current = null
                 swapView(isAboutView ? "work" : "about", "profile-meta")
               }}
             >
@@ -636,8 +679,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
         </div>
       </header>
 
-      {showProjects ? (
-        <>
+      <>
           <div
             key={view}
             className={`mosaic-view${isSwapping ? " is-leaving" : ""}${
@@ -656,6 +698,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
                 className={`mosaic-rows${
                   hasSwapped || hasCompletedWorkIntro ? "" : " mosaic-work-intro"
                 }`}
+                role="group"
                 aria-label="Selected work previews"
               >
                 {rowsRender.map((row, rowIndex) => {
@@ -780,8 +823,7 @@ export function SimpleFeed({ cards, profile, links, showProjects = true }: Simpl
               />
             </Suspense>
           ) : null}
-        </>
-      ) : null}
+      </>
     </section>
   )
 }

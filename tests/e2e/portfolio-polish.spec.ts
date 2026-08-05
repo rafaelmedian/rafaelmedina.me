@@ -35,11 +35,13 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
-test("operates the profile name disclosure from the keyboard and restores focus", async ({ page }) => {
+test("operates the about disclosure from the keyboard and restores focus", async ({ page }) => {
   await page.goto("/")
-  const trigger = page.locator(".mosaic-profile-meta")
+  // Located by class, not name: the accessible name flips to "Back to selected
+  // work" once the panel opens.
+  const trigger = page.locator(".mosaic-avatar-button")
 
-  await expect(trigger).toHaveAttribute("role", "button")
+  await expect(trigger).toHaveAccessibleName("Read about Rafael Medina")
   await expect(trigger).toHaveAttribute("aria-expanded", "false")
   await trigger.focus()
   await trigger.press("Enter")
@@ -51,6 +53,19 @@ test("operates the profile name disclosure from the keyboard and restores focus"
   await page.keyboard.press("Escape")
   await expect(page.locator("#about-panel")).toBeHidden()
   await expect(trigger).toBeFocused()
+})
+
+test("exposes the profile name as a heading rather than burying it in a control", async ({ page }) => {
+  await page.goto("/")
+
+  // `role="button"` on the wrapper would make its descendants presentational,
+  // dropping this heading out of the accessibility tree entirely.
+  await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeVisible()
+  await expect(page.locator(".mosaic-profile-meta")).not.toHaveAttribute("role", "button")
+
+  // The pointer-only hit area must not become a second tab stop with the same
+  // label as the avatar button.
+  await expect(page.locator(".mosaic-profile-meta")).not.toHaveAttribute("tabindex", "0")
 })
 
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
@@ -341,6 +356,75 @@ test("reveals the work-history popover for a touch pointer on a hover-capable de
 
   await expect(popover).toBeVisible()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Onit")
+})
+
+test("settles work-history tilt when the pointer exits before the next frame", async ({ page }) => {
+  await page.goto("/")
+
+  const tilt = await page.locator(".mosaic-work-history-chip").first().evaluate(async (trigger) => {
+    const container = trigger.closest<HTMLElement>(".mosaic-work-history")
+    if (!container) throw new Error("Missing work-history container")
+
+    const box = trigger.getBoundingClientRect()
+    trigger.dispatchEvent(
+      new PointerEvent("pointermove", {
+        bubbles: true,
+        clientX: box.right,
+        clientY: box.top,
+      }),
+    )
+    trigger.dispatchEvent(
+      new PointerEvent("pointerout", {
+        bubbles: true,
+        clientX: box.right + 1,
+        clientY: box.top,
+        relatedTarget: document.body,
+      }),
+    )
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+
+    return {
+      anchorX: container.style.getPropertyValue("--mosaic-popover-anchor-x"),
+      tiltY: container.style.getPropertyValue("--mosaic-popover-tilt-y"),
+    }
+  })
+
+  expect(tilt).toEqual({ anchorX: "0px", tiltY: "0deg" })
+})
+
+test("settles queued work-history tilt when Escape closes the popover", async ({ page }) => {
+  await page.goto("/")
+
+  const trigger = page.locator(".mosaic-work-history-chip").first()
+  const popover = page.locator(".mosaic-work-history-popover")
+  await trigger.focus()
+  await expect(popover).toBeVisible()
+
+  const tilt = await trigger.evaluate(async (element) => {
+    const container = element.closest<HTMLElement>(".mosaic-work-history")
+    if (!container) throw new Error("Missing work-history container")
+
+    const box = element.getBoundingClientRect()
+    element.dispatchEvent(
+      new PointerEvent("pointermove", {
+        bubbles: true,
+        clientX: box.right,
+        clientY: box.top,
+      }),
+    )
+    document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }))
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+
+    return {
+      anchorX: container.style.getPropertyValue("--mosaic-popover-anchor-x"),
+      tiltY: container.style.getPropertyValue("--mosaic-popover-tilt-y"),
+    }
+  })
+
+  await expect(popover).toBeHidden()
+  expect(tilt).toEqual({ anchorX: "0px", tiltY: "0deg" })
 })
 
 test("reveals the work-history popover on the first tap and follows the link on the second", async ({ browser }) => {
