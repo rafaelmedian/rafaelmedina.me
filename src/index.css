@@ -34,9 +34,16 @@
   --surface: #ffffff;
   --surface-2: #f6f8fb;
   --ink: #141414;
-  --muted: #888787;
+  /* Muted text ramp. Both steps clear WCAG AA (4.5:1) against --body-bg:
+     --muted is 5.3:1, --muted-soft 4.6:1. Keep new muted text on these two
+     rather than reaching for a lighter one-off grey. */
+  --muted: #6b6b6b;
+  --muted-soft: #757575;
   --border: rgb(148 163 184 / 0.26);
   --accent: #8a8a8a;
+  /* Focus indicators need 3:1 against the adjacent surface (WCAG 1.4.11), which
+     rules out the greys in --accent's range on our near-white backgrounds. */
+  --focus-ring: #2d2d2d;
   --overlay-filter: blur(1rem);
   --overlay-background: hsla(0, 0%, 100%, 0.8);
   --overlay-shadow:
@@ -98,7 +105,7 @@ body * {
 }
 
 :where(a, button, input, textarea, select, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--accent) 75%, white);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -312,12 +319,6 @@ img {
   cursor: pointer;
 }
 
-.mosaic-profile-meta:focus-visible {
-  outline: 2px solid #2d2d2d;
-  outline-offset: 3px;
-  border-radius: 0.2rem;
-}
-
 .mosaic-avatar {
   width: 3.25rem;
   height: 3.25rem;
@@ -376,7 +377,7 @@ img {
 }
 
 .mosaic-avatar-button:focus-visible {
-  outline: 2px solid #2d2d2d;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -745,7 +746,7 @@ img {
 }
 
 .mosaic-about-hobby-note {
-  color: #a4a4a4;
+  color: var(--muted-soft);
 }
 
 .mosaic-about-facts {
@@ -767,7 +768,7 @@ img {
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.6;
-  color: #a4a4a4;
+  color: var(--muted-soft);
 }
 
 .mosaic-about-fact dd {
@@ -814,7 +815,7 @@ img {
   gap: 0.4rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
   font-size: 0.875rem;
-  color: #838383;
+  color: var(--muted);
   cursor: pointer;
   transition: color 160ms ease;
 }
@@ -856,7 +857,7 @@ img {
   font-size: 1rem;
   line-height: 1.7;
   letter-spacing: -0.005rem;
-  color: #838383;
+  color: var(--muted);
 }
 
 
@@ -870,13 +871,13 @@ img {
   font-size: 1rem;
   line-height: 1.7;
   letter-spacing: -0.005rem;
-  color: #838383;
+  color: var(--muted);
   text-align: center;
   text-wrap: balance;
 }
 
 .mosaic-profile-location > span[aria-hidden="true"] {
-  color: #a4a4a4;
+  color: var(--muted-soft);
   margin-inline: 0.25rem;
 }
 
@@ -974,7 +975,7 @@ img {
   align-items: center;
   justify-content: flex-start;
   gap: 0.25rem;
-  color: #838383;
+  color: var(--muted);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
   font-size: 1rem;
   font-weight: 400;
@@ -991,7 +992,7 @@ img {
 }
 
 .mosaic-work-history-copy {
-  color: #838383;
+  color: var(--muted);
   white-space: nowrap;
 }
 
@@ -1037,7 +1038,7 @@ img {
 }
 
 .mosaic-work-history-chip:focus-visible {
-  outline: 2px solid #9ea6b5;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -1180,7 +1181,7 @@ img {
 }
 
 .mosaic-work-history-popover-role {
-  color: #8a8a8a;
+  color: var(--muted-soft);
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.5;
@@ -1224,7 +1225,7 @@ img {
 }
 
 .mosaic-work-history-popover-link:focus-visible {
-  outline: 2px solid #9ea6b5;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -1330,7 +1331,7 @@ img {
 }
 
 .mosaic-company-inline-link:focus-visible {
-  outline: 2px solid #9ea6b5;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
   border-radius: 0.2rem;
 }
@@ -1464,7 +1465,7 @@ img {
 }
 
 .mosaic-contact-pill:focus-visible {
-  outline: 2px solid #9ea6b5;
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -1735,12 +1736,12 @@ img {
 }
 
 .mosaic-row-card:focus-visible {
-  border-color: #9ea6b5;
+  border-color: var(--focus-ring);
   background: #e9e9e9;
   box-shadow:
-    0 0 0 1px rgb(158 166 181 / 0.58),
-    0 0 0 6px rgb(158 166 181 / 0.18);
-  outline: 2px solid #9ea6b5;
+    0 0 0 1px rgb(45 45 45 / 0.5),
+    0 0 0 6px rgb(45 45 45 / 0.14);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -2143,7 +2144,7 @@ img {
 }
 
 .preview-gallery-detail-row dt {
-  color: #8a8a8a;
+  color: var(--muted-soft);
   font-size: 0.875rem;
   line-height: 1.35;
 }

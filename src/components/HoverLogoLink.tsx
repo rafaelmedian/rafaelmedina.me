@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react"
 
-import { applyPointerTilt, logoChipTilt, nestedChipTilt, resetPointerTilt } from "../lib/pointerTilt"
+import { applyPointerTilt, coalescePointerMove, logoChipTilt, nestedChipTilt, resetPointerTilt } from "../lib/pointerTilt"
 
 type HoverLogoLinkProps = PropsWithChildren<{
   href: string
@@ -10,17 +10,17 @@ type HoverLogoLinkProps = PropsWithChildren<{
   title?: string
 }>
 
-function handlePointerMove(event: React.PointerEvent<HTMLAnchorElement>) {
-  const target = event.currentTarget
+const handlePointerMove = coalescePointerMove<HTMLAnchorElement>((target, pointer) => {
   const box = target.getBoundingClientRect()
 
   // The pill leans; the logos inside it lean half as much, so they parallax
   // against their own container instead of moving as one rigid slab.
-  applyPointerTilt({ target, box, pointer: event, scales: logoChipTilt, prefix: "mosaic-hover" })
-  applyPointerTilt({ target, box, pointer: event, scales: nestedChipTilt, prefix: "mosaic-hover-chip" })
-}
+  applyPointerTilt({ target, box, pointer, scales: logoChipTilt, prefix: "mosaic-hover" })
+  applyPointerTilt({ target, box, pointer, scales: nestedChipTilt, prefix: "mosaic-hover-chip" })
+})
 
 function resetPointerAnchor(event: React.PointerEvent<HTMLAnchorElement>) {
+  handlePointerMove.cancel()
   resetPointerTilt(event.currentTarget, "mosaic-hover")
   resetPointerTilt(event.currentTarget, "mosaic-hover-chip")
 }

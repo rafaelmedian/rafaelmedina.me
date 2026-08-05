@@ -12,7 +12,7 @@ import {
   type PointerEvent,
 } from "react"
 
-import { applyPointerTilt, popoverTilt, resetPointerTilt } from "../lib/pointerTilt"
+import { applyPointerTilt, coalescePointerMove, popoverTilt, resetPointerTilt } from "../lib/pointerTilt"
 import { HoverLogoLink } from "./HoverLogoLink"
 
 const popoverTiltPrefix = "mosaic-popover"
@@ -130,11 +130,27 @@ function isHoverCapable() {
   return typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
 }
 
+// The popover is a sibling of the triggers, so measure the pointer against the
+// word it is leaning away from but hang the variables on the shared container
+// the popover can actually inherit from. The trigger finds that container by
+// walking up, which keeps this a plain module-level handler.
+const handleTriggerPointerMove = coalescePointerMove<HTMLAnchorElement>((trigger, pointer) => {
+  const container = trigger.closest<HTMLElement>(".mosaic-work-history")
+  if (!container || !isHoverCapable()) return
+
+  applyPointerTilt({
+    target: container,
+    box: trigger.getBoundingClientRect(),
+    pointer,
+    scales: popoverTilt,
+    prefix: popoverTiltPrefix,
+  })
+})
+
 function WorkHistoryTrigger({
   active,
   company,
   descriptionId,
-  popoverId,
   onBlur,
   onClick,
   onFocus,
@@ -147,7 +163,6 @@ function WorkHistoryTrigger({
   active: boolean
   company: WorkedWithCompany
   descriptionId: string
-  popoverId: string
   onBlur: (event: FocusEvent<HTMLElement>) => void
   onClick: (companyId: string, event: MouseEvent<HTMLAnchorElement>) => void
   onFocus: (companyId: string) => void
@@ -164,8 +179,9 @@ function WorkHistoryTrigger({
       target="_blank"
       rel="noreferrer"
       className={`mosaic-work-history-chip${active ? " is-active" : ""}`}
-      aria-expanded={active}
-      aria-controls={popoverId}
+      // No aria-expanded/aria-controls: activating this chip navigates to the
+      // company site, it does not toggle the popover, so a disclosure state here
+      // would misreport what Enter does.
       aria-describedby={descriptionId}
       onClick={(event) => onClick(company.id, event)}
       onFocus={() => onFocus(company.id)}
@@ -218,8 +234,18 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       ? profileCompanies.recentGroup
       : profileCompanies.previousCompanies.find((company) => company.id === activeCompanyId)
 
+  const activeCompanyHostname = activeCompany
+    ? new URL(activeCompany.href).hostname.replace(/^www\./, "")
+    : ""
+
   const clearOpenTimeout = () => window.clearTimeout(openTimeoutRef.current)
   const clearCloseTimeout = () => window.clearTimeout(closeTimeoutRef.current)
+
+  /** Cancel queued steering before returning the popover to its resting angle. */
+  const settleTilt = useCallback(() => {
+    handleTriggerPointerMove.cancel()
+    if (containerRef.current) resetPointerTilt(containerRef.current, popoverTiltPrefix)
+  }, [])
 
   const closePopover = useCallback(() => {
     clearOpenTimeout()
@@ -227,8 +253,8 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
     setIsSwitchingCompany(false)
     setActiveCompanyId(null)
     // Otherwise a keyboard-opened panel inherits the lean from the last hover.
-    if (containerRef.current) resetPointerTilt(containerRef.current, popoverTiltPrefix)
-  }, [])
+    settleTilt()
+  }, [settleTilt])
 
   const positionPopover = useCallback((companyId: string) => {
     const container = containerRef.current
@@ -266,14 +292,19 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
   }, [activeCompanyId, positionPopover])
 
   useEffect(() => {
+    // Every handler here is a no-op with no popover open, and the sentence
+    // variant never opens one. Bail out rather than keep four global listeners
+    // (including a scroll handler) live for the whole session.
+    if (!activeCompanyId) return
+
     const handlePositionChange = () => {
-      if (activeCompanyId) positionPopover(activeCompanyId)
+      positionPopover(activeCompanyId)
     }
     const handlePointerDown = (event: globalThis.PointerEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) closePopover()
     }
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape" || !activeCompanyId) return
+      if (event.key !== "Escape") return
       const activeTrigger = triggerRefs.current.get(activeCompanyId)
       closePopover()
       activeTrigger?.focus()
@@ -301,11 +332,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
   )
 
   if (variant === "profile") {
-    /** Let the panel fall flat once the cursor is no longer steering it. */
-    const settleTilt = () => {
-      if (containerRef.current) resetPointerTilt(containerRef.current, popoverTiltPrefix)
-    }
-
     const openPopover = (companyId: string, delay = false) => {
       clearCloseTimeout()
       clearOpenTimeout()
@@ -347,22 +373,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       scheduleClose()
     }
 
-    // The popover is a sibling of the triggers, so measure the pointer against
-    // the word it is leaning away from but hang the variables on the shared
-    // container the popover can actually inherit from.
-    const handleTriggerPointerMove = (event: PointerEvent<HTMLAnchorElement>) => {
-      const container = containerRef.current
-      if (!container || !isHoverCapable()) return
-
-      applyPointerTilt({
-        target: container,
-        box: event.currentTarget.getBoundingClientRect(),
-        pointer: event,
-        scales: popoverTilt,
-        prefix: popoverTiltPrefix,
-      })
-    }
-
     const handleFocusLeave = (event: FocusEvent<HTMLElement>) => {
       const destination = event.relatedTarget
       if (destination instanceof Node && containerRef.current?.contains(destination)) return
@@ -401,7 +411,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
     } as CSSProperties
 
     return (
-      <div ref={containerRef} className="mosaic-work-history" aria-label="Work history">
+      <div ref={containerRef} className="mosaic-work-history" role="group" aria-label="Work history">
         <div className="mosaic-work-history-line">
           <span className="mosaic-work-history-copy">Recently at</span>
           {profileCompanies.recentGroup ? (
@@ -409,7 +419,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
               active={activeCompanyId === profileCompanies.recentGroup.id}
               company={profileCompanies.recentGroup}
               descriptionId={`${popoverId}-${profileCompanies.recentGroup.id}-description`}
-              popoverId={popoverId}
               onBlur={handleFocusLeave}
               onClick={handleTriggerClick}
               onFocus={handleTriggerFocus}
@@ -424,14 +433,13 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
           ) : null}
           <span className="mosaic-work-history-copy">previously worked with and at</span>
         </div>
-        <div className="mosaic-work-history-line" aria-label="Previous companies">
+        <div className="mosaic-work-history-line" role="group" aria-label="Previous companies">
           {profileCompanies.previousCompanies.map((company) => (
             <WorkHistoryTrigger
               key={company.id}
               active={activeCompanyId === company.id}
               company={company}
               descriptionId={`${popoverId}-${company.id}-description`}
-              popoverId={popoverId}
               onBlur={handleFocusLeave}
               onClick={handleTriggerClick}
               onFocus={handleTriggerFocus}
@@ -449,7 +457,10 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
         <div
           ref={popoverRef}
           id={popoverId}
-          role="dialog"
+          // Not `dialog`: focus is never moved in here and nothing is modal, so
+          // announcing it as one promises an interaction that does not exist.
+          // The chip's aria-describedby already reads out the same content.
+          role="group"
           aria-label={activeCompany ? `${activeCompany.name}, ${activeCompany.role}` : "Work history details"}
           aria-hidden={activeCompany ? undefined : true}
           className="mosaic-work-history-popover"
@@ -493,9 +504,9 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
                 target="_blank"
                 rel="noreferrer"
                 className="mosaic-work-history-popover-link"
-                aria-label={`Visit ${new URL(activeCompany.href).hostname.replace(/^www\./, "")}`}
+                aria-label={`Visit ${activeCompanyHostname}`}
               >
-                {new URL(activeCompany.href).hostname.replace(/^www\./, "")}
+                {activeCompanyHostname}
                 <span aria-hidden="true">›</span>
               </a>
             </div>
@@ -516,7 +527,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
   }
 
   return (
-    <span className="mosaic-company-inline-list" aria-label="Companies I have worked with">
+    <span className="mosaic-company-inline-list" role="group" aria-label="Companies I have worked with">
       {workedWithCompanies.map((company, index) => (
         <span key={company.name} className="mosaic-company-inline-item">
           <HoverLogoLink

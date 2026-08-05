@@ -59,8 +59,15 @@ export const popoverTilt: PointerTiltScales = {
   lift: 0.004,
 }
 
+// Built once and reused: `applyPointerTilt` runs on every pointermove, and
+// constructing a MediaQueryList per event is pure overhead on the hot path.
+// The list stays live, so `.matches` still tracks preference changes.
+let reducedMotionQuery: MediaQueryList | null = null
+
 function prefersReducedMotion() {
-  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  if (typeof window === "undefined") return false
+  reducedMotionQuery ??= window.matchMedia("(prefers-reduced-motion: reduce)")
+  return reducedMotionQuery.matches
 }
 
 function names(prefix: string) {
@@ -108,6 +115,42 @@ export function applyPointerTilt({
   target.style.setProperty(property.tiltX, `${(-relativeY * scales.tiltX).toFixed(2)}deg`)
   target.style.setProperty(property.tiltY, `${(relativeX * scales.tiltY).toFixed(2)}deg`)
   target.style.setProperty(property.lift, `${(1 + Math.abs(relativeX) * scales.lift).toFixed(3)}`)
+}
+
+/**
+ * Wrap a tilt handler so it runs at most once per frame.
+ *
+ * `pointermove` fires well above refresh rate, and each call reads a rect and
+ * then writes five custom properties -- a read-after-write on every event, which
+ * forces a synchronous layout each time. Coalescing into rAF caps that at one
+ * per frame while still measuring fresh geometry (so it stays correct if the
+ * page scrolled since the last move).
+ */
+export function coalescePointerMove<T extends HTMLElement>(
+  apply: (element: T, pointer: { clientX: number; clientY: number }) => void,
+) {
+  let frame = 0
+  let pending: { element: T; clientX: number; clientY: number } | null = null
+
+  const handlePointerMove = (event: { currentTarget: T; clientX: number; clientY: number }) => {
+    pending = { element: event.currentTarget, clientX: event.clientX, clientY: event.clientY }
+    if (frame) return
+
+    frame = requestAnimationFrame(() => {
+      frame = 0
+      const next = pending
+      pending = null
+      if (next) apply(next.element, next)
+    })
+  }
+
+  handlePointerMove.cancel = () => {
+    pending = null
+    cancelAnimationFrame(frame)
+    frame = 0
+  }
+
+  return handlePointerMove
 }
 
 /** Return the tilt variables in `prefix` to their resting values. */

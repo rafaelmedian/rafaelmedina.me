@@ -463,6 +463,16 @@ export function PreviewGalleryDialog({
     if (!open) return
 
     const onKeyDown = (event: KeyboardEvent) => {
+      // Arrow keys belong to the focused control first -- seeking a video,
+      // moving a caret -- and only fall through to gallery paging otherwise.
+      // Escape still closes from anywhere.
+      const target = event.target
+      const typingOrScrubbing =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT", "VIDEO", "AUDIO"].includes(target.tagName))
+      if (typingOrScrubbing && event.key !== "Escape") return
+
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         event.preventDefault()
         moveBy(-1)
@@ -508,7 +518,8 @@ export function PreviewGalleryDialog({
               className="preview-gallery-popup"
               data-preview-media={activeCardIsVideo ? "video" : "image"}
               data-origin-motion={originMotionEnabled ? "true" : undefined}
-              aria-label={`${activeCard.title} gallery preview`}
+              // No aria-label here: it would override the aria-labelledby Base UI
+              // wires to <Dialog.Title> below, and the title is the better name.
             >
               <article className={`preview-gallery-card${switchClassName}`}>
                 <div className="preview-gallery-card-inner" ref={cardInnerRef}>
@@ -544,14 +555,19 @@ export function PreviewGalleryDialog({
                         autoPlay={!prefersReducedMotion}
                         playsInline
                         preload={prefersReducedMotion ? "none" : "metadata"}
-                        controls={prefersReducedMotion}
+                        // Always on, not just under reduced motion: an autoplaying
+                        // loop runs past five seconds, so WCAG 2.2.2 wants a pause
+                        // control every viewer can reach.
+                        controls
                         aria-label={activeCard.title}
                         className="preview-gallery-media"
                       />
                     ) : (
                       <img
                         src={activeCard.image}
-                        alt={activeCard.title}
+                        // The dialog title right below already names this preview,
+                        // so a matching alt would just read the same words twice.
+                        alt=""
                         width={activeCard.previewWidth}
                         height={activeCard.previewHeight}
                         className="preview-gallery-media"
@@ -566,7 +582,7 @@ export function PreviewGalleryDialog({
                       {safeIndex + 1} / {cards.length}
                     </span>
 
-                    <div className="preview-gallery-controls" aria-label="Preview controls">
+                    <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
                       <button
                         type="button"
                         className="preview-gallery-nav preview-gallery-nav-prev"

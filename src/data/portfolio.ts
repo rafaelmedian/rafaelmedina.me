@@ -1,14 +1,7 @@
-import card02 from "../assets/cards/card-02.svg"
-import card04 from "../assets/cards/card-04.svg"
-import card05 from "../assets/cards/card-05.svg"
-import card06 from "../assets/cards/card-06.svg"
 import profilePhoto from "../assets/profile-photo.webp"
-
-export type CardKind = "project" | "about" | "contact" | "preview" | "info"
 
 export type PortfolioCard = {
   id: string
-  kind: CardKind
   category: string
   title: string
   summary: string
@@ -17,14 +10,9 @@ export type PortfolioCard = {
   previewWidth?: number
   previewHeight?: number
   previewPoster?: string
-  ctaLabel: string
   ctaHref: string
-  ctaExternal: boolean
   previewAspectRatio?: number
   previewMediaPaddingBlock?: string
-  masonrySpan?: "sm" | "lg"
-  homePlacement?: "featured-phone" | "featured-wide" | "featured-poster" | "grid"
-  homeOrder?: number
   pagination?: {
     total: number
     images: string[]
@@ -114,15 +102,6 @@ export const homeRows: HomeRow[] = [
 export const siteProfile = {
   name: "Rafael Medina",
   title: "Product Designer, Freelance",
-  intro:
-    "Hey I'm Rafael, a product designer and maker based in Punta Cana. For over 10 years, I've helped teams design products that balance clarity, visual craft, and practical outcomes.",
-  previouslyLabel: "Previously",
-  previouslyText: "Product designer for SaaS teams and startup builders.",
-  nowLabel: "Now",
-  nowText: "Freelancing, experimenting with AI workflows, and building design systems.",
-  availability: "Available for work",
-  contactLabel: "Get in touch",
-  contactHref: "mailto:hey@rafaelmedina.me",
   photo: profilePhoto,
 }
 
@@ -138,7 +117,6 @@ export const siteLinks: SiteLinks = {
 export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-9",
-    kind: "preview",
     category: "Preview",
     title: "Matcha - Multiwallet flow",
     summary: "",
@@ -147,15 +125,11 @@ export const portfolioCards: PortfolioCard[] = [
     previewWidth: 480,
     previewHeight: 360,
     previewPoster: "/Projects/shot-small-9-poster.webp",
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
     previewAspectRatio: 0.74,
-    homePlacement: "featured-phone",
   },
   {
     id: "preview-shot-14",
-    kind: "preview",
     category: "Preview",
     title: "Matcha - Mobile Screens",
     summary: "",
@@ -163,14 +137,10 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
-    homeOrder: 1,
   },
   {
     id: "preview-shot-20",
-    kind: "preview",
     category: "Preview",
     title: "Matcha - Security Audit",
     summary: "",
@@ -179,14 +149,10 @@ export const portfolioCards: PortfolioCard[] = [
     previewWidth: 640,
     previewHeight: 480,
     previewPoster: "/Projects/shot-small-20-poster.webp",
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
-    homeOrder: 10,
   },
   {
     id: "preview-shot-16",
-    kind: "preview",
     category: "Preview",
     title: "Matcha - Homepage",
     summary: "",
@@ -195,16 +161,11 @@ export const portfolioCards: PortfolioCard[] = [
     previewWidth: 640,
     previewHeight: 480,
     previewPoster: "/Projects/shot-small-16-poster.webp",
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
     previewAspectRatio: 0.8,
-    masonrySpan: "sm",
-    homePlacement: "featured-wide",
   },
   {
     id: "preview-protector",
-    kind: "preview",
     category: "Preview",
     title: "Protector",
     summary: "",
@@ -212,15 +173,11 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/protector.webp",
     previewWidth: 1200,
     previewHeight: 1328,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
     previewAspectRatio: 1354 / 1025,
-    homeOrder: 3,
   },
   {
     id: "preview-popparazi-v1",
-    kind: "preview",
     category: "Preview",
     title: "Popparazi V1",
     summary: "",
@@ -228,17 +185,12 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/popparazi_v1.webp",
     previewWidth: 630,
     previewHeight: 1314,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
     previewAspectRatio: 0.46,
     previewMediaPaddingBlock: "clamp(0.7rem, 1.6vw, 1.4rem)",
-    masonrySpan: "sm",
-    homePlacement: "featured-poster",
   },
   {
     id: "preview-shot-21",
-    kind: "preview",
     category: "Preview",
     title: "Matcha - Token Page",
     summary: "",
@@ -246,15 +198,11 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
     previewAspectRatio: 4 / 3,
-    homeOrder: 8,
   },
   {
     id: "preview-shot-1",
-    kind: "preview",
     category: "Preview",
     title: "Matcha Trade Page",
     summary: "",
@@ -262,14 +210,10 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
-    homeOrder: 5,
   },
   {
     id: "preview-shot-15",
-    kind: "preview",
     category: "Preview",
     title: "Matcha - Mobile navigation",
     summary: "",
@@ -277,14 +221,10 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
-    homeOrder: 6,
   },
   {
     id: "preview-shot-19",
-    kind: "preview",
     category: "Preview",
     title: "Matcha Trade module",
     summary: "",
@@ -292,14 +232,10 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
-    homeOrder: 4,
   },
   {
     id: "preview-shot-22",
-    kind: "preview",
     category: "Preview",
     title: "Matcha Dark mode",
     summary: "",
@@ -307,14 +243,10 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
-    homeOrder: 7,
   },
   {
     id: "preview-shot-23",
-    kind: "preview",
     category: "Preview",
     title: "Matcha Pro",
     summary: "",
@@ -322,81 +254,6 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaLabel: "",
     ctaHref: "#",
-    ctaExternal: false,
-    homeOrder: 9,
-  },
-  {
-    id: "widget-music",
-    kind: "info",
-    category: "Widget",
-    title: "Music Player",
-    summary: "A focused listening mix for design sessions.",
-    detail: "Ambient and electronic tracks for deep work and prototyping.",
-    image: "",
-    ctaLabel: "Spotify Embed",
-    ctaHref: "https://open.spotify.com/embed/playlist/37i9dQZF1DX4WYpdgoIcn6?utm_source=generator",
-    ctaExternal: true,
-  },
-  {
-    id: "widget-map",
-    kind: "info",
-    category: "Widget",
-    title: "Map",
-    summary: "Current location and nearby context.",
-    detail: "Map snapshot centered on Punta Cana, Dominican Republic.",
-    image: "",
-    ctaLabel: "Open in Maps",
-    ctaHref: "https://maps.google.com/?q=Punta+Cana,Dominican+Republic",
-    ctaExternal: true,
-  },
-  {
-    id: "info-cv",
-    kind: "info",
-    category: "CV",
-    title: "Curriculum Vitae",
-    summary: "Experience, projects, and selected work history.",
-    detail: "A concise overview of product design roles, outcomes, and capabilities.",
-    image: card02,
-    ctaLabel: "Open LinkedIn",
-    ctaHref: siteLinks.linkedin,
-    ctaExternal: true,
-  },
-  {
-    id: "info-about",
-    kind: "info",
-    category: "About",
-    title: "About",
-    summary: "Product designer focused on clarity, systems, and practical craft.",
-    detail: "I design dependable experiences with clean hierarchy and thoughtful interaction.",
-    image: card05,
-    ctaLabel: "About Profile",
-    ctaHref: siteLinks.linkedin,
-    ctaExternal: true,
-  },
-  {
-    id: "info-notes",
-    kind: "info",
-    category: "Notes",
-    title: "Design Notes",
-    summary: "Short notes on process, interaction ideas, and UI experiments.",
-    detail: "A running collection of observations, rationale, and implementation details.",
-    image: card04,
-    ctaLabel: "View GitHub",
-    ctaHref: siteLinks.github,
-    ctaExternal: true,
-  },
-  {
-    id: "info-social",
-    kind: "info",
-    category: "Social",
-    title: "Basic Social Links",
-    summary: "Email, GitHub, and LinkedIn for quick contact.",
-    detail: "Reach out by email or connect via GitHub and LinkedIn.",
-    image: card06,
-    ctaLabel: "Open LinkedIn",
-    ctaHref: siteLinks.linkedin,
-    ctaExternal: true,
   },
 ]
