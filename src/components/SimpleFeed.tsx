@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type Dispatch, type SetStateAction } from "react"
 
 import { AboutPanel } from "./AboutPanel"
+import { ContactActionRow } from "./ContactActionRow"
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -357,7 +358,9 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
   const resolvedAnimatingState = reducedMotion ? false : isAnimating
 
   return (
-    <span className={`mosaic-live-time ${resolvedAnimatingState ? "is-animating" : ""}`} aria-live="polite" aria-atomic="true">
+    // No aria-live: this is ambient info, and a live region would re-announce
+    // the time to screen readers on every minute tick for the whole session.
+    <span className={`mosaic-live-time ${resolvedAnimatingState ? "is-animating" : ""}`}>
       <span className="mosaic-live-time-track">
         <span className="mosaic-live-time-value mosaic-live-time-value-current">{resolvedLabel}</span>
         {resolvedIncomingLabel ? <span className="mosaic-live-time-value mosaic-live-time-value-next">{resolvedIncomingLabel}</span> : null}
@@ -368,8 +371,8 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
 
 function SocialCorner({ links }: { links: SiteLinks }) {
   const socialLinks = [
-    { label: "X.com", href: links.x, external: true },
-    { label: "Telegram", href: links.telegram, external: true },
+    { label: "X", href: links.x, external: true },
+    { label: "LinkedIn", href: links.linkedin, external: true },
     { label: "Email", href: `mailto:${links.email}`, external: false },
   ]
 
@@ -407,20 +410,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
-  const [view, setView] = useState<"work" | "about">("work")
-  const [isSwapping, setIsSwapping] = useState(false)
-  // Two entrance systems share the mosaic, and `hasSwapped` picks between them:
-  // before the first swap the rows carry `.mosaic-work-intro` (the CSS-only
-  // first-load cascade, which has to be in the prerendered HTML), after it they
-  // carry `.mosaic-view-animated` (the swap stagger). Never both -- the swap
-  // animation scales the container, which would leave the mosaic mid-scale for
-  // anything measuring it if it also ran on load.
-  const [hasSwapped, setHasSwapped] = useState(false)
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
-  const swapTimeoutRef = useRef<number | null>(null)
-  const avatarRef = useRef<HTMLButtonElement | null>(null)
-  const viewTriggerRef = useRef<HTMLElement | null>(null)
-  const metaPointerRef = useRef<{ x: number; y: number } | null>(null)
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -545,57 +535,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     }
   }, [])
 
-  useEffect(() => {
-    return () => {
-      if (swapTimeoutRef.current !== null) window.clearTimeout(swapTimeoutRef.current)
-    }
-  }, [])
+  const scrollToAbout = () => {
+    trackEvent("about_scroll", { about_scroll_trigger: "avatar" })
+    const aboutPanel = document.getElementById("about-panel")
+    if (!aboutPanel) return
 
-  useEffect(() => {
-    if (view !== "about") return
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") swapView("work")
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- swapView is redeclared each render
-  }, [view, prefersReducedMotion])
-
-  function swapView(nextView: "work" | "about", trigger = "avatar") {
-    if (nextView === view) return
-
-    trackEvent("hero_view_change", { hero_view: nextView, hero_view_trigger: trigger })
-
-    // Closing from inside the panel (its back button, or Escape) unmounts
-    // whatever had focus, so hand it back to the photo that opened it.
-    const focusLeavesWithPanel =
-      nextView === "work" &&
-      document.activeElement instanceof Node &&
-      (document.getElementById("about-panel")?.contains(document.activeElement) ?? false)
-    const restoreFocus = () => {
-      if (focusLeavesWithPanel) (viewTriggerRef.current ?? avatarRef.current)?.focus()
-    }
-
-    if (prefersReducedMotion) {
-      setView(nextView)
-      restoreFocus()
-      return
-    }
-
-    setHasSwapped(true)
-    if (swapTimeoutRef.current !== null) window.clearTimeout(swapTimeoutRef.current)
-    setIsSwapping(true)
-    swapTimeoutRef.current = window.setTimeout(() => {
-      setView(nextView)
-      setIsSwapping(false)
-      swapTimeoutRef.current = null
-      restoreFocus()
-    }, 170)
+    aboutPanel.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    })
+    aboutPanel.focus({ preventScroll: true })
   }
-
-  const isAboutView = view === "about"
 
   return (
     <section className="mosaic-shell">
@@ -605,16 +555,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-info">
             <button
-              ref={avatarRef}
               type="button"
-              className={`mosaic-avatar mosaic-avatar-coin mosaic-avatar-button${isAboutView ? " is-flipped" : ""}`}
-              aria-expanded={isAboutView}
-              aria-controls={isAboutView ? "about-panel" : undefined}
-              aria-label={isAboutView ? "Back to selected work" : `Read about ${profile.name}`}
-              onClick={(event) => {
-                viewTriggerRef.current = event.currentTarget
-                swapView(isAboutView ? "work" : "about")
-              }}
+              className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
+              aria-label={`Read about ${profile.name}`}
+              onClick={scrollToAbout}
             >
               <div className="mosaic-avatar-coin-inner">
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
@@ -635,38 +579,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   <path d="M33 5C23 4 11 7 4 15" />
                   <path d="M4 15 10.8 13.4M4 15 6.5 8.5" />
                 </svg>
-                <span className="mosaic-avatar-hint-label">
-                  {isAboutView ? "go back" : "read about me"}
-                </span>
+                <span className="mosaic-avatar-hint-label">read about me</span>
               </span>
             </button>
-            {/* A convenience hit area for pointers only -- deliberately not a
-                control. `role="button"` here would make its descendants
-                presentational, stripping the <h2> (the page's only visible
-                heading) from the accessibility tree and adding a second tab stop
-                with the same label as the avatar button above. Keyboard and
-                screen reader users get the identical disclosure from that
-                button, so this stays a plain div with a real heading inside. */}
-            <div
-              className="mosaic-profile-meta"
-              onPointerDown={(event) => {
-                metaPointerRef.current = { x: event.clientX, y: event.clientY }
-              }}
-              onClick={(event) => {
-                // This text stays selectable, so only treat the click as a tap:
-                // a drag that travelled, or one that left a selection behind,
-                // was the reader highlighting their name, not toggling views.
-                const start = metaPointerRef.current
-                metaPointerRef.current = null
-                if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) return
-                const selection = window.getSelection()
-                if (selection && !selection.isCollapsed) return
-                // Not a focus target, so leave `viewTriggerRef` alone and let the
-                // about panel return focus to the avatar button on close.
-                viewTriggerRef.current = null
-                swapView(isAboutView ? "work" : "about", "profile-meta")
-              }}
-            >
+            <div className="mosaic-profile-meta">
               <h2>{profile.name}</h2>
               <p className="mosaic-profile-subtitle">{profile.title}</p>
             </div>
@@ -676,28 +592,30 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
             Punta Cana & NYC <span aria-hidden="true">·</span> Local time:{" "}
             <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
           </p>
+          {/* One wrapper, one stagger slot: availability and the contact
+              actions land together in the hero cascade. */}
+          <div className="mosaic-profile-contact">
+            <ContactActionRow
+              email={links.email}
+              contactHref={`mailto:${links.email}`}
+              linkedinHref={links.linkedin}
+            />
+            <p className="mosaic-profile-availability">
+              <span className="mosaic-availability-dot" aria-hidden="true" />
+              Available for work
+            </p>
+          </div>
         </div>
       </header>
 
       <>
-          <div
-            key={view}
-            className={`mosaic-view${isSwapping ? " is-leaving" : ""}${
-              hasSwapped && !prefersReducedMotion ? " mosaic-view-animated" : ""
-            }`}
-          >
-          {isAboutView ? (
-            <AboutPanel links={links} onClose={() => swapView("work")} />
-          ) : (
-            <article id="work" className="mosaic-work">
+          <article id="work" className="mosaic-work">
               <h2 className="sr-only">Selected work</h2>
               {/* No `prefersReducedMotion` here on purpose: it is false on the
                   server and on the first client render, so a JS gate would flash
                   before the effect syncs. Reduced motion is handled in CSS. */}
               <div
-                className={`mosaic-rows${
-                  hasSwapped || hasCompletedWorkIntro ? "" : " mosaic-work-intro"
-                }`}
+                className={`mosaic-rows${hasCompletedWorkIntro ? "" : " mosaic-work-intro"}`}
                 role="group"
                 aria-label="Selected work previews"
               >
@@ -797,16 +715,13 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   )
                 })}
               </div>
-            </article>
-          )}
-          </div>
+          </article>
 
-          {/* Outside the swap wrapper: while that wrapper is mid-animation it has
-              a transform, which would become the containing block for the
-              dialog's fixed positioning. Stays mounted after the first open so
-              Base UI can run the close transition instead of the dialog
-              vanishing on unmount. */}
-          {!isAboutView && hasOpenedWorkPreview && flatWorkCards.length > 0 ? (
+          <AboutPanel links={links} />
+
+          {/* Stays mounted after the first open so Base UI can run the close
+              transition instead of the dialog vanishing on unmount. */}
+          {hasOpenedWorkPreview && flatWorkCards.length > 0 ? (
             <Suspense fallback={null}>
               <PreviewGalleryDialog
                 cards={flatWorkCards}

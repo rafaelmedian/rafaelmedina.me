@@ -35,24 +35,53 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
-test("operates the about disclosure from the keyboard and restores focus", async ({ page }) => {
+test("offers a LinkedIn message action beside copy email", async ({ page }) => {
   await page.goto("/")
-  // Located by class, not name: the accessible name flips to "Back to selected
-  // work" once the panel opens.
+
+  const actions = page.getByRole("group", { name: "Profile contact actions" })
+  const socialActions = actions.getByRole("link")
+
+  await expect(socialActions).toHaveCount(1)
+  await expect(socialActions).toHaveAccessibleName("Message on LinkedIn")
+  await expect(socialActions).toHaveAttribute("href", "https://www.linkedin.com/in/rafaelmedian")
+})
+
+test("scrolls to and focuses the about section from the avatar button", async ({ page }) => {
+  // Reduced motion makes the scroll instant, so the assertion isn't racing a
+  // smooth-scroll animation.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
   const trigger = page.locator(".mosaic-avatar-button")
 
   await expect(trigger).toHaveAccessibleName("Read about Rafael Medina")
-  await expect(trigger).toHaveAttribute("aria-expanded", "false")
   await trigger.focus()
   await trigger.press("Enter")
 
-  await expect(page.locator("#about-panel")).toBeVisible()
-  await expect(page.locator("#about-panel")).toBeFocused()
-  await expect(trigger).toHaveAttribute("aria-expanded", "true")
+  const about = page.locator("#about-panel")
+  await expect(about).toBeInViewport()
+  await expect(about).toBeFocused()
+  await expect(about).not.toHaveCSS("outline-style", "none")
+})
 
-  await page.keyboard.press("Escape")
-  await expect(page.locator("#about-panel")).toBeHidden()
-  await expect(trigger).toBeFocused()
+test("keeps the about section below the portfolio cards", async ({ page }) => {
+  await page.goto("/")
+
+  const work = page.locator("#work")
+  const about = page.locator("#about-panel")
+
+  await expect(work).toBeVisible()
+  await expect(about).toBeVisible()
+
+  const placement = await page.locator("#work, #about-panel").evaluateAll(([workNode, aboutNode]) => {
+    const workRect = workNode.getBoundingClientRect()
+    const aboutRect = aboutNode.getBoundingClientRect()
+    return {
+      followsWork: Boolean(workNode.compareDocumentPosition(aboutNode) & Node.DOCUMENT_POSITION_FOLLOWING),
+      startsAfterWork: aboutRect.top >= workRect.bottom,
+    }
+  })
+
+  expect(placement).toEqual({ followsWork: true, startsAfterWork: true })
 })
 
 test("exposes the profile name as a heading rather than burying it in a control", async ({ page }) => {
@@ -128,12 +157,87 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
   await expect(dialog).toBeHidden()
 })
 
+test("treats a mostly vertical touch gesture as scrolling rather than gallery paging", async ({ browser }) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    isMobile: true,
+    reducedMotion: "reduce",
+    viewport: mobileViewport,
+  })
+  const page = await context.newPage()
+  await page.goto("/")
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).tap()
+
+  const card = page.locator(".preview-gallery-card")
+  await card.evaluate((element) => {
+    const start = new Touch({ identifier: 1, target: element, clientX: 240, clientY: 180 })
+    const end = new Touch({ identifier: 1, target: element, clientX: 170, clientY: 480 })
+    element.dispatchEvent(
+      new TouchEvent("touchstart", { bubbles: true, changedTouches: [start], touches: [start] }),
+    )
+    element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
+  })
+
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 12")
+  await context.close()
+})
+
+test("clears a cancelled gallery gesture before accepting the next horizontal swipe", async ({ browser }) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    isMobile: true,
+    reducedMotion: "reduce",
+    viewport: mobileViewport,
+  })
+  const page = await context.newPage()
+  await page.goto("/")
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).tap()
+
+  const card = page.locator(".preview-gallery-card")
+  await card.evaluate((element) => {
+    const cancelledStart = new Touch({
+      identifier: 1,
+      target: element,
+      clientX: 260,
+      clientY: 180,
+    })
+    element.dispatchEvent(
+      new TouchEvent("touchstart", {
+        bubbles: true,
+        changedTouches: [cancelledStart],
+        touches: [cancelledStart],
+      }),
+    )
+    element.dispatchEvent(
+      new TouchEvent("touchcancel", { bubbles: true, changedTouches: [cancelledStart] }),
+    )
+
+    const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
+    element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
+  })
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 12")
+
+  await card.evaluate((element) => {
+    const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
+    const end = new Touch({ identifier: 2, target: element, clientX: 180, clientY: 190 })
+    element.dispatchEvent(
+      new TouchEvent("touchstart", { bubbles: true, changedTouches: [start], touches: [start] }),
+    )
+    element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
+  })
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 12")
+  await context.close()
+})
+
 test("returns focus to the originating project after closing the gallery", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
   const trigger = page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ })
   await trigger.focus()
   await trigger.press("Enter")
+  // The gallery chunk is lazy: an Escape fired before it mounts closes
+  // nothing, and the dialog then opens after the assertion.
+  await expect(page.getByRole("dialog")).toBeVisible()
   await page.keyboard.press("Escape")
   await expect(trigger).toBeFocused()
 })
@@ -163,6 +267,32 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
 
   await expect(page.getByRole("dialog")).toBeVisible()
   expect(errors).toEqual([])
+})
+
+test("switches the about card between about me and resume", async ({ page }) => {
+  await page.goto("/")
+  const panel = page.locator("#about-panel")
+
+  await expect(panel).toContainText(/Hi, I.m Rafael/)
+
+  await panel.getByRole("tab", { name: "resume" }).click()
+  await expect(panel.getByRole("tab", { name: "resume" })).toHaveAttribute("aria-selected", "true")
+  await expect(panel).not.toContainText(/Hi, I.m Rafael/)
+
+  const entries = panel.locator(".mosaic-about-resume-entry")
+  await expect(entries.first()).toContainText("0x Project")
+  await expect(panel).toContainText("Incubeta")
+  await expect(panel).toContainText("NOVA Community College")
+  await expect(panel).toContainText("ITLA")
+  await expect(panel).not.toContainText("hellorafaelmedina@gmail.com")
+  await expect(panel).not.toContainText("786 9580")
+
+  await expect(panel.getByRole("button", { name: /Briefcase sticker/ })).toBeVisible()
+  await expect(panel.getByRole("button", { name: /Palm tree sticker/ })).toHaveCount(0)
+
+  await panel.getByRole("tab", { name: "resume" }).press("ArrowLeft")
+  await expect(panel.getByRole("tab", { name: "about me" })).toHaveAttribute("aria-selected", "true")
+  await expect(panel).toContainText(/Hi, I.m Rafael/)
 })
 
 test("lets keyboard users move and reset about stickers", async ({ page }) => {
@@ -427,7 +557,7 @@ test("settles queued work-history tilt when Escape closes the popover", async ({
   expect(tilt).toEqual({ anchorX: "0px", tiltY: "0deg" })
 })
 
-test("reveals the work-history popover on the first tap and follows the link on the second", async ({ browser }) => {
+test("toggles the work-history popover on tap and navigates through its link", async ({ browser }) => {
   const context = await browser.newContext({ hasTouch: true, isMobile: true, viewport: mobileViewport })
   await stubCompanySite(context)
   const page = await context.newPage()
@@ -440,8 +570,15 @@ test("reveals the work-history popover on the first tap and follows the link on 
   await expect(popover).toBeVisible()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Onit")
 
-  const opened = page.waitForEvent("popup")
+  // A second tap on the chip dismisses the popover instead of navigating away.
   await onit.tap()
+  await expect(popover).toBeHidden()
+
+  await onit.tap()
+  await expect(popover).toBeVisible()
+
+  const opened = page.waitForEvent("popup")
+  await popover.getByRole("link", { name: "Visit onit.com" }).tap()
   const companyTab = await opened
   await companyTab.waitForLoadState()
   expect(companyTab.url()).toContain("onit.com")

@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react"
 type ContactActionRowProps = {
   email: string
   contactHref: string
-  telegramHref: string
+  linkedinHref: string
   xHref?: string
 }
 
-export function ContactActionRow({ email, contactHref, telegramHref, xHref }: ContactActionRowProps) {
+export function ContactActionRow({ email, contactHref, linkedinHref, xHref }: ContactActionRowProps) {
   const [isCopySuccess, setIsCopySuccess] = useState(false)
   const resetTimeoutRef = useRef<number | undefined>(undefined)
 
@@ -32,17 +32,23 @@ export function ContactActionRow({ email, contactHref, telegramHref, xHref }: Co
         <button type="button" className="mosaic-contact-pill mosaic-contact-pill-default" onClick={handleCopyEmail}>
           <span className="mosaic-contact-pill-default-label">{isCopySuccess ? "Copied!" : "Copy email"}</span>
         </button>
-        <a href={telegramHref} target="_blank" rel="noreferrer" className="mosaic-contact-pill mosaic-contact-pill-telegram">
-          <span className="mosaic-contact-pill-content mosaic-contact-pill-content-telegram">
+        <a
+          href={linkedinHref}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Message on LinkedIn"
+          className="mosaic-contact-pill mosaic-contact-pill-linkedin"
+        >
+          <span className="mosaic-contact-pill-content mosaic-contact-pill-content-linkedin">
             <img
-              src="/icons/telegram.png"
+              src="/icons/linkedin.svg"
               alt=""
               width={16}
               height={16}
               decoding="async"
-              className="mosaic-contact-pill-icon mosaic-contact-pill-icon-telegram"
+              className="mosaic-contact-pill-icon mosaic-contact-pill-icon-linkedin"
             />
-            <span className="mosaic-contact-pill-telegram-label">Message</span>
+            <span className="mosaic-contact-pill-linkedin-label">Message</span>
           </span>
         </a>
         {xHref ? (
@@ -59,21 +65,7 @@ export function ContactActionRow({ email, contactHref, telegramHref, xHref }: Co
               <span className="mosaic-contact-pill-dark-label">Follow</span>
             </span>
           </a>
-        ) : (
-          <span className="mosaic-contact-pill mosaic-contact-pill-dark">
-            <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
-              <img
-                src="/icons/x.svg"
-                alt=""
-                width={16}
-                height={16}
-                decoding="async"
-                className="mosaic-contact-pill-icon mosaic-contact-pill-icon-x"
-              />
-              <span className="mosaic-contact-pill-dark-label">Follow</span>
-            </span>
-          </span>
-        )}
+        ) : null}
       </div>
       <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {isCopySuccess ? "Email copied to clipboard" : ""}

@@ -11,8 +11,16 @@ export type PortfolioCard = {
   previewHeight?: number
   previewPoster?: string
   ctaHref: string
+  /** Gallery "Product" row; falls back to `category`. */
+  product?: string
+  /** Gallery "Industry" row; falls back to "Product Design". */
+  industry?: string
+  /** Teammates on this work; Rafael is credited automatically alongside them. */
+  team?: Collaborator[]
   previewAspectRatio?: number
   previewMediaPaddingBlock?: string
+  /** The grid tile crops this shot; the gallery repeats the same crop. */
+  previewCropped?: boolean
   pagination?: {
     total: number
     images: string[]
@@ -37,7 +45,6 @@ export const collaborators = {
 export type SiteLinks = {
   dribbble: string
   x: string
-  telegram: string
   github: string
   linkedin: string
   email: string
@@ -108,10 +115,15 @@ export const siteProfile = {
 export const siteLinks: SiteLinks = {
   dribbble: "https://dribbble.com/rafaelmedian",
   x: "https://x.com/rafaelmedian",
-  telegram: "https://t.me/rafaelmedian",
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
   email: "hey@rafaelmedina.me",
+}
+
+const matchaMeta = {
+  product: "Matcha - DEX Aggregator by 0x",
+  industry: "DeFi / Web3 / Fintech",
+  ctaHref: "https://matcha.xyz",
 }
 
 export const portfolioCards: PortfolioCard[] = [
@@ -120,12 +132,14 @@ export const portfolioCards: PortfolioCard[] = [
     category: "Preview",
     title: "Matcha - Multiwallet flow",
     summary: "",
-    detail: "",
+    detail:
+      "Connecting and switching between several wallets without losing your place — the flow, states, and small interactions that make juggling accounts on Matcha feel routine.",
     image: "/Projects/shot-small-9.webm",
     previewWidth: 480,
     previewHeight: 360,
     previewPoster: "/Projects/shot-small-9-poster.webp",
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.simon],
     previewAspectRatio: 0.74,
   },
   {
@@ -133,35 +147,41 @@ export const portfolioCards: PortfolioCard[] = [
     category: "Preview",
     title: "Matcha - Mobile Screens",
     summary: "",
-    detail: "",
+    detail:
+      "A pass across Matcha's core mobile screens, keeping dense trading data legible and tappable on a phone-sized canvas.",
     image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.simon, collaborators.jakub],
   },
   {
     id: "preview-shot-20",
     category: "Preview",
     title: "Matcha - Security Audit",
     summary: "",
-    detail: "",
+    detail:
+      "Surfacing token security audits inside Matcha so traders can gauge risk before they swap, without leaving the flow.",
     image: "/Projects/shot-small-20.webm",
     previewWidth: 640,
     previewHeight: 480,
     previewPoster: "/Projects/shot-small-20-poster.webp",
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.simon, collaborators.jakub],
   },
   {
     id: "preview-shot-16",
     category: "Preview",
     title: "Matcha - Homepage",
     summary: "",
-    detail: "",
+    detail:
+      "Matcha's homepage, introducing the product and moving visitors into their first trade with as little friction as possible.",
     image: "/Projects/shot-small-16.webm",
     previewWidth: 640,
     previewHeight: 480,
     previewPoster: "/Projects/shot-small-16-poster.webp",
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.simon],
     previewAspectRatio: 0.8,
   },
   {
@@ -169,23 +189,32 @@ export const portfolioCards: PortfolioCard[] = [
     category: "Preview",
     title: "Protector",
     summary: "",
-    detail: "",
+    detail:
+      "A protection-focused mobile product designed around trust: quick comprehension, calm surfaces, and confident action in stressful moments.",
     image: "/Projects/protector.webp",
     previewWidth: 1200,
     previewHeight: 1328,
-    ctaHref: "#",
+    ctaHref: "https://protector.so",
+    product: "Protector",
+    industry: "Consumer Safety",
+    team: [collaborators.nick],
     previewAspectRatio: 1354 / 1025,
+    previewCropped: true,
   },
   {
     id: "preview-popparazi-v1",
     category: "Preview",
     title: "Popparazi V1",
     summary: "",
-    detail: "",
+    detail:
+      "The first version of Popparazi, a mobile social app exploration focused on visual rhythm, content density, and playful interaction.",
     image: "/Projects/popparazi_v1.webp",
     previewWidth: 630,
     previewHeight: 1314,
     ctaHref: "#",
+    product: "Popparazi",
+    industry: "Consumer Social",
+    team: [collaborators.nick],
     previewAspectRatio: 0.46,
     previewMediaPaddingBlock: "clamp(0.7rem, 1.6vw, 1.4rem)",
   },
@@ -194,11 +223,13 @@ export const portfolioCards: PortfolioCard[] = [
     category: "Preview",
     title: "Matcha - Token Page",
     summary: "",
-    detail: "",
+    detail:
+      "Matcha's token page, organizing price action, liquidity, and token metadata into a hierarchy a trader can scan in seconds.",
     image: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.jakub],
     previewAspectRatio: 4 / 3,
   },
   {
@@ -206,54 +237,64 @@ export const portfolioCards: PortfolioCard[] = [
     category: "Preview",
     title: "Matcha Trade Page",
     summary: "",
-    detail: "",
+    detail:
+      "The trade page that anchors Matcha: a dense quote panel held together by calm hierarchy, so fast decisions don't feel rushed.",
     image: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.simon, collaborators.jakub],
   },
   {
     id: "preview-shot-15",
     category: "Preview",
     title: "Matcha - Mobile navigation",
     summary: "",
-    detail: "",
+    detail:
+      "Rethinking Matcha's mobile navigation so the core actions stayed one thumb-reach away as the product grew.",
     image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.simon],
   },
   {
     id: "preview-shot-19",
     category: "Preview",
     title: "Matcha Trade module",
     summary: "",
-    detail: "",
+    detail:
+      "The trade module itself — inputs, quotes, and confirmation states tuned for clarity at the moment money moves.",
     image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.jakub],
   },
   {
     id: "preview-shot-22",
     category: "Preview",
     title: "Matcha Dark mode",
     summary: "",
-    detail: "",
+    detail:
+      "Matcha's dark mode, rebuilt from tokens up so contrast and depth hold on every surface instead of just inverting colors.",
     image: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.simon],
   },
   {
     id: "preview-shot-23",
     category: "Preview",
     title: "Matcha Pro",
     summary: "",
-    detail: "",
+    detail:
+      "Matcha Pro, a denser trading view with charting and order controls for the people who live in the product all day.",
     image: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ctaHref: "#",
+    ...matchaMeta,
+    team: [collaborators.simon, collaborators.jakub],
   },
 ]
