@@ -8,12 +8,12 @@ import {
   type PointerEvent,
 } from "react"
 
+import { cvEducation, cvExperience } from "../data/cv"
 import type { SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 
 type AboutPanelProps = {
   links: SiteLinks
-  onClose: () => void
 }
 
 type AboutSticker = {
@@ -45,6 +45,17 @@ const aboutStickers: AboutSticker[] = [
   { emoji: "💻", label: "Laptop", top: "40%", right: "3%", rotate: -6 },
   { emoji: "🤖", label: "Robot", bottom: "30%", right: "9%", rotate: 11 },
   { emoji: "🛠️", label: "Tools", bottom: "6%", right: "4%", rotate: -7 },
+]
+
+const resumeStickers: AboutSticker[] = [
+  { emoji: "🎓", label: "Graduation cap", top: "6%", left: "5%", rotate: 10 },
+  { emoji: "🖋️", label: "Fountain pen", top: "34%", left: "8%", rotate: -14 },
+  { emoji: "☕", label: "Coffee", bottom: "30%", left: "3%", rotate: 9 },
+  { emoji: "🚀", label: "Rocket", bottom: "7%", left: "8%", rotate: -11 },
+  { emoji: "💼", label: "Briefcase", top: "9%", right: "5%", rotate: -8 },
+  { emoji: "📈", label: "Chart trending up", top: "38%", right: "9%", rotate: 12 },
+  { emoji: "💡", label: "Light bulb", bottom: "32%", right: "3%", rotate: -6 },
+  { emoji: "🏆", label: "Trophy", bottom: "6%", right: "8%", rotate: 7 },
 ]
 
 type Offset = { x: number; y: number }
@@ -226,35 +237,50 @@ function useStickerMovement() {
 }
 
 const hobbies = [
-  { emoji: "🥊", label: "kickboxing" },
-  { emoji: "🚵", label: "mountain biking" },
-  { emoji: "🏊", label: "lap swimming" },
-  { emoji: "🥾", label: "hiking" },
-  { emoji: "💃", label: "salsa", learning: true },
-  { emoji: "🥋", label: "jiu jitsu", learning: true },
+  { emoji: "🥊", label: "Kickboxing" },
+  { emoji: "🚵", label: "Mountain biking" },
+  { emoji: "🏊", label: "Lap swimming" },
+  { emoji: "🥾", label: "Hiking" },
+  { emoji: "💃", label: "Salsa", learning: true },
+  { emoji: "🥋", label: "Jiu jitsu", learning: true },
 ]
 
-/** `label` is what renders (lowercase, to match the panel); `name` is what analytics records. */
 const elsewhereLinks = (links: SiteLinks) => [
-  { label: "x", name: "X", href: links.x },
-  { label: "telegram", name: "Telegram", href: links.telegram },
-  { label: "github", name: "GitHub", href: links.github },
-  { label: "linkedin", name: "LinkedIn", href: links.linkedin },
-  { label: "dribbble", name: "Dribbble", href: links.dribbble },
+  { name: "X", href: links.x },
+  { name: "GitHub", href: links.github },
+  { name: "LinkedIn", href: links.linkedin },
+  { name: "Dribbble", href: links.dribbble },
 ]
 
-export function AboutPanel({ links, onClose }: AboutPanelProps) {
-  const panelRef = useRef<HTMLElement | null>(null)
+type AboutTab = "about" | "resume"
+
+const aboutTabs: { id: AboutTab; label: string }[] = [
+  { id: "about", label: "about me" },
+  { id: "resume", label: "resume" },
+]
+
+export function AboutPanel({ links }: AboutPanelProps) {
+  const [activeTab, setActiveTab] = useState<AboutTab>("about")
+  const tabRefs = useRef<Record<AboutTab, HTMLButtonElement | null>>({ about: null, resume: null })
   const { offsets, order, dragging, onKeyDown, onPointerDown, onPointerMove, onPointerUp } =
     useStickerMovement()
 
-  useEffect(() => {
-    panelRef.current?.focus({ preventScroll: true })
-  }, [])
+  const selectTab = (tab: AboutTab) => {
+    if (tab === activeTab) return
+    trackEvent("about_tab_change", { about_tab: tab })
+    setActiveTab(tab)
+  }
+
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return
+    event.preventDefault()
+    const next: AboutTab = activeTab === "about" ? "resume" : "about"
+    selectTab(next)
+    tabRefs.current[next]?.focus()
+  }
 
   return (
     <article
-      ref={panelRef}
       id="about-panel"
       className="mosaic-about"
       tabIndex={-1}
@@ -262,7 +288,183 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
     >
       <h2 className="sr-only">About Rafael Medina</h2>
       <div className="mosaic-about-panel">
-        {aboutStickers.map((sticker) => {
+        <div className="mosaic-about-body">
+          <div className="mosaic-about-tabs" role="tablist" aria-label="About me or resume">
+            {aboutTabs.map((tab) => (
+              <button
+                key={tab.id}
+                ref={(element) => {
+                  tabRefs.current[tab.id] = element
+                }}
+                type="button"
+                role="tab"
+                id={`about-tab-${tab.id}`}
+                aria-selected={activeTab === tab.id}
+                aria-controls="about-tabpanel"
+                tabIndex={activeTab === tab.id ? 0 : -1}
+                className="mosaic-about-tab"
+                onClick={() => selectTab(tab.id)}
+                onKeyDown={handleTabKeyDown}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "resume" ? (
+            <div
+              id="about-tabpanel"
+              role="tabpanel"
+              aria-labelledby="about-tab-resume"
+              className="mosaic-about-tabpanel"
+            >
+              <p className="mosaic-about-lede">Senior Product Designer.</p>
+              <p>
+                Ten years across web3, fintech, and consumer products — from early strategy to
+                shipped interfaces.
+              </p>
+
+              <ol className="mosaic-about-resume">
+                {cvExperience.map((job) => (
+                  <li key={`${job.company}-${job.dates}`} className="mosaic-about-resume-entry">
+                    <p className="mosaic-about-resume-company">
+                      {job.logoUrls ? (
+                        <span className="mosaic-about-resume-logos" aria-hidden="true">
+                          {job.logoUrls.map((logoUrl) => (
+                            <span key={logoUrl} className="mosaic-about-resume-logo-wrap">
+                              <img src={logoUrl} alt="" loading="lazy" decoding="async" />
+                            </span>
+                          ))}
+                        </span>
+                      ) : null}
+                      {job.company}
+                    </p>
+                    <p className="mosaic-about-resume-meta">
+                      {job.role} <span aria-hidden="true">·</span> {job.dates}
+                    </p>
+                    <ul className="mosaic-about-resume-highlights">
+                      {job.achievements.map((achievement) => (
+                        <li key={achievement}>{achievement}</li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ol>
+
+              <div className="mosaic-about-resume-education">
+                <p className="mosaic-about-resume-heading">Education</p>
+                <ul className="mosaic-about-resume">
+                  {cvEducation.map((school) => (
+                    <li key={school.school} className="mosaic-about-resume-entry">
+                      <p className="mosaic-about-resume-company">{school.school}</p>
+                      <p className="mosaic-about-resume-meta">
+                        {school.credential} <span aria-hidden="true">·</span> {school.location}
+                      </p>
+                      {school.details ? (
+                        <p className="mosaic-about-resume-note">{school.details}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : (
+            <div
+              id="about-tabpanel"
+              role="tabpanel"
+              aria-labelledby="about-tab-about"
+              className="mosaic-about-tabpanel"
+            >
+          <p className="mosaic-about-lede">Hi, I&rsquo;m Rafael.</p>
+          <p>
+            I&rsquo;ve been designing products for over ten years, mostly the unglamorous parts.
+            Working out what to build, drawing it, putting it in front of people, then sticking
+            around for the long tail of fixes after launch.
+          </p>
+          <p>
+            I build my prototypes in code. Something you can click answers questions a static mockup
+            can&rsquo;t, and it settles an argument faster than a meeting does.
+          </p>
+          <p>
+            Outside of work I&rsquo;m usually moving, and I pick up something new every year. Right
+            now that&rsquo;s salsa and jiu jitsu, both of which I am comfortably bad at.
+          </p>
+
+          <ul className="mosaic-about-hobbies">
+            {hobbies.map((hobby) => (
+              <li key={hobby.label}>
+                <span className="mosaic-about-hobby-emoji" aria-hidden="true">
+                  {hobby.emoji}
+                </span>
+                {hobby.label}
+                {hobby.learning ? (
+                  <span className="mosaic-about-hobby-note"> (learning)</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+
+          <dl className="mosaic-about-facts">
+            <div className="mosaic-about-fact">
+              <dt>Now</dt>
+              <dd>Freelance, splitting time between Punta Cana and NYC.</dd>
+            </div>
+            <div className="mosaic-about-fact">
+              <dt>Lately</dt>
+              <dd>Prototypes, AI tooling, and design systems.</dd>
+            </div>
+            <div className="mosaic-about-fact">
+              <dt>Elsewhere</dt>
+              <dd>
+                {elsewhereLinks(links).map((link, index) => (
+                  <span key={link.name}>
+                    {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mosaic-about-link"
+                      onClick={() => {
+                        trackEvent("social_link_click", {
+                          social_label: link.name,
+                          social_href: link.href,
+                          social_placement: "about_panel",
+                        })
+                      }}
+                    >
+                      {link.name}
+                    </a>
+                  </span>
+                ))}
+              </dd>
+            </div>
+          </dl>
+
+          <p className="mosaic-about-closing">
+            I&rsquo;m taking on new work at the moment. If you&rsquo;re building something,{" "}
+            <a
+              href={`mailto:${links.email}`}
+              className="mosaic-about-link"
+              onClick={() => {
+                trackEvent("social_link_click", {
+                  social_label: "Email",
+                  social_href: `mailto:${links.email}`,
+                  social_placement: "about_panel",
+                })
+              }}
+            >
+              send me an email
+            </a>
+            .
+          </p>
+            </div>
+          )}
+        </div>
+
+        {/* After the body on purpose: they are absolutely positioned, so the
+            visual result is identical, but keyboard users reach the tabs and
+            content before these eight decorative tab stops. */}
+        {(activeTab === "resume" ? resumeStickers : aboutStickers).map((sticker) => {
           const offset = offsets[sticker.emoji]
           const stackIndex = order.indexOf(sticker.emoji)
 
@@ -296,95 +498,6 @@ export function AboutPanel({ links, onClose }: AboutPanelProps) {
             </button>
           )
         })}
-
-        <div className="mosaic-about-body">
-          <button type="button" className="mosaic-about-back" onClick={onClose}>
-            <span aria-hidden="true">←</span> back
-          </button>
-
-          <p className="mosaic-about-lede">hi, i&rsquo;m rafael.</p>
-          <p>
-            i&rsquo;ve been designing products for over ten years, mostly the unglamorous parts.
-            working out what to build, drawing it, putting it in front of people, then sticking
-            around for the long tail of fixes after launch.
-          </p>
-          <p>
-            i build my prototypes in code. something you can click answers questions a static mockup
-            can&rsquo;t, and it settles an argument faster than a meeting does.
-          </p>
-          <p>
-            outside of work i&rsquo;m usually moving, and i pick up something new every year. right
-            now that&rsquo;s salsa and jiu jitsu, both of which i am comfortably bad at.
-          </p>
-
-          <ul className="mosaic-about-hobbies">
-            {hobbies.map((hobby) => (
-              <li key={hobby.label}>
-                <span className="mosaic-about-hobby-emoji" aria-hidden="true">
-                  {hobby.emoji}
-                </span>
-                {hobby.label}
-                {hobby.learning ? (
-                  <span className="mosaic-about-hobby-note"> (learning)</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-
-          <dl className="mosaic-about-facts">
-            <div className="mosaic-about-fact">
-              <dt>now</dt>
-              <dd>freelance, splitting time between punta cana and nyc.</dd>
-            </div>
-            <div className="mosaic-about-fact">
-              <dt>lately</dt>
-              <dd>prototypes, ai tooling, and design systems.</dd>
-            </div>
-            <div className="mosaic-about-fact">
-              <dt>elsewhere</dt>
-              <dd>
-                {elsewhereLinks(links).map((link, index) => (
-                  <span key={link.name}>
-                    {index > 0 ? <span aria-hidden="true"> · </span> : null}
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mosaic-about-link"
-                      onClick={() => {
-                        trackEvent("social_link_click", {
-                          social_label: link.name,
-                          social_href: link.href,
-                          social_placement: "about_panel",
-                        })
-                      }}
-                    >
-                      {link.label}
-                    </a>
-                  </span>
-                ))}
-              </dd>
-            </div>
-          </dl>
-
-          <p className="mosaic-about-closing">
-            i&rsquo;m taking on new work at the moment. if you&rsquo;re building something,{" "}
-            <a
-              href={`mailto:${links.email}`}
-              className="mosaic-about-link"
-              onClick={() => {
-                trackEvent("social_link_click", {
-                  social_label: "Email",
-                  social_href: `mailto:${links.email}`,
-                  social_placement: "about_panel",
-                })
-              }}
-            >
-              send me an email
-            </a>
-            .
-          </p>
-        </div>
       </div>
     </article>
   )

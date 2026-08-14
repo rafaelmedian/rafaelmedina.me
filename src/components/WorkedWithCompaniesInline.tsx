@@ -387,17 +387,23 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
     // The chip is a link to the company, but it is also the only way to reach
     // the detail panel. Hover and keyboard users already get the panel for
     // free, so they navigate on the first click; touch users get one tap to
-    // reveal the panel and a second to follow the link.
+    // reveal the panel and a second tap to dismiss it — navigation lives on
+    // the explicit link inside the panel, so tapping a chip again to put the
+    // panel away never yanks the reader off to another site.
     const handleTriggerClick = (companyId: string, event: MouseEvent<HTMLAnchorElement>) => {
       clearOpenTimeout()
       clearCloseTimeout()
       pointerFocusCompanyIdRef.current = null
       const pointerType = (event.nativeEvent as globalThis.PointerEvent).pointerType
 
-      if ((pointerType === "touch" || !isHoverCapable()) && activeCompanyId !== companyId) {
+      if (pointerType === "touch" || !isHoverCapable()) {
         event.preventDefault()
-        setIsSwitchingCompany(activeCompanyId !== null)
-        setActiveCompanyId(companyId)
+        if (activeCompanyId !== companyId) {
+          setIsSwitchingCompany(activeCompanyId !== null)
+          setActiveCompanyId(companyId)
+        } else {
+          closePopover()
+        }
         return
       }
 

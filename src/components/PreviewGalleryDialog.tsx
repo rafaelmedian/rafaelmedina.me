@@ -170,58 +170,13 @@ function wrapIndex(index: number, length: number) {
 }
 
 function getPreviewDescription(card: PortfolioCard) {
-  if (card.detail) return card.detail
-  if (card.summary) return card.summary
-
-  if (card.title.includes("Matcha")) {
-    return "A product interface exploration for Matcha, balancing dense trading information with calm hierarchy and fast decision-making."
-  }
-
-  if (card.title.includes("Protector")) {
-    return "A protection-focused mobile product concept shaped around trust, quick comprehension, and confident action."
-  }
-
-  if (card.title.includes("Popparazi")) {
-    return "A mobile social product exploration with an emphasis on visual rhythm, content density, and playful interaction."
-  }
-
-  return "A selected product design preview focused on clear hierarchy, responsive interaction, and polished interface craft."
-}
-
-function getPreviewProduct(card: PortfolioCard) {
-  if (card.title.includes("Matcha")) return "Matcha - DEX Aggregator by 0x"
-  if (card.title.includes("Protector")) return "Protector"
-  if (card.title.includes("Popparazi")) return "Popparazi"
-  return card.category
-}
-
-function getPreviewIndustry(card: PortfolioCard) {
-  if (card.title.includes("Matcha")) return "DeFi / Web3 / Fintech"
-  if (card.title.includes("Protector")) return "Consumer Safety"
-  if (card.title.includes("Popparazi")) return "Consumer Social"
-  return "Product Design"
+  return card.detail || card.summary
 }
 
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
-  const teammates = getPreviewTeammates(card)
+  const teammates = card.team ?? []
   // Credit myself alongside anyone I worked with; solo shots keep the Team row hidden.
   return teammates.length > 0 ? [collaborators.rafael, ...teammates] : []
-}
-
-function getPreviewTeammates(card: PortfolioCard): Collaborator[] {
-  // Simon was the only other designer on the homepage, multiwallet, mobile nav and dark mode work.
-  if (
-    card.title.includes("Homepage") ||
-    card.title.includes("Multiwallet") ||
-    card.title.includes("Mobile navigation") ||
-    card.title.includes("Dark mode")
-  )
-    return [collaborators.simon]
-  // The token page and trade module were just Jakub and me.
-  if (card.title.includes("Token Page") || card.title.includes("Trade module")) return [collaborators.jakub]
-  if (card.title.includes("Matcha")) return [collaborators.simon, collaborators.jakub]
-  if (card.title.includes("Protector") || card.title.includes("Popparazi")) return [collaborators.nick]
-  return []
 }
 
 function getInitials(name: string) {
@@ -233,10 +188,7 @@ function getInitials(name: string) {
 }
 
 function getPreviewLink(card: PortfolioCard) {
-  if (card.ctaHref && card.ctaHref !== "#") return card.ctaHref
-  if (card.title.includes("Matcha")) return "https://matcha.xyz"
-  if (card.title.includes("Protector")) return "https://protector.so"
-  return ""
+  return card.ctaHref && card.ctaHref !== "#" ? card.ctaHref : ""
 }
 
 export function PreviewGalleryDialog({
@@ -248,7 +200,7 @@ export function PreviewGalleryDialog({
   onSelectedIndexChange,
   getOriginRect,
 }: PreviewGalleryDialogProps) {
-  const touchStartXRef = useRef<number | null>(null)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
   const prevOpenRef = useRef(open)
   const switchTimeoutRef = useRef<number | null>(null)
   const switchFrameRef = useRef<number | null>(null)
@@ -269,8 +221,8 @@ export function PreviewGalleryDialog({
   const activeMetaRows = activeCard
     ? [
         // No "Project" row — the dialog title directly above already says it.
-        ["Product", getPreviewProduct(activeCard)],
-        ["Industry", getPreviewIndustry(activeCard)],
+        ["Product", activeCard.product ?? activeCard.category],
+        ["Industry", activeCard.industry ?? "Product Design"],
       ]
     : []
 
@@ -517,33 +469,45 @@ export function PreviewGalleryDialog({
             <Dialog.Popup
               className="preview-gallery-popup"
               data-preview-media={activeCardIsVideo ? "video" : "image"}
+              data-preview-crop={activeCard.previewCropped ? "true" : undefined}
               data-origin-motion={originMotionEnabled ? "true" : undefined}
               // No aria-label here: it would override the aria-labelledby Base UI
               // wires to <Dialog.Title> below, and the title is the better name.
             >
-              <article className={`preview-gallery-card${switchClassName}`}>
+              {/* Swipe is handled on the whole card, not just the media: on
+                  phones the media is capped at 32vh, so the text below it is
+                  most of the surface a thumb actually lands on. */}
+              <article
+                className={`preview-gallery-card${switchClassName}`}
+                onTouchStart={(event) => {
+                  // A horizontal drag on the video is the seek bar, not a swipe.
+                  if (event.target instanceof Element && event.target.closest("video")) {
+                    touchStartRef.current = null
+                    return
+                  }
+                  const touch = event.changedTouches[0]
+                  touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null
+                }}
+                onTouchEnd={(event) => {
+                  const touchStart = touchStartRef.current
+                  touchStartRef.current = null
+                  if (!touchStart) return
+
+                  const touchEnd = event.changedTouches[0]
+                  const deltaX = (touchEnd?.clientX ?? touchStart.x) - touchStart.x
+                  const deltaY = (touchEnd?.clientY ?? touchStart.y) - touchStart.y
+                  const threshold = 56
+
+                  if (Math.abs(deltaX) >= threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
+                    moveBy(deltaX > 0 ? -1 : 1)
+                  }
+                }}
+                onTouchCancel={() => {
+                  touchStartRef.current = null
+                }}
+              >
                 <div className="preview-gallery-card-inner" ref={cardInnerRef}>
-                  <div
-                    className="preview-gallery-media-frame"
-                    style={mediaFrameStyle}
-                    onTouchStart={(event) => {
-                      touchStartXRef.current = event.changedTouches[0]?.clientX ?? null
-                    }}
-                    onTouchEnd={(event) => {
-                      const touchStartX = touchStartXRef.current
-                      if (touchStartX == null) return
-
-                      const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX
-                      const delta = touchEndX - touchStartX
-                      const threshold = 56
-
-                      if (Math.abs(delta) >= threshold) {
-                        moveBy(delta > 0 ? -1 : 1)
-                      }
-
-                      touchStartXRef.current = null
-                    }}
-                  >
+                  <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
                     {activeCardIsVideo ? (
                       <video
                         src={activeCard.image}

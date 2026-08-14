@@ -50,7 +50,12 @@ export function StyleguidePage({ links, name }: StyleguidePageProps) {
             <h2>Contact action row</h2>
           </div>
           <div className="styleguide-specimen styleguide-specimen-wide">
-            <ContactActionRow email={links.email} contactHref={`mailto:${links.email}`} telegramHref={links.telegram} xHref={links.x} />
+            <ContactActionRow
+              email={links.email}
+              contactHref={`mailto:${links.email}`}
+              linkedinHref={links.linkedin}
+              xHref={links.x}
+            />
           </div>
           <div className="styleguide-notes-grid">
             <article className="styleguide-note-card">
@@ -61,7 +66,7 @@ export function StyleguidePage({ links, name }: StyleguidePageProps) {
             <article className="styleguide-note-card">
               <span>Secondary</span>
               <strong>Message</strong>
-              <p>Friendlier blue accent that stays related to the main button family.</p>
+              <p>The LinkedIn action carries a friendly blue-accented treatment.</p>
             </article>
             <article className="styleguide-note-card">
               <span>Tertiary</span>

@@ -109,7 +109,7 @@ body * {
   outline-offset: 2px;
 }
 
-:where(h1, h2, h3, h4, h5, h6, #about, #feed, #work, #contact) {
+:where(h1, h2, h3, h4, h5, h6, #about, #feed, #work, #contact, #cv) {
   scroll-margin-top: 5rem;
 }
 
@@ -316,7 +316,6 @@ img {
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: pointer;
 }
 
 .mosaic-avatar {
@@ -432,45 +431,12 @@ img {
   }
 }
 
-.mosaic-avatar-coin.is-flipped .mosaic-avatar-coin-inner {
-  transform: rotateY(180deg);
-}
-
-.mosaic-avatar-coin.is-flipped:hover .mosaic-avatar-coin-inner,
-.mosaic-avatar-coin.is-flipped:focus-visible .mosaic-avatar-coin-inner {
-  transform: rotateY(360deg);
-}
-
-/* The name and title toggle the same view, so hovering them plays the photo's
-   flip and reveals its hint as if the photo itself were hovered. */
-.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-coin-inner {
-  transform: rotateY(180deg);
-}
-
-.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible))
-  .mosaic-avatar-coin.is-flipped
-  .mosaic-avatar-coin-inner {
-  transform: rotateY(360deg);
-}
-
-.mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-hint {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0) rotate(-3deg);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .mosaic-avatar-coin-inner {
     transition: none;
   }
   .mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin.is-flipped .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin.is-flipped:hover .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin.is-flipped:focus-visible .mosaic-avatar-coin-inner,
-  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-coin-inner,
-  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible))
-    .mosaic-avatar-coin.is-flipped
-    .mosaic-avatar-coin-inner {
+  .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
     transform: none;
   }
   .mosaic-avatar-button,
@@ -482,97 +448,19 @@ img {
   /* Keep the hint's fade, drop its slide. */
   .mosaic-avatar-hint,
   .mosaic-avatar-button:hover .mosaic-avatar-hint,
-  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint,
-  .mosaic-profile-info:has(.mosaic-profile-meta:is(:hover, :focus-visible)) .mosaic-avatar-hint {
+  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
     transform: translateY(-50%) rotate(-3deg);
     transition: opacity 120ms linear;
   }
 }
 
-.mosaic-view {
-  opacity: 1;
-  transform: none;
-}
-
-.mosaic-view-animated {
-  animation: mosaic-view-enter 460ms var(--ease-smooth) both;
-  transition:
-    opacity 170ms cubic-bezier(0.4, 0, 1, 1),
-    transform 170ms cubic-bezier(0.4, 0, 1, 1);
-}
-
-.mosaic-view-animated.is-leaving,
-.mosaic-view-animated.is-leaving * {
-  animation: none !important;
-}
-
-.mosaic-view-animated.is-leaving {
-  opacity: 0;
-  transform: translateY(0.25rem) scale(0.99);
-}
-
-/* Rows and about blocks trail in behind the container, so the swap reads as
-   content arriving rather than one block replacing another. */
-.mosaic-view-animated .mosaic-row,
-.mosaic-view-animated .mosaic-about-body > * {
-  animation: mosaic-intro-rise 520ms var(--ease-smooth) both;
-}
-
-.mosaic-view-animated .mosaic-row:nth-child(1),
-.mosaic-view-animated .mosaic-about-body > :nth-child(1) {
-  animation-delay: 90ms;
-}
-
-.mosaic-view-animated .mosaic-row:nth-child(2),
-.mosaic-view-animated .mosaic-about-body > :nth-child(2) {
-  animation-delay: 150ms;
-}
-
-.mosaic-view-animated .mosaic-row:nth-child(3),
-.mosaic-view-animated .mosaic-about-body > :nth-child(3) {
-  animation-delay: 210ms;
-}
-
-.mosaic-view-animated .mosaic-row:nth-child(4),
-.mosaic-view-animated .mosaic-about-body > :nth-child(4) {
-  animation-delay: 270ms;
-}
-
-.mosaic-view-animated .mosaic-about-body > :nth-child(5) {
-  animation-delay: 320ms;
-}
-
-.mosaic-view-animated .mosaic-about-body > :nth-child(6) {
-  animation-delay: 365ms;
-}
-
-.mosaic-view-animated .mosaic-about-body > :nth-child(7) {
-  animation-delay: 405ms;
-}
-
-.mosaic-view-animated .mosaic-about-body > :nth-child(8) {
-  animation-delay: 440ms;
-}
-
-@keyframes mosaic-view-enter {
-  from {
-    opacity: 0;
-    transform: translateY(0.5rem) scale(0.995);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* First-load entrance for the work cards. Unlike the swap stagger above, this
-   one has to exist in the prerendered HTML: CSS animations start at first paint,
-   long before hydration, so the class comes from `!hasSwapped` in SimpleFeed
-   rather than from an effect. `hasSwapped` drops the class on the first view
-   swap, handing the mosaic over to `.mosaic-view-animated` above -- the two
-   never overlap. Delays are data-driven from inline `--work-intro-row` and
+/* First-load entrance for the work cards. It has to exist in the prerendered
+   HTML: CSS animations start at first paint, long before hydration, so the
+   class comes from `!hasCompletedWorkIntro` in SimpleFeed rather than from an
+   effect. Delays are data-driven from inline
+   `--work-intro-row` and
    `--work-intro-col` rather than nth-child, so all twelve cards stagger; the
-   swap rule above silently stops at nth-child(4).
+   values continue through every row.
    Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
    700px the rows collapse into one flex column, and a smaller row step would
    make a card arrive before the card above it.
@@ -629,7 +517,7 @@ img {
   padding: 0 clamp(16px, 3vw, 32px) clamp(3rem, 8vw, 5rem);
 }
 
-.mosaic-about:focus {
+.mosaic-about:focus:not(:focus-visible) {
   outline: none;
 }
 
@@ -698,9 +586,10 @@ img {
 
 .mosaic-about-body {
   width: min(100%, 34rem);
+  margin-top: 3.55rem;
   display: grid;
   gap: 1.05rem;
-  text-align: left;
+  text-align: center;
 }
 
 .mosaic-about-body p {
@@ -725,9 +614,10 @@ img {
   margin: 0 0 0.9rem;
   padding: 0;
   list-style: none;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.25rem;
 }
 
 .mosaic-about-hobbies li {
@@ -758,10 +648,11 @@ img {
 }
 
 .mosaic-about-fact {
-  display: grid;
-  grid-template-columns: 6rem minmax(0, 1fr);
-  gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: baseline;
+  gap: 0.25rem 0.5rem;
 }
 
 .mosaic-about-fact dt {
@@ -802,38 +693,146 @@ img {
   padding-top: 1.25rem;
 }
 
-.mosaic-about-back {
-  justify-self: start;
-  appearance: none;
-  border: 0;
-  background: none;
-  padding: 0;
-  margin-bottom: 0.25rem;
-  min-height: 2.5rem;
+.mosaic-about-tabs {
+  position: absolute;
+  top: clamp(1.1rem, 2.4vw, 1.5rem);
+  left: 50%;
+  transform: translateX(-50%);
   display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
-  font-size: 0.875rem;
-  color: var(--muted);
-  cursor: pointer;
-  transition: color 160ms ease;
+  padding: 0.17rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.06);
 }
 
-.mosaic-about-back:hover,
-.mosaic-about-back:focus-visible {
+.mosaic-about-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  min-height: 1.75rem;
+  padding: 0 0.8rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 460;
+  letter-spacing: -0.00563rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.mosaic-about-tab:hover {
   color: #2d2d2d;
 }
 
-@media (max-width: 520px) {
-  .mosaic-about-fact {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.15rem;
-  }
+.mosaic-about-tab[aria-selected="true"] {
+  background: #ffffff;
+  color: #2d2d2d;
+  box-shadow: 0 1px 4px rgb(46 42 42 / 0.14);
+}
 
-  .mosaic-about-hobbies {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.mosaic-about-tabpanel {
+  display: grid;
+  gap: 1.05rem;
+}
+
+.mosaic-about-resume {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1.6rem;
+}
+
+.mosaic-about-resume-entry {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mosaic-about-body .mosaic-about-resume-company {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #2d2d2d;
+}
+
+.mosaic-about-resume-logos {
+  display: inline-flex;
+}
+
+.mosaic-about-resume-logo-wrap {
+  display: inline-flex;
+  width: 1.35rem;
+  height: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.29rem;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05);
+}
+
+.mosaic-about-resume-logo-wrap + .mosaic-about-resume-logo-wrap {
+  margin-left: -0.26rem;
+}
+
+.mosaic-about-resume-logo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.mosaic-about-body .mosaic-about-resume-meta {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.mosaic-about-body .mosaic-about-resume-highlights {
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.mosaic-about-body .mosaic-about-resume-highlights li {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
+  color: #545454;
+  text-wrap: pretty;
+}
+
+.mosaic-about-resume-education {
+  margin-top: 0.5rem;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding-top: 1.25rem;
+  display: grid;
+  gap: 1.05rem;
+}
+
+.mosaic-about-resume-education .mosaic-about-resume {
+  margin-top: 0;
+}
+
+.mosaic-about-body .mosaic-about-resume-heading {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--muted-soft);
+}
+
+.mosaic-about-body .mosaic-about-resume-note {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #545454;
+  text-wrap: pretty;
 }
 
 .mosaic-profile-meta h2 {
@@ -874,6 +873,36 @@ img {
   color: var(--muted);
   text-align: center;
   text-wrap: balance;
+}
+
+.mosaic-profile-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mosaic-profile-availability {
+  margin: 0.85rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: -0.005rem;
+  color: var(--muted);
+}
+
+.mosaic-availability-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #34a26a;
+  box-shadow: 0 0 0 3px rgb(52 162 106 / 0.16);
+}
+
+.mosaic-profile-contact .mosaic-profile-actions {
+  margin-top: 1.1rem;
 }
 
 .mosaic-profile-location > span[aria-hidden="true"] {
@@ -1435,14 +1464,15 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.375rem;
-  height: 2.375rem;
-  padding: 0 0.9rem;
+  min-height: 2rem;
+  height: 2rem;
+  padding: 0 0.75rem;
   border-radius: 999px;
   border: 1px solid #dedee0;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 460;
-  line-height: 1.25rem;
+  /* Line box hugs the glyphs so the flex centering is also optical centering. */
+  line-height: 1;
   letter-spacing: -0.00563rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
   text-decoration: none;
@@ -1451,17 +1481,7 @@ img {
   isolation: isolate;
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
-  transform: translateY(0);
-  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease, border-color 140ms ease;
-}
-
-.mosaic-contact-pill:hover,
-.mosaic-contact-pill:focus-visible {
-  transform: translateY(-1px);
-}
-
-.mosaic-contact-pill:active {
-  transform: translateY(0);
+  transition: box-shadow 140ms ease, filter 140ms ease, border-color 140ms ease;
 }
 
 .mosaic-contact-pill:focus-visible {
@@ -1470,8 +1490,8 @@ img {
 }
 
 .mosaic-contact-pill-default {
-  min-width: 126px;
-  padding-inline: 1.05rem;
+  min-width: 104px;
+  padding-inline: 0.85rem;
   border-color: #dedee0;
   background: linear-gradient(180deg, #f4f4f4 0%, #ffffff 69.12%);
   box-shadow: 0 1px 5px rgb(46 42 42 / 0.08);
@@ -1483,8 +1503,8 @@ img {
   position: absolute;
   top: 2px;
   left: 50%;
-  width: calc(100% - 24px);
-  height: 22px;
+  width: calc(100% - 20px);
+  height: 18px;
   transform: translateX(-50%);
   border-radius: 1000px;
   background: linear-gradient(180deg, #ffffff 0%, rgb(255 255 255 / 0.3) 100%);
@@ -1517,6 +1537,8 @@ img {
 
 .mosaic-contact-pill-default-label {
   position: relative;
+  /* SF sits low in its em box at this size; lift to the optical center. */
+  top: -1px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -1524,22 +1546,25 @@ img {
   font-weight: inherit;
 }
 
-.mosaic-contact-pill-telegram {
-  min-width: 112px;
-  padding-inline: 0.95rem;
+.mosaic-contact-pill-linkedin {
+  min-width: 92px;
+  padding-inline: 0.8rem;
   border-color: #dedee0;
   background: linear-gradient(180deg, #f4f4f4 0%, #ffffff 69.12%);
   box-shadow: 0 1px 5px rgb(46 42 42 / 0.08);
-  color: #138ed0;
 }
 
-.mosaic-contact-pill-telegram::before {
+.mosaic-contact-pill-linkedin {
+  color: #0a66c2;
+}
+
+.mosaic-contact-pill-linkedin::before {
   content: "";
   position: absolute;
   top: 2px;
   left: 50%;
-  width: calc(100% - 18px);
-  height: 22px;
+  width: calc(100% - 16px);
+  height: 18px;
   transform: translateX(-50%);
   border-radius: 1000px;
   background: linear-gradient(180deg, #ffffff 0%, rgb(255 255 255 / 0.3) 100%);
@@ -1547,7 +1572,7 @@ img {
   pointer-events: none;
 }
 
-.mosaic-contact-pill-telegram::after {
+.mosaic-contact-pill-linkedin::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -1561,20 +1586,20 @@ img {
   pointer-events: none;
 }
 
-.mosaic-contact-pill-telegram:hover,
-.mosaic-contact-pill-telegram:focus-visible {
+.mosaic-contact-pill-linkedin:hover,
+.mosaic-contact-pill-linkedin:focus-visible {
   box-shadow: 0 4px 12px rgb(46 42 42 / 0.12);
 }
 
-.mosaic-contact-pill-telegram:active {
+.mosaic-contact-pill-linkedin:active {
   box-shadow: 0 1px 4px rgb(46 42 42 / 0.08);
 }
 
-.mosaic-contact-pill-content-telegram {
+.mosaic-contact-pill-content-linkedin {
   gap: 0.375rem;
 }
 
-.mosaic-contact-pill-telegram-label,
+.mosaic-contact-pill-linkedin-label,
 .mosaic-contact-pill-dark-label {
   position: relative;
   z-index: 1;
@@ -1585,6 +1610,8 @@ img {
 
 .mosaic-contact-pill-content {
   position: relative;
+  /* Matches the -1px optical lift on the default pill's label. */
+  top: -1px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -1597,35 +1624,26 @@ img {
   display: block;
   flex: none;
   object-fit: contain;
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
-  transition: transform 160ms ease, opacity 160ms ease;
-}
-
-.mosaic-contact-pill:hover .mosaic-contact-pill-icon,
-.mosaic-contact-pill:focus-visible .mosaic-contact-pill-icon {
-  opacity: 1;
-  transform: translate3d(0, -0.5px, 0);
+  transition: opacity 160ms ease;
 }
 
 .mosaic-contact-pill:active .mosaic-contact-pill-icon {
   opacity: 0.92;
-  transform: translate3d(0, 0, 0);
 }
 
-.mosaic-contact-pill-icon-telegram {
-  width: 1rem;
-  height: 1rem;
+.mosaic-contact-pill-icon-linkedin {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 .mosaic-contact-pill-icon-x {
-  width: 1rem;
-  height: 1rem;
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 .mosaic-contact-pill-dark {
-  min-width: 94px;
-  padding-inline: 0.85rem;
+  min-width: 80px;
+  padding-inline: 0.75rem;
   border-color: #000000;
   background: linear-gradient(180deg, #171717 0%, #000000 100%);
   box-shadow: 0 1px 10px rgb(0 0 0 / 0.15);
@@ -1801,9 +1819,18 @@ img {
   filter: blur(0);
 }
 
+/* Cropped tiles show a zoomed corner of the shot rather than the whole frame.
+   The gallery reads the same two values, so opening the card keeps you looking
+   at what you clicked instead of swapping in a differently framed image. */
+.mosaic-row-card-preview-protector,
+.preview-gallery-popup[data-preview-crop="true"] {
+  --preview-crop-scale: 1.18;
+  --preview-crop-position: left top;
+}
+
 .mosaic-row-card-preview-protector .mosaic-row-media {
-  object-position: left top;
-  transform: scale(1.18);
+  object-position: var(--preview-crop-position);
+  transform: scale(var(--preview-crop-scale));
   transform-origin: left top;
 }
 
@@ -2045,6 +2072,22 @@ img {
 .preview-gallery-popup[data-preview-media="video"] .preview-gallery-media {
   backface-visibility: hidden;
   transform: translateZ(0);
+}
+
+/* The frame, not the image, carries the landscape shape of the grid tile, so
+   the crop stays put while the popup width changes. */
+.preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
+  aspect-ratio: 16 / 9;
+  max-height: min(42vh, 480px);
+}
+
+.preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media {
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  object-position: var(--preview-crop-position);
+  transform: scale(var(--preview-crop-scale));
+  transform-origin: left top;
 }
 
 .preview-gallery-content {
@@ -2554,9 +2597,10 @@ img {
   .mosaic-hero {
     min-height: 25rem;
     margin: 0;
-    /* Bottom padding only bites once expansions push past min-height, keeping
-       the profile off the mosaic when several chips are open. */
-    padding-block: 0 clamp(1.75rem, 3vw, 3rem);
+    /* The contact block grew the hero past its min-height, so the avatar
+       needs real top clearance; the bottom padding only bites once chip
+       expansions push further, keeping the profile off the mosaic. */
+    padding-block: clamp(2.25rem, 4.5vh, 3.5rem) clamp(1.75rem, 3vw, 3rem);
   }
 
   .mosaic-hero-hero-only {
@@ -2696,6 +2740,20 @@ img {
     width: 100%;
     height: 100%;
     padding: clamp(0.75rem, 4vw, 1.25rem);
+    object-fit: contain;
+    object-position: center;
+    transform: none;
+  }
+
+  /* The tile is uncropped here, so the preview drops the crop with it. */
+  .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
+    aspect-ratio: auto;
+    max-height: none;
+  }
+
+  .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media {
+    height: auto;
+    max-height: 32vh;
     object-fit: contain;
     object-position: center;
     transform: none;
