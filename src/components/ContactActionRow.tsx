@@ -52,7 +52,13 @@ export function ContactActionRow({ email, contactHref, linkedinHref, xHref }: Co
           </span>
         </a>
         {xHref ? (
-          <a href={xHref} target="_blank" rel="noreferrer" className="mosaic-contact-pill mosaic-contact-pill-dark">
+          <a
+            href={xHref}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Follow on X"
+            className="mosaic-contact-pill mosaic-contact-pill-dark"
+          >
             <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
               <img
                 src="/icons/x.svg"
