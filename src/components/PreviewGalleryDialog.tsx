@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize2, Minimize2, X } from "lucide-react"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
@@ -207,14 +207,17 @@ export function PreviewGalleryDialog({
   const closeResetTimeoutRef = useRef<number | null>(null)
   const originWrapRef = useRef<HTMLDivElement | null>(null)
   const cardInnerRef = useRef<HTMLDivElement | null>(null)
+  const popupRef = useRef<HTMLDivElement | null>(null)
   const originAnimationsRef = useRef<Animation[]>([])
   // The portal mounts its contents in a later commit than the one that flips
   // `open`, so the open animation keys off the node arriving, not off `open`.
   const [originWrapNode, setOriginWrapNode] = useState<HTMLDivElement | null>(null)
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("down")
+  const [isWide, setIsWide] = useState(false)
   const safeIndex = useMemo(() => wrapIndex(selectedIndex, cards.length), [cards.length, selectedIndex])
   const activeCard = cards[safeIndex]
+  const activeMediaSource = activeCard?.image ?? ""
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
   const activeLink = activeCard ? getPreviewLink(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
@@ -361,6 +364,7 @@ export function PreviewGalleryDialog({
         }
         closeResetTimeoutRef.current = window.setTimeout(() => {
           setSwitchPhase("idle")
+          setIsWide(false)
           closeResetTimeoutRef.current = null
         }, previewCloseResetMs)
       }
@@ -372,6 +376,7 @@ export function PreviewGalleryDialog({
   const moveBy = useCallback(
     (direction: number) => {
       if (cards.length <= 1) return
+      if (direction === 0) return
       if (switchPhase !== "idle") return
 
       if (direction > 0) playNext()
@@ -443,7 +448,7 @@ export function PreviewGalleryDialog({
 
   if (!activeCard) return null
 
-  const activeCardIsVideo = isVideoPreviewSource(activeCard.image)
+  const activeMediaIsVideo = isVideoPreviewSource(activeMediaSource)
   const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
   const mediaFrameStyle = activeCard.previewMediaPaddingBlock
     ? ({ "--preview-gallery-media-padding-block": activeCard.previewMediaPaddingBlock } as CSSProperties)
@@ -465,12 +470,19 @@ export function PreviewGalleryDialog({
             }
           }}
         >
-          <div className="preview-gallery-origin-wrap" ref={attachOriginWrap}>
+          <div
+            className="preview-gallery-origin-wrap"
+            data-wide={isWide ? "true" : undefined}
+            ref={attachOriginWrap}
+          >
             <Dialog.Popup
               className="preview-gallery-popup"
-              data-preview-media={activeCardIsVideo ? "video" : "image"}
+              ref={popupRef}
+              initialFocus={popupRef}
+              data-preview-media={activeMediaIsVideo ? "video" : "image"}
               data-preview-crop={activeCard.previewCropped ? "true" : undefined}
               data-origin-motion={originMotionEnabled ? "true" : undefined}
+              data-wide={isWide ? "true" : undefined}
               // No aria-label here: it would override the aria-labelledby Base UI
               // wires to <Dialog.Title> below, and the title is the better name.
             >
@@ -508,9 +520,10 @@ export function PreviewGalleryDialog({
               >
                 <div className="preview-gallery-card-inner" ref={cardInnerRef}>
                   <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
-                    {activeCardIsVideo ? (
+                    {activeMediaIsVideo ? (
                       <video
-                        src={activeCard.image}
+                        key={activeMediaSource}
+                        src={activeMediaSource}
                         poster={activeCard.previewPoster}
                         width={activeCard.previewWidth}
                         height={activeCard.previewHeight}
@@ -528,7 +541,8 @@ export function PreviewGalleryDialog({
                       />
                     ) : (
                       <img
-                        src={activeCard.image}
+                        key={activeMediaSource}
+                        src={activeMediaSource}
                         // The dialog title right below already names this preview,
                         // so a matching alt would just read the same words twice.
                         alt=""
@@ -539,6 +553,25 @@ export function PreviewGalleryDialog({
                         decoding="async"
                       />
                     )}
+
+                    <button
+                      type="button"
+                      className="preview-gallery-expand"
+                      aria-label={isWide ? "Exit wide view" : "Expand preview"}
+                      aria-pressed={isWide}
+                      onClick={() => setIsWide((current) => !current)}
+                    >
+                      <Maximize2
+                        aria-hidden="true"
+                        strokeWidth={2}
+                        className={`preview-gallery-expand-icon${isWide ? "" : " is-active"}`}
+                      />
+                      <Minimize2
+                        aria-hidden="true"
+                        strokeWidth={2}
+                        className={`preview-gallery-expand-icon${isWide ? " is-active" : ""}`}
+                      />
+                    </button>
                   </div>
 
                   <div className="preview-gallery-toolbar">
