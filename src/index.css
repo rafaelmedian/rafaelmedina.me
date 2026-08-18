@@ -1389,6 +1389,16 @@ img {
     visibility 0ms linear;
 }
 
+/* Keep the hover target continuous across the visual gap from chip to card. */
+.mosaic-work-history-popover[data-open="true"]::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 0.625rem;
+}
+
 .mosaic-work-history-popover[data-switching="true"] {
   transition: none;
 }
