@@ -121,7 +121,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha - Multiwallet flow",
     summary: "",
     detail:
-      "Connecting and switching between several wallets without losing your place — the flow, states, and small interactions that make juggling accounts on Matcha feel routine.",
+      "Connecting and switching between wallets without losing your place. The flow, the empty and error states, and the small interactions in between.",
     image: "/Projects/shot-small-9.webm",
     previewWidth: 480,
     previewHeight: 360,
@@ -136,7 +136,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha - Mobile Screens",
     summary: "",
     detail:
-      "A pass across Matcha's core mobile screens, keeping dense trading data legible and tappable on a phone-sized canvas.",
+      "Matcha's core screens on mobile. Most of the work was keeping dense trading data readable and tappable at phone width.",
     image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
@@ -149,7 +149,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha - Homepage",
     summary: "",
     detail:
-      "Matcha's homepage, introducing the product and moving visitors into their first trade with as little friction as possible.",
+      "Matcha's homepage. It explains what the product does and gets people to their first trade in as few steps as possible.",
     image: "/Projects/shot-small-16.webm",
     previewWidth: 640,
     previewHeight: 480,
@@ -164,7 +164,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Protector",
     summary: "",
     detail:
-      "A protection-focused mobile product designed around trust: quick comprehension, calm surfaces, and confident action in stressful moments.",
+      "A mobile safety product. People open it when something is already wrong, so the main action stays one tap away and everything else gets out of the way.",
     image: "/Projects/protector.webp",
     previewWidth: 1200,
     previewHeight: 1328,
@@ -181,7 +181,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Popparazi V1",
     summary: "",
     detail:
-      "The first version of Popparazi, a mobile social app exploration focused on visual rhythm, content density, and playful interaction.",
+      "First version of Popparazi, a mobile social app. An exploration of feed layout, how much content fits per screen, and how playful the interactions could get.",
     image: "/Projects/popparazi_v1.webp",
     previewWidth: 630,
     previewHeight: 1314,
@@ -198,7 +198,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha - Token Page",
     summary: "",
     detail:
-      "Matcha's token page, organizing price action, liquidity, and token metadata into a hierarchy a trader can scan in seconds.",
+      "Matcha's token page. Price, liquidity, and token details ordered so a trader can scan the page in a few seconds.",
     image: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
@@ -212,7 +212,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha Trade Page",
     summary: "",
     detail:
-      "The trade page that anchors Matcha: a dense quote panel held together by calm hierarchy, so fast decisions don't feel rushed.",
+      "The page most of Matcha runs through. A dense quote panel with enough hierarchy that you can read it quickly.",
     image: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
@@ -225,7 +225,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha Trade module",
     summary: "",
     detail:
-      "The trade module itself — inputs, quotes, and confirmation states tuned for clarity at the moment money moves.",
+      "The trade module itself: inputs, quotes, and confirmation states. Most of the effort went into making the numbers unambiguous before you sign.",
     image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
