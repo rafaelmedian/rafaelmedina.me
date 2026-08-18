@@ -420,6 +420,23 @@ test("switches the about card between about me and resume", async ({ page }) => 
   await expect(panel).toContainText(/Hi, I.m Rafael/)
 })
 
+test("slides one shared selection pill between the about tabs", async ({ page }) => {
+  await page.goto("/")
+
+  const tabs = page.getByRole("tablist", { name: "About me or resume" })
+  const indicator = tabs.locator(".mosaic-about-tab-indicator")
+
+  await expect(indicator).toHaveCount(1)
+  const aboutPosition = await indicator.boundingBox()
+  expect(aboutPosition).not.toBeNull()
+
+  await tabs.getByRole("tab", { name: "resume" }).click()
+  await expect(tabs).toHaveAttribute("data-active-tab", "resume")
+  await expect
+    .poll(async () => (await indicator.boundingBox())?.x)
+    .toBeGreaterThan(aboutPosition?.x ?? 0)
+})
+
 test("lets keyboard users move and reset about stickers", async ({ page }) => {
   await page.setViewportSize({ width: 1000, height: 900 })
   await page.emulateMedia({ reducedMotion: "reduce" })
