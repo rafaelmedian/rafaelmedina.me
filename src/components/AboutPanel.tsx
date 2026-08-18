@@ -12,8 +12,13 @@ import { cvEducation, cvExperience } from "../data/cv"
 import type { SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 
+export type AboutTab = "about" | "resume"
+
 type AboutPanelProps = {
   links: SiteLinks
+  // Owned by the feed so the top nav can deep-link straight into a tab.
+  activeTab: AboutTab
+  onTabChange: (tab: AboutTab) => void
 }
 
 type AboutSticker = {
@@ -252,15 +257,12 @@ const elsewhereLinks = (links: SiteLinks) => [
   { name: "Dribbble", href: links.dribbble },
 ]
 
-type AboutTab = "about" | "resume"
-
 const aboutTabs: { id: AboutTab; label: string }[] = [
   { id: "about", label: "About me" },
   { id: "resume", label: "Resume" },
 ]
 
-export function AboutPanel({ links }: AboutPanelProps) {
-  const [activeTab, setActiveTab] = useState<AboutTab>("about")
+export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
   const tabRefs = useRef<Record<AboutTab, HTMLButtonElement | null>>({ about: null, resume: null })
   const { offsets, order, dragging, onKeyDown, onPointerDown, onPointerMove, onPointerUp } =
     useStickerMovement()
@@ -268,7 +270,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
   const selectTab = (tab: AboutTab) => {
     if (tab === activeTab) return
     trackEvent("about_tab_change", { about_tab: tab })
-    setActiveTab(tab)
+    onTabChange(tab)
   }
 
   const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
@@ -287,7 +289,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
       aria-label="About Rafael Medina"
     >
       <h2 className="sr-only">About Rafael Medina</h2>
-      <div className="mosaic-about-panel">
+      <div id="about-panel-resume" className="mosaic-about-panel">
         <div className="mosaic-about-body">
           <div className="mosaic-about-tabs" role="tablist" aria-label="About me or resume">
             {aboutTabs.map((tab) => (

@@ -420,6 +420,43 @@ test("switches the about card between about me and resume", async ({ page }) => 
   await expect(panel).toContainText(/Hi, I.m Rafael/)
 })
 
+test("records the selected about tab in the URL", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const resumeLink = page
+    .getByRole("navigation", { name: "Sections" })
+    .getByRole("link", { name: "Resume" })
+
+  await expect(resumeLink).toHaveAttribute("href", "#about-panel-resume")
+  await resumeLink.click()
+
+  await expect(page).toHaveURL(/#about-panel-resume$/)
+  await expect(page.getByRole("tab", { name: "resume" })).toHaveAttribute("aria-selected", "true")
+})
+
+test("opens the resume tab from its deep link", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/#about-panel-resume")
+
+  await expect(page.getByRole("tab", { name: "resume" })).toHaveAttribute("aria-selected", "true")
+  await expect(page.locator("#about-panel")).toBeInViewport()
+})
+
+test("restores the about tab when navigating back from resume", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page
+    .getByRole("navigation", { name: "Sections" })
+    .getByRole("link", { name: "Resume" })
+    .click()
+
+  await page.goBack()
+
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole("tab", { name: "about me" })).toHaveAttribute("aria-selected", "true")
+})
+
 test("lets keyboard users move and reset about stickers", async ({ page }) => {
   await page.setViewportSize({ width: 1000, height: 900 })
   await page.emulateMedia({ reducedMotion: "reduce" })

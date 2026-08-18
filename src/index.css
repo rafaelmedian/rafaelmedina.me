@@ -198,16 +198,25 @@ img {
   text-align: center;
 }
 
-.mosaic-social-corner {
+.mosaic-social-corner,
+.mosaic-section-corner {
   position: absolute;
   top: clamp(0.7rem, 2vw, 1.45rem);
-  right: clamp(0.75rem, 2vw, 1.7rem);
   z-index: 30;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 0.16rem;
-  max-width: calc(100vw - 1.5rem);
+  max-width: calc(50vw - 0.75rem);
+}
+
+.mosaic-social-corner {
+  right: clamp(0.75rem, 2vw, 1.7rem);
+  justify-content: flex-end;
+}
+
+.mosaic-section-corner {
+  left: clamp(0.75rem, 2vw, 1.7rem);
+  justify-content: flex-start;
 }
 
 .mosaic-social-link {
@@ -2795,12 +2804,20 @@ img {
     padding-top: 4.4rem;
   }
 
-  .mosaic-social-corner {
+  .mosaic-social-corner,
+  .mosaic-section-corner {
     top: 0.52rem;
     right: auto;
     left: 50%;
     justify-content: center;
     transform: translateX(-50%);
+  }
+
+  /* Two nav groups have to share a 320px-wide bar without meeting in the
+     middle, so trade horizontal padding (not the 2.5rem tap height) for room. */
+  .mosaic-social-link {
+    padding: 0 0.34rem;
+    font-size: 0.8125rem;
   }
 
   .mosaic-profile-actions {

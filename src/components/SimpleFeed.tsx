@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react"
 import { ExternalLink } from "lucide-react"
 
-import { AboutPanel } from "./AboutPanel"
+import { AboutPanel, type AboutTab } from "./AboutPanel"
 import { ContactActionRow } from "./ContactActionRow"
 import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
@@ -337,6 +337,40 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
   )
 }
 
+const sectionLinks: { label: string; tab: AboutTab; href: string }[] = [
+  { label: "About me", tab: "about", href: "#about-panel" },
+  { label: "Resume", tab: "resume", href: "#about-panel-resume" },
+]
+
+function getAboutTabFromHash(hash: string): AboutTab | null {
+  if (hash === "#about-panel-resume") return "resume"
+  if (hash === "" || hash === "#about-panel") return "about"
+  return null
+}
+
+function SectionCorner({ onSelect }: { onSelect: (tab: AboutTab, href: string) => void }) {
+  return (
+    <nav className="mosaic-section-corner" aria-label="Sections">
+      {sectionLinks.map((link) => (
+        <a
+          key={link.tab}
+          href={link.href}
+          className="mosaic-social-link"
+          onClick={(event) => {
+            // Let modified clicks fall through so the anchor still opens in a
+            // new tab; otherwise take over so the tab can be selected first.
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+            event.preventDefault()
+            onSelect(link.tab, link.href)
+          }}
+        >
+          {link.label}
+        </a>
+      ))}
+    </nav>
+  )
+}
+
 function SocialCorner({ links }: { links: SiteLinks }) {
   const socialLinks = [
     { label: "Download Resume", href: links.resumePdf, external: true },
@@ -386,6 +420,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
+  const [aboutTab, setAboutTab] = useState<AboutTab>("about")
   const [showAllWork, setShowAllWork] = useState(false)
   const rowsRender = useMemo(() => {
     let previewIndex = 0
@@ -489,6 +524,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   }, [])
 
   useEffect(() => {
+    const syncAboutTabFromUrl = () => {
+      const tab = getAboutTabFromHash(window.location.hash)
+      if (tab) setAboutTab(tab)
+    }
+
+    syncAboutTabFromUrl()
+    window.addEventListener("popstate", syncAboutTabFromUrl)
+    return () => window.removeEventListener("popstate", syncAboutTabFromUrl)
+  }, [])
+
+  useEffect(() => {
     if (!showAllWork || !shouldFocusRevealedWorkRef.current) return
 
     shouldFocusRevealedWorkRef.current = false
@@ -520,8 +566,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     }
   }, [])
 
-  const scrollToAbout = () => {
-    trackEvent("about_scroll", { about_scroll_trigger: "avatar" })
+  const scrollToAbout = (trigger: string) => {
+    trackEvent("about_scroll", { about_scroll_trigger: trigger })
     const aboutPanel = document.getElementById("about-panel")
     if (!aboutPanel) return
 
@@ -532,9 +578,19 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     aboutPanel.focus({ preventScroll: true })
   }
 
+  const openAboutTab = (tab: AboutTab, href: string) => {
+    if (tab !== aboutTab) {
+      trackEvent("about_tab_change", { about_tab: tab })
+      setAboutTab(tab)
+    }
+    if (window.location.hash !== href) window.history.pushState(null, "", href)
+    scrollToAbout(`nav_${tab}`)
+  }
+
   return (
     <section className="mosaic-shell">
       <h1 className="sr-only">{profile.name} portfolio</h1>
+      <SectionCorner onSelect={openAboutTab} />
       <SocialCorner links={links} />
       <header id="about" className="mosaic-hero">
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
@@ -543,7 +599,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
               aria-label={`Read about ${profile.name}`}
-              onClick={scrollToAbout}
+              onClick={() => scrollToAbout("avatar")}
             >
               <div className="mosaic-avatar-coin-inner">
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
@@ -694,7 +750,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               ) : null}
           </article>
 
-          <AboutPanel links={links} />
+          <AboutPanel links={links} activeTab={aboutTab} onTabChange={setAboutTab} />
 
           {/* Stays mounted after the first open so Base UI can run the close
               transition instead of the dialog vanishing on unmount. */}
