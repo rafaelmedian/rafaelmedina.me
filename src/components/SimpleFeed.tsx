@@ -51,6 +51,31 @@ const PreviewGalleryDialog = lazy(() =>
   loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })),
 )
 
+function PuntaCanaMapScreenshot() {
+  return (
+    <img
+      className="mosaic-local-time-map-screenshot"
+      src="/maps/punta-cana-openstreetmap.png"
+      alt="OpenStreetMap screenshot of Punta Cana, Dominican Republic"
+      width="696"
+      height="320"
+    />
+  )
+}
+
+function FailedPuntaCanaMap() {
+  return <PuntaCanaMapScreenshot />
+}
+
+const PuntaCanaMap = lazy(async () => {
+  try {
+    const module = await import("./PuntaCanaMap")
+    return { default: module.PuntaCanaMap }
+  } catch {
+    return { default: FailedPuntaCanaMap }
+  }
+})
+
 type SiteProfile = {
   name: string
   title: string
@@ -406,9 +431,8 @@ function SocialCorner({
   timeLabel: string
 }) {
   const { isOpen, hoverProps } = useHoverCard()
-  const [appleMapFailed, setAppleMapFailed] = useState(false)
-  const appleMapsSnapshotUrl = import.meta.env.VITE_APPLE_MAPS_SNAPSHOT_URL?.trim()
-  const showAppleMap = isOpen && Boolean(appleMapsSnapshotUrl) && !appleMapFailed
+  const [mapLoaded, setMapLoaded] = useState(false)
+  const handleMapReady = useCallback(() => setMapLoaded(true), [])
 
   return (
     <div className="mosaic-social-corner">
@@ -428,32 +452,22 @@ function SocialCorner({
           aria-hidden={!isOpen}
         >
           <span className="mosaic-local-time-map">
-            {showAppleMap ? (
-              <img
-                className="mosaic-local-time-map-image"
-                src={appleMapsSnapshotUrl}
-                alt="Apple Maps view of Punta Cana, Dominican Republic"
-                onError={() => setAppleMapFailed(true)}
-              />
+            {isOpen || mapLoaded ? (
+              <Suspense fallback={<PuntaCanaMapScreenshot />}>
+                <PuntaCanaMap onReady={handleMapReady} />
+              </Suspense>
             ) : (
-              <svg
-                viewBox="0 0 320 144"
-                role="img"
-                aria-label="Map of the Dominican Republic with Punta Cana marked"
-              >
-                <path
-                  className="mosaic-local-time-map-haiti"
-                  d="M19 67 34 59l9-14 21-5 18 6 17-7 22 4 12 13-4 11 11 10-5 15-20 3-11 12-23-5-14 4-11-10-24-4-9-12 6-12-9-9Z"
-                />
-                <path
-                  className="mosaic-local-time-map-dr"
-                  d="m129 56 16-10 25 2 16-5 24 7 22-4 20 8 27 1 18 11 8 15-10 9 5 10-18 4-13-6-19 9-25-4-18 8-20-4-19 7-20-8-19 2-8-12-15-2-8-13 5-11-11-10Z"
-                />
-                <path className="mosaic-local-time-map-border" d="m129 56 11 10-5 11 8 13-5 12" />
-                <circle className="mosaic-local-time-map-marker-ring" cx="284" cy="82" r="8" />
-                <circle className="mosaic-local-time-map-marker" cx="284" cy="82" r="3.5" />
-              </svg>
+              <PuntaCanaMapScreenshot />
             )}
+            <a
+              className="mosaic-local-time-map-attribution"
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="OpenStreetMap contributors"
+            >
+              © OpenStreetMap contributors
+            </a>
           </span>
           <span className="mosaic-local-time-card-copy">
             <span>

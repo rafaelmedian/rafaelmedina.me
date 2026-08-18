@@ -1,7 +1,11 @@
 import { expect, type BrowserContext, type Page, test } from "@playwright/test"
 
 const mobileViewport = { width: 390, height: 844 }
-const appleMapsTestUrl = "https://example.test/apple-maps-punta-cana.png"
+const openStreetMapTileUrl = /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/
+const transparentMapTile = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+)
 
 // Work-history chips point at real company sites; the assertions only care that
 // the browser went there, so serve a stub rather than depend on the network.
@@ -66,13 +70,15 @@ test("previews the copy reaction without copying on hover", async ({ page }) => 
   await copyButton.hover()
   await expect(reaction).toBeVisible()
   await expect(copyButton).toHaveText("Copy email")
+  await expect(reaction.locator("source")).toHaveAttribute("srcset", "/reactions/copy-email-before-still.webp")
   await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.gif")
 })
 
 test("celebrates a copied email below the trigger on the highest hero layer", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-write"])
   await page.goto("/")
-  await page.clock.install()
+  await page.clock.install({ time: new Date("2026-08-18T12:00:00Z") })
+  await page.clock.pauseAt(new Date("2026-08-18T12:01:00Z"))
 
   const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
   const reaction = page.locator(".mosaic-copy-reaction")
@@ -116,7 +122,8 @@ test("celebrates a copied email below the trigger on the highest hero layer", as
 test("dismisses the copied-email reaction as soon as another contact pill is hovered", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-write"])
   await page.goto("/")
-  await page.clock.install()
+  await page.clock.install({ time: new Date("2026-08-18T12:00:00Z") })
+  await page.clock.pauseAt(new Date("2026-08-18T12:01:00Z"))
 
   const copyButton = page.getByRole("button", { name: "Copy email" })
   const reaction = page.locator(".mosaic-copy-reaction")
@@ -290,14 +297,12 @@ test("holds the LinkedIn clip still under reduced motion", async ({ page }) => {
   await expect(page.locator(".mosaic-linkedin-card video")).toHaveJSProperty("paused", true)
 })
 
-test("shows an Apple Maps view of Punta Cana while local time is hovered", async ({ page }) => {
-  await page.route(appleMapsTestUrl, (route) =>
+test("shows an interactive OpenStreetMap view of Punta Cana while local time is hovered", async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 600 })
+  await page.route(openStreetMapTileUrl, (route) =>
     route.fulfill({
       contentType: "image/png",
-      body: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
-        "base64",
-      ),
+      body: transparentMapTile,
     }),
   )
   await page.goto("/")
@@ -311,16 +316,35 @@ test("shows an Apple Maps view of Punta Cana while local time is hovered", async
   await expect(card).toHaveAttribute("data-state", "open")
   await expect(card.getByText("Punta Cana", { exact: true })).toBeVisible()
   await expect(card.getByText("Dominican Republic", { exact: true })).toBeVisible()
-  const map = card.getByRole("img", { name: "Apple Maps view of Punta Cana, Dominican Republic" })
+  const map = card.getByRole("region", { name: "Interactive map of Punta Cana, Dominican Republic" })
   await expect(map).toBeVisible()
-  await expect(map).toHaveAttribute("src", appleMapsTestUrl)
-  await expect.poll(() => map.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBeGreaterThan(0)
+  await expect(map.getByRole("button")).toHaveCount(0)
+  await expect(map.getByRole("link")).toHaveCount(0)
+  await expect(map.getByRole("img", { name: "Punta Cana location marker" })).toBeVisible()
+  await expect(card.getByRole("link", { name: "OpenStreetMap contributors" })).toBeVisible()
+  await expect(
+    card.getByRole("img", { name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic" }),
+  ).toBeHidden()
 
   const cardBox = await card.boundingBox()
   const timeBox = await localTime.boundingBox()
   expect(cardBox).not.toBeNull()
   expect(timeBox).not.toBeNull()
+  expect(cardBox!.width).toBeCloseTo(360, 0)
   expect(cardBox!.y).toBeGreaterThan(timeBox!.y + timeBox!.height)
+
+  const workHistoryBox = await page.locator(".mosaic-work-history").boundingBox()
+  expect(workHistoryBox).not.toBeNull()
+  const overlapPoint = {
+    x: Math.max(cardBox!.x, workHistoryBox!.x) + 8,
+    y: Math.max(cardBox!.y, workHistoryBox!.y) + 8,
+  }
+  expect(
+    await page.evaluate(
+      ({ x, y }) => Boolean(document.elementFromPoint(x, y)?.closest(".mosaic-local-time-card")),
+      overlapPoint,
+    ),
+  ).toBe(true)
 
   await page.mouse.move(cardBox!.x + cardBox!.width / 2, cardBox!.y + cardBox!.height / 2, { steps: 8 })
   await expect(card).toHaveAttribute("data-state", "open")
@@ -329,14 +353,38 @@ test("shows an Apple Maps view of Punta Cana while local time is hovered", async
   await expect(card).toHaveAttribute("data-state", "closed")
 })
 
-test("falls back to the illustrated Punta Cana map when Apple Maps is unavailable", async ({ page }) => {
-  await page.route(appleMapsTestUrl, (route) => route.abort())
+test("shows a Punta Cana map screenshot while OpenStreetMap tiles are unavailable", async ({ page }) => {
+  await page.route(openStreetMapTileUrl, () => {})
   await page.goto("/")
 
   await page.locator(".mosaic-social-time").hover()
 
+  const screenshot = page.getByRole("img", {
+    name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic",
+  })
+  await expect(screenshot).toBeVisible()
+  await expect.poll(() => screenshot.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBeGreaterThan(0)
+})
+
+test("keeps the static Punta Cana map when the interactive map chunk fails", async ({ page }) => {
+  await page.route("**/assets/PuntaCanaMap-*.js", (route) => route.abort("failed"))
+  await page.goto("/")
+
+  const mapChunkFailure = page.waitForEvent(
+    "requestfailed",
+    (request) => request.url().includes("/assets/PuntaCanaMap-"),
+  )
+  await page.locator(".mosaic-social-time").hover()
+  await mapChunkFailure
+  // React retries the suspended tree before surfacing an unhandled lazy-import
+  // rejection, so let that recovery cycle settle before inspecting the page.
+  await page.waitForTimeout(500)
+
+  await expect(page.getByRole("heading", { name: "Rafael Medina portfolio" })).toBeVisible()
   await expect(
-    page.getByRole("img", { name: "Map of the Dominican Republic with Punta Cana marked" }),
+    page.getByRole("img", {
+      name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic",
+    }),
   ).toBeVisible()
 })
 
@@ -428,7 +476,8 @@ test("shows current availability with the status dot on the right", async ({ pag
   expect(availabilityBox).not.toBeNull()
   expect(alignment).not.toBeNull()
   expect(alignment!.dotCenterX).toBeGreaterThan(availabilityBox!.x + availabilityBox!.width / 2)
-  expect(alignment!.dotCenterY).toBeCloseTo(alignment!.textCenterY, 0)
+  expect(alignment!.dotCenterY - alignment!.textCenterY).toBeGreaterThanOrEqual(1)
+  expect(alignment!.dotCenterY - alignment!.textCenterY).toBeLessThanOrEqual(2)
 })
 
 test("uses a compact availability dot", async ({ page }) => {
@@ -483,6 +532,28 @@ test("places the resume link beside about in the section navigation", async ({ p
   expect(resumeBox!.x).toBeGreaterThanOrEqual(aboutBox!.x + aboutBox!.width)
 })
 
+test("keeps the section links compact with the hero tooltip-link corners", async ({ page }) => {
+  await page.goto("/")
+
+  const navigation = page.getByRole("navigation", { name: "Sections" })
+  const links = navigation.getByRole("link")
+
+  await expect(links).toHaveCount(2)
+  for (const link of await links.all()) {
+    await expect(link).toHaveCSS("min-height", "32px")
+    await expect(link).toHaveCSS("border-radius", "8px")
+  }
+})
+
+test("preserves the section links' vertical hit area", async ({ page }) => {
+  await page.goto("/")
+
+  const about = page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "About", exact: true })
+  const hitAreaHeight = await about.evaluate((link) => getComputedStyle(link, "::before").height)
+
+  expect(hitAreaHeight).toBe("40px")
+})
+
 test("places the external-link icon after the resume label", async ({ page }) => {
   await page.goto("/")
 
@@ -532,6 +603,18 @@ test("labels the about panel tabs", async ({ page }) => {
   const tabs = page.getByRole("tablist", { name: "About me or work history" })
   await expect(tabs.getByRole("tab").nth(0)).toHaveText("About me")
   await expect(tabs.getByRole("tab").nth(1)).toHaveText("Work history")
+})
+
+test("uses compact corners for the about panel tabs", async ({ page }) => {
+  await page.goto("/#about-panel")
+
+  const tablist = page.getByRole("tablist", { name: "About me or work history" })
+  const tabs = tablist.getByRole("tab")
+
+  await expect(tablist).toHaveCSS("border-radius", "11px")
+  for (const tab of await tabs.all()) {
+    await expect(tab).toHaveCSS("border-radius", "8px")
+  }
 })
 
 test("scrolls to and focuses the about section from the avatar button", async ({ page }) => {
@@ -1080,7 +1163,8 @@ test("travels one role-bearing work-history popover between company triggers wit
 
   const closedTransform = await popover.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform))
   expect(closedTransform.a).toBeCloseTo(1, 2)
-  expect(closedTransform.d).toBeCloseTo(0, 2)
+  expect(closedTransform.d).toBeCloseTo(1, 2)
+  expect(closedTransform.m42).toBeCloseTo(-6, 1)
 
   await onit.hover()
   await expect(popover).toBeVisible()
@@ -1112,7 +1196,8 @@ test("travels one role-bearing work-history popover between company triggers wit
         .map((duration) => Number.parseFloat(duration) * (duration.includes("ms") ? 0.001 : 1)),
     ),
   )
-  expect(longestPopoverTransition).toBeCloseTo(0.2, 2)
+  expect(longestPopoverTransition).toBeCloseTo(0.24, 2)
+  await expect(popover).toHaveCSS("transition-property", "transform, opacity, visibility")
 
   const onitPopoverBox = await popover.boundingBox()
   const onitTriggerBox = await onit.boundingBox()
@@ -1145,6 +1230,24 @@ test("travels one role-bearing work-history popover between company triggers wit
   await page.getByRole("link", { name: "Protector and Patrol", exact: true }).hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Protector and Patrol")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
+})
+
+test("keeps a work-history pill engaged while the pointer moves into its card", async ({ page }) => {
+  await page.goto("/")
+
+  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const popover = page.locator(".mosaic-work-history-popover")
+
+  await onit.hover()
+  await expect(popover).toBeVisible()
+
+  const popoverBox = await popover.boundingBox()
+  expect(popoverBox).not.toBeNull()
+  await page.mouse.move(popoverBox!.x + popoverBox!.width / 2, popoverBox!.y + 12, { steps: 8 })
+
+  await expect(popover).toBeVisible()
+  await expect(onit).toHaveClass(/\bis-active\b/)
+  await expect(onit).toHaveCSS("background-color", "rgb(233, 233, 233)")
 })
 
 test("opens the work-history popover from the keyboard and links each chip to its company", async ({

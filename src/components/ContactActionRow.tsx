@@ -67,14 +67,14 @@ export function ContactActionRow({
                 srcSet={
                   isCopySuccess
                     ? "/reactions/copy-email-success-still.webp"
-                    : "/reactions/copy-email-reaction-still.webp"
+                    : "/reactions/copy-email-before-still.webp"
                 }
               />
               <img
-                src={isCopySuccess ? "/reactions/copy-email-success.webp" : "/reactions/copy-email-reaction.webp"}
+                src={isCopySuccess ? "/reactions/copy-email-success.webp" : "/reactions/copy-email-before.gif"}
                 alt=""
-                width={isCopySuccess ? 400 : 200}
-                height={isCopySuccess ? 262 : 144}
+                width={isCopySuccess ? 400 : 480}
+                height={isCopySuccess ? 262 : 371}
                 decoding="async"
               />
             </picture>
