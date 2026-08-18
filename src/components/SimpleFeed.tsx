@@ -3,8 +3,9 @@ import { ExternalLink } from "lucide-react"
 
 import { AboutPanel, type AboutTab } from "./AboutPanel"
 import { ContactActionRow } from "./ContactActionRow"
-import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
+import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
+import { useHoverCard } from "../lib/hoverCard"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
@@ -338,8 +339,7 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
 }
 
 const sectionLinks: { label: string; tab: AboutTab; href: string }[] = [
-  { label: "About me", tab: "about", href: "#about-panel" },
-  { label: "Resume", tab: "resume", href: "#about-panel-resume" },
+  { label: "About", tab: "about", href: "#about-panel" },
 ]
 
 function getAboutTabFromHash(hash: string): AboutTab | null {
@@ -348,7 +348,13 @@ function getAboutTabFromHash(hash: string): AboutTab | null {
   return null
 }
 
-function SectionCorner({ onSelect }: { onSelect: (tab: AboutTab, href: string) => void }) {
+function SectionCorner({
+  onSelect,
+  resumeHref,
+}: {
+  onSelect: (tab: AboutTab, href: string) => void
+  resumeHref: string
+}) {
   return (
     <nav className="mosaic-section-corner" aria-label="Sections">
       {sectionLinks.map((link) => (
@@ -367,44 +373,98 @@ function SectionCorner({ onSelect }: { onSelect: (tab: AboutTab, href: string) =
           {link.label}
         </a>
       ))}
+      <a
+        href={resumeHref}
+        target="_blank"
+        rel="noreferrer"
+        className="mosaic-social-link"
+        onClick={() => {
+          trackEvent("social_link_click", {
+            social_label: "Download Resume",
+            social_href: resumeHref,
+            social_placement: "top_corner",
+          })
+        }}
+      >
+        Resume
+        <ExternalLink
+          className="mosaic-social-link-external-icon"
+          size={12}
+          strokeWidth={1.75}
+          aria-hidden="true"
+        />
+      </a>
     </nav>
   )
 }
 
-function SocialCorner({ links }: { links: SiteLinks }) {
-  const socialLinks = [
-    { label: "Download Resume", href: links.resumePdf, external: true },
-  ]
+function SocialCorner({
+  reducedMotion,
+  timeLabel,
+}: {
+  reducedMotion: boolean
+  timeLabel: string
+}) {
+  const { isOpen, hoverProps } = useHoverCard()
+  const [appleMapFailed, setAppleMapFailed] = useState(false)
+  const appleMapsSnapshotUrl = import.meta.env.VITE_APPLE_MAPS_SNAPSHOT_URL?.trim()
+  const showAppleMap = isOpen && Boolean(appleMapsSnapshotUrl) && !appleMapFailed
 
   return (
-    <nav className="mosaic-social-corner" aria-label="Social links">
-      {socialLinks.map((link) => (
-        <a
-          key={link.label}
-          href={link.href}
-          target={link.external ? "_blank" : undefined}
-          rel={link.external ? "noreferrer" : undefined}
-          className="mosaic-social-link"
-          onClick={() => {
-            trackEvent("social_link_click", {
-              social_label: link.label,
-              social_href: link.href,
-              social_placement: "top_corner",
-            })
-          }}
+    <div className="mosaic-social-corner">
+      <span className="mosaic-hover-anchor mosaic-local-time-anchor" {...hoverProps}>
+        <span
+          className="mosaic-social-time"
+          tabIndex={0}
+          aria-describedby="local-time-location"
         >
-          {link.label}
-          {link.external ? (
-            <ExternalLink
-              className="mosaic-social-link-external-icon"
-              size={12}
-              strokeWidth={1.75}
-              aria-hidden="true"
-            />
-          ) : null}
-        </a>
-      ))}
-    </nav>
+          Local time: <LiveTimeLabel label={timeLabel} reducedMotion={reducedMotion} />
+        </span>
+        <span
+          id="local-time-location"
+          className={`mosaic-local-time-card${isOpen ? " is-open" : ""}`}
+          data-state={isOpen ? "open" : "closed"}
+          role="tooltip"
+          aria-hidden={!isOpen}
+        >
+          <span className="mosaic-local-time-map">
+            {showAppleMap ? (
+              <img
+                className="mosaic-local-time-map-image"
+                src={appleMapsSnapshotUrl}
+                alt="Apple Maps view of Punta Cana, Dominican Republic"
+                onError={() => setAppleMapFailed(true)}
+              />
+            ) : (
+              <svg
+                viewBox="0 0 320 144"
+                role="img"
+                aria-label="Map of the Dominican Republic with Punta Cana marked"
+              >
+                <path
+                  className="mosaic-local-time-map-haiti"
+                  d="M19 67 34 59l9-14 21-5 18 6 17-7 22 4 12 13-4 11 11 10-5 15-20 3-11 12-23-5-14 4-11-10-24-4-9-12 6-12-9-9Z"
+                />
+                <path
+                  className="mosaic-local-time-map-dr"
+                  d="m129 56 16-10 25 2 16-5 24 7 22-4 20 8 27 1 18 11 8 15-10 9 5 10-18 4-13-6-19 9-25-4-18 8-20-4-19 7-20-8-19 2-8-12-15-2-8-13 5-11-11-10Z"
+                />
+                <path className="mosaic-local-time-map-border" d="m129 56 11 10-5 11 8 13-5 12" />
+                <circle className="mosaic-local-time-map-marker-ring" cx="284" cy="82" r="8" />
+                <circle className="mosaic-local-time-map-marker" cx="284" cy="82" r="3.5" />
+              </svg>
+            )}
+          </span>
+          <span className="mosaic-local-time-card-copy">
+            <span>
+              <strong>Punta Cana</strong>
+              <span>Dominican Republic</span>
+            </span>
+            <span className="mosaic-local-time-card-clock">{timeLabel}</span>
+          </span>
+        </span>
+      </span>
+    </div>
   )
 }
 
@@ -587,11 +647,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     scrollToAbout(`nav_${tab}`)
   }
 
+  const selectAboutTab = (tab: AboutTab) => {
+    setAboutTab(tab)
+    const href = tab === "resume" ? "#about-panel-resume" : "#about-panel"
+    if (window.location.hash !== href) window.history.pushState(null, "", href)
+  }
+
   return (
     <section className="mosaic-shell">
       <h1 className="sr-only">{profile.name} portfolio</h1>
-      <SectionCorner onSelect={openAboutTab} />
-      <SocialCorner links={links} />
+      <SectionCorner onSelect={openAboutTab} resumeHref={links.resumePdf} />
+      <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
       <header id="about" className="mosaic-hero">
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-info">
@@ -630,22 +696,21 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           </div>
           <WorkedWithCompaniesInline variant="profile" />
           <p className="mosaic-profile-location">
-            Punta Cana & NYC <span aria-hidden="true">·</span> Local time:{" "}
-            <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+            Punta Cana & NYC <span aria-hidden="true">·</span>{" "}
+            <span className="mosaic-profile-availability">
+              Available for work
+              <span className="mosaic-availability-dot" aria-hidden="true" />
+            </span>
           </p>
-          {/* One wrapper, one stagger slot: availability and the contact
-              actions land together in the hero cascade. */}
           <div className="mosaic-profile-contact">
             <ContactActionRow
               email={links.email}
               contactHref={`mailto:${links.email}`}
               linkedinHref={links.linkedin}
               xHref={links.x}
+              xProfile={xProfilePreview}
+              linkedinMedia={linkedinHoverMedia}
             />
-            <p className="mosaic-profile-availability">
-              <span className="mosaic-availability-dot" aria-hidden="true" />
-              Available for work
-            </p>
           </div>
         </div>
       </header>
@@ -750,7 +815,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               ) : null}
           </article>
 
-          <AboutPanel links={links} activeTab={aboutTab} onTabChange={setAboutTab} />
+          <AboutPanel links={links} activeTab={aboutTab} onTabChange={selectAboutTab} />
 
           {/* Stays mounted after the first open so Base UI can run the close
               transition instead of the dialog vanishing on unmount. */}

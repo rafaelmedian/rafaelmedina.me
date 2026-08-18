@@ -1,4 +1,4 @@
-import type { SiteLinks } from "../data/portfolio"
+import { linkedinHoverMedia, xProfilePreview, type SiteLinks } from "../data/portfolio"
 import { ContactActionRow } from "./ContactActionRow"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
@@ -55,6 +55,8 @@ export function StyleguidePage({ links, name }: StyleguidePageProps) {
               contactHref={`mailto:${links.email}`}
               linkedinHref={links.linkedin}
               xHref={links.x}
+              xProfile={xProfilePreview}
+              linkedinMedia={linkedinHoverMedia}
             />
           </div>
           <div className="styleguide-notes-grid">

@@ -14,5 +14,8 @@ export default defineConfig({
     command: "npm run test:e2e:serve",
     url: "http://127.0.0.1:4174",
     reuseExistingServer: false,
+    env: {
+      VITE_APPLE_MAPS_SNAPSHOT_URL: "https://example.test/apple-maps-punta-cana.png",
+    },
   },
 })

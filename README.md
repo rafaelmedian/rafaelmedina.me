@@ -12,7 +12,10 @@ npm run build    # type-check + production build into dist/
 npm run preview  # serve the production build locally
 ```
 
-Copy `.env.example` to `.env` for optional analytics/map configuration (`VITE_GA_MEASUREMENT_ID`, `VITE_MAPBOX_TOKEN`).
+Copy `.env.example` to `.env` for optional analytics/map configuration
+(`VITE_GA_MEASUREMENT_ID`, `VITE_APPLE_MAPS_SNAPSHOT_URL`). Generate the complete,
+signed Punta Cana snapshot URL with [Apple's Create a Map tool](https://developer.apple.com/maps/create-a-map/);
+without it, the location card falls back to its illustrated Dominican Republic map.
 
 Google Analytics only loads when `VITE_GA_MEASUREMENT_ID` is set at build time. In
 CI it comes from the `VITE_GA_MEASUREMENT_ID` repo variable; leave it unset locally
