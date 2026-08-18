@@ -25,6 +25,11 @@ const settleWorkCards = (page: Page) =>
       Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)),
     )
 
+const pausePageClock = async (page: Page) => {
+  await page.clock.install({ time: new Date("2026-08-18T12:00:00Z") })
+  await page.clock.pauseAt(new Date("2026-08-18T12:01:00Z"))
+}
+
 test("hydrates the prerendered portfolio without browser errors", async ({ page, request }) => {
   const errors: string[] = []
   page.on("pageerror", (error) => errors.push(error.message))
@@ -77,8 +82,7 @@ test("previews the copy reaction without copying on hover", async ({ page }) => 
 test("celebrates a copied email below the trigger on the highest hero layer", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-write"])
   await page.goto("/")
-  await page.clock.install({ time: new Date("2026-08-18T12:00:00Z") })
-  await page.clock.pauseAt(new Date("2026-08-18T12:01:00Z"))
+  await pausePageClock(page)
 
   const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
   const reaction = page.locator(".mosaic-copy-reaction")
@@ -122,8 +126,7 @@ test("celebrates a copied email below the trigger on the highest hero layer", as
 test("dismisses the copied-email reaction as soon as another contact pill is hovered", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-write"])
   await page.goto("/")
-  await page.clock.install({ time: new Date("2026-08-18T12:00:00Z") })
-  await page.clock.pauseAt(new Date("2026-08-18T12:01:00Z"))
+  await pausePageClock(page)
 
   const copyButton = page.getByRole("button", { name: "Copy email" })
   const reaction = page.locator(".mosaic-copy-reaction")
@@ -139,6 +142,7 @@ test("keeps the copy reaction inside a narrow viewport", async ({ context, page 
   await context.grantPermissions(["clipboard-write"])
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
+  await pausePageClock(page)
 
   await page.locator(".mosaic-profile-contact").getByRole("button").click()
   const reaction = page.locator(".mosaic-copy-reaction")
@@ -950,6 +954,23 @@ test("switches the about card between about me and work history", async ({ page 
   await panel.getByRole("tab", { name: "Work history" }).press("ArrowLeft")
   await expect(panel.getByRole("tab", { name: "about me" })).toHaveAttribute("aria-selected", "true")
   await expect(panel).toContainText(/Hi, I.m Rafael/)
+})
+
+test("slides one shared selection pill between the about tabs", async ({ page }) => {
+  await page.goto("/")
+
+  const tabs = page.getByRole("tablist", { name: "About me or work history" })
+  const indicator = tabs.locator(".mosaic-about-tab-indicator")
+
+  await expect(indicator).toHaveCount(1)
+  const aboutPosition = await indicator.boundingBox()
+  expect(aboutPosition).not.toBeNull()
+
+  await tabs.getByRole("tab", { name: "Work history" }).click()
+  await expect(tabs).toHaveAttribute("data-active-tab", "resume")
+  await expect
+    .poll(async () => (await indicator.boundingBox())?.x)
+    .toBeGreaterThan(aboutPosition?.x ?? 0)
 })
 
 test("records the selected about tab in the URL", async ({ page }) => {

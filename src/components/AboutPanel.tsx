@@ -291,7 +291,13 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
       <h2 className="sr-only">About Rafael Medina</h2>
       <div id="about-panel-resume" className="mosaic-about-panel">
         <div className="mosaic-about-body">
-          <div className="mosaic-about-tabs" role="tablist" aria-label="About me or work history">
+          <div
+            className="mosaic-about-tabs"
+            role="tablist"
+            aria-label="About me or work history"
+            data-active-tab={activeTab}
+          >
+            <span className="mosaic-about-tab-indicator" aria-hidden="true" />
             {aboutTabs.map((tab) => (
               <button
                 key={tab.id}
