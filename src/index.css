@@ -240,6 +240,29 @@ img {
     transform 160ms ease;
 }
 
+.mosaic-social-link:has(.mosaic-social-link-external-icon) {
+  gap: 0.22rem;
+}
+
+.mosaic-social-link-external-icon {
+  flex: 0 0 auto;
+  opacity: 0;
+  filter: blur(4px);
+  transform: scale(0.25);
+  transform-origin: center;
+  transition:
+    opacity 180ms cubic-bezier(0.2, 0, 0, 1),
+    filter 180ms cubic-bezier(0.2, 0, 0, 1),
+    transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.mosaic-social-link:hover .mosaic-social-link-external-icon,
+.mosaic-social-link:focus-visible .mosaic-social-link-external-icon {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
 .mosaic-social-link:hover,
 .mosaic-social-link:focus-visible {
   color: #2d2d2d;
@@ -608,7 +631,7 @@ img {
   line-height: 1.7;
   letter-spacing: -0.005rem;
   color: #545454;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 .mosaic-about-body .mosaic-about-lede {
@@ -724,6 +747,8 @@ img {
   font-size: 0.8125rem;
   font-weight: 460;
   letter-spacing: -0.00563rem;
+  white-space: nowrap;
+  text-wrap: nowrap;
   color: var(--muted);
   cursor: pointer;
   transition:
@@ -1716,6 +1741,10 @@ img {
   padding: 0 clamp(16px, 3vw, 32px) 32px;
 }
 
+.mosaic-work-reveal {
+  display: none;
+}
+
 .mosaic-row {
   --row-gap: 1rem;
   display: flex;
@@ -1772,46 +1801,6 @@ img {
   outline-offset: 3px;
 }
 
-.mosaic-row-card-paginated {
-  --mosaic-row-pagination-bottom: clamp(0.7rem, 1.2vw, 0.95rem);
-}
-
-.mosaic-row-card-paginated .mosaic-row-card-title {
-  bottom: calc(var(--mosaic-row-pagination-bottom) + 0.78rem);
-}
-
-.mosaic-row-card-paginated .mosaic-row-media {
-  transition: opacity 180ms ease, filter 180ms ease;
-}
-
-.mosaic-row-card-pagination {
-  position: absolute;
-  left: 50%;
-  bottom: var(--mosaic-row-pagination-bottom);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.28rem;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.mosaic-row-card-pagination-dot {
-  width: 0.38rem;
-  height: 0.38rem;
-  border-radius: 999px;
-  background: rgb(0 0 0 / 0.13);
-  transform: scale(0.82);
-  transition:
-    background-color 180ms ease,
-    transform 180ms ease;
-}
-
-.mosaic-row-card-pagination-dot.is-active {
-  background: rgb(0 0 0 / 0.32);
-  transform: scale(1);
-}
-
 .mosaic-row-media {
   width: 100%;
   height: 100%;
@@ -1849,10 +1838,6 @@ img {
   place-items: center;
 }
 
-.mosaic-row-item-fit-contain .mosaic-row-card-paginated {
-  padding-bottom: clamp(1.75rem, 2.4vw, 2.25rem);
-}
-
 .mosaic-row-item-fit-contain .mosaic-row-media {
   width: auto;
   max-width: 100%;
@@ -1862,6 +1847,42 @@ img {
 }
 
 @media (max-width: 699.98px) {
+  .mosaic-rows[data-mobile-expanded="false"] .mosaic-row-mobile-extra {
+    display: none;
+  }
+
+  .mosaic-work-reveal {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    margin: 0 16px 32px;
+    border: 1px solid rgb(0 0 0 / 0.1);
+    border-radius: 999px;
+    padding: 0.65rem 1.1rem;
+    background: #fff;
+    box-shadow: 0 1px 5px rgb(46 42 42 / 0.08);
+    color: #2d2d2d;
+    font-size: 0.875rem;
+    font-weight: 560;
+    cursor: pointer;
+    transition-property: box-shadow, transform;
+    transition-duration: 160ms;
+  }
+
+  .mosaic-work-reveal:hover,
+  .mosaic-work-reveal:focus-visible {
+    box-shadow: 0 4px 12px rgb(46 42 42 / 0.12);
+  }
+
+  .mosaic-work-reveal:active {
+    transform: scale(0.96);
+  }
+
+  .mosaic-work-reveal[aria-expanded="true"] {
+    display: none;
+  }
+
   .mosaic-row {
     flex-direction: column;
     height: auto;
@@ -1873,6 +1894,7 @@ img {
     height: var(--row-height, 240px);
     min-height: var(--row-height, 240px);
   }
+
 }
 
 
@@ -1932,6 +1954,10 @@ img {
   transform-origin: center center;
 }
 
+.preview-gallery-origin-wrap[data-wide="true"] {
+  width: min(1280px, 100%);
+}
+
 .preview-gallery-popup {
   position: relative;
   width: min(544px, 100%);
@@ -1946,6 +1972,10 @@ img {
   transition:
     opacity var(--pg-content-in-ms, 140ms) ease-out,
     transform var(--pg-open-ms, 200ms) var(--pg-open-ease, cubic-bezier(0.32, 0.8, 0.32, 1));
+}
+
+.preview-gallery-popup[data-wide="true"] {
+  width: 100%;
 }
 
 /* Fallback for when there is no card to travel from (it scrolled off-screen, or
@@ -2015,6 +2045,15 @@ img {
     0 1px 1px rgb(0 0 0 / 0.04),
     0 18px 44px -18px rgb(0 0 0 / 0.28),
     0 48px 92px -42px rgb(0 0 0 / 0.38);
+  scrollbar-width: none;
+}
+
+/* Wide previews can outgrow the viewport vertically. Keep wheel, trackpad, and
+   touch scrolling available without drawing scrollbars over the rounded card. */
+.preview-gallery-card::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* The wrapper scales the surface down to the size of the card that was clicked;
@@ -2057,11 +2096,95 @@ img {
 }
 
 .preview-gallery-media-frame {
+  position: relative;
   overflow: hidden;
   border-radius: var(--preview-gallery-media-radius);
   background: #f0f0f1;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
   padding-block: var(--preview-gallery-media-padding-block, 0);
+}
+
+.preview-gallery-expand {
+  position: absolute;
+  z-index: 3;
+  right: 0.7rem;
+  bottom: 0.7rem;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(20 20 20 / 0.56);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.18);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  scale: 1;
+  transform: translateY(-0.3rem);
+  transition-property: background-color, opacity, scale, transform;
+  transition-duration: 160ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.preview-gallery-media-frame:hover .preview-gallery-expand,
+.preview-gallery-media-frame:focus-within .preview-gallery-expand {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.preview-gallery-expand:hover,
+.preview-gallery-expand:focus-visible {
+  background: rgb(20 20 20 / 0.76);
+}
+
+.preview-gallery-expand:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.preview-gallery-expand:active {
+  scale: 0.96;
+}
+
+.preview-gallery-expand-icon {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  opacity: 0;
+  filter: blur(4px);
+  transform: scale(0.25);
+  transition-property: filter, opacity, transform;
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.preview-gallery-expand-icon.is-active {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .preview-gallery-expand {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-gallery-expand {
+    transform: none;
+  }
+
+  .preview-gallery-expand,
+  .preview-gallery-expand-icon {
+    transition: none;
+  }
 }
 
 .preview-gallery-popup[data-preview-media="video"] .preview-gallery-media-frame {
@@ -2078,6 +2201,10 @@ img {
   margin-inline: auto;
 }
 
+.preview-gallery-popup[data-wide="true"] .preview-gallery-media {
+  max-height: min(72vh, 780px);
+}
+
 .preview-gallery-popup[data-preview-media="video"] .preview-gallery-media {
   backface-visibility: hidden;
   transform: translateZ(0);
@@ -2088,6 +2215,10 @@ img {
 .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
   aspect-ratio: 16 / 9;
   max-height: min(42vh, 480px);
+}
+
+.preview-gallery-popup[data-wide="true"][data-preview-crop="true"] .preview-gallery-media-frame {
+  max-height: min(72vh, 780px);
 }
 
 .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media {
@@ -2652,9 +2783,7 @@ img {
     animation: none;
   }
 
-  .mosaic-row-card-paginated .mosaic-row-media,
-  .mosaic-row-card-title,
-  .mosaic-row-card-pagination-dot {
+  .mosaic-row-card-title {
     transition: none;
   }
 
@@ -2678,6 +2807,10 @@ img {
   .mosaic-social-corner,
   .mosaic-section-corner {
     top: 0.52rem;
+    right: auto;
+    left: 50%;
+    justify-content: center;
+    transform: translateX(-50%);
   }
 
   /* Two nav groups have to share a 320px-wide bar without meeting in the

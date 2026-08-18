@@ -21,10 +21,6 @@ export type PortfolioCard = {
   previewMediaPaddingBlock?: string
   /** The grid tile crops this shot; the gallery repeats the same crop. */
   previewCropped?: boolean
-  pagination?: {
-    total: number
-    images: string[]
-  }
 }
 
 export type Collaborator = {
@@ -48,6 +44,7 @@ export type SiteLinks = {
   github: string
   linkedin: string
   email: string
+  resumePdf: string
 }
 
 export type HomeRowItem = {
@@ -83,7 +80,6 @@ export const homeRows: HomeRow[] = [
     items: [
       { cardId: "preview-shot-14", span: 1 },
       { cardId: "preview-protector", span: 2 },
-      { cardId: "preview-shot-20", span: 1 },
     ],
   },
   {
@@ -92,16 +88,7 @@ export const homeRows: HomeRow[] = [
     items: [
       { cardId: "preview-shot-21", span: 1 },
       { cardId: "preview-shot-1", span: 1 },
-      { cardId: "preview-shot-15", span: 1 },
-    ],
-  },
-  {
-    id: "row-4",
-    height: homeTileRowHeight,
-    items: [
       { cardId: "preview-shot-19", span: 1 },
-      { cardId: "preview-shot-22", span: 1 },
-      { cardId: "preview-shot-23", span: 1 },
     ],
   },
 ]
@@ -118,6 +105,7 @@ export const siteLinks: SiteLinks = {
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
   email: "hey@rafaelmedina.me",
+  resumePdf: "https://drive.google.com/file/d/1fjJlXtRb_sG3io7z_mpBTlSgrK4RDiGU/view?usp=sharing",
 }
 
 const matchaMeta = {
@@ -152,20 +140,6 @@ export const portfolioCards: PortfolioCard[] = [
     image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
-    ...matchaMeta,
-    team: [collaborators.simon, collaborators.jakub],
-  },
-  {
-    id: "preview-shot-20",
-    category: "Preview",
-    title: "Matcha - Security Audit",
-    summary: "",
-    detail:
-      "Surfacing token security audits inside Matcha so traders can gauge risk before they swap, without leaving the flow.",
-    image: "/Projects/shot-small-20.webm",
-    previewWidth: 640,
-    previewHeight: 480,
-    previewPoster: "/Projects/shot-small-20-poster.webp",
     ...matchaMeta,
     team: [collaborators.simon, collaborators.jakub],
   },
@@ -246,19 +220,6 @@ export const portfolioCards: PortfolioCard[] = [
     team: [collaborators.simon, collaborators.jakub],
   },
   {
-    id: "preview-shot-15",
-    category: "Preview",
-    title: "Matcha - Mobile navigation",
-    summary: "",
-    detail:
-      "Rethinking Matcha's mobile navigation so the core actions stayed one thumb-reach away as the product grew.",
-    image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
-    previewWidth: 1600,
-    previewHeight: 1200,
-    ...matchaMeta,
-    team: [collaborators.simon],
-  },
-  {
     id: "preview-shot-19",
     category: "Preview",
     title: "Matcha Trade module",
@@ -270,31 +231,5 @@ export const portfolioCards: PortfolioCard[] = [
     previewHeight: 1200,
     ...matchaMeta,
     team: [collaborators.jakub],
-  },
-  {
-    id: "preview-shot-22",
-    category: "Preview",
-    title: "Matcha Dark mode",
-    summary: "",
-    detail:
-      "Matcha's dark mode, rebuilt from tokens up so contrast and depth hold on every surface instead of just inverting colors.",
-    image: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg",
-    previewWidth: 1600,
-    previewHeight: 1200,
-    ...matchaMeta,
-    team: [collaborators.simon],
-  },
-  {
-    id: "preview-shot-23",
-    category: "Preview",
-    title: "Matcha Pro",
-    summary: "",
-    detail:
-      "Matcha Pro, a denser trading view with charting and order controls for the people who live in the product all day.",
-    image: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg",
-    previewWidth: 1600,
-    previewHeight: 1200,
-    ...matchaMeta,
-    team: [collaborators.simon, collaborators.jakub],
   },
 ]

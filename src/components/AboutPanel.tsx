@@ -258,8 +258,8 @@ const elsewhereLinks = (links: SiteLinks) => [
 ]
 
 const aboutTabs: { id: AboutTab; label: string }[] = [
-  { id: "about", label: "about me" },
-  { id: "resume", label: "resume" },
+  { id: "about", label: "About me" },
+  { id: "resume", label: "Resume" },
 ]
 
 export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
@@ -325,7 +325,6 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
                 Ten years across web3, fintech, and consumer products — from early strategy to
                 shipped interfaces.
               </p>
-
               <ol className="mosaic-about-resume">
                 {cvExperience.map((job) => (
                   <li key={`${job.company}-${job.dates}`} className="mosaic-about-resume-entry">
@@ -379,17 +378,17 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
             >
           <p className="mosaic-about-lede">Hi, I&rsquo;m Rafael.</p>
           <p>
-            I&rsquo;ve been designing products for over ten years, mostly the unglamorous parts.
-            Working out what to build, drawing it, putting it in front of people, then sticking
-            around for the long tail of fixes after launch.
+            I&rsquo;ve spent the last ten years designing products, mostly the complicated parts people
+            prefer not to think about. I figure out what to build, test it with real people, and stay
+            for the fixes after launch.
           </p>
           <p>
-            I build my prototypes in code. Something you can click answers questions a static mockup
-            can&rsquo;t, and it settles an argument faster than a meeting does.
+            I prototype in code. A working interaction answers questions faster than a static mockup,
+            and usually faster than a meeting.
           </p>
           <p>
-            Outside of work I&rsquo;m usually moving, and I pick up something new every year. Right
-            now that&rsquo;s salsa and jiu jitsu, both of which I am comfortably bad at.
+            When I&rsquo;m not working, I&rsquo;m probably kickboxing, swimming, riding a bike, or being humbled
+            by salsa and jiu jitsu.
           </p>
 
           <ul className="mosaic-about-hobbies">
@@ -443,7 +442,7 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
           </dl>
 
           <p className="mosaic-about-closing">
-            I&rsquo;m taking on new work at the moment. If you&rsquo;re building something,{" "}
+            Taking on new work. Building something?{" "}
             <a
               href={`mailto:${links.email}`}
               className="mosaic-about-link"
@@ -455,7 +454,7 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
                 })
               }}
             >
-              send me an email
+              Send me an email
             </a>
             .
           </p>
