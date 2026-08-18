@@ -12,10 +12,7 @@ import {
   type PointerEvent,
 } from "react"
 
-import { applyPointerTilt, coalescePointerMove, popoverTilt, resetPointerTilt } from "../lib/pointerTilt"
 import { HoverLogoLink } from "./HoverLogoLink"
-
-const popoverTiltPrefix = "mosaic-popover"
 
 type WorkedWithCompany = {
   id: string
@@ -116,7 +113,6 @@ type WorkedWithCompaniesInlineProps = {
 }
 
 type PopoverPosition = {
-  arrowX: number
   side: "above" | "below"
   x: number
   y: number
@@ -130,23 +126,6 @@ function isHoverCapable() {
   return typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches
 }
 
-// The popover is a sibling of the triggers, so measure the pointer against the
-// word it is leaning away from but hang the variables on the shared container
-// the popover can actually inherit from. The trigger finds that container by
-// walking up, which keeps this a plain module-level handler.
-const handleTriggerPointerMove = coalescePointerMove<HTMLAnchorElement>((trigger, pointer) => {
-  const container = trigger.closest<HTMLElement>(".mosaic-work-history")
-  if (!container || !isHoverCapable()) return
-
-  applyPointerTilt({
-    target: container,
-    box: trigger.getBoundingClientRect(),
-    pointer,
-    scales: popoverTilt,
-    prefix: popoverTiltPrefix,
-  })
-})
-
 function WorkHistoryTrigger({
   active,
   company,
@@ -157,7 +136,6 @@ function WorkHistoryTrigger({
   onPointerDown,
   onPointerEnter,
   onPointerLeave,
-  onPointerMove,
   setTrigger,
 }: {
   active: boolean
@@ -169,7 +147,6 @@ function WorkHistoryTrigger({
   onPointerDown: (companyId: string) => void
   onPointerEnter: (companyId: string) => void
   onPointerLeave: (event: PointerEvent<HTMLAnchorElement>) => void
-  onPointerMove: (event: PointerEvent<HTMLAnchorElement>) => void
   setTrigger: (companyId: string, element: HTMLAnchorElement | null) => void
 }) {
   return (
@@ -189,7 +166,6 @@ function WorkHistoryTrigger({
       onPointerDown={() => onPointerDown(company.id)}
       onPointerEnter={() => onPointerEnter(company.id)}
       onPointerLeave={onPointerLeave}
-      onPointerMove={onPointerMove}
     >
       {company.compactName}
     </a>
@@ -206,7 +182,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
   const pointerFocusCompanyIdRef = useRef<string | null>(null)
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null)
   const [isSwitchingCompany, setIsSwitchingCompany] = useState(false)
-  const [position, setPosition] = useState<PopoverPosition>({ arrowX: 192, side: "above", x: 192, y: 0 })
+  const [position, setPosition] = useState<PopoverPosition>({ side: "below", x: 192, y: 0 })
 
   const profileCompanies = useMemo(() => {
     const recentCompanies = workedWithCompanies.filter((company) => company.relationship === "recent")
@@ -241,20 +217,12 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
   const clearOpenTimeout = () => window.clearTimeout(openTimeoutRef.current)
   const clearCloseTimeout = () => window.clearTimeout(closeTimeoutRef.current)
 
-  /** Cancel queued steering before returning the popover to its resting angle. */
-  const settleTilt = useCallback(() => {
-    handleTriggerPointerMove.cancel()
-    if (containerRef.current) resetPointerTilt(containerRef.current, popoverTiltPrefix)
-  }, [])
-
   const closePopover = useCallback(() => {
     clearOpenTimeout()
     clearCloseTimeout()
     setIsSwitchingCompany(false)
     setActiveCompanyId(null)
-    // Otherwise a keyboard-opened panel inherits the lean from the last hover.
-    settleTilt()
-  }, [settleTilt])
+  }, [])
 
   const positionPopover = useCallback((companyId: string) => {
     const container = containerRef.current
@@ -265,22 +233,14 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
     const containerBox = container.getBoundingClientRect()
     const triggerBox = trigger.getBoundingClientRect()
     const popoverWidth = popover.offsetWidth
-    const popoverHeight = popover.offsetHeight
     const gap = 10
     const triggerCenter = triggerBox.left - containerBox.left + triggerBox.width / 2
     const halfPopover = popoverWidth / 2
     const x = Math.max(halfPopover, Math.min(triggerCenter, containerBox.width - halfPopover))
-    const spaceAbove = triggerBox.top
-    const spaceBelow = window.innerHeight - triggerBox.bottom
-    const side: PopoverPosition["side"] =
-      spaceAbove >= popoverHeight + gap || spaceAbove >= spaceBelow ? "above" : "below"
-    const y =
-      side === "above"
-        ? triggerBox.top - containerBox.top - gap
-        : triggerBox.bottom - containerBox.top + gap
+    const side: PopoverPosition["side"] = "below"
+    const y = triggerBox.bottom - containerBox.top + gap
 
     setPosition({
-      arrowX: triggerCenter - (x - halfPopover),
       side,
       x,
       y,
@@ -352,7 +312,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       closeTimeoutRef.current = window.setTimeout(() => {
         setIsSwitchingCompany(false)
         setActiveCompanyId(null)
-        settleTilt()
       }, closeDelayMs)
     }
 
@@ -367,7 +326,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
 
     const handleTriggerPointerLeave = (event: PointerEvent<HTMLAnchorElement>) => {
       if (!isHoverCapable()) return
-      settleTilt()
       const destination = event.relatedTarget
       if (destination instanceof Node && popoverRef.current?.contains(destination)) return
       scheduleClose()
@@ -411,7 +369,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
     }
 
     const popoverStyle = {
-      "--mosaic-popover-arrow-x": `${position.arrowX}px`,
       "--mosaic-popover-x": `${position.x}px`,
       "--mosaic-popover-y": `${position.y}px`,
     } as CSSProperties
@@ -433,7 +390,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
               }}
               onPointerEnter={handleTriggerPointerEnter}
               onPointerLeave={handleTriggerPointerLeave}
-              onPointerMove={handleTriggerPointerMove}
               setTrigger={setTrigger}
             />
           ) : null}
@@ -454,7 +410,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
               }}
               onPointerEnter={handleTriggerPointerEnter}
               onPointerLeave={handleTriggerPointerLeave}
-              onPointerMove={handleTriggerPointerMove}
               setTrigger={setTrigger}
             />
           ))}
@@ -476,11 +431,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
           style={popoverStyle}
           onFocus={() => clearCloseTimeout()}
           onBlur={handleFocusLeave}
-          onPointerEnter={() => {
-            clearCloseTimeout()
-            // Reading the panel should not fight the lean it arrived with.
-            settleTilt()
-          }}
+          onPointerEnter={clearCloseTimeout}
           onPointerLeave={(event) => {
             if (!isHoverCapable()) return
             const destination = event.relatedTarget
@@ -488,7 +439,6 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
             scheduleClose()
           }}
         >
-          <span className="mosaic-work-history-popover-arrow" aria-hidden="true" />
           {activeCompany ? (
             <div key={activeCompany.id} className="mosaic-work-history-popover-content">
               <div className="mosaic-work-history-popover-heading">

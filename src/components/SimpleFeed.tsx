@@ -3,8 +3,9 @@ import { ExternalLink } from "lucide-react"
 
 import { AboutPanel, type AboutTab } from "./AboutPanel"
 import { ContactActionRow } from "./ContactActionRow"
-import { homeRows, type PortfolioCard, type SiteLinks } from "../data/portfolio"
+import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
+import { useHoverCard } from "../lib/hoverCard"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
@@ -49,6 +50,31 @@ function loadPreviewGallery() {
 const PreviewGalleryDialog = lazy(() =>
   loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })),
 )
+
+function PuntaCanaMapScreenshot() {
+  return (
+    <img
+      className="mosaic-local-time-map-screenshot"
+      src="/maps/punta-cana-openstreetmap.png"
+      alt="OpenStreetMap screenshot of Punta Cana, Dominican Republic"
+      width="696"
+      height="320"
+    />
+  )
+}
+
+function FailedPuntaCanaMap() {
+  return <PuntaCanaMapScreenshot />
+}
+
+const PuntaCanaMap = lazy(async () => {
+  try {
+    const module = await import("./PuntaCanaMap")
+    return { default: module.PuntaCanaMap }
+  } catch {
+    return { default: FailedPuntaCanaMap }
+  }
+})
 
 type SiteProfile = {
   name: string
@@ -338,8 +364,7 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
 }
 
 const sectionLinks: { label: string; tab: AboutTab; href: string }[] = [
-  { label: "About me", tab: "about", href: "#about-panel" },
-  { label: "Resume", tab: "resume", href: "#about-panel-resume" },
+  { label: "About", tab: "about", href: "#about-panel" },
 ]
 
 function getAboutTabFromHash(hash: string): AboutTab | null {
@@ -348,7 +373,13 @@ function getAboutTabFromHash(hash: string): AboutTab | null {
   return null
 }
 
-function SectionCorner({ onSelect }: { onSelect: (tab: AboutTab, href: string) => void }) {
+function SectionCorner({
+  onSelect,
+  resumeHref,
+}: {
+  onSelect: (tab: AboutTab, href: string) => void
+  resumeHref: string
+}) {
   return (
     <nav className="mosaic-section-corner" aria-label="Sections">
       {sectionLinks.map((link) => (
@@ -367,44 +398,87 @@ function SectionCorner({ onSelect }: { onSelect: (tab: AboutTab, href: string) =
           {link.label}
         </a>
       ))}
+      <a
+        href={resumeHref}
+        target="_blank"
+        rel="noreferrer"
+        className="mosaic-social-link"
+        onClick={() => {
+          trackEvent("social_link_click", {
+            social_label: "Download Resume",
+            social_href: resumeHref,
+            social_placement: "top_corner",
+          })
+        }}
+      >
+        Resume
+        <ExternalLink
+          className="mosaic-social-link-external-icon"
+          size={12}
+          strokeWidth={1.75}
+          aria-hidden="true"
+        />
+      </a>
     </nav>
   )
 }
 
-function SocialCorner({ links }: { links: SiteLinks }) {
-  const socialLinks = [
-    { label: "Download Resume", href: links.resumePdf, external: true },
-  ]
+function SocialCorner({
+  reducedMotion,
+  timeLabel,
+}: {
+  reducedMotion: boolean
+  timeLabel: string
+}) {
+  const { isOpen, hoverProps } = useHoverCard()
+  const [mapLoaded, setMapLoaded] = useState(false)
+  const handleMapReady = useCallback(() => setMapLoaded(true), [])
 
   return (
-    <nav className="mosaic-social-corner" aria-label="Social links">
-      {socialLinks.map((link) => (
-        <a
-          key={link.label}
-          href={link.href}
-          target={link.external ? "_blank" : undefined}
-          rel={link.external ? "noreferrer" : undefined}
-          className="mosaic-social-link"
-          onClick={() => {
-            trackEvent("social_link_click", {
-              social_label: link.label,
-              social_href: link.href,
-              social_placement: "top_corner",
-            })
-          }}
+    <div className="mosaic-social-corner">
+      <span className="mosaic-hover-anchor mosaic-local-time-anchor" {...hoverProps}>
+        <span
+          className="mosaic-social-time"
+          tabIndex={0}
+          aria-describedby="local-time-location"
         >
-          {link.label}
-          {link.external ? (
-            <ExternalLink
-              className="mosaic-social-link-external-icon"
-              size={12}
-              strokeWidth={1.75}
-              aria-hidden="true"
-            />
-          ) : null}
-        </a>
-      ))}
-    </nav>
+          Local time: <LiveTimeLabel label={timeLabel} reducedMotion={reducedMotion} />
+        </span>
+        <span
+          id="local-time-location"
+          className={`mosaic-local-time-card${isOpen ? " is-open" : ""}`}
+          data-state={isOpen ? "open" : "closed"}
+          role="tooltip"
+          aria-hidden={!isOpen}
+        >
+          <span className="mosaic-local-time-map">
+            {isOpen || mapLoaded ? (
+              <Suspense fallback={<PuntaCanaMapScreenshot />}>
+                <PuntaCanaMap onReady={handleMapReady} />
+              </Suspense>
+            ) : (
+              <PuntaCanaMapScreenshot />
+            )}
+            <a
+              className="mosaic-local-time-map-attribution"
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="OpenStreetMap contributors"
+            >
+              © OpenStreetMap contributors
+            </a>
+          </span>
+          <span className="mosaic-local-time-card-copy">
+            <span>
+              <strong>Punta Cana</strong>
+              <span>Dominican Republic</span>
+            </span>
+            <span className="mosaic-local-time-card-clock">{timeLabel}</span>
+          </span>
+        </span>
+      </span>
+    </div>
   )
 }
 
@@ -587,11 +661,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     scrollToAbout(`nav_${tab}`)
   }
 
+  const selectAboutTab = (tab: AboutTab) => {
+    setAboutTab(tab)
+    const href = tab === "resume" ? "#about-panel-resume" : "#about-panel"
+    if (window.location.hash !== href) window.history.pushState(null, "", href)
+  }
+
   return (
     <section className="mosaic-shell">
       <h1 className="sr-only">{profile.name} portfolio</h1>
-      <SectionCorner onSelect={openAboutTab} />
-      <SocialCorner links={links} />
+      <SectionCorner onSelect={openAboutTab} resumeHref={links.resumePdf} />
+      <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
       <header id="about" className="mosaic-hero">
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-info">
@@ -630,22 +710,21 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           </div>
           <WorkedWithCompaniesInline variant="profile" />
           <p className="mosaic-profile-location">
-            Punta Cana & NYC <span aria-hidden="true">·</span> Local time:{" "}
-            <LiveTimeLabel label={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+            Punta Cana & NYC <span aria-hidden="true">·</span>{" "}
+            <span className="mosaic-profile-availability">
+              Available for work
+              <span className="mosaic-availability-dot" aria-hidden="true" />
+            </span>
           </p>
-          {/* One wrapper, one stagger slot: availability and the contact
-              actions land together in the hero cascade. */}
           <div className="mosaic-profile-contact">
             <ContactActionRow
               email={links.email}
               contactHref={`mailto:${links.email}`}
               linkedinHref={links.linkedin}
               xHref={links.x}
+              xProfile={xProfilePreview}
+              linkedinMedia={linkedinHoverMedia}
             />
-            <p className="mosaic-profile-availability">
-              <span className="mosaic-availability-dot" aria-hidden="true" />
-              Available for work
-            </p>
           </div>
         </div>
       </header>
@@ -750,7 +829,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               ) : null}
           </article>
 
-          <AboutPanel links={links} activeTab={aboutTab} onTabChange={setAboutTab} />
+          <AboutPanel links={links} activeTab={aboutTab} onTabChange={selectAboutTab} />
 
           {/* Stays mounted after the first open so Base UI can run the close
               transition instead of the dialog vanishing on unmount. */}

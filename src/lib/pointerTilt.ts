@@ -46,19 +46,6 @@ export const nestedChipTilt: PointerTiltScales = {
   lift: 0.006,
 }
 
-/**
- * Gentler values for the work-history popover. It is roughly ten times the
- * width of a logo chip, so the chip's sweep reads as a slot machine rather
- * than a lean. This lands at about ±1.75deg at the edges.
- */
-export const popoverTilt: PointerTiltScales = {
-  anchorX: 6,
-  anchorY: 2,
-  tiltX: 1.5,
-  tiltY: 3.5,
-  lift: 0.004,
-}
-
 // Built once and reused: `applyPointerTilt` runs on every pointermove, and
 // constructing a MediaQueryList per event is pure overhead on the hot path.
 // The list stays live, so `.matches` still tracks preference changes.

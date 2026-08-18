@@ -108,6 +108,51 @@ export const siteLinks: SiteLinks = {
   resumePdf: "https://drive.google.com/file/d/1fjJlXtRb_sG3io7z_mpBTlSgrK4RDiGU/view?usp=sharing",
 }
 
+/** Static mirror of the X profile, used by the hover preview on the Follow pill. */
+export type XProfilePreview = {
+  name: string
+  handle: string
+  photo: string
+  bio: string
+  href: string
+  verified?: boolean
+  /** Counts are typed out by hand; leave them off rather than showing a stale number. */
+  following?: string
+  followers?: string
+}
+
+export const xProfilePreview: XProfilePreview = {
+  name: siteProfile.name,
+  handle: "@rafaelmedian",
+  photo: profilePhoto,
+  // Verbatim from the X profile; @mentions are linked out the way X renders them.
+  bio: "Designer - Prev at @0xproject / @matchaxyz",
+  href: siteLinks.x,
+  verified: true,
+  following: "2,566",
+  followers: "713",
+}
+
+/** A clip or still hung under a contact pill on hover. */
+export type HoverMedia = {
+  src: string
+  /** Only used for video sources. */
+  poster?: string
+  width: number
+  height: number
+}
+
+// Patrick Star at his very serious business desk, sourced from Tenor (5752959),
+// trimmed before the caption and transcoded to VP9. Swap `src` for any
+// .gif/.webp/.webm/.mp4 in `public/` -- video sources autoplay muted and loop,
+// stills just sit there.
+export const linkedinHoverMedia: HoverMedia = {
+  src: "/reactions/linkedin-reaction.webm",
+  poster: "/reactions/linkedin-reaction-poster.webp",
+  width: 500,
+  height: 280,
+}
+
 const matchaMeta = {
   product: "Matcha - DEX Aggregator by 0x",
   industry: "DeFi / Web3 / Fintech",

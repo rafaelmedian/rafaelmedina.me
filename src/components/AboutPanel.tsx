@@ -259,7 +259,7 @@ const elsewhereLinks = (links: SiteLinks) => [
 
 const aboutTabs: { id: AboutTab; label: string }[] = [
   { id: "about", label: "About me" },
-  { id: "resume", label: "Resume" },
+  { id: "resume", label: "Work history" },
 ]
 
 export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
@@ -294,7 +294,7 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
           <div
             className="mosaic-about-tabs"
             role="tablist"
-            aria-label="About me or resume"
+            aria-label="About me or work history"
             data-active-tab={activeTab}
           >
             <span className="mosaic-about-tab-indicator" aria-hidden="true" />

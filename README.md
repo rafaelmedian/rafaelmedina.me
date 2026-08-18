@@ -12,7 +12,9 @@ npm run build    # type-check + production build into dist/
 npm run preview  # serve the production build locally
 ```
 
-Copy `.env.example` to `.env` for optional analytics/map configuration (`VITE_GA_MEASUREMENT_ID`, `VITE_MAPBOX_TOKEN`).
+Copy `.env.example` to `.env` for optional analytics configuration
+(`VITE_GA_MEASUREMENT_ID`). The Punta Cana location card loads a minimal
+OpenStreetMap tile view on demand and keeps a bundled map screenshot as its fallback.
 
 Google Analytics only loads when `VITE_GA_MEASUREMENT_ID` is set at build time. In
 CI it comes from the `VITE_GA_MEASUREMENT_ID` repo variable; leave it unset locally

@@ -1,6 +1,11 @@
 import { expect, type BrowserContext, type Page, test } from "@playwright/test"
 
 const mobileViewport = { width: 390, height: 844 }
+const openStreetMapTileUrl = /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/
+const transparentMapTile = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+)
 
 // Work-history chips point at real company sites; the assertions only care that
 // the browser went there, so serve a stub rather than depend on the network.
@@ -19,6 +24,11 @@ const settleWorkCards = (page: Page) =>
     .evaluate((element) =>
       Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)),
     )
+
+const pausePageClock = async (page: Page) => {
+  await page.clock.install({ time: new Date("2026-08-18T12:00:00Z") })
+  await page.clock.pauseAt(new Date("2026-08-18T12:01:00Z"))
+}
 
 test("hydrates the prerendered portfolio without browser errors", async ({ page, request }) => {
   const errors: string[] = []
@@ -46,29 +56,531 @@ test("offers LinkedIn and X actions beside copy email", async ({ page }) => {
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
 })
 
-test("centers the social navigation on mobile", async ({ page }) => {
+test("optically centers the X mark in the Follow pill", async ({ page }) => {
+  await page.goto("/")
+
+  const xIcon = page.getByRole("link", { name: "Follow on X" }).locator(".mosaic-contact-pill-icon-x")
+  const verticalOffset = await xIcon.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m42)
+
+  expect(verticalOffset).toBe(1)
+})
+
+test("previews the copy reaction without copying on hover", async ({ page }) => {
+  await page.goto("/")
+
+  const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
+  const reaction = page.locator(".mosaic-copy-reaction")
+
+  await expect(reaction).toHaveCount(0)
+  await copyButton.hover()
+  await expect(reaction).toBeVisible()
+  await expect(copyButton).toHaveText("Copy email")
+  await expect(reaction.locator("source")).toHaveAttribute("srcset", "/reactions/copy-email-before-still.webp")
+  await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.gif")
+})
+
+test("celebrates a copied email below the trigger on the highest hero layer", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-write"])
+  await page.goto("/")
+  await pausePageClock(page)
+
+  const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
+  const reaction = page.locator(".mosaic-copy-reaction")
+
+  await expect(copyButton).toHaveAccessibleName("Copy email")
+  await expect(reaction).toHaveCount(0)
+  await copyButton.click()
+
+  await expect(copyButton).toHaveText("Copied!")
+  await expect(reaction).toBeVisible()
+  await expect(reaction.evaluate((element) => getComputedStyle(element, "::after").content)).resolves.toBe("none")
+  const buttonBox = await copyButton.boundingBox()
+  const reactionBox = await reaction.boundingBox()
+  expect(buttonBox).not.toBeNull()
+  expect(reactionBox).not.toBeNull()
+  expect(reactionBox!.y).toBeGreaterThanOrEqual(buttonBox!.y + buttonBox!.height)
+
+  const contactLayer = await page.locator(".mosaic-profile-contact").evaluate((element) =>
+    Number.parseInt(getComputedStyle(element).zIndex, 10),
+  )
+  const navigationLayer = await page.locator(".mosaic-social-corner").evaluate((element) =>
+    Number.parseInt(getComputedStyle(element).zIndex, 10),
+  )
+  const reactionLayer = await reaction.evaluate((element) => Number.parseInt(getComputedStyle(element).zIndex, 10))
+  const socialCardLayer = await page.locator(".mosaic-x-card").evaluate((element) =>
+    Number.parseInt(getComputedStyle(element).zIndex, 10),
+  )
+  expect(contactLayer).toBeGreaterThan(navigationLayer)
+  expect(reactionLayer).toBeGreaterThan(socialCardLayer)
+
+  const image = reaction.locator("img")
+  await expect(image).toHaveAttribute("src", "/reactions/copy-email-success.webp")
+  await expect.poll(() => image.evaluate((element) => element.naturalWidth)).toBeGreaterThan(0)
+  await page.clock.fastForward(1_800)
+  await expect(copyButton).toHaveText("Copy email")
+  await expect(reaction).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(reaction).toHaveCount(0)
+})
+
+test("dismisses the copied-email reaction as soon as another contact pill is hovered", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-write"])
+  await page.goto("/")
+  await pausePageClock(page)
+
+  const copyButton = page.getByRole("button", { name: "Copy email" })
+  const reaction = page.locator(".mosaic-copy-reaction")
+
+  await copyButton.click()
+  await expect(reaction).toBeVisible()
+
+  await page.getByRole("link", { name: "Message on LinkedIn" }).hover()
+  await expect(reaction).toHaveCount(0, { timeout: 400 })
+})
+
+test("keeps the copy reaction inside a narrow viewport", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-write"])
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await pausePageClock(page)
+
+  await page.locator(".mosaic-profile-contact").getByRole("button").click()
+  const reaction = page.locator(".mosaic-copy-reaction")
+  await reaction.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const reactionBox = await reaction.boundingBox()
+
+  expect(reactionBox).not.toBeNull()
+  expect(reactionBox!.x).toBeGreaterThanOrEqual(0)
+  expect(reactionBox!.x + reactionBox!.width).toBeLessThanOrEqual(mobileViewport.width)
+})
+
+test("previews the X profile while the Follow pill is hovered", async ({ page }) => {
+  await page.goto("/")
+
+  const xAction = page.getByRole("link", { name: "Follow on X" })
+  const card = page.locator(".mosaic-x-card")
+
+  await expect(card).toHaveAttribute("data-state", "closed")
+
+  await xAction.hover()
+  await expect(card).toHaveAttribute("data-state", "open")
+  await expect(card).toContainText("@rafaelmedian")
+
+  // The card sits below the pill and must clear the work grid, not hide behind it.
+  const cardBox = await card.boundingBox()
+  const pillBox = await xAction.boundingBox()
+  expect(cardBox!.y).toBeGreaterThan(pillBox!.y + pillBox!.height)
+
+  // Moving onto the card keeps it up; leaving the pair puts it away.
+  await page.mouse.move(cardBox!.x + 40, cardBox!.y + 40, { steps: 8 })
+  await expect(card).toHaveAttribute("data-state", "open")
+
+  await page.mouse.move(8, cardBox!.y + 320, { steps: 12 })
+  await expect(card).toHaveAttribute("data-state", "closed")
+})
+
+test("sends every X preview control to the right profile", async ({ page }) => {
+  await page.goto("/")
+
+  const xAction = page.getByRole("link", { name: "Follow on X" })
+  const card = page.locator(".mosaic-x-card")
+
+  // Closed, the card is inert: its links are out of the tab order.
+  await expect(card).toHaveAttribute("inert", "")
+
+  await xAction.focus()
+  await expect(card).toHaveAttribute("data-state", "open")
+  await expect(card).not.toHaveAttribute("inert", /.*/)
+  await expect(card.locator(".mosaic-x-card-follow")).toHaveAttribute(
+    "href",
+    "https://x.com/intent/follow?screen_name=rafaelmedian",
+  )
+  await expect(card.locator(".mosaic-x-card-identity")).toHaveAttribute("href", "https://x.com/rafaelmedian")
+  await expect(card.locator(".mosaic-x-card-avatar-link")).toHaveAttribute("href", "https://x.com/rafaelmedian")
+  await expect(card.locator(".mosaic-x-card-badge")).toHaveAttribute("aria-label", "Verified account")
+  await expect(card.locator(".mosaic-x-card-stats")).toContainText("713 Followers")
+
+  // The bio is stored as plain text; its @mentions are linked out like X does.
+  await expect(card.locator(".mosaic-x-card-bio")).toHaveText("Designer - Prev at @0xproject / @matchaxyz")
+  const mentions = card.locator(".mosaic-x-card-mention")
+  await expect(mentions).toHaveCount(2)
+  await expect(mentions.nth(0)).toHaveAttribute("href", "https://x.com/0xproject")
+  await expect(mentions.nth(1)).toHaveAttribute("href", "https://x.com/matchaxyz")
+
+  // Focus reaches the card's own links, and leaving the pair puts it away.
+  await page.keyboard.press("Tab")
+  await expect(card.locator(".mosaic-x-card-avatar-link")).toBeFocused()
+  await expect(card).toHaveAttribute("data-state", "open")
+
+  await page.keyboard.press("Escape")
+  await expect(card).toHaveAttribute("data-state", "closed")
+  await expect(xAction).toBeFocused()
+})
+
+test("keeps the X preview card inside a narrow hover-capable viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await page.goto("/")
+
+  await page.getByRole("link", { name: "Follow on X" }).focus()
+  const cardBox = await page.locator(".mosaic-x-card").boundingBox()
+
+  expect(cardBox).not.toBeNull()
+  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(375)
+})
+
+test("keeps the wrapped X preview card inside a 320px viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 })
+  await page.goto("/")
+
+  await page.getByRole("link", { name: "Follow on X" }).focus()
+  const cardBox = await page.locator(".mosaic-x-card").boundingBox()
+
+  expect(cardBox).not.toBeNull()
+  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(320)
+})
+
+test("keeps the LinkedIn preview card inside a narrow hover-capable viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await page.goto("/")
+
+  await page.getByRole("link", { name: "Message on LinkedIn" }).focus()
+  const cardBox = await page.locator(".mosaic-linkedin-card").boundingBox()
+
+  expect(cardBox).not.toBeNull()
+  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(375)
+})
+
+test("keeps the reduced-motion X preview card inside a narrow viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  await page.getByRole("link", { name: "Follow on X" }).focus()
+  const cardBox = await page.locator(".mosaic-x-card").boundingBox()
+
+  expect(cardBox).not.toBeNull()
+  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(375)
+})
+
+test("plays a clip under the LinkedIn pill only while it is hovered", async ({ page }) => {
+  await page.goto("/")
+
+  const linkedinAction = page.getByRole("link", { name: "Message on LinkedIn" })
+  const card = page.locator(".mosaic-linkedin-card")
+  const media = card.locator("video")
+
+  await expect(card).toHaveAttribute("data-state", "closed")
+  // Nothing decodes until the card is actually asked for.
+  await expect(media).toHaveJSProperty("paused", true)
+
+  await linkedinAction.hover()
+  await expect(card).toHaveAttribute("data-state", "open")
+
+  const cardBox = await card.boundingBox()
+  const mediaBox = await media.boundingBox()
+  const pillBox = await linkedinAction.boundingBox()
+  expect(cardBox!.y).toBeGreaterThan(pillBox!.y + pillBox!.height)
+  expect(mediaBox!.width / mediaBox!.height).toBeCloseTo(500 / 280, 1)
+  await expect(media).toHaveJSProperty("paused", false)
+
+  await page.mouse.move(8, cardBox!.y + 320, { steps: 12 })
+  await expect(card).toHaveAttribute("data-state", "closed")
+  await expect(media).toHaveJSProperty("paused", true)
+})
+
+test("holds the LinkedIn clip still under reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  await page.getByRole("link", { name: "Message on LinkedIn" }).hover()
+  await expect(page.locator(".mosaic-linkedin-card")).toHaveAttribute("data-state", "open")
+  await expect(page.locator(".mosaic-linkedin-card video")).toHaveJSProperty("paused", true)
+})
+
+test("shows an interactive OpenStreetMap view of Punta Cana while local time is hovered", async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 600 })
+  await page.route(openStreetMapTileUrl, (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      body: transparentMapTile,
+    }),
+  )
+  await page.goto("/")
+
+  const localTime = page.locator(".mosaic-social-time")
+  const card = page.locator(".mosaic-local-time-card")
+
+  await expect(card).toHaveAttribute("data-state", "closed")
+
+  await localTime.hover()
+  await expect(card).toHaveAttribute("data-state", "open")
+  await expect(card.getByText("Punta Cana", { exact: true })).toBeVisible()
+  await expect(card.getByText("Dominican Republic", { exact: true })).toBeVisible()
+  const map = card.getByRole("region", { name: "Interactive map of Punta Cana, Dominican Republic" })
+  await expect(map).toBeVisible()
+  await expect(map.getByRole("button")).toHaveCount(0)
+  await expect(map.getByRole("link")).toHaveCount(0)
+  await expect(map.getByRole("img", { name: "Punta Cana location marker" })).toBeVisible()
+  await expect(card.getByRole("link", { name: "OpenStreetMap contributors" })).toBeVisible()
+  await expect(
+    card.getByRole("img", { name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic" }),
+  ).toBeHidden()
+
+  const cardBox = await card.boundingBox()
+  const timeBox = await localTime.boundingBox()
+  expect(cardBox).not.toBeNull()
+  expect(timeBox).not.toBeNull()
+  expect(cardBox!.width).toBeCloseTo(360, 0)
+  expect(cardBox!.y).toBeGreaterThan(timeBox!.y + timeBox!.height)
+
+  const workHistoryBox = await page.locator(".mosaic-work-history").boundingBox()
+  expect(workHistoryBox).not.toBeNull()
+  const overlapPoint = {
+    x: Math.max(cardBox!.x, workHistoryBox!.x) + 8,
+    y: Math.max(cardBox!.y, workHistoryBox!.y) + 8,
+  }
+  expect(
+    await page.evaluate(
+      ({ x, y }) => Boolean(document.elementFromPoint(x, y)?.closest(".mosaic-local-time-card")),
+      overlapPoint,
+    ),
+  ).toBe(true)
+
+  await page.mouse.move(cardBox!.x + cardBox!.width / 2, cardBox!.y + cardBox!.height / 2, { steps: 8 })
+  await expect(card).toHaveAttribute("data-state", "open")
+
+  await page.mouse.move(8, cardBox!.y + cardBox!.height + 80, { steps: 12 })
+  await expect(card).toHaveAttribute("data-state", "closed")
+})
+
+test("shows a Punta Cana map screenshot while OpenStreetMap tiles are unavailable", async ({ page }) => {
+  await page.route(openStreetMapTileUrl, () => {})
+  await page.goto("/")
+
+  await page.locator(".mosaic-social-time").hover()
+
+  const screenshot = page.getByRole("img", {
+    name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic",
+  })
+  await expect(screenshot).toBeVisible()
+  await expect.poll(() => screenshot.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBeGreaterThan(0)
+})
+
+test("keeps the static Punta Cana map when the interactive map chunk fails", async ({ page }) => {
+  await page.route("**/assets/PuntaCanaMap-*.js", (route) => route.abort("failed"))
+  await page.goto("/")
+
+  const mapChunkFailure = page.waitForEvent(
+    "requestfailed",
+    (request) => request.url().includes("/assets/PuntaCanaMap-"),
+  )
+  await page.locator(".mosaic-social-time").hover()
+  await mapChunkFailure
+  // React retries the suspended tree before surfacing an unhandled lazy-import
+  // rejection, so let that recovery cycle settle before inspecting the page.
+  await page.waitForTimeout(500)
+
+  await expect(page.getByRole("heading", { name: "Rafael Medina portfolio" })).toBeVisible()
+  await expect(
+    page.getByRole("img", {
+      name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic",
+    }),
+  ).toBeVisible()
+})
+
+test("matches the local-time trigger corners to its card", async ({ page }) => {
+  await page.goto("/")
+
+  await expect(page.locator(".mosaic-social-time")).toHaveCSS("border-radius", "16px")
+  await expect(page.locator(".mosaic-local-time-card")).toHaveCSS("border-radius", "16px")
+})
+
+test("keeps the local-time card inside a narrow hover-capable viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 })
+  await page.goto("/")
+
+  await page.locator(".mosaic-social-time").focus()
+  const cardBox = await page.locator(".mosaic-local-time-card").boundingBox()
+
+  expect(cardBox).not.toBeNull()
+  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(320)
+})
+
+test("centers the local time on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const navigation = page.getByRole("navigation", { name: "Social links" })
-  const box = await navigation.boundingBox()
+  const box = await page.locator(".mosaic-social-corner").boundingBox()
 
   expect(box).not.toBeNull()
   expect(box!.x + box!.width / 2).toBeCloseTo(mobileViewport.width / 2, 0)
 })
 
-test("keeps only the resume link in the top navigation", async ({ page }) => {
+test("stacks local time below the section links on mobile", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const navigation = page.getByRole("navigation", { name: "Social links" })
-  await expect(navigation.getByRole("link")).toHaveCount(1)
-  await expect(navigation.getByRole("link", { name: "Download Resume" })).toBeVisible()
+  const navigationBox = await page.getByRole("navigation", { name: "Sections" }).boundingBox()
+  const localTimeBox = await page.locator(".mosaic-social-corner").boundingBox()
+
+  expect(navigationBox).not.toBeNull()
+  expect(localTimeBox).not.toBeNull()
+  expect(localTimeBox!.y).toBeGreaterThanOrEqual(navigationBox!.y + navigationBox!.height)
+})
+
+test("keeps local time separate from the navigation", async ({ page }) => {
+  await page.goto("/")
+
+  const localTime = page.locator(".mosaic-social-corner")
+  await expect(localTime.getByRole("link")).toHaveCount(0)
+  await expect(localTime).toContainText("Local time:")
+  await expect(localTime.locator(".mosaic-live-time")).toBeVisible()
+
+  const location = page.locator(".mosaic-profile-location")
+  await expect(location).toContainText("Punta Cana & NYC")
+  await expect(location).toContainText("Available for work")
+  await expect(location).not.toContainText("Local time:")
+  await expect(page.locator(".mosaic-profile-contact > .mosaic-profile-availability")).toHaveCount(0)
+})
+
+test("shows current availability with the status dot on the right", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+
+  const availability = page.locator(".mosaic-profile-availability")
+  await expect(availability).toHaveText("Available for work")
+  await page.locator(".mosaic-profile-location").evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  )
+
+  const availabilityBox = await availability.boundingBox()
+  const alignment = await availability.evaluate((element) => {
+    const textNode = Array.from(element.childNodes).find(
+      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+    )
+    if (!textNode) return null
+
+    const range = document.createRange()
+    range.selectNode(textNode)
+    const textBox = range.getBoundingClientRect()
+    const dotBox = element.querySelector(".mosaic-availability-dot")?.getBoundingClientRect()
+    if (!dotBox) return null
+
+    return {
+      dotCenterX: dotBox.x + dotBox.width / 2,
+      dotCenterY: dotBox.y + dotBox.height / 2,
+      textCenterY: textBox.y + textBox.height / 2,
+    }
+  })
+  expect(availabilityBox).not.toBeNull()
+  expect(alignment).not.toBeNull()
+  expect(alignment!.dotCenterX).toBeGreaterThan(availabilityBox!.x + availabilityBox!.width / 2)
+  expect(alignment!.dotCenterY - alignment!.textCenterY).toBeGreaterThanOrEqual(1)
+  expect(alignment!.dotCenterY - alignment!.textCenterY).toBeLessThanOrEqual(2)
+})
+
+test("uses a compact availability dot", async ({ page }) => {
+  await page.goto("/")
+
+  await expect(page.locator(".mosaic-availability-dot")).toHaveCSS("width", "6px")
+  await expect(page.locator(".mosaic-availability-dot")).toHaveCSS("height", "6px")
+})
+
+test("reveals the availability dot only while the label is hovered", async ({ page }) => {
+  await page.goto("/")
+
+  const availability = page.locator(".mosaic-profile-availability")
+  const dot = availability.locator(".mosaic-availability-dot")
+  await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
+  await expect(dot).toHaveCSS("opacity", "0")
+
+  await availability.hover()
+  await expect(dot).toHaveCSS("opacity", "1")
+
+  await page.mouse.move(1, 1)
+  await expect(dot).toHaveCSS("opacity", "0")
+})
+
+test("reveals the availability dot without motion when reduced motion is requested", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const availability = page.locator(".mosaic-profile-availability")
+  const dot = availability.locator(".mosaic-availability-dot")
+  await expect(dot).toHaveCSS("opacity", "0")
+
+  await availability.hover()
+  await expect(dot).toHaveCSS("opacity", "1")
+  await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
+})
+
+test("places the resume link beside about in the section navigation", async ({ page }) => {
+  await page.goto("/")
+
+  const navigation = page.getByRole("navigation", { name: "Sections" })
+  const about = navigation.getByRole("link", { name: "About", exact: true })
+  const resume = navigation.getByRole("link", { name: "Resume", exact: true })
+  await expect(navigation.getByRole("link")).toHaveCount(2)
+  await expect(about).toBeVisible()
+  await expect(resume).toBeVisible()
+
+  const aboutBox = await about.boundingBox()
+  const resumeBox = await resume.boundingBox()
+  expect(aboutBox).not.toBeNull()
+  expect(resumeBox).not.toBeNull()
+  expect(resumeBox!.x).toBeGreaterThanOrEqual(aboutBox!.x + aboutBox!.width)
+})
+
+test("keeps the section links compact with the hero tooltip-link corners", async ({ page }) => {
+  await page.goto("/")
+
+  const navigation = page.getByRole("navigation", { name: "Sections" })
+  const links = navigation.getByRole("link")
+
+  await expect(links).toHaveCount(2)
+  for (const link of await links.all()) {
+    await expect(link).toHaveCSS("min-height", "32px")
+    await expect(link).toHaveCSS("border-radius", "8px")
+  }
+})
+
+test("preserves the section links' vertical hit area", async ({ page }) => {
+  await page.goto("/")
+
+  const about = page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "About", exact: true })
+  const hitAreaHeight = await about.evaluate((link) => getComputedStyle(link, "::before").height)
+
+  expect(hitAreaHeight).toBe("40px")
+})
+
+test("places the external-link icon after the resume label", async ({ page }) => {
+  await page.goto("/")
+
+  const resume = page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })
+  const iconBox = await resume.locator(".mosaic-social-link-external-icon").boundingBox()
+  const labelBox = await resume.evaluate((link) => {
+    const labelNode = Array.from(link.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())
+    if (!labelNode) return null
+
+    const range = document.createRange()
+    range.selectNode(labelNode)
+    return range.getBoundingClientRect().toJSON()
+  })
+
+  expect(iconBox).not.toBeNull()
+  expect(labelBox).not.toBeNull()
+  expect(iconBox!.x).toBeGreaterThan(labelBox!.x + labelBox!.width)
 })
 
 test("reveals an external-link icon when the resume link is hovered", async ({ page }) => {
   await page.goto("/")
 
-  const resume = page.getByRole("navigation", { name: "Social links" }).getByRole("link", { name: "Download Resume" })
+  const resume = page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })
   const externalIcon = resume.locator(".mosaic-social-link-external-icon")
 
   await expect(externalIcon).toHaveCSS("opacity", "0")
@@ -89,12 +601,24 @@ test("keeps the about me toggle label on one line on mobile", async ({ page }) =
   expect(lineCount).toBe(1)
 })
 
-test("capitalizes the about panel tabs", async ({ page }) => {
+test("labels the about panel tabs", async ({ page }) => {
   await page.goto("/")
 
-  const tabs = page.getByRole("tablist", { name: "About me or resume" })
+  const tabs = page.getByRole("tablist", { name: "About me or work history" })
   await expect(tabs.getByRole("tab").nth(0)).toHaveText("About me")
-  await expect(tabs.getByRole("tab").nth(1)).toHaveText("Resume")
+  await expect(tabs.getByRole("tab").nth(1)).toHaveText("Work history")
+})
+
+test("uses compact corners for the about panel tabs", async ({ page }) => {
+  await page.goto("/#about-panel")
+
+  const tablist = page.getByRole("tablist", { name: "About me or work history" })
+  const tabs = tablist.getByRole("tab")
+
+  await expect(tablist).toHaveCSS("border-radius", "11px")
+  for (const tab of await tabs.all()) {
+    await expect(tab).toHaveCSS("border-radius", "8px")
+  }
 })
 
 test("scrolls to and focuses the about section from the avatar button", async ({ page }) => {
@@ -133,6 +657,18 @@ test("keeps the about section below the portfolio cards", async ({ page }) => {
   })
 
   expect(placement).toEqual({ followsWork: true, startsAfterWork: true })
+})
+
+test("matches the selected-work bottom padding to the card spacing", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+
+  const spacing = await page.locator("#selected-work-previews").evaluate((element) => {
+    const styles = getComputedStyle(element)
+    return { bottomPadding: styles.paddingBottom, cardGap: styles.rowGap }
+  })
+
+  expect(spacing).toEqual({ bottomPadding: "16px", cardGap: "16px" })
 })
 
 test("shows three projects first on mobile and reveals the remaining work on request", async ({ page }) => {
@@ -385,14 +921,14 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-test("switches the about card between about me and resume", async ({ page }) => {
+test("switches the about card between about me and work history", async ({ page }) => {
   await page.goto("/")
   const panel = page.locator("#about-panel")
 
   await expect(panel).toContainText(/Hi, I.m Rafael/)
 
-  await panel.getByRole("tab", { name: "resume" }).click()
-  await expect(panel.getByRole("tab", { name: "resume" })).toHaveAttribute("aria-selected", "true")
+  await panel.getByRole("tab", { name: "Work history" }).click()
+  await expect(panel.getByRole("tab", { name: "Work history" })).toHaveAttribute("aria-selected", "true")
   await expect(panel).not.toContainText(/Hi, I.m Rafael/)
 
   const entries = panel.locator(".mosaic-about-resume-entry")
@@ -403,11 +939,11 @@ test("switches the about card between about me and resume", async ({ page }) => 
   await expect(panel).not.toContainText("hellorafaelmedina@gmail.com")
   await expect(panel).not.toContainText("786 9580")
   await expect(panel.getByRole("link", { name: "Download résumé PDF" })).toHaveCount(0)
-  await expect(page.getByRole("navigation", { name: "Social links" }).getByRole("link", { name: "Download Resume" })).toHaveAttribute(
+  await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "href",
     "https://drive.google.com/file/d/1fjJlXtRb_sG3io7z_mpBTlSgrK4RDiGU/view?usp=sharing",
   )
-  await expect(page.getByRole("navigation", { name: "Social links" }).getByRole("link", { name: "Download Resume" })).toHaveAttribute(
+  await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "target",
     "_blank",
   )
@@ -415,7 +951,7 @@ test("switches the about card between about me and resume", async ({ page }) => 
   await expect(panel.getByRole("button", { name: /Briefcase sticker/ })).toBeVisible()
   await expect(panel.getByRole("button", { name: /Palm tree sticker/ })).toHaveCount(0)
 
-  await panel.getByRole("tab", { name: "resume" }).press("ArrowLeft")
+  await panel.getByRole("tab", { name: "Work history" }).press("ArrowLeft")
   await expect(panel.getByRole("tab", { name: "about me" })).toHaveAttribute("aria-selected", "true")
   await expect(panel).toContainText(/Hi, I.m Rafael/)
 })
@@ -423,14 +959,14 @@ test("switches the about card between about me and resume", async ({ page }) => 
 test("slides one shared selection pill between the about tabs", async ({ page }) => {
   await page.goto("/")
 
-  const tabs = page.getByRole("tablist", { name: "About me or resume" })
+  const tabs = page.getByRole("tablist", { name: "About me or work history" })
   const indicator = tabs.locator(".mosaic-about-tab-indicator")
 
   await expect(indicator).toHaveCount(1)
   const aboutPosition = await indicator.boundingBox()
   expect(aboutPosition).not.toBeNull()
 
-  await tabs.getByRole("tab", { name: "resume" }).click()
+  await tabs.getByRole("tab", { name: "Work history" }).click()
   await expect(tabs).toHaveAttribute("data-active-tab", "resume")
   await expect
     .poll(async () => (await indicator.boundingBox())?.x)
@@ -441,32 +977,24 @@ test("records the selected about tab in the URL", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  const resumeLink = page
-    .getByRole("navigation", { name: "Sections" })
-    .getByRole("link", { name: "Resume" })
-
-  await expect(resumeLink).toHaveAttribute("href", "#about-panel-resume")
-  await resumeLink.click()
+  await page.locator("#about-panel").getByRole("tab", { name: "Work history" }).click()
 
   await expect(page).toHaveURL(/#about-panel-resume$/)
-  await expect(page.getByRole("tab", { name: "resume" })).toHaveAttribute("aria-selected", "true")
+  await expect(page.getByRole("tab", { name: "Work history" })).toHaveAttribute("aria-selected", "true")
 })
 
 test("opens the resume tab from its deep link", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/#about-panel-resume")
 
-  await expect(page.getByRole("tab", { name: "resume" })).toHaveAttribute("aria-selected", "true")
+  await expect(page.getByRole("tab", { name: "Work history" })).toHaveAttribute("aria-selected", "true")
   await expect(page.locator("#about-panel")).toBeInViewport()
 })
 
 test("restores the about tab when navigating back from resume", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page
-    .getByRole("navigation", { name: "Sections" })
-    .getByRole("link", { name: "Resume" })
-    .click()
+  await page.locator("#about-panel").getByRole("tab", { name: "Work history" }).click()
 
   await page.goBack()
 
@@ -652,9 +1180,23 @@ test("travels one role-bearing work-history popover between company triggers wit
   const initialLocationBox = await location.boundingBox()
   const popover = page.locator(".mosaic-work-history-popover")
   const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const initialOnitBox = await onit.boundingBox()
+
+  const closedTransform = await popover.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform))
+  expect(closedTransform.a).toBeCloseTo(1, 2)
+  expect(closedTransform.d).toBeCloseTo(1, 2)
+  expect(closedTransform.m42).toBeCloseTo(-6, 1)
 
   await onit.hover()
   await expect(popover).toBeVisible()
+  await popover.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const openTransform = await popover.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform))
+  expect(openTransform.a).toBeCloseTo(1, 2)
+  expect(openTransform.d).toBeCloseTo(1, 2)
+  const openOnitBox = await onit.boundingBox()
+  expect(initialOnitBox).not.toBeNull()
+  expect(openOnitBox!.x).toBeCloseTo(initialOnitBox!.x, 1)
+  expect(openOnitBox!.y).toBeCloseTo(initialOnitBox!.y, 1)
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Onit")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
   const visitLink = popover.getByRole("link", { name: "Visit onit.com" })
@@ -662,8 +1204,12 @@ test("travels one role-bearing work-history popover between company triggers wit
   await expect(popover).toHaveCSS("text-align", "left")
   await expect(visitLink).toHaveCSS("background-color", "rgb(242, 242, 242)")
   await expect(page.locator(".mosaic-work-history")).toHaveCSS("z-index", "40")
-  await expect(popover).toHaveAttribute("data-side", "above")
-  await expect(popover.locator(".mosaic-work-history-popover-arrow")).toHaveCSS("border-radius", "3px")
+  await expect(popover).toHaveAttribute("data-side", "below")
+  await expect(popover.locator(".mosaic-work-history-popover-arrow")).toHaveCount(0)
+  await expect(popover).toHaveCSS("padding-top", "15px")
+  await expect(popover).toHaveCSS("padding-right", "16px")
+  await expect(popover).toHaveCSS("padding-bottom", "17px")
+  await expect(popover).toHaveCSS("padding-left", "16px")
   const longestPopoverTransition = await popover.evaluate((element) =>
     Math.max(
       ...getComputedStyle(element)
@@ -671,12 +1217,16 @@ test("travels one role-bearing work-history popover between company triggers wit
         .map((duration) => Number.parseFloat(duration) * (duration.includes("ms") ? 0.001 : 1)),
     ),
   )
-  expect(longestPopoverTransition).toBeLessThanOrEqual(0.14)
+  expect(longestPopoverTransition).toBeCloseTo(0.24, 2)
+  await expect(popover).toHaveCSS("transition-property", "transform, opacity, visibility")
 
   const onitPopoverBox = await popover.boundingBox()
+  const onitTriggerBox = await onit.boundingBox()
   const onitLocationBox = await location.boundingBox()
   expect(initialLocationBox).not.toBeNull()
   expect(onitPopoverBox).not.toBeNull()
+  expect(onitTriggerBox).not.toBeNull()
+  expect(onitPopoverBox!.y).toBeGreaterThan(onitTriggerBox!.y + onitTriggerBox!.height)
   expect(onitLocationBox!.y).toBeCloseTo(initialLocationBox!.y, 0)
 
   await page.getByRole("link", { name: "Moody's", exact: true }).hover()
@@ -701,6 +1251,24 @@ test("travels one role-bearing work-history popover between company triggers wit
   await page.getByRole("link", { name: "Protector and Patrol", exact: true }).hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Protector and Patrol")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
+})
+
+test("keeps a work-history pill engaged while the pointer moves into its card", async ({ page }) => {
+  await page.goto("/")
+
+  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const popover = page.locator(".mosaic-work-history-popover")
+
+  await onit.hover()
+  await expect(popover).toBeVisible()
+
+  const popoverBox = await popover.boundingBox()
+  expect(popoverBox).not.toBeNull()
+  await page.mouse.move(popoverBox!.x + popoverBox!.width / 2, popoverBox!.y + 12, { steps: 8 })
+
+  await expect(popover).toBeVisible()
+  await expect(onit).toHaveClass(/\bis-active\b/)
+  await expect(onit).toHaveCSS("background-color", "rgb(233, 233, 233)")
 })
 
 test("opens the work-history popover from the keyboard and links each chip to its company", async ({
@@ -748,73 +1316,38 @@ test("reveals the work-history popover for a touch pointer on a hover-capable de
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Onit")
 })
 
-test("settles work-history tilt when the pointer exits before the next frame", async ({ page }) => {
+test("keeps the work-history popover stationary while the pointer moves within a link", async ({ page }) => {
   await page.goto("/")
 
-  const tilt = await page.locator(".mosaic-work-history-chip").first().evaluate(async (trigger) => {
-    const container = trigger.closest<HTMLElement>(".mosaic-work-history")
-    if (!container) throw new Error("Missing work-history container")
-
-    const box = trigger.getBoundingClientRect()
-    trigger.dispatchEvent(
-      new PointerEvent("pointermove", {
-        bubbles: true,
-        clientX: box.right,
-        clientY: box.top,
-      }),
-    )
-    trigger.dispatchEvent(
-      new PointerEvent("pointerout", {
-        bubbles: true,
-        clientX: box.right + 1,
-        clientY: box.top,
-        relatedTarget: document.body,
-      }),
-    )
-
-    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
-
-    return {
-      anchorX: container.style.getPropertyValue("--mosaic-popover-anchor-x"),
-      tiltY: container.style.getPropertyValue("--mosaic-popover-tilt-y"),
-    }
-  })
-
-  expect(tilt).toEqual({ anchorX: "0px", tiltY: "0deg" })
-})
-
-test("settles queued work-history tilt when Escape closes the popover", async ({ page }) => {
-  await page.goto("/")
-
-  const trigger = page.locator(".mosaic-work-history-chip").first()
+  const trigger = page.getByRole("link", { name: "Onit", exact: true })
   const popover = page.locator(".mosaic-work-history-popover")
+  const triggerBox = await trigger.boundingBox()
+  expect(triggerBox).not.toBeNull()
+
+  const movePointerTo = (relativeX: number) =>
+    trigger.evaluate(async (element, x) => {
+      const box = element.getBoundingClientRect()
+      element.dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientX: box.left + x,
+          clientY: box.top + box.height / 2,
+        }),
+      )
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    }, relativeX)
+
   await trigger.focus()
   await expect(popover).toBeVisible()
+  await movePointerTo(1)
+  await popover.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const leftX = (await popover.boundingBox())!.x
 
-  const tilt = await trigger.evaluate(async (element) => {
-    const container = element.closest<HTMLElement>(".mosaic-work-history")
-    if (!container) throw new Error("Missing work-history container")
+  await movePointerTo(triggerBox!.width - 1)
+  await popover.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const rightX = (await popover.boundingBox())!.x
 
-    const box = element.getBoundingClientRect()
-    element.dispatchEvent(
-      new PointerEvent("pointermove", {
-        bubbles: true,
-        clientX: box.right,
-        clientY: box.top,
-      }),
-    )
-    document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }))
-
-    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
-
-    return {
-      anchorX: container.style.getPropertyValue("--mosaic-popover-anchor-x"),
-      tiltY: container.style.getPropertyValue("--mosaic-popover-tilt-y"),
-    }
-  })
-
-  await expect(popover).toBeHidden()
-  expect(tilt).toEqual({ anchorX: "0px", tiltY: "0deg" })
+  expect(rightX).toBeCloseTo(leftX, 1)
 })
 
 test("toggles the work-history popover on tap and navigates through its link", async ({ browser }) => {
@@ -862,10 +1395,10 @@ test("keeps the work-history popover positioned with reduced motion", async ({ p
   expect(popoverBox).not.toBeNull()
   expect(popoverBox!.x).toBeGreaterThanOrEqual(0)
   expect(popoverBox!.x + popoverBox!.width).toBeLessThanOrEqual(mobileViewport.width)
-  expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(triggerBox!.y)
+  expect(popoverBox!.y).toBeGreaterThanOrEqual(triggerBox!.y + triggerBox!.height)
 })
 
-test("moves the work-history popover below its trigger near the viewport top", async ({ page }) => {
+test("keeps the work-history popover below its trigger while scrolling", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
@@ -873,7 +1406,7 @@ test("moves the work-history popover below its trigger near the viewport top", a
   const popover = page.locator(".mosaic-work-history-popover")
   await onit.focus()
   await expect(popover).toBeVisible()
-  await expect(popover).toHaveAttribute("data-side", "above")
+  await expect(popover).toHaveAttribute("data-side", "below")
 
   await page.evaluate(() => window.scrollBy(0, 180))
   await expect(popover).toHaveAttribute("data-side", "below")

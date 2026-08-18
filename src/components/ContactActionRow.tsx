@@ -1,17 +1,40 @@
 import { useEffect, useRef, useState } from "react"
 
+import type { HoverMedia, XProfilePreview } from "../data/portfolio"
+import { useHoverCard } from "../lib/hoverCard"
+import { LinkedInHoverCard } from "./LinkedInHoverCard"
+import { XProfileHoverCard } from "./XProfileHoverCard"
+
 type ContactActionRowProps = {
   email: string
   contactHref: string
   linkedinHref: string
   xHref?: string
+  xProfile?: XProfilePreview
+  linkedinMedia?: HoverMedia
 }
 
-export function ContactActionRow({ email, contactHref, linkedinHref, xHref }: ContactActionRowProps) {
+export function ContactActionRow({
+  email,
+  contactHref,
+  linkedinHref,
+  xHref,
+  xProfile,
+  linkedinMedia,
+}: ContactActionRowProps) {
   const [isCopySuccess, setIsCopySuccess] = useState(false)
   const resetTimeoutRef = useRef<number | undefined>(undefined)
+  const copyCard = useHoverCard()
+  const xCard = useHoverCard()
+  const linkedinCard = useHoverCard()
 
   useEffect(() => () => window.clearTimeout(resetTimeoutRef.current), [])
+
+  const dismissCopyReaction = () => {
+    window.clearTimeout(resetTimeoutRef.current)
+    setIsCopySuccess(false)
+    copyCard.close()
+  }
 
   const handleCopyEmail = async () => {
     try {
@@ -29,48 +52,103 @@ export function ContactActionRow({ email, contactHref, linkedinHref, xHref }: Co
   return (
     <>
       <div className="mosaic-profile-actions" role="group" aria-label="Profile contact actions">
-        <button type="button" className="mosaic-contact-pill mosaic-contact-pill-default" onClick={handleCopyEmail}>
-          <span className="mosaic-contact-pill-default-label">{isCopySuccess ? "Copied!" : "Copy email"}</span>
-        </button>
-        <a
-          href={linkedinHref}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Message on LinkedIn"
-          className="mosaic-contact-pill mosaic-contact-pill-linkedin"
+        <div className="mosaic-hover-anchor" {...copyCard.hoverProps}>
+          <button type="button" className="mosaic-contact-pill mosaic-contact-pill-default" onClick={handleCopyEmail}>
+            <span className="mosaic-contact-pill-default-label">{isCopySuccess ? "Copied!" : "Copy email"}</span>
+          </button>
+          {isCopySuccess || copyCard.isOpen ? (
+            <picture
+              key={isCopySuccess ? "success" : "preview"}
+              className={`mosaic-copy-reaction${isCopySuccess ? " is-success" : ""}`}
+              aria-hidden="true"
+            >
+              <source
+                media="(prefers-reduced-motion: reduce)"
+                srcSet={
+                  isCopySuccess
+                    ? "/reactions/copy-email-success-still.webp"
+                    : "/reactions/copy-email-before-still.webp"
+                }
+              />
+              <img
+                src={isCopySuccess ? "/reactions/copy-email-success.webp" : "/reactions/copy-email-before.gif"}
+                alt=""
+                width={isCopySuccess ? 400 : 480}
+                height={isCopySuccess ? 262 : 371}
+                decoding="async"
+              />
+            </picture>
+          ) : null}
+        </div>
+        <div
+          className="mosaic-hover-anchor"
+          {...linkedinCard.hoverProps}
+          onPointerEnter={(event) => {
+            dismissCopyReaction()
+            linkedinCard.hoverProps.onPointerEnter(event)
+          }}
+          onFocus={(event) => {
+            dismissCopyReaction()
+            linkedinCard.hoverProps.onFocus(event)
+          }}
         >
-          <span className="mosaic-contact-pill-content mosaic-contact-pill-content-linkedin">
-            <img
-              src="/icons/linkedin.svg"
-              alt=""
-              width={16}
-              height={16}
-              decoding="async"
-              className="mosaic-contact-pill-icon mosaic-contact-pill-icon-linkedin"
-            />
-            <span className="mosaic-contact-pill-linkedin-label">Message</span>
-          </span>
-        </a>
-        {xHref ? (
           <a
-            href={xHref}
+            href={linkedinHref}
             target="_blank"
             rel="noreferrer"
-            aria-label="Follow on X"
-            className="mosaic-contact-pill mosaic-contact-pill-dark"
+            aria-label="Message on LinkedIn"
+            className="mosaic-contact-pill mosaic-contact-pill-linkedin"
           >
-            <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
+            <span className="mosaic-contact-pill-content mosaic-contact-pill-content-linkedin">
               <img
-                src="/icons/x.svg"
+                src="/icons/linkedin.svg"
                 alt=""
                 width={16}
                 height={16}
                 decoding="async"
-                className="mosaic-contact-pill-icon mosaic-contact-pill-icon-x"
+                className="mosaic-contact-pill-icon mosaic-contact-pill-icon-linkedin"
               />
-              <span className="mosaic-contact-pill-dark-label">Follow</span>
+              <span className="mosaic-contact-pill-linkedin-label">Message</span>
             </span>
           </a>
+          {linkedinMedia ? <LinkedInHoverCard media={linkedinMedia} isOpen={linkedinCard.isOpen} /> : null}
+        </div>
+        {xHref ? (
+          // Focus anywhere in the pair keeps the card up, so a keyboard user can
+          // tab from the pill into the card's own links.
+          <div
+            className="mosaic-hover-anchor"
+            {...xCard.hoverProps}
+            onPointerEnter={(event) => {
+              dismissCopyReaction()
+              xCard.hoverProps.onPointerEnter(event)
+            }}
+            onFocus={(event) => {
+              dismissCopyReaction()
+              xCard.hoverProps.onFocus(event)
+            }}
+          >
+            <a
+              href={xHref}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Follow on X"
+              className="mosaic-contact-pill mosaic-contact-pill-dark"
+            >
+              <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
+                <img
+                  src="/icons/x.svg"
+                  alt=""
+                  width={16}
+                  height={16}
+                  decoding="async"
+                  className="mosaic-contact-pill-icon mosaic-contact-pill-icon-x"
+                />
+                <span className="mosaic-contact-pill-dark-label">Follow</span>
+              </span>
+            </a>
+            {xProfile ? <XProfileHoverCard profile={xProfile} isOpen={xCard.isOpen} /> : null}
+          </div>
         ) : null}
       </div>
       <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
