@@ -56,6 +56,26 @@ test("offers LinkedIn and X actions beside copy email", async ({ page }) => {
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
 })
 
+test("uses the same side padding for every contact action", async ({ page }) => {
+  await page.goto("/")
+
+  const sidePadding = await page
+    .getByRole("group", { name: "Profile contact actions" })
+    .locator(".mosaic-contact-pill")
+    .evaluateAll((actions) =>
+      actions.map((action) => {
+        const styles = getComputedStyle(action)
+        return [Number.parseFloat(styles.paddingLeft), Number.parseFloat(styles.paddingRight)]
+      }),
+    )
+
+  expect(sidePadding).toHaveLength(3)
+  for (const [left, right] of sidePadding) {
+    expect(left).toBeCloseTo(right, 5)
+    expect(left).toBeCloseTo(sidePadding[0][0], 5)
+  }
+})
+
 test("optically centers the X mark in the Follow pill", async ({ page }) => {
   await page.goto("/")
 
@@ -144,7 +164,9 @@ test("keeps the copy reaction inside a narrow viewport", async ({ context, page 
   await page.goto("/")
   await pausePageClock(page)
 
-  await page.locator(".mosaic-profile-contact").getByRole("button").click()
+  const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
+  await copyButton.click()
+  await expect(copyButton).toHaveText("Copied!")
   const reaction = page.locator(".mosaic-copy-reaction")
   await reaction.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
   const reactionBox = await reaction.boundingBox()
@@ -262,7 +284,9 @@ test("keeps the reduced-motion X preview card inside a narrow viewport", async (
   const cardBox = await page.locator(".mosaic-x-card").boundingBox()
 
   expect(cardBox).not.toBeNull()
-  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  // Keep a small buffer for platform font metrics and fractional layout
+  // rounding instead of balancing the card directly on the viewport edge.
+  expect(cardBox!.x).toBeGreaterThanOrEqual(3)
   expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(375)
 })
 
@@ -397,6 +421,36 @@ test("matches the local-time trigger corners to its card", async ({ page }) => {
 
   await expect(page.locator(".mosaic-social-time")).toHaveCSS("border-radius", "16px")
   await expect(page.locator(".mosaic-local-time-card")).toHaveCSS("border-radius", "16px")
+})
+
+test("keeps the local-time hover highlight compact without shrinking its hover target", async ({ page }) => {
+  await page.goto("/")
+
+  const hoverTarget = page.locator(".mosaic-local-time-anchor")
+  const highlight = page.locator(".mosaic-social-time")
+  await highlight.hover()
+
+  const hoverTargetBox = await hoverTarget.boundingBox()
+  const highlightBox = await highlight.boundingBox()
+  expect(hoverTargetBox).not.toBeNull()
+  expect(highlightBox).not.toBeNull()
+  expect(hoverTargetBox!.height).toBeGreaterThanOrEqual(40)
+  expect(highlightBox!.height).toBeCloseTo(24, 0)
+})
+
+test("keeps the local-time card close to the visible trigger", async ({ page }) => {
+  await page.goto("/")
+
+  const trigger = page.locator(".mosaic-social-time")
+  const card = page.locator(".mosaic-local-time-card")
+  await trigger.hover()
+  await expect(card).toHaveAttribute("data-state", "open")
+  await card.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  const [triggerBox, cardBox] = await Promise.all([trigger.boundingBox(), card.boundingBox()])
+  expect(triggerBox).not.toBeNull()
+  expect(cardBox).not.toBeNull()
+  expect(cardBox!.y - (triggerBox!.y + triggerBox!.height)).toBeCloseTo(10, 0)
 })
 
 test("keeps the local-time card inside a narrow hover-capable viewport", async ({ page }) => {
@@ -1139,6 +1193,34 @@ test("expands and restores the gallery without losing the selected preview", asy
   await expect(dialog).not.toHaveAttribute("data-wide", "true")
   await expect(dialog.getByRole("button", { name: "Expand preview" })).toHaveAttribute("aria-pressed", "false")
   await expect.poll(async () => (await dialog.boundingBox())!.width).toBeCloseTo(compactWidth, 0)
+})
+
+test("fills the expanded card width with cropped project artwork", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 545 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("button", { name: /Open Protector preview/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  await dialog.getByRole("button", { name: "Expand preview" }).click()
+  await expect(dialog).toHaveAttribute("data-wide", "true")
+
+  const card = dialog.locator(".preview-gallery-card")
+  const mediaFrame = dialog.locator(".preview-gallery-media-frame")
+  const [cardBox, mediaFrameBox, horizontalInset] = await Promise.all([
+    card.boundingBox(),
+    mediaFrame.boundingBox(),
+    card.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return [styles.borderLeftWidth, styles.paddingLeft, styles.paddingRight, styles.borderRightWidth]
+        .map(Number.parseFloat)
+        .reduce((total, value) => total + value, 0)
+    }),
+  ])
+
+  expect(cardBox).not.toBeNull()
+  expect(mediaFrameBox).not.toBeNull()
+  expect(mediaFrameBox!.width).toBeCloseTo(cardBox!.width - horizontalInset, 0)
 })
 
 test("keeps the expanded gallery scrollable without visible scrollbars", async ({ playwright, baseURL }) => {
