@@ -2054,7 +2054,7 @@ img {
   gap: 0.25rem;
   /* Wide enough to hold the bio on one line instead of orphaning the slash. */
   width: 21.5rem;
-  max-width: min(21.5rem, calc(100vw - 2rem));
+  max-width: min(21.5rem, calc(100vw - 2.25rem));
   padding: 0.9375rem 1rem 1.0625rem;
   border-radius: 1rem;
   border: 1px solid #e6e6e8;

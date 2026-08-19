@@ -284,7 +284,9 @@ test("keeps the reduced-motion X preview card inside a narrow viewport", async (
   const cardBox = await page.locator(".mosaic-x-card").boundingBox()
 
   expect(cardBox).not.toBeNull()
-  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  // Keep a small buffer for platform font metrics and fractional layout
+  // rounding instead of balancing the card directly on the viewport edge.
+  expect(cardBox!.x).toBeGreaterThanOrEqual(3)
   expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(375)
 })
 
