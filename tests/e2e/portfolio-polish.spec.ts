@@ -1526,6 +1526,40 @@ test("shows project captions and contains Protector artwork on touch layouts", a
   await expect(protectorMedia).toHaveCSS("transform", "none")
 })
 
+test("keeps wrapped touch captions inside a bounded contrast gradient", async ({ browser }) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 768, height: 1024 },
+  })
+  const page = await context.newPage()
+
+  try {
+    await page.goto("/")
+
+    const caption = page.locator(".mosaic-row-card-title").first()
+    const layout = await caption.evaluate((element) => {
+      const card = element.closest<HTMLElement>(".mosaic-row-card")!
+      const cardBox = card.getBoundingClientRect()
+      const captionBox = element.getBoundingClientRect()
+      const gradient = getComputedStyle(card, "::after")
+
+      return {
+        cardHeight: cardBox.height,
+        captionHeight: captionBox.height,
+        captionTopFromBottom: cardBox.bottom - captionBox.top,
+        gradientHeight: Number.parseFloat(gradient.height),
+      }
+    })
+
+    expect(layout.captionHeight).toBeGreaterThan(20)
+    expect(layout.gradientHeight).toBeGreaterThanOrEqual(layout.captionTopFromBottom)
+    expect(layout.gradientHeight).toBeLessThan(layout.cardHeight / 2)
+  } finally {
+    await context.close()
+  }
+})
+
 test("renders intrinsic media dimensions and does not autoplay under reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
