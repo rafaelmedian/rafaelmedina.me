@@ -71,7 +71,7 @@ export function ContactActionRow({
                 }
               />
               <img
-                src={isCopySuccess ? "/reactions/copy-email-success.webp" : "/reactions/copy-email-before.gif"}
+                src={isCopySuccess ? "/reactions/copy-email-success.webp" : "/reactions/copy-email-before.webp"}
                 alt=""
                 width={isCopySuccess ? 400 : 480}
                 height={isCopySuccess ? 262 : 371}

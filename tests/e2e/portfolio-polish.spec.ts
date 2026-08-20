@@ -45,6 +45,13 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
+test("does not claim a sitemap modification date for every deployment", async ({ request }) => {
+  const response = await request.get("/sitemap.xml")
+
+  expect(response.ok()).toBe(true)
+  expect(await response.text()).not.toContain("<lastmod>")
+})
+
 test("offers LinkedIn and X actions beside copy email", async ({ page }) => {
   await page.goto("/")
 
@@ -154,7 +161,7 @@ test("reserves balanced wrapping for headings", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("tab", { name: "About me" }).click()
 
-  await expect(page.locator("#about-tabpanel > p").nth(1)).toHaveCSS("text-wrap", "pretty")
+  await expect(page.locator("#about-tabpanel-about > p").nth(1)).toHaveCSS("text-wrap", "pretty")
   await expect(page.getByRole("button", { name: "Copy email" })).not.toHaveCSS("text-wrap", "balance")
 })
 
@@ -175,7 +182,7 @@ test("previews the copy reaction without copying on hover", async ({ page }) => 
   await expect(reaction).toBeVisible()
   await expect(copyButton).toHaveText("Copy email")
   await expect(reaction.locator("source")).toHaveAttribute("srcset", "/reactions/copy-email-before-still.webp")
-  await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.gif")
+  await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 })
 
 test("celebrates a copied email below the trigger on the highest hero layer", async ({ context, page }) => {
@@ -423,11 +430,13 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
   await expect(card).toHaveAttribute("data-state", "open")
   await expect(card.getByText("Punta Cana", { exact: true })).toBeVisible()
   await expect(card.getByText("Dominican Republic", { exact: true })).toBeVisible()
-  const map = card.getByRole("region", { name: "Interactive map of Punta Cana, Dominican Republic" })
+  // role="img": all map interaction is disabled, so it must not announce as an
+  // interactive region, and its children are presentational.
+  const map = card.getByRole("img", { name: "Map of Punta Cana, Dominican Republic" })
   await expect(map).toBeVisible()
   await expect(map.getByRole("button")).toHaveCount(0)
   await expect(map.getByRole("link")).toHaveCount(0)
-  await expect(map.getByRole("img", { name: "Punta Cana location marker" })).toBeVisible()
+  await expect(map.locator(".mosaic-punta-cana-map-marker")).toBeVisible()
   await expect(card.getByRole("link", { name: "OpenStreetMap contributors" })).toBeVisible()
   await expect(
     card.getByRole("img", { name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic" }),
@@ -775,7 +784,7 @@ test("gives about panel links comfortable mobile targets", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("tab", { name: "About me" }).click()
 
-  const links = page.locator("#about-tabpanel .mosaic-about-link")
+  const links = page.locator("#about-tabpanel-about .mosaic-about-link")
   expect(await links.count()).toBeGreaterThan(0)
   for (const link of await links.all()) {
     const box = await link.boundingBox()
@@ -798,10 +807,24 @@ test("uses compact corners for the about panel tabs", async ({ page }) => {
   const tablist = page.getByRole("tablist", { name: "About me or work history" })
   const tabs = tablist.getByRole("tab")
 
-  await expect(tablist).toHaveCSS("border-radius", "11px")
   for (const tab of await tabs.all()) {
     await expect(tab).toHaveCSS("border-radius", "8px")
   }
+
+  // The group's corner is the tab's corner plus the padding between them, so the
+  // two curves stay concentric. That value is derived in CSS from --radius-sm
+  // rather than hard-coded, so assert the relationship instead of a literal --
+  // it has to survive a change to either the token or the padding.
+  const corners = await tablist.evaluate((element) => {
+    const tab = element.querySelector('[role="tab"]')
+    return {
+      group: parseFloat(getComputedStyle(element).borderTopLeftRadius),
+      tab: parseFloat(getComputedStyle(tab as Element).borderTopLeftRadius),
+      padding: parseFloat(getComputedStyle(element).paddingTop),
+    }
+  })
+
+  expect(corners.group).toBeCloseTo(corners.tab + corners.padding, 1)
 })
 
 test("scrolls to and focuses the about section from the avatar button", async ({ page }) => {
@@ -886,18 +909,46 @@ test("uses eight pixel mobile gutters and taller project cards", async ({ page }
   expect(cardBox!.height).toBeGreaterThanOrEqual(340)
 })
 
-test("keeps Matcha Trade module in a three-card desktop row", async ({ page }) => {
-  await page.setViewportSize({ width: 1728, height: 913 })
+test("keeps Dark mode beside Protector", async ({ page }) => {
   await page.goto("/")
 
-  const moduleCard = page.getByRole("button", { name: /Open Matcha Trade module/ })
-  const row = page.locator(".mosaic-row").filter({ has: moduleCard })
-  await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
+  const protectorCard = page.getByRole("button", { name: /Open Protector/ })
+  const row = page.locator(".mosaic-row").filter({ has: protectorCard })
 
-  const [rowBox, moduleBox] = await Promise.all([row.boundingBox(), moduleCard.boundingBox()])
-  expect(rowBox).not.toBeNull()
-  expect(moduleBox).not.toBeNull()
-  expect(moduleBox!.width).toBeLessThan(rowBox!.width / 2)
+  await expect(row.getByRole("button", { name: /Open Matcha Dark mode/ })).toHaveCount(1)
+})
+
+test("places the Trade Page after the Token Page", async ({ page }) => {
+  await page.goto("/")
+
+  const tokenCard = page.getByRole("button", { name: /Open Matcha - Token Page/ })
+  const row = page.locator(".mosaic-row").filter({ has: tokenCard })
+  const cards = row.locator(".mosaic-row-card")
+
+  await expect(cards.first()).toHaveAttribute(
+    "aria-label",
+    /Open Matcha - Token Page/,
+  )
+  await expect(cards.last()).toHaveAttribute("aria-label", /Open Matcha Trade Page/)
+})
+
+test("makes the Token Page modestly wider than the Trade Page", async ({ page }) => {
+  await page.setViewportSize({ width: 2560, height: 1239 })
+  await page.goto("/")
+
+  const tokenCard = page.getByRole("button", { name: /Open Matcha - Token Page/ })
+  const tradePageCard = page.getByRole("button", { name: /Open Matcha Trade Page/ })
+  const row = page.locator(".mosaic-row").filter({ has: tokenCard })
+  await expect(row.locator(".mosaic-row-item")).toHaveCount(2)
+
+  const [tokenBox, tradePageBox] = await Promise.all([
+    tokenCard.boundingBox(),
+    tradePageCard.boundingBox(),
+  ])
+  expect(tokenBox).not.toBeNull()
+  expect(tradePageBox).not.toBeNull()
+  expect(tokenBox!.width).toBeGreaterThan(tradePageBox!.width * 1.2)
+  expect(tokenBox!.width).toBeLessThan(tradePageBox!.width * 1.3)
 })
 
 test("omits retired Matcha projects from selected work", async ({ page }) => {
@@ -905,9 +956,10 @@ test("omits retired Matcha projects from selected work", async ({ page }) => {
 
   for (const title of [
     "Matcha - Security Audit",
-    "Matcha Dark mode",
     "Matcha Pro",
     "Matcha - Mobile navigation",
+    "Matcha - Mobile Screens",
+    "Matcha Trade module",
   ]) {
     await expect(page.getByRole("button", { name: new RegExp(`Open ${title}`) })).toHaveCount(0)
   }
@@ -990,7 +1042,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  await expect(dialog.getByText("2 / 8", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("2 / 7", { exact: true })).toBeVisible()
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -1017,7 +1069,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 8")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 7")
   await context.close()
 })
 
@@ -1054,7 +1106,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 8")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 7")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -1064,7 +1116,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 8")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 7")
   await context.close()
 })
 
@@ -1098,7 +1150,7 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("button", { name: /Open Matcha - Mobile Screens preview/ })
+  const trigger = page.getByRole("button", { name: /Open Matcha - Token Page preview/ })
   await trigger.hover()
   await failedPrefetch
   await page.unroute(galleryChunk)
@@ -1112,11 +1164,13 @@ test("switches the about card between about me and work history", async ({ page 
   await page.goto("/")
   const panel = page.locator("#about-panel")
 
-  await expect(panel).toContainText(/Hi, I.m Rafael/)
+  // Both tab panels stay mounted so the resume prerenders; the inactive one is
+  // `hidden`, so assert visibility rather than DOM presence.
+  await expect(panel.getByText(/Hi, I.m Rafael/)).toBeVisible()
 
   await panel.getByRole("tab", { name: "Work history" }).click()
   await expect(panel.getByRole("tab", { name: "Work history" })).toHaveAttribute("aria-selected", "true")
-  await expect(panel).not.toContainText(/Hi, I.m Rafael/)
+  await expect(panel.getByText(/Hi, I.m Rafael/)).toBeHidden()
 
   const entries = panel.locator(".mosaic-about-resume-entry")
   await expect(entries.first()).toContainText("0x Project")
@@ -1128,7 +1182,7 @@ test("switches the about card between about me and work history", async ({ page 
   await expect(panel.getByRole("link", { name: "Download résumé PDF" })).toHaveCount(0)
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "href",
-    "https://drive.google.com/file/d/1fjJlXtRb_sG3io7z_mpBTlSgrK4RDiGU/view?usp=sharing",
+    "/rafael-medina-resume.pdf",
   )
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "target",
@@ -1140,7 +1194,7 @@ test("switches the about card between about me and work history", async ({ page 
 
   await panel.getByRole("tab", { name: "Work history" }).press("ArrowLeft")
   await expect(panel.getByRole("tab", { name: "about me" })).toHaveAttribute("aria-selected", "true")
-  await expect(panel).toContainText(/Hi, I.m Rafael/)
+  await expect(panel.getByText(/Hi, I.m Rafael/)).toBeVisible()
 })
 
 test("slides one shared selection pill between the about tabs", async ({ page }) => {
@@ -1252,8 +1306,10 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   await expect(rail).toBeVisible()
   await expect(previous).toHaveAttribute("aria-keyshortcuts", "ArrowUp ArrowLeft")
   await expect(next).toHaveAttribute("aria-keyshortcuts", "ArrowDown ArrowRight")
-  await expect(card).toHaveCSS("border-bottom-left-radius", "28px")
-  await expect(card).toHaveCSS("border-bottom-right-radius", "28px")
+  // --radius-lg. The dialog's bottom corners used to be a 28px one-off; they
+  // were folded into the four-step radius scale (see /design-system).
+  await expect(card).toHaveCSS("border-bottom-left-radius", "24px")
+  await expect(card).toHaveCSS("border-bottom-right-radius", "24px")
 
   const initialDialogBox = await dialog.boundingBox()
   const initialRailBox = await rail.boundingBox()
@@ -1265,7 +1321,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
 
   await next.click()
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 8")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 7")
 
   const changedDialogBox = await dialog.boundingBox()
   const changedRailBox = await rail.boundingBox()
@@ -1276,7 +1332,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 8")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 7")
 })
 
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
@@ -1840,4 +1896,33 @@ test("keeps the work-card entrance inside its delay budget", async ({ page }) =>
   // Last card starts at 520ms + 3 x 70ms + 2 x 32ms = 754ms. The ceiling is
   // deliberately loose -- it guards against a runaway intro, not the exact base.
   expect(maxDelay).toBeLessThanOrEqual(0.85)
+})
+
+test("pauses and resumes the looping work previews from the motion toggle", async ({ page }) => {
+  await page.goto("/")
+
+  const video = page.locator(".mosaic-row-card video.mosaic-row-media").first()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
+
+  const toggle = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Pause motion" })
+  await toggle.click()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true)
+
+  // The preference persists across visits.
+  await page.reload()
+  const playToggle = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Play motion" })
+  await expect(playToggle).toBeVisible()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true)
+
+  await playToggle.click()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
+})
+
+test("hides the motion toggle when reduced motion already pauses previews", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const navigation = page.getByRole("navigation", { name: "Sections" })
+  await expect(navigation.getByRole("button", { name: /motion/i })).toHaveCount(0)
+  await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })

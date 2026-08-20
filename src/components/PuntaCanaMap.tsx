@@ -66,16 +66,20 @@ export function PuntaCanaMap({ onReady }: PuntaCanaMapProps) {
   return (
     <div
       className={`mosaic-punta-cana-map${isReady ? " is-ready" : ""}`}
-      role="region"
-      aria-label="Interactive map of Punta Cana, Dominican Republic"
+      // role="img", not region: every zoom/pan/keyboard input is disabled, so
+      // calling it "interactive" would promise controls that aren't there.
+      role="img"
+      aria-label="Map of Punta Cana, Dominican Republic"
     >
       {!isReady ? (
         <img
           className="mosaic-local-time-map-screenshot"
-          src="/maps/punta-cana-openstreetmap.png"
+          src="/maps/punta-cana-openstreetmap.webp"
           alt="OpenStreetMap screenshot of Punta Cana, Dominican Republic"
           width="696"
           height="320"
+          loading="lazy"
+          decoding="async"
         />
       ) : null}
       <div ref={mapNodeRef} className="mosaic-punta-cana-map-canvas" />

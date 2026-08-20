@@ -78,7 +78,7 @@ export const homeRows: HomeRow[] = [
     id: "row-2",
     height: homeTileRowHeight,
     items: [
-      { cardId: "preview-shot-14", span: 1 },
+      { cardId: "preview-shot-22", span: 1 },
       { cardId: "preview-protector", span: 2 },
     ],
   },
@@ -86,9 +86,8 @@ export const homeRows: HomeRow[] = [
     id: "row-3",
     height: homeTileRowHeight,
     items: [
-      { cardId: "preview-shot-21", span: 1 },
+      { cardId: "preview-shot-21", span: 1.25 },
       { cardId: "preview-shot-1", span: 1 },
-      { cardId: "preview-shot-19", span: 1 },
     ],
   },
 ]
@@ -105,7 +104,9 @@ export const siteLinks: SiteLinks = {
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
   email: "hey@rafaelmedina.me",
-  resumePdf: "https://drive.google.com/file/d/1fjJlXtRb_sG3io7z_mpBTlSgrK4RDiGU/view?usp=sharing",
+  // Self-hosted so the link survives Drive permission changes and skips the
+  // Drive viewer interstitial.
+  resumePdf: "/rafael-medina-resume.pdf",
 }
 
 /** Static mirror of the X profile, used by the hover preview on the Follow pill. */
@@ -176,17 +177,17 @@ export const portfolioCards: PortfolioCard[] = [
     previewAspectRatio: 0.74,
   },
   {
-    id: "preview-shot-14",
+    id: "preview-shot-22",
     category: "Preview",
-    title: "Matcha - Mobile Screens",
+    title: "Matcha Dark mode",
     summary: "",
     detail:
-      "Matcha's core screens on mobile. Most of the work was keeping dense trading data readable and tappable at phone width.",
-    image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
+      "Matcha's dark mode, rebuilt from tokens up so contrast and depth hold on every surface instead of just inverting colors.",
+    image: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg",
     previewWidth: 1600,
     previewHeight: 1200,
     ...matchaMeta,
-    team: [collaborators.simon, collaborators.jakub],
+    team: [collaborators.simon],
   },
   {
     id: "preview-shot-16",
@@ -263,18 +264,5 @@ export const portfolioCards: PortfolioCard[] = [
     previewHeight: 1200,
     ...matchaMeta,
     team: [collaborators.simon, collaborators.jakub],
-  },
-  {
-    id: "preview-shot-19",
-    category: "Preview",
-    title: "Matcha Trade module",
-    summary: "",
-    detail:
-      "The trade module itself: inputs, quotes, and confirmation states. Most of the effort went into making the numbers unambiguous before you sign.",
-    image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
-    previewWidth: 1600,
-    previewHeight: 1200,
-    ...matchaMeta,
-    team: [collaborators.jakub],
   },
 ]

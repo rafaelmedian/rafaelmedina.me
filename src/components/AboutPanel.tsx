@@ -308,7 +308,7 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
                 role="tab"
                 id={`about-tab-${tab.id}`}
                 aria-selected={activeTab === tab.id}
-                aria-controls="about-tabpanel"
+                aria-controls={`about-tabpanel-${tab.id}`}
                 tabIndex={activeTab === tab.id ? 0 : -1}
                 className="mosaic-about-tab"
                 onClick={() => selectTab(tab.id)}
@@ -319,13 +319,16 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
             ))}
           </div>
 
-          {activeTab === "resume" ? (
-            <div
-              id="about-tabpanel"
-              role="tabpanel"
-              aria-labelledby="about-tab-resume"
-              className="mosaic-about-tabpanel"
-            >
+          {/* Both panels stay mounted -- the inactive one is `hidden` -- so the
+              resume prerenders into the shipped HTML instead of being
+              client-only. */}
+          <div
+            id="about-tabpanel-resume"
+            role="tabpanel"
+            aria-labelledby="about-tab-resume"
+            className="mosaic-about-tabpanel"
+            hidden={activeTab !== "resume"}
+          >
               <p className="mosaic-about-lede">Senior Product Designer.</p>
               <p>
                 Ten years across web3, fintech, and consumer products — from early strategy to
@@ -334,7 +337,7 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
               <ol className="mosaic-about-resume">
                 {cvExperience.map((job) => (
                   <li key={`${job.company}-${job.dates}`} className="mosaic-about-resume-entry">
-                    <p className="mosaic-about-resume-company">
+                    <h3 className="mosaic-about-resume-company">
                       {job.logoUrls ? (
                         <span className="mosaic-about-resume-logos" aria-hidden="true">
                           {job.logoUrls.map((logoUrl) => (
@@ -345,7 +348,7 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
                         </span>
                       ) : null}
                       {job.company}
-                    </p>
+                    </h3>
                     <p className="mosaic-about-resume-meta">
                       {job.role} <span aria-hidden="true">·</span> {job.dates}
                     </p>
@@ -359,11 +362,11 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
               </ol>
 
               <div className="mosaic-about-resume-education">
-                <p className="mosaic-about-resume-heading">Education</p>
+                <h3 className="mosaic-about-resume-heading">Education</h3>
                 <ul className="mosaic-about-resume">
                   {cvEducation.map((school) => (
                     <li key={school.school} className="mosaic-about-resume-entry">
-                      <p className="mosaic-about-resume-company">{school.school}</p>
+                      <h4 className="mosaic-about-resume-company">{school.school}</h4>
                       <p className="mosaic-about-resume-meta">
                         {school.credential} <span aria-hidden="true">·</span> {school.location}
                       </p>
@@ -375,12 +378,12 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
                 </ul>
               </div>
             </div>
-          ) : (
             <div
-              id="about-tabpanel"
+              id="about-tabpanel-about"
               role="tabpanel"
               aria-labelledby="about-tab-about"
               className="mosaic-about-tabpanel"
+              hidden={activeTab !== "about"}
             >
           <p className="mosaic-about-lede">Hi, I&rsquo;m Rafael.</p>
           <p>
@@ -465,7 +468,6 @@ export function AboutPanel({ links, activeTab, onTabChange }: AboutPanelProps) {
             .
           </p>
             </div>
-          )}
         </div>
 
         {/* After the body on purpose: they are absolutely positioned, so the
