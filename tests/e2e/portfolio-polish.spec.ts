@@ -165,10 +165,17 @@ test("reserves balanced wrapping for headings", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Copy email" })).not.toHaveCSS("text-wrap", "balance")
 })
 
-test("matches the mobile browser theme color to the page canvas", async ({ page }) => {
+test("matches the mobile browser theme color to the page canvas", async ({ page, request }) => {
   await page.goto("/")
 
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#ffffff")
+
+  const manifest = await request.get("/site.webmanifest")
+  expect(manifest.ok()).toBe(true)
+  expect(await manifest.json()).toMatchObject({
+    background_color: "#ffffff",
+    theme_color: "#ffffff",
+  })
 })
 
 test("previews the copy reaction without copying on hover", async ({ page }) => {
@@ -1697,6 +1704,9 @@ test("keeps project images free of captions on mobile", async ({ page }) => {
 
   const firstCaption = page.locator(".mosaic-row-card-title").first()
   await expect(firstCaption).toBeHidden()
+  expect(
+    await page.locator(".mosaic-row-card").first().evaluate((card) => getComputedStyle(card, "::after").opacity),
+  ).toBe("0")
 
   const protectorMedia = page.locator(".mosaic-row-card-preview-protector .mosaic-row-media")
   await expect(protectorMedia).toHaveCSS("object-fit", "contain")

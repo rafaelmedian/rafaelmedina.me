@@ -16,6 +16,7 @@ test("presents the current mobile review at the clean audit URL", async ({ page 
   await expect(page.getByRole("heading", { name: "Make primary contact actions easier to tap" })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Show a visible Selected work heading" })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Match the browser chrome to the page canvas" })).toBeVisible()
+  await expect(page.getByRole("link", { name: "UX Audit home" })).toHaveAttribute("href", "/audit")
 })
 
 test("uses smooth-out easing for skip-link position motion", async ({ page }) => {

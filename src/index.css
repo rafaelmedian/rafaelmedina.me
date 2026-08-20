@@ -3247,8 +3247,10 @@ img {
     display: none;
   }
 
-  .mosaic-row-card::after {
-    opacity: 1;
+  .mosaic-row-card::after,
+  .mosaic-row-card:hover::after,
+  .mosaic-row-card:focus-visible::after {
+    opacity: 0;
   }
 
   .mosaic-row-card-preview-protector .mosaic-row-media {

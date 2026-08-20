@@ -250,8 +250,9 @@ const SPACE = [
   { value: "0.375rem", use: "Inside pills and stat groups" },
   { value: "0.5rem", use: "Hobby lists, X card internals" },
   { value: "0.625rem", use: "The contact action row" },
+  { value: "8px", use: "Mobile page gutter below 700px" },
   { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
-  { value: "clamp(16px, 3vw, 32px)", use: "Page gutter" },
+  { value: "clamp(16px, 3vw, 32px)", use: "Page gutter from 700px to 899px" },
 ]
 
 /* --------------------------------------------------------------- elevation */
@@ -1092,8 +1093,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Shell</p>
               <ul className="ds-list">
                 <li>
-                  <strong>Max width 1560px</strong>, gutter <code>clamp(1rem, 5vw, 1.5rem)</code> — dropped entirely at
-                  900px so the mosaic can run full-bleed.
+                  <strong>Max width 1560px</strong>, with an 8px gutter below 700px and a{" "}
+                  <code>clamp(1rem, 5vw, 1.5rem)</code> gutter from 700px to 899px — dropped entirely at 900px so the
+                  mosaic can run full-bleed.
                 </li>
                 <li>
                   <strong>Mosaic rows</strong> are flex, <code>1rem</code> gap, with height driven by{" "}

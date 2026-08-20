@@ -322,7 +322,7 @@ export function AuditPage() {
       </a>
 
       <header className="audit-topbar">
-        <a className="audit-brand" href="/audit.html" aria-label="UX Audit home">
+        <a className="audit-brand" href="/audit" aria-label="UX Audit home">
           <span className="audit-brand-mark" aria-hidden="true">
             <Sparkles size={17} strokeWidth={2} />
           </span>
