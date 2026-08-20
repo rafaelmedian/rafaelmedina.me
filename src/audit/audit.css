@@ -22,6 +22,13 @@
   --audit-amber: #9a6b24;
   --audit-amber-soft: #f3ead8;
   --audit-focus: #2c6650;
+  --modal-open-dur: 250ms;
+  --modal-close-dur: 150ms;
+  --modal-scale: 0.96;
+  --modal-scale-close: 0.96;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --resize-dur: 300ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -79,7 +86,7 @@ textarea {
   font-size: 13px;
   font-weight: 650;
   text-decoration: none;
-  transition: translate 160ms cubic-bezier(0.2, 0, 0, 1);
+  transition: translate 160ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .audit-skip-link:focus {
@@ -336,7 +343,13 @@ textarea {
   height: 100%;
   border-radius: inherit;
   background: var(--audit-mint);
-  transition: width 260ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.t-resize {
+  transition:
+    width var(--resize-dur) var(--resize-ease),
+    height var(--resize-dur) var(--resize-ease);
+  will-change: width, height;
 }
 
 .audit-reviewed-count {
@@ -787,7 +800,32 @@ textarea {
   padding: 24px;
   background: var(--audit-sheet-raised);
   box-shadow: 0 24px 70px rgb(36 39 33 / 0.22), 0 0 0 1px rgb(36 39 33 / 0.08);
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.audit-dialog.t-modal {
+  transform-origin: center;
+  opacity: 1;
+  pointer-events: auto;
+  transition:
+    transform var(--modal-open-dur) var(--modal-ease),
+    opacity var(--modal-open-dur) var(--modal-ease);
+  will-change: transform, opacity;
+}
+
+.audit-dialog.t-modal[data-starting-style] {
+  transform: translate(-50%, -50%) scale(var(--modal-scale));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.audit-dialog.t-modal[data-ending-style] {
+  transform: translate(-50%, -50%) scale(var(--modal-scale-close));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--modal-close-dur) var(--modal-ease),
+    opacity var(--modal-close-dur) var(--modal-ease);
 }
 
 .audit-dialog-icon {
@@ -1017,5 +1055,13 @@ textarea {
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .t-modal {
+    transition: none !important;
+  }
+
+  .t-resize {
+    transition: none !important;
   }
 }
