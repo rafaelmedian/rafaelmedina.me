@@ -456,7 +456,7 @@ export function AuditPage() {
               <span className="audit-summary-fraction">{reviewed} / {auditItems.length}</span>
             </div>
             <div className="audit-progress-track" aria-hidden="true">
-              <span style={{ width: `${completion}%` }} />
+              <span className="t-resize" style={{ width: `${completion}%` }} />
             </div>
             <p className="audit-reviewed-count">{reviewed} of {auditItems.length} reviewed</p>
 
@@ -596,7 +596,7 @@ export function AuditPage() {
 
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className="audit-dialog-backdrop" />
-        <AlertDialog.Popup className="audit-dialog" initialFocus={clearCancelRef}>
+        <AlertDialog.Popup className="audit-dialog t-modal" initialFocus={clearCancelRef}>
             <div className="audit-dialog-icon"><RotateCcw size={19} aria-hidden="true" /></div>
             <AlertDialog.Title>Clear every response?</AlertDialog.Title>
             <AlertDialog.Description>This removes all decisions and discussion notes from this browser. Your project name will stay.</AlertDialog.Description>

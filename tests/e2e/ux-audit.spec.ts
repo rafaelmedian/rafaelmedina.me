@@ -14,6 +14,23 @@ test("presents a usable set of UX recommendations", async ({ page }) => {
   await expect(page.getByText("0 of 10 reviewed")).toBeVisible()
 })
 
+test("uses smooth-out easing for skip-link position motion", async ({ page }) => {
+  const motion = await page.locator(".audit-skip-link").evaluate((element) => {
+    const styles = getComputedStyle(element)
+    return {
+      property: styles.transitionProperty,
+      duration: styles.transitionDuration,
+      easing: styles.transitionTimingFunction,
+    }
+  })
+
+  expect(motion).toEqual({
+    property: "translate",
+    duration: "0.16s",
+    easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+  })
+})
+
 test("pairs every finding with before evidence and an updated idea", async ({ page }) => {
   await expect(page.getByRole("img", { name: /^Before:/ })).toHaveCount(10)
   await expect(page.getByText("Before", { exact: true })).toHaveCount(10)
@@ -35,6 +52,30 @@ test("records and persists yes and no decisions", async ({ page }) => {
   await page.reload()
   await expect(firstSuggestion.getByRole("radio", { name: "Yes" })).toBeChecked()
   await expect(secondSuggestion.getByRole("radio", { name: "No" })).toBeChecked()
+})
+
+test("uses the card-resize motion recipe for review progress", async ({ page }) => {
+  const progress = page.locator(".audit-progress-track span")
+  const motion = await progress.evaluate((element) => {
+    const styles = getComputedStyle(element)
+    return {
+      property: styles.transitionProperty,
+      duration: styles.transitionDuration,
+      easing: styles.transitionTimingFunction,
+    }
+  })
+
+  expect(motion).toEqual({
+    property: "width, height",
+    duration: "0.3s, 0.3s",
+    easing: "cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1)",
+  })
+
+  await page.getByRole("radio", { name: "Yes" }).first().click()
+  await expect.poll(() => progress.evaluate((element) => {
+    const trackWidth = element.parentElement?.getBoundingClientRect().width ?? 1
+    return element.getBoundingClientRect().width / trackWidth
+  })).toBeCloseTo(0.1, 2)
 })
 
 test("captures discussion notes and filters the audit", async ({ page }) => {
@@ -88,6 +129,28 @@ test("supports clearing all responses", async ({ page }) => {
 
   await expect(page.getByText("0 of 10 reviewed")).toBeVisible()
   await expect(page.getByRole("radio", { name: "Yes" }).first()).not.toBeChecked()
+})
+
+test("opens and closes the clear confirmation with asymmetric modal motion", async ({ page }) => {
+  await page.getByRole("radio", { name: "Yes" }).first().click()
+  await page.getByRole("button", { name: "Clear responses" }).click()
+
+  const dialog = page.getByRole("alertdialog")
+  const openMotion = await dialog.evaluate((element) => {
+    const styles = getComputedStyle(element)
+    return {
+      duration: styles.transitionDuration,
+      easing: styles.transitionTimingFunction,
+    }
+  })
+
+  expect(openMotion.duration).toBe("0.25s, 0.25s")
+  expect(openMotion.easing).toBe("cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1)")
+
+  await dialog.getByRole("button", { name: "Cancel" }).click()
+  const closingDialog = page.locator(".audit-dialog[data-ending-style]")
+  await expect(closingDialog).toBeAttached()
+  await expect(closingDialog).toHaveCSS("transition-duration", "0.15s, 0.15s")
 })
 
 test("keeps keyboard focus inside the clear confirmation", async ({ page }) => {
