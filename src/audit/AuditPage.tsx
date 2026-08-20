@@ -42,227 +42,152 @@ type SavedAudit = {
   responses: Record<string, AuditResponse>
 }
 
-const STORAGE_KEY = "ux-audit-review-board-v2"
+const STORAGE_KEY = "mobile-ux-audit-review-board-v3"
 
 const auditItems: AuditItem[] = [
   {
-    id: "specific-positioning",
-    category: "Landing",
+    id: "contact-action-targets",
+    category: "Touch targets",
     priority: "High",
-    title: "Make the positioning specific above the fold",
-    detail: "The opening identifies Rafael as a freelance product designer, but his strongest differentiators—prototyping in code and experience across fintech, web3, and consumer products—appear much later.",
-    recommendation: "Replace the generic role line with a short value proposition that says what Rafael is unusually good at and who he helps.",
+    title: "Make primary contact actions easier to tap",
+    detail: "Copy email, Message, and Follow are the hero’s primary conversion actions, but each control is only 32px tall. At 320px wide the Follow action also drops onto a second row by itself, weakening the group’s visual balance.",
+    recommendation: "Increase coarse-pointer targets toward 44px and tune the narrow-screen padding and gaps so the three actions remain a deliberate group.",
     evidence: {
-      src: "/audit/before-desktop-landing.png",
-      alt: "Before: desktop portfolio introduction with the generic Product Designer, Freelance role line",
-      position: "center 0%",
+      src: "/audit/before-mobile-landing.png",
+      alt: "Before: mobile hero with compact Copy email, Message, and Follow actions",
+      position: "center 14%",
     },
-    updatedIdea: `+----------------------------------+
-| Rafael Medina                    |
-| Product designer who prototypes  |
-| complex fintech products in code |
-|                                  |
-| [Selected work]  [Email me]      |
-+----------------------------------+`,
+    updatedIdea: `[ Copy email ] [ Message ] [ Follow ]
+      44px          44px        44px
+
+At 320px: preserve one balanced row,
+or use three equal-width columns.`,
   },
   {
-    id: "work-introduction",
-    category: "Work grid",
+    id: "company-chip-targets",
+    category: "Touch targets",
     priority: "High",
-    title: "Introduce the work before showing the mosaic",
-    detail: "The desktop experience moves directly from availability into a large image grid. The “Selected work” heading is present semantically, but it is not visually carrying the transition or explaining how the grid works.",
-    recommendation: "Add a visible section heading and one concise line that frames the work, the interaction, and the kind of contribution shown.",
+    title: "Give compact controls more touch room",
+    detail: "The company chips are roughly 29px tall and sit close together across multiple lines. Their density makes accidental taps more likely when a visitor opens a company detail on a phone.",
+    recommendation: "Increase the effective hit area on coarse pointers while preserving the compact visual chip treatment.",
     evidence: {
-      src: "/audit/before-desktop-landing.png",
-      alt: "Before: desktop portfolio transitions directly from availability to the image mosaic",
-      position: "center 23%",
+      src: "/audit/before-mobile-landing.png",
+      alt: "Before: tightly grouped company chips in the mobile hero",
+      position: "center 8%",
+    },
+    updatedIdea: `Recently at [ 0x + Matcha ]
+
+[ Moody's ] [ Chainlink ] [ Twilio ]
+[ Onit ]    [ Google ]    [ Protector ]
+
+Visual chip stays compact;
+touch target expands around it.`,
+  },
+  {
+    id: "about-link-targets",
+    category: "Touch targets",
+    priority: "High",
+    title: "Enlarge the About panel links",
+    detail: "The Elsewhere links use text-sized targets; the X link measures about 10 by 18px. The links are visually clear but unnecessarily difficult to tap accurately near the bottom of a long page.",
+    recommendation: "Add invisible inline padding or turn the destinations into compact 44px pills while keeping the understated styling.",
+    evidence: {
+      src: "/audit/before-mobile-landing.png",
+      alt: "Before: small text links in the mobile About panel",
+      position: "center 96%",
+    },
+    updatedIdea: `Elsewhere
+
+[ X ] [ GitHub ] [ LinkedIn ] [ Dribbble ]
+
+Quiet visual styling,
+comfortable touch geometry.`,
+  },
+  {
+    id: "visible-work-heading",
+    category: "Content hierarchy",
+    priority: "High",
+    title: "Show a visible Selected work heading",
+    detail: "The Selected work heading exists for assistive technology but is visually hidden. On mobile, project cards begin immediately after the contact actions without an explicit transition into the portfolio.",
+    recommendation: "Add a compact visible heading above the first project card; one short framing line is optional, not required.",
+    evidence: {
+      src: "/audit/before-mobile-landing.png",
+      alt: "Before: mobile layout moves directly from contact actions into project cards",
+      position: "center 20%",
     },
     updatedIdea: `SELECTED WORK
-Complex product problems, shipped.
-Open a project for context and outcomes.
-
-                |
-                v
-+----------+ +----------+ +----------+
-| Project  | | Project  | | Project  |
-+----------+ +----------+ +----------+`,
-  },
-  {
-    id: "persistent-project-labels",
-    category: "Work grid",
-    priority: "High",
-    title: "Keep project labels visible on desktop",
-    detail: "Desktop visitors initially see strong imagery without project names, roles, or outcomes; titles appear only after hover or keyboard focus. Mobile visitors get persistent titles, creating a clearer scan.",
-    recommendation: "Show a compact title and project type on every tile by default, then reserve hover for secondary detail or motion.",
-    evidence: {
-      src: "/audit/before-desktop-landing.png",
-      alt: "Before: desktop project mosaic shows unlabeled artwork before hover",
-      position: "center 40%",
-    },
-    updatedIdea: `+--------------------------+
-|                          |
-|       PROJECT ART        |
-|                          |
-+--------------------------+
-| Matcha multiwallet       |
-| Product UX - Fintech     |
-+--------------------------+`,
-  },
-  {
-    id: "desktop-preview-exit",
-    category: "Project viewer",
-    priority: "High",
-    title: "Give the desktop project viewer a visible close control",
-    detail: "The desktop viewer exposes previous and next arrows but no close button. Escape and clicking outside work, yet neither exit is discoverable from the interface. Mobile does include a clear close control.",
-    recommendation: "Use the same visible close button on every viewport and keep it grouped with the viewer navigation.",
-    evidence: {
-      src: "/audit/before-desktop-project-preview.png",
-      alt: "Before: desktop project viewer shows previous and next controls without a close button",
-      position: "center",
-    },
-    updatedIdea: `+----------------------------------+
-| Project preview             [X] |
-|                                  |
-|          PROJECT ART             |
-|                                  |
-+----------------------------------+
-| [< Previous]  1 / 12  [Next >]  |
-+----------------------------------+`,
-  },
-  {
-    id: "case-study-depth",
-    category: "Project detail",
-    priority: "High",
-    title: "Turn visual previews into evidence of impact",
-    detail: "The viewer explains the product, industry, team, and a short scenario, but it does not show Rafael’s role, the problem, key decisions, or measurable outcome—information a hiring manager needs to assess the work.",
-    recommendation: "Add a lightweight case-study layer for each project: challenge, ownership, one pivotal decision, and outcome before the gallery metadata.",
-    evidence: {
-      src: "/audit/before-desktop-project-preview.png",
-      alt: "Before: project viewer contains artwork and metadata but limited case-study context",
-      position: "center",
-    },
-    updatedIdea: `+------------+    +------------+
-| CHALLENGE  | -> | DECISION   |
-| 2 wallets  |    | one switch |
-+------------+    +------------+
-        \\
-         +------> +----------------+
-                  | OUTCOME        |
-                  | fewer dropoffs |
-                  +----------------+`,
-  },
-  {
-    id: "preview-orientation",
-    category: "Project viewer",
-    priority: "Medium",
-    title: "Show position and navigation meaning on desktop",
-    detail: "Mobile shows “1 / 12” and groups previous, next, and close. Desktop uses two compact vertical arrow buttons without a visible count, so the size and direction of the collection are harder to understand.",
-    recommendation: "Add a current/total counter and make previous versus next legible without relying on arrow direction alone.",
-    evidence: {
-      src: "/audit/before-desktop-project-preview.png",
-      alt: "Before: desktop project viewer uses two unlabeled vertical arrows and no position counter",
-      position: "center",
-    },
-    updatedIdea: `+----------------------------------+
-| Matcha multiwallet               |
-|                                  |
-| [< Previous]   1 / 12   [Next >]|
-|                                  |
-| Keyboard: arrows move, Esc exits |
-+----------------------------------+`,
-  },
-  {
-    id: "mobile-scan-length",
-    category: "Mobile",
-    priority: "High",
-    title: "Shorten the path through selected work on mobile",
-    detail: "All 12 previews stack before the About section. The imagery remains readable, but the sequence becomes a long undifferentiated scroll before visitors can learn how Rafael thinks or reach the closing contact prompt.",
-    recommendation: "Lead with three to five strongest projects, then reveal the rest with “View more” or organize the work into compact case-study groups.",
-    evidence: {
-      src: "/audit/before-mobile-landing.png",
-      alt: "Before: mobile portfolio stacks all twelve project previews before the About section",
-      position: "center 50%",
-    },
-    updatedIdea: `+------------------+
-| Hero             |
-+------------------+
-| Case study 1     |
-| Case study 2     |
-| Case study 3     |
-+------------------+
-| [View 9 more]    |
-+------------------+
-| About + Contact  |
-+------------------+`,
-  },
-  {
-    id: "project-grouping",
-    category: "Information architecture",
-    priority: "Medium",
-    title: "Group repeated Matcha work into a coherent story",
-    detail: "Most tiles are Matcha screens, mixed one-by-one with Popparazi and Protector. This shows range within the product but makes the portfolio read like a gallery of screens rather than a curated set of projects.",
-    recommendation: "Group related Matcha artifacts under one case study with chapters, and let distinct products lead their own project entries.",
-    evidence: {
-      src: "/audit/before-desktop-landing.png",
-      alt: "Before: individual Matcha screens are mixed with unrelated projects in one mosaic",
-      position: "center 58%",
-    },
-    updatedIdea: `[MATCHA CASE STUDY]
- |
- +-- Wallet management
- +-- Trading experience
- \\-- Mobile navigation
-
-[POPPARAZI CASE STUDY]
-
-[PROTECTOR CASE STUDY]`,
-  },
-  {
-    id: "shareable-resume",
-    category: "Résumé",
-    priority: "Medium",
-    title: "Make the résumé easy to share and take away",
-    detail: "The résumé tab is clear and detailed, but it has no dedicated URL, download action, or print-friendly handoff. Recruiters cannot link directly to this state or keep a conventional copy.",
-    recommendation: "Give the résumé a stable hash or route and add a restrained “Download PDF” or “Print résumé” action.",
-    evidence: {
-      src: "/audit/before-desktop-resume.png",
-      alt: "Before: desktop résumé tab has no share, print, or download action",
-      position: "center",
-    },
-    updatedIdea: `ABOUT ME  |  RESUME
--------------------------------
-Senior Product Designer
-Ten years across web3, fintech...
-
-[Download PDF]  [Copy resume link]
-
-Experience
-0x Project ........ 2021 - 2026`,
-  },
-  {
-    id: "repeat-contact-path",
-    category: "Contact",
-    priority: "Medium",
-    title: "Repeat a strong contact path after the work",
-    detail: "Copy email and LinkedIn are clear near the top, and the copy action gives excellent inline and screen-reader feedback. After the long mobile work sequence, however, the next contact opportunity is a quiet text link at the bottom of About.",
-    recommendation: "Add a compact availability and contact block directly after Selected work, repeating email and LinkedIn at the moment interest is highest.",
-    evidence: {
-      src: "/audit/before-mobile-landing.png",
-      alt: "Before: mobile contact prompt appears only after the long work and About sequence",
-      position: "center 100%",
-    },
-    updatedIdea: `[SELECTED WORK ENDS]
 
 +----------------------------+
-| Available for new projects |
-|                            |
-| [Copy email]  [LinkedIn]   |
-+----------------------------+
+| Matcha - Multiwallet flow  |
++----------------------------+`,
+  },
+  {
+    id: "about-tab-targets",
+    category: "Touch targets",
+    priority: "Medium",
+    title: "Enlarge the About switcher targets",
+    detail: "About me and Work history are only 28px tall. The control reads clearly, but its interactive area is smaller than the project viewer controls and the mobile reveal button.",
+    recommendation: "Keep the compact segmented-control appearance while expanding each tab’s hit target toward 44px on coarse pointers.",
+    evidence: {
+      src: "/audit/before-mobile-landing.png",
+      alt: "Before: compact About me and Work history tab controls",
+      position: "center 83%",
+    },
+    updatedIdea: `+-------------------------------+
+|   About me   |  Work history  |
++-------------------------------+
+        44px minimum target`,
+  },
+  {
+    id: "body-text-wrapping",
+    category: "Typography",
+    priority: "Medium",
+    title: "Let body copy wrap naturally",
+    detail: "A global text-wrap: balance rule affects every paragraph, label, and link. On narrow screens this shapes body copy into visually even but less natural lines and makes wrapping harder to predict.",
+    recommendation: "Reserve text-wrap: balance for headings and use text-wrap: pretty for paragraphs and longer descriptions.",
+    evidence: {
+      src: "/audit/before-mobile-landing.png",
+      alt: "Before: globally balanced paragraph wrapping in the mobile About panel",
+      position: "center 90%",
+    },
+    updatedIdea: `Headings:   text-wrap: balance
+Paragraphs: text-wrap: pretty
+Controls:   normal wrapping rules`,
+  },
+  {
+    id: "location-status-wrap",
+    category: "Responsive copy",
+    priority: "Medium",
+    title: "Keep the location status together",
+    detail: "At 320px, the centered location and availability sentence can wrap with the middle dot leading the second line. The content remains understandable, but the punctuation looks stranded.",
+    recommendation: "Model the location and availability as two nowrap groups and handle their separator explicitly when they wrap.",
+    evidence: {
+      src: "/audit/before-mobile-landing.png",
+      alt: "Before: centered location and availability status in the mobile hero",
+      position: "center 12%",
+    },
+    updatedIdea: `Punta Cana & NYC
+Available for work
 
-[ABOUT RAFAEL]`,
+No orphaned separator when wrapping.`,
+  },
+  {
+    id: "theme-color",
+    category: "Mobile browser",
+    priority: "Medium",
+    title: "Match the browser chrome to the page canvas",
+    detail: "The document theme color is #f5f5f4 while the visible canvas is white or near-white. Mobile browser chrome can therefore show a subtly different band of color around the page.",
+    recommendation: "Use the actual canvas color for the theme-color metadata, or deliberately carry the warmer surface into the page background.",
+    evidence: {
+      src: "/audit/before-mobile-landing.png",
+      alt: "Before: near-white portfolio canvas used as reference for the mobile browser theme color",
+      position: "center 0%",
+    },
+    updatedIdea: `Page canvas:  #ffffff
+Theme color:  #ffffff
+
+Browser chrome and page meet cleanly.`,
   },
 ]
-
 const decisions: Array<{ value: Decision; label: string; icon: typeof Check }> = [
   { value: "yes", label: "Yes", icon: Check },
   { value: "no", label: "No", icon: X },
@@ -397,7 +322,7 @@ export function AuditPage() {
       </a>
 
       <header className="audit-topbar">
-        <a className="audit-brand" href="/audit.html" aria-label="UX Audit home">
+        <a className="audit-brand" href="/audit" aria-label="UX Audit home">
           <span className="audit-brand-mark" aria-hidden="true">
             <Sparkles size={17} strokeWidth={2} />
           </span>
@@ -418,8 +343,8 @@ export function AuditPage() {
           </div>
           <div className="audit-title-row">
             <div>
-              <h1 id="audit-title">UX audit</h1>
-              <p>Review findings from the portfolio’s desktop and mobile visitor journey, then capture where the team agrees, disagrees, or needs a conversation.</p>
+              <h1 id="audit-title">Mobile UX audit</h1>
+              <p>Review the current mobile portfolio findings, then capture which improvements to accept, deny, or discuss before implementation.</p>
             </div>
             <div className="audit-title-actions">
               <button

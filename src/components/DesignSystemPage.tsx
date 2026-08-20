@@ -250,8 +250,9 @@ const SPACE = [
   { value: "0.375rem", use: "Inside pills and stat groups" },
   { value: "0.5rem", use: "Hobby lists, X card internals" },
   { value: "0.625rem", use: "The contact action row" },
+  { value: "8px", use: "Mobile page gutter below 700px" },
   { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
-  { value: "clamp(16px, 3vw, 32px)", use: "Page gutter" },
+  { value: "clamp(16px, 3vw, 32px)", use: "Page gutter from 700px to 899px" },
 ]
 
 /* --------------------------------------------------------------- elevation */
@@ -357,9 +358,10 @@ const DURATIONS = [
 /* ------------------------------------------------------------------ layout */
 
 const BREAKPOINTS = [
-  { at: "≤ 327.98px", change: "The X hover card flips to the left edge because the pills have wrapped." },
+  { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; location and availability stack without a separator." },
   { at: "≤ 639.98px", change: "Corner nav centres and stacks; the hero gains 6.9rem of top padding." },
-  { at: "≤ 699.98px", change: "Mosaic rows become one column at 240px tall; the reveal button appears; card titles pin open." },
+  { at: "≤ 699.98px", change: "The shell uses 8px gutters; every project shows in one 340–380px column; card captions hide." },
+  { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall and local time uses 14px type." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
   { at: "≥ 1320px", change: "The hero name settles at 16px." },
@@ -897,7 +899,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </table>
               </div>
               <p className="ds-caption">
-                All three are 2rem tall with a 999px radius and share the same physical build: an outer shadow, a{" "}
+                All three use a 2rem fine-pointer height and <code>--radius-full</code>; below 700px, touch inputs keep a
+                44px target. They share the same physical build: an outer shadow, a{" "}
                 <code>::before</code> specular highlight across the top, and a <code>::after</code> ring of inset
                 shadows for the bottom bevel. Labels sit at <code>top: -1px</code> because SF rides low in its em box at
                 13px. Shadow, not scale, carries the press.
@@ -1090,13 +1093,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Shell</p>
               <ul className="ds-list">
                 <li>
-                  <strong>Max width 1560px</strong>, gutter <code>clamp(1rem, 5vw, 1.5rem)</code> — dropped entirely at
-                  900px so the mosaic can run full-bleed.
+                  <strong>Max width 1560px</strong>, with an 8px gutter below 700px and a{" "}
+                  <code>clamp(1rem, 5vw, 1.5rem)</code> gutter from 700px to 899px — dropped entirely at 900px so the
+                  mosaic can run full-bleed.
                 </li>
                 <li>
                   <strong>Mosaic rows</strong> are flex, <code>1rem</code> gap, with height driven by{" "}
-                  <code>--row-height</code>: 240px stacked on mobile, 320px base, 420px from 900px up. Items flex by an
-                  inline <code>--row-span</code>.
+                  <code>--row-height</code>: <code>clamp(340px, 92vw, 380px)</code> stacked on mobile, 320px base, and
+                  420px from 900px up. Items flex by an inline <code>--row-span</code>.
                 </li>
                 <li>
                   <strong>Row height is asserted at exactly 420px</strong> in{" "}
@@ -1187,8 +1191,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </li>
               <li>
                 <strong>Hover-only content has a non-hover fate.</strong> Every hover card is{" "}
-                <code>display: none</code> under <code>(hover: none)</code>; card titles pin open on touch instead of
-                waiting for a hover that never comes.
+                <code>display: none</code> under <code>(hover: none)</code>; project cards stay image-only on touch while
+                their button labels continue to expose each project title to assistive technology.
               </li>
               <li>
                 <strong>Asynchronous results are announced.</strong> Copying the email writes to an{" "}

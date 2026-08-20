@@ -549,14 +549,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [hasOpenedWorkPreview, setHasOpenedWorkPreview] = useState(false)
   const previewCardNodesRef = useRef(new Map<number, HTMLButtonElement>())
-  const firstHiddenWorkCardRef = useRef<HTMLButtonElement | null>(null)
-  const shouldFocusRevealedWorkRef = useRef(false)
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [aboutTab, setAboutTab] = useState<AboutTab>("about")
-  const [showAllWork, setShowAllWork] = useState(false)
   const motionPaused = useSyncExternalStore(
     subscribeToMotionPreference,
     getMotionPausedSnapshot,
@@ -588,8 +585,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     () => rowsRender.flatMap((row) => row.items.map((item) => item.card)),
     [rowsRender],
   )
-  const initiallyVisibleWorkCount = rowsRender[0]?.items.length ?? 0
-  const hiddenWorkCount = Math.max(flatWorkCards.length - initiallyVisibleWorkCount, 0)
   const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(flatWorkCards.length - 1, 0))
   const setSelectedWorkPreviewIndex = (index: number) => {
     setLastWorkPreviewIndex(index)
@@ -680,13 +675,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     window.addEventListener("popstate", syncAboutTabFromUrl)
     return () => window.removeEventListener("popstate", syncAboutTabFromUrl)
   }, [])
-
-  useEffect(() => {
-    if (!showAllWork || !shouldFocusRevealedWorkRef.current) return
-
-    shouldFocusRevealedWorkRef.current = false
-    firstHiddenWorkCardRef.current?.focus()
-  }, [showAllWork])
 
   useEffect(() => {
     let intervalId: number | undefined
@@ -789,7 +777,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           </div>
           <WorkedWithCompaniesInline variant="profile" />
           <p className="mosaic-profile-location">
-            Punta Cana & NYC <span aria-hidden="true">·</span>{" "}
+            <span className="mosaic-profile-location-place">Punta Cana & NYC</span>
+            <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
             <span className="mosaic-profile-availability">
               Available for work
               <span className="mosaic-availability-dot" aria-hidden="true" />
@@ -819,7 +808,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                 role="group"
                 aria-label="Selected work previews"
                 id="selected-work-previews"
-                data-mobile-expanded={showAllWork}
               >
                 {rowsRender.map((row, rowIndex) => {
                   const rowStyle = {
@@ -830,7 +818,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   return (
                     <div
                       key={row.id}
-                      className={`mosaic-row${rowIndex > 0 ? " mosaic-row-mobile-extra" : ""}`}
+                      className="mosaic-row"
                       style={rowStyle}
                     >
                       {row.items.map((item, itemIndex) => {
@@ -866,9 +854,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 const nodes = previewCardNodesRef.current
                                 if (node) nodes.set(item.previewIndex, node)
                                 else nodes.delete(item.previewIndex)
-                                if (rowIndex === 1 && itemIndex === 0) {
-                                  firstHiddenWorkCardRef.current = node
-                                }
                               }}
                               className={`mosaic-row-card mosaic-row-card-${item.card.id}`}
                               onPointerEnter={prefetchPreviewGallery}
@@ -898,21 +883,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   )
                 })}
               </div>
-              {hiddenWorkCount > 0 ? (
-                <button
-                  type="button"
-                  className="mosaic-work-reveal"
-                  aria-controls="selected-work-previews"
-                  aria-expanded={showAllWork}
-                  onClick={(event) => {
-                    shouldFocusRevealedWorkRef.current = event.detail === 0
-                    setShowAllWork(true)
-                    trackEvent("work_reveal", { hidden_work_count: hiddenWorkCount })
-                  }}
-                >
-                  View {hiddenWorkCount} more projects
-                </button>
-              ) : null}
           </article>
 
           <AboutPanel links={links} activeTab={aboutTab} onTabChange={selectAboutTab} />
