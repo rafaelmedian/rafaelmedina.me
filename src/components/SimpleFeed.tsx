@@ -55,10 +55,12 @@ function PuntaCanaMapScreenshot() {
   return (
     <img
       className="mosaic-local-time-map-screenshot"
-      src="/maps/punta-cana-openstreetmap.png"
+      src="/maps/punta-cana-openstreetmap.webp"
       alt="OpenStreetMap screenshot of Punta Cana, Dominican Republic"
       width="696"
       height="320"
+      loading="lazy"
+      decoding="async"
     />
   )
 }
@@ -97,6 +99,7 @@ type RowVideoMediaProps = {
   width?: number
   height?: number
   prefersReducedMotion: boolean
+  paused: boolean
 }
 
 const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -152,6 +155,42 @@ function prefetchPreviewGallery() {
   void loadPreviewGallery().catch(() => undefined)
 }
 
+// The pause-motion preference lives outside React so it can hydrate safely
+// (server snapshot is always "playing") and persist across visits. The
+// module-level flag stays authoritative when storage is unavailable.
+let motionPausedState: boolean | null = null
+const motionPreferenceListeners = new Set<() => void>()
+
+function getMotionPausedSnapshot() {
+  if (motionPausedState === null) {
+    try {
+      motionPausedState = window.localStorage.getItem("motion-paused") === "true"
+    } catch {
+      motionPausedState = false
+    }
+  }
+  return motionPausedState
+}
+
+function getMotionPausedServerSnapshot() {
+  return false
+}
+
+function subscribeToMotionPreference(listener: () => void) {
+  motionPreferenceListeners.add(listener)
+  return () => motionPreferenceListeners.delete(listener)
+}
+
+function setMotionPaused(paused: boolean) {
+  motionPausedState = paused
+  try {
+    window.localStorage.setItem("motion-paused", String(paused))
+  } catch {
+    // Session-only preference is fine when storage is unavailable.
+  }
+  for (const listener of motionPreferenceListeners) listener()
+}
+
 function RowVideoMedia({
   source,
   poster,
@@ -159,6 +198,7 @@ function RowVideoMedia({
   width,
   height,
   prefersReducedMotion,
+  paused,
 }: RowVideoMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const supportsIntersectionObserver = useSyncExternalStore(
@@ -209,12 +249,12 @@ function RowVideoMedia({
     const video = videoRef.current
     if (!video) return
 
-    if (!prefersReducedMotion && loadNow && visibleNow) {
+    if (!prefersReducedMotion && !paused && loadNow && visibleNow) {
       void video.play().catch(() => undefined)
     } else {
       video.pause()
     }
-  }, [loadNow, prefersReducedMotion, visibleNow])
+  }, [loadNow, paused, prefersReducedMotion, visibleNow])
 
   return (
     <video
@@ -376,9 +416,15 @@ function getAboutTabFromHash(hash: string): AboutTab | null {
 function SectionCorner({
   onSelect,
   resumeHref,
+  motionPaused,
+  onToggleMotion,
+  prefersReducedMotion,
 }: {
   onSelect: (tab: AboutTab, href: string) => void
   resumeHref: string
+  motionPaused: boolean
+  onToggleMotion: () => void
+  prefersReducedMotion: boolean
 }) {
   return (
     <nav className="mosaic-section-corner" aria-label="Sections">
@@ -419,6 +465,17 @@ function SectionCorner({
           aria-hidden="true"
         />
       </a>
+      {!prefersReducedMotion ? (
+        // WCAG 2.2.2: the looping work previews need a pause mechanism when
+        // the OS is not already suppressing their motion.
+        <button
+          type="button"
+          className="mosaic-social-link mosaic-motion-toggle"
+          onClick={onToggleMotion}
+        >
+          {motionPaused ? "Play motion" : "Pause motion"}
+        </button>
+      ) : null}
     </nav>
   )
 }
@@ -444,21 +501,25 @@ function SocialCorner({
         >
           Local time: <LiveTimeLabel label={timeLabel} reducedMotion={reducedMotion} />
         </span>
+        {/* The description target is plain text on purpose: the visual card
+            below contains a link, which a tooltip/description must not. */}
+        <span id="local-time-location" className="sr-only">
+          Punta Cana, Dominican Republic
+        </span>
         <span
-          id="local-time-location"
           className={`mosaic-local-time-card${isOpen ? " is-open" : ""}`}
           data-state={isOpen ? "open" : "closed"}
-          role="tooltip"
-          aria-hidden={!isOpen}
+          inert={!isOpen}
         >
           <span className="mosaic-local-time-map">
+            {/* Nothing renders while closed so the screenshot is never fetched
+                for visitors who never hover; the Suspense fallback covers the
+                gap while Leaflet's chunk loads. */}
             {isOpen || mapLoaded ? (
               <Suspense fallback={<PuntaCanaMapScreenshot />}>
                 <PuntaCanaMap onReady={handleMapReady} />
               </Suspense>
-            ) : (
-              <PuntaCanaMapScreenshot />
-            )}
+            ) : null}
             <a
               className="mosaic-local-time-map-attribution"
               href="https://www.openstreetmap.org/copyright"
@@ -496,6 +557,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [aboutTab, setAboutTab] = useState<AboutTab>("about")
   const [showAllWork, setShowAllWork] = useState(false)
+  const motionPaused = useSyncExternalStore(
+    subscribeToMotionPreference,
+    getMotionPausedSnapshot,
+    getMotionPausedServerSnapshot,
+  )
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -561,6 +627,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           width={card.previewWidth}
           height={card.previewHeight}
           prefersReducedMotion={prefersReducedMotion}
+          paused={motionPaused}
         />
       )
     }
@@ -596,6 +663,12 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     mediaQuery.addListener(syncPreference)
     return () => mediaQuery.removeListener(syncPreference)
   }, [])
+
+  const toggleMotionPaused = () => {
+    const next = !getMotionPausedSnapshot()
+    trackEvent("motion_toggle", { motion_paused: next })
+    setMotionPaused(next)
+  }
 
   useEffect(() => {
     const syncAboutTabFromUrl = () => {
@@ -670,7 +743,13 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   return (
     <section className="mosaic-shell">
       <h1 className="sr-only">{profile.name} portfolio</h1>
-      <SectionCorner onSelect={openAboutTab} resumeHref={links.resumePdf} />
+      <SectionCorner
+        onSelect={openAboutTab}
+        resumeHref={links.resumePdf}
+        motionPaused={motionPaused}
+        onToggleMotion={toggleMotionPaused}
+        prefersReducedMotion={prefersReducedMotion}
+      />
       <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
       <header id="about" className="mosaic-hero">
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
@@ -799,10 +878,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
                               }}
                               aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
+                              aria-describedby={`${itemKey}-description`}
                             >
                               {renderRowMedia(item.card, item.card.image, item.card.title, eagerRow)}
                               <span className="mosaic-row-card-title" aria-hidden="true">
                                 {item.card.title}
+                              </span>
+                              {/* Prerenders each project's description as real
+                                  text: crawlers get more than an aria-label,
+                                  and screen readers hear it after the label. */}
+                              <span id={`${itemKey}-description`} className="sr-only">
+                                {item.card.detail}
                               </span>
                             </button>
                           </div>

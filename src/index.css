@@ -346,11 +346,13 @@ img {
   right: 0.35rem;
   bottom: 0.25rem;
   z-index: 500;
-  padding: 0.12rem 0.25rem;
+  /* 11px text + this padding lands the link at the 24px minimum target
+     (WCAG 2.5.8); the opaque backing keeps contrast steady over any tile. */
+  padding: 0.375rem 0.5rem;
   border-radius: 0.25rem;
-  background: rgb(255 255 255 / 0.82);
+  background: #ffffff;
   color: #555b58;
-  font-size: 0.5625rem;
+  font-size: 0.6875rem;
   line-height: 1.1;
   text-decoration: none;
 }
@@ -389,7 +391,7 @@ img {
 }
 
 .mosaic-local-time-card-copy > span:first-child > span {
-  color: #777b79;
+  color: var(--muted);
   font-size: 0.75rem;
   line-height: 1.25;
 }
@@ -415,6 +417,14 @@ img {
     transform: none;
     transition: opacity 100ms ease, visibility 100ms ease;
   }
+}
+
+/* The motion toggle is a <button> sharing the nav-link look. */
+.mosaic-motion-toggle {
+  margin: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
 }
 
 .mosaic-social-link {
@@ -992,6 +1002,12 @@ img {
 .mosaic-about-tabpanel {
   display: grid;
   gap: 1.05rem;
+}
+
+/* `display: grid` above would otherwise beat the UA's [hidden] rule, and the
+   inactive tab panel now stays mounted so it prerenders. */
+.mosaic-about-tabpanel[hidden] {
+  display: none;
 }
 
 .mosaic-about-resume {
@@ -2815,7 +2831,7 @@ img {
 .preview-gallery-description {
   margin: 0.5rem 0 0;
   max-width: 46rem;
-  color: #777777;
+  color: var(--muted);
   font-size: clamp(0.8125rem, 0.9vw, 0.875rem);
   font-weight: 400;
   line-height: 1.45;
@@ -2831,7 +2847,7 @@ img {
   border-radius: 999px;
   background: #f4f4f4;
   padding: 0 0.65rem;
-  color: #777777;
+  color: var(--muted);
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
   line-height: 1;

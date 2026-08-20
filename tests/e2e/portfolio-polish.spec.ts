@@ -45,6 +45,13 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
+test("does not claim a sitemap modification date for every deployment", async ({ request }) => {
+  const response = await request.get("/sitemap.xml")
+
+  expect(response.ok()).toBe(true)
+  expect(await response.text()).not.toContain("<lastmod>")
+})
+
 test("offers LinkedIn and X actions beside copy email", async ({ page }) => {
   await page.goto("/")
 
@@ -96,7 +103,7 @@ test("previews the copy reaction without copying on hover", async ({ page }) => 
   await expect(reaction).toBeVisible()
   await expect(copyButton).toHaveText("Copy email")
   await expect(reaction.locator("source")).toHaveAttribute("srcset", "/reactions/copy-email-before-still.webp")
-  await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.gif")
+  await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 })
 
 test("celebrates a copied email below the trigger on the highest hero layer", async ({ context, page }) => {
@@ -344,11 +351,13 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
   await expect(card).toHaveAttribute("data-state", "open")
   await expect(card.getByText("Punta Cana", { exact: true })).toBeVisible()
   await expect(card.getByText("Dominican Republic", { exact: true })).toBeVisible()
-  const map = card.getByRole("region", { name: "Interactive map of Punta Cana, Dominican Republic" })
+  // role="img": all map interaction is disabled, so it must not announce as an
+  // interactive region, and its children are presentational.
+  const map = card.getByRole("img", { name: "Map of Punta Cana, Dominican Republic" })
   await expect(map).toBeVisible()
   await expect(map.getByRole("button")).toHaveCount(0)
   await expect(map.getByRole("link")).toHaveCount(0)
-  await expect(map.getByRole("img", { name: "Punta Cana location marker" })).toBeVisible()
+  await expect(map.locator(".mosaic-punta-cana-map-marker")).toBeVisible()
   await expect(card.getByRole("link", { name: "OpenStreetMap contributors" })).toBeVisible()
   await expect(
     card.getByRole("img", { name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic" }),
@@ -979,11 +988,13 @@ test("switches the about card between about me and work history", async ({ page 
   await page.goto("/")
   const panel = page.locator("#about-panel")
 
-  await expect(panel).toContainText(/Hi, I.m Rafael/)
+  // Both tab panels stay mounted so the resume prerenders; the inactive one is
+  // `hidden`, so assert visibility rather than DOM presence.
+  await expect(panel.getByText(/Hi, I.m Rafael/)).toBeVisible()
 
   await panel.getByRole("tab", { name: "Work history" }).click()
   await expect(panel.getByRole("tab", { name: "Work history" })).toHaveAttribute("aria-selected", "true")
-  await expect(panel).not.toContainText(/Hi, I.m Rafael/)
+  await expect(panel.getByText(/Hi, I.m Rafael/)).toBeHidden()
 
   const entries = panel.locator(".mosaic-about-resume-entry")
   await expect(entries.first()).toContainText("0x Project")
@@ -995,7 +1006,7 @@ test("switches the about card between about me and work history", async ({ page 
   await expect(panel.getByRole("link", { name: "Download résumé PDF" })).toHaveCount(0)
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "href",
-    "https://drive.google.com/file/d/1fjJlXtRb_sG3io7z_mpBTlSgrK4RDiGU/view?usp=sharing",
+    "/rafael-medina-resume.pdf",
   )
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "target",
@@ -1007,7 +1018,7 @@ test("switches the about card between about me and work history", async ({ page 
 
   await panel.getByRole("tab", { name: "Work history" }).press("ArrowLeft")
   await expect(panel.getByRole("tab", { name: "about me" })).toHaveAttribute("aria-selected", "true")
-  await expect(panel).toContainText(/Hi, I.m Rafael/)
+  await expect(panel.getByText(/Hi, I.m Rafael/)).toBeVisible()
 })
 
 test("slides one shared selection pill between the about tabs", async ({ page }) => {
@@ -1708,4 +1719,33 @@ test("keeps the work-card entrance inside its delay budget", async ({ page }) =>
   // Last card starts at 520ms + 3 x 70ms + 2 x 32ms = 754ms. The ceiling is
   // deliberately loose -- it guards against a runaway intro, not the exact base.
   expect(maxDelay).toBeLessThanOrEqual(0.85)
+})
+
+test("pauses and resumes the looping work previews from the motion toggle", async ({ page }) => {
+  await page.goto("/")
+
+  const video = page.locator(".mosaic-row-card video.mosaic-row-media").first()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
+
+  const toggle = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Pause motion" })
+  await toggle.click()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true)
+
+  // The preference persists across visits.
+  await page.reload()
+  const playToggle = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Play motion" })
+  await expect(playToggle).toBeVisible()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true)
+
+  await playToggle.click()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
+})
+
+test("hides the motion toggle when reduced motion already pauses previews", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const navigation = page.getByRole("navigation", { name: "Sections" })
+  await expect(navigation.getByRole("button", { name: /motion/i })).toHaveCount(0)
+  await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })
