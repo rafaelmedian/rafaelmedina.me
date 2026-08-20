@@ -1,24 +1,28 @@
 import { expect, test } from "@playwright/test"
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/audit.html")
+  await page.goto("/audit")
   await page.evaluate(() => localStorage.clear())
   await page.reload()
 })
 
-test("presents a usable set of UX recommendations", async ({ page }) => {
-  await expect(page.getByRole("heading", { name: "UX audit" })).toBeVisible()
+test("presents the current mobile review at the clean audit URL", async ({ page }) => {
+  await expect(page).toHaveURL(/\/audit$/)
+  await expect(page.getByRole("heading", { name: "Mobile UX audit" })).toBeVisible()
   await expect(page.getByRole("textbox", { name: "Project or flow" })).toHaveValue("Rafael Medina portfolio")
-  await expect(page.getByRole("article")).toHaveCount(10)
-  await expect(page.getByRole("radiogroup", { name: /Decision for/ })).toHaveCount(10)
-  await expect(page.getByText("0 of 10 reviewed")).toBeVisible()
+  await expect(page.getByRole("article")).toHaveCount(8)
+  await expect(page.getByRole("radiogroup", { name: /Decision for/ })).toHaveCount(8)
+  await expect(page.getByText("0 of 8 reviewed")).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Make primary contact actions easier to tap" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Show a visible Selected work heading" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Match the browser chrome to the page canvas" })).toBeVisible()
 })
 
 test("pairs every finding with before evidence and an updated idea", async ({ page }) => {
-  await expect(page.getByRole("img", { name: /^Before:/ })).toHaveCount(10)
-  await expect(page.getByText("Before", { exact: true })).toHaveCount(10)
-  await expect(page.getByText("Updated idea", { exact: true })).toHaveCount(10)
-  await expect(page.locator("article pre")).toHaveCount(10)
+  await expect(page.getByRole("img", { name: /^Before:/ })).toHaveCount(8)
+  await expect(page.getByText("Before", { exact: true })).toHaveCount(8)
+  await expect(page.getByText("Updated idea", { exact: true })).toHaveCount(8)
+  await expect(page.locator("article pre")).toHaveCount(8)
 })
 
 test("records and persists yes and no decisions", async ({ page }) => {
@@ -28,7 +32,7 @@ test("records and persists yes and no decisions", async ({ page }) => {
   await firstSuggestion.getByRole("radio", { name: "Yes" }).click()
   await secondSuggestion.getByRole("radio", { name: "No" }).click()
 
-  await expect(page.getByText("2 of 10 reviewed")).toBeVisible()
+  await expect(page.getByText("2 of 8 reviewed")).toBeVisible()
   await expect(page.getByTestId("yes-count")).toHaveText("1")
   await expect(page.getByTestId("no-count")).toHaveText("1")
 
@@ -72,13 +76,13 @@ test("copies a complete Markdown response summary", async ({ page, context }) =>
 
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   expect(clipboard).toContain("# UX audit responses — Rafael Medina portfolio")
-  expect(clipboard).toContain("Reviewed: 3 of 10")
-  expect(clipboard).toContain("## Yes\n- Make the positioning specific above the fold")
-  expect(clipboard).toContain("## No\n- Introduce the work before showing the mosaic")
+  expect(clipboard).toContain("Reviewed: 3 of 8")
+  expect(clipboard).toContain("## Yes\n- Make primary contact actions easier to tap")
+  expect(clipboard).toContain("## No\n- Give compact controls more touch room")
   expect(clipboard).toContain(
-    "## Discuss\n- Keep project labels visible on desktop\n  - Note: Confirm the labels with the project team.",
+    "## Discuss\n- Enlarge the About panel links\n  - Note: Confirm the labels with the project team.",
   )
-  expect(clipboard).toContain("## Open\n- Give the desktop project viewer a visible close control")
+  expect(clipboard).toContain("## Open\n- Show a visible Selected work heading")
 })
 
 test("supports clearing all responses", async ({ page }) => {
@@ -86,7 +90,7 @@ test("supports clearing all responses", async ({ page }) => {
   await page.getByRole("button", { name: "Clear responses" }).click()
   await page.getByRole("button", { name: "Clear all" }).click()
 
-  await expect(page.getByText("0 of 10 reviewed")).toBeVisible()
+  await expect(page.getByText("0 of 8 reviewed")).toBeVisible()
   await expect(page.getByRole("radio", { name: "Yes" }).first()).not.toBeChecked()
 })
 

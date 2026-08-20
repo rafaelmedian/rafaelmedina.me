@@ -57,6 +57,7 @@ test("offers LinkedIn and X actions beside copy email", async ({ page }) => {
 })
 
 test("uses the same side padding for every contact action", async ({ page }) => {
+  await page.setViewportSize({ width: 487, height: 1381 })
   await page.goto("/")
 
   const sidePadding = await page
@@ -73,7 +74,38 @@ test("uses the same side padding for every contact action", async ({ page }) => 
   for (const [left, right] of sidePadding) {
     expect(left).toBeCloseTo(right, 5)
     expect(left).toBeCloseTo(sidePadding[0][0], 5)
+    expect(left).toBeCloseTo(16, 5)
   }
+})
+
+test("matches the desktop contact-pill height at compact desktop widths", async ({ page }) => {
+  await page.setViewportSize({ width: 572, height: 1381 })
+  await page.goto("/")
+
+  const message = page.getByRole("link", { name: "Message on LinkedIn" })
+  await expect(message).toHaveCSS("height", "32px")
+  await expect(message).toHaveCSS("min-height", "32px")
+})
+
+test("keeps comfortable contact targets on wide touch viewports", async ({ browser }) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 568, height: 320 },
+  })
+  const page = await context.newPage()
+  await page.goto("/")
+
+  const actions = page
+    .getByRole("group", { name: "Profile contact actions" })
+    .locator(".mosaic-contact-pill")
+  for (const action of await actions.all()) {
+    const box = await action.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeGreaterThanOrEqual(44)
+  }
+
+  await context.close()
 })
 
 test("optically centers the X mark in the Follow pill", async ({ page }) => {
@@ -83,6 +115,53 @@ test("optically centers the X mark in the Follow pill", async ({ page }) => {
   const verticalOffset = await xIcon.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m42)
 
   expect(verticalOffset).toBe(1)
+})
+
+test("keeps primary contact actions on one comfortable mobile row", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 })
+  await page.goto("/")
+
+  const boxes = await page
+    .getByRole("group", { name: "Profile contact actions" })
+    .locator(".mosaic-contact-pill")
+    .evaluateAll((actions) => actions.map((action) => action.getBoundingClientRect().toJSON()))
+
+  expect(boxes).toHaveLength(3)
+  expect(new Set(boxes.map(({ y }) => Math.round(y))).size).toBe(1)
+  for (const box of boxes) expect(box.height).toBeGreaterThanOrEqual(44)
+})
+
+test("keeps company chips compact with comfortable mobile targets", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const chips = page.locator(".mosaic-work-history-chip")
+  expect(await chips.count()).toBeGreaterThan(0)
+  for (const chip of await chips.all()) {
+    const box = await chip.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeLessThanOrEqual(32)
+    await expect(chip).toHaveCSS("min-height", "32px")
+    await expect(chip).toHaveCSS("position", "relative")
+    expect(
+      await chip.evaluate((element) => Number.parseFloat(getComputedStyle(element, "::after").height)),
+    ).toBeGreaterThanOrEqual(40)
+  }
+})
+
+test("reserves balanced wrapping for headings", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await page.getByRole("tab", { name: "About me" }).click()
+
+  await expect(page.locator("#about-tabpanel > p").nth(1)).toHaveCSS("text-wrap", "pretty")
+  await expect(page.getByRole("button", { name: "Copy email" })).not.toHaveCSS("text-wrap", "balance")
+})
+
+test("matches the mobile browser theme color to the page canvas", async ({ page }) => {
+  await page.goto("/")
+
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#ffffff")
 })
 
 test("previews the copy reaction without copying on hover", async ({ page }) => {
@@ -251,7 +330,7 @@ test("keeps the X preview card inside a narrow hover-capable viewport", async ({
   expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(375)
 })
 
-test("keeps the wrapped X preview card inside a 320px viewport", async ({ page }) => {
+test("keeps the X preview card inside a 320px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.goto("/")
 
@@ -475,6 +554,13 @@ test("centers the local time on mobile", async ({ page }) => {
   expect(box!.x + box!.width / 2).toBeCloseTo(mobileViewport.width / 2, 0)
 })
 
+test("uses the larger local-time font at compact desktop widths", async ({ page }) => {
+  await page.setViewportSize({ width: 572, height: 1381 })
+  await page.goto("/")
+
+  await expect(page.locator(".mosaic-social-time")).toHaveCSS("font-size", "14px")
+})
+
 test("stacks local time below the section links on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
@@ -500,6 +586,23 @@ test("keeps local time separate from the navigation", async ({ page }) => {
   await expect(location).toContainText("Available for work")
   await expect(location).not.toContainText("Local time:")
   await expect(page.locator(".mosaic-profile-contact > .mosaic-profile-availability")).toHaveCount(0)
+})
+
+test("keeps the location and availability copy together at 320px", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 })
+  await page.goto("/")
+
+  const place = page.locator(".mosaic-profile-location-place")
+  const availability = page.locator(".mosaic-profile-availability")
+  const separator = page.locator(".mosaic-profile-location-separator")
+  await expect(place).toHaveCSS("white-space", "nowrap")
+  await expect(availability).toHaveCSS("white-space", "nowrap")
+  await expect(separator).toBeHidden()
+
+  const [placeBox, availabilityBox] = await Promise.all([place.boundingBox(), availability.boundingBox()])
+  expect(placeBox).not.toBeNull()
+  expect(availabilityBox).not.toBeNull()
+  expect(availabilityBox!.y).toBeGreaterThan(placeBox!.y)
 })
 
 test("shows current availability with the status dot on the right", async ({ page }) => {
@@ -655,6 +758,32 @@ test("keeps the about me toggle label on one line on mobile", async ({ page }) =
   expect(lineCount).toBe(1)
 })
 
+test("gives the about switcher comfortable mobile targets", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const tabs = page.getByRole("tablist", { name: "About me or work history" }).getByRole("tab")
+  for (const tab of await tabs.all()) {
+    const box = await tab.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeGreaterThanOrEqual(40)
+  }
+})
+
+test("gives about panel links comfortable mobile targets", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await page.getByRole("tab", { name: "About me" }).click()
+
+  const links = page.locator("#about-tabpanel .mosaic-about-link")
+  expect(await links.count()).toBeGreaterThan(0)
+  for (const link of await links.all()) {
+    const box = await link.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeGreaterThanOrEqual(40)
+  }
+})
+
 test("labels the about panel tabs", async ({ page }) => {
   await page.goto("/")
 
@@ -725,32 +854,36 @@ test("matches the selected-work bottom padding to the card spacing", async ({ pa
   expect(spacing).toEqual({ bottomPadding: "16px", cardGap: "16px" })
 })
 
-test("shows three projects first on mobile and reveals the remaining work on request", async ({ page }) => {
+test("shows every project immediately on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
   const rows = page.locator(".mosaic-row")
-  await expect(rows.first()).toBeVisible()
-  await expect(rows.nth(1)).toBeHidden()
-
-  const reveal = page.getByRole("button", { name: "View 5 more projects" })
-  await expect(reveal).toBeVisible()
-  await reveal.click()
-
   await expect(rows).toHaveCount(3)
+  await expect(rows.first()).toBeVisible()
+  await expect(rows.nth(1)).toBeVisible()
   await expect(rows.last()).toBeVisible()
-  await expect(reveal).toBeHidden()
+  await expect(page.getByRole("button", { name: /View \d+ more projects/ })).toHaveCount(0)
 })
 
-test("moves keyboard focus into the newly revealed mobile projects", async ({ page }) => {
+test("keeps the selected work label out of the visual layout", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const reveal = page.getByRole("button", { name: "View 5 more projects" })
-  await reveal.focus()
-  await page.keyboard.press("Enter")
+  const heading = page.getByRole("heading", { name: "Selected work" })
+  await expect(heading).toHaveText("Selected work")
+  await expect(heading).toHaveClass("sr-only")
+})
 
-  await expect(page.getByRole("button", { name: /Open Matcha - Mobile Screens/ })).toBeFocused()
+test("uses eight pixel mobile gutters and taller project cards", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const cardBox = await page.locator(".mosaic-row-card").first().boundingBox()
+  expect(cardBox).not.toBeNull()
+  expect(cardBox!.x).toBe(8)
+  expect(cardBox!.x + cardBox!.width).toBe(mobileViewport.width - 8)
+  expect(cardBox!.height).toBeGreaterThanOrEqual(340)
 })
 
 test("keeps Matcha Trade module in a three-card desktop row", async ({ page }) => {
@@ -1502,13 +1635,12 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
-test("shows project captions and contains Protector artwork on touch layouts", async ({ page }) => {
+test("keeps project images free of captions on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
   const firstCaption = page.locator(".mosaic-row-card-title").first()
-  await expect(firstCaption).toBeVisible()
-  await expect(firstCaption).toHaveCSS("opacity", "1")
+  await expect(firstCaption).toBeHidden()
 
   const protectorMedia = page.locator(".mosaic-row-card-preview-protector .mosaic-row-media")
   await expect(protectorMedia).toHaveCSS("object-fit", "contain")
