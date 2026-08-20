@@ -105,7 +105,9 @@ export const siteLinks: SiteLinks = {
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
   email: "hey@rafaelmedina.me",
-  resumePdf: "https://drive.google.com/file/d/1fjJlXtRb_sG3io7z_mpBTlSgrK4RDiGU/view?usp=sharing",
+  // Self-hosted so the link survives Drive permission changes and skips the
+  // Drive viewer interstitial.
+  resumePdf: "/rafael-medina-resume.pdf",
 }
 
 /** Static mirror of the X profile, used by the hover preview on the Follow pill. */
