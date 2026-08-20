@@ -86,8 +86,9 @@ export const homeRows: HomeRow[] = [
     id: "row-3",
     height: homeTileRowHeight,
     items: [
-      { cardId: "preview-shot-21", span: 1.25 },
+      { cardId: "preview-shot-21", span: 1 },
       { cardId: "preview-shot-1", span: 1 },
+      { cardId: "preview-shot-19", span: 1 },
     ],
   },
 ]
@@ -264,5 +265,18 @@ export const portfolioCards: PortfolioCard[] = [
     previewHeight: 1200,
     ...matchaMeta,
     team: [collaborators.simon, collaborators.jakub],
+  },
+  {
+    id: "preview-shot-19",
+    category: "Preview",
+    title: "Matcha Trade module",
+    summary: "",
+    detail:
+      "The trade module itself: inputs, quotes, and confirmation states. Most of the effort went into making the numbers unambiguous before you sign.",
+    image: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
+    ...matchaMeta,
+    team: [collaborators.jakub],
   },
 ]

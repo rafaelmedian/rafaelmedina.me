@@ -428,14 +428,6 @@ img {
   }
 }
 
-/* The motion toggle is a <button> sharing the nav-link look. */
-.mosaic-motion-toggle {
-  margin: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-}
-
 .mosaic-social-link {
   position: relative;
   display: inline-flex;
