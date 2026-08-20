@@ -1,5 +1,19 @@
 # AGENTS.md
 
+## Design system
+
+`/design-system` (dev server only — `npm run dev`, then
+http://localhost:5173/design-system) is the reference for this site's colour,
+type, spacing, elevation, motion, layout, and accessibility rules. It is an
+inventory of what already ships, not a proposal.
+
+Read it before adding a colour, a font size, a radius, an easing curve, or a
+z-index, and prefer a value that is already on it. When you do change one of
+those values in `src/index.css`, update
+`src/components/DesignSystemPage.tsx` in the same commit — the live component
+specimens cannot drift, but the swatches, scales, and tables are transcriptions
+and will.
+
 ## Shipping
 
 `main` is the only branch that deploys. Merge into it and GitHub Actions builds

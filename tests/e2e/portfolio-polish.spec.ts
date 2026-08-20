@@ -678,10 +678,24 @@ test("uses compact corners for the about panel tabs", async ({ page }) => {
   const tablist = page.getByRole("tablist", { name: "About me or work history" })
   const tabs = tablist.getByRole("tab")
 
-  await expect(tablist).toHaveCSS("border-radius", "11px")
   for (const tab of await tabs.all()) {
     await expect(tab).toHaveCSS("border-radius", "8px")
   }
+
+  // The group's corner is the tab's corner plus the padding between them, so the
+  // two curves stay concentric. That value is derived in CSS from --radius-sm
+  // rather than hard-coded, so assert the relationship instead of a literal --
+  // it has to survive a change to either the token or the padding.
+  const corners = await tablist.evaluate((element) => {
+    const tab = element.querySelector('[role="tab"]')
+    return {
+      group: parseFloat(getComputedStyle(element).borderTopLeftRadius),
+      tab: parseFloat(getComputedStyle(tab as Element).borderTopLeftRadius),
+      padding: parseFloat(getComputedStyle(element).paddingTop),
+    }
+  })
+
+  expect(corners.group).toBeCloseTo(corners.tab + corners.padding, 1)
 })
 
 test("scrolls to and focuses the about section from the avatar button", async ({ page }) => {
@@ -1159,8 +1173,10 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   await expect(rail).toBeVisible()
   await expect(previous).toHaveAttribute("aria-keyshortcuts", "ArrowUp ArrowLeft")
   await expect(next).toHaveAttribute("aria-keyshortcuts", "ArrowDown ArrowRight")
-  await expect(card).toHaveCSS("border-bottom-left-radius", "28px")
-  await expect(card).toHaveCSS("border-bottom-right-radius", "28px")
+  // --radius-lg. The dialog's bottom corners used to be a 28px one-off; they
+  // were folded into the four-step radius scale (see /design-system).
+  await expect(card).toHaveCSS("border-bottom-left-radius", "24px")
+  await expect(card).toHaveCSS("border-bottom-right-radius", "24px")
 
   const initialDialogBox = await dialog.boundingBox()
   const initialRailBox = await rail.boundingBox()
