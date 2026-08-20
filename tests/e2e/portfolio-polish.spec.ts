@@ -925,37 +925,39 @@ test("keeps Dark mode beside Protector", async ({ page }) => {
   await expect(row.getByRole("button", { name: /Open Matcha Dark mode/ })).toHaveCount(1)
 })
 
-test("places the Trade Page after the Token Page", async ({ page }) => {
+test("restores the former three projects to the third row", async ({ page }) => {
   await page.goto("/")
 
   const tokenCard = page.getByRole("button", { name: /Open Matcha - Token Page/ })
   const row = page.locator(".mosaic-row").filter({ has: tokenCard })
   const cards = row.locator(".mosaic-row-card")
 
-  await expect(cards.first()).toHaveAttribute(
-    "aria-label",
-    /Open Matcha - Token Page/,
-  )
-  await expect(cards.last()).toHaveAttribute("aria-label", /Open Matcha Trade Page/)
+  await expect(cards).toHaveCount(3)
+  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha - Token Page/)
+  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha Trade Page/)
+  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha Trade module/)
 })
 
-test("makes the Token Page modestly wider than the Trade Page", async ({ page }) => {
+test("keeps the restored third-row projects equal width", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/")
 
   const tokenCard = page.getByRole("button", { name: /Open Matcha - Token Page/ })
   const tradePageCard = page.getByRole("button", { name: /Open Matcha Trade Page/ })
+  const tradeModuleCard = page.getByRole("button", { name: /Open Matcha Trade module/ })
   const row = page.locator(".mosaic-row").filter({ has: tokenCard })
-  await expect(row.locator(".mosaic-row-item")).toHaveCount(2)
+  await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
 
-  const [tokenBox, tradePageBox] = await Promise.all([
+  const [tokenBox, tradePageBox, tradeModuleBox] = await Promise.all([
     tokenCard.boundingBox(),
     tradePageCard.boundingBox(),
+    tradeModuleCard.boundingBox(),
   ])
   expect(tokenBox).not.toBeNull()
   expect(tradePageBox).not.toBeNull()
-  expect(tokenBox!.width).toBeGreaterThan(tradePageBox!.width * 1.2)
-  expect(tokenBox!.width).toBeLessThan(tradePageBox!.width * 1.3)
+  expect(tradeModuleBox).not.toBeNull()
+  expect(tokenBox!.width).toBeCloseTo(tradePageBox!.width, 0)
+  expect(tradePageBox!.width).toBeCloseTo(tradeModuleBox!.width, 0)
 })
 
 test("omits retired Matcha projects from selected work", async ({ page }) => {
@@ -966,7 +968,6 @@ test("omits retired Matcha projects from selected work", async ({ page }) => {
     "Matcha Pro",
     "Matcha - Mobile navigation",
     "Matcha - Mobile Screens",
-    "Matcha Trade module",
   ]) {
     await expect(page.getByRole("button", { name: new RegExp(`Open ${title}`) })).toHaveCount(0)
   }
@@ -1049,7 +1050,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  await expect(dialog.getByText("2 / 7", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("2 / 8", { exact: true })).toBeVisible()
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -1076,7 +1077,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 7")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 8")
   await context.close()
 })
 
@@ -1113,7 +1114,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 7")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 8")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -1123,7 +1124,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 7")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 8")
   await context.close()
 })
 
@@ -1328,7 +1329,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
 
   await next.click()
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 7")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 8")
 
   const changedDialogBox = await dialog.boundingBox()
   const changedRailBox = await rail.boundingBox()
@@ -1339,7 +1340,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 7")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 8")
 })
 
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
@@ -1908,23 +1909,13 @@ test("keeps the work-card entrance inside its delay budget", async ({ page }) =>
   expect(maxDelay).toBeLessThanOrEqual(0.85)
 })
 
-test("pauses and resumes the looping work previews from the motion toggle", async ({ page }) => {
+test("does not show a motion toggle beside the section links", async ({ page }) => {
   await page.goto("/")
 
+  const navigation = page.getByRole("navigation", { name: "Sections" })
+  await expect(navigation.getByRole("button", { name: /motion/i })).toHaveCount(0)
+
   const video = page.locator(".mosaic-row-card video.mosaic-row-media").first()
-  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
-
-  const toggle = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Pause motion" })
-  await toggle.click()
-  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true)
-
-  // The preference persists across visits.
-  await page.reload()
-  const playToggle = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Play motion" })
-  await expect(playToggle).toBeVisible()
-  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true)
-
-  await playToggle.click()
   await expect.poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
 })
 

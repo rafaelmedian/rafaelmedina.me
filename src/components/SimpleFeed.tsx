@@ -99,7 +99,6 @@ type RowVideoMediaProps = {
   width?: number
   height?: number
   prefersReducedMotion: boolean
-  paused: boolean
 }
 
 const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -155,42 +154,6 @@ function prefetchPreviewGallery() {
   void loadPreviewGallery().catch(() => undefined)
 }
 
-// The pause-motion preference lives outside React so it can hydrate safely
-// (server snapshot is always "playing") and persist across visits. The
-// module-level flag stays authoritative when storage is unavailable.
-let motionPausedState: boolean | null = null
-const motionPreferenceListeners = new Set<() => void>()
-
-function getMotionPausedSnapshot() {
-  if (motionPausedState === null) {
-    try {
-      motionPausedState = window.localStorage.getItem("motion-paused") === "true"
-    } catch {
-      motionPausedState = false
-    }
-  }
-  return motionPausedState
-}
-
-function getMotionPausedServerSnapshot() {
-  return false
-}
-
-function subscribeToMotionPreference(listener: () => void) {
-  motionPreferenceListeners.add(listener)
-  return () => motionPreferenceListeners.delete(listener)
-}
-
-function setMotionPaused(paused: boolean) {
-  motionPausedState = paused
-  try {
-    window.localStorage.setItem("motion-paused", String(paused))
-  } catch {
-    // Session-only preference is fine when storage is unavailable.
-  }
-  for (const listener of motionPreferenceListeners) listener()
-}
-
 function RowVideoMedia({
   source,
   poster,
@@ -198,7 +161,6 @@ function RowVideoMedia({
   width,
   height,
   prefersReducedMotion,
-  paused,
 }: RowVideoMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const supportsIntersectionObserver = useSyncExternalStore(
@@ -249,12 +211,12 @@ function RowVideoMedia({
     const video = videoRef.current
     if (!video) return
 
-    if (!prefersReducedMotion && !paused && loadNow && visibleNow) {
+    if (!prefersReducedMotion && loadNow && visibleNow) {
       void video.play().catch(() => undefined)
     } else {
       video.pause()
     }
-  }, [loadNow, paused, prefersReducedMotion, visibleNow])
+  }, [loadNow, prefersReducedMotion, visibleNow])
 
   return (
     <video
@@ -416,15 +378,9 @@ function getAboutTabFromHash(hash: string): AboutTab | null {
 function SectionCorner({
   onSelect,
   resumeHref,
-  motionPaused,
-  onToggleMotion,
-  prefersReducedMotion,
 }: {
   onSelect: (tab: AboutTab, href: string) => void
   resumeHref: string
-  motionPaused: boolean
-  onToggleMotion: () => void
-  prefersReducedMotion: boolean
 }) {
   return (
     <nav className="mosaic-section-corner" aria-label="Sections">
@@ -465,17 +421,6 @@ function SectionCorner({
           aria-hidden="true"
         />
       </a>
-      {!prefersReducedMotion ? (
-        // WCAG 2.2.2: the looping work previews need a pause mechanism when
-        // the OS is not already suppressing their motion.
-        <button
-          type="button"
-          className="mosaic-social-link mosaic-motion-toggle"
-          onClick={onToggleMotion}
-        >
-          {motionPaused ? "Play motion" : "Pause motion"}
-        </button>
-      ) : null}
     </nav>
   )
 }
@@ -554,11 +499,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [aboutTab, setAboutTab] = useState<AboutTab>("about")
-  const motionPaused = useSyncExternalStore(
-    subscribeToMotionPreference,
-    getMotionPausedSnapshot,
-    getMotionPausedServerSnapshot,
-  )
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -622,7 +562,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           width={card.previewWidth}
           height={card.previewHeight}
           prefersReducedMotion={prefersReducedMotion}
-          paused={motionPaused}
         />
       )
     }
@@ -658,12 +597,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     mediaQuery.addListener(syncPreference)
     return () => mediaQuery.removeListener(syncPreference)
   }, [])
-
-  const toggleMotionPaused = () => {
-    const next = !getMotionPausedSnapshot()
-    trackEvent("motion_toggle", { motion_paused: next })
-    setMotionPaused(next)
-  }
 
   useEffect(() => {
     const syncAboutTabFromUrl = () => {
@@ -734,9 +667,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <SectionCorner
         onSelect={openAboutTab}
         resumeHref={links.resumePdf}
-        motionPaused={motionPaused}
-        onToggleMotion={toggleMotionPaused}
-        prefersReducedMotion={prefersReducedMotion}
       />
       <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
       <header id="about" className="mosaic-hero">
