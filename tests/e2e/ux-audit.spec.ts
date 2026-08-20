@@ -147,10 +147,39 @@ test("opens and closes the clear confirmation with asymmetric modal motion", asy
   expect(openMotion.duration).toBe("0.25s, 0.25s")
   expect(openMotion.easing).toBe("cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1)")
 
+  await dialog.evaluate((element) => {
+    const closingMotion = new Promise<{ duration: string; easing: string }>((resolve) => {
+      const observer = new MutationObserver(() => {
+        if (!element.hasAttribute("data-ending-style")) return
+
+        const styles = getComputedStyle(element)
+        observer.disconnect()
+        resolve({
+          duration: styles.transitionDuration,
+          easing: styles.transitionTimingFunction,
+        })
+      })
+
+      observer.observe(element, { attributes: true, attributeFilter: ["data-ending-style"] })
+    })
+
+    ;(
+      window as typeof window & {
+        __auditClosingMotion?: Promise<{ duration: string; easing: string }>
+      }
+    ).__auditClosingMotion = closingMotion
+  })
+
   await dialog.getByRole("button", { name: "Cancel" }).click()
-  const closingDialog = page.locator(".audit-dialog[data-ending-style]")
-  await expect(closingDialog).toBeAttached()
-  await expect(closingDialog).toHaveCSS("transition-duration", "0.15s, 0.15s")
+  const closeMotion = await page.evaluate(
+    () =>
+      (window as typeof window & {
+        __auditClosingMotion?: Promise<{ duration: string; easing: string }>
+      }).__auditClosingMotion,
+  )
+
+  expect(closeMotion?.duration).toBe("0.15s, 0.15s")
+  expect(closeMotion?.easing).toBe("cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1)")
 })
 
 test("keeps keyboard focus inside the clear confirmation", async ({ page }) => {
