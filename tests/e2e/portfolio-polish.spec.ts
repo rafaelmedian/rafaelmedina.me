@@ -742,7 +742,7 @@ test("shows three projects first on mobile and reveals the remaining work on req
   await expect(rows.first()).toBeVisible()
   await expect(rows.nth(1)).toBeHidden()
 
-  const reveal = page.getByRole("button", { name: "View 5 more projects" })
+  const reveal = page.getByRole("button", { name: "View 4 more projects" })
   await expect(reveal).toBeVisible()
   await reveal.click()
 
@@ -755,25 +755,53 @@ test("moves keyboard focus into the newly revealed mobile projects", async ({ pa
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const reveal = page.getByRole("button", { name: "View 5 more projects" })
+  const reveal = page.getByRole("button", { name: "View 4 more projects" })
   await reveal.focus()
   await page.keyboard.press("Enter")
 
-  await expect(page.getByRole("button", { name: /Open Matcha - Mobile Screens/ })).toBeFocused()
+  await expect(page.getByRole("button", { name: /Open Matcha Dark mode/ })).toBeFocused()
 })
 
-test("keeps Matcha Trade module in a three-card desktop row", async ({ page }) => {
-  await page.setViewportSize({ width: 1728, height: 913 })
+test("keeps Dark mode beside Protector", async ({ page }) => {
   await page.goto("/")
 
-  const moduleCard = page.getByRole("button", { name: /Open Matcha Trade module/ })
-  const row = page.locator(".mosaic-row").filter({ has: moduleCard })
-  await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
+  const protectorCard = page.getByRole("button", { name: /Open Protector/ })
+  const row = page.locator(".mosaic-row").filter({ has: protectorCard })
 
-  const [rowBox, moduleBox] = await Promise.all([row.boundingBox(), moduleCard.boundingBox()])
-  expect(rowBox).not.toBeNull()
-  expect(moduleBox).not.toBeNull()
-  expect(moduleBox!.width).toBeLessThan(rowBox!.width / 2)
+  await expect(row.getByRole("button", { name: /Open Matcha Dark mode/ })).toHaveCount(1)
+})
+
+test("places the Trade Page after the Token Page", async ({ page }) => {
+  await page.goto("/")
+
+  const tokenCard = page.getByRole("button", { name: /Open Matcha - Token Page/ })
+  const row = page.locator(".mosaic-row").filter({ has: tokenCard })
+  const cards = row.locator(".mosaic-row-card")
+
+  await expect(cards.first()).toHaveAttribute(
+    "aria-label",
+    /Open Matcha - Token Page/,
+  )
+  await expect(cards.last()).toHaveAttribute("aria-label", /Open Matcha Trade Page/)
+})
+
+test("makes the Token Page modestly wider than the Trade Page", async ({ page }) => {
+  await page.setViewportSize({ width: 2560, height: 1239 })
+  await page.goto("/")
+
+  const tokenCard = page.getByRole("button", { name: /Open Matcha - Token Page/ })
+  const tradePageCard = page.getByRole("button", { name: /Open Matcha Trade Page/ })
+  const row = page.locator(".mosaic-row").filter({ has: tokenCard })
+  await expect(row.locator(".mosaic-row-item")).toHaveCount(2)
+
+  const [tokenBox, tradePageBox] = await Promise.all([
+    tokenCard.boundingBox(),
+    tradePageCard.boundingBox(),
+  ])
+  expect(tokenBox).not.toBeNull()
+  expect(tradePageBox).not.toBeNull()
+  expect(tokenBox!.width).toBeGreaterThan(tradePageBox!.width * 1.2)
+  expect(tokenBox!.width).toBeLessThan(tradePageBox!.width * 1.3)
 })
 
 test("omits retired Matcha projects from selected work", async ({ page }) => {
@@ -781,9 +809,10 @@ test("omits retired Matcha projects from selected work", async ({ page }) => {
 
   for (const title of [
     "Matcha - Security Audit",
-    "Matcha Dark mode",
     "Matcha Pro",
     "Matcha - Mobile navigation",
+    "Matcha - Mobile Screens",
+    "Matcha Trade module",
   ]) {
     await expect(page.getByRole("button", { name: new RegExp(`Open ${title}`) })).toHaveCount(0)
   }
@@ -866,7 +895,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  await expect(dialog.getByText("2 / 8", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("2 / 7", { exact: true })).toBeVisible()
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -893,7 +922,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 8")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 7")
   await context.close()
 })
 
@@ -930,7 +959,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 8")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 7")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -940,7 +969,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 8")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 7")
   await context.close()
 })
 
@@ -974,7 +1003,7 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("button", { name: /Open Matcha - Mobile Screens preview/ })
+  const trigger = page.getByRole("button", { name: /Open Matcha - Token Page preview/ })
   await trigger.hover()
   await failedPrefetch
   await page.unroute(galleryChunk)
@@ -1143,7 +1172,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
 
   await next.click()
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 8")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 7")
 
   const changedDialogBox = await dialog.boundingBox()
   const changedRailBox = await rail.boundingBox()
@@ -1154,7 +1183,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 8")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 7")
 })
 
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
