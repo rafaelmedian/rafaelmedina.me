@@ -21,6 +21,13 @@ type PreviewSwitchPhase = "idle" | "out" | "in"
 
 const previewSwitchExitMs = 190
 const previewCloseResetMs = 260
+const largeDesktopPreviewQuery = "(min-width: 1320px)"
+
+function shouldOpenPreviewWide() {
+  return typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(largeDesktopPreviewQuery).matches
+}
 
 // Origin-aware open/close: the popup travels from (and back to) the card that
 // was clicked, so the modal reads as that card growing into place. Every
@@ -214,7 +221,7 @@ export function PreviewGalleryDialog({
   const [originWrapNode, setOriginWrapNode] = useState<HTMLDivElement | null>(null)
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("down")
-  const [isWide, setIsWide] = useState(false)
+  const [isWide, setIsWide] = useState(shouldOpenPreviewWide)
   const safeIndex = useMemo(() => wrapIndex(selectedIndex, cards.length), [cards.length, selectedIndex])
   const activeCard = cards[safeIndex]
   const activeMediaSource = activeCard?.image ?? ""
@@ -232,6 +239,14 @@ export function PreviewGalleryDialog({
   const playOpen = useSound(openSound, { volume: 0.3 })
   const playNext = useSound(nextSound, { volume: 0.26 })
   const playBack = useSound(backSound, { volume: 0.26 })
+
+  // Large desktop previews use the available canvas immediately. Set this in
+  // a layout effect so the portal reaches its opening-animation measurement in
+  // the intended mode, while smaller viewports retain the compact default.
+  useIsomorphicLayoutEffect(() => {
+    if (!open || prevOpenRef.current) return
+    setIsWide(shouldOpenPreviewWide())
+  }, [open])
 
   useEffect(() => {
     if (open && closeResetTimeoutRef.current !== null) {
@@ -463,6 +478,7 @@ export function PreviewGalleryDialog({
 
         <div
           className="preview-gallery-shell"
+          data-wide={isWide ? "true" : undefined}
           style={galleryMotionVars}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {

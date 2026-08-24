@@ -364,7 +364,10 @@ const BREAKPOINTS = [
   { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall and local time uses 14px type." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
-  { at: "≥ 1320px", change: "The hero name settles at 16px." },
+  {
+    at: "≥ 1320px",
+    change: "The hero name settles at 16px; project previews open in the 1090px wide view with a 5vh top inset.",
+  },
 ]
 
 const STACKING = [

@@ -1323,7 +1323,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   const initialRailBox = await rail.boundingBox()
   expect(initialDialogBox).not.toBeNull()
   expect(initialRailBox).not.toBeNull()
-  expect(initialDialogBox!.y).toBeCloseTo(80, 0)
+  expect(initialDialogBox!.y).toBeCloseTo(50, 0)
   expect(initialRailBox!.x - (initialDialogBox!.x + initialDialogBox!.width)).toBeCloseTo(16, 0)
   expect(initialRailBox!.y + initialRailBox!.height / 2 - initialDialogBox!.y).toBeCloseTo(128, 0)
 
@@ -1356,8 +1356,34 @@ test("does not use dots to navigate between projects in the main feed", async ({
   await expect(dialog.getByRole("button", { name: /next .* image/i })).toHaveCount(0)
 })
 
+test("opens the gallery wide without clipping navigation at the large desktop breakpoint", async ({ page }) => {
+  await page.setViewportSize({ width: 1320, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toHaveAttribute("data-wide", "true")
+  await expect(dialog.getByRole("button", { name: "Exit wide view" })).toHaveAttribute("aria-pressed", "true")
+  const wideDialogBox = await dialog.boundingBox()
+  expect(wideDialogBox?.width).toBeCloseTo(1090, 0)
+  expect(wideDialogBox?.y).toBeCloseTo(50, 0)
+
+  const nextPreviewBox = await dialog.getByRole("button", { name: "Next preview" }).boundingBox()
+  expect(nextPreviewBox).not.toBeNull()
+  expect(nextPreviewBox!.x + nextPreviewBox!.width).toBeLessThanOrEqual(1320)
+
+  await page.setViewportSize({ width: 1280, height: 1000 })
+  await page.reload()
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+
+  await expect(dialog).not.toHaveAttribute("data-wide", "true")
+  await expect(dialog.getByRole("button", { name: "Expand preview" })).toHaveAttribute("aria-pressed", "false")
+  expect((await dialog.boundingBox())?.y).toBeCloseTo(80, 0)
+})
+
 test("expands and restores the gallery without losing the selected preview", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.setViewportSize({ width: 1280, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
@@ -1376,7 +1402,7 @@ test("expands and restores the gallery without losing the selected preview", asy
   expect(expandBox).not.toBeNull()
   expect(mediaFrameBox).not.toBeNull()
   expect(mediaFrameBox!.x + mediaFrameBox!.width - (expandBox!.x + expandBox!.width)).toBeCloseTo(11, 0)
-  expect(mediaFrameBox!.y + mediaFrameBox!.height - (expandBox!.y + expandBox!.height)).toBeCloseTo(11, 0)
+  expect(expandBox!.y - mediaFrameBox!.y).toBeCloseTo(11, 0)
 
   const compactWidth = (await dialog.boundingBox())!.width
   await expand.click()
@@ -1385,6 +1411,7 @@ test("expands and restores the gallery without losing the selected preview", asy
   await expect(dialog.getByRole("button", { name: "Exit wide view" })).toHaveAttribute("aria-pressed", "true")
   await expect(dialog.getByRole("heading", { name: "Popparazi V1" })).toBeVisible()
   await expect.poll(async () => (await dialog.boundingBox())!.width).toBeGreaterThan(compactWidth * 1.8)
+  expect((await dialog.boundingBox())?.y).toBeCloseTo(50, 0)
 
   await dialog.getByRole("button", { name: "Exit wide view" }).click()
   await expect(dialog).not.toHaveAttribute("data-wide", "true")
@@ -1431,7 +1458,6 @@ test("keeps the expanded gallery scrollable without visible scrollbars", async (
     await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
 
     const dialog = page.getByRole("dialog")
-    await dialog.getByRole("button", { name: "Expand preview" }).click()
     await expect(dialog).toHaveAttribute("data-wide", "true")
 
     const card = dialog.locator(".preview-gallery-card")
