@@ -104,7 +104,7 @@ const SURFACES = [
     hex: "#ffffff",
     token: "--canvas / --surface",
     name: "Page & raised",
-    note: "App's wrapper paints this across the viewport, so white is both the page and the colour of anything floating above it — hover cards, popovers, the dialog, logo chips. Every ratio on this page is measured against it.",
+    note: "App's wrapper paints this across the viewport, so white is both the page and the colour of the full-bleed About sheet and anything floating above it — hover cards, popovers, the dialog, logo chips. Every ratio on this page is measured against it.",
   },
   {
     hex: "#fdfdfc",
@@ -116,7 +116,7 @@ const SURFACES = [
     hex: "#ececee",
     token: "--mosaic-card-surface",
     name: "Tile",
-    note: "Work tiles and the about panel. The one surface that is meaningfully darker than the page.",
+    note: "Work tiles. The one surface that is meaningfully darker than the page.",
   },
   {
     hex: "#f2f2f2",
@@ -198,7 +198,7 @@ const TYPE_SCALE = [
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
     spec: "0.875rem · 14px",
-    where: "Pill and tab labels, body copy, detail rows, hover-card text, wider project captions",
+    where: "Pill labels, body copy, detail rows, hover-card text, wider project captions",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
@@ -219,7 +219,7 @@ const TYPE_SCALE = [
 
 const WEIGHTS = [
   { value: 400, use: "Body copy, nav links, summaries, definition values" },
-  { value: 500, use: "Pill and tab labels, preview titles, popover roles" },
+  { value: 500, use: "Pill labels, preview titles, popover roles" },
   { value: 600, use: "Headings, card titles, résumé companies, the mobile reveal, the X follow button" },
   { value: 700, use: "The X card name and stats only — vendor weight" },
 ]
@@ -229,7 +229,7 @@ const WEIGHTS = [
 const RADII = [
   {
     value: "--radius-sm · 8px",
-    use: "Chips, nav hover targets, about-panel tabs, popover links, focus rings",
+    use: "Chips, nav hover targets, popover links, focus rings",
     css: "8px",
   },
   {
@@ -239,7 +239,7 @@ const RADII = [
   },
   {
     value: "--radius-lg · 24px",
-    use: "Work tiles, the about panel, dialog media and bottom corners",
+    use: "Work tiles, dialog media and bottom corners",
     css: "24px",
   },
   { value: "--radius-full · 999px", use: "Pills, dots, avatars, nav buttons, the skip link", css: "999px" },
@@ -332,23 +332,23 @@ const EASINGS = [
     use: "The avatar's 180-degree flip and its long settle.",
   },
   {
-    name: "Tab slide",
-    css: "cubic-bezier(0.65, 0, 0.35, 1)",
-    duration: "240ms",
-    use: "The about-panel selection indicator moving between its two tabs.",
-  },
-  {
     name: "Overshoot",
     css: "cubic-bezier(0.34, 1.56, 0.64, 1)",
     duration: "220ms",
     use: "The copy-email reaction only. The single place in the system that overshoots — keep it that way.",
+  },
+  {
+    name: "About takeover",
+    css: "linear",
+    duration: "1 viewport of scroll",
+    use: "A CSS View Timeline scales and fades the complete pinned gallery as the About sheet covers it.",
   },
 ]
 
 const DURATIONS = [
   { value: "100–120ms", use: "Fallback fades, popover-content swaps, and the shortest exit feedback." },
   { value: "140–160ms", use: "Colour, opacity, and shadow on hover or focus. The default for a state change." },
-  { value: "180–240ms", use: "Anything that also moves: overlays, tab indicators, title reveals." },
+  { value: "180–240ms", use: "Anything that also moves: overlays and title reveals." },
   { value: "300ms", use: "The gallery expand/minimise icon swap." },
   { value: "360ms", use: "Media un-blurring as it decodes." },
   { value: "380–480ms", use: "First-load entrance travel, hero then mosaic." },
@@ -360,7 +360,7 @@ const DURATIONS = [
 const BREAKPOINTS = [
   { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; location and availability stack without a separator." },
   { at: "≤ 639.98px", change: "Corner nav centres and stacks; the hero gains 6.9rem of top padding." },
-  { at: "≤ 699.98px", change: "The shell uses 8px gutters; every project shows in one 340–380px column; card captions hide." },
+  { at: "≤ 699.98px", change: "The shell uses 8px gutters; every project shows in one 340–380px column; the full-bleed About sheet returns to normal document flow; card captions hide." },
   { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall and local time uses 14px type." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
@@ -372,6 +372,7 @@ const BREAKPOINTS = [
 
 const STACKING = [
   { z: "0–20", name: "Base, dock, chrome", note: "Tailwind's z-base / z-dock / z-chrome. The page and the mosaic." },
+  { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover." },
   {
     z: "30 / 50",
     name: "Corner nav",
@@ -500,8 +501,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <p>
                   On white both muted steps clear AA — <code>--muted</code> at 5.33:1 and <code>--muted-soft</code> at
                   4.61:1. On <code>--mosaic-card-surface</code> (#ececee) they fall to 4.52:1 and 3.91:1, so{" "}
-                  <code>--muted-soft</code> stops passing for normal-size text. The about panel currently uses it that
-                  way for hobby notes, definition terms, and résumé headings. On the tile surface, stop at{" "}
+                  <code>--muted-soft</code> stops passing for normal-size text. The About sheet is white, so its hobby
+                  notes, definition terms, and résumé headings can use <code>--muted-soft</code>; on work tiles, stop at{" "}
                   <code>--muted</code>.
                 </p>
               </div>
@@ -779,8 +780,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <p>
                   When one rounded box sits inside another, the outer radius is the inner radius plus the gap between
                   them. Those cases are written as <code>calc()</code> off one of the four tokens rather than measured
-                  and hard-coded: the tab group is <code>calc(var(--radius-sm) + 0.17rem)</code>, the LinkedIn card's
-                  media is <code>calc(var(--radius-md) - 5px)</code>, the preview dialog is{" "}
+                  and hard-coded: the LinkedIn card's media is <code>calc(var(--radius-md) - 5px)</code>, the preview dialog is{" "}
                   <code>calc(var(--radius-lg) + card-padding)</code>. That is how 11px, 11.5px, and 10px corners exist
                   without being scale steps — and why they stay correct when a padding changes.
                 </p>
@@ -958,8 +958,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                     Tile — #ececee
                   </strong>
                   <p style={{ margin: "0.4rem 0 0", color: "var(--muted)", fontSize: "var(--text-sm)", lineHeight: 1.45 }}>
-                    Work cards and the about panel. 24px radius, <code>1px solid rgb(0 0 0 / 0.08)</code>, no shadow —
-                    it sits in the page rather than above it.
+                    Work cards only. They use a 24px radius, <code>1px solid rgb(0 0 0 / 0.08)</code>, and no shadow —
+                    they sit in the page rather than above it. About uses the full-bleed white canvas surface.
                   </p>
                 </div>
                 <div className="ds-specimen" style={{ display: "block", background: "#f2f2f2" }}>
@@ -1109,6 +1109,22 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <strong>Row height is asserted at exactly 420px</strong> in{" "}
                   <code>tests/e2e/portfolio-polish.spec.ts</code>. Entrance animations use opacity and translate only —
                   a scale would change the measured box and fail that test.
+                </li>
+                <li>
+                  <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
+                  remain in one sticky stage at their original sizes and 1rem gaps, followed by 2rem of breathing room.
+                  The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
+                  full-bleed white About sheet crosses it at z-index 1. The gallery retreats as one surface, and About
+                  continues in normal flow after the cover. Below 700px both wrappers collapse with{" "}
+                  <code>display: contents</code>; the white sheet stays full-bleed but no pinning or overlap is applied.
+                </li>
+                <li>
+                  <strong>About is one continuous reading surface.</strong> The introduction, Work history, and Education
+                  share one left-aligned 34rem reading axis in normal document flow. A content-width hairline separates
+                  About from Work history, with 3rem of space before the heading. Both eight-sticker sets span four
+                  vertical bands inside the outer 8% of the desktop side gutters. Work-history company names reveal
+                  their logo tooltips on hover, focus, and touch. There is no tab state or hidden panel; <code>#about-panel-resume</code> anchors
+                  directly to the visible Work history section.
                 </li>
               </ul>
             </div>
