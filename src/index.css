@@ -60,16 +60,16 @@
      next to 0.875), which is noise rather than a scale. If a new element does
      not fit one of these four, change the element, not the scale. */
   --text-xs: 0.75rem; /* 12px -- map attribution, count pills, avatar initials */
-  --text-sm: 0.875rem; /* 14px -- pill and tab labels, body copy, detail rows */
+  --text-sm: 0.875rem; /* 14px -- pill labels, body copy, detail rows */
   --text-md: 1rem; /* 16px -- card titles, prose, hero name */
   --text-lg: 1.125rem; /* 18px -- the about lede, the largest text on the site */
   /* Radius. Four steps. Anything nested is derived from one of them by the
      concentric rule (outer = inner + the padding between them) rather than
-     becoming a fifth value -- that is why the tab group and the hover-card
-     media below are calc() expressions and not new tokens. */
-  --radius-sm: 8px; /* chips, nav targets, tabs, focus rings */
+     becoming a fifth value -- that is why the hover-card media below uses a
+     calc() expression rather than a new token. */
+  --radius-sm: 8px; /* chips, nav targets, focus rings */
   --radius-md: 16px; /* hover cards, popovers, the local-time card */
-  --radius-lg: 24px; /* work tiles, the about panel, dialog media and corners */
+  --radius-lg: 24px; /* work tiles, dialog media and corners */
   --radius-full: 999px; /* pills, dots, avatars, nav buttons */
   color-scheme: light;
   text-rendering: optimizeLegibility;
@@ -764,8 +764,17 @@ img {
    fade. That has been tried three ways and does nothing. */
 
 .mosaic-about {
+  position: relative;
+  left: 50%;
+  z-index: 1;
   display: block;
-  padding: 0 clamp(16px, 3vw, 32px) clamp(3rem, 8vw, 5rem);
+  width: 100vw;
+  width: 100dvw;
+  margin-top: 0;
+  margin-left: -50vw;
+  margin-left: -50dvw;
+  padding: 0;
+  background: var(--canvas);
 }
 
 .mosaic-about:focus:not(:focus-visible) {
@@ -775,12 +784,13 @@ img {
 .mosaic-about-panel {
   position: relative;
   width: 100%;
-  min-height: clamp(26rem, 52vh, 38rem);
+  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
-  place-items: center;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgb(0 0 0 / 0.08);
-  background: var(--mosaic-card-surface);
+  place-items: start center;
+  border-radius: 0;
+  border: 0;
+  background: var(--canvas);
   padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.25rem, 6vw, 5rem);
   overflow: hidden;
 }
@@ -836,11 +846,58 @@ img {
 }
 
 .mosaic-about-body {
+  width: 100%;
+  margin-top: 0;
+  display: grid;
+  gap: 0;
+  text-align: left;
+}
+
+.mosaic-about-section {
   width: min(100%, 34rem);
-  margin-top: 3.55rem;
+  margin-inline: auto;
   display: grid;
   gap: 1.05rem;
-  text-align: center;
+}
+
+.mosaic-about-section-intro {
+  position: relative;
+  width: 100%;
+}
+
+.mosaic-about-section-copy {
+  width: min(100%, 34rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1.05rem;
+  text-align: left;
+}
+
+.mosaic-about-work-history {
+  position: relative;
+  width: 100%;
+  padding-block: 1.5rem clamp(2rem, 6vw, 5rem);
+  scroll-margin-top: clamp(1rem, 4vw, 3rem);
+  text-align: left;
+}
+
+.mosaic-about-work-history-copy {
+  width: min(100%, 34rem);
+  margin-inline: auto;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding-top: 3rem;
+  display: grid;
+  gap: 1.05rem;
+  text-align: left;
+}
+
+.mosaic-about-section-heading {
+  margin: 0 0 clamp(0.75rem, 2vw, 1.5rem);
+  color: #2d2d2d;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.015rem;
 }
 
 .mosaic-about-body p {
@@ -867,7 +924,7 @@ img {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.5rem 1.25rem;
 }
 
@@ -901,7 +958,7 @@ img {
 .mosaic-about-fact {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: baseline;
   gap: 0.25rem 0.5rem;
 }
@@ -944,73 +1001,6 @@ img {
   padding-top: 1.25rem;
 }
 
-.mosaic-about-tabs {
-  position: absolute;
-  top: clamp(1.1rem, 2.4vw, 1.5rem);
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-grid;
-  grid-template-columns: repeat(2, 1fr);
-  padding: 0.17rem;
-  border-radius: calc(var(--radius-sm) + 0.17rem);
-  background: rgb(0 0 0 / 0.06);
-}
-
-.mosaic-about-tab-indicator {
-  position: absolute;
-  inset-block: 0.17rem;
-  left: 0.17rem;
-  width: calc((100% - 0.34rem) / 2);
-  border-radius: var(--radius-sm);
-  background: #ffffff;
-  box-shadow: 0 1px 4px rgb(46 42 42 / 0.14);
-  pointer-events: none;
-  transition: transform 240ms cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.mosaic-about-tabs[data-active-tab="resume"] .mosaic-about-tab-indicator {
-  transform: translateX(100%);
-}
-
-.mosaic-about-tab {
-  position: relative;
-  z-index: 1;
-  appearance: none;
-  border: 0;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  min-height: 1.75rem;
-  padding: 0 0.8rem;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  letter-spacing: -0.00563rem;
-  white-space: nowrap;
-  text-wrap: nowrap;
-  color: var(--muted);
-  cursor: pointer;
-  transition: color 160ms ease;
-}
-
-.mosaic-about-tab:hover {
-  color: #2d2d2d;
-}
-
-.mosaic-about-tab[aria-selected="true"] {
-  color: #2d2d2d;
-}
-
-.mosaic-about-tabpanel {
-  display: grid;
-  gap: 1.05rem;
-}
-
-/* `display: grid` above would otherwise beat the UA's [hidden] rule, and the
-   inactive tab panel now stays mounted so it prerenders. */
-.mosaic-about-tabpanel[hidden] {
-  display: none;
-}
-
 .mosaic-about-resume {
   margin: 0.35rem 0 0;
   padding: 0;
@@ -1028,37 +1018,32 @@ img {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.5rem;
   font-weight: 600;
   line-height: 1.5;
   color: #2d2d2d;
 }
 
-.mosaic-about-resume-logos {
-  display: inline-flex;
+.mosaic-about-resume-company-trigger {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.mosaic-about-resume-logo-wrap {
-  display: inline-flex;
-  width: 1.35rem;
-  height: 1.35rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0.29rem;
-  border-radius: var(--radius-full);
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05);
-}
-
-.mosaic-about-resume-logo-wrap + .mosaic-about-resume-logo-wrap {
-  margin-left: -0.26rem;
-}
-
-.mosaic-about-resume-logo-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.mosaic-about-resume-company-trigger .mosaic-company-inline-hover-logos[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform:
+    perspective(920px)
+    translate(calc(-50% + var(--mosaic-hover-anchor-x)), var(--mosaic-hover-anchor-y))
+    rotateX(var(--mosaic-hover-tilt-x))
+    rotateY(var(--mosaic-hover-tilt-y))
+    scale(var(--mosaic-hover-lift));
 }
 
 .mosaic-about-body .mosaic-about-resume-meta {
@@ -2304,10 +2289,96 @@ img {
   min-height: var(--row-height, 320px);
 }
 
+/* The wrappers disappear on compact screens, where the stacked project rows
+   are taller than the viewport and cannot become a useful pinned background. */
+.mosaic-takeover-runway,
+.mosaic-takeover-stage {
+  display: contents;
+}
+
+@keyframes mosaic-takeover-retreat {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0.78;
+    transform: scale(0.98);
+  }
+}
+
+@media (min-width: 700px) {
+  .mosaic-shell {
+    timeline-scope: --about-takeover;
+  }
+
+  /* The runway adds one viewport after the gallery. Its sticky child keeps the
+     complete grid intact and pins only when the grid's bottom reaches the
+     viewport, leaving About one viewport of space to cross it. */
+  .mosaic-rows {
+    padding-bottom: 2rem;
+  }
+
+  .mosaic-takeover-runway {
+    --takeover-row-height: clamp(180px, 16vw, 260px);
+    --takeover-gallery-height: calc(
+      var(--takeover-row-height) + var(--takeover-row-height) + var(--takeover-row-height) +
+        var(--takeover-row-height) + 5rem
+    );
+
+    position: relative;
+    width: 100%;
+    height: calc(var(--takeover-gallery-height) + 100vh);
+    height: calc(var(--takeover-gallery-height) + 100dvh);
+    display: block;
+  }
+
+  .mosaic-takeover-stage {
+    position: sticky;
+    top: calc(100vh - var(--takeover-gallery-height));
+    top: calc(100dvh - var(--takeover-gallery-height));
+    z-index: 0;
+    width: 100%;
+    height: var(--takeover-gallery-height);
+    display: block;
+    transform-origin: center bottom;
+  }
+
+  .mosaic-takeover-stage .mosaic-rows {
+    width: 100%;
+  }
+
+  .mosaic-about {
+    margin-top: -100vh;
+    margin-top: -100dvh;
+    view-timeline-name: --about-takeover;
+    view-timeline-axis: block;
+  }
+}
+
+@media (min-width: 700px) and (prefers-reduced-motion: no-preference) {
+  /* View Timelines keep scroll-linked motion off the main thread. The complete
+     gallery retreats as one composited surface, preserving every card gap and
+     avoiding continuously painted blur. */
+  .mosaic-takeover-stage {
+    animation-name: mosaic-takeover-retreat;
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --about-takeover;
+    animation-range: entry 0% entry 100%;
+  }
+}
+
 /* Taller cards on desktop. `--row-height` is set inline from the row data, so
    `!important` is what it takes to win the cascade against an inline custom
    property. Folding the breakpoint into the data model would be cleaner. */
 @media (min-width: 900px) {
+  .mosaic-takeover-runway {
+    --takeover-row-height: 420px;
+  }
+
   .mosaic-row {
     --row-height: 420px !important;
   }
@@ -2443,7 +2514,6 @@ img {
     min-height: 44px;
   }
 
-  .mosaic-about-tab,
   .mosaic-about-link {
     min-height: 40px;
   }

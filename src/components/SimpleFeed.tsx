@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react"
 import { ExternalLink } from "lucide-react"
 
-import { AboutPanel, type AboutTab } from "./AboutPanel"
+import { AboutPanel } from "./AboutPanel"
 import { ContactActionRow } from "./ContactActionRow"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
@@ -365,36 +365,31 @@ function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion:
   )
 }
 
-const sectionLinks: { label: string; tab: AboutTab; href: string }[] = [
-  { label: "About", tab: "about", href: "#about-panel" },
+const sectionLinks: { label: string; href: string }[] = [
+  { label: "About", href: "#about-panel" },
 ]
-
-function getAboutTabFromHash(hash: string): AboutTab | null {
-  if (hash === "#about-panel-resume") return "resume"
-  if (hash === "" || hash === "#about-panel") return "about"
-  return null
-}
 
 function SectionCorner({
   onSelect,
   resumeHref,
 }: {
-  onSelect: (tab: AboutTab, href: string) => void
+  onSelect: (href: string) => void
   resumeHref: string
 }) {
   return (
     <nav className="mosaic-section-corner" aria-label="Sections">
       {sectionLinks.map((link) => (
         <a
-          key={link.tab}
+          key={link.href}
           href={link.href}
           className="mosaic-social-link"
           onClick={(event) => {
             // Let modified clicks fall through so the anchor still opens in a
-            // new tab; otherwise take over so the tab can be selected first.
+            // new tab; otherwise use the same focused smooth-scroll path as
+            // the profile-photo shortcut.
             if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
             event.preventDefault()
-            onSelect(link.tab, link.href)
+            onSelect(link.href)
           }}
         >
           {link.label}
@@ -498,7 +493,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
-  const [aboutTab, setAboutTab] = useState<AboutTab>("about")
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -599,17 +593,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   }, [])
 
   useEffect(() => {
-    const syncAboutTabFromUrl = () => {
-      const tab = getAboutTabFromHash(window.location.hash)
-      if (tab) setAboutTab(tab)
-    }
-
-    syncAboutTabFromUrl()
-    window.addEventListener("popstate", syncAboutTabFromUrl)
-    return () => window.removeEventListener("popstate", syncAboutTabFromUrl)
-  }, [])
-
-  useEffect(() => {
     let intervalId: number | undefined
     let timeoutId: number | undefined
 
@@ -646,26 +629,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     aboutPanel.focus({ preventScroll: true })
   }
 
-  const openAboutTab = (tab: AboutTab, href: string) => {
-    if (tab !== aboutTab) {
-      trackEvent("about_tab_change", { about_tab: tab })
-      setAboutTab(tab)
-    }
+  const openAbout = (href: string) => {
     if (window.location.hash !== href) window.history.pushState(null, "", href)
-    scrollToAbout(`nav_${tab}`)
-  }
-
-  const selectAboutTab = (tab: AboutTab) => {
-    setAboutTab(tab)
-    const href = tab === "resume" ? "#about-panel-resume" : "#about-panel"
-    if (window.location.hash !== href) window.history.pushState(null, "", href)
+    scrollToAbout("nav_about")
   }
 
   return (
     <section className="mosaic-shell">
       <h1 className="sr-only">{profile.name} portfolio</h1>
       <SectionCorner
-        onSelect={openAboutTab}
+        onSelect={openAbout}
         resumeHref={links.resumePdf}
       />
       <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
@@ -733,89 +706,93 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               {/* No `prefersReducedMotion` here on purpose: it is false on the
                   server and on the first client render, so a JS gate would flash
                   before the effect syncs. Reduced motion is handled in CSS. */}
-              <div
-                className={`mosaic-rows${hasCompletedWorkIntro ? "" : " mosaic-work-intro"}`}
-                role="group"
-                aria-label="Selected work previews"
-                id="selected-work-previews"
-              >
-                {rowsRender.map((row, rowIndex) => {
-                  const rowStyle = {
-                    ...(row.height ? { "--row-height": row.height } : {}),
-                    ...(row.gap ? { "--row-gap": row.gap } : {}),
-                  } as CSSProperties
-                  const eagerRow = rowIndex === 0
-                  return (
-                    <div
-                      key={row.id}
-                      className="mosaic-row"
-                      style={rowStyle}
-                    >
-                      {row.items.map((item, itemIndex) => {
-                        const itemKey = `${item.card.id}-${item.previewIndex}`
-                        const itemStyle = {
-                          "--row-span": item.span,
-                          // Feeds the first-load stagger in `.mosaic-work-intro`.
-                          // Inert without that class, so set unconditionally.
-                          "--work-intro-row": rowIndex,
-                          "--work-intro-col": itemIndex,
-                          ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
-                          ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
-                        } as CSSProperties
-                        return (
-                          <div
-                            key={itemKey}
-                            className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
-                            style={itemStyle}
-                            onAnimationEnd={
-                              rowIndex === rowsRender.length - 1 &&
-                              itemIndex === row.items.length - 1
-                                ? (event) => {
-                                    if (event.target === event.currentTarget) {
-                                      setHasCompletedWorkIntro(true)
-                                    }
-                                  }
-                                : undefined
-                            }
-                          >
-                            <button
-                              type="button"
-                              ref={(node) => {
-                                const nodes = previewCardNodesRef.current
-                                if (node) nodes.set(item.previewIndex, node)
-                                else nodes.delete(item.previewIndex)
-                              }}
-                              className={`mosaic-row-card mosaic-row-card-${item.card.id}`}
-                              onPointerEnter={prefetchPreviewGallery}
-                              onPointerDown={prefetchPreviewGallery}
-                              onFocus={prefetchPreviewGallery}
-                              onClick={() => {
-                                openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
-                              }}
-                              aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
-                              aria-describedby={`${itemKey}-description`}
-                            >
-                              {renderRowMedia(item.card, item.card.image, item.card.title, eagerRow)}
-                              <span className="mosaic-row-card-title" aria-hidden="true">
-                                {item.card.title}
-                              </span>
-                              {/* Prerenders each project's description as real
-                                  text: crawlers get more than an aria-label,
-                                  and screen readers hear it after the label. */}
-                              <span id={`${itemKey}-description`} className="sr-only">
-                                {item.card.detail}
-                              </span>
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )
-                })}
+              <div className="mosaic-takeover-runway">
+                <div className="mosaic-takeover-stage">
+                  <div
+                    className={`mosaic-rows${hasCompletedWorkIntro ? "" : " mosaic-work-intro"}`}
+                    role="group"
+                    aria-label="Selected work previews"
+                    id="selected-work-previews"
+                  >
+                    {rowsRender.map((row, rowIndex) => {
+                      const rowStyle = {
+                        ...(row.height ? { "--row-height": row.height } : {}),
+                        ...(row.gap ? { "--row-gap": row.gap } : {}),
+                      } as CSSProperties
+                      const eagerRow = rowIndex === 0
+                      return (
+                        <div
+                          key={row.id}
+                          className="mosaic-row"
+                          style={rowStyle}
+                        >
+                          {row.items.map((item, itemIndex) => {
+                            const itemKey = `${item.card.id}-${item.previewIndex}`
+                            const itemStyle = {
+                              "--row-span": item.span,
+                              // Feeds the first-load stagger in `.mosaic-work-intro`.
+                              // Inert without that class, so set unconditionally.
+                              "--work-intro-row": rowIndex,
+                              "--work-intro-col": itemIndex,
+                              ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
+                              ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
+                            } as CSSProperties
+                            return (
+                              <div
+                                key={itemKey}
+                                className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
+                                style={itemStyle}
+                                onAnimationEnd={
+                                  rowIndex === rowsRender.length - 1 &&
+                                  itemIndex === row.items.length - 1
+                                    ? (event) => {
+                                        if (event.target === event.currentTarget) {
+                                          setHasCompletedWorkIntro(true)
+                                        }
+                                      }
+                                    : undefined
+                                }
+                              >
+                                <button
+                                  type="button"
+                                  ref={(node) => {
+                                    const nodes = previewCardNodesRef.current
+                                    if (node) nodes.set(item.previewIndex, node)
+                                    else nodes.delete(item.previewIndex)
+                                  }}
+                                  className={`mosaic-row-card mosaic-row-card-${item.card.id}`}
+                                  onPointerEnter={prefetchPreviewGallery}
+                                  onPointerDown={prefetchPreviewGallery}
+                                  onFocus={prefetchPreviewGallery}
+                                  onClick={() => {
+                                    openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
+                                  }}
+                                  aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
+                                  aria-describedby={`${itemKey}-description`}
+                                >
+                                  {renderRowMedia(item.card, item.card.image, item.card.title, eagerRow)}
+                                  <span className="mosaic-row-card-title" aria-hidden="true">
+                                    {item.card.title}
+                                  </span>
+                                  {/* Prerenders each project's description as real
+                                      text: crawlers get more than an aria-label,
+                                      and screen readers hear it after the label. */}
+                                  <span id={`${itemKey}-description`} className="sr-only">
+                                    {item.card.detail}
+                                  </span>
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
           </article>
 
-          <AboutPanel links={links} activeTab={aboutTab} onTabChange={selectAboutTab} />
+          <AboutPanel links={links} />
 
           {/* Stays mounted after the first open so Base UI can run the close
               transition instead of the dialog vanishing on unmount. */}

@@ -17,6 +17,13 @@ export type CvEducation = {
 
 export const cvExperience: CvExperience[] = [
   {
+    company: "Stealth",
+    location: "Remote",
+    dates: "Mar 2026 - Present",
+    role: "Founder",
+    achievements: ["Building a mobile wallet product."],
+  },
+  {
     company: "0x Project",
     location: "Remote, SF",
     dates: "Dec 2021 - Mar 2026",

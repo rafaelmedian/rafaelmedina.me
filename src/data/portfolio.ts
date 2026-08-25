@@ -91,6 +91,16 @@ export const homeRows: HomeRow[] = [
       { cardId: "preview-shot-19", span: 1 },
     ],
   },
+  {
+    id: "row-4",
+    height: homeTileRowHeight,
+    items: [
+      { cardId: "preview-shot-14", span: 1 },
+      { cardId: "preview-shot-15", span: 1 },
+      { cardId: "preview-shot-23", span: 1 },
+      { cardId: "preview-shot-20", span: 1 },
+    ],
+  },
 ]
 
 export const siteProfile = {
@@ -278,5 +288,58 @@ export const portfolioCards: PortfolioCard[] = [
     previewHeight: 1200,
     ...matchaMeta,
     team: [collaborators.jakub],
+  },
+  {
+    id: "preview-shot-14",
+    category: "Preview",
+    title: "Matcha - Mobile Screens",
+    summary: "",
+    detail:
+      "A pass across Matcha's core mobile screens, keeping dense trading data legible and tappable on a phone-sized canvas.",
+    image: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
+    ...matchaMeta,
+    team: [collaborators.simon, collaborators.jakub],
+  },
+  {
+    id: "preview-shot-15",
+    category: "Preview",
+    title: "Matcha - Mobile navigation",
+    summary: "",
+    detail:
+      "Rethinking Matcha's mobile navigation so the core actions stayed one thumb-reach away as the product grew.",
+    image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
+    ...matchaMeta,
+    team: [collaborators.simon],
+  },
+  {
+    id: "preview-shot-23",
+    category: "Preview",
+    title: "Matcha Pro",
+    summary: "",
+    detail:
+      "Matcha Pro, a denser trading view with charting and order controls for the people who live in the product all day.",
+    image: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg",
+    previewWidth: 1600,
+    previewHeight: 1200,
+    ...matchaMeta,
+    team: [collaborators.simon, collaborators.jakub],
+  },
+  {
+    id: "preview-shot-20",
+    category: "Preview",
+    title: "Matcha - Security Audit",
+    summary: "",
+    detail:
+      "Surfacing token security audits inside Matcha so traders can gauge risk before they swap, without leaving the flow.",
+    image: "/Projects/shot-small-20.webm",
+    previewWidth: 640,
+    previewHeight: 480,
+    previewPoster: "/Projects/shot-small-20-poster.webp",
+    ...matchaMeta,
+    team: [collaborators.simon, collaborators.jakub],
   },
 ]
