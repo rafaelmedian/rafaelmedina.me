@@ -191,28 +191,28 @@ const TYPE_SCALE = [
     token: "--text-xs",
     sample: "Punta Cana · Local time",
     spec: "0.75rem · 12px",
-    where: "Map attribution, count pills, avatar initials, the mobile corner nav, compact project captions",
+    where: "Map attribution, count pills, avatar initials, compact project captions",
     style: { fontSize: "var(--text-xs)", lineHeight: 1.25 },
   },
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
     spec: "0.875rem · 14px",
-    where: "Pill labels, body copy, detail rows, hover-card text, wider project captions",
+    where: "Pill labels, body copy, detail rows, hover-card text, mobile corner nav, wider project captions",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
     token: "--text-md",
     sample: "Senior Product Designer",
     spec: "1rem · 16px",
-    where: "Hero name, about prose, résumé companies",
+    where: "Hero name; About prose, labels, section headings, résumé companies, and metadata",
     style: { fontSize: "var(--text-md)", lineHeight: 1.5, letterSpacing: "-0.005rem", fontWeight: 600 },
   },
   {
     token: "--text-lg",
     sample: "Ten years prototyping in code.",
     spec: "1.125rem · 18px",
-    where: "The about lede — the largest text on the site",
+    where: "About ledes — the largest text on the site",
     style: { fontSize: "var(--text-lg)", lineHeight: 1.5, letterSpacing: "-0.015rem", fontWeight: 600 },
   },
 ]
@@ -250,9 +250,11 @@ const SPACE = [
   { value: "0.375rem", use: "Inside pills and stat groups" },
   { value: "0.5rem", use: "Hobby lists, X card internals" },
   { value: "0.625rem", use: "The contact action row" },
-  { value: "8px", use: "Mobile page gutter below 700px" },
+  { value: "1.25rem", use: "Maximum mobile contact-pill side padding" },
+  { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
   { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
   { value: "clamp(16px, 3vw, 32px)", use: "Page gutter from 700px to 899px" },
+  { value: "clamp(8rem, 20vh, 12rem)", use: "Desktop white runway before the About takeover" },
 ]
 
 /* --------------------------------------------------------------- elevation */
@@ -359,9 +361,10 @@ const DURATIONS = [
 
 const BREAKPOINTS = [
   { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; location and availability stack without a separator." },
-  { at: "≤ 639.98px", change: "Corner nav centres and stacks; the hero gains 6.9rem of top padding." },
-  { at: "≤ 699.98px", change: "The shell uses 8px gutters; every project shows in one 340–380px column; the full-bleed About sheet returns to normal document flow; card captions hide." },
-  { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall and local time uses 14px type." },
+  { at: "≤ 479.98px", change: "Contact pills gain up to 1.25rem side padding and wrap when their container cannot accommodate them." },
+  { at: "≤ 639.98px", change: "The hero reserves 4rem of top clearance." },
+  { at: "≤ 699.98px", change: "Local time hides; the 14px About and Resume labels centre optically; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; card captions hide." },
+  { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
   {
@@ -1112,7 +1115,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </li>
                 <li>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
-                  remain in one sticky stage at their original sizes and 1rem gaps, followed by 2rem of breathing room.
+                  remain in one sticky stage at their original sizes and 1rem gaps, followed by a responsive white
+                  runway of <code>clamp(8rem, 20vh, 12rem)</code>.
                   The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
                   full-bleed white About sheet crosses it at z-index 1. The gallery retreats as one surface, and About
                   continues in normal flow after the cover. Below 700px both wrappers collapse with{" "}

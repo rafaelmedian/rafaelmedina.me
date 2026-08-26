@@ -123,18 +123,96 @@ test("optically centers the X mark in the Follow pill", async ({ page }) => {
   expect(verticalOffset).toBe(1)
 })
 
-test("keeps primary contact actions on one comfortable mobile row", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 568 })
+test("wraps primary contact actions when their mobile container is too narrow", async ({ page }) => {
+  await page.setViewportSize({ width: 473, height: 994 })
   await page.goto("/")
 
-  const boxes = await page
-    .getByRole("group", { name: "Profile contact actions" })
-    .locator(".mosaic-contact-pill")
+  const actions = page.getByRole("group", { name: "Profile contact actions" })
+  await actions.evaluate((element) => {
+    element.style.width = "220px"
+  })
+
+  const boxes = await actions.locator(".mosaic-contact-pill")
     .evaluateAll((actions) => actions.map((action) => action.getBoundingClientRect().toJSON()))
 
   expect(boxes).toHaveLength(3)
-  expect(new Set(boxes.map(({ y }) => Math.round(y))).size).toBe(1)
-  for (const box of boxes) expect(box.height).toBeGreaterThanOrEqual(44)
+  expect(new Set(boxes.map(({ y }) => Math.round(y))).size).toBeGreaterThan(1)
+  for (const box of boxes) expect(box.height).toBeCloseTo(44, 1)
+})
+
+test("centers a wrapped contact action on narrow mobile widths", async ({ page }) => {
+  await page.setViewportSize({ width: 328, height: 844 })
+  await page.goto("/")
+
+  const actions = page.getByRole("group", { name: "Profile contact actions" })
+  const [actionsBox, firstActionBox, followBox] = await Promise.all([
+    actions.boundingBox(),
+    actions.locator(".mosaic-contact-pill").first().boundingBox(),
+    page.getByRole("link", { name: "Follow on X" }).boundingBox(),
+  ])
+
+  expect(actionsBox).not.toBeNull()
+  expect(firstActionBox).not.toBeNull()
+  expect(followBox).not.toBeNull()
+  expect(followBox!.y).toBeGreaterThan(firstActionBox!.y)
+  expect(followBox!.x + followBox!.width / 2).toBeCloseTo(actionsBox!.x + actionsBox!.width / 2, 0)
+})
+
+test("insets row videos from the card sides on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 473, height: 994 })
+  await page.goto("/")
+
+  const video = page.locator(".mosaic-row-card video.mosaic-row-media").first()
+  await expect(video).toHaveCSS("padding-left", "8px")
+  await expect(video).toHaveCSS("padding-right", "8px")
+})
+
+test("uses only the body and lead type steps throughout About", async ({ page }) => {
+  await page.setViewportSize({ width: 473, height: 994 })
+  await page.goto("/")
+
+  const typeRoles = page.locator([
+    "#about-section .mosaic-about-lede",
+    "#about-section .mosaic-about-section-copy > p:not(.mosaic-about-lede)",
+    "#about-section .mosaic-about-hobbies li",
+    "#about-section .mosaic-about-fact dt",
+    "#about-section .mosaic-about-fact dd",
+    ".mosaic-about-section-heading",
+    ".mosaic-about-work-history-copy > .mosaic-about-lede",
+    ".mosaic-about-resume-company",
+    ".mosaic-about-resume-meta",
+    ".mosaic-about-resume-highlights li",
+    ".mosaic-about-resume-heading",
+    ".mosaic-about-resume-note",
+  ].join(", "))
+  const sizes = await typeRoles.evaluateAll((elements) =>
+    [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
+  )
+
+  expect(sizes).toEqual(["16px", "18px"])
+  await expect(page.locator(".mosaic-about-section-heading")).toHaveCSS("font-size", "16px")
+  await expect(page.locator(".mosaic-about-work-history-copy > .mosaic-about-lede")).toHaveCSS("font-size", "18px")
+})
+
+test("gives mobile contact actions generous horizontal padding", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const actions = page
+    .getByRole("group", { name: "Profile contact actions" })
+    .locator(".mosaic-contact-pill")
+  const sidePadding = await actions.evaluateAll((elements) =>
+    elements.map((element) => {
+      const styles = getComputedStyle(element)
+      return [Number.parseFloat(styles.paddingLeft), Number.parseFloat(styles.paddingRight)]
+    }),
+  )
+
+  expect(sidePadding).toHaveLength(3)
+  for (const [left, right] of sidePadding) {
+    expect(left).toBeCloseTo(right, 5)
+    expect(left).toBeGreaterThanOrEqual(19)
+  }
 })
 
 test("keeps company chips compact with comfortable mobile targets", async ({ page }) => {
@@ -153,6 +231,22 @@ test("keeps company chips compact with comfortable mobile targets", async ({ pag
       await chip.evaluate((element) => Number.parseFloat(getComputedStyle(element, "::after").height)),
     ).toBeGreaterThanOrEqual(40)
   }
+})
+
+test("adds breathing room below the previous-work label on mobile", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const previousWorkLabel = page.getByText("previously worked with and at", { exact: true })
+  const firstPreviousCompany = page.getByRole("link", { name: "Moody's", exact: true })
+  const [labelBox, companyBox] = await Promise.all([
+    previousWorkLabel.boundingBox(),
+    firstPreviousCompany.boundingBox(),
+  ])
+
+  expect(labelBox).not.toBeNull()
+  expect(companyBox).not.toBeNull()
+  expect(companyBox!.y - (labelBox!.y + labelBox!.height)).toBeCloseTo(12, 0)
 })
 
 test("reserves balanced wrapping for headings", async ({ page }) => {
@@ -546,8 +640,8 @@ test("keeps the local-time card close to the visible trigger", async ({ page }) 
   expect(cardBox!.y - (triggerBox!.y + triggerBox!.height)).toBeCloseTo(10, 0)
 })
 
-test("keeps the local-time card inside a narrow hover-capable viewport", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 568 })
+test("keeps the local-time card inside the narrowest viewport where it remains visible", async ({ page }) => {
+  await page.setViewportSize({ width: 700, height: 568 })
   await page.goto("/")
 
   await page.locator(".mosaic-social-time").focus()
@@ -555,36 +649,70 @@ test("keeps the local-time card inside a narrow hover-capable viewport", async (
 
   expect(cardBox).not.toBeNull()
   expect(cardBox!.x).toBeGreaterThanOrEqual(0)
-  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(320)
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(700)
 })
 
-test("centers the local time on mobile", async ({ page }) => {
+test("removes local time from the mobile hero", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const box = await page.locator(".mosaic-social-corner").boundingBox()
-
-  expect(box).not.toBeNull()
-  expect(box!.x + box!.width / 2).toBeCloseTo(mobileViewport.width / 2, 0)
+  await expect(page.locator(".mosaic-social-corner")).toBeHidden()
 })
 
-test("uses the larger local-time font at compact desktop widths", async ({ page }) => {
-  await page.setViewportSize({ width: 572, height: 1381 })
+test("uses the body type step at the narrowest visible local-time width", async ({ page }) => {
+  await page.setViewportSize({ width: 700, height: 1381 })
   await page.goto("/")
 
   await expect(page.locator(".mosaic-social-time")).toHaveCSS("font-size", "14px")
 })
 
-test("stacks local time below the section links on mobile", async ({ page }) => {
+test("uses the body type step for mobile section navigation", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const navigationBox = await page.getByRole("navigation", { name: "Sections" }).boundingBox()
-  const localTimeBox = await page.locator(".mosaic-social-corner").boundingBox()
+  const navigation = page.getByRole("navigation", { name: "Sections" })
+  await expect(navigation.getByRole("link", { name: "About" })).toHaveCSS("font-size", "14px")
+  await expect(navigation.getByRole("link", { name: /Resume/ })).toHaveCSS("font-size", "14px")
+})
+
+test("optically centers the About and Resume labels on mobile", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const labelsCenter = await page.getByRole("navigation", { name: "Sections" }).evaluate((navigation) => {
+    const links = Array.from(navigation.querySelectorAll("a"))
+    const labelRects = links.map((link) => {
+      const labelNode = Array.from(link.childNodes).find(
+        (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+      )
+      if (!labelNode) return null
+
+      const range = document.createRange()
+      range.selectNode(labelNode)
+      return range.getBoundingClientRect()
+    })
+
+    if (!labelRects[0] || !labelRects[1]) return null
+    return (labelRects[0].left + labelRects[1].right) / 2
+  })
+
+  expect(labelsCenter).not.toBeNull()
+  expect(labelsCenter!).toBeCloseTo(mobileViewport.width / 2, 0)
+})
+
+test("keeps the mobile profile clear of the section navigation", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  const [navigationBox, avatarBox] = await Promise.all([
+    page.getByRole("navigation", { name: "Sections" }).boundingBox(),
+    page.getByRole("button", { name: "Read about Rafael Medina" }).boundingBox(),
+  ])
 
   expect(navigationBox).not.toBeNull()
-  expect(localTimeBox).not.toBeNull()
-  expect(localTimeBox!.y).toBeGreaterThanOrEqual(navigationBox!.y + navigationBox!.height)
+  expect(avatarBox).not.toBeNull()
+  expect(avatarBox!.y - (navigationBox!.y + navigationBox!.height)).toBeGreaterThanOrEqual(16)
+  expect(avatarBox!.y).toBeLessThan(96)
 })
 
 test("keeps local time separate from the navigation", async ({ page }) => {
@@ -881,7 +1009,7 @@ test("keeps every project row together inside the takeover stage", async ({ page
   expect(gaps).toEqual([16, 16, 16])
 })
 
-test("leaves breathing room after the final project row before the about takeover", async ({ page }) => {
+test("leaves a generous white runway after the final project row before the about takeover", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
 
@@ -895,7 +1023,7 @@ test("leaves breathing room after the final project row before the about takeove
     return Math.round(element.getBoundingClientRect().bottom - lastRow.getBoundingClientRect().bottom)
   })
 
-  expect(endSpacing).toBe(32)
+  expect(endSpacing).toBeGreaterThanOrEqual(160)
 })
 
 test("pins the complete project grid when its bottom reaches the viewport", async ({ page }) => {
@@ -910,18 +1038,14 @@ test("pins the complete project grid when its bottom reaches the viewport", asyn
     if (!aboutNode) return null
     const stageRect = element.getBoundingClientRect()
     return {
-      stageTop: Math.round(stageRect.top),
       stageBottom: Math.round(stageRect.bottom),
-      stageHeight: Math.round(stageRect.height),
       stagePosition: getComputedStyle(element).position,
       aboutTop: Math.round(aboutNode.getBoundingClientRect().top),
     }
   })
 
   expect(placement).toEqual({
-    stageTop: -847,
     stageBottom: 913,
-    stageHeight: 1760,
     stagePosition: "sticky",
     aboutTop: 913,
   })
@@ -2036,10 +2160,45 @@ test("keeps project images free of captions on mobile", async ({ page }) => {
   expect(
     await page.locator(".mosaic-row-card").first().evaluate((card) => getComputedStyle(card, "::after").opacity),
   ).toBe("0")
+})
+
+test("fills the mobile cards with the featured Matcha previews", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  for (const title of ["Matcha - Multiwallet flow", "Matcha - Homepage"]) {
+    const card = page.getByRole("button", { name: new RegExp(`Open ${title}`) })
+    const media = card.locator(".mosaic-row-media")
+    const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), media.boundingBox()])
+
+    await expect(media).toHaveCSS("object-fit", "cover")
+    expect(cardBox).not.toBeNull()
+    expect(mediaBox).not.toBeNull()
+    expect(mediaBox!.width).toBeCloseTo(cardBox!.width - 2, 0)
+    expect(mediaBox!.height).toBeCloseTo(cardBox!.height - 2, 0)
+  }
+})
+
+test("crops and zooms the Protector artwork on mobile", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
 
   const protectorMedia = page.locator(".mosaic-row-card-preview-protector .mosaic-row-media")
-  await expect(protectorMedia).toHaveCSS("object-fit", "contain")
-  await expect(protectorMedia).toHaveCSS("transform", "none")
+  const scale = await protectorMedia.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).a)
+
+  await expect(protectorMedia).toHaveCSS("object-fit", "cover")
+  await expect(protectorMedia).toHaveCSS("object-position", "50% 50%")
+  expect(scale).toBeGreaterThan(1)
+})
+
+test("describes Protector as an on-demand private security app", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await page.getByRole("button", { name: /Open Protector preview/ }).click()
+
+  await expect(page.getByRole("dialog")).toContainText(
+    "A private security app for booking short-term personal protection from veteran and former law enforcement professionals. I designed the booking flow—from choosing an operator and uniform to arranging escorted transportation—to make high-stakes decisions feel clear and discreet.",
+  )
 })
 
 test("renders intrinsic media dimensions and does not autoplay under reduced motion", async ({ page }) => {
@@ -2070,7 +2229,10 @@ for (const viewport of [
     await page.setViewportSize(viewport)
     await page.goto("/")
 
-    for (const selector of [".mosaic-social-corner", ".mosaic-work-history", ".mosaic-rows"]) {
+    const visibleLayoutSelectors = [".mosaic-work-history", ".mosaic-rows"]
+    if (viewport.width >= 700) visibleLayoutSelectors.push(".mosaic-social-corner")
+
+    for (const selector of visibleLayoutSelectors) {
       const box = await page.locator(selector).boundingBox()
       expect(box).not.toBeNull()
       expect(box!.x).toBeGreaterThanOrEqual(0)
