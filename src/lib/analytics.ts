@@ -106,12 +106,27 @@ function attachAnalyticsListeners() {
   document.addEventListener("click", trackLinkClick)
 }
 
+// gtag.js is ~90 KB gzipped and evaluates on arrival, so injecting it at
+// startup competes with hydration and the LCP images on slow connections.
+// The stub client queues every gtag() call in dataLayer until the script
+// arrives, so nothing recorded before then is lost.
+function scheduleGoogleTagScript() {
+  const inject = () => {
+    if (typeof window.requestIdleCallback === "function")
+      window.requestIdleCallback(() => ensureGoogleTagScript(), { timeout: 4000 })
+    else window.setTimeout(ensureGoogleTagScript, 1500)
+  }
+
+  if (document.readyState === "complete") inject()
+  else window.addEventListener("load", inject, { once: true })
+}
+
 export function startAnalytics() {
   if (!isGoogleAnalyticsEnabled() || window.__analyticsStarted) return
 
-  ensureGoogleTagScript()
   ensureGoogleTagClient()
   attachAnalyticsListeners()
   trackPageView()
+  scheduleGoogleTagScript()
   window.__analyticsStarted = true
 }

@@ -192,7 +192,6 @@ function RowVideoMedia({
           loadObserver.disconnect()
         }
       },
-      { rootMargin: "400px 0px" },
     )
     const visibilityObserver = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
@@ -242,7 +241,12 @@ function RowVideoMedia({
 // where the mosaic stops growing), so the full-size file is ~3.6x oversampled at
 // 1x and ~1.8x at 2x. The gallery dialog keeps loading the original.
 const previewVariantWidths = [480, 960]
-const hasPreviewVariants = (source: string) => /_shot-small-\d+\.jpg$/.test(source)
+// The webp previews are one-offs, so their resized siblings are listed
+// explicitly instead of pattern-matched. Regenerate with
+// scripts/generate-preview-variants.mjs when one of these sources changes.
+const webpPreviewVariantSources = new Set(["/Projects/protector.webp", "/Projects/popparazi_v1.webp"])
+const hasPreviewVariants = (source: string) =>
+  /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)
 
 // Measured tile widths: 317px at 390vw, 228px at 768, 393px at 1280, 446px at
 // 1440 and up.
@@ -251,8 +255,13 @@ const previewSizes = "(max-width: 520px) 82vw, (max-width: 1400px) 31vw, 446px"
 function buildPreviewSrcSet(source: string, intrinsicWidth?: number) {
   if (!hasPreviewVariants(source)) return undefined
 
-  const stem = source.slice(0, -".jpg".length)
-  const candidates = previewVariantWidths.map((width) => `${stem}-${width}w.jpg ${width}w`)
+  const extension = source.endsWith(".webp") ? ".webp" : ".jpg"
+  const stem = source.slice(0, -extension.length)
+  // Skip variants at or above the source width (popparazi is only 630px wide,
+  // so a -960w sibling would be an upscale that doesn't exist).
+  const candidates = previewVariantWidths
+    .filter((width) => !intrinsicWidth || width < intrinsicWidth)
+    .map((width) => `${stem}-${width}w${extension} ${width}w`)
   if (intrinsicWidth) candidates.push(`${source} ${intrinsicWidth}w`)
   return candidates.join(", ")
 }
