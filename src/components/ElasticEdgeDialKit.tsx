@@ -14,7 +14,7 @@ function ElasticEdgeControls() {
   const params = useDialKit(
     "End gradient",
     {
-      preview: true,
+      preview: DEFAULT_ELASTIC_EDGE_SETTINGS.preview,
       shape: {
         height: [DEFAULT_ELASTIC_EDGE_SETTINGS.height, 32, 160, 1],
         centerWidth: [DEFAULT_ELASTIC_EDGE_SETTINGS.centerWidth, 24, 72, 1],
