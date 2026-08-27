@@ -49,7 +49,7 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
-test("compresses a soft light-gray edge into view when scrolling past the page bottom", async ({ page }) => {
+test("compresses a luminous layered gradient into view with a fresh palette for each pull", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
 
@@ -66,6 +66,12 @@ test("compresses a soft light-gray edge into view when scrolling past the page b
       shadeCount: element.querySelectorAll(".elastic-scroll-edge-shade").length,
       shadeFilter: shade ? getComputedStyle(shade).filter : "missing",
       backgroundImage: shade ? getComputedStyle(shade).backgroundImage : "none",
+      palette: [1, 2, 3, 4, 5].map((index) =>
+        (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
+      ),
+      shadeOpacity: Number.parseFloat((element as HTMLElement).style.getPropertyValue("--elastic-edge-shade-opacity")),
+      coreOpacity: Number.parseFloat((element as HTMLElement).style.getPropertyValue("--elastic-edge-core-opacity")),
+      lightOpacity: Number.parseFloat((element as HTMLElement).style.getPropertyValue("--elastic-edge-light-opacity")),
     }
   })
 
@@ -75,13 +81,152 @@ test("compresses a soft light-gray edge into view when scrolling past the page b
   expect(pulledState.height).toBeGreaterThanOrEqual(40)
   expect(pulledState.height).toBeLessThanOrEqual(72)
   expect(pulledState.shadeCount).toBe(1)
-  expect(pulledState.shadeFilter).toBe("none")
-  const saturatedStops = [...pulledState.backgroundImage.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)]
-    .map(([, red, green, blue]) => [Number(red), Number(green), Number(blue)])
-    .filter((channels) => Math.max(...channels) - Math.min(...channels) >= 12)
-  expect(saturatedStops).toHaveLength(0)
-  expect(pulledState.backgroundImage).toContain("236, 236, 238")
+  expect(pulledState.shadeFilter).toMatch(/^blur\((?:[4-9]|1[0-4])px\) saturate\(/)
+  expect(Number(pulledState.shadeFilter.match(/saturate\(([^)]+)\)/)?.[1])).toBeGreaterThanOrEqual(1)
+  expect(pulledState.backgroundImage.match(/radial-gradient/g)).toHaveLength(7)
+  expect(pulledState.palette.every(Boolean)).toBe(true)
+  expect(new Set(pulledState.palette).size).toBe(5)
+  expect(pulledState.coreOpacity).toBeGreaterThan(pulledState.shadeOpacity)
+  expect(pulledState.lightOpacity).toBeGreaterThan(0)
+  expect(pulledState.lightOpacity).toBeLessThan(0.5)
   await expect(edge).toHaveAttribute("data-pulling", "false")
+  await expect(edge).toHaveCSS("opacity", "0")
+
+  const nextPalette = await edge.evaluate((element) => {
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    return [1, 2, 3, 4, 5].map((index) =>
+      (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
+    )
+  })
+
+  expect(nextPalette).not.toEqual(pulledState.palette)
+})
+
+test("changes the elastic-edge palette when the random source repeats", async ({ page }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.5
+  })
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const palettes = await page.locator(".elastic-scroll-edge").evaluate((element) => {
+    const readPalette = () =>
+      [1, 2, 3, 4, 5].map((index) =>
+        (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
+      )
+
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    const first = readPalette()
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: -1 }))
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+
+    return { first, second: readPalette() }
+  })
+
+  expect(palettes.second).not.toEqual(palettes.first)
+})
+
+test("tosses a wink and three varied emoji once per bottom overscroll gesture", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const emojiLayer = page.locator(".elastic-scroll-edge-emojis")
+  const firstBurst = await emojiLayer.evaluate((element) => {
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    return [...element.querySelectorAll<HTMLElement>(".elastic-scroll-edge-emoji")].map((emoji) => emoji.textContent)
+  })
+
+  expect(firstBurst).toHaveLength(4)
+  expect(firstBurst).toContain("😉")
+  expect(new Set(firstBurst).size).toBe(4)
+  await expect(emojiLayer).toHaveCSS("pointer-events", "none")
+
+  await emojiLayer.evaluate((element) => {
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 80 }))
+    return element.querySelectorAll(".elastic-scroll-edge-emoji").length
+  })
+  await expect(emojiLayer.locator(".elastic-scroll-edge-emoji")).toHaveCount(4)
+  await expect(emojiLayer.locator(".elastic-scroll-edge-emoji")).toHaveCount(0, { timeout: 2_000 })
+})
+
+test("keeps each emoji's horizontal momentum through the apex and fall", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const horizontalSteps = await page.locator(".elastic-scroll-edge").evaluate(() => {
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    const element = document.querySelector<HTMLElement>(".elastic-scroll-edge-emoji")
+    if (!element) throw new Error("Emoji burst did not launch")
+    const animation = element.getAnimations()[0]
+    if (!animation) throw new Error("Emoji drift animation did not start")
+    animation.pause()
+
+    const sampleX = (time: number) => {
+      animation.currentTime = time
+      return new DOMMatrixReadOnly(getComputedStyle(element).transform).m41
+    }
+
+    const quarter = sampleX(175)
+    const apex = sampleX(350)
+    const falling = sampleX(525)
+    return [apex - quarter, falling - apex]
+  })
+
+  expect(Math.sign(horizontalSteps[0])).toBe(Math.sign(horizontalSteps[1]))
+  expect(Math.abs(Math.abs(horizontalSteps[0]) - Math.abs(horizontalSteps[1]))).toBeLessThan(2)
+})
+
+test("previews the gradient while applying live height and shape settings", async ({ page }) => {
+  await page.goto("/")
+
+  const edge = page.locator(".elastic-scroll-edge")
+  await edge.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent("elastic-edge:settings", {
+        detail: {
+          preview: true,
+          height: 120,
+          centerWidth: 58,
+          colorSpread: 70,
+          blur: 8,
+          saturation: 1.04,
+          translucency: 0.38,
+          coreOpacity: 0.9,
+          lightOpacity: 0.26,
+        },
+      }),
+    )
+  })
+
+  await expect(edge).toHaveAttribute("data-preview", "true")
+  await expect(edge).toHaveCSS("height", "120px")
+  await expect(edge).toHaveCSS("opacity", "0.92")
+  expect(
+    await edge.evaluate((element) => ({
+      centerWidth: (element as HTMLElement).style.getPropertyValue("--elastic-edge-center-width"),
+      colorSpread: (element as HTMLElement).style.getPropertyValue("--elastic-edge-color-spread"),
+    })),
+  ).toEqual({ centerWidth: "58%", colorSpread: "70%" })
+
+  await edge.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent("elastic-edge:settings", {
+        detail: {
+          preview: false,
+          height: 120,
+          centerWidth: 58,
+          colorSpread: 70,
+          blur: 8,
+          saturation: 1.04,
+          translucency: 0.38,
+          coreOpacity: 0.9,
+          lightOpacity: 0.26,
+        },
+      }),
+    )
+  })
+
+  await expect(edge).toHaveAttribute("data-preview", "false")
   await expect(edge).toHaveCSS("opacity", "0")
 })
 
@@ -135,9 +280,11 @@ test("removes the elastic scroll edge when reduced motion is preferred", async (
 
   await expect(edge).toHaveCSS("display", "none")
   await expect(edge).toHaveAttribute("data-pulling", "false")
+  await expect(page.locator(".elastic-scroll-edge-emojis")).toHaveCSS("display", "none")
+  await expect(page.locator(".elastic-scroll-edge-emoji")).toHaveCount(0)
 })
 
-test("keeps the About surface continuous while limiting its shadow to the top edge", async ({ page }) => {
+test("defines the overlapping About surface with a top border and shadow", async ({ page }) => {
   await page.goto("/")
 
   const about = page.locator(".mosaic-about")
@@ -150,7 +297,9 @@ test("keeps the About surface continuous while limiting its shadow to the top ed
       sheetShadow: sheet.boxShadow,
       sheetClip: sheet.clipPath,
       topEdgeContent: topEdge.content,
+      topEdgeTop: topEdge.top,
       topEdgeHeight: topEdge.height,
+      topEdgeBackground: topEdge.backgroundColor,
       topEdgeShadow: topEdge.boxShadow,
       panelLayer: panel ? getComputedStyle(panel).zIndex : "missing",
     }
@@ -159,7 +308,9 @@ test("keeps the About surface continuous while limiting its shadow to the top ed
   expect(treatment.sheetShadow).toBe("none")
   expect(treatment.sheetClip).toBe("none")
   expect(treatment.topEdgeContent).toBe('""')
+  expect(treatment.topEdgeTop).toBe("-1px")
   expect(treatment.topEdgeHeight).toBe("1px")
+  expect(treatment.topEdgeBackground).toBe("rgba(0, 0, 0, 0.08)")
   expect(treatment.topEdgeShadow).not.toBe("none")
   expect(treatment.panelLayer).toBe("1")
 })
@@ -316,7 +467,6 @@ test("uses only the body and lead type steps throughout About", async ({ page })
     "#about-section .mosaic-about-section-copy > p:not(.mosaic-about-lede)",
     "#about-section .mosaic-about-hobbies li",
     ".mosaic-about-section-heading",
-    ".mosaic-about-resume-link",
     ".mosaic-about-resume-title",
     ".mosaic-about-resume-dates",
     ".mosaic-about-resume-location",
@@ -1364,6 +1514,24 @@ test("shows every project immediately on mobile", async ({ page }) => {
   await expect(page.getByRole("button", { name: /View \d+ more projects/ })).toHaveCount(0)
 })
 
+test("loads each preview video only when it reaches the viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/")
+
+  const videos = page.locator(".mosaic-row-card video.mosaic-row-media")
+  const visibleVideo = videos.first()
+  const offscreenVideo = videos.nth(1)
+
+  await expect(visibleVideo).toHaveAttribute("src", "/Projects/shot-small-9.webm")
+  expect(await offscreenVideo.evaluate((video) => video.getBoundingClientRect().top)).toBeGreaterThanOrEqual(844)
+  await expect(offscreenVideo).not.toHaveAttribute("src", /\S+/)
+  await expect(offscreenVideo).toHaveAttribute("preload", "none")
+
+  await offscreenVideo.scrollIntoViewIfNeeded()
+  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/shot-small-16.webm")
+  await expect(offscreenVideo).toHaveAttribute("preload", "metadata")
+})
+
 test("keeps the selected work label out of the visual layout", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
@@ -1736,6 +1904,13 @@ test("uses the visible about lede as the section heading", async ({ page }) => {
   await expect(intro.locator(".mosaic-about-facts")).toHaveCount(0)
 })
 
+test("gives the About introduction more space from the top of its section", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/#about-panel")
+
+  await expect(page.locator(".mosaic-about-panel")).toHaveCSS("padding-top", "140px")
+})
+
 test("adds breathing room above the about hobbies", async ({ page }) => {
   await page.goto("/#about-panel")
 
@@ -1746,15 +1921,37 @@ test("presents work history as a focused summary", async ({ page }) => {
   await page.goto("/#about-panel-resume")
 
   const workHistory = page.locator("#about-panel-resume")
-  await expect(workHistory.getByRole("link", { name: "Full résumé" })).toHaveAttribute(
-    "href",
-    "/rafael-medina-resume.pdf",
-  )
+  await expect(workHistory.getByRole("link", { name: "Full résumé" })).toHaveCount(0)
   await expect(workHistory.locator(".mosaic-about-lede")).toHaveCount(0)
   await expect(
     workHistory.locator(".mosaic-about-work-list > .mosaic-about-work-entry .mosaic-about-resume-description"),
   ).toHaveCount(6)
-  await expect(workHistory.locator(".mosaic-about-sticker")).toHaveCount(0)
+  await expect(workHistory.locator(".mosaic-about-sticker")).toHaveCount(4)
+})
+
+test("offers a CV download after the education list", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+
+  const workHistory = page.locator("#about-panel-resume")
+  const education = workHistory.locator(".mosaic-about-resume-education")
+  const download = workHistory.getByRole("link", { name: "Download CV in PDF", exact: true })
+
+  await expect(download).toHaveAttribute("href", "/rafael-medina-resume.pdf")
+  await expect(download).toHaveAttribute("download", "")
+  const downloadGap = await workHistory.evaluate((section) => {
+    const educationSection = section.querySelector(".mosaic-about-resume-education")
+    const downloadRow = section.querySelector(".mosaic-about-resume-download")
+    if (!(educationSection instanceof HTMLElement) || !(downloadRow instanceof HTMLElement)) return null
+
+    return downloadRow.getBoundingClientRect().top - educationSection.getBoundingClientRect().bottom
+  })
+  expect(downloadGap).toBe(80)
+  await expect(
+    education.evaluate(
+      (section, link) => Boolean(section.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING),
+      await download.elementHandle(),
+    ),
+  ).resolves.toBe(true)
 })
 
 test("omits the work-history summary paragraph", async ({ page }) => {
@@ -1844,35 +2041,63 @@ test("formats education with dates beside its details and extra section spacing"
   expect(datesBox!.y).toBeCloseTo(detailsBox!.y, 0)
 })
 
-test("spreads the about stickers across the full desktop section gutters", async ({ page }) => {
+test("spreads the stickers across the About and Work history desktop gutters", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/#about-panel")
 
-  const layout = await page.locator("#about-section").evaluate((section) => {
-    const sectionRect = section.getBoundingClientRect()
-    const stickers = Array.from(section.querySelectorAll<HTMLElement>(".mosaic-about-sticker"))
+  const layout = await page.locator(".mosaic-about-body").evaluate((body) => {
+    const bodyRect = body.getBoundingClientRect()
+    const stickers = Array.from(body.querySelectorAll<HTMLElement>(".mosaic-about-sticker"))
     const centers = stickers.map((sticker) => {
       const rect = sticker.getBoundingClientRect()
       return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
     })
     const nearestEdgeInsets = centers.map(({ x }) =>
-      Math.min(x - sectionRect.left, sectionRect.right - x),
+      Math.min(x - bodyRect.left, bodyRect.right - x),
     )
     const verticalCenters = centers.map(({ y }) => y)
 
     return {
       stickerCount: stickers.length,
-      allInOuterGutters: nearestEdgeInsets.every((inset) => inset <= sectionRect.width * 0.08),
+      aboutStickerCount: body.querySelectorAll("#about-section .mosaic-about-sticker").length,
+      workStickerCount: body.querySelectorAll("#about-panel-resume .mosaic-about-sticker").length,
+      allInOuterGutters: nearestEdgeInsets.every((inset) => inset <= bodyRect.width * 0.08),
       verticalCoverage:
         verticalCenters.length > 0
-          ? (Math.max(...verticalCenters) - Math.min(...verticalCenters)) / sectionRect.height
+          ? (Math.max(...verticalCenters) - Math.min(...verticalCenters)) / bodyRect.height
           : 0,
     }
   })
 
   expect(layout.stickerCount).toBe(8)
+  expect(layout.aboutStickerCount).toBe(4)
+  expect(layout.workStickerCount).toBe(4)
   expect(layout.allInOuterGutters).toBe(true)
   expect(layout.verticalCoverage).toBeGreaterThan(0.75)
+})
+
+test("keeps desktop stickers static during pointer movement and page scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/#about-panel")
+
+  const pointerSticker = page.getByRole("button", { name: /Palm tree sticker/ })
+  const initialPointerTranslate = await pointerSticker.evaluate((sticker) => getComputedStyle(sticker).translate)
+  await page.mouse.move(1420, 880)
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+  )
+  await expect(pointerSticker).toHaveCSS("translate", initialPointerTranslate)
+
+  await page.goto("/#about-panel-resume")
+  const scrollSticker = page.getByRole("button", { name: /Statue of Liberty sticker/ })
+  const scrollVisual = scrollSticker.locator(":scope > span")
+  const initialScrollTransform = await scrollVisual.evaluate((visual) => getComputedStyle(visual).transform)
+
+  await page.evaluate(() => window.scrollBy(0, 300))
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+  )
+  await expect(scrollVisual).toHaveCSS("transform", initialScrollTransform)
 })
 
 test("keeps 140px between the about close and the work-history heading on desktop", async ({ page }) => {
