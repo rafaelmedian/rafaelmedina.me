@@ -44,6 +44,7 @@
   /* Focus indicators need 3:1 against the adjacent surface (WCAG 1.4.11), which
      rules out the greys in --accent's range on our near-white backgrounds. */
   --focus-ring: #2d2d2d;
+  --elastic-edge-height: 56px;
   --overlay-filter: blur(1rem);
   --overlay-background: hsla(0, 0%, 100%, 0.8);
   --overlay-shadow:
@@ -168,6 +169,42 @@ img {
 
 #root {
   min-height: 100dvh;
+}
+
+.elastic-scroll-edge {
+  --elastic-edge-opacity: 0;
+  --elastic-edge-offset: 44px;
+  --elastic-edge-scale: 0.35;
+
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  height: calc(var(--elastic-edge-height) + env(safe-area-inset-bottom));
+  pointer-events: none;
+  opacity: var(--elastic-edge-opacity);
+  transform: translate3d(0, var(--elastic-edge-offset), 0) scaleY(var(--elastic-edge-scale));
+  transform-origin: center bottom;
+  transition-property: transform, opacity;
+  transition-duration: 700ms;
+  transition-timing-function: var(--ease-smooth);
+  will-change: transform, opacity;
+}
+
+.elastic-scroll-edge-shade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 90% 120% at 50% 120%,
+    var(--mosaic-card-surface) 0%,
+    rgb(236 236 238 / 0.66) 48%,
+    transparent 100%
+  );
+}
+
+.elastic-scroll-edge[data-pulling="true"] {
+  transition-duration: 0ms;
 }
 
 .mosaic-shell {
@@ -2350,11 +2387,28 @@ img {
   .mosaic-about {
     margin-top: -100vh;
     margin-top: -100dvh;
+    view-timeline-name: --about-takeover;
+    view-timeline-axis: block;
+  }
+
+  .mosaic-about::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 0;
+    height: 1px;
+    pointer-events: none;
     box-shadow:
       0 1px 2px rgb(16 16 20 / 0.06),
       0 12px 32px rgb(16 16 20 / 0.16);
-    view-timeline-name: --about-takeover;
-    view-timeline-axis: block;
+  }
+
+  /* The solid panel covers the shadow below its top edge. The shadow can
+     still lift over the gallery, while the sheet has no painted bottom edge. */
+  .mosaic-about-panel {
+    z-index: 1;
   }
 }
 
@@ -3398,5 +3452,9 @@ img {
 
   .mosaic-live-time {
     overflow: visible;
+  }
+
+  .elastic-scroll-edge {
+    display: none;
   }
 }

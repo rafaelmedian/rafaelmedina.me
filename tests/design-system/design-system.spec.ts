@@ -100,3 +100,11 @@ test("documents component-specific motion curves that still ship", async ({ page
     expect(documentedCurves).toContain(curve)
   }
 })
+
+test("keeps the restored neutral elastic edge free of its former tuning panel", async ({ page }) => {
+  await page.goto("/")
+  await page.waitForLoadState("networkidle")
+
+  const dial = page.locator(".dialkit-panel-wrapper").filter({ hasText: "Elastic scroll edge" })
+  await expect(dial).toHaveCount(0)
+})

@@ -1,5 +1,11 @@
 # AGENTS.md
 
+## Interaction preference
+
+For small, clear changes and direct follow-up corrections, implement and verify
+without asking for another approval round. Ask only when a decision is genuinely
+ambiguous, risky, destructive, or requires new authority.
+
 ## Design system
 
 `/design-system` (dev server only — `npm run dev`, then

@@ -276,7 +276,7 @@ const ELEVATION = [
   {
     name: "Hover card",
     shadow: "0 1px 2px rgb(16 16 20 / 0.06), 0 12px 32px rgb(16 16 20 / 0.16)",
-    use: "LinkedIn and X cards, the work-history popover, and the About takeover. A tight contact shadow plus one wide ambient.",
+    use: "LinkedIn and X cards, the work-history popover, and the top edge of the About takeover. A tight contact shadow plus one wide ambient.",
   },
   {
     name: "Dialog",
@@ -327,8 +327,8 @@ const EASINGS = [
   {
     name: "First load",
     css: "cubic-bezier(0.19, 1, 0.22, 1)",
-    duration: "380–480ms",
-    use: "--ease-smooth. The hero and mosaic intro cascades; the avatar press reuses it at 160ms.",
+    duration: "160–700ms",
+    use: "--ease-smooth. The hero and mosaic intro cascades; the bottom scroll edge uses a slower 700ms physical settle; the avatar press reuses it at 160ms.",
   },
   {
     name: "Coin flip",
@@ -357,7 +357,7 @@ const DURATIONS = [
   { value: "300ms", use: "The gallery expand/minimise icon swap." },
   { value: "360ms", use: "Media un-blurring as it decodes." },
   { value: "380–480ms", use: "First-load entrance travel, hero then mosaic." },
-  { value: "700ms", use: "The avatar coin flip — a deliberate outlier, and the longest thing on the site." },
+  { value: "700ms", use: "The bottom scroll edge's synchronized physical settle and the avatar coin flip." },
 ]
 
 /* ------------------------------------------------------------------ layout */
@@ -377,7 +377,7 @@ const BREAKPOINTS = [
 ]
 
 const STACKING = [
-  { z: "0–20", name: "Base, dock, chrome", note: "Tailwind's z-base / z-dock / z-chrome. The page and the mosaic." },
+  { z: "0–20", name: "Base, dock, chrome", note: "Tailwind's z-base / z-dock / z-chrome. The page, mosaic, and bottom scroll edge." },
   { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover." },
   {
     z: "30 / 50",
@@ -528,6 +528,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                     </div>
                   </article>
                 ))}
+              </div>
+            </div>
+
+            <div className="ds-block">
+              <p className="ds-subhead">Elastic page edge</p>
+              <div className="ds-rule">
+                <strong>One neutral rubber sheet.</strong>
+                <p>
+                  The 56px page-end curve reuses <code>--mosaic-card-surface</code> and fades it to transparent. It has
+                  one layer, no blur, no distortion, and no separate hue; the gesture and release motion provide the
+                  effect instead of decorative rendering.
+                </p>
               </div>
             </div>
 
@@ -1121,7 +1133,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   remain in one sticky stage at their original sizes and 1rem gaps, followed by a responsive white
                   runway of <code>clamp(12rem, 30vh, 18rem)</code>.
                   The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
-                  full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards. The gallery retreats as one surface, and About
+                  full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards.
+                  A top-only layer casts that shadow while the white sheet remains continuous through the page end. The gallery retreats as one surface, and About
                   continues in normal flow after the cover. Below 700px both wrappers collapse with{" "}
                   <code>display: contents</code>; the white sheet stays full-bleed but no pinning or overlap is applied.
                 </li>

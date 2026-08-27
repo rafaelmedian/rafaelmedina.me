@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react"
 
+import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
 import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
 
@@ -37,9 +38,12 @@ function App() {
             <DesignSystemPage links={siteLinks} name={siteProfile.name} />
           </Suspense>
         ) : (
-          <main id="main-content" tabIndex={-1} className="relative z-dock">
-            <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
-          </main>
+          <>
+            <main id="main-content" tabIndex={-1} className="relative z-dock">
+              <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
+            </main>
+            <BottomOverscrollEffect />
+          </>
         )}
         {Agentation ? (
           <Suspense fallback={null}>
