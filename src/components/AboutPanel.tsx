@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useCallback,
   useEffect,
   useRef,
@@ -9,6 +10,7 @@ import {
 } from "react"
 
 import { cvEducation, cvExperience } from "../data/cv"
+import type { CvExperience } from "../data/cv"
 import type { SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 
@@ -279,6 +281,43 @@ function ResumeCompanyLink({ company, href, logoUrls }: { company: string; href:
   )
 }
 
+function getCompanyLabel(job: CvExperience) {
+  if (!job.clients) return job.company
+
+  const clientNames = job.clients.map((client) => client.name)
+  const clients =
+    clientNames.length > 1
+      ? `${clientNames.slice(0, -1).join(", ")}, and ${clientNames.at(-1)}`
+      : clientNames[0]
+
+  return `${job.company} (${clients})`
+}
+
+function ResumeCompany({ job }: { job: CvExperience }) {
+  const clients = job.clients
+
+  if (clients) {
+    return (
+      <>
+        <span>{job.company} (</span>
+        {clients.map((client, index) => (
+          <Fragment key={client.name}>
+            {index > 0 ? (index === clients.length - 1 ? ", and " : ", ") : null}
+            <ResumeCompanyLink company={client.name} href={client.href} logoUrls={[client.logoUrl]} />
+          </Fragment>
+        ))}
+        <span>)</span>
+      </>
+    )
+  }
+
+  if (job.href && job.logoUrls) {
+    return <ResumeCompanyLink company={job.company} href={job.href} logoUrls={job.logoUrls} />
+  }
+
+  return <span>{job.company}</span>
+}
+
 export function AboutPanel({ links }: AboutPanelProps) {
   const { offsets, order, dragging, onKeyDown, onPointerDown, onPointerMove, onPointerUp } =
     useStickerMovement()
@@ -422,14 +461,9 @@ export function AboutPanel({ links }: AboutPanelProps) {
                     <div className="mosaic-about-resume-details">
                       <h3
                         className="mosaic-about-resume-title"
-                        aria-label={`${job.role} at ${job.company}`}
+                        aria-label={`${job.role} at ${getCompanyLabel(job)}`}
                       >
-                        {job.role} at{" "}
-                        {job.href && job.logoUrls ? (
-                          <ResumeCompanyLink company={job.company} href={job.href} logoUrls={job.logoUrls} />
-                        ) : (
-                          <span>{job.company}</span>
-                        )}
+                        {job.role} at <ResumeCompany job={job} />
                       </h3>
                       <p className="mosaic-about-resume-location">{job.location}</p>
                       <p className="mosaic-about-resume-description">{job.highlight}</p>

@@ -905,7 +905,7 @@ img {
 
 .mosaic-about-section-heading {
   margin: 0;
-  color: var(--muted-soft);
+  color: #545454;
   font-size: var(--text-md);
   font-weight: 400;
   line-height: 1.6;
@@ -1775,7 +1775,7 @@ img {
 }
 
 .mosaic-contact-pill-default {
-  min-width: 104px;
+  width: 7rem;
   border-color: #dedee0;
   background: linear-gradient(180deg, #f4f4f4 0%, #ffffff 69.12%);
   box-shadow: 0 1px 5px rgb(46 42 42 / 0.08);
@@ -2602,6 +2602,13 @@ img {
     padding-inline: 0.625rem;
   }
 
+  .mosaic-x-card {
+    right: auto;
+    left: 50%;
+    translate: -50% 0;
+    transform-origin: top center;
+  }
+
   .mosaic-profile-location {
     flex-direction: column;
     gap: 0.15rem;
@@ -2780,22 +2787,13 @@ img {
   height: 0;
 }
 
-/* The wrapper scales the surface down to the size of the card that was clicked;
-   this layer takes the exact reciprocal, so the media and the copy sit at final
-   size for the whole flight and the growing box just reveals them. Driven by
-   the Web Animations API in the dialog, in lockstep with the wrapper. */
-.preview-gallery-card-inner {
-  transform-origin: top center;
-}
-
-/* Mid-flight the counter-scaled content overflows its box, so the shell flags
-   the travel and the surface clips rather than flashing a scrollbar. */
+/* Mid-flight the translated surface can overflow the shell, so clip it rather
+   than flashing a scrollbar. */
 .preview-gallery-shell[data-origin-animating] .preview-gallery-card {
   overflow: hidden;
 }
 
-.preview-gallery-shell[data-origin-animating] .preview-gallery-origin-wrap,
-.preview-gallery-shell[data-origin-animating] .preview-gallery-card-inner {
+.preview-gallery-shell[data-origin-animating] .preview-gallery-origin-wrap {
   will-change: transform;
 }
 

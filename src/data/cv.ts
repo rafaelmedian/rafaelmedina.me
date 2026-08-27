@@ -1,5 +1,6 @@
 export type CvExperience = {
   company: string
+  clients?: CvExperienceClient[]
   location: string
   dates: string
   role: string
@@ -7,6 +8,12 @@ export type CvExperience = {
   /** Primary company link and decorative logo tooltip. */
   href?: string
   logoUrls?: string[]
+}
+
+export type CvExperienceClient = {
+  name: string
+  href: string
+  logoUrl: string
 }
 
 export type CvEducation = {
@@ -55,12 +62,15 @@ export const cvExperience: CvExperience[] = [
     highlight: "Redesigned financial-analysis tools for institutional analysts, improving data discovery and workflow efficiency.",
   },
   {
-    company: "TM (Chainlink, Twilio, and Onit)",
+    company: "TM",
+    clients: [
+      { name: "Chainlink", href: "https://chain.link/", logoUrl: "/logos/chainlink.svg" },
+      { name: "Twilio", href: "https://www.twilio.com/", logoUrl: "/logos/twilio.svg" },
+      { name: "Onit", href: "https://www.onit.com/", logoUrl: "/logos/onit.png" },
+    ],
     location: "Remote, Los Angeles",
     dates: "2018 - 2020",
     role: "Product Designer & Frontend Developer",
-    href: "https://chain.link/",
-    logoUrls: ["/logos/chainlink.svg", "/logos/twilio.svg", "/logos/onit.png"],
     highlight:
       "Chainlink: collaborated on internal product tools and the brand system, helping make a complex blockchain oracle network clearer and more consistent as the company scaled.",
   },

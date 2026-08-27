@@ -130,18 +130,14 @@ const easeClose = cubicBezierEasing(closeEasePoints)
 // 120Hz over the longest of these animations.
 const originSampleCount = 48
 
-// The wrapper scales the surface by `s` and the inner layer has to undo it with
-// `1/s`. Easing those two independently does NOT cancel — lerp(s, 1) times
-// lerp(1/s, 1) peaks around 20% off at the midpoint, which shows up as the copy
-// visibly breathing. So the easing is baked into sampled keyframes here and both
-// animations run `linear`, which keeps them exact reciprocals at every offset.
+// Bake the easing into sampled keyframes so the origin-aware translation and
+// scale remain one coordinated motion on the complete gallery surface.
 function buildOriginKeyframes(
   mode: "open" | "close",
   offset: { dx: number; dy: number; scale: number },
 ) {
   const ease = mode === "open" ? easeOpen : easeClose
-  const wrap: Keyframe[] = []
-  const inner: Keyframe[] = []
+  const keyframes: Keyframe[] = []
 
   for (let step = 0; step < originSampleCount; step += 1) {
     const time = step / (originSampleCount - 1)
@@ -152,19 +148,14 @@ function buildOriginKeyframes(
     const dx = offset.dx * (1 - travel)
     const dy = offset.dy * (1 - travel)
 
-    wrap.push({
+    keyframes.push({
       offset: time,
       easing: "linear",
       transform: `translate3d(${dx.toFixed(2)}px, ${dy.toFixed(2)}px, 0) scale(${scale.toFixed(5)})`,
     })
-    inner.push({
-      offset: time,
-      easing: "linear",
-      transform: `scale(${(1 / scale).toFixed(5)})`,
-    })
   }
 
-  return { wrap, inner }
+  return keyframes
 }
 
 function isVideoPreviewSource(source: string) {
@@ -213,7 +204,6 @@ export function PreviewGalleryDialog({
   const switchFrameRef = useRef<number | null>(null)
   const closeResetTimeoutRef = useRef<number | null>(null)
   const originWrapRef = useRef<HTMLDivElement | null>(null)
-  const cardInnerRef = useRef<HTMLDivElement | null>(null)
   const popupRef = useRef<HTMLDivElement | null>(null)
   const originAnimationsRef = useRef<Animation[]>([])
   // The portal mounts its contents in a later commit than the one that flips
@@ -292,10 +282,9 @@ export function PreviewGalleryDialog({
     originInputsRef.current = { getOriginRect, prefersReducedMotion, safeIndex }
   }, [getOriginRect, prefersReducedMotion, safeIndex])
 
-  // A translated (and counter-scaled) child overflows its scroll containers,
-  // which would flash a scrollbar mid-flight, and the rail would ride the scale
-  // down to a speck. One flag on the shell gates both, plus the compositing
-  // hints, and it must come off however the animation ends.
+  // The translated surface can overflow its scroll containers and flash a
+  // scrollbar mid-flight. One flag on the shell gates that clipping and the
+  // compositing hint, and it must come off however the animation ends.
   const clearOriginAnimatingFlag = useCallback(() => {
     originWrapRef.current?.parentElement?.removeAttribute("data-origin-animating")
   }, [])
@@ -329,19 +318,8 @@ export function PreviewGalleryDialog({
       fill: mode === "open" ? "none" : "forwards",
     }
 
-    const travel = wrap.animate(keyframes.wrap, options)
+    const travel = wrap.animate(keyframes, options)
     originAnimationsRef.current = [travel]
-
-    // The surface scales, the content must not: this layer takes the exact
-    // reciprocal, so the copy and the media sit at final size the whole way and
-    // the growing box simply reveals them. Same start time, so the two
-    // transforms cancel on every frame.
-    const inner = cardInnerRef.current
-    if (inner && typeof inner.animate === "function") {
-      const counter = inner.animate(keyframes.inner, options)
-      if (travel.startTime !== null) counter.startTime = travel.startTime
-      originAnimationsRef.current.push(counter)
-    }
 
     wrap.parentElement?.setAttribute("data-origin-animating", "true")
     // Only the open path unlocks on finish. On close the transform is held by
@@ -534,7 +512,7 @@ export function PreviewGalleryDialog({
                   touchStartRef.current = null
                 }}
               >
-                <div className="preview-gallery-card-inner" ref={cardInnerRef}>
+                <div className="preview-gallery-card-inner">
                   <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
                     {activeMediaIsVideo ? (
                       <video
