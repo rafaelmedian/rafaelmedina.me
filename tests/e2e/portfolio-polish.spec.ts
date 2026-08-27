@@ -44,6 +44,121 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
+test("compresses a soft light-gray edge into view when scrolling past the page bottom", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const edge = page.locator(".elastic-scroll-edge")
+  const pulledState = await edge.evaluate((element) => {
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    const styles = getComputedStyle(element)
+    const shade = element.querySelector<HTMLElement>(".elastic-scroll-edge-shade")
+    return {
+      pulling: element.getAttribute("data-pulling"),
+      inlineOpacity: (element as HTMLElement).style.getPropertyValue("--elastic-edge-opacity"),
+      pointerEvents: styles.pointerEvents,
+      height: Number.parseFloat(styles.height),
+      shadeCount: element.querySelectorAll(".elastic-scroll-edge-shade").length,
+      shadeFilter: shade ? getComputedStyle(shade).filter : "missing",
+      backgroundImage: shade ? getComputedStyle(shade).backgroundImage : "none",
+    }
+  })
+
+  expect(pulledState.pulling).toBe("true")
+  expect(Number(pulledState.inlineOpacity)).toBeGreaterThanOrEqual(0.9)
+  expect(pulledState.pointerEvents).toBe("none")
+  expect(pulledState.height).toBeGreaterThanOrEqual(40)
+  expect(pulledState.height).toBeLessThanOrEqual(72)
+  expect(pulledState.shadeCount).toBe(1)
+  expect(pulledState.shadeFilter).toBe("none")
+  const saturatedStops = [...pulledState.backgroundImage.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)]
+    .map(([, red, green, blue]) => [Number(red), Number(green), Number(blue)])
+    .filter((channels) => Math.max(...channels) - Math.min(...channels) >= 12)
+  expect(saturatedStops).toHaveLength(0)
+  expect(pulledState.backgroundImage).toContain("236, 236, 238")
+  await expect(edge).toHaveAttribute("data-pulling", "false")
+  await expect(edge).toHaveCSS("opacity", "0")
+})
+
+test("releases the elastic scroll edge with one slow physical settle", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const edge = page.locator(".elastic-scroll-edge")
+  const pullingState = await edge.evaluate((element) => {
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    return {
+      pulling: element.getAttribute("data-pulling"),
+      transitionDuration: getComputedStyle(element).transitionDuration,
+    }
+  })
+
+  expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0s" })
+
+  await expect(edge).toHaveAttribute("data-pulling", "false")
+  await expect(edge).toHaveCSS("transition-duration", "0.7s")
+  await expect(edge).toHaveCSS("transition-timing-function", "cubic-bezier(0.19, 1, 0.22, 1)")
+})
+
+test("continues the elastic scroll edge from its visible position when release is interrupted", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const edge = page.locator(".elastic-scroll-edge")
+  const interruption = await edge.evaluate(async (element) => {
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    await new Promise((resolve) => window.setTimeout(resolve, 210))
+
+    const opacityBeforeInterruption = Number.parseFloat(getComputedStyle(element).opacity)
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 20 }))
+    const opacityAfterInterruption = Number.parseFloat(getComputedStyle(element).opacity)
+
+    return { opacityBeforeInterruption, opacityAfterInterruption }
+  })
+
+  expect(interruption.opacityBeforeInterruption).toBeGreaterThan(0.1)
+  expect(interruption.opacityAfterInterruption).toBeGreaterThanOrEqual(interruption.opacityBeforeInterruption)
+})
+
+test("removes the elastic scroll edge when reduced motion is preferred", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const edge = page.locator(".elastic-scroll-edge")
+  await edge.evaluate(() => window.dispatchEvent(new WheelEvent("wheel", { deltaY: 180 })))
+
+  await expect(edge).toHaveCSS("display", "none")
+  await expect(edge).toHaveAttribute("data-pulling", "false")
+})
+
+test("keeps the About surface continuous while limiting its shadow to the top edge", async ({ page }) => {
+  await page.goto("/")
+
+  const about = page.locator(".mosaic-about")
+  const treatment = await about.evaluate((element) => {
+    const sheet = getComputedStyle(element)
+    const topEdge = getComputedStyle(element, "::before")
+    const panel = element.querySelector<HTMLElement>(".mosaic-about-panel")
+
+    return {
+      sheetShadow: sheet.boxShadow,
+      sheetClip: sheet.clipPath,
+      topEdgeContent: topEdge.content,
+      topEdgeHeight: topEdge.height,
+      topEdgeShadow: topEdge.boxShadow,
+      panelLayer: panel ? getComputedStyle(panel).zIndex : "missing",
+    }
+  })
+
+  expect(treatment.sheetShadow).toBe("none")
+  expect(treatment.sheetClip).toBe("none")
+  expect(treatment.topEdgeContent).toBe('""')
+  expect(treatment.topEdgeHeight).toBe("1px")
+  expect(treatment.topEdgeShadow).not.toBe("none")
+  expect(treatment.panelLayer).toBe("1")
+})
+
 test("does not claim a sitemap modification date for every deployment", async ({ request }) => {
   const response = await request.get("/sitemap.xml")
 
@@ -1084,7 +1199,7 @@ test("reuses the hover-card shadow for the about takeover", async ({ page }) => 
   const hoverCard = page.locator(".mosaic-linkedin-card")
 
   const [aboutShadow, hoverCardShadow] = await Promise.all([
-    about.evaluate((element) => getComputedStyle(element).boxShadow),
+    about.evaluate((element) => getComputedStyle(element, "::before").boxShadow),
     hoverCard.evaluate((element) => getComputedStyle(element).boxShadow),
   ])
 
