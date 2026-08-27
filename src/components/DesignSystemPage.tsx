@@ -144,10 +144,10 @@ const INK = [
   { hex: "#171717", token: "—", use: "Text inside white cards and the preview dialog" },
   { hex: "#2d2d2d", token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
-  { hex: "#545454", token: "—", use: "About-panel prose" },
+  { hex: "#545454", token: "—", use: "About-panel prose and the Work history heading" },
   { hex: "#6b6b6b", token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions" },
   { hex: "#747474", token: "—", use: "Corner nav links and the local-time label" },
-  { hex: "#757575", token: "--muted-soft", use: "Tertiary labels: definition terms, hobby notes, headings" },
+  { hex: "#757575", token: "--muted-soft", use: "Tertiary labels: definition terms and hobby notes" },
 ]
 
 const NON_TEXT = [
@@ -310,7 +310,7 @@ const EASINGS = [
     name: "Gallery open",
     css: "cubic-bezier(0.32, 0.8, 0.32, 1)",
     duration: "200ms",
-    use: "The preview gallery's origin-aware expansion and its fallback lift.",
+    use: "The preview gallery's origin-aware, whole-surface expansion and its fallback lift.",
   },
   {
     name: "Exit",
@@ -363,7 +363,7 @@ const DURATIONS = [
 /* ------------------------------------------------------------------ layout */
 
 const BREAKPOINTS = [
-  { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; location and availability stack without a separator." },
+  { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; the wrapped X card centers on its trigger; location and availability stack without a separator." },
   { at: "≤ 479.98px", change: "Contact pills gain up to 1.25rem side padding and wrap when their container cannot accommodate them." },
   { at: "≤ 639.98px", change: "The hero reserves 4rem of top clearance." },
   { at: "≤ 699.98px", change: "Local time hides; the 14px About and Resume labels centre optically; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; card captions hide." },
@@ -898,7 +898,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                     <tr>
                       <td>Default</td>
                       <td>
-                        <code>#f4f4f4 → #fff</code> gradient, <code>#dedee0</code> border, 104px min
+                        <code>#f4f4f4 → #fff</code> gradient, <code>#dedee0</code> border, 112px fixed
                       </td>
                       <td>The primary action. One per row.</td>
                     </tr>

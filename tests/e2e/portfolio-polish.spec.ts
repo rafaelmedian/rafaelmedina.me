@@ -14,6 +14,11 @@ const stubCompanySite = (context: BrowserContext) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Onit</title>" }),
   )
 
+const getPreviousCompanyLink = (page: Page, name: string) =>
+  page
+    .getByRole("group", { name: "Previous companies" })
+    .getByRole("link", { name, exact: true })
+
 // The work cards cascade in on first load, so a card clicked straight after
 // `goto` can still be sitting at its pre-start offset -- and the gallery grows
 // out of that card's live rect. Settle the cascade before touching a card.
@@ -177,6 +182,26 @@ test("offers LinkedIn and X actions beside copy email", async ({ page }) => {
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
 })
 
+test("keeps the wider copy-email action fixed when its label changes", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-write"])
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+  await pausePageClock(page)
+
+  const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
+  const beforeCopy = await copyButton.boundingBox()
+
+  expect(beforeCopy).not.toBeNull()
+  expect(beforeCopy!.width).toBe(112)
+
+  await copyButton.click()
+  await expect(copyButton).toHaveText("Copied!")
+
+  const afterCopy = await copyButton.boundingBox()
+  expect(afterCopy).not.toBeNull()
+  expect(afterCopy!.width).toBe(beforeCopy!.width)
+})
+
 test("uses the same side padding for every contact action", async ({ page }) => {
   await page.setViewportSize({ width: 487, height: 1381 })
   await page.goto("/")
@@ -304,6 +329,7 @@ test("uses only the body and lead type steps throughout About", async ({ page })
 
   expect(sizes).toEqual(["16px", "18px"])
   await expect(page.locator(".mosaic-about-section-heading")).toHaveCSS("font-size", "16px")
+  await expect(page.locator(".mosaic-about-section-heading")).toHaveCSS("color", "rgb(84, 84, 84)")
   await expect(page.locator("#about-section .mosaic-about-lede")).toHaveCSS("font-size", "18px")
 
   const workHistorySizes = await page
@@ -1460,6 +1486,31 @@ test("exposes the profile name as a heading rather than burying it in a control"
   await expect(page.locator(".mosaic-profile-meta")).not.toHaveAttribute("tabindex", "0")
 })
 
+test("opens the preview gallery as one coordinated surface", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 })
+  await page.goto("/")
+  await settleWorkCards(page)
+
+  // Hold Web Animations at their first frame so the short opening motion is
+  // still inspectable after React mounts the dialog portal.
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      animation.pause()
+      return animation
+    }
+  })
+
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+
+  const originWrap = page.locator(".preview-gallery-origin-wrap")
+  const cardInner = page.locator(".preview-gallery-card-inner")
+  expect(await originWrap.evaluate((element) => element.getAnimations().length)).toBe(1)
+  expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
+})
+
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
@@ -1477,9 +1528,8 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
     .locator(".preview-gallery-origin-wrap")
     .evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
 
-  // The counter-scale has to land exactly back on identity, or the content is
-  // left a fraction of a percent off its true size.
-  await expect(page.locator(".preview-gallery-card-inner")).toHaveCSS("transform", "none")
+  // The complete surface has to land exactly back on identity.
+  await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
 
   for (const name of ["Previous preview", "Next preview", "Close preview"]) {
     const control = dialog.getByRole("button", { name })
@@ -1911,7 +1961,9 @@ test("links each work-history company name to its primary website", async ({ pag
     { company: "0x Project", href: "https://0x.org/" },
     { company: "BoldVoice", href: "https://boldvoice.com/" },
     { company: "Moody's", href: "https://www.moodys.com/" },
-    { company: "TM (Chainlink, Twilio, and Onit)", href: "https://chain.link/" },
+    { company: "Chainlink", href: "https://chain.link/" },
+    { company: "Twilio", href: "https://www.twilio.com/" },
+    { company: "Onit", href: "https://www.onit.com/" },
     { company: "Incubeta (Google)", href: "https://www.google.com/" },
   ]
 
@@ -2211,7 +2263,7 @@ test("travels one role-bearing work-history popover between company triggers wit
   await location.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
   const initialLocationBox = await location.boundingBox()
   const popover = page.locator(".mosaic-work-history-popover")
-  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const onit = getPreviousCompanyLink(page, "Onit")
   const initialOnitBox = await onit.boundingBox()
 
   const closedTransform = await popover.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform))
@@ -2291,7 +2343,7 @@ test("travels one role-bearing work-history popover between company triggers wit
 test("keeps a work-history pill engaged while the pointer moves into its card", async ({ page }) => {
   await page.goto("/")
 
-  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const onit = getPreviousCompanyLink(page, "Onit")
   const popover = page.locator(".mosaic-work-history-popover")
 
   await onit.hover()
@@ -2311,7 +2363,7 @@ test("opens the work-history popover from the keyboard and links each chip to it
   page,
 }) => {
   await page.goto("/")
-  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const onit = getPreviousCompanyLink(page, "Onit")
   const popover = page.locator(".mosaic-work-history-popover")
 
   await onit.focus()
@@ -2337,7 +2389,7 @@ test("opens the work-history popover from the keyboard and links each chip to it
 
 test("reveals the work-history popover for a touch pointer on a hover-capable device", async ({ page }) => {
   await page.goto("/")
-  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const onit = getPreviousCompanyLink(page, "Onit")
   const popover = page.locator(".mosaic-work-history-popover")
 
   await onit.evaluate((element) => {
@@ -2354,7 +2406,7 @@ test("reveals the work-history popover for a touch pointer on a hover-capable de
 test("keeps the work-history popover stationary while the pointer moves within a link", async ({ page }) => {
   await page.goto("/")
 
-  const trigger = page.getByRole("link", { name: "Onit", exact: true })
+  const trigger = getPreviousCompanyLink(page, "Onit")
   const popover = page.locator(".mosaic-work-history-popover")
   const triggerBox = await trigger.boundingBox()
   expect(triggerBox).not.toBeNull()
@@ -2391,7 +2443,7 @@ test("toggles the work-history popover on tap and navigates through its link", a
   const page = await context.newPage()
   await page.goto("/")
 
-  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const onit = getPreviousCompanyLink(page, "Onit")
   const popover = page.locator(".mosaic-work-history-popover")
 
   await onit.tap()
@@ -2419,7 +2471,7 @@ test("keeps the work-history popover positioned with reduced motion", async ({ p
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const onit = getPreviousCompanyLink(page, "Onit")
   const popover = page.locator(".mosaic-work-history-popover")
   await onit.focus()
   await expect(popover).toBeVisible()
@@ -2437,7 +2489,7 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const onit = page.getByRole("link", { name: "Onit", exact: true })
+  const onit = getPreviousCompanyLink(page, "Onit")
   const popover = page.locator(".mosaic-work-history-popover")
   await onit.focus()
   await expect(popover).toBeVisible()
