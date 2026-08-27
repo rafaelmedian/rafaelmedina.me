@@ -96,7 +96,6 @@ export const homeRows: HomeRow[] = [
     height: homeTileRowHeight,
     items: [
       { cardId: "preview-shot-14", span: 1 },
-      { cardId: "preview-shot-15", span: 1 },
       { cardId: "preview-shot-23", span: 1 },
       { cardId: "preview-shot-20", span: 1 },
     ],

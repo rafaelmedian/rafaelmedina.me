@@ -52,6 +52,21 @@ test("documents the computed navigation hit area", async ({ page }) => {
   await expect(controlsCaption).toContainText(hitArea)
 })
 
+test("documents the computed resume-title weight", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+  const resumeTitleWeight = await page
+    .locator(".mosaic-about-resume-title")
+    .first()
+    .evaluate((title) => getComputedStyle(title).fontWeight)
+
+  await openDesignSystem(page)
+  const weightRow = page
+    .locator("#typography table tbody tr")
+    .filter({ has: page.getByRole("cell", { name: resumeTitleWeight, exact: true }) })
+
+  await expect(weightRow).toContainText("résumé titles and companies")
+})
+
 test("documents component-specific motion curves that still ship", async ({ page }) => {
   await page.goto("/")
 
