@@ -175,15 +175,13 @@ test("uses only the body and lead type steps throughout About", async ({ page })
     "#about-section .mosaic-about-lede",
     "#about-section .mosaic-about-section-copy > p:not(.mosaic-about-lede)",
     "#about-section .mosaic-about-hobbies li",
-    "#about-section .mosaic-about-fact dt",
-    "#about-section .mosaic-about-fact dd",
     ".mosaic-about-section-heading",
-    ".mosaic-about-work-history-copy > .mosaic-about-lede",
-    ".mosaic-about-resume-company",
-    ".mosaic-about-resume-meta",
-    ".mosaic-about-resume-highlights li",
+    ".mosaic-about-resume-link",
+    ".mosaic-about-resume-title",
+    ".mosaic-about-resume-dates",
+    ".mosaic-about-resume-location",
+    ".mosaic-about-resume-description",
     ".mosaic-about-resume-heading",
-    ".mosaic-about-resume-note",
   ].join(", "))
   const sizes = await typeRoles.evaluateAll((elements) =>
     [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
@@ -191,7 +189,13 @@ test("uses only the body and lead type steps throughout About", async ({ page })
 
   expect(sizes).toEqual(["16px", "18px"])
   await expect(page.locator(".mosaic-about-section-heading")).toHaveCSS("font-size", "16px")
-  await expect(page.locator(".mosaic-about-work-history-copy > .mosaic-about-lede")).toHaveCSS("font-size", "18px")
+  await expect(page.locator("#about-section .mosaic-about-lede")).toHaveCSS("font-size", "18px")
+
+  const workHistorySizes = await page
+    .locator("#about-panel-resume")
+    .locator("h2, h3, h4, p, li, a")
+    .evaluateAll((elements) => [...new Set(elements.map((element) => getComputedStyle(element).fontSize))])
+  expect(workHistorySizes).toEqual(["16px"])
 })
 
 test("gives mobile contact actions generous horizontal padding", async ({ page }) => {
@@ -238,7 +242,9 @@ test("adds breathing room below the previous-work label on mobile", async ({ pag
   await page.goto("/")
 
   const previousWorkLabel = page.getByText("previously worked with and at", { exact: true })
-  const firstPreviousCompany = page.getByRole("link", { name: "Moody's", exact: true })
+  const firstPreviousCompany = page
+    .locator(".mosaic-work-history")
+    .getByRole("link", { name: "Moody's", exact: true })
   const [labelBox, companyBox] = await Promise.all([
     previousWorkLabel.boundingBox(),
     firstPreviousCompany.boundingBox(),
@@ -906,7 +912,7 @@ test("stacks about before work history without tab controls", async ({ page }) =
   const about = page.locator("#about-section")
   const workHistory = page.locator("#about-panel-resume")
   await expect(page.getByRole("tablist")).toHaveCount(0)
-  await expect(about.getByText(/Hi, I.m Rafael/)).toBeVisible()
+  await expect(about.locator(".mosaic-about-lede")).toBeVisible()
   await expect(workHistory.getByRole("heading", { name: "Work history" })).toBeVisible()
 
   const order = await page.locator("#about-section, #about-panel-resume").evaluateAll(([aboutNode, workNode]) => {
@@ -930,13 +936,11 @@ test("left aligns the about introduction with the work-history reading axis", as
       const aboutRect = aboutCopy.getBoundingClientRect()
       const workHistoryRect = workHistoryCopy.getBoundingClientRect()
       const hobbies = aboutCopy.querySelector(".mosaic-about-hobbies")
-      const fact = aboutCopy.querySelector(".mosaic-about-fact")
 
       return {
         sharedLeftEdge: Math.round(aboutRect.left) === Math.round(workHistoryRect.left),
         aboutTextAlign: getComputedStyle(aboutCopy).textAlign,
         hobbiesJustification: hobbies ? getComputedStyle(hobbies).justifyContent : null,
-        factsJustification: fact ? getComputedStyle(fact).justifyContent : null,
       }
     },
   )
@@ -945,31 +949,28 @@ test("left aligns the about introduction with the work-history reading axis", as
     sharedLeftEdge: true,
     aboutTextAlign: "left",
     hobbiesJustification: "flex-start",
-    factsJustification: "flex-start",
   })
 })
 
-test("separates work history from about with a content-width divider", async ({ page }) => {
+test("separates work history from about with 140px of desktop whitespace and no hairline", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
 
-  const divider = await page.locator(".mosaic-about-work-history-copy").evaluate((element) => {
-    const styles = getComputedStyle(element)
+  const separation = await page.locator("#about-section, .mosaic-about-work-history-copy").evaluateAll(([about, workHistory]) => {
+    const styles = getComputedStyle(workHistory)
     return {
-      width: Math.round(element.getBoundingClientRect().width),
+      gap: Math.round(workHistory.getBoundingClientRect().top - about.getBoundingClientRect().bottom),
+      width: Math.round(workHistory.getBoundingClientRect().width),
       borderTopWidth: styles.borderTopWidth,
-      borderTopStyle: styles.borderTopStyle,
-      borderTopColor: styles.borderTopColor,
       paddingTop: styles.paddingTop,
     }
   })
 
-  expect(divider).toEqual({
-    width: 544,
-    borderTopWidth: "1px",
-    borderTopStyle: "solid",
-    borderTopColor: "rgba(0, 0, 0, 0.08)",
-    paddingTop: "48px",
+  expect(separation).toEqual({
+    gap: 140,
+    width: 576,
+    borderTopWidth: "0px",
+    paddingTop: "0px",
   })
 })
 
@@ -1023,7 +1024,7 @@ test("leaves a generous white runway after the final project row before the abou
     return Math.round(element.getBoundingClientRect().bottom - lastRow.getBoundingClientRect().bottom)
   })
 
-  expect(endSpacing).toBeGreaterThanOrEqual(160)
+  expect(endSpacing).toBeGreaterThanOrEqual(250)
 })
 
 test("pins the complete project grid when its bottom reaches the viewport", async ({ page }) => {
@@ -1073,6 +1074,21 @@ test("scrolls the about surface over the pinned project grid", async ({ page }) 
   })
 
   expect(placement).toEqual({ stageBottom: 913, aboutTop: 456, aboutOwnsCoveredArea: true })
+})
+
+test("reuses the hover-card shadow for the about takeover", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+
+  const about = page.locator("#about-panel")
+  const hoverCard = page.locator(".mosaic-linkedin-card")
+
+  const [aboutShadow, hoverCardShadow] = await Promise.all([
+    about.evaluate((element) => getComputedStyle(element).boxShadow),
+    hoverCard.evaluate((element) => getComputedStyle(element).boxShadow),
+  ])
+
+  expect(aboutShadow).toBe(hoverCardShadow)
 })
 
 test("retreats the complete project grid as one surface during takeover", async ({ page }) => {
@@ -1271,7 +1287,7 @@ test("keeps the restored third-row projects equal width", async ({ page }) => {
   expect(tradePageBox!.width).toBeCloseTo(tradeModuleBox!.width, 0)
 })
 
-test("adds four more projects in the fourth row", async ({ page }) => {
+test("caps each row at three projects and omits Mobile navigation", async ({ page }) => {
   await page.goto("/")
 
   const rows = page.locator(".mosaic-row")
@@ -1279,15 +1295,18 @@ test("adds four more projects in the fourth row", async ({ page }) => {
   const cards = lastRow.locator(".mosaic-row-card")
 
   await expect(rows).toHaveCount(4)
-  await expect(cards).toHaveCount(4)
+  const rowCardCounts = await rows.evaluateAll((elements) =>
+    elements.map((element) => element.querySelectorAll(".mosaic-row-card").length),
+  )
+  expect(rowCardCounts.every((count) => count <= 3)).toBe(true)
+  await expect(cards).toHaveCount(3)
   await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha - Mobile Screens/)
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha - Mobile navigation/)
-  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha Pro/)
-  await expect(cards.nth(3)).toHaveAttribute("aria-label", /Open Matcha - Security Audit/)
+  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha Pro/)
+  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha - Security Audit/)
+  await expect(page.getByRole("button", { name: /Open Matcha - Mobile navigation/ })).toHaveCount(0)
   await expect(cards.nth(0).locator("img")).toHaveAttribute("src", /shot-small-14\.jpg$/)
-  await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-15\.jpg$/)
-  await expect(cards.nth(2).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
-  await expect(cards.nth(3).locator("video")).toHaveAttribute("poster", "/Projects/shot-small-20-poster.webp")
+  await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
+  await expect(cards.nth(2).locator("video")).toHaveAttribute("poster", "/Projects/shot-small-20-poster.webp")
 })
 
 test("keeps the fourth-row projects equal width", async ({ page }) => {
@@ -1295,7 +1314,7 @@ test("keeps the fourth-row projects equal width", async ({ page }) => {
   await page.goto("/")
 
   const cards = page.locator(".mosaic-row").last().locator(".mosaic-row-card")
-  await expect(cards).toHaveCount(4)
+  await expect(cards).toHaveCount(3)
   const widths = await cards.evaluateAll((elements) =>
     elements.map((element) => Math.round(element.getBoundingClientRect().width)),
   )
@@ -1380,7 +1399,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  await expect(dialog.getByText("2 / 12", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("2 / 11", { exact: true })).toBeVisible()
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -1407,7 +1426,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 12")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 11")
   await context.close()
 })
 
@@ -1444,7 +1463,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 12")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 11")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -1454,7 +1473,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 12")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 11")
   await context.close()
 })
 
@@ -1498,18 +1517,29 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-test("shows about and the complete work history together", async ({ page }) => {
+test("shows about and the work history summary together", async ({ page }) => {
   await page.goto("/")
   const panel = page.locator("#about-panel")
 
-  await expect(panel.getByText(/Hi, I.m Rafael/)).toBeVisible()
+  await expect(panel.locator(".mosaic-about-lede")).toBeVisible()
   await expect(panel.getByRole("heading", { name: "Work history" })).toBeVisible()
 
   const entries = panel.locator(".mosaic-about-resume-entry")
-  await expect(entries.first()).toContainText("Stealth")
-  await expect(entries.first()).toContainText("Founder · Mar 2026 - Present")
-  await expect(entries.first()).toContainText("Building a mobile wallet product.")
+  await expect(entries.first()).toContainText("Startup")
+  await expect(entries.first().locator(".mosaic-about-resume-title")).toHaveText("Co-founder at Startup")
+  await expect(entries.first().locator(".mosaic-about-resume-dates")).toHaveText("2026 - Present")
+  await expect(entries.first()).toContainText(
+    "Building a mobile wallet for colmados, helping neighborhood store owners in the Dominican Republic manage payments and day-to-day finances from their phones.",
+  )
   await expect(entries.nth(1)).toContainText("0x Project")
+  await expect(entries.nth(1).locator(".mosaic-about-resume-dates")).toHaveText("2021 - 2026")
+  await expect(entries.nth(1).locator(".mosaic-about-resume-description")).toHaveText(
+    "Redesigned Matcha.xyz from scratch and introduced monetization flows that generated sustainable revenue.",
+  )
+  const tmDescription = entries.nth(4).locator(".mosaic-about-resume-description")
+  await expect(tmDescription).toHaveText(
+    "Chainlink: collaborated on internal product tools and the brand system, helping make a complex blockchain oracle network clearer and more consistent as the company scaled.",
+  )
   await expect(panel).toContainText("Incubeta")
   await expect(panel).toContainText("NOVA Community College")
   await expect(panel).toContainText("ITLA")
@@ -1526,63 +1556,161 @@ test("shows about and the complete work history together", async ({ page }) => {
   )
 
   await expect(panel.getByRole("button", { name: /Palm tree sticker/ })).toBeVisible()
-  await expect(panel.getByRole("button", { name: /Briefcase sticker/ })).toBeVisible()
+  await expect(panel.getByRole("button", { name: /Briefcase sticker/ })).toHaveCount(0)
 })
 
-test("keeps work-history stickers inside the work-history section", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
+test("uses the visible about lede as the section heading", async ({ page }) => {
+  await page.goto("/#about-panel")
+
+  const intro = page.locator("#about-section .mosaic-about-section-copy")
+  const heading = intro.getByRole("heading", { name: "About me" })
+
+  await expect(heading).toHaveClass(/mosaic-about-lede/)
+  await expect(heading).not.toHaveClass(/sr-only/)
+  await expect(intro.locator(":scope > p")).toHaveCount(3)
+  await expect(intro.locator(".mosaic-about-facts")).toHaveCount(0)
+})
+
+test("adds breathing room above the about hobbies", async ({ page }) => {
+  await page.goto("/#about-panel")
+
+  await expect(page.locator(".mosaic-about-hobbies")).toHaveCSS("margin-top", "8px")
+})
+
+test("presents work history as a focused summary", async ({ page }) => {
   await page.goto("/#about-panel-resume")
 
   const workHistory = page.locator("#about-panel-resume")
-  const sticker = page.getByRole("button", { name: /Briefcase sticker/ })
-
-  await expect(sticker).toBeVisible()
-  expect(await sticker.evaluate((element) => element.parentElement?.id)).toBe("about-panel-resume")
-
-  const bounds = await Promise.all([workHistory.boundingBox(), sticker.boundingBox()])
-  expect(bounds[0]).not.toBeNull()
-  expect(bounds[1]).not.toBeNull()
-  expect(bounds[1]!.x).toBeGreaterThanOrEqual(bounds[0]!.x)
-  expect(bounds[1]!.x + bounds[1]!.width).toBeLessThanOrEqual(bounds[0]!.x + bounds[0]!.width)
+  await expect(workHistory.getByRole("link", { name: "Full résumé" })).toHaveAttribute(
+    "href",
+    "/rafael-medina-resume.pdf",
+  )
+  await expect(workHistory.locator(".mosaic-about-lede")).toHaveCount(0)
+  await expect(
+    workHistory.locator(".mosaic-about-work-list > .mosaic-about-work-entry .mosaic-about-resume-description"),
+  ).toHaveCount(6)
+  await expect(workHistory.locator(".mosaic-about-sticker")).toHaveCount(0)
 })
 
-test("spreads each sticker set across the full desktop section gutters", async ({ page }) => {
+test("omits the work-history summary paragraph", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+
+  await expect(
+    page.getByText(
+      "Ten years designing web3, fintech, and consumer products — from early strategy to shipped interfaces.",
+      { exact: true },
+    ),
+  ).toHaveCount(0)
+})
+
+test("starts the experience list without a top hairline", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+
+  await expect(
+    page.locator(".mosaic-about-work-history-copy > .mosaic-about-resume > .mosaic-about-resume-entry").first(),
+  ).toHaveCSS("border-top-width", "0px")
+})
+
+test("starts the education section without a top hairline", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+
+  await expect(page.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "0px")
+})
+
+test("formats desktop work history as dates beside role, company, location, and description", async ({ page }) => {
+  await page.setViewportSize({ width: 650, height: 900 })
+  await page.goto("/#about-panel-resume")
+
+  const entry = page.locator(".mosaic-about-resume-entry").first()
+  const dates = entry.locator(".mosaic-about-resume-dates")
+  const details = entry.locator(".mosaic-about-resume-details")
+
+  await expect(entry.getByRole("heading", { name: "Co-founder at Startup" })).toBeVisible()
+  await expect(entry.locator(".mosaic-about-resume-location")).toHaveText("Remote")
+  await expect(entry.locator(".mosaic-about-resume-description")).toHaveText(
+    "Building a mobile wallet for colmados, helping neighborhood store owners in the Dominican Republic manage payments and day-to-day finances from their phones.",
+  )
+  await expect(entry.locator(".mosaic-about-resume-description")).toHaveCSS("margin-top", "12px")
+
+  const [datesBox, detailsBox] = await Promise.all([dates.boundingBox(), details.boundingBox()])
+  expect(datesBox).not.toBeNull()
+  expect(detailsBox).not.toBeNull()
+  expect(datesBox!.x).toBeLessThan(detailsBox!.x)
+  expect(datesBox!.y).toBeCloseTo(detailsBox!.y, 0)
+})
+
+test("gives the Chainlink work a fuller description", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+
+  const chainlinkEntry = page
+    .locator(".mosaic-about-work-entry")
+    .filter({ has: page.getByRole("heading", { name: "Product Designer & Frontend Developer at TM (Chainlink, Twilio, and Onit)" }) })
+
+  await expect(chainlinkEntry.locator(".mosaic-about-resume-description")).toContainText(
+    "Chainlink: collaborated on internal product tools and the brand system, helping make a complex blockchain oracle network clearer and more consistent as the company scaled.",
+  )
+})
+
+test("formats education with dates beside its details and extra section spacing", async ({ page }) => {
+  await page.setViewportSize({ width: 650, height: 900 })
+  await page.goto("/#about-panel-resume")
+
+  const education = page.locator(".mosaic-about-resume-education")
+  const entry = education.locator(".mosaic-about-resume-entry").first()
+  const dates = entry.locator(".mosaic-about-resume-dates")
+  const details = entry.locator(".mosaic-about-resume-details")
+
+  await expect(entry.getByRole("heading", { name: "Computer Science at CCI Program - NOVA Community College" })).toBeVisible()
+  await expect(dates).toHaveText("2016 - 2018")
+  await expect(entry.locator(".mosaic-about-resume-location")).toHaveText("Washington, DC")
+
+  const [sectionBox, lastJobBox, datesBox, detailsBox] = await Promise.all([
+    education.boundingBox(),
+    page.locator(".mosaic-about-work-list > .mosaic-about-work-entry").last().boundingBox(),
+    dates.boundingBox(),
+    details.boundingBox(),
+  ])
+  expect(sectionBox).not.toBeNull()
+  expect(lastJobBox).not.toBeNull()
+  expect(datesBox).not.toBeNull()
+  expect(detailsBox).not.toBeNull()
+  expect(sectionBox!.y - (lastJobBox!.y + lastJobBox!.height)).toBeGreaterThanOrEqual(64)
+  expect(datesBox!.x).toBeLessThan(detailsBox!.x)
+  expect(datesBox!.y).toBeCloseTo(detailsBox!.y, 0)
+})
+
+test("spreads the about stickers across the full desktop section gutters", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/#about-panel")
 
-  const layouts = await page.locator("#about-section, #about-panel-resume").evaluateAll((sections) =>
-    sections.map((section) => {
-      const sectionRect = section.getBoundingClientRect()
-      const stickers = Array.from(section.querySelectorAll<HTMLElement>(".mosaic-about-sticker"))
-      const centers = stickers.map((sticker) => {
-        const rect = sticker.getBoundingClientRect()
-        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-      })
-      const nearestEdgeInsets = centers.map(({ x }) =>
-        Math.min(x - sectionRect.left, sectionRect.right - x),
-      )
-      const verticalCenters = centers.map(({ y }) => y)
+  const layout = await page.locator("#about-section").evaluate((section) => {
+    const sectionRect = section.getBoundingClientRect()
+    const stickers = Array.from(section.querySelectorAll<HTMLElement>(".mosaic-about-sticker"))
+    const centers = stickers.map((sticker) => {
+      const rect = sticker.getBoundingClientRect()
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+    })
+    const nearestEdgeInsets = centers.map(({ x }) =>
+      Math.min(x - sectionRect.left, sectionRect.right - x),
+    )
+    const verticalCenters = centers.map(({ y }) => y)
 
-      return {
-        stickerCount: stickers.length,
-        allInOuterGutters: nearestEdgeInsets.every((inset) => inset <= sectionRect.width * 0.08),
-        verticalCoverage:
-          verticalCenters.length > 0
-            ? (Math.max(...verticalCenters) - Math.min(...verticalCenters)) / sectionRect.height
-            : 0,
-      }
-    }),
-  )
+    return {
+      stickerCount: stickers.length,
+      allInOuterGutters: nearestEdgeInsets.every((inset) => inset <= sectionRect.width * 0.08),
+      verticalCoverage:
+        verticalCenters.length > 0
+          ? (Math.max(...verticalCenters) - Math.min(...verticalCenters)) / sectionRect.height
+          : 0,
+    }
+  })
 
-  expect(layouts).toHaveLength(2)
-  for (const layout of layouts) {
-    expect(layout.stickerCount).toBe(8)
-    expect(layout.allInOuterGutters).toBe(true)
-    expect(layout.verticalCoverage).toBeGreaterThan(0.75)
-  }
+  expect(layout.stickerCount).toBe(8)
+  expect(layout.allInOuterGutters).toBe(true)
+  expect(layout.verticalCoverage).toBeGreaterThan(0.75)
 })
 
-test("gives work history more top breathing room without disconnecting it from about", async ({ page }) => {
+test("keeps 140px between the about close and the work-history heading on desktop", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/#about-panel")
 
@@ -1593,8 +1721,7 @@ test("gives work history more top breathing room without disconnecting it from a
     return Math.round(heading.getBoundingClientRect().top - closing.getBoundingClientRect().bottom)
   })
 
-  expect(gap).toBeGreaterThanOrEqual(72)
-  expect(gap).toBeLessThanOrEqual(80)
+  expect(gap).toBe(140)
 })
 
 test("left aligns the work-history reading hierarchy", async ({ page }) => {
@@ -1602,53 +1729,112 @@ test("left aligns the work-history reading hierarchy", async ({ page }) => {
 
   const alignment = await page.locator("#about-panel-resume").evaluate((section) => {
     const heading = section.querySelector("#about-work-history-heading")
-    const company = section.querySelector(".mosaic-about-resume-company")
+    const title = section.querySelector(".mosaic-about-resume-title")
     return {
       section: getComputedStyle(section).textAlign,
       heading: heading ? getComputedStyle(heading).textAlign : null,
-      companyJustification: company ? getComputedStyle(company).justifyContent : null,
+      title: title ? getComputedStyle(title).textAlign : null,
     }
   })
 
-  expect(alignment).toEqual({ section: "left", heading: "left", companyJustification: "flex-start" })
+  expect(alignment).toEqual({ section: "left", heading: "left", title: "left" })
 })
 
 test("reveals company logo tooltips on hover and keyboard focus", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/#about-panel-resume")
 
-  const trigger = page.getByRole("button", { name: "Show 0x Project logos" })
-  const tooltip = page.getByRole("tooltip", { name: "0x Project logos" })
+  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
+  const tooltip = companyLink.locator(".mosaic-company-inline-hover-logos")
 
   await expect(tooltip).toBeHidden()
-  await trigger.hover()
+  await companyLink.hover()
   await expect(tooltip).toBeVisible()
+  await expect(tooltip.locator("img")).toHaveCount(2)
   await page.mouse.move(0, 0)
   await expect(tooltip).toBeHidden()
-  await trigger.focus()
+  await companyLink.focus()
+  await expect(tooltip).toBeVisible()
+})
+
+test("keeps a keyboard-focused company logo tooltip populated after pointer leave", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/#about-panel-resume")
+
+  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
+  const tooltip = companyLink.locator(".mosaic-company-inline-hover-logos")
+
+  await companyLink.focus()
+  await companyLink.hover()
+  await page.mouse.move(0, 0)
+
+  await expect(companyLink).toBeFocused()
   await expect(tooltip).toBeVisible()
   await expect(tooltip.locator("img")).toHaveCount(2)
 })
 
-test("keeps each employer as the accessible work-history heading", async ({ page }) => {
+test("dismisses a keyboard-focused company logo tooltip with Escape", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/#about-panel-resume")
 
-  await expect(page.getByRole("heading", { name: "0x Project", exact: true })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Show 0x Project logos" })).toBeVisible()
+  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
+  const tooltip = companyLink.locator(".mosaic-company-inline-hover-logos")
+
+  await companyLink.focus()
+  await expect(tooltip).toBeVisible()
+  await companyLink.press("Escape")
+
+  await expect(companyLink).toBeFocused()
+  await expect(tooltip).toBeHidden()
 })
 
-test("keeps focus on a company trigger when Escape dismisses its logo tooltip", async ({ page }) => {
+test("links each work-history company name to its primary website", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+  const workHistory = page.locator("#about-panel-resume")
+
+  const projects = [
+    { company: "0x Project", href: "https://0x.org/" },
+    { company: "BoldVoice", href: "https://boldvoice.com/" },
+    { company: "Moody's", href: "https://www.moodys.com/" },
+    { company: "TM (Chainlink, Twilio, and Onit)", href: "https://chain.link/" },
+    { company: "Incubeta (Google)", href: "https://www.google.com/" },
+  ]
+
+  for (const project of projects) {
+    const companyLink = workHistory.getByRole("link", { name: project.company, exact: true })
+    await expect(companyLink).toHaveAttribute("href", project.href)
+    await expect(companyLink).toHaveAttribute("target", "_blank")
+  }
+})
+
+test("opens a work-history company website from its name", async ({ page }) => {
+  await page.context().route("https://0x.org/**", (route) =>
+    route.fulfill({ contentType: "text/html", body: "<!doctype html><title>0x</title>" }),
+  )
   await page.goto("/#about-panel-resume")
 
-  const trigger = page.getByRole("button", { name: "Show 0x Project logos" })
-  const tooltip = page.getByRole("tooltip", { name: "0x Project logos" })
-  await trigger.focus()
-  await expect(tooltip).toBeVisible()
+  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
 
-  await trigger.press("Escape")
+  const popupPromise = page.waitForEvent("popup")
+  await companyLink.click()
+  const popup = await popupPromise
+  await expect.poll(() => popup.url()).toContain("0x.org")
+  await popup.close()
+})
 
-  await expect(tooltip).toBeHidden()
-  await expect(trigger).toBeFocused()
+test("keeps each role and employer as the accessible work-history heading", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+
+  await expect(page.getByRole("heading", { name: "Senior Product Designer at 0x Project" })).toBeVisible()
+  await expect(page.getByRole("link", { name: "0x Project", exact: true })).toBeVisible()
+})
+
+test("keeps work-history logo tooltips non-interactive", async ({ page }) => {
+  await page.goto("/#about-panel-resume")
+
+  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
+  await companyLink.hover()
+  await expect(companyLink.locator(".mosaic-company-inline-hover-logos").getByRole("link")).toHaveCount(0)
 })
 
 test("defers resume-only company logos until their tooltip opens", async ({ page }) => {
@@ -1664,7 +1850,7 @@ test("defers resume-only company logos until their tooltip opens", async ({ page
   expect(requestedLogoPaths).not.toContain(boldVoiceLogoPath)
 
   const request = page.waitForRequest((candidate) => new URL(candidate.url()).pathname === boldVoiceLogoPath)
-  await page.getByRole("button", { name: "Show BoldVoice logos" }).focus()
+  await page.getByRole("link", { name: "BoldVoice", exact: true }).focus()
   await request
 })
 
@@ -1755,7 +1941,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
 
   await next.click()
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 12")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 11")
 
   const changedDialogBox = await dialog.boundingBox()
   const changedRailBox = await rail.boundingBox()
@@ -1766,7 +1952,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 12")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 11")
 })
 
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
@@ -1960,7 +2146,10 @@ test("travels one role-bearing work-history popover between company triggers wit
   expect(onitPopoverBox!.y).toBeGreaterThan(onitTriggerBox!.y + onitTriggerBox!.height)
   expect(onitLocationBox!.y).toBeCloseTo(initialLocationBox!.y, 0)
 
-  await page.getByRole("link", { name: "Moody's", exact: true }).hover()
+  await page
+    .locator(".mosaic-work-history")
+    .getByRole("link", { name: "Moody's", exact: true })
+    .hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Moody's")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
   expect(

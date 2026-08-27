@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useId,
   useRef,
   useState,
   type CSSProperties,
@@ -38,25 +37,14 @@ type AboutSticker = {
  * movement, and they are hidden below 900px where the panel has no spare room.
  */
 const aboutStickers: AboutSticker[] = [
-  { emoji: "🌴", label: "Palm tree", top: "6%", left: "2%", rotate: -12 },
+  { emoji: "🌴", label: "Palm tree", top: "5%", left: "2%", rotate: -12 },
   { emoji: "🎨", label: "Artist palette", top: "34%", left: "5%", rotate: 15 },
   { emoji: "✏️", label: "Pencil", bottom: "34%", left: "2%", rotate: 14 },
-  { emoji: "🌊", label: "Ocean wave", bottom: "6%", left: "5%", rotate: -9 },
+  { emoji: "🌊", label: "Ocean wave", bottom: "5%", left: "5%", rotate: -9 },
   { emoji: "🗽", label: "Statue of Liberty", top: "10%", right: "4%", rotate: 9 },
   { emoji: "💻", label: "Laptop", top: "38%", right: "2%", rotate: -6 },
   { emoji: "🤖", label: "Robot", bottom: "30%", right: "5%", rotate: 11 },
   { emoji: "🛠️", label: "Tools", bottom: "8%", right: "2%", rotate: -7 },
-]
-
-const resumeStickers: AboutSticker[] = [
-  { emoji: "🎓", label: "Graduation cap", top: "8%", left: "4%", rotate: 10 },
-  { emoji: "🖋️", label: "Fountain pen", top: "36%", left: "2%", rotate: -14 },
-  { emoji: "☕", label: "Coffee", bottom: "32%", left: "5%", rotate: 9 },
-  { emoji: "🚀", label: "Rocket", bottom: "6%", left: "2%", rotate: -11 },
-  { emoji: "💼", label: "Briefcase", top: "12%", right: "2%", rotate: -8 },
-  { emoji: "📈", label: "Chart trending up", top: "40%", right: "5%", rotate: 12 },
-  { emoji: "💡", label: "Light bulb", bottom: "28%", right: "2%", rotate: -6 },
-  { emoji: "🏆", label: "Trophy", bottom: "8%", right: "4%", rotate: 7 },
 ]
 
 type Offset = { x: number; y: number }
@@ -246,25 +234,15 @@ const hobbies = [
   { emoji: "🥋", label: "Jiu jitsu", learning: true },
 ]
 
-const elsewhereLinks = (links: SiteLinks) => [
-  { name: "X", href: links.x },
-  { name: "GitHub", href: links.github },
-  { name: "LinkedIn", href: links.linkedin },
-  { name: "Dribbble", href: links.dribbble },
-]
-
-function ResumeCompanyTooltip({ company, logoUrls }: { company: string; logoUrls: string[] }) {
-  const tooltipId = useId()
+function ResumeCompanyLink({ company, href, logoUrls }: { company: string; href: string; logoUrls: string[] }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <button
-      type="button"
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
       className="mosaic-company-inline-link mosaic-about-resume-company-trigger"
-      aria-label={`Show ${company} logos`}
-      aria-describedby={open ? tooltipId : undefined}
-      aria-expanded={open}
-      onClick={() => setOpen(true)}
       onFocus={() => setOpen(true)}
       onBlur={() => setOpen(false)}
       onPointerEnter={() => {
@@ -274,16 +252,12 @@ function ResumeCompanyTooltip({ company, logoUrls }: { company: string; logoUrls
         if (document.activeElement !== event.currentTarget) setOpen(false)
       }}
       onKeyDown={(event) => {
-        if (event.key !== "Escape") return
-        setOpen(false)
+        if (event.key === "Escape") setOpen(false)
       }}
     >
       <span className="mosaic-company-inline-name">{company}</span>
       <span
-        id={tooltipId}
-        role="tooltip"
-        aria-label={`${company} logos`}
-        aria-hidden={open ? undefined : true}
+        aria-hidden="true"
         className="mosaic-company-inline-hover-logos"
         data-open={open ? "true" : "false"}
       >
@@ -301,7 +275,7 @@ function ResumeCompanyTooltip({ company, logoUrls }: { company: string; logoUrls
             ))
           : null}
       </span>
-    </button>
+    </a>
   )
 }
 
@@ -361,18 +335,13 @@ export function AboutPanel({ links }: AboutPanelProps) {
             aria-labelledby="about-section-heading"
           >
             <div className="mosaic-about-section-copy">
-              <h2 id="about-section-heading" className="sr-only">
+              <h2 id="about-section-heading" className="mosaic-about-lede">
                 About me
               </h2>
-              <p className="mosaic-about-lede">Hi, I&rsquo;m Rafael.</p>
               <p>
-                I&rsquo;ve spent the last ten years designing products, mostly the complicated parts people
-                prefer not to think about. I figure out what to build, test it with real people, and stay
-                for the fixes after launch.
-              </p>
-              <p>
-                I prototype in code. A working interaction answers questions faster than a static mockup,
-                and usually faster than a meeting.
+                I design the complicated parts of products people prefer not to think about. I figure out
+                what to build, test it with real people, and prototype in code because working interactions
+                answer questions faster than static mockups.
               </p>
               <p>
                 When I&rsquo;m not working, I&rsquo;m probably kickboxing, swimming, riding a bike, or being humbled
@@ -392,42 +361,6 @@ export function AboutPanel({ links }: AboutPanelProps) {
                   </li>
                 ))}
               </ul>
-
-              <dl className="mosaic-about-facts">
-                <div className="mosaic-about-fact">
-                  <dt>Now</dt>
-                  <dd>Freelance, splitting time between Punta Cana and NYC.</dd>
-                </div>
-                <div className="mosaic-about-fact">
-                  <dt>Lately</dt>
-                  <dd>Prototypes, AI tooling, and design systems.</dd>
-                </div>
-                <div className="mosaic-about-fact">
-                  <dt>Elsewhere</dt>
-                  <dd>
-                    {elsewhereLinks(links).map((link, index) => (
-                      <span key={link.name}>
-                        {index > 0 ? <span aria-hidden="true"> · </span> : null}
-                        <a
-                          href={link.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mosaic-about-link"
-                          onClick={() => {
-                            trackEvent("social_link_click", {
-                              social_label: link.name,
-                              social_href: link.href,
-                              social_placement: "about_panel",
-                            })
-                          }}
-                        >
-                          {link.name}
-                        </a>
-                      </span>
-                    ))}
-                  </dd>
-                </div>
-              </dl>
 
               <p className="mosaic-about-closing">
                 Taking on new work. Building something?{" "}
@@ -459,58 +392,78 @@ export function AboutPanel({ links }: AboutPanelProps) {
             aria-labelledby="about-work-history-heading"
           >
             <div className="mosaic-about-work-history-copy">
-              <h2 id="about-work-history-heading" className="mosaic-about-section-heading">
-                Work history
-              </h2>
-              <p className="mosaic-about-lede">Senior Product Designer.</p>
-              <p>
-                Ten years across web3, fintech, and consumer products — from early strategy to
-                shipped interfaces.
-              </p>
-              <ol className="mosaic-about-resume">
+              <div className="mosaic-about-section-heading-row">
+                <h2 id="about-work-history-heading" className="mosaic-about-section-heading">
+                  Work history
+                </h2>
+                <a
+                  href={links.resumePdf}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mosaic-about-link mosaic-about-resume-link"
+                  onClick={() => {
+                    trackEvent("social_link_click", {
+                      social_label: "Download Resume",
+                      social_href: links.resumePdf,
+                      social_placement: "about_panel",
+                    })
+                  }}
+                >
+                  Full résumé
+                </a>
+              </div>
+              <ol className="mosaic-about-resume mosaic-about-work-list">
                 {cvExperience.map((job) => (
-                  <li key={`${job.company}-${job.dates}`} className="mosaic-about-resume-entry">
-                    <h3
-                      className="mosaic-about-resume-company"
-                      aria-label={job.logoUrls ? job.company : undefined}
-                    >
-                      {job.logoUrls ? (
-                        <ResumeCompanyTooltip company={job.company} logoUrls={job.logoUrls} />
-                      ) : (
-                        job.company
-                      )}
-                    </h3>
-                    <p className="mosaic-about-resume-meta">
-                      {job.role} <span aria-hidden="true">·</span> {job.dates}
-                    </p>
-                    <ul className="mosaic-about-resume-highlights">
-                      {job.achievements.map((achievement) => (
-                        <li key={achievement}>{achievement}</li>
-                      ))}
-                    </ul>
+                  <li
+                    key={`${job.company}-${job.dates}`}
+                    className="mosaic-about-resume-entry mosaic-about-work-entry"
+                  >
+                    <p className="mosaic-about-resume-dates">{job.dates}</p>
+                    <div className="mosaic-about-resume-details">
+                      <h3
+                        className="mosaic-about-resume-title"
+                        aria-label={`${job.role} at ${job.company}`}
+                      >
+                        {job.role} at{" "}
+                        {job.href && job.logoUrls ? (
+                          <ResumeCompanyLink company={job.company} href={job.href} logoUrls={job.logoUrls} />
+                        ) : (
+                          <span>{job.company}</span>
+                        )}
+                      </h3>
+                      <p className="mosaic-about-resume-location">{job.location}</p>
+                      <p className="mosaic-about-resume-description">{job.highlight}</p>
+                    </div>
                   </li>
                 ))}
               </ol>
 
               <div className="mosaic-about-resume-education">
                 <h3 className="mosaic-about-resume-heading">Education</h3>
-                <ul className="mosaic-about-resume">
+                <ul className="mosaic-about-resume mosaic-about-education-list">
                   {cvEducation.map((school) => (
-                    <li key={school.school} className="mosaic-about-resume-entry">
-                      <h4 className="mosaic-about-resume-company">{school.school}</h4>
-                      <p className="mosaic-about-resume-meta">
-                        {school.credential} <span aria-hidden="true">·</span> {school.location}
-                      </p>
-                      {school.details ? (
-                        <p className="mosaic-about-resume-note">{school.details}</p>
-                      ) : null}
+                    <li
+                      key={school.school}
+                      className="mosaic-about-resume-entry mosaic-about-work-entry"
+                    >
+                      <p className="mosaic-about-resume-dates">{school.dates}</p>
+                      <div className="mosaic-about-resume-details">
+                        <h4
+                          className="mosaic-about-resume-title"
+                          aria-label={`${school.credential} at ${school.school}`}
+                        >
+                          {school.credential} at <span>{school.school}</span>
+                        </h4>
+                        <p className="mosaic-about-resume-location">{school.location}</p>
+                        {school.details ? (
+                          <p className="mosaic-about-resume-description">{school.details}</p>
+                        ) : null}
+                      </div>
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
-
-            {renderStickers(resumeStickers)}
           </section>
         </div>
       </div>

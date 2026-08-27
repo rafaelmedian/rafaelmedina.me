@@ -144,7 +144,7 @@ const INK = [
   { hex: "#171717", token: "—", use: "Text inside white cards and the preview dialog" },
   { hex: "#2d2d2d", token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
-  { hex: "#545454", token: "—", use: "About-panel prose and résumé highlights" },
+  { hex: "#545454", token: "—", use: "About-panel prose" },
   { hex: "#6b6b6b", token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions" },
   { hex: "#747474", token: "—", use: "Corner nav links and the local-time label" },
   { hex: "#757575", token: "--muted-soft", use: "Tertiary labels: definition terms, hobby notes, headings" },
@@ -205,7 +205,7 @@ const TYPE_SCALE = [
     token: "--text-md",
     sample: "Senior Product Designer",
     spec: "1rem · 16px",
-    where: "Hero name; About prose, labels, section headings, résumé companies, and metadata",
+    where: "Hero name; About prose, labels, section headings, card titles, and metadata",
     style: { fontSize: "var(--text-md)", lineHeight: 1.5, letterSpacing: "-0.005rem", fontWeight: 600 },
   },
   {
@@ -218,9 +218,9 @@ const TYPE_SCALE = [
 ]
 
 const WEIGHTS = [
-  { value: 400, use: "Body copy, nav links, summaries, definition values" },
+  { value: 400, use: "Body copy, nav links, summaries, definition values, résumé titles and companies" },
   { value: 500, use: "Pill labels, preview titles, popover roles" },
-  { value: 600, use: "Headings, card titles, résumé companies, the mobile reveal, the X follow button" },
+  { value: 600, use: "Headings, card titles, the mobile reveal, the X follow button" },
   { value: 700, use: "The X card name and stats only — vendor weight" },
 ]
 
@@ -250,11 +250,14 @@ const SPACE = [
   { value: "0.375rem", use: "Inside pills and stat groups" },
   { value: "0.5rem", use: "Hobby lists, X card internals" },
   { value: "0.625rem", use: "The contact action row" },
+  { value: "0.75rem", use: "Work-history description offset and compact floating offsets" },
   { value: "1.25rem", use: "Maximum mobile contact-pill side padding" },
+  { value: "5rem", use: "Mobile whitespace between About and Work history" },
+  { value: "8.75rem", use: "Desktop whitespace between About and Work history" },
   { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
   { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
   { value: "clamp(16px, 3vw, 32px)", use: "Page gutter from 700px to 899px" },
-  { value: "clamp(8rem, 20vh, 12rem)", use: "Desktop white runway before the About takeover" },
+  { value: "clamp(12rem, 30vh, 18rem)", use: "Desktop white runway before the About takeover" },
 ]
 
 /* --------------------------------------------------------------- elevation */
@@ -273,7 +276,7 @@ const ELEVATION = [
   {
     name: "Hover card",
     shadow: "0 1px 2px rgb(16 16 20 / 0.06), 0 12px 32px rgb(16 16 20 / 0.16)",
-    use: "LinkedIn and X cards, the work-history popover. A tight contact shadow plus one wide ambient.",
+    use: "LinkedIn and X cards, the work-history popover, and the About takeover. A tight contact shadow plus one wide ambient.",
   },
   {
     name: "Dialog",
@@ -1116,19 +1119,22 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <li>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
                   remain in one sticky stage at their original sizes and 1rem gaps, followed by a responsive white
-                  runway of <code>clamp(8rem, 20vh, 12rem)</code>.
+                  runway of <code>clamp(12rem, 30vh, 18rem)</code>.
                   The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
-                  full-bleed white About sheet crosses it at z-index 1. The gallery retreats as one surface, and About
+                  full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards. The gallery retreats as one surface, and About
                   continues in normal flow after the cover. Below 700px both wrappers collapse with{" "}
                   <code>display: contents</code>; the white sheet stays full-bleed but no pinning or overlap is applied.
                 </li>
                 <li>
                   <strong>About is one continuous reading surface.</strong> The introduction, Work history, and Education
-                  share one left-aligned 34rem reading axis in normal document flow. A content-width hairline separates
-                  About from Work history, with 3rem of space before the heading. Both eight-sticker sets span four
-                  vertical bands inside the outer 8% of the desktop side gutters. Work-history company names reveal
-                  their logo tooltips on hover, focus, and touch. There is no tab state or hidden panel; <code>#about-panel-resume</code> anchors
-                  directly to the visible Work history section.
+                  share one left-aligned 36rem reading axis in normal document flow. Work history sits 8.75rem (140px)
+                  below About on desktop and 5rem (80px) below it on mobile, without a hairline. About&rsquo;s eight stickers span four
+                  vertical bands inside the outer 8% of the desktop side gutters; Work history stays undecorated so
+                  its compact role rows remain easy to scan. Each role shows one representative result, aligns its
+                  dates opposite the company on wider screens, and points to the full résumé for the complete detail.
+                  Company names are keyboard-focusable external links that reveal non-interactive logo tooltips on
+                  hover and focus. There is no tab state or
+                  hidden panel; <code>#about-panel-resume</code> anchors directly to the visible Work history section.
                 </li>
               </ul>
             </div>
