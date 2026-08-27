@@ -195,16 +195,117 @@ img {
 .elastic-scroll-edge-shade {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    ellipse 90% 120% at 50% 120%,
-    var(--mosaic-card-surface) 0%,
-    rgb(236 236 238 / 0.66) 48%,
-    transparent 100%
-  );
+  background:
+    radial-gradient(
+      ellipse calc(var(--elastic-edge-center-width) - 4%) 88% at 50% 116%,
+      rgb(255 255 255 / var(--elastic-edge-light-opacity)) 0%,
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse var(--elastic-edge-center-width) 122% at 50% 124%,
+      color-mix(in srgb, var(--elastic-edge-color-3) var(--elastic-edge-core-strength), transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse var(--elastic-edge-color-spread) 142% at 30% 120%,
+      color-mix(in srgb, var(--elastic-edge-color-2) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 73%
+    ),
+    radial-gradient(
+      ellipse var(--elastic-edge-color-spread) 142% at 70% 120%,
+      color-mix(in srgb, var(--elastic-edge-color-4) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 73%
+    ),
+    radial-gradient(
+      ellipse calc(var(--elastic-edge-color-spread) + 6%) 155% at 4% 126%,
+      color-mix(in srgb, var(--elastic-edge-color-1) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse calc(var(--elastic-edge-color-spread) + 6%) 155% at 98% 126%,
+      color-mix(in srgb, var(--elastic-edge-color-5) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 92% 168% at 50% 132%,
+      color-mix(in srgb, var(--elastic-edge-color-3) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 78%
+    );
+  filter: blur(var(--elastic-edge-blur)) saturate(var(--elastic-edge-saturation));
+}
+
+.elastic-scroll-edge[data-preview="true"] {
+  opacity: 0.92;
+  transform: translate3d(0, 0, 0) scaleY(1);
 }
 
 .elastic-scroll-edge[data-pulling="true"] {
   transition-duration: 0ms;
+}
+
+.elastic-scroll-edge-emojis {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.elastic-scroll-edge-emoji {
+  position: absolute;
+  bottom: -2rem;
+  display: block;
+  font-size: var(--emoji-size);
+  line-height: 1;
+  animation: elastic-edge-emoji-drift 700ms linear both;
+  animation-delay: var(--emoji-delay);
+  will-change: transform;
+}
+
+.elastic-scroll-edge-emoji-glyph {
+  display: block;
+  opacity: 0;
+  transform-origin: center;
+  animation: elastic-edge-emoji-toss 700ms both;
+  animation-delay: var(--emoji-delay);
+  will-change: transform, opacity;
+}
+
+@keyframes elastic-edge-emoji-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(var(--emoji-land-x), 0, 0);
+  }
+}
+
+@keyframes elastic-edge-emoji-toss {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 2rem, 0) rotate(var(--emoji-start-rotation)) scale(0.78);
+    animation-timing-function: var(--ease-smooth);
+  }
+
+  16% {
+    opacity: 1;
+  }
+
+  52% {
+    opacity: 1;
+    transform: translate3d(0, var(--emoji-rise), 0) rotate(0deg) scale(1);
+    animation-timing-function: ease-in;
+  }
+
+  82% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 3rem, 0) rotate(var(--emoji-end-rotation)) scale(0.9);
+  }
 }
 
 .mosaic-shell {
@@ -828,7 +929,7 @@ img {
   border-radius: 0;
   border: 0;
   background: var(--canvas);
-  padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.25rem, 6vw, 5rem);
+  padding: clamp(5rem, 10vw, 8.75rem) clamp(1.25rem, 6vw, 5rem) clamp(2.5rem, 7vw, 5.5rem);
   overflow: hidden;
 }
 
@@ -861,8 +962,11 @@ img {
   font-size: clamp(2rem, 3.4vw, 3rem);
   line-height: 1;
   filter: var(--sticker-cut) drop-shadow(0.02em 0.045em 0.035em rgb(0 0 0 / 0.3));
-  transform: translate(var(--sticker-x, 0px), var(--sticker-y, 0px))
+  transform: translate3d(var(--sticker-x, 0px), var(--sticker-y, 0px), 0)
     rotate(var(--sticker-rotate, 0deg));
+  transition:
+    transform 160ms cubic-bezier(0.2, 0, 0, 1),
+    filter 160ms cubic-bezier(0.2, 0, 0, 1);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -871,9 +975,10 @@ img {
 
 .mosaic-about-sticker[data-dragging] {
   cursor: grabbing;
-  transform: translate(var(--sticker-x, 0px), var(--sticker-y, 0px))
+  transform: translate3d(var(--sticker-x, 0px), var(--sticker-y, 0px), 0)
     rotate(var(--sticker-rotate, 0deg)) scale(1.12);
   filter: var(--sticker-cut) drop-shadow(0.04em 0.11em 0.1em rgb(0 0 0 / 0.3));
+  transition-duration: 0ms;
 }
 
 @media (max-width: 899.98px) {
@@ -931,13 +1036,6 @@ img {
   display: grid;
   gap: 1rem;
   text-align: left;
-}
-
-.mosaic-about-section-heading-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
 }
 
 .mosaic-about-section-heading {
@@ -1016,10 +1114,8 @@ img {
   padding-top: 1.25rem;
 }
 
-.mosaic-about-resume-link {
-  flex: none;
-  font-size: var(--text-md);
-  line-height: 1.6;
+.mosaic-about-body .mosaic-about-resume-download {
+  margin-top: 4rem;
 }
 
 .mosaic-about-resume {
@@ -2394,19 +2490,20 @@ img {
   .mosaic-about::before {
     content: "";
     position: absolute;
-    top: 0;
+    top: -1px;
     right: 0;
     left: 0;
     z-index: 0;
     height: 1px;
     pointer-events: none;
+    background: rgb(0 0 0 / 0.08);
     box-shadow:
       0 1px 2px rgb(16 16 20 / 0.06),
       0 12px 32px rgb(16 16 20 / 0.16);
   }
 
-  /* The solid panel covers the shadow below its top edge. The shadow can
-     still lift over the gallery, while the sheet has no painted bottom edge. */
+  /* The solid panel covers the shadow below its top edge. The hairline sits
+     one pixel above it, so the overlap stays crisp without boxing the sheet. */
   .mosaic-about-panel {
     z-index: 1;
   }
@@ -3452,7 +3549,8 @@ img {
     overflow: visible;
   }
 
-  .elastic-scroll-edge {
+  .elastic-scroll-edge,
+  .elastic-scroll-edge-emojis {
     display: none;
   }
 }

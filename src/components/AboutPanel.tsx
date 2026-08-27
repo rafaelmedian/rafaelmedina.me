@@ -31,22 +31,24 @@ type AboutSticker = {
 }
 
 /**
- * Scattered stickers for the about panel, echoing the copy below: the two
- * places, the drawing, the tooling, the code. The offsets are hand-picked
- * rather than randomised at runtime so the scatter stays put across
- * re-renders, and they sit in the panel's side gutters to stay clear of the
- * 34rem text column. Each sticker supports pointer dragging and keyboard
- * movement, and they are hidden below 900px where the panel has no spare room.
+ * Scattered stickers for the full About surface, echoing the copy below: the
+ * places, the drawing, the tooling, and the code. The offsets are hand-picked
+ * rather than randomised at runtime so the composition stays put across
+ * re-renders. They sit in the side gutters, support pointer dragging and
+ * keyboard movement, and hide below 900px where there is no spare room.
  */
 const aboutStickers: AboutSticker[] = [
-  { emoji: "🌴", label: "Palm tree", top: "5%", left: "2%", rotate: -12 },
-  { emoji: "🎨", label: "Artist palette", top: "34%", left: "5%", rotate: 15 },
-  { emoji: "✏️", label: "Pencil", bottom: "34%", left: "2%", rotate: 14 },
-  { emoji: "🌊", label: "Ocean wave", bottom: "5%", left: "5%", rotate: -9 },
-  { emoji: "🗽", label: "Statue of Liberty", top: "10%", right: "4%", rotate: 9 },
-  { emoji: "💻", label: "Laptop", top: "38%", right: "2%", rotate: -6 },
-  { emoji: "🤖", label: "Robot", bottom: "30%", right: "5%", rotate: 11 },
-  { emoji: "🛠️", label: "Tools", bottom: "8%", right: "2%", rotate: -7 },
+  { emoji: "🌴", label: "Palm tree", top: "8%", left: "2%", rotate: -12 },
+  { emoji: "🎨", label: "Artist palette", top: "28%", right: "4%", rotate: 15 },
+  { emoji: "✏️", label: "Pencil", bottom: "28%", left: "5%", rotate: 14 },
+  { emoji: "🌊", label: "Ocean wave", bottom: "6%", right: "2%", rotate: -9 },
+]
+
+const workHistoryStickers: AboutSticker[] = [
+  { emoji: "🗽", label: "Statue of Liberty", top: "3%", right: "4%", rotate: 9 },
+  { emoji: "💻", label: "Laptop", top: "31%", left: "2%", rotate: -6 },
+  { emoji: "🤖", label: "Robot", top: "62%", right: "5%", rotate: 11 },
+  { emoji: "🛠️", label: "Tools", bottom: "4%", left: "3%", rotate: -7 },
 ]
 
 type Offset = { x: number; y: number }
@@ -420,7 +422,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
               </p>
             </div>
 
-            {/* Keyboard users reach the section copy before its eight movable
+            {/* Keyboard users reach the section copy before its four movable
                 decorative stickers. The intro section owns their bounds. */}
             {renderStickers(aboutStickers)}
           </section>
@@ -431,26 +433,9 @@ export function AboutPanel({ links }: AboutPanelProps) {
             aria-labelledby="about-work-history-heading"
           >
             <div className="mosaic-about-work-history-copy">
-              <div className="mosaic-about-section-heading-row">
-                <h2 id="about-work-history-heading" className="mosaic-about-section-heading">
-                  Work history
-                </h2>
-                <a
-                  href={links.resumePdf}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mosaic-about-link mosaic-about-resume-link"
-                  onClick={() => {
-                    trackEvent("social_link_click", {
-                      social_label: "Download Resume",
-                      social_href: links.resumePdf,
-                      social_placement: "about_panel",
-                    })
-                  }}
-                >
-                  Full résumé
-                </a>
-              </div>
+              <h2 id="about-work-history-heading" className="mosaic-about-section-heading">
+                Work history
+              </h2>
               <ol className="mosaic-about-resume mosaic-about-work-list">
                 {cvExperience.map((job) => (
                   <li
@@ -497,7 +482,15 @@ export function AboutPanel({ links }: AboutPanelProps) {
                   ))}
                 </ul>
               </div>
+
+              <p className="mosaic-about-resume-download">
+                <a href={links.resumePdf} download className="mosaic-about-link">
+                  Download CV in PDF
+                </a>
+              </p>
             </div>
+
+            {renderStickers(workHistoryStickers)}
           </section>
         </div>
       </div>

@@ -252,8 +252,8 @@ const SPACE = [
   { value: "0.625rem", use: "The contact action row" },
   { value: "0.75rem", use: "Work-history description offset and compact floating offsets" },
   { value: "1.25rem", use: "Maximum mobile contact-pill side padding" },
-  { value: "5rem", use: "Mobile whitespace between About and Work history" },
-  { value: "8.75rem", use: "Desktop whitespace between About and Work history" },
+  { value: "5rem", use: "Minimum About inset, mobile Work-history gap, and rendered spacing before the CV download" },
+  { value: "8.75rem", use: "Maximum About inset and desktop whitespace before Work history" },
   { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
   { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
   { value: "clamp(16px, 3vw, 32px)", use: "Page gutter from 700px to 899px" },
@@ -276,7 +276,7 @@ const ELEVATION = [
   {
     name: "Hover card",
     shadow: "0 1px 2px rgb(16 16 20 / 0.06), 0 12px 32px rgb(16 16 20 / 0.16)",
-    use: "LinkedIn and X cards, the work-history popover, and the top edge of the About takeover. A tight contact shadow plus one wide ambient.",
+    use: "LinkedIn and X cards, the work-history popover, and the top edge of the About takeover. About pairs it with a 0.08 black hairline so the overlapping sheet stays crisp.",
   },
   {
     name: "Dialog",
@@ -292,7 +292,7 @@ const EASINGS = [
     name: "Standard",
     css: "cubic-bezier(0.2, 0, 0, 1)",
     duration: "160–300ms",
-    use: "The house curve. Chips, icons, expand buttons, card-title reveals — anything changing state in place.",
+    use: "The house curve. Chips, icons, expand buttons, sticker tracking, and card-title reveals — anything changing state in place.",
   },
   {
     name: "Responsive resize",
@@ -328,7 +328,7 @@ const EASINGS = [
     name: "First load",
     css: "cubic-bezier(0.19, 1, 0.22, 1)",
     duration: "160–700ms",
-    use: "--ease-smooth. The hero and mosaic intro cascades; the bottom scroll edge uses a slower 700ms physical settle; the avatar press reuses it at 160ms.",
+    use: "--ease-smooth. The hero and mosaic intro cascades; the bottom scroll edge and emoji toss use a slower 700ms physical settle; the avatar press reuses it at 160ms.",
   },
   {
     name: "Coin flip",
@@ -343,10 +343,10 @@ const EASINGS = [
     use: "The copy-email reaction only. The single place in the system that overshoots — keep it that way.",
   },
   {
-    name: "About takeover",
+    name: "Scroll linked",
     css: "linear",
     duration: "1 viewport of scroll",
-    use: "A CSS View Timeline scales and fades the complete pinned gallery as the About sheet covers it.",
+    use: "A View Timeline scales and fades the complete pinned gallery as the About sheet covers it.",
   },
 ]
 
@@ -357,7 +357,7 @@ const DURATIONS = [
   { value: "300ms", use: "The gallery expand/minimise icon swap." },
   { value: "360ms", use: "Media un-blurring as it decodes." },
   { value: "380–480ms", use: "First-load entrance travel, hero then mosaic." },
-  { value: "700ms", use: "The bottom scroll edge's synchronized physical settle and the avatar coin flip." },
+  { value: "700ms", use: "The bottom scroll edge, its emoji toss, and the avatar coin flip." },
 ]
 
 /* ------------------------------------------------------------------ layout */
@@ -534,11 +534,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-block">
               <p className="ds-subhead">Elastic page edge</p>
               <div className="ds-rule">
-                <strong>One neutral rubber sheet.</strong>
+                <strong>A quiet, changing wash.</strong>
                 <p>
-                  The 56px page-end curve reuses <code>--mosaic-card-surface</code> and fades it to transparent. It has
-                  one layer, no blur, no distortion, and no separate hue; the gesture and release motion provide the
-                  effect instead of decorative rendering.
+                  The 56px page-end curve blends five clean analogous shades, chosen again for each pull. Its deeper,
+                  more saturated centre sits beneath a translucent white highlight while broader pale layers recede
+                  toward the sides. An 8px blur softens their seams while the gesture and 700ms release remain the
+                  effect's dominant motion. Each fresh gesture also tosses a wink and three non-repeating companions
+                  from below the viewport on staggered 700ms arcs. Their outer layer keeps constant horizontal momentum
+                  through the apex while each inner glyph eases upward and accelerates down under gravity, avoiding an
+                  artificial direction change during the fall. They remain decorative and pointer-free, clean up after
+                  landing, and disappear with the entire effect under reduced motion. Development keeps a live preview
+                  open and exposes height, centre width, colour spread, blur, saturation, centre strength, light,
+                  translucency, and palette refresh in DialKit.
                 </p>
               </div>
             </div>
@@ -561,8 +568,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <strong>Vendor colours stay vendor colours.</strong>
                 <p>
                   The X card reproduces X's own palette and the LinkedIn pill its blue, because a recognisable chrome is
-                  the point of both. That exemption does not extend past those two components — nothing else on the site
-                  may introduce a hue.
+                  the point of both. Those vendor exemptions do not extend past the two components; the elastic page
+                  edge above is the sole site-owned hue exception, and no other surface may introduce colour.
                 </p>
               </div>
             </div>
@@ -598,7 +605,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <h2>Typography</h2>
               <p>
                 Interface text uses one face, four sizes, and four weights. The handwritten avatar hint and draggable
-                emoji sticker are deliberate display exceptions.
+                emoji stickers are deliberate display exceptions.
               </p>
             </div>
 
@@ -1134,17 +1141,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   runway of <code>clamp(12rem, 30vh, 18rem)</code>.
                   The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
                   full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards.
-                  A top-only layer casts that shadow while the white sheet remains continuous through the page end. The gallery retreats as one surface, and About
+                  A top-only layer pairs that shadow with a <code>rgb(0 0 0 / 0.08)</code> hairline while the white sheet
+                  remains continuous through the page end. The gallery retreats as one surface, and About
                   continues in normal flow after the cover. Below 700px both wrappers collapse with{" "}
                   <code>display: contents</code>; the white sheet stays full-bleed but no pinning or overlap is applied.
                 </li>
                 <li>
                   <strong>About is one continuous reading surface.</strong> The introduction, Work history, and Education
-                  share one left-aligned 36rem reading axis in normal document flow. Work history sits 8.75rem (140px)
-                  below About on desktop and 5rem (80px) below it on mobile, without a hairline. About&rsquo;s eight stickers span four
-                  vertical bands inside the outer 8% of the desktop side gutters; Work history stays undecorated so
-                  its compact role rows remain easy to scan. Each role shows one representative result, aligns its
-                  dates opposite the company on wider screens, and points to the full résumé for the complete detail.
+                  share one left-aligned 36rem reading axis in normal document flow. The introduction starts with a
+                  fluid <code>clamp(5rem, 10vw, 8.75rem)</code> (80–140px) inset from the sheet&rsquo;s top: 5rem on
+                  mobile, growing to 8.75rem on wide desktops. Work history sits 5rem below About on mobile and
+                  8.75rem below it on desktop, without a hairline. Eight stickers are split evenly between About and
+                  Work history and span the outer 8% of the desktop side gutters, so the decoration follows the full
+                  reading surface without crowding the copy. They stay fixed while the pointer and page move, but can
+                  still be repositioned directly with pointer dragging or the keyboard. Each role shows one representative result, aligns its
+                  dates opposite the company on wider screens, then ends with a PDF download 5rem (80px) after Education.
                   Company names are keyboard-focusable external links that reveal non-interactive logo tooltips on
                   hover and focus. There is no tab state or
                   hidden panel; <code>#about-panel-resume</code> anchors directly to the visible Work history section.

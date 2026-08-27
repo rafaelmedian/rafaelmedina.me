@@ -1,8 +1,67 @@
 import { useEffect, useRef } from "react"
 
+import {
+  DEFAULT_ELASTIC_EDGE_SETTINGS,
+  ELASTIC_EDGE_RANDOMIZE_EVENT,
+  ELASTIC_EDGE_SETTINGS_EVENT,
+  paintElasticEdgeSettings,
+  randomizeElasticEdgePalette,
+  type ElasticEdgeSettings,
+} from "../lib/elasticEdgeGradient"
+
 const MAX_PULL = 72
 const MAX_OPACITY = 0.92
 const RELEASE_DELAY_MS = 90
+const EMOJI_COMPANIONS = ["✨", "🥳", "🌴", "🚀", "💫", "🎉", "🫶", "😎"]
+const EMOJI_ANCHORS = [18, 39, 61, 82]
+
+function randomBetween(min: number, max: number) {
+  return min + Math.random() * (max - min)
+}
+
+function pickEmojiCompanions(count: number) {
+  const choices = [...EMOJI_COMPANIONS]
+
+  for (let index = choices.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    const choice = choices[index]
+    choices[index] = choices[swapIndex]
+    choices[swapIndex] = choice
+  }
+
+  return choices.slice(0, count)
+}
+
+function launchEmojiBurst(layer: HTMLDivElement) {
+  const emojis = ["😉", ...pickEmojiCompanions(3)]
+  const fragment = document.createDocumentFragment()
+
+  layer.replaceChildren()
+
+  emojis.forEach((emoji, index) => {
+    const particle = document.createElement("span")
+    const glyph = document.createElement("span")
+    const driftDirection = index < emojis.length / 2 ? 1 : -1
+
+    particle.className = "elastic-scroll-edge-emoji"
+    particle.style.left = `${EMOJI_ANCHORS[index] + randomBetween(-6, 6)}%`
+    particle.style.setProperty("--emoji-land-x", `${driftDirection * randomBetween(58, 104)}px`)
+    particle.style.setProperty("--emoji-rise", `${randomBetween(-168, -104)}px`)
+    particle.style.setProperty("--emoji-start-rotation", `${randomBetween(-22, 22)}deg`)
+    particle.style.setProperty("--emoji-end-rotation", `${randomBetween(-70, 70)}deg`)
+    particle.style.setProperty("--emoji-delay", `${index * 35}ms`)
+    particle.style.setProperty("--emoji-size", `${randomBetween(1.3, 1.85)}rem`)
+    particle.addEventListener("animationend", (event) => {
+      if (event.target === particle) particle.remove()
+    })
+    glyph.className = "elastic-scroll-edge-emoji-glyph"
+    glyph.textContent = emoji
+    particle.append(glyph)
+    fragment.append(particle)
+  })
+
+  layer.append(fragment)
+}
 
 function isAtDocumentBottom() {
   const root = document.documentElement
@@ -24,15 +83,20 @@ function isInsideScrollableRegion(target: EventTarget | null) {
 
 export function BottomOverscrollEffect() {
   const edgeRef = useRef<HTMLDivElement | null>(null)
+  const emojiLayerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const edge = edgeRef.current
-    if (!edge || typeof window.matchMedia !== "function") return
+    const emojiLayer = emojiLayerRef.current
+    if (!edge || !emojiLayer || typeof window.matchMedia !== "function") return
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     let pull = 0
     let lastTouchY: number | null = null
     let releaseTimer: number | undefined
+
+    randomizeElasticEdgePalette(edge)
+    paintElasticEdgeSettings(edge, DEFAULT_ELASTIC_EDGE_SETTINGS)
 
     const paint = (nextPull: number) => {
       pull = Math.max(0, Math.min(MAX_PULL, nextPull))
@@ -70,6 +134,9 @@ export function BottomOverscrollEffect() {
         if (Number.isFinite(renderedOpacity)) {
           pull = Math.max(0, Math.min(MAX_PULL, (renderedOpacity / MAX_OPACITY) * MAX_PULL))
         }
+
+        randomizeElasticEdgePalette(edge)
+        launchEmojiBurst(emojiLayer)
       }
 
       edge.dataset.pulling = "true"
@@ -123,7 +190,15 @@ export function BottomOverscrollEffect() {
     }
 
     const handleMotionPreference = () => {
-      if (reducedMotion.matches) release()
+      if (reducedMotion.matches) {
+        release()
+        emojiLayer.replaceChildren()
+      }
+    }
+
+    const handleRandomize = () => randomizeElasticEdgePalette(edge)
+    const handleSettings = (event: Event) => {
+      paintElasticEdgeSettings(edge, (event as CustomEvent<ElasticEdgeSettings>).detail)
     }
 
     window.addEventListener("wheel", handleWheel, { passive: true })
@@ -133,9 +208,12 @@ export function BottomOverscrollEffect() {
     document.addEventListener("touchend", handleTouchEnd, { passive: true })
     document.addEventListener("touchcancel", handleTouchEnd, { passive: true })
     reducedMotion.addEventListener("change", handleMotionPreference)
+    window.addEventListener(ELASTIC_EDGE_RANDOMIZE_EVENT, handleRandomize)
+    window.addEventListener(ELASTIC_EDGE_SETTINGS_EVENT, handleSettings)
 
     return () => {
       if (releaseTimer !== undefined) window.clearTimeout(releaseTimer)
+      emojiLayer.replaceChildren()
       window.removeEventListener("wheel", handleWheel)
       window.removeEventListener("scroll", handleScroll)
       document.removeEventListener("touchstart", handleTouchStart)
@@ -143,12 +221,17 @@ export function BottomOverscrollEffect() {
       document.removeEventListener("touchend", handleTouchEnd)
       document.removeEventListener("touchcancel", handleTouchEnd)
       reducedMotion.removeEventListener("change", handleMotionPreference)
+      window.removeEventListener(ELASTIC_EDGE_RANDOMIZE_EVENT, handleRandomize)
+      window.removeEventListener(ELASTIC_EDGE_SETTINGS_EVENT, handleSettings)
     }
   }, [])
 
   return (
-    <div ref={edgeRef} className="elastic-scroll-edge" data-pulling="false" aria-hidden="true">
-      <div className="elastic-scroll-edge-shade" />
-    </div>
+    <>
+      <div ref={edgeRef} className="elastic-scroll-edge" data-pulling="false" aria-hidden="true">
+        <div className="elastic-scroll-edge-shade" />
+      </div>
+      <div ref={emojiLayerRef} className="elastic-scroll-edge-emojis" aria-hidden="true" />
+    </>
   )
 }

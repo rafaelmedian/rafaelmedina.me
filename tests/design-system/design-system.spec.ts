@@ -101,10 +101,15 @@ test("documents component-specific motion curves that still ship", async ({ page
   }
 })
 
-test("keeps the restored neutral elastic edge free of its former tuning panel", async ({ page }) => {
+test("shows elastic-edge tuning controls only alongside the portfolio effect", async ({ page }) => {
   await page.goto("/")
   await page.waitForLoadState("networkidle")
 
-  const dial = page.locator(".dialkit-panel-wrapper").filter({ hasText: "Elastic scroll edge" })
-  await expect(dial).toHaveCount(0)
+  await expect(page.locator(".elastic-scroll-edge")).toHaveCount(1)
+  await expect(page.locator(".dialkit-panel-wrapper").filter({ hasText: "End gradient" })).toHaveCount(1)
+
+  await openDesignSystem(page)
+
+  await expect(page.locator(".elastic-scroll-edge")).toHaveCount(0)
+  await expect(page.locator(".dialkit-panel-wrapper").filter({ hasText: "End gradient" })).toHaveCount(0)
 })
