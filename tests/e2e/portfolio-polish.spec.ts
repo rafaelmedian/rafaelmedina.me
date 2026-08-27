@@ -1514,6 +1514,24 @@ test("shows every project immediately on mobile", async ({ page }) => {
   await expect(page.getByRole("button", { name: /View \d+ more projects/ })).toHaveCount(0)
 })
 
+test("loads each preview video only when it reaches the viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/")
+
+  const videos = page.locator(".mosaic-row-card video.mosaic-row-media")
+  const visibleVideo = videos.first()
+  const offscreenVideo = videos.nth(1)
+
+  await expect(visibleVideo).toHaveAttribute("src", "/Projects/shot-small-9.webm")
+  expect(await offscreenVideo.evaluate((video) => video.getBoundingClientRect().top)).toBeGreaterThanOrEqual(844)
+  await expect(offscreenVideo).not.toHaveAttribute("src", /\S+/)
+  await expect(offscreenVideo).toHaveAttribute("preload", "none")
+
+  await offscreenVideo.scrollIntoViewIfNeeded()
+  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/shot-small-16.webm")
+  await expect(offscreenVideo).toHaveAttribute("preload", "metadata")
+})
+
 test("keeps the selected work label out of the visual layout", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
