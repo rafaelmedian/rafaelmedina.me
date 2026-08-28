@@ -378,7 +378,9 @@ export function AboutPanel({ links }: AboutPanelProps) {
             } as CSSProperties
           }
         >
-          <span aria-hidden="true">{sticker.emoji}</span>
+          <span className="mosaic-about-sticker-glyph" aria-hidden="true">
+            {sticker.emoji}
+          </span>
         </button>
       )
     })
@@ -392,6 +394,31 @@ export function AboutPanel({ links }: AboutPanelProps) {
       aria-label="About Rafael Medina"
     >
       <h2 className="sr-only">About Rafael Medina</h2>
+      {/* One dilate pass, shared by every sticker. The die-cut used to be eight
+          chained `drop-shadow()`s, which Chrome lowers to eight separate GPU
+          render passes each -- across eight stickers that is ~64 passes per
+          frame, and the About takeover scrolled at ~27fps with three quarters
+          of its frames dropped. `feMorphology` is the real dilation those
+          offsets were approximating, in one pass, at ~110fps. */}
+      <svg className="mosaic-about-sticker-filter" aria-hidden="true" focusable="false">
+        <filter
+          id="about-sticker-die-cut"
+          primitiveUnits="objectBoundingBox"
+          x="-20%"
+          y="-20%"
+          width="140%"
+          height="140%"
+          colorInterpolationFilters="sRGB"
+        >
+          <feMorphology in="SourceAlpha" operator="dilate" radius="0.03" result="cut" />
+          <feFlood floodColor="#ffffff" result="white" />
+          <feComposite in="white" in2="cut" operator="in" result="border" />
+          <feMerge>
+            <feMergeNode in="border" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </svg>
       <div className="mosaic-about-panel">
         <div className="mosaic-about-body">
           <section
