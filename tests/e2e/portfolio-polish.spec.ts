@@ -3151,3 +3151,102 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
   await expect(navigation.getByRole("button", { name: /motion/i })).toHaveCount(0)
   await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })
+
+test("states my role and the outcome on every project preview", async ({ page }) => {
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const details = dialog.locator(".preview-gallery-detail-row")
+
+  // Scope before impact, and both before the credits and the outbound link.
+  await expect(details.locator("dt")).toHaveText(["Product", "Industry", "Role", "Outcome", "Team", "Link"])
+
+  const rowValue = (label: string) => details.filter({ has: page.getByText(label, { exact: true }) }).locator("dd")
+  await expect(rowValue("Role")).toHaveText("Lead product designer for the multiwallet experience.")
+  await expect(rowValue("Outcome")).not.toBeEmpty()
+
+  // Every card in the gallery, not just the one that happens to open first.
+  const total = Number((await dialog.locator(".preview-gallery-count").innerText()).split("/")[1])
+  for (let index = 0; index < total; index += 1) {
+    await expect(rowValue("Role")).not.toBeEmpty()
+    await expect(rowValue("Outcome")).not.toBeEmpty()
+    // Placeholders read as filled-in fields but say nothing about the work.
+    await expect(rowValue("Role")).not.toHaveText(/^Product [Dd]esign$/)
+    // Wide and compact each render a nav group; only one is on screen.
+    await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
+  }
+})
+
+const expectPreviewContributionFits = async (page: Page, viewportHeight: number) => {
+  const dialog = page.getByRole("dialog")
+  const details = dialog.locator(".preview-gallery-detail-row")
+  await expect(details).toHaveCount(6)
+
+  // Only the two new rows: the Team row's chips intentionally hang past the
+  // column edge by their own negative margin.
+  const overflow = await details
+    .filter({ has: page.getByText(/^(Role|Outcome)$/) })
+    .evaluateAll((rows) => rows.map((row) => row.scrollWidth - row.clientWidth))
+  expect(overflow).toHaveLength(2)
+  expect(Math.max(...overflow)).toBeLessThanOrEqual(1)
+
+  // The primary controls stay on screen rather than being pushed off by the
+  // two extra rows.
+  const nav = dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true })
+  const navBox = await nav.boundingBox()
+  expect(navBox).not.toBeNull()
+  expect(navBox!.y + navBox!.height).toBeLessThanOrEqual(viewportHeight)
+}
+
+test("keeps the preview role and outcome inside the card on desktop", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+
+  await expectPreviewContributionFits(page, 900)
+})
+
+test("keeps the preview role and outcome inside the card on mobile", async ({ browser }) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    isMobile: true,
+    reducedMotion: "reduce",
+    viewport: mobileViewport,
+  })
+  const page = await context.newPage()
+  await page.goto("/")
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).tap()
+
+  await expectPreviewContributionFits(page, mobileViewport.height)
+  await context.close()
+})
+
+test("serves a résumé PDF that matches the live profile", async ({ request }) => {
+  const response = await request.get("/rafael-medina-resume.pdf")
+
+  expect(response.status()).toBe(200)
+  expect(response.headers()["content-type"]).toContain("application/pdf")
+
+  const bytes = await response.body()
+  expect(bytes.byteLength).toBeGreaterThan(1024)
+
+  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs")
+  const pdf = await getDocument({ data: new Uint8Array(bytes), useSystemFonts: true }).promise
+  // A second page means the export drifted off the single-sheet layout.
+  expect(pdf.numPages).toBe(1)
+
+  const content = await (await pdf.getPage(1)).getTextContent()
+  // Non-empty items also prove the text is real and selectable, not an image.
+  const text = content.items.map((item) => ("str" in item ? item.str : "")).join("")
+  expect(text.length).toBeGreaterThan(500)
+
+  expect(text).toContain("Co-founder")
+  expect(text).toContain("2026 - Present")
+  expect(text).toMatch(/0x Project[\s\S]*March 2026/)
+  expect(text).toContain("hey@rafaelmedina.me")
+  // The old Figma export shipped a stale personal address; it must not come back.
+  expect(text).not.toContain("hellorafaelmedina@gmail.com")
+})

@@ -3273,6 +3273,9 @@ img {
   font-size: var(--text-sm);
   line-height: 1.35;
   text-align: right;
+  /* Role and Outcome are sentences, not labels -- keep their ragged edge even
+     instead of leaving one word alone on the last line. */
+  text-wrap: pretty;
 }
 
 .preview-gallery-people {

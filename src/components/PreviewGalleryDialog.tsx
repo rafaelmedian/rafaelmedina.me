@@ -223,6 +223,9 @@ export function PreviewGalleryDialog({
         // No "Project" row — the dialog title directly above already says it.
         ["Product", activeCard.product ?? activeCard.category],
         ["Industry", activeCard.industry ?? "Product Design"],
+        // What I owned and what changed, in that order -- scope before impact.
+        ["Role", activeCard.role],
+        ["Outcome", activeCard.outcome],
       ]
     : []
 

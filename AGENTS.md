@@ -37,6 +37,19 @@ This repo used to keep source and built output on two unrelated branches, and
 edits made directly to the deployed files were silently lost on the next build.
 Do not reintroduce that pattern.
 
+## Résumé
+
+`public/rafael-medina-resume.pdf` is generated, not exported by hand. It used to
+be a Figma export, which is how it drifted into advertising a role I had left and
+an email address the site no longer uses. Edit the content in
+`scripts/build-resume.mjs`, run `node scripts/build-resume.mjs`, and commit the
+regenerated PDF.
+
+Keep it in step with `src/data/cv.ts` (work history, dates, education) and
+`siteLinks.email` in `src/data/portfolio.ts` (contact address) — a Playwright test
+reads the shipped PDF and fails when those disagree. The script refuses to write a
+second page.
+
 ## Planning Mode Rules
 
 - In planning mode, any task related to design, animation/motion, or user flows must include an ASCII plan.
