@@ -131,6 +131,48 @@ type NetworkInformation = {
   effectiveType?: string
 }
 
+// Intersection with the viewport cannot say whether the pinned grid is
+// *occluded*, only whether it is on screen — and during the takeover it is
+// both. What can be measured is the About sheet against a zero-height line at
+// the viewport's top edge: the sheet straddles that line exactly while it
+// spans the whole viewport, which is when the grid behind it is fully hidden
+// and its videos can rest. One shared observer feeds every video through
+// useSyncExternalStore, so a crossing re-renders only the handful of video
+// elements rather than the whole feed at the exact moment raster headroom is
+// scarcest.
+let galleryCoveredValue = false
+let galleryCoveredObserver: IntersectionObserver | null = null
+const galleryCoveredListeners = new Set<() => void>()
+
+function subscribeToGalleryCovered(listener: () => void) {
+  galleryCoveredListeners.add(listener)
+
+  if (!galleryCoveredObserver && "IntersectionObserver" in window) {
+    const aboutPanel = document.getElementById("about-panel")
+    if (aboutPanel) {
+      galleryCoveredObserver = new IntersectionObserver(
+        ([entry]) => {
+          galleryCoveredValue = entry.isIntersecting
+          galleryCoveredListeners.forEach((notify) => notify())
+        },
+        { rootMargin: "0px 0px -100% 0px" },
+      )
+      galleryCoveredObserver.observe(aboutPanel)
+    }
+  }
+
+  return () => {
+    galleryCoveredListeners.delete(listener)
+    if (galleryCoveredListeners.size === 0) {
+      galleryCoveredObserver?.disconnect()
+      galleryCoveredObserver = null
+    }
+  }
+}
+
+const getGalleryCovered = () => galleryCoveredValue
+const getGalleryCoveredOnServer = () => false
+
 // Data Saver and 2g are the cases where an autoplaying loop is a liability
 // rather than a flourish: the poster already carries the frame, and the videos
 // are the heaviest thing on the page by a wide margin.
@@ -167,6 +209,11 @@ function RowVideoMedia({
     subscribeToNothing,
     hasIntersectionObserver,
     hasIntersectionObserverOnServer,
+  )
+  const galleryCovered = useSyncExternalStore(
+    subscribeToGalleryCovered,
+    getGalleryCovered,
+    getGalleryCoveredOnServer,
   )
   // Without a poster there is nothing to fall back to, so the video loads even
   // on a metered connection.
@@ -210,12 +257,17 @@ function RowVideoMedia({
     const video = videoRef.current
     if (!video) return
 
-    if (!prefersReducedMotion && loadNow && visibleNow) {
+    // `visibleNow` cannot catch the takeover: the pinned grid still intersects
+    // the viewport while the About sheet slides over it, so without
+    // `galleryCovered` every loop keeps decoding and uploading frames to the
+    // GPU behind an opaque sheet — starving the raster budget the sheet's own
+    // text needs during scroll.
+    if (!prefersReducedMotion && loadNow && visibleNow && !galleryCovered) {
       void video.play().catch(() => undefined)
     } else {
       video.pause()
     }
-  }, [loadNow, prefersReducedMotion, visibleNow])
+  }, [galleryCovered, loadNow, prefersReducedMotion, visibleNow])
 
   return (
     <video

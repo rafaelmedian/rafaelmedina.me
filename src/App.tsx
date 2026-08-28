@@ -18,9 +18,6 @@ const DESIGN_SYSTEM_PATHS = new Set(["/design-system", "/styleguide"])
 const Agentation = import.meta.env.DEV
   ? lazy(() => import("agentation").then((module) => ({ default: module.Agentation })))
   : null
-const ElasticEdgeDialKit = import.meta.env.DEV
-  ? lazy(() => import("./components/ElasticEdgeDialKit").then((module) => ({ default: module.ElasticEdgeDialKit })))
-  : null
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -51,11 +48,6 @@ function App() {
         {Agentation ? (
           <Suspense fallback={null}>
             <Agentation />
-          </Suspense>
-        ) : null}
-        {ElasticEdgeDialKit && !isDesignSystemPage ? (
-          <Suspense fallback={null}>
-            <ElasticEdgeDialKit />
           </Suspense>
         ) : null}
     </div>

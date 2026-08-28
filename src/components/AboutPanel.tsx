@@ -238,47 +238,15 @@ const hobbies = [
   { emoji: "🥋", label: "Jiu jitsu", learning: true },
 ]
 
-function ResumeCompanyLink({ company, href, logoUrls }: { company: string; href: string; logoUrls: string[] }) {
-  const [open, setOpen] = useState(false)
-
+function ResumeCompanyLink({ company, href }: { company: string; href: string }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="mosaic-company-inline-link mosaic-about-resume-company-trigger"
-      onFocus={() => setOpen(true)}
-      onBlur={() => setOpen(false)}
-      onPointerEnter={() => {
-        if (window.matchMedia("(hover: hover)").matches) setOpen(true)
-      }}
-      onPointerLeave={(event) => {
-        if (document.activeElement !== event.currentTarget) setOpen(false)
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") setOpen(false)
-      }}
+      className="mosaic-company-inline-link"
     >
       <span className="mosaic-company-inline-name">{company}</span>
-      <span
-        aria-hidden="true"
-        className="mosaic-company-inline-hover-logos"
-        data-open={open ? "true" : "false"}
-      >
-        {open
-          ? logoUrls.map((logoUrl) => (
-              <span key={`${company}-${logoUrl}`} className="mosaic-company-inline-hover-logo-wrap">
-                <img
-                  src={logoUrl}
-                  alt=""
-                  loading="eager"
-                  decoding="async"
-                  className="mosaic-company-inline-hover-logo"
-                />
-              </span>
-            ))
-          : null}
-      </span>
     </a>
   )
 }
@@ -305,7 +273,7 @@ function ResumeCompany({ job }: { job: CvExperience }) {
         {clients.map((client, index) => (
           <Fragment key={client.name}>
             {index > 0 ? (index === clients.length - 1 ? ", and " : ", ") : null}
-            <ResumeCompanyLink company={client.name} href={client.href} logoUrls={[client.logoUrl]} />
+            <ResumeCompanyLink company={client.name} href={client.href} />
           </Fragment>
         ))}
         <span>)</span>
@@ -313,8 +281,8 @@ function ResumeCompany({ job }: { job: CvExperience }) {
     )
   }
 
-  if (job.href && job.logoUrls) {
-    return <ResumeCompanyLink company={job.company} href={job.href} logoUrls={job.logoUrls} />
+  if (job.href) {
+    return <ResumeCompanyLink company={job.company} href={job.href} />
   }
 
   return <span>{job.company}</span>
@@ -323,6 +291,61 @@ function ResumeCompany({ job }: { job: CvExperience }) {
 export function AboutPanel({ links }: AboutPanelProps) {
   const { offsets, order, dragging, onKeyDown, onPointerDown, onPointerMove, onPointerUp } =
     useStickerMovement()
+  const panelRef = useRef<HTMLElement | null>(null)
+
+  // The copy blocks ship visible — the attribute is empty in the prerendered
+  // markup, so nothing depends on JavaScript. On mount, blocks still below
+  // the fold are held transparent and released with the shared intro rise the
+  // first time they scroll into the sheet. Besides continuity with the hero
+  // and mosaic entrances, the fade buys the sheet's composited layer a beat
+  // to rasterise fresh text tiles behind intent instead of as a late paint.
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel || typeof window.matchMedia !== "function") return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    if (!("IntersectionObserver" in window)) return
+
+    // Scroll restoration can land mid-sheet; anything already on screen (or
+    // above it) stays put and only content still below the fold animates.
+    const blocks = [...panel.querySelectorAll<HTMLElement>("[data-about-fade]")].filter(
+      (block) => block.getBoundingClientRect().top > window.innerHeight,
+    )
+    if (blocks.length === 0) return
+
+    // The top margin stretches the root far above the viewport so an instant
+    // jump (a nav link, a hard fling) that skips a block past the trigger
+    // line still counts as entering — otherwise the skipped block would stay
+    // transparent until it re-entered from above. Blocks arriving in the same
+    // batch cascade top-down on a short stagger so the sheet reads in order —
+    // but only blocks actually on screen join the cascade. The first visible
+    // block always starts at 0ms and skipped offscreen blocks reveal
+    // instantly, so a jump never lands on a blank page waiting its turn.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const arrivals = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+
+        let visibleIndex = 0
+        for (const entry of arrivals) {
+          const block = entry.target as HTMLElement
+          const rect = entry.boundingClientRect
+          const onScreen = rect.bottom > 0 && rect.top < window.innerHeight
+          block.style.setProperty("--about-fade-delay", `${onScreen ? visibleIndex * 60 : 0}ms`)
+          if (onScreen) visibleIndex += 1
+          block.dataset.aboutFade = "in"
+          observer.unobserve(block)
+        }
+      },
+      { rootMargin: "9999px 0px -8% 0px" },
+    )
+
+    for (const block of blocks) {
+      block.dataset.aboutFade = "pending"
+      observer.observe(block)
+    }
+    return () => observer.disconnect()
+  }, [])
 
   const renderStickers = (stickers: AboutSticker[]) =>
     stickers.map((sticker) => {
@@ -363,6 +386,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
   return (
     <article
       id="about-panel"
+      ref={panelRef}
       className="mosaic-about"
       tabIndex={-1}
       aria-label="About Rafael Medina"
@@ -375,7 +399,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
             className="mosaic-about-section mosaic-about-section-intro"
             aria-labelledby="about-section-heading"
           >
-            <div className="mosaic-about-section-copy">
+            <div className="mosaic-about-section-copy" data-about-fade="">
               <h2 id="about-section-heading" className="mosaic-about-lede">
                 About me
               </h2>
@@ -433,7 +457,11 @@ export function AboutPanel({ links }: AboutPanelProps) {
             aria-labelledby="about-work-history-heading"
           >
             <div className="mosaic-about-work-history-copy">
-              <h2 id="about-work-history-heading" className="mosaic-about-section-heading">
+              <h2
+                id="about-work-history-heading"
+                className="mosaic-about-section-heading"
+                data-about-fade=""
+              >
                 Work history
               </h2>
               <ol className="mosaic-about-resume mosaic-about-work-list">
@@ -441,6 +469,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
                   <li
                     key={`${job.company}-${job.dates}`}
                     className="mosaic-about-resume-entry mosaic-about-work-entry"
+                    data-about-fade=""
                   >
                     <p className="mosaic-about-resume-dates">{job.dates}</p>
                     <div className="mosaic-about-resume-details">
@@ -458,12 +487,15 @@ export function AboutPanel({ links }: AboutPanelProps) {
               </ol>
 
               <div className="mosaic-about-resume-education">
-                <h3 className="mosaic-about-resume-heading">Education</h3>
+                <h3 className="mosaic-about-resume-heading" data-about-fade="">
+                  Education
+                </h3>
                 <ul className="mosaic-about-resume mosaic-about-education-list">
                   {cvEducation.map((school) => (
                     <li
                       key={school.school}
                       className="mosaic-about-resume-entry mosaic-about-work-entry"
+                      data-about-fade=""
                     >
                       <p className="mosaic-about-resume-dates">{school.dates}</p>
                       <div className="mosaic-about-resume-details">
@@ -483,7 +515,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
                 </ul>
               </div>
 
-              <p className="mosaic-about-resume-download">
+              <p className="mosaic-about-resume-download" data-about-fade="">
                 <a href={links.resumePdf} download className="mosaic-about-link">
                   Download CV in PDF
                 </a>

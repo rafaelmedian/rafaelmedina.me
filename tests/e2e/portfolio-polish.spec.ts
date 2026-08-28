@@ -54,8 +54,9 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
 
   const edge = page.locator(".elastic-scroll-edge")
-  const pulledState = await edge.evaluate((element) => {
+  const pulledState = await edge.evaluate(async (element) => {
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
     const styles = getComputedStyle(element)
     const shade = element.querySelector<HTMLElement>(".elastic-scroll-edge-shade")
     return {
@@ -81,8 +82,10 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
   expect(pulledState.height).toBeGreaterThanOrEqual(40)
   expect(pulledState.height).toBeLessThanOrEqual(72)
   expect(pulledState.shadeCount).toBe(1)
-  expect(pulledState.shadeFilter).toMatch(/^blur\((?:[4-9]|1[0-4])px\) saturate\(/)
-  expect(Number(pulledState.shadeFilter.match(/saturate\(([^)]+)\)/)?.[1])).toBeGreaterThanOrEqual(1)
+  // The strip must stay filter-free: a blur pass re-rasters the full-width
+  // surface at device scale on every palette change. Saturation is baked into
+  // the generated palette instead.
+  expect(pulledState.shadeFilter).toBe("none")
   expect(pulledState.backgroundImage.match(/radial-gradient/g)).toHaveLength(7)
   expect(pulledState.palette.every(Boolean)).toBe(true)
   expect(new Set(pulledState.palette).size).toBe(5)
@@ -126,6 +129,38 @@ test("changes the elastic-edge palette when the random source repeats", async ({
   expect(palettes.second).not.toEqual(palettes.first)
 })
 
+test("coalesces a burst of elastic-edge input into one visual update per frame", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const progress = await page.locator(".elastic-scroll-edge").evaluate((element) => {
+    const scheduledFrames: FrameRequestCallback[] = []
+    const requestFrame = window.requestAnimationFrame
+
+    window.requestAnimationFrame = (callback) => {
+      scheduledFrames.push(callback)
+      return scheduledFrames.length
+    }
+
+    try {
+      for (let index = 0; index < 8; index += 1) {
+        window.dispatchEvent(new WheelEvent("wheel", { deltaY: 24 }))
+      }
+
+      const beforeFrame = (element as HTMLElement).style.getPropertyValue("--elastic-edge-opacity")
+      scheduledFrames.splice(0).forEach((callback) => callback(performance.now()))
+      const afterFrame = (element as HTMLElement).style.getPropertyValue("--elastic-edge-opacity")
+
+      return { beforeFrame, afterFrame }
+    } finally {
+      window.requestAnimationFrame = requestFrame
+    }
+  })
+
+  expect(progress.beforeFrame).toBe("")
+  expect(Number(progress.afterFrame)).toBeGreaterThan(0)
+})
+
 test("tosses a wink and three varied emoji once per bottom overscroll gesture", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
@@ -149,31 +184,44 @@ test("tosses a wink and three varied emoji once per bottom overscroll gesture", 
   await expect(emojiLayer.locator(".elastic-scroll-edge-emoji")).toHaveCount(0, { timeout: 2_000 })
 })
 
-test("keeps each emoji's horizontal momentum through the apex and fall", async ({ page }) => {
+test("tosses each emoji on one animated layer with no horizontal drift", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
 
-  const horizontalSteps = await page.locator(".elastic-scroll-edge").evaluate(() => {
+  // The burst used to nest a drift wrapper around each glyph for a parallax
+  // arc, which doubled the animated layers mid-interaction. Each emoji is now
+  // a single childless span that rises and falls in place.
+  const toss = await page.locator(".elastic-scroll-edge").evaluate(() => {
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
     const element = document.querySelector<HTMLElement>(".elastic-scroll-edge-emoji")
     if (!element) throw new Error("Emoji burst did not launch")
     const animation = element.getAnimations()[0]
-    if (!animation) throw new Error("Emoji drift animation did not start")
+    if (!animation) throw new Error("Emoji toss animation did not start")
     animation.pause()
 
-    const sampleX = (time: number) => {
+    const sample = (time: number) => {
       animation.currentTime = time
-      return new DOMMatrixReadOnly(getComputedStyle(element).transform).m41
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
+      return { x: matrix.m41, y: matrix.m42 }
     }
 
-    const quarter = sampleX(175)
-    const apex = sampleX(350)
-    const falling = sampleX(525)
-    return [apex - quarter, falling - apex]
+    const rising = sample(175)
+    const apex = sample(350)
+    const falling = sample(650)
+    return {
+      childCount: element.childElementCount,
+      animationCount: element.getAnimations().length,
+      horizontalTravel: Math.max(Math.abs(rising.x), Math.abs(apex.x), Math.abs(falling.x)),
+      roseToApex: apex.y < rising.y,
+      fellAfterApex: falling.y > apex.y,
+    }
   })
 
-  expect(Math.sign(horizontalSteps[0])).toBe(Math.sign(horizontalSteps[1]))
-  expect(Math.abs(Math.abs(horizontalSteps[0]) - Math.abs(horizontalSteps[1]))).toBeLessThan(2)
+  expect(toss.childCount).toBe(0)
+  expect(toss.animationCount).toBe(1)
+  expect(toss.horizontalTravel).toBe(0)
+  expect(toss.roseToApex).toBe(true)
+  expect(toss.fellAfterApex).toBe(true)
 })
 
 test("previews the gradient while applying live height and shape settings", async ({ page }) => {
@@ -188,8 +236,6 @@ test("previews the gradient while applying live height and shape settings", asyn
           height: 120,
           centerWidth: 58,
           colorSpread: 70,
-          blur: 8,
-          saturation: 1.04,
           translucency: 0.38,
           coreOpacity: 0.9,
           lightOpacity: 0.26,
@@ -216,8 +262,6 @@ test("previews the gradient while applying live height and shape settings", asyn
           height: 120,
           centerWidth: 58,
           colorSpread: 70,
-          blur: 8,
-          saturation: 1.04,
           translucency: 0.38,
           coreOpacity: 0.9,
           lightOpacity: 0.26,
@@ -290,29 +334,37 @@ test("defines the overlapping About surface with a top border and shadow", async
   const about = page.locator(".mosaic-about")
   const treatment = await about.evaluate((element) => {
     const sheet = getComputedStyle(element)
-    const topEdge = getComputedStyle(element, "::before")
-    const panel = element.querySelector<HTMLElement>(".mosaic-about-panel")
+    // The hairline anchors to the runway rather than the sheet: paint outside
+    // the sheet's bounds would keep its composited layer non-opaque, and a
+    // missed raster tile would composite as see-through grid instead of
+    // solid canvas.
+    const runway = document.querySelector(".mosaic-takeover-runway")
+    const topEdge = runway ? getComputedStyle(runway, "::after") : null
+    const runwayRect = runway?.getBoundingClientRect()
+    const topEdgePaintBottom =
+      runwayRect && topEdge ? Math.round(runwayRect.bottom - Number.parseFloat(topEdge.bottom)) : null
 
     return {
       sheetShadow: sheet.boxShadow,
       sheetClip: sheet.clipPath,
-      topEdgeContent: topEdge.content,
-      topEdgeTop: topEdge.top,
-      topEdgeHeight: topEdge.height,
-      topEdgeBackground: topEdge.backgroundColor,
-      topEdgeShadow: topEdge.boxShadow,
-      panelLayer: panel ? getComputedStyle(panel).zIndex : "missing",
+      sheetTopEdgeContent: getComputedStyle(element, "::before").content,
+      topEdgeContent: topEdge?.content ?? "missing",
+      topEdgeHeight: topEdge?.height ?? "missing",
+      topEdgeBackground: topEdge?.backgroundColor ?? "missing",
+      topEdgeShadow: topEdge?.boxShadow ?? "missing",
+      topEdgePaintBottom,
+      sheetTop: Math.round(element.getBoundingClientRect().top),
     }
   })
 
   expect(treatment.sheetShadow).toBe("none")
   expect(treatment.sheetClip).toBe("none")
+  expect(treatment.sheetTopEdgeContent).toBe("none")
   expect(treatment.topEdgeContent).toBe('""')
-  expect(treatment.topEdgeTop).toBe("-1px")
+  expect(treatment.topEdgePaintBottom).toBe(treatment.sheetTop)
   expect(treatment.topEdgeHeight).toBe("1px")
   expect(treatment.topEdgeBackground).toBe("rgba(0, 0, 0, 0.08)")
   expect(treatment.topEdgeShadow).not.toBe("none")
-  expect(treatment.panelLayer).toBe("1")
 })
 
 test("does not claim a sitemap modification date for every deployment", async ({ request }) => {
@@ -1371,11 +1423,11 @@ test("reuses the hover-card shadow for the about takeover", async ({ page }) => 
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
 
-  const about = page.locator("#about-panel")
+  const runway = page.locator(".mosaic-takeover-runway")
   const hoverCard = page.locator(".mosaic-linkedin-card")
 
   const [aboutShadow, hoverCardShadow] = await Promise.all([
-    about.evaluate((element) => getComputedStyle(element, "::before").boxShadow),
+    runway.evaluate((element) => getComputedStyle(element, "::after").boxShadow),
     hoverCard.evaluate((element) => getComputedStyle(element).boxShadow),
   ])
 
@@ -1402,6 +1454,22 @@ test("retreats the complete project grid as one surface during takeover", async 
   expect(retreat.transform).not.toBe("none")
   await expect(card).toHaveCSS("opacity", "1")
   await expect(card).toHaveCSS("transform", "none")
+})
+
+test("releases the project grid compositor layer after the takeover", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+
+  const stage = page.locator(".mosaic-takeover-stage")
+  await stage.evaluate((element) => element.scrollIntoView({ block: "end" }))
+  await page.evaluate(() => window.scrollBy(0, window.innerHeight + 80))
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+  )
+
+  await expect(stage).toHaveCSS("opacity", "1")
+  await expect(stage).toHaveCSS("transform", "none")
 })
 
 test("keeps the takeover cover but removes retreat motion for reduced motion", async ({ page }) => {
@@ -1445,6 +1513,85 @@ test("releases the about sheet into normal document scrolling after takeover", a
   )
 
   expect(placement).toEqual({ position: "relative", distanceMoved: 80 })
+})
+
+test("raises each about copy block into view the first time it scrolls in", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+
+  // Below the fold the copy holds transparent. The prerendered markup ships
+  // the attribute empty, so nothing is hidden without JavaScript.
+  const intro = page.locator(".mosaic-about-section-copy")
+  const download = page.locator(".mosaic-about-resume-download")
+  await expect(intro).toHaveAttribute("data-about-fade", "pending")
+  await expect(download).toHaveAttribute("data-about-fade", "pending")
+
+  await page.locator("#about-panel").evaluate((element) => element.scrollIntoView({ block: "start" }))
+  await expect(intro).toHaveAttribute("data-about-fade", "in")
+  await expect(intro).toHaveCSS("opacity", "1")
+  // Deeper blocks wait for their own approach rather than following the intro.
+  await expect(download).toHaveAttribute("data-about-fade", "pending")
+
+  await download.scrollIntoViewIfNeeded()
+  await expect(download).toHaveAttribute("data-about-fade", "in")
+  await expect(download).toHaveCSS("opacity", "1")
+
+  // The jump skipped every block between the intro and the download; none of
+  // them may be left transparent above the viewport.
+  await expect(page.locator('[data-about-fade="pending"]')).toHaveCount(0)
+
+  // Within the batch, on-screen blocks cascade top-down but the first starts
+  // immediately — a jump never lands on a blank page waiting its turn.
+  const visibleDelays = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('[data-about-fade="in"]')]
+      .filter((block) => {
+        const rect = block.getBoundingClientRect()
+        return rect.bottom > 0 && rect.top < window.innerHeight
+      })
+      .map((block) => block.style.getPropertyValue("--about-fade-delay")),
+  )
+  expect(visibleDelays).toContain("0ms")
+  expect(new Set(visibleDelays).size).toBeGreaterThan(1)
+})
+
+test("keeps the about copy visible without an entrance under reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const intro = page.locator(".mosaic-about-section-copy")
+  await expect(intro).toHaveAttribute("data-about-fade", "")
+  await expect(intro).toHaveCSS("opacity", "1")
+})
+
+test("rests preview videos while the about sheet covers the grid", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+
+  const videos = page.locator(".mosaic-row-card video.mosaic-row-media")
+  await expect.poll(() => videos.first().evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
+
+  await page.locator("#about-panel").evaluate((element) => element.scrollIntoView({ block: "start" }))
+  await page.evaluate(() => window.scrollBy(0, 80))
+
+  // The pinned grid still intersects the viewport behind the sheet, so a pause
+  // here proves the occlusion signal, not the offscreen one.
+  expect(
+    await videos.evaluateAll((elements) =>
+      elements.some((video) => {
+        const rect = video.getBoundingClientRect()
+        return rect.bottom > 0 && rect.top < window.innerHeight
+      }),
+    ),
+  ).toBe(true)
+  await expect.poll(() =>
+    videos.evaluateAll((elements) => elements.every((video) => (video as HTMLVideoElement).paused)),
+  ).toBe(true)
+
+  // Scrolling back reveals the grid again and the loops resume.
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await expect.poll(() => videos.first().evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
 })
 
 test("uses normal-flow project and about sections on mobile", async ({ page }) => {
@@ -2130,52 +2277,22 @@ test("left aligns the work-history reading hierarchy", async ({ page }) => {
   expect(alignment).toEqual({ section: "left", heading: "left", title: "left" })
 })
 
-test("reveals company logo tooltips on hover and keyboard focus", async ({ page }) => {
+test("keeps work-history company links free of logo tooltips", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/#about-panel-resume")
 
-  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
-  const tooltip = companyLink.locator(".mosaic-company-inline-hover-logos")
+  const companyLink = page
+    .locator("#about-panel-resume a.mosaic-company-inline-link")
+    .filter({ hasText: "Moody's" })
+  const tooltips = page.locator("#about-panel-resume .mosaic-company-inline-hover-logos")
 
-  await expect(tooltip).toBeHidden()
+  await expect(companyLink).toHaveCount(1)
+  await expect(tooltips).toHaveCount(0)
   await companyLink.hover()
-  await expect(tooltip).toBeVisible()
-  await expect(tooltip.locator("img")).toHaveCount(2)
-  await page.mouse.move(0, 0)
-  await expect(tooltip).toBeHidden()
+  await expect(tooltips).toHaveCount(0)
   await companyLink.focus()
-  await expect(tooltip).toBeVisible()
-})
-
-test("keeps a keyboard-focused company logo tooltip populated after pointer leave", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/#about-panel-resume")
-
-  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
-  const tooltip = companyLink.locator(".mosaic-company-inline-hover-logos")
-
-  await companyLink.focus()
-  await companyLink.hover()
-  await page.mouse.move(0, 0)
-
   await expect(companyLink).toBeFocused()
-  await expect(tooltip).toBeVisible()
-  await expect(tooltip.locator("img")).toHaveCount(2)
-})
-
-test("dismisses a keyboard-focused company logo tooltip with Escape", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/#about-panel-resume")
-
-  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
-  const tooltip = companyLink.locator(".mosaic-company-inline-hover-logos")
-
-  await companyLink.focus()
-  await expect(tooltip).toBeVisible()
-  await companyLink.press("Escape")
-
-  await expect(companyLink).toBeFocused()
-  await expect(tooltip).toBeHidden()
+  await expect(tooltips).toHaveCount(0)
 })
 
 test("links each work-history company name to its primary website", async ({ page }) => {
@@ -2219,31 +2336,6 @@ test("keeps each role and employer as the accessible work-history heading", asyn
 
   await expect(page.getByRole("heading", { name: "Senior Product Designer at 0x Project" })).toBeVisible()
   await expect(page.getByRole("link", { name: "0x Project", exact: true })).toBeVisible()
-})
-
-test("keeps work-history logo tooltips non-interactive", async ({ page }) => {
-  await page.goto("/#about-panel-resume")
-
-  const companyLink = page.getByRole("link", { name: "0x Project", exact: true })
-  await companyLink.hover()
-  await expect(companyLink.locator(".mosaic-company-inline-hover-logos").getByRole("link")).toHaveCount(0)
-})
-
-test("defers resume-only company logos until their tooltip opens", async ({ page }) => {
-  const boldVoiceLogoPath = "/logos/boldvoice.png"
-  const requestedLogoPaths: string[] = []
-  page.on("request", (request) => {
-    const path = new URL(request.url()).pathname
-    if (path.startsWith("/logos/")) requestedLogoPaths.push(path)
-  })
-
-  await page.goto("/")
-  await page.waitForLoadState("networkidle")
-  expect(requestedLogoPaths).not.toContain(boldVoiceLogoPath)
-
-  const request = page.waitForRequest((candidate) => new URL(candidate.url()).pathname === boldVoiceLogoPath)
-  await page.getByRole("link", { name: "BoldVoice", exact: true }).focus()
-  await request
 })
 
 test("opens work history directly from its deep link", async ({ page }) => {
@@ -2797,7 +2889,18 @@ test("renders intrinsic media dimensions and does not autoplay under reduced mot
   await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
   const previewVideo = page.getByRole("dialog").locator("video")
   expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
-  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(true)
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(false)
+})
+
+test("autoplays gallery clips without native playback controls", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+
+  const previewVideo = page.getByRole("dialog").locator("video")
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(true)
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.loop)).toBe(true)
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(false)
 })
 
 for (const viewport of [

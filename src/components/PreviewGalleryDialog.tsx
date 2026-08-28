@@ -526,10 +526,6 @@ export function PreviewGalleryDialog({
                         autoPlay={!prefersReducedMotion}
                         playsInline
                         preload={prefersReducedMotion ? "none" : "metadata"}
-                        // Always on, not just under reduced motion: an autoplaying
-                        // loop runs past five seconds, so WCAG 2.2.2 wants a pause
-                        // control every viewer can reach.
-                        controls
                         aria-label={activeCard.title}
                         className="preview-gallery-media"
                       />

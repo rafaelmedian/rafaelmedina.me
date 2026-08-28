@@ -356,7 +356,7 @@ const DURATIONS = [
   { value: "180–240ms", use: "Anything that also moves: overlays and title reveals." },
   { value: "300ms", use: "The gallery expand/minimise icon swap." },
   { value: "360ms", use: "Media un-blurring as it decodes." },
-  { value: "380–480ms", use: "First-load entrance travel, hero then mosaic." },
+  { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
   { value: "700ms", use: "The bottom scroll edge, its emoji toss, and the avatar coin flip." },
 ]
 
@@ -538,14 +538,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <p>
                   The 56px page-end curve blends five clean analogous shades, chosen again for each pull. Its deeper,
                   more saturated centre sits beneath a translucent white highlight while broader pale layers recede
-                  toward the sides. An 8px blur softens their seams while the gesture and 700ms release remain the
-                  effect's dominant motion. Each fresh gesture also tosses a wink and three non-repeating companions
-                  from below the viewport on staggered 700ms arcs. Their outer layer keeps constant horizontal momentum
-                  through the apex while each inner glyph eases upward and accelerates down under gravity, avoiding an
-                  artificial direction change during the fall. They remain decorative and pointer-free, clean up after
-                  landing, and disappear with the entire effect under reduced motion. Development keeps a live preview
-                  open and exposes height, centre width, colour spread, blur, saturation, centre strength, light,
-                  translucency, and palette refresh in DialKit.
+                  toward the sides. The soft-edged ellipses blend without any filter pass, keeping the strip cheap to
+                  repaint while the gesture and 700ms release remain the effect's dominant motion. Each fresh gesture
+                  also tosses a wink and three non-repeating companions from below the viewport on staggered 700ms
+                  rises — each a single layer that eases upward, tumbles, and accelerates down under gravity. They
+                  remain decorative and pointer-free, clean up after landing, and disappear with the entire effect
+                  under reduced motion.
                 </p>
               </div>
             </div>
@@ -1156,8 +1154,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   reading surface without crowding the copy. They stay fixed while the pointer and page move, but can
                   still be repositioned directly with pointer dragging or the keyboard. Each role shows one representative result, aligns its
                   dates opposite the company on wider screens, then ends with a PDF download 5rem (80px) after Education.
-                  Company names are keyboard-focusable external links that reveal non-interactive logo tooltips on
-                  hover and focus. There is no tab state or
+                  Company names are keyboard-focusable external links without hover or focus tooltips. There is no tab state or
                   hidden panel; <code>#about-panel-resume</code> anchors directly to the visible Work history section.
                 </li>
               </ul>
