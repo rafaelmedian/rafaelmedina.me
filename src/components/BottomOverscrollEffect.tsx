@@ -40,12 +40,9 @@ function launchEmojiBurst(layer: HTMLDivElement) {
 
   emojis.forEach((emoji, index) => {
     const particle = document.createElement("span")
-    const glyph = document.createElement("span")
-    const driftDirection = index < emojis.length / 2 ? 1 : -1
 
     particle.className = "elastic-scroll-edge-emoji"
     particle.style.left = `${EMOJI_ANCHORS[index] + randomBetween(-6, 6)}%`
-    particle.style.setProperty("--emoji-land-x", `${driftDirection * randomBetween(58, 104)}px`)
     particle.style.setProperty("--emoji-rise", `${randomBetween(-168, -104)}px`)
     particle.style.setProperty("--emoji-start-rotation", `${randomBetween(-22, 22)}deg`)
     particle.style.setProperty("--emoji-end-rotation", `${randomBetween(-70, 70)}deg`)
@@ -54,9 +51,7 @@ function launchEmojiBurst(layer: HTMLDivElement) {
     particle.addEventListener("animationend", (event) => {
       if (event.target === particle) particle.remove()
     })
-    glyph.className = "elastic-scroll-edge-emoji-glyph"
-    glyph.textContent = emoji
-    particle.append(glyph)
+    particle.textContent = emoji
     fragment.append(particle)
   })
 
@@ -93,6 +88,7 @@ export function BottomOverscrollEffect() {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     let pull = 0
     let lastTouchY: number | null = null
+    let paintFrame: number | undefined
     let releaseTimer: number | undefined
 
     randomizeElasticEdgePalette(edge)
@@ -100,11 +96,16 @@ export function BottomOverscrollEffect() {
 
     const paint = (nextPull: number) => {
       pull = Math.max(0, Math.min(MAX_PULL, nextPull))
-      const progress = pull / MAX_PULL
+      if (paintFrame !== undefined) return
 
-      edge.style.setProperty("--elastic-edge-opacity", String(progress * MAX_OPACITY))
-      edge.style.setProperty("--elastic-edge-offset", `${(1 - progress) * 44}px`)
-      edge.style.setProperty("--elastic-edge-scale", String(0.35 + progress * 0.65))
+      paintFrame = window.requestAnimationFrame(() => {
+        paintFrame = undefined
+        const progress = pull / MAX_PULL
+
+        edge.style.setProperty("--elastic-edge-opacity", String(progress * MAX_OPACITY))
+        edge.style.setProperty("--elastic-edge-offset", `${(1 - progress) * 44}px`)
+        edge.style.setProperty("--elastic-edge-scale", String(0.35 + progress * 0.65))
+      })
     }
 
     const release = () => {
@@ -212,6 +213,7 @@ export function BottomOverscrollEffect() {
     window.addEventListener(ELASTIC_EDGE_SETTINGS_EVENT, handleSettings)
 
     return () => {
+      if (paintFrame !== undefined) window.cancelAnimationFrame(paintFrame)
       if (releaseTimer !== undefined) window.clearTimeout(releaseTimer)
       emojiLayer.replaceChildren()
       window.removeEventListener("wheel", handleWheel)

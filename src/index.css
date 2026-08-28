@@ -231,7 +231,10 @@ img {
       color-mix(in srgb, var(--elastic-edge-color-3) var(--elastic-edge-shade-strength), transparent) 0%,
       transparent 78%
     );
-  filter: blur(var(--elastic-edge-blur)) saturate(var(--elastic-edge-saturation));
+  /* No filter here on purpose: a blur pass over a full-width strip re-rasters
+     the whole surface at device scale every palette change. The ellipses
+     already fade to transparent, and the old 4% saturate() is baked into the
+     palette generator instead. */
 }
 
 .elastic-scroll-edge[data-preview="true"] {
@@ -251,34 +254,21 @@ img {
   pointer-events: none;
 }
 
+/* One animated span per emoji. The burst used to nest a linear-drift wrapper
+   around an eased glyph for a projectile arc, but that doubled the animated
+   compositor layers for a decoration that fires mid-interaction, exactly when
+   raster headroom is scarcest. The toss keeps the rise, fall, and tumble in a
+   single layer and drops the horizontal parallax. */
 .elastic-scroll-edge-emoji {
   position: absolute;
   bottom: -2rem;
   display: block;
+  opacity: 0;
   font-size: var(--emoji-size);
   line-height: 1;
-  animation: elastic-edge-emoji-drift 700ms linear both;
-  animation-delay: var(--emoji-delay);
-  will-change: transform;
-}
-
-.elastic-scroll-edge-emoji-glyph {
-  display: block;
-  opacity: 0;
   transform-origin: center;
   animation: elastic-edge-emoji-toss 700ms both;
   animation-delay: var(--emoji-delay);
-  will-change: transform, opacity;
-}
-
-@keyframes elastic-edge-emoji-drift {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(var(--emoji-land-x), 0, 0);
-  }
 }
 
 @keyframes elastic-edge-emoji-toss {
@@ -1013,6 +1003,44 @@ img {
   display: grid;
   gap: 1.05rem;
   text-align: left;
+}
+
+/* About copy rises in from below, released per block the first time it
+   scrolls into the sheet — the same family as the hero and mosaic entrances
+   but with more travel, so the text reads as arriving from the bottom edge.
+   The markup ships the attribute empty, so without JavaScript nothing is
+   ever hidden; the panel's observer holds only below-the-fold blocks
+   transparent. The entrance also gives the sheet's composited layer a beat
+   to rasterise fresh text tiles behind intent instead of as a late paint. */
+[data-about-fade="pending"] {
+  opacity: 0;
+}
+
+[data-about-fade="in"] {
+  animation: mosaic-about-rise 440ms var(--ease-smooth) both;
+  /* Set per batch by the panel's observer: blocks that arrive together
+     cascade top-down, so the sheet reads in order however far a gesture
+     jumps. `both` keeps a delayed block at the from-frame while it waits. */
+  animation-delay: var(--about-fade-delay, 0ms);
+}
+
+@keyframes mosaic-about-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-about-fade] {
+    opacity: 1;
+    animation: none;
+  }
 }
 
 .mosaic-about-work-history {
@@ -2487,25 +2515,31 @@ img {
     view-timeline-axis: block;
   }
 
-  .mosaic-about::before {
+  /* The sheet's top hairline and shadow live on the runway rather than the
+     sheet. Painting outside the sheet's own bounds would keep its composited
+     layer non-opaque, and a missed raster tile on a non-opaque layer
+     composites as transparent — the retreating grid flashes through
+     mid-scroll. Anchored here the same shadow reads identically (the sheet
+     still covers the downward spill), while a missed sheet tile now resolves
+     to solid canvas instead of a see-through band. */
+  .mosaic-takeover-runway::after {
     content: "";
     position: absolute;
-    top: -1px;
     right: 0;
+    bottom: 100vh;
+    bottom: 100dvh;
     left: 0;
-    z-index: 0;
+    z-index: 1;
     height: 1px;
     pointer-events: none;
     background: rgb(0 0 0 / 0.08);
     box-shadow:
       0 1px 2px rgb(16 16 20 / 0.06),
       0 12px 32px rgb(16 16 20 / 0.16);
-  }
-
-  /* The solid panel covers the shadow below its top edge. The hairline sits
-     one pixel above it, so the overlap stays crisp without boxing the sheet. */
-  .mosaic-about-panel {
-    z-index: 1;
+    /* Keep the shadow on its own compositor layer. Without this Chrome
+       squashes it into the sheet's layer, whose bounds then regrow past the
+       opaque background — undoing the whole reason the shadow moved here. */
+    will-change: transform;
   }
 }
 
@@ -2517,7 +2551,12 @@ img {
     animation-name: mosaic-takeover-retreat;
     animation-duration: 1ms;
     animation-timing-function: linear;
-    animation-fill-mode: both;
+    /* The start and end states are visually redundant outside the takeover:
+       before it, the default stage already matches the first keyframe; after
+       it, the opaque About sheet covers the gallery. Do not retain the final
+       transform, or Chrome keeps this large off-screen surface composited
+       while it should be rasterizing the long About reading surface. */
+    animation-fill-mode: none;
     animation-timeline: --about-takeover;
     animation-range: entry 0% entry 100%;
   }
@@ -2571,13 +2610,12 @@ img {
   z-index: 1;
   height: max(18%, 4.5rem);
   pointer-events: none;
-  background: linear-gradient(
-    to top,
-    rgb(0 0 0 / 0.58) 0%,
-    rgb(0 0 0 / 0.38) 36%,
-    rgb(0 0 0 / 0.14) 68%,
-    transparent 100%
-  );
+  /* Staggered translucent ramps keep the caption readable without leaving a
+     broad gray shelf across the image, as a single multi-stop scrim did. */
+  background:
+    linear-gradient(to top, rgb(0 0 0 / 0.34) 0%, transparent 48%),
+    linear-gradient(to top, rgb(0 0 0 / 0.2) 0%, transparent 74%),
+    linear-gradient(to top, rgb(0 0 0 / 0.1) 0%, transparent 100%);
   opacity: 0;
   transition: opacity 160ms ease-out;
 }
@@ -2608,9 +2646,14 @@ img {
   will-change: opacity, filter;
 }
 
+/* Once the blur-up settles the hint would only pin ~10 tile textures in GPU
+   memory for the rest of the session — memory the About sheet needs while it
+   rasterises during the takeover crossing (it is force-composited because it
+   slides over this grid). Release it. */
 .mosaic-row-media[data-loaded="true"] {
   opacity: 1;
   filter: blur(0);
+  will-change: auto;
 }
 
 /* Cropped tiles show a zoomed corner of the shot rather than the whole frame.

@@ -30,7 +30,6 @@
     "@vitejs/plugin-react": "^5.1.1",
     "agentation": "^2.2.1",
     "autoprefixer": "^10.4.19",
-    "dialkit": "^1.4.3",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.4.26",

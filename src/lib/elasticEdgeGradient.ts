@@ -6,8 +6,6 @@ export const DEFAULT_ELASTIC_EDGE_SETTINGS = {
   height: 56,
   centerWidth: 42,
   colorSpread: 52,
-  blur: 8,
-  saturation: 1.04,
   translucency: 0.38,
   coreOpacity: 0.9,
   lightOpacity: 0.26,
@@ -18,8 +16,6 @@ export type ElasticEdgeSettings = {
   height: number
   centerWidth: number
   colorSpread: number
-  blur: number
-  saturation: number
   translucency: number
   coreOpacity: number
   lightOpacity: number
@@ -31,7 +27,9 @@ const wrapHue = (hue: number) => ((hue % 360) + 360) % 360
 
 export function createElasticEdgePalette(random = Math.random) {
   const baseHue = Math.floor(random() * 360)
-  const saturation = 66 + Math.floor(random() * 8)
+  // 69–76% carries the 4% saturate() the shade used to apply as a filter, so
+  // the strip keeps its colour without a per-paint filter pass.
+  const saturation = 69 + Math.floor(random() * 8)
   const lightness = 74 + Math.floor(random() * 5)
 
   return HUE_OFFSETS.map((offset, index) => {
@@ -66,8 +64,6 @@ export function paintElasticEdgeSettings(element: HTMLElement, settings: Elastic
   element.style.setProperty("--elastic-edge-height", `${settings.height}px`)
   element.style.setProperty("--elastic-edge-center-width", `${settings.centerWidth}%`)
   element.style.setProperty("--elastic-edge-color-spread", `${settings.colorSpread}%`)
-  element.style.setProperty("--elastic-edge-blur", `${settings.blur}px`)
-  element.style.setProperty("--elastic-edge-saturation", String(settings.saturation))
   element.style.setProperty("--elastic-edge-shade-opacity", String(shadeOpacity))
   element.style.setProperty("--elastic-edge-shade-strength", `${shadeOpacity * 100}%`)
   element.style.setProperty("--elastic-edge-core-opacity", String(settings.coreOpacity))
