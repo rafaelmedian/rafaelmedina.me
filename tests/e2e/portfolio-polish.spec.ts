@@ -2223,6 +2223,38 @@ test("spreads the stickers across the About and Work history desktop gutters", a
   expect(layout.verticalCoverage).toBeGreaterThan(0.75)
 })
 
+test("cuts the stickers with one dilate pass rather than a drop-shadow chain", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/#about-panel")
+
+  // Chrome gives every function in a filter chain its own GPU render pass and
+  // re-evaluates the whole chain each frame, so the eight stickers' die-cut is
+  // multiplied by however many passes it costs. The chained `drop-shadow()`
+  // version measured ~27fps across the About takeover against ~110fps here.
+  const cut = await page.locator(".mosaic-about-sticker").first().evaluate((sticker) => {
+    const glyphFilter = getComputedStyle(
+      sticker.querySelector(".mosaic-about-sticker-glyph") as HTMLElement,
+    ).filter
+    const reference = glyphFilter.match(/url\(["']?#?([\w-]+)["']?\)/)?.[1]
+    const svgFilter = reference ? document.getElementById(reference) : null
+    const buttonFilter = getComputedStyle(sticker).filter
+    return {
+      dilates: svgFilter?.querySelectorAll("feMorphology[operator='dilate']").length ?? 0,
+      glyphPasses: glyphFilter.split(/(?=url\(|drop-shadow\()/).length,
+      buttonDropShadows: buttonFilter.split("drop-shadow(").length - 1,
+      // A `url()` anywhere in the button's list would make the drag release
+      // snap instead of easing.
+      buttonReferences: buttonFilter.split("url(").length - 1,
+    }
+  })
+
+  expect(cut.dilates).toBe(1)
+  expect(cut.glyphPasses).toBe(1)
+  // One blurred cast shadow, and nothing else.
+  expect(cut.buttonDropShadows).toBe(1)
+  expect(cut.buttonReferences).toBe(0)
+})
+
 test("keeps desktop stickers static during pointer movement and page scrolling", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/#about-panel")

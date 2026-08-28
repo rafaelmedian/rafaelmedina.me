@@ -925,19 +925,38 @@ img {
 
 /*
  * A die-cut sticker: a thick white border cut around the emoji's own
- * silhouette rather than a disc behind it. Real vinyl has a hard edge, so each
- * white pass uses a zero blur radius and an offset instead — the eight
- * directions chain into a solid, crisp dilation of the glyph's alpha channel.
- * Only the cast shadow is blurred. Sizes are in `em` so the whole effect
- * scales with the font size.
+ * silhouette rather than a disc behind it. Real vinyl has a hard edge, so the
+ * cut is an `feMorphology` dilation of the glyph's alpha channel flooded
+ * white, with a zero-blur result — only the cast shadow is blurred. The
+ * dilation radius is in `objectBoundingBox` units so the border still scales
+ * with the button, which tracks the `clamp()`ed font size.
+ *
+ * The cut used to be eight chained `drop-shadow()`s. Do not go back: Chrome
+ * gives every function in a filter chain its own GPU render pass and
+ * re-evaluates the whole chain each frame (promotion does not cache it), so
+ * eight stickers cost ~64 passes per frame and dropped the About takeover
+ * from ~107fps to ~27fps. `text-shadow` is equally cheap but wrong — it
+ * offsets the raw glyph instead of dilating cumulatively, so concave gaps
+ * like the ones between palm fronds never fill in.
  */
-.mosaic-about-sticker {
-  --sticker-cut:
-    drop-shadow(0.028em 0 0 #fff) drop-shadow(-0.028em 0 0 #fff) drop-shadow(0 0.028em 0 #fff)
-    drop-shadow(0 -0.028em 0 #fff) drop-shadow(0.02em 0.02em 0 #fff)
-    drop-shadow(-0.02em -0.02em 0 #fff) drop-shadow(0.02em -0.02em 0 #fff)
-    drop-shadow(-0.02em 0.02em 0 #fff);
+.mosaic-about-sticker-filter {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
 
+/* The cut rides the glyph, not the button, for two reasons: its
+   `objectBoundingBox` radius then tracks the `clamp()`ed font size exactly
+   instead of the button's 44px tap-target floor, and it keeps `url()` out of
+   the button's own filter list — a list containing a filter reference can only
+   animate discretely, which would snap the cast shadow on drag release while
+   the scale eased. */
+.mosaic-about-sticker-glyph {
+  filter: url(#about-sticker-die-cut);
+}
+
+.mosaic-about-sticker {
   position: absolute;
   display: grid;
   min-width: 44px;
@@ -951,7 +970,7 @@ img {
   font-family: inherit;
   font-size: clamp(2rem, 3.4vw, 3rem);
   line-height: 1;
-  filter: var(--sticker-cut) drop-shadow(0.02em 0.045em 0.035em rgb(0 0 0 / 0.3));
+  filter: drop-shadow(0.02em 0.045em 0.035em rgb(0 0 0 / 0.3));
   transform: translate3d(var(--sticker-x, 0px), var(--sticker-y, 0px), 0)
     rotate(var(--sticker-rotate, 0deg));
   transition:
@@ -967,7 +986,7 @@ img {
   cursor: grabbing;
   transform: translate3d(var(--sticker-x, 0px), var(--sticker-y, 0px), 0)
     rotate(var(--sticker-rotate, 0deg)) scale(1.12);
-  filter: var(--sticker-cut) drop-shadow(0.04em 0.11em 0.1em rgb(0 0 0 / 0.3));
+  filter: drop-shadow(0.04em 0.11em 0.1em rgb(0 0 0 / 0.3));
   transition-duration: 0ms;
 }
 
