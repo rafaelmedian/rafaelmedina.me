@@ -2610,13 +2610,12 @@ img {
   z-index: 1;
   height: max(18%, 4.5rem);
   pointer-events: none;
-  background: linear-gradient(
-    to top,
-    rgb(0 0 0 / 0.58) 0%,
-    rgb(0 0 0 / 0.38) 36%,
-    rgb(0 0 0 / 0.14) 68%,
-    transparent 100%
-  );
+  /* Staggered translucent ramps keep the caption readable without leaving a
+     broad gray shelf across the image, as a single multi-stop scrim did. */
+  background:
+    linear-gradient(to top, rgb(0 0 0 / 0.34) 0%, transparent 48%),
+    linear-gradient(to top, rgb(0 0 0 / 0.2) 0%, transparent 74%),
+    linear-gradient(to top, rgb(0 0 0 / 0.1) 0%, transparent 100%);
   opacity: 0;
   transition: opacity 160ms ease-out;
 }

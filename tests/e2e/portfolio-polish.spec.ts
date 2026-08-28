@@ -2835,6 +2835,24 @@ test("keeps project images free of captions on mobile", async ({ page }) => {
   ).toBe("0")
 })
 
+test("uses a layered scrim behind desktop project captions", async ({ page }) => {
+  await page.setViewportSize({ width: 2446, height: 1239 })
+  await page.goto("/")
+
+  const card = page.getByRole("button", { name: /Open Matcha - Homepage preview 2 of/ })
+  await card.hover()
+
+  await expect
+    .poll(() => card.evaluate((element) => getComputedStyle(element, "::after").opacity))
+    .toBe("1")
+
+  const backgroundImage = await card.evaluate(
+    (element) => getComputedStyle(element, "::after").backgroundImage,
+  )
+
+  expect(backgroundImage.match(/linear-gradient/g)).toHaveLength(3)
+})
+
 test("fills the mobile cards with the featured Matcha previews", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
