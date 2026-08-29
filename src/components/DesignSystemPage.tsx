@@ -866,6 +866,23 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 hover-card level above — the seven-layer stack costs paint time it will not earn back at that size.
               </p>
             </div>
+            <div className="ds-rule">
+              <strong>
+                <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
+              </strong>
+              <p>
+                Four masked layers on <code>.mosaic-row-card-scrim</code> step the radius through 12%, 30%, 62%, and
+                100% of that value, so the artwork softens toward the bottom edge instead of stopping at a seam. A
+                single masked blur layer is not the same effect — a mask fades the opacity of a uniformly blurred
+                layer, which leaves the top of the band a half-strength blend of sharp and blurred. A{" "}
+                <code>rgb(0 0 0 / 0.68)</code> ramp sits above all four: blur cannot promise contrast on its own,
+                because a blurred white screenshot is still white. Its bottom stop keeps the caption at 4.5:1 even
+                over white artwork. The two fade on separate clocks — the tint at the 160ms hover default alongside
+                the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
+                illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
+                on hover and focus, one tile at a time, and is off entirely below 700px and on coarse pointers.
+              </p>
+            </div>
           </section>
 
           {/* ------------------------------------------------- components -- */}

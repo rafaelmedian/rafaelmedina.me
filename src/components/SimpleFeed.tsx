@@ -832,6 +832,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                   aria-describedby={`${itemKey}-description`}
                                 >
                                   {renderRowMedia(item.card, item.card.image, item.card.title, eagerRow)}
+                                  {/* The caption backdrop. Four nodes because
+                                      each one carries a different blur radius
+                                      and its own mask, and a pseudo-element
+                                      pair only gets you two of them. */}
+                                  <span className="mosaic-row-card-scrim" aria-hidden="true">
+                                    <span />
+                                    <span />
+                                    <span />
+                                    <span />
+                                  </span>
                                   <span className="mosaic-row-card-title" aria-hidden="true">
                                     {item.card.title}
                                   </span>
