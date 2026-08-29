@@ -2863,26 +2863,87 @@ test("keeps project images free of captions on mobile", async ({ page }) => {
   const firstCaption = page.locator(".mosaic-row-card-title").first()
   await expect(firstCaption).toBeHidden()
   expect(
-    await page.locator(".mosaic-row-card").first().evaluate((card) => getComputedStyle(card, "::after").opacity),
+    await page.locator(".mosaic-row-card-scrim").first().evaluate((scrim) => getComputedStyle(scrim).opacity),
   ).toBe("0")
 })
 
-test("uses a layered scrim behind desktop project captions", async ({ page }) => {
+test("ramps the blur radius behind desktop project captions", async ({ page }) => {
   await page.setViewportSize({ width: 2446, height: 1239 })
   await page.goto("/")
 
   const card = page.getByRole("button", { name: /Open Matcha - Homepage preview 2 of/ })
+  const scrim = card.locator(".mosaic-row-card-scrim")
   await card.hover()
 
-  await expect
-    .poll(() => card.evaluate((element) => getComputedStyle(element, "::after").opacity))
-    .toBe("1")
+  await expect.poll(() => scrim.evaluate((element) => getComputedStyle(element.children[0]).opacity)).toBe("1")
 
-  const backgroundImage = await card.evaluate(
-    (element) => getComputedStyle(element, "::after").backgroundImage,
+  // The tint has to land ahead of the ramp. Fading both together meant the
+  // caption could not go legible until four backdrop rasters were ready, which
+  // is what made the whole effect feel like it arrived late.
+  const [tintMs, rampMs] = await scrim.evaluate((element) =>
+    [getComputedStyle(element, "::after"), getComputedStyle(element.children[0])].map((style) =>
+      Number.parseFloat(style.transitionDuration) * 1000,
+    ),
   )
 
-  expect(backgroundImage.match(/linear-gradient/g)).toHaveLength(3)
+  expect(tintMs).toBeGreaterThan(0)
+  expect(rampMs).toBeGreaterThan(tintMs)
+
+  // Four layers, each blurrier than the last. The ordering is the assertion
+  // that matters: a single blurred layer fading its opacity in looks similar in
+  // a screenshot but leaves the top of the band a blend of sharp and blurred
+  // rather than a gentler blur, and it would pass a mere "is there a blur" check.
+  const radii = await scrim.evaluate((element) =>
+    Array.from(element.children, (layer) =>
+      Number(getComputedStyle(layer).backdropFilter.match(/blur\(([\d.]+)px\)/)?.[1] ?? Number.NaN),
+    ),
+  )
+
+  expect(radii).toHaveLength(4)
+  expect(radii.every((radius) => Number.isFinite(radius) && radius > 0)).toBe(true)
+  expect([...radii].sort((first, second) => first - second)).toEqual(radii)
+  expect(radii.at(-1)).toBeCloseTo(40, 0)
+
+  // Blur cannot carry contrast by itself -- a blurred white screenshot is still
+  // white -- so a tint rides above the whole ramp.
+  const tint = await scrim.evaluate((element) => getComputedStyle(element, "::after").backgroundImage)
+  expect(tint).toContain("linear-gradient")
+})
+
+test("keeps desktop project captions readable over white artwork", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/")
+
+  const card = page.getByRole("button", { name: /Open Matcha - Homepage preview 2 of/ })
+  const scrim = card.locator(".mosaic-row-card-scrim")
+  await card.hover()
+
+  const contrastOverWhite = await scrim.evaluate((element) => {
+    const background = getComputedStyle(element, "::after").backgroundImage
+    const gradient = background.match(
+      /rgba\(0, 0, 0, ([\d.]+)\) 0%, rgba\(0, 0, 0, 0\) ([\d.]+)%/,
+    )
+    const title = element.nextElementSibling
+
+    if (!gradient || !(title instanceof HTMLElement)) return Number.NaN
+
+    const scrimBox = element.getBoundingClientRect()
+    const titleBox = title.getBoundingClientRect()
+    const startAlpha = Number(gradient[1])
+    const fadeEnd = Number(gradient[2]) / 100
+    const titleFromBottom = scrimBox.bottom - (titleBox.top + titleBox.height / 2)
+    const titleProgress = titleFromBottom / scrimBox.height
+    const tintAlpha = startAlpha * Math.max(0, 1 - titleProgress / fadeEnd)
+    const compositedChannel = 1 - tintAlpha
+    const luminance =
+      compositedChannel <= 0.04045
+        ? compositedChannel / 12.92
+        : ((compositedChannel + 0.055) / 1.055) ** 2.4
+
+    return 1.05 / (luminance + 0.05)
+  })
+
+  expect(contrastOverWhite).toBeGreaterThanOrEqual(4.5)
 })
 
 test("fills the mobile cards with the featured Matcha previews", async ({ page }) => {

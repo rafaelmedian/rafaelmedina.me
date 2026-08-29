@@ -2622,25 +2622,106 @@ img {
     box-shadow 180ms ease;
 }
 
-.mosaic-row-card::after {
-  content: "";
+/* The caption backdrop. Four separately masked layers step the blur radius from
+   a twelfth of `--card-caption-blur` up to all of it, so the artwork softens
+   progressively toward the bottom edge rather than stopping at a seam.
+
+   One masked blur layer is the obvious cheaper version of this and it does not
+   read the same: a mask fades the *opacity* of a uniformly blurred layer, so
+   the top of the band ends up a half-strength blend of sharp and blurred
+   instead of a gentler blur. This ramps the radius itself.
+
+   These have to be real nodes -- an element only gets ::before and ::after, and
+   the ramp needs four. */
+.mosaic-row-card-scrim {
+  --card-caption-blur: 2.5rem;
+
   position: absolute;
   inset: auto 0 0;
   z-index: 1;
-  height: max(18%, 4.5rem);
+  height: max(46%, 6rem);
   pointer-events: none;
-  /* Staggered translucent ramps keep the caption readable without leaving a
-     broad gray shelf across the image, as a single multi-stop scrim did. */
-  background:
-    linear-gradient(to top, rgb(0 0 0 / 0.34) 0%, transparent 48%),
-    linear-gradient(to top, rgb(0 0 0 / 0.2) 0%, transparent 74%),
-    linear-gradient(to top, rgb(0 0 0 / 0.1) 0%, transparent 100%);
+}
+
+/* The tint and the ramp fade on separate clocks, and the split is the point.
+   Fading the whole scrim as one meant the caption could not become legible
+   until the four backdrop rasters were ready, so the entire effect arrived at
+   once and read as a stall. The tint is an ordinary gradient that paints
+   immediately, so it carries the contrast on the hover beat while the blur
+   resolves behind it over the longer curve. */
+.mosaic-row-card-scrim > span {
+  position: absolute;
+  inset: 0;
+  display: block;
   opacity: 0;
+  /* 360ms is the scale's "media un-blurring as it decodes" step. This is the
+     same event -- a blur resolving -- so it borrows that value rather than
+     adding one. It also means a raster that lands late lands mid-fade, which
+     reads as softening rather than as a pop. */
+  transition: opacity 360ms ease-out;
+}
+
+.mosaic-row-card-scrim > span:nth-child(1) {
+  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.12));
+  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.12));
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 22%, transparent 46%);
+  mask-image: linear-gradient(to top, #000 0%, #000 22%, transparent 46%);
+}
+
+.mosaic-row-card-scrim > span:nth-child(2) {
+  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.3));
+  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.3));
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 14%, transparent 34%);
+  mask-image: linear-gradient(to top, #000 0%, #000 14%, transparent 34%);
+}
+
+.mosaic-row-card-scrim > span:nth-child(3) {
+  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.62));
+  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.62));
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 8%, transparent 24%);
+  mask-image: linear-gradient(to top, #000 0%, #000 8%, transparent 24%);
+}
+
+.mosaic-row-card-scrim > span:nth-child(4) {
+  -webkit-backdrop-filter: blur(var(--card-caption-blur));
+  backdrop-filter: blur(var(--card-caption-blur));
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 15%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 15%);
+}
+
+/* The tint rides above the whole ramp rather than inside the blurriest layer.
+   Blur cannot promise contrast on its own -- a blurred white screenshot is
+   still white -- and folded into the bottom layer this only covered the lowest
+   fifteenth of the band, which is under the caption rather than behind it. */
+.mosaic-row-card-scrim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* After the 72% fade reaches the caption's position, this still composites
+     white artwork dark enough for the white label to clear 4.5:1. */
+  background: linear-gradient(to top, rgb(0 0 0 / 0.68) 0%, transparent 72%);
+  opacity: 0;
+  /* The scale's default for opacity on hover, and the same curve the caption
+     itself uses -- tint and label arrive together, ahead of the blur. */
   transition: opacity 160ms ease-out;
 }
 
-.mosaic-row-card:hover::after,
-.mosaic-row-card:focus-visible::after {
+/* Where the backdrop cannot be sampled, fall back to the staggered ramps this
+   replaced: translucent enough to keep the caption legible without leaving the
+   broad gray shelf a single multi-stop scrim left. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .mosaic-row-card-scrim::after {
+    background:
+      linear-gradient(to top, rgb(0 0 0 / 0.34) 0%, transparent 48%),
+      linear-gradient(to top, rgb(0 0 0 / 0.2) 0%, transparent 74%),
+      linear-gradient(to top, rgb(0 0 0 / 0.1) 0%, transparent 100%);
+  }
+}
+
+.mosaic-row-card:hover .mosaic-row-card-scrim > span,
+.mosaic-row-card:focus-visible .mosaic-row-card-scrim > span,
+.mosaic-row-card:hover .mosaic-row-card-scrim::after,
+.mosaic-row-card:focus-visible .mosaic-row-card-scrim::after {
   opacity: 1;
 }
 
@@ -3441,7 +3522,9 @@ img {
     animation: none;
   }
 
-  .mosaic-row-card-title {
+  .mosaic-row-card-title,
+  .mosaic-row-card-scrim > span,
+  .mosaic-row-card-scrim::after {
     transition: none;
   }
 
@@ -3568,9 +3651,9 @@ img {
     display: none;
   }
 
-  .mosaic-row-card::after,
-  .mosaic-row-card:hover::after,
-  .mosaic-row-card:focus-visible::after {
+  /* Hiding the container is enough -- it takes the ramp and the tint with it,
+     whatever the layers inside are doing. */
+  .mosaic-row-card-scrim {
     opacity: 0;
   }
 
