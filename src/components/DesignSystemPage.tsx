@@ -225,6 +225,7 @@ const INK = [
   { hex: "#141414", token: "--ink", use: "App wrapper text colour" },
   { hex: "#171717", token: "—", use: "Text inside white cards and the preview dialog" },
   { hex: "#2d2d2d", token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
+  { hex: "#363636", token: "—", use: "Inline links on hover" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
   { hex: "#545454", token: "—", use: "About-panel prose and the Work history heading" },
   { hex: "#6b6b6b", token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions" },
@@ -445,18 +446,31 @@ const BREAKPOINTS = [
 ]
 
 const STACKING = [
-  { z: "0–20", name: "Base, dock, chrome", note: "Tailwind's z-base / z-dock / z-chrome. The page, mosaic, and bottom scroll edge." },
+  {
+    z: "0–20",
+    name: "--z-dock / --z-chrome",
+    note: "The page, main content wrapper (Tailwind's z-dock maps onto the token), and the bottom scroll edge.",
+  },
   { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
   {
     z: "30 / 50",
-    name: "Corner controls",
-    note: "The section corner and takeover close sit at 30; the social corner sits at 50 so its hover cards clear other overlays.",
+    name: "--z-corner / --z-social",
+    note: "The section corner and takeover close sit at --z-corner; the social corner sits at --z-social so its hover cards clear other overlays.",
   },
-  { z: "40", name: "Hover cards", note: "LinkedIn, X, work-history popovers, the local-time card." },
-  { z: "60 / 70", name: "Dialog", note: "The preview gallery backdrop, then its shell." },
-  { z: "100", name: "Copy reaction", note: "Has to clear the dialog trigger it sits under." },
-  { z: "120", name: "Skip link", note: "Above everything, always." },
+  {
+    z: "40",
+    name: "--z-overlay",
+    note: "Hover cards, the local-time card, and the work-history block. The popover inside that block stacks locally (z 4 within its isolated container), so only the container carries the tier.",
+  },
+  { z: "60 / 70", name: "--z-dialog-backdrop / --z-dialog", note: "The preview gallery backdrop and pending veil, then its shell." },
+  { z: "100", name: "--z-reaction", note: "The copy-email reaction has to clear the dialog trigger it sits under." },
+  { z: "120", name: "--z-skip-link", note: "Above everything, always." },
+  {
+    z: "500 (scoped)",
+    name: "Map attribution",
+    note: "Clears Leaflet's internal panes inside the transformed local-time card — its own stacking context, so it never meets the ladder.",
+  },
 ]
 
 /* ------------------------------------------------------------------- shell */

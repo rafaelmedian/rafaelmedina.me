@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync, statSync } from "node:fs"
+import { join } from "node:path"
+
 import { expect, type Page, test } from "@playwright/test"
 
 const openDesignSystem = async (page: Page) => {
@@ -99,4 +102,34 @@ test("documents component-specific motion curves that still ship", async ({ page
   for (const curve of curves) {
     expect(documentedCurves).toContain(curve)
   }
+})
+
+// Guards the invariant behind the token cleanup: a custom property defined in
+// the stylesheets must be consumed somewhere (CSS var(), a JS property read,
+// or the Tailwind config) — otherwise it is drift and should be deleted, not
+// documented. Prose mentions on the design-system page do not count.
+test("every custom property defined in the stylesheets is referenced", () => {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir).flatMap((entry) => {
+      const path = join(dir, entry)
+      if (statSync(path).isDirectory()) return walk(path)
+      return /\.(ts|tsx|css|html)$/.test(path) ? [path] : []
+    })
+
+  const definitions = new Set<string>()
+  for (const file of ["src/index.css", "src/components/design-system.css"]) {
+    for (const match of readFileSync(file, "utf8").matchAll(/^\s*(--[\w-]+)\s*:/gm)) {
+      definitions.add(match[1])
+    }
+  }
+
+  const references = new Set<string>()
+  for (const file of [...walk("src"), "tailwind.config.js", "index.html"]) {
+    const text = readFileSync(file, "utf8")
+    for (const match of text.matchAll(/var\((--[\w-]+)/g)) references.add(match[1])
+    for (const match of text.matchAll(/["'`](--[\w-]+)["'`]/g)) references.add(match[1])
+  }
+
+  const unreferenced = [...definitions].filter((token) => !references.has(token))
+  expect(unreferenced).toEqual([])
 })
