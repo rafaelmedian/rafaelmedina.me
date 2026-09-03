@@ -19,34 +19,26 @@
   --font-fallback:
     "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-primary: var(--font-inter, var(--font-fallback));
-  --font-secondary: var(--font-newsreader, var(--font-fallback));
-  --font-code: "SF Mono", "SFMono-Regular", "Consolas", "Liberation Mono", Menlo, Courier, monospace;
+  --font-primary: var(--font-fallback);
   --font-body: var(--font-primary);
+  /* The stack most interface text actually renders with: system-first, so SF
+     on Apple hardware. Distinct from --font-fallback, which leads with Inter. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
   --body-color: #111;
   --body-bg: #fdfdfc;
-  --heading-color: #111;
-  --primary: #3e9fff;
-  --secondary: #f09637;
   --mosaic-card-surface: #ececee;
   --ease-smooth: cubic-bezier(0.19, 1, 0.22, 1);
   --canvas: #ffffff;
-  --surface: #ffffff;
-  --surface-2: #f6f8fb;
   --ink: #141414;
   /* Muted text ramp. Both steps clear WCAG AA (4.5:1) against --body-bg:
      --muted is 5.3:1, --muted-soft 4.6:1. Keep new muted text on these two
      rather than reaching for a lighter one-off grey. */
   --muted: #6b6b6b;
   --muted-soft: #757575;
-  --border: rgb(148 163 184 / 0.26);
-  --accent: #8a8a8a;
   /* Focus indicators need 3:1 against the adjacent surface (WCAG 1.4.11), which
-     rules out the greys in --accent's range on our near-white backgrounds. */
+     rules out mid-greys on our near-white backgrounds. */
   --focus-ring: #2d2d2d;
   --elastic-edge-height: 56px;
-  --overlay-filter: blur(1rem);
-  --overlay-background: hsla(0, 0%, 100%, 0.8);
   --overlay-shadow:
     0 0 0 1px rgb(0 0 0 / 0.04),
     0 1.625rem 3.375rem rgb(0 0 0 / 0.04),
@@ -307,11 +299,6 @@ img {
   padding-inline: clamp(1rem, 5vw, 1.5rem);
 }
 
-.mosaic-shell-hero-only {
-  min-height: 100dvh;
-  display: grid;
-}
-
 .mosaic-hero {
   min-height: clamp(17rem, 42vh, 25rem);
   display: grid;
@@ -320,12 +307,6 @@ img {
   transition:
     min-height 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
     padding-block 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.mosaic-hero-hero-only {
-  min-height: 100dvh;
-  margin: 0;
-  padding-block: 0;
 }
 
 .mosaic-hero-profile {
@@ -373,7 +354,7 @@ img {
     border-radius: var(--radius-full);
     display: grid;
     place-items: center;
-    background: var(--surface);
+    background: var(--canvas);
     color: var(--ink);
     cursor: pointer;
     box-shadow:
@@ -428,7 +409,7 @@ img {
   padding: 0 0.54rem;
   border-radius: var(--radius-md);
   color: #747474;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1;
@@ -466,7 +447,7 @@ img {
     0 2px 6px rgb(16 16 20 / 0.08),
     0 18px 42px rgb(16 16 20 / 0.15);
   color: #202020;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   text-align: left;
   transform: translateY(-0.25rem) scale(0.97);
   transform-origin: top right;
@@ -623,7 +604,7 @@ img {
   border-radius: var(--radius-sm);
   padding: 0 0.54rem;
   color: #747474;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1;
@@ -723,23 +704,6 @@ img {
     transform: translateY(0);
   }
 }
-
-.mosaic-profile {
-  min-height: 340px;
-  padding: 2rem 1.6rem 1.4rem;
-  background: var(--mosaic-card-surface);
-  border: 1px solid #F2F2F2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-#about.mosaic-profile {
-  background: var(--mosaic-card-surface);
-  border-color: #F2F2F2;
-  border-width: 2px;
-}
-
 
 .mosaic-profile-info {
   display: flex;
@@ -1154,7 +1118,7 @@ img {
 
 .mosaic-about-body p {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   font-size: var(--text-md);
   line-height: 1.7;
   letter-spacing: -0.005rem;
@@ -1329,7 +1293,7 @@ img {
 
 .mosaic-profile-meta h2 {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   font-style: normal;
   font-weight: 600;
   font-size: var(--text-md);
@@ -1356,7 +1320,7 @@ img {
   margin: 2.1rem 0 0;
   width: auto;
   height: auto;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   font-style: normal;
   font-weight: 400;
   font-size: var(--text-md);
@@ -1388,7 +1352,7 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   font-size: inherit;
   font-weight: 400;
   letter-spacing: -0.005rem;
@@ -1484,7 +1448,7 @@ img {
   margin-top: 0.85rem;
   width: min(525px, 100%);
   height: auto;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   font-style: normal;
   font-weight: 400;
   font-size: var(--text-sm);
@@ -1510,17 +1474,23 @@ img {
 }
 
 .mosaic-work-history {
+  --mosaic-popover-enter-duration: 240ms;
+  --mosaic-popover-exit-duration: 160ms;
+  --mosaic-popover-enter-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --mosaic-popover-exit-ease: cubic-bezier(0.55, 0, 1, 0.45);
+  position: relative;
+  z-index: 40;
+  isolation: isolate;
+  overflow: visible;
   margin-top: 1.5rem;
   width: min(100%, 64rem);
-  /* Reserve the row an expansion adds, so the first click does not push the page. */
-  min-height: 6.225rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 0.25rem;
   color: var(--muted);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   font-size: var(--text-md);
   font-weight: 400;
   line-height: 1.7;
@@ -1577,18 +1547,6 @@ img {
   outline-offset: 2px;
 }
 
-
-.mosaic-work-history {
-  --mosaic-popover-enter-duration: 240ms;
-  --mosaic-popover-exit-duration: 160ms;
-  --mosaic-popover-enter-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --mosaic-popover-exit-ease: cubic-bezier(0.55, 0, 1, 0.45);
-  position: relative;
-  z-index: 40;
-  min-height: auto;
-  overflow: visible;
-  isolation: isolate;
-}
 
 /* WORK-HISTORY CARD MOTION
  *
@@ -1884,9 +1842,8 @@ img {
   backdrop-filter: blur(10px);
 }
 
-.mosaic-company-inline-link:not(.mosaic-about-resume-company-trigger):hover .mosaic-company-inline-hover-logos,
-.mosaic-company-inline-link:not(.mosaic-about-resume-company-trigger):focus-visible .mosaic-company-inline-hover-logos,
-.mosaic-about-resume-company-trigger .mosaic-company-inline-hover-logos[data-open="true"] {
+.mosaic-company-inline-link:hover .mosaic-company-inline-hover-logos,
+.mosaic-company-inline-link:focus-visible .mosaic-company-inline-hover-logos {
   opacity: 1;
   visibility: visible;
   transform:
@@ -1997,7 +1954,7 @@ img {
   /* Line box hugs the glyphs so the flex centering is also optical centering. */
   line-height: 1;
   letter-spacing: -0.00563rem;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   text-decoration: none;
   cursor: pointer;
   overflow: hidden;
@@ -2311,7 +2268,7 @@ img {
     0 1px 2px rgb(16 16 20 / 0.06),
     0 12px 32px rgb(16 16 20 / 0.14);
   color: #0f1419;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  font-family: var(--font-ui);
   text-align: left;
   /* The card grows out of the pill's right edge, keeping its wider surface
      inside the viewport when the pill sits at the end of the action row. */
@@ -2516,7 +2473,6 @@ img {
 }
 
 .mosaic-row {
-  --row-gap: 1rem;
   display: flex;
   gap: var(--row-gap);
   align-items: stretch;
@@ -3775,10 +3731,6 @@ img {
     padding-inline: 0;
   }
 
-  .mosaic-shell-hero-only {
-    min-height: 100dvh;
-  }
-
   .mosaic-hero {
     min-height: 25rem;
     margin: 0;
@@ -3786,15 +3738,6 @@ img {
        needs real top clearance; the bottom padding only bites once chip
        expansions push further, keeping the profile off the mosaic. */
     padding-block: clamp(2.25rem, 4.5vh, 3.5rem) clamp(1.75rem, 3vw, 3rem);
-  }
-
-  .mosaic-hero-hero-only {
-    min-height: 100dvh;
-    margin: 0;
-  }
-
-  .mosaic-row {
-    --row-height: 420px !important;
   }
 }
 

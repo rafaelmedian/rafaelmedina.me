@@ -15,8 +15,9 @@
 .ds-page {
   --ds-gutter: clamp(1rem, 3vw, 2.5rem);
   --ds-hairline: rgb(0 0 0 / 0.08);
-  --ds-hairline-soft: rgb(0 0 0 / 0.055);
   --ds-rail: 15.5rem;
+  /* Only this dev-only page sets code, so the token lives here, not :root. */
+  --font-code: "SF Mono", "SFMono-Regular", "Consolas", "Liberation Mono", Menlo, Courier, monospace;
   position: relative;
   z-index: 1;
   min-height: 100dvh;
@@ -504,8 +505,7 @@
   line-height: 1.35;
 }
 
-.ds-card-spec,
-.ds-swatch-body code {
+.ds-card-spec {
   display: block;
   margin-top: 0.2rem;
   color: #6b6b6b;

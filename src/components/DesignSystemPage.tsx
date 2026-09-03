@@ -190,7 +190,7 @@ function SpecCard({
 const SURFACES = [
   {
     hex: "#ffffff",
-    token: "--canvas / --surface",
+    token: "--canvas",
     name: "Page & raised",
     note: "App's wrapper paints this across the viewport, so white is both the page and the colour of the full-bleed About sheet and anything floating above it — hover cards, popovers, the dialog, logo chips. Every ratio on this page is measured against it.",
   },
@@ -218,16 +218,10 @@ const SURFACES = [
     name: "Chip active",
     note: "The hover, focus, and pressed state for anything sitting on chip rest.",
   },
-  {
-    hex: "#f6f8fb",
-    token: "--surface-2",
-    name: "Unused",
-    note: "Declared in :root and referenced nowhere. Do not reach for it; pick one of the surfaces above.",
-  },
 ]
 
 const INK = [
-  { hex: "#111111", token: "--body-color / --heading-color", use: "Body default and headings" },
+  { hex: "#111111", token: "--body-color", use: "Body default and headings" },
   { hex: "#141414", token: "--ink", use: "App wrapper text colour" },
   { hex: "#171717", token: "—", use: "Text inside white cards and the preview dialog" },
   { hex: "#2d2d2d", token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
@@ -265,11 +259,6 @@ const BRAND = [
   { hex: "#0f1419", name: "X ink", note: "Follow button fill and the card's name and bio." },
   { hex: "#1d9bf0", name: "X mention", note: "The @mention link inside the X hover card only." },
   { hex: "#536471", name: "X muted", note: "Handle and stat labels inside the X hover card only." },
-]
-
-const DECLARED_ONLY = [
-  { hex: "#3e9fff", token: "--primary", note: "Declared in :root; no component paints text or a surface with it." },
-  { hex: "#f09637", token: "--secondary", note: "Declared in :root; unused. Neither is a brand colour yet." },
 ]
 
 /* -------------------------------------------------------------- typography */
@@ -857,30 +846,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
             </div>
 
-            <div className="ds-block">
-              <p className="ds-subhead">Declared but unused</p>
-              <div className="ds-grid">
-                {DECLARED_ONLY.map((entry) => (
-                  <SpecCard
-                    key={entry.token}
-                    className="ds-swatch-card"
-                    terms={terms(entry.token, entry.hex, entry.note, "unused declared dead token")}
-                    proof={<div className="ds-swatch" style={{ background: entry.hex }} />}
-                    name={entry.token}
-                    copy={entry.hex}
-                    note={entry.note}
-                  />
-                ))}
-              </div>
-              <div className="ds-rule" data-ds-terms={terms("--primary --secondary --surface-2 unused root canonical")}>
-                <strong>Do not treat these as the brand palette.</strong>
-                <p>
-                  <code>--primary</code>, <code>--secondary</code>, and <code>--surface-2</code> survive in{" "}
-                  <code>:root</code> from an earlier direction. Nothing renders them. Either give one a real job
-                  deliberately, or leave them alone — do not reach for them because they sound canonical.
-                </p>
-              </div>
-            </div>
           </section>
 
           {/* ------------------------------------------------- typography -- */}
@@ -897,13 +862,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Families</p>
               <div className="ds-grid ds-grid-wide">
                 <SpecCard
-                  terms={terms("ui system stack font-body apple sf pro inter webfont")}
-                  name="UI — the system stack"
+                  terms={terms("ui system stack font-ui font-body apple sf pro inter webfont")}
+                  name="UI — --font-ui"
                   copy='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif'
                   note={
                     <>
-                      All interface copy and controls. No webfont, no layout shift, SF Pro on Apple hardware. Prefer{" "}
-                      <code>var(--font-body)</code> — twelve rules currently write the stack out inline instead.
+                      All interface copy and controls. No webfont, no layout shift, SF Pro on Apple hardware. Use{" "}
+                      <code>var(--font-ui)</code>; <code>var(--font-body)</code> is the Inter-first fallback stack the
+                      page root sets.
                     </>
                   }
                 />
@@ -927,15 +893,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--font-primary --font-secondary --font-fallback --font-inter --font-newsreader face")}
+                data-ds-terms={terms("--font-primary --font-fallback --font-ui face")}
               >
                 <strong>There is no second general-purpose face.</strong>
                 <p>
-                  <code>--font-primary</code> and <code>--font-secondary</code> both resolve to{" "}
-                  <code>--font-fallback</code>, because <code>--font-inter</code> and <code>--font-newsreader</code> are
-                  never defined. Asking for <code>--font-secondary</code> gets the interface stack, not the narrowly
-                  scoped Handlee display face. Any additional general-purpose face needs a real <code>@font-face</code>,
-                  not that variable.
+                  Two stacks exist: <code>--font-ui</code> (system-first, what interface text renders with) and{" "}
+                  <code>--font-fallback</code> (Inter-first, what <code>--font-body</code> resolves to on the page
+                  root). Any additional general-purpose face needs a real <code>@font-face</code>, not a new variable.
                 </p>
               </div>
             </div>
@@ -1141,15 +1105,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--overlay-shadow --overlay-filter blur seven layers glass expensive")}
+                data-ds-terms={terms("--overlay-shadow blur seven layers glass expensive")}
               >
                 <strong>
                   <code>--overlay-shadow</code> is a fifth level, and it is expensive.
                 </strong>
                 <p>
-                  Seven stacked layers from <code>0 0 0.125rem</code> out to <code>0 1.625rem 3.375rem</code>, paired with{" "}
-                  <code>--overlay-filter: blur(1rem)</code>. It exists for full-bleed glass surfaces. For a card, use the
-                  hover-card level above — the seven-layer stack costs paint time it will not earn back at that size.
+                  Seven stacked layers from <code>0 0 0.125rem</code> out to <code>0 1.625rem 3.375rem</code>. It exists
+                  for full-bleed glass surfaces. For a card, use the hover-card level above — the seven-layer stack
+                  costs paint time it will not earn back at that size.
                 </p>
               </div>
               <div
