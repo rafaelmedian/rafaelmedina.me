@@ -629,6 +629,7 @@ test("previews the copy reaction without copying on hover", async ({ page }) => 
   await copyButton.hover()
   await expect(reaction).toBeVisible()
   await expect(copyButton).toHaveText("Copy email")
+  await expect(copyButton).toHaveAttribute("title", "hey@rafaelmedina.me")
   await expect(reaction.locator("source")).toHaveAttribute("srcset", "/reactions/copy-email-before-still.webp")
   await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 })
@@ -1997,6 +1998,72 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   expect(errors).toEqual([])
 })
 
+test("keeps the site usable when the gallery chunk fails at click time", async ({ page }) => {
+  const galleryChunk = "**/assets/PreviewGalleryDialog-*.js"
+  await page.route(galleryChunk, (route) => route.abort("failed"))
+  await page.goto("/")
+  await settleWorkCards(page)
+
+  const trigger = page.getByRole("button", { name: /Open Matcha token page preview/ })
+  await trigger.click()
+
+  await expect(page.getByRole("heading", { name: "Rafael Medina portfolio" })).toBeAttached()
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+  await expect(page.locator(".preview-gallery-pending")).toHaveCount(0)
+
+  await page.unroute(galleryChunk)
+  await trigger.click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+})
+
+test("acknowledges the first gallery tap while its chunk loads", async ({ page }) => {
+  let releaseChunk: (() => void) | undefined
+  const chunkBlocked = new Promise<void>((resolve) => {
+    releaseChunk = resolve
+  })
+  const galleryChunk = "**/assets/PreviewGalleryDialog-*.js"
+
+  await page.route(galleryChunk, async (route) => {
+    await chunkBlocked
+    await route.continue()
+  })
+  await page.goto("/")
+  await settleWorkCards(page)
+
+  const trigger = page.getByRole("button", { name: /Open Matcha token page preview/ })
+  await trigger.click()
+  const pending = page.locator(".preview-gallery-pending")
+  await expect(pending).toBeVisible()
+  await expect(pending).toContainText("Loading project preview")
+  await expect(pending).toHaveCSS("background-color", "rgba(18, 18, 18, 0.28)")
+
+  releaseChunk?.()
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(pending).toHaveCount(0)
+})
+
+test("keeps the gallery pending state visible without motion", async ({ page }) => {
+  let releaseChunk: (() => void) | undefined
+  const chunkBlocked = new Promise<void>((resolve) => {
+    releaseChunk = resolve
+  })
+
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.route("**/assets/PreviewGalleryDialog-*.js", async (route) => {
+    await chunkBlocked
+    await route.continue()
+  })
+  await page.goto("/")
+
+  await page.getByRole("button", { name: /Open Matcha token page preview/ }).click()
+  const pending = page.locator(".preview-gallery-pending")
+  await expect(pending).toBeVisible()
+  await expect(pending).toHaveCSS("animation-name", "none")
+
+  releaseChunk?.()
+  await expect(page.getByRole("dialog")).toBeVisible()
+})
+
 test("shows about and the work history summary together", async ({ page }) => {
   await page.goto("/")
   const panel = page.locator("#about-panel")
@@ -2005,8 +2072,8 @@ test("shows about and the work history summary together", async ({ page }) => {
   await expect(panel.getByRole("heading", { name: "Work history" })).toBeVisible()
 
   const entries = panel.locator(".mosaic-about-resume-entry")
-  await expect(entries.first()).toContainText("Startup")
-  await expect(entries.first().locator(".mosaic-about-resume-title")).toHaveText("Co-founder at Startup")
+  await expect(entries.first()).toContainText("Stealth fintech")
+  await expect(entries.first().locator(".mosaic-about-resume-title")).toHaveText("Co-founder at Stealth fintech")
   await expect(entries.first().locator(".mosaic-about-resume-dates")).toHaveText("2026 - Present")
   await expect(entries.first()).toContainText(
     "Building a mobile wallet for colmados, helping neighborhood store owners in the Dominican Republic manage payments and day-to-day finances from their phones.",
@@ -2025,6 +2092,10 @@ test("shows about and the work history summary together", async ({ page }) => {
   await expect(panel).toContainText("ITLA")
   await expect(panel).not.toContainText("hellorafaelmedina@gmail.com")
   await expect(panel).not.toContainText("786 9580")
+  await expect(panel.getByRole("link", { name: "hey@rafaelmedina.me", exact: true })).toHaveAttribute(
+    "href",
+    "mailto:hey@rafaelmedina.me",
+  )
   await expect(panel.getByRole("link", { name: "Download résumé PDF" })).toHaveCount(0)
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "href",
@@ -2076,15 +2147,16 @@ test("presents work history as a focused summary", async ({ page }) => {
   await expect(workHistory.locator(".mosaic-about-sticker")).toHaveCount(4)
 })
 
-test("offers a CV download after the education list", async ({ page }) => {
+test("offers the résumé in a new tab after the education list", async ({ page }) => {
   await page.goto("/#about-panel-resume")
 
   const workHistory = page.locator("#about-panel-resume")
   const education = workHistory.locator(".mosaic-about-resume-education")
-  const download = workHistory.getByRole("link", { name: "Download CV in PDF", exact: true })
+  const download = workHistory.getByRole("link", { name: "View resume (PDF)", exact: true })
 
   await expect(download).toHaveAttribute("href", "/rafael-medina-resume.pdf")
-  await expect(download).toHaveAttribute("download", "")
+  await expect(download).toHaveAttribute("target", "_blank")
+  await expect(download).not.toHaveAttribute("download", "")
   const downloadGap = await workHistory.evaluate((section) => {
     const educationSection = section.querySelector(".mosaic-about-resume-education")
     const downloadRow = section.querySelector(".mosaic-about-resume-download")
@@ -2134,7 +2206,7 @@ test("formats desktop work history as dates beside role, company, location, and 
   const dates = entry.locator(".mosaic-about-resume-dates")
   const details = entry.locator(".mosaic-about-resume-details")
 
-  await expect(entry.getByRole("heading", { name: "Co-founder at Startup" })).toBeVisible()
+  await expect(entry.getByRole("heading", { name: "Co-founder at Stealth fintech" })).toBeVisible()
   await expect(entry.locator(".mosaic-about-resume-location")).toHaveText("Remote")
   await expect(entry.locator(".mosaic-about-resume-description")).toHaveText(
     "Building a mobile wallet for colmados, helping neighborhood store owners in the Dominican Republic manage payments and day-to-day finances from their phones.",
@@ -2392,14 +2464,37 @@ test("lets keyboard users move and reset about stickers", async ({ page }) => {
   const initialBox = await sticker.boundingBox()
   expect(initialBox).not.toBeNull()
 
+  await sticker.press("Enter")
+  await expect(sticker).toHaveAttribute("aria-pressed", "true")
   await sticker.press("ArrowRight")
   await expect
     .poll(async () => (await sticker.boundingBox())?.x)
     .toBeGreaterThan(initialBox!.x)
 
+  await sticker.press("Enter")
+  await expect(sticker).toHaveAttribute("aria-pressed", "false")
   await sticker.press("Home")
   await expect.poll(async () => (await sticker.boundingBox())?.x).toBeCloseTo(initialBox!.x, 0)
   await expect(sticker).toBeFocused()
+})
+
+test("uses one tab stop per sticker group and arrows between stickers", async ({ page }) => {
+  await page.goto("/#about-panel")
+
+  const aboutStickers = page.locator("#about-section .mosaic-about-sticker")
+  const workStickers = page.locator("#about-panel-resume .mosaic-about-sticker")
+  await expect(aboutStickers).toHaveCount(4)
+  await expect(workStickers).toHaveCount(4)
+  await expect(page.locator('#about-section .mosaic-about-sticker[tabindex="0"]')).toHaveCount(1)
+  await expect(page.locator('#about-panel-resume .mosaic-about-sticker[tabindex="0"]')).toHaveCount(1)
+
+  const first = aboutStickers.nth(0)
+  const second = aboutStickers.nth(1)
+  await first.focus()
+  await first.press("ArrowRight")
+  await expect(second).toBeFocused()
+  await expect(first).toHaveAttribute("tabindex", "-1")
+  await expect(second).toHaveAttribute("tabindex", "0")
 })
 
 test("keeps moved about stickers recoverable inside the panel", async ({ page }) => {
@@ -2416,6 +2511,7 @@ test("keeps moved about stickers recoverable inside the panel", async ({ page })
   expect(stickerBox).not.toBeNull()
 
   await sticker.focus()
+  await sticker.press("Enter")
   for (let step = 0; step < 100; step += 1) {
     await sticker.press("ArrowRight")
   }
@@ -2856,15 +2952,17 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
-test("keeps project images free of captions on mobile", async ({ page }) => {
+test("keeps project captions legible without the blur ramp on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
   const firstCaption = page.locator(".mosaic-row-card-title").first()
-  await expect(firstCaption).toBeHidden()
+  await expect(firstCaption).toBeVisible()
+  await expect(firstCaption).toHaveCSS("opacity", "1")
   expect(
     await page.locator(".mosaic-row-card-scrim").first().evaluate((scrim) => getComputedStyle(scrim).opacity),
-  ).toBe("0")
+  ).toBe("1")
+  await expect(page.locator(".mosaic-row-card-scrim > span").first()).toHaveCSS("display", "none")
 })
 
 test("ramps the blur radius behind desktop project captions", async ({ page }) => {
@@ -3306,6 +3404,7 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   const text = content.items.map((item) => ("str" in item ? item.str : "")).join("")
   expect(text.length).toBeGreaterThan(500)
 
+  expect(text).toContain("Stealth fintech")
   expect(text).toContain("Co-founder")
   expect(text).toContain("2026 - Present")
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)

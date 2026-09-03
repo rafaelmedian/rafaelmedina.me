@@ -335,22 +335,6 @@ export const portfolioCards: PortfolioCard[] = [
     team: [collaborators.simon, collaborators.jakub],
   },
   {
-    id: "preview-shot-15",
-    category: "Preview",
-    title: "Matcha mobile navigation",
-    summary: "",
-    detail:
-      "I reorganized Matcha's mobile header as the product added more sections. Search, wallet controls, account access, and secondary navigation each received a clear place.",
-    role: "I defined the mobile information architecture and designed the compact controls.",
-    outcome:
-      "The main destinations remain accessible from the header as the product grows.",
-    image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
-    previewWidth: 1600,
-    previewHeight: 1200,
-    ...matchaMeta,
-    team: [collaborators.simon],
-  },
-  {
     id: "preview-shot-23",
     category: "Preview",
     title: "Matcha Pro",
