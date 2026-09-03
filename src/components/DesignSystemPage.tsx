@@ -372,24 +372,24 @@ const EASINGS = [
     name: "Standard — --ease-standard",
     css: "cubic-bezier(0.2, 0, 0, 1)",
     duration: "160–300ms",
-    use: "The house curve. Chips, icons, expand buttons, sticker tracking, and card-title reveals — anything changing state in place.",
+    use: "The house curve, and the default for a bare timing function. Chips, icons, expand buttons, sticker tracking, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
   },
   {
     name: "Smooth — --ease-smooth",
     css: "cubic-bezier(0.16, 1, 0.3, 1)",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the emoji toss. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the emoji toss, the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
     css: "cubic-bezier(0.4, 0, 1, 1)",
     duration: "120–160ms",
-    use: "Hover cards, the takeover close, and the preview gallery leaving. Always shorter than the entrance it reverses.",
+    use: "Hover cards, the local-time card, the takeover close, and the preview gallery leaving. Always shorter than the entrance it reverses.",
   },
   {
     name: "Responsive resize",
     css: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-    duration: "180ms",
+    duration: "160ms",
     use: "The hero's min-height and padding as the viewport crosses layout states. Inline, not a token — two uses.",
   },
   {
@@ -408,7 +408,7 @@ const EASINGS = [
     name: "Overshoot",
     css: "cubic-bezier(0.34, 1.56, 0.64, 1)",
     duration: "220ms",
-    use: "The copy-email reaction only. The single place in the system that overshoots — keep it that way.",
+    use: "The copy-email reaction only, and now the only 220ms left in the file. The single place in the system that overshoots — keep it that way.",
   },
   {
     name: "Scroll linked",
@@ -420,10 +420,11 @@ const EASINGS = [
 
 const DURATIONS = [
   { value: "--duration-fast · 120ms", use: "Taps, small fades, popover-content swaps, and the shortest exit feedback." },
-  { value: "--duration-quick · 160ms", use: "Colour, opacity, and shadow on hover or focus. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
-  { value: "--duration-base · 200ms", use: "Larger surface moves: the gallery open and close." },
-  { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration." },
+  { value: "--duration-quick · 160ms", use: "Colour, opacity, and shadow on hover or focus, and every overlay exit. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
+  { value: "--duration-base · 200ms", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close. Absorbed the old 220ms entrances." },
+  { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
   { value: "300ms", use: "The gallery expand/minimise icon swap." },
+  { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
   { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes." },
   { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
   { value: "700ms", use: "The bottom scroll edge, its emoji toss, and the avatar coin flip." },
@@ -1339,10 +1340,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </div>
 
             <div className="ds-block">
-              <div className="ds-rule" data-ds-terms={terms("exit entrance 220ms 160ms opacity transform dropped frame")}>
+              <div className="ds-rule" data-ds-terms={terms("exit entrance 200ms 160ms opacity transform dropped frame")}>
                 <strong>Exits are shorter than entrances, and both are honest about it.</strong>
                 <p>
-                  A hover card enters over 220ms on the smooth curve and leaves over 160ms on the exit curve. Opacity and
+                  A hover card enters over 200ms on the smooth curve and leaves over 160ms on the exit curve. Opacity and
                   transform share a duration within each direction — if they differ, the card finishes fading while it is
                   still moving and reads as a dropped frame. Where an element unmounts on transition end, the exit has to
                   outlast the fade, not merely match it.

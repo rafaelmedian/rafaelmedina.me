@@ -291,7 +291,7 @@ test("releases the elastic scroll edge with one slow physical settle", async ({ 
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
   await expect(edge).toHaveCSS("transition-duration", "0.7s")
-  await expect(edge).toHaveCSS("transition-timing-function", "cubic-bezier(0.19, 1, 0.22, 1)")
+  await expect(edge).toHaveCSS("transition-timing-function", "cubic-bezier(0.16, 1, 0.3, 1)")
 })
 
 test("continues the elastic scroll edge from its visible position when release is interrupted", async ({ page }) => {
@@ -1895,6 +1895,28 @@ test("keeps the about copy visible without an entrance under reduced motion", as
 
   const intro = page.locator(".mosaic-about-section-copy")
   await expect(intro).toHaveAttribute("data-about-fade", "")
+  await expect(intro).toHaveCSS("opacity", "1")
+})
+
+test("keeps viewed about copy visible when reduced motion is disabled", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+
+  const intro = page.locator(".mosaic-about-section-copy")
+  await expect(intro).toHaveAttribute("data-about-fade", "pending")
+
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect(intro).toHaveCSS("opacity", "1")
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
+
+  await intro.scrollIntoViewIfNeeded()
+  await expect(intro).toBeInViewport()
+  await expect(intro).toHaveAttribute("data-about-fade", "pending")
+
+  await page.emulateMedia({ reducedMotion: "no-preference" })
   await expect(intro).toHaveCSS("opacity", "1")
 })
 

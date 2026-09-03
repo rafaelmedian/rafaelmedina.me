@@ -136,7 +136,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.01em;
   text-decoration: none;
-  transition: transform var(--duration-quick) ease;
+  transition: transform var(--duration-quick) var(--ease-standard);
 }
 
 .skip-link:focus-visible {
@@ -411,7 +411,7 @@ img {
     visibility: visible;
     pointer-events: auto;
     transform: translateY(0) scale(1);
-    transition-duration: 220ms;
+    transition-duration: var(--duration-base);
     transition-timing-function: var(--ease-smooth);
   }
 
@@ -456,8 +456,8 @@ img {
   white-space: nowrap;
   cursor: default;
   transition:
-    background-color var(--duration-quick) ease,
-    color var(--duration-quick) ease;
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-local-time-anchor:hover .mosaic-social-time,
@@ -485,10 +485,14 @@ img {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  /* Exit. Transform used to run --duration-base while opacity and visibility
+     ran --duration-quick, so the card was hidden 40ms before it stopped
+     moving -- the clipped-animation bug .mosaic-hover-card documents. One
+     duration across all three, on the exit curve. Enter lives on .is-open. */
   transition:
-    transform var(--duration-base) var(--ease-smooth),
-    opacity var(--duration-quick) ease,
-    visibility var(--duration-quick) ease;
+    transform var(--duration-quick) var(--ease-exit),
+    opacity var(--duration-quick) var(--ease-exit),
+    visibility var(--duration-quick) linear;
 }
 
 .mosaic-local-time-card::before {
@@ -505,6 +509,12 @@ img {
   visibility: visible;
   pointer-events: auto;
   transform: translateY(0) scale(1);
+  /* Enter: the open state drives the way in, matching .mosaic-hover-card --
+     the long expo-out settle arriving, the quick exit curve dismissing. */
+  transition:
+    transform var(--duration-base) var(--ease-smooth),
+    opacity var(--duration-quick) ease-out,
+    visibility var(--duration-base) linear;
 }
 
 .mosaic-local-time-map {
@@ -647,9 +657,9 @@ img {
   letter-spacing: 0;
   text-decoration: none;
   transition:
-    color var(--duration-quick) ease,
-    opacity var(--duration-quick) ease,
-    transform var(--duration-quick) ease;
+    color var(--duration-quick) var(--ease-standard),
+    opacity var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-social-link::before {
@@ -1210,7 +1220,7 @@ img {
   text-decoration-thickness: 0.0625rem;
   text-decoration-skip-ink: none;
   text-underline-offset: 0.11em;
-  transition: text-decoration-color var(--duration-quick) ease;
+  transition: text-decoration-color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-about-link:hover,
@@ -1409,7 +1419,7 @@ img {
   box-shadow: 0 0 0 2px rgb(52 162 106 / 0.16);
   opacity: 0;
   transform: translateY(1px);
-  transition: opacity var(--duration-quick) ease;
+  transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-profile-availability:hover .mosaic-availability-dot {
@@ -1444,10 +1454,14 @@ img {
 .mosaic-live-time-value {
   grid-area: 1 / 1;
   display: inline-block;
-  will-change: transform, opacity;
+  will-change: transform, opacity, filter;
+  /* The blur lane is what makes the roll read as one label moving rather than
+     two boxes sliding past each other; 2px is the text-swap default. */
+  filter: blur(0);
   transition:
     transform 240ms var(--ease-smooth),
-    opacity 240ms var(--ease-smooth);
+    opacity 240ms var(--ease-smooth),
+    filter 240ms var(--ease-smooth);
 }
 
 .mosaic-live-time-value-current {
@@ -1458,11 +1472,13 @@ img {
 .mosaic-live-time-value-next {
   transform: translateY(1.05em);
   opacity: 0;
+  filter: blur(2px);
 }
 
 .mosaic-live-time.is-animating .mosaic-live-time-value-current {
   transform: translateY(-1.05em);
   opacity: 0;
+  filter: blur(2px);
 }
 
 .mosaic-live-time.is-animating .mosaic-live-time-value-next {
@@ -1511,7 +1527,9 @@ img {
   text-decoration-thickness: 0.0625rem;
   text-decoration-skip-ink: none;
   text-underline-offset: 0.11em;
-  transition: color var(--duration-base) ease, text-decoration-color var(--duration-base) ease;
+  transition:
+    color var(--duration-quick) var(--ease-standard),
+    text-decoration-color var(--duration-quick) var(--ease-standard);
 }
 
 /* ------------------------------------------------- work history & popover --- */
@@ -1572,8 +1590,8 @@ img {
   white-space: nowrap;
   cursor: pointer;
   transition:
-    background-color var(--duration-base) var(--ease-standard),
-    border-color var(--duration-base) var(--ease-standard),
+    background-color var(--duration-quick) var(--ease-standard),
+    border-color var(--duration-quick) var(--ease-standard),
     color var(--duration-quick) var(--ease-standard);
 }
 
@@ -1714,8 +1732,8 @@ img {
   line-height: 1.5;
   text-decoration: none;
   transition:
-    background-color var(--duration-quick) ease,
-    color var(--duration-quick) ease;
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-work-history-popover-link:hover {
@@ -1849,7 +1867,7 @@ img {
   visibility: hidden;
   pointer-events: none;
   will-change: transform, opacity;
-  transition: opacity var(--duration-quick) ease, transform var(--duration-quick) var(--ease-smooth), visibility var(--duration-quick) ease;
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-smooth), visibility var(--duration-quick) var(--ease-standard);
   z-index: 3;
   backdrop-filter: blur(10px);
 }
@@ -1974,7 +1992,7 @@ img {
   isolation: isolate;
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
-  transition: box-shadow var(--duration-quick) ease, filter var(--duration-quick) ease, border-color var(--duration-quick) ease;
+  transition: box-shadow var(--duration-quick) var(--ease-standard), filter var(--duration-quick) var(--ease-standard), border-color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-contact-pill:focus-visible {
@@ -2082,7 +2100,7 @@ img {
   display: block;
   flex: none;
   object-fit: contain;
-  transition: opacity var(--duration-quick) ease;
+  transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-contact-pill:active .mosaic-contact-pill-icon {
@@ -2192,7 +2210,7 @@ img {
   pointer-events: auto;
   transition:
     opacity var(--duration-quick) ease-out,
-    transform 220ms var(--ease-smooth);
+    transform var(--duration-base) var(--ease-smooth);
 }
 
 .mosaic-linkedin-card {
@@ -2274,7 +2292,7 @@ img {
   border-radius: var(--radius-full);
   object-fit: cover;
   background: #f1f1f3;
-  transition: opacity var(--duration-quick) ease;
+  transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-x-card-avatar-link:hover .mosaic-x-card-avatar {
@@ -2294,7 +2312,7 @@ img {
   letter-spacing: -0.00563rem;
   line-height: 1;
   text-decoration: none;
-  transition: background-color var(--duration-quick) ease;
+  transition: background-color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-x-card-follow:hover {
@@ -2803,9 +2821,9 @@ img {
   cursor: pointer;
   text-align: left;
   transition:
-    background-color var(--duration-quick) ease,
-    border-color var(--duration-quick) ease,
-    box-shadow var(--duration-quick) ease;
+    background-color var(--duration-quick) var(--ease-standard),
+    border-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard);
 }
 
 /* The caption backdrop. Four separately masked layers step the blur radius from
@@ -3578,7 +3596,7 @@ img {
   border-radius: var(--radius-full);
   color: #171717;
   text-decoration: none;
-  transition: background-color var(--duration-quick) ease;
+  transition: background-color var(--duration-quick) var(--ease-standard);
 }
 
 .preview-gallery-detail-row .preview-gallery-person:hover,
