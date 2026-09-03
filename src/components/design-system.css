@@ -16,6 +16,8 @@
   --ds-gutter: clamp(1rem, 3vw, 2.5rem);
   --ds-hairline: rgb(0 0 0 / 0.08);
   --ds-rail: 15.5rem;
+  /* Only this dev-only page sets code, so the token lives here, not :root. */
+  --font-code: "SF Mono", "SFMono-Regular", "Consolas", "Liberation Mono", Menlo, Courier, monospace;
   position: relative;
   z-index: 1;
   min-height: 100dvh;
@@ -55,9 +57,7 @@
   padding: 0.5rem 0.9rem;
   border-radius: var(--radius-full);
   background: #fff;
-  box-shadow:
-    0 1px 2px rgb(16 16 20 / 0.06),
-    0 12px 32px rgb(16 16 20 / 0.16);
+  box-shadow: var(--shadow-overlay);
   color: #171717;
   font-size: var(--text-sm);
   text-decoration: none;
@@ -122,8 +122,8 @@
   line-height: 1;
   text-decoration: none;
   transition:
-    background-color 160ms cubic-bezier(0.2, 0, 0, 1),
-    color 160ms cubic-bezier(0.2, 0, 0, 1);
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
 .ds-home-link:hover,
@@ -178,7 +178,7 @@
   min-height: 2rem;
   border-radius: var(--radius-sm);
   background: #f2f2f2;
-  transition: background-color 160ms cubic-bezier(0.2, 0, 0, 1);
+  transition: background-color var(--duration-quick) var(--ease-standard);
 }
 
 .ds-filter:focus-within {
@@ -290,9 +290,9 @@
   line-height: 1;
   text-decoration: none;
   transition:
-    background-color 160ms cubic-bezier(0.2, 0, 0, 1),
-    color 160ms cubic-bezier(0.2, 0, 0, 1),
-    opacity 160ms cubic-bezier(0.2, 0, 0, 1);
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard),
+    opacity var(--duration-quick) var(--ease-standard);
 }
 
 .ds-nav-link:hover,
@@ -317,8 +317,8 @@
   opacity: 0;
   transform: scaleY(0.4);
   transition:
-    opacity 160ms cubic-bezier(0.2, 0, 0, 1),
-    transform 160ms cubic-bezier(0.2, 0, 0, 1);
+    opacity var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard);
 }
 
 .ds-nav-link[data-active="true"] .ds-nav-marker {
@@ -541,8 +541,8 @@
   cursor: pointer;
   text-align: left;
   transition:
-    background-color 160ms cubic-bezier(0.2, 0, 0, 1),
-    color 160ms cubic-bezier(0.2, 0, 0, 1);
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
 .ds-copy code {
@@ -567,7 +567,7 @@
   width: 0.75rem;
   height: 0.75rem;
   opacity: 0;
-  transition: opacity 160ms cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
 .ds-copy-icon svg {
@@ -866,7 +866,7 @@
   background: #2d2d2d;
   transform: translateY(-50%) translateX(0);
   transition-property: transform;
-  transition-duration: var(--ds-motion-duration, 160ms);
+  transition-duration: var(--ds-motion-duration, var(--duration-quick));
   transition-timing-function: var(--ds-motion-ease, ease);
 }
 

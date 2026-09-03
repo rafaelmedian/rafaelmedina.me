@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 
 import type { HoverMedia } from "../data/portfolio"
+import { isVideoSource } from "../lib/media"
+import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
 type LinkedInHoverCardProps = {
   media: HoverMedia
   isOpen: boolean
 }
-
-const isVideoSource = (source: string) => /\.(webm|mp4)$/.test(source)
 
 /**
  * A single piece of media hanging off the LinkedIn pill. Purely decorative: it
@@ -15,18 +15,7 @@ const isVideoSource = (source: string) => /\.(webm|mp4)$/.test(source)
  */
 export function LinkedInHoverCard({ media, isOpen }: LinkedInHoverCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
-
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const sync = () => setPrefersReducedMotion(query.matches)
-    sync()
-
-    query.addEventListener("change", sync)
-    return () => query.removeEventListener("change", sync)
-  }, [])
+  const prefersReducedMotion = usePrefersReducedMotion()
 
   // The clip only runs while the card is up, so a hover the user never opens
   // costs nothing and a closed card isn't animating off screen.
@@ -42,7 +31,7 @@ export function LinkedInHoverCard({ media, isOpen }: LinkedInHoverCardProps) {
 
   return (
     <span
-      className={`mosaic-linkedin-card${isOpen ? " is-open" : ""}`}
+      className={`mosaic-hover-card mosaic-linkedin-card${isOpen ? " is-open" : ""}`}
       data-state={isOpen ? "open" : "closed"}
       aria-hidden="true"
     >

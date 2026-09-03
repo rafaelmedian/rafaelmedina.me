@@ -14,6 +14,7 @@ import { cvEducation, cvExperience } from "../data/cv"
 import type { CvExperience } from "../data/cv"
 import type { SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
+import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
 type AboutPanelProps = {
   links: SiteLinks
@@ -375,6 +376,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
   } = useStickerMovement()
   const panelRef = useRef<HTMLElement | null>(null)
   const stickerInstructionsId = useId()
+  const prefersReducedMotion = usePrefersReducedMotion()
 
   // The copy blocks ship visible — the attribute is empty in the prerendered
   // markup, so nothing depends on JavaScript. On mount, blocks still below
@@ -384,15 +386,26 @@ export function AboutPanel({ links }: AboutPanelProps) {
   // to rasterise fresh text tiles behind intent instead of as a late paint.
   useEffect(() => {
     const panel = panelRef.current
-    if (!panel || typeof window.matchMedia !== "function") return
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    // The shared hook hydrates from false, so consult the live query before
+    // its first effect-driven update can reach this effect.
+    const reducedMotionEnabled =
+      prefersReducedMotion ||
+      (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    if (!panel || reducedMotionEnabled) return
     if (!("IntersectionObserver" in window)) return
 
     // Scroll restoration can land mid-sheet; anything already on screen (or
     // above it) stays put and only content still below the fold animates.
-    const blocks = [...panel.querySelectorAll<HTMLElement>("[data-about-fade]")].filter(
-      (block) => block.getBoundingClientRect().top > window.innerHeight,
-    )
+    const blocks = [...panel.querySelectorAll<HTMLElement>("[data-about-fade]")].filter((block) => {
+      if (block.dataset.aboutFade === "in") return false
+      if (block.getBoundingClientRect().top > window.innerHeight) return true
+
+      // Reduced motion can leave an observed block pending while the user
+      // scrolls it into view. Retire that marker before motion is restored so
+      // removing the media-query override cannot hide content they have seen.
+      if (block.dataset.aboutFade === "pending") block.removeAttribute("data-about-fade")
+      return false
+    })
     if (blocks.length === 0) return
 
     // The top margin stretches the root far above the viewport so an instant
@@ -414,7 +427,11 @@ export function AboutPanel({ links }: AboutPanelProps) {
           const block = entry.target as HTMLElement
           const rect = entry.boundingClientRect
           const onScreen = rect.bottom > 0 && rect.top < window.innerHeight
-          block.style.setProperty("--about-fade-delay", `${onScreen ? visibleIndex * 60 : 0}ms`)
+          // Capped at five steps: past ~300ms of total stagger the last block
+          // reads as late rather than sequenced, and a tall viewport can batch
+          // more blocks than a short one.
+          const staggerStep = Math.min(visibleIndex, 5)
+          block.style.setProperty("--about-fade-delay", `${onScreen ? staggerStep * 60 : 0}ms`)
           if (onScreen) visibleIndex += 1
           block.dataset.aboutFade = "in"
           observer.unobserve(block)
@@ -428,7 +445,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
       observer.observe(block)
     }
     return () => observer.disconnect()
-  }, [])
+  }, [prefersReducedMotion])
 
   const renderStickers = (stickers: AboutSticker[], groupId: string) =>
     stickers.map((sticker) => {

@@ -1,8 +1,80 @@
+import { readdirSync, readFileSync, statSync } from "node:fs"
+import { join } from "node:path"
+
 import { expect, type Page, test } from "@playwright/test"
+import * as ts from "typescript"
 
 const openDesignSystem = async (page: Page) => {
   await page.goto("/design-system")
   await expect(page.getByRole("heading", { name: "Design system" })).toBeVisible()
+}
+
+const customPropertyPattern = /^--[\w-]+$/
+const cssVariablePattern = /var\((--[\w-]+)/g
+
+const findCssCustomPropertyReferences = (text: string) =>
+  new Set(
+    [...text.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(cssVariablePattern)].map((match) => match[1]),
+  )
+
+const findScriptCustomPropertyReferences = (text: string, fileName = "source.tsx") => {
+  const references = new Set<string>()
+  const scriptKind = fileName.endsWith(".tsx")
+    ? ts.ScriptKind.TSX
+    : fileName.endsWith(".js")
+      ? ts.ScriptKind.JS
+      : ts.ScriptKind.TS
+  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, scriptKind)
+
+  const addCssVariables = (value: string) => {
+    for (const match of value.matchAll(cssVariablePattern)) references.add(match[1])
+  }
+
+  const isStyleContext = (node: ts.Node) => {
+    for (let current: ts.Node | undefined = node.parent; current; current = current.parent) {
+      if (ts.isJsxAttribute(current) && current.name.getText(source) === "style") return true
+      if (
+        ts.isPropertyAssignment(current) &&
+        ts.isIdentifier(current.name) &&
+        current.name.text === "style"
+      ) return true
+      if (
+        ts.isVariableDeclaration(current) &&
+        ts.isIdentifier(current.name) &&
+        /style$/i.test(current.name.text)
+      ) return true
+      if (
+        ts.isCallExpression(current) &&
+        ts.isPropertyAccessExpression(current.expression) &&
+        ["getPropertyValue", "removeProperty", "setProperty"].includes(current.expression.name.text)
+      ) return true
+    }
+    return fileName === "tailwind.config.js"
+  }
+
+  const visit = (node: ts.Node) => {
+    if (ts.isStringLiteralLike(node) && isStyleContext(node)) addCssVariables(node.text)
+
+    if (ts.isPropertyAssignment(node) && ts.isStringLiteralLike(node.name) && isStyleContext(node)) {
+      if (customPropertyPattern.test(node.name.text)) references.add(node.name.text)
+    }
+
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ["getPropertyValue", "removeProperty", "setProperty"].includes(node.expression.name.text)
+    ) {
+      const property = node.arguments[0]
+      if (property && ts.isStringLiteralLike(property) && customPropertyPattern.test(property.text)) {
+        references.add(property.text)
+      }
+    }
+
+    ts.forEachChild(node, visit)
+  }
+
+  visit(source)
+  return references
 }
 
 test("grades meaningful non-text colors against the 3:1 threshold", async ({ page }) => {
@@ -99,4 +171,54 @@ test("documents component-specific motion curves that still ship", async ({ page
   for (const curve of curves) {
     expect(documentedCurves).toContain(curve)
   }
+})
+
+// Guards the invariant behind the token cleanup: a custom property defined in
+// the stylesheets must be consumed somewhere (CSS var(), a JS property read,
+// or the Tailwind config) — otherwise it is drift and should be deleted, not
+// documented. Prose mentions on the design-system page do not count.
+test("every custom property defined in the stylesheets is referenced", () => {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir).flatMap((entry) => {
+      const path = join(dir, entry)
+      if (statSync(path).isDirectory()) return walk(path)
+      return /\.(ts|tsx|css|html)$/.test(path) ? [path] : []
+    })
+
+  const definitions = new Set<string>()
+  for (const file of ["src/index.css", "src/components/design-system.css"]) {
+    const css = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "")
+    for (const match of css.matchAll(/^\s*(--[\w-]+)\s*:/gm)) {
+      definitions.add(match[1])
+    }
+  }
+
+  const references = new Set<string>()
+  for (const file of [...walk("src"), "tailwind.config.js", "index.html"]) {
+    const text = readFileSync(file, "utf8")
+    const tokens = file.endsWith(".css") || file.endsWith(".html")
+      ? findCssCustomPropertyReferences(text)
+      : findScriptCustomPropertyReferences(text, file)
+    for (const token of tokens) references.add(token)
+  }
+
+  const unreferenced = [...definitions].filter((token) => !references.has(token))
+  expect(unreferenced).toEqual([])
+})
+
+test("does not count documented custom property names as references", () => {
+  const scriptReferences = findScriptCustomPropertyReferences(`
+    const documentation = { token: "--documented-only" }
+    const documentationWithSyntax = "Use var(--documented-variable) for overlays"
+    // Neither \`--comment-only\` nor var(--comment-variable) is a live reference.
+    element.style.setProperty("--live-property", "1")
+    const style = { "--live-inline-property": "1", zIndex: "var(--live-value)" }
+  `)
+  const cssReferences = findCssCustomPropertyReferences(`
+    /* var(--documented-css-variable) */
+    .example { color: var(--live-css-value); }
+  `)
+
+  expect([...scriptReferences].sort()).toEqual(["--live-inline-property", "--live-property", "--live-value"])
+  expect([...cssReferences]).toEqual(["--live-css-value"])
 })

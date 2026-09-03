@@ -35,3 +35,6 @@ playwright-report
 .claude/settings.local.json
 .claude/skills/
 .kiro/skills/
+
+# Temporary ux-review triage reports — never commit
+.claude-review/

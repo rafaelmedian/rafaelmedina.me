@@ -33,7 +33,7 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
 
   return (
     <div
-      className={`mosaic-x-card${isOpen ? " is-open" : ""}`}
+      className={`mosaic-hover-card mosaic-x-card${isOpen ? " is-open" : ""}`}
       data-state={isOpen ? "open" : "closed"}
       // Closed, the card is still painted for its exit transition, so `inert`
       // keeps its links out of the tab order and off screen readers.

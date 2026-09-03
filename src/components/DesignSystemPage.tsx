@@ -190,7 +190,7 @@ function SpecCard({
 const SURFACES = [
   {
     hex: "#ffffff",
-    token: "--canvas / --surface",
+    token: "--canvas",
     name: "Page & raised",
     note: "App's wrapper paints this across the viewport, so white is both the page and the colour of the full-bleed About sheet and anything floating above it — hover cards, popovers, the dialog, logo chips. Every ratio on this page is measured against it.",
   },
@@ -218,19 +218,14 @@ const SURFACES = [
     name: "Chip active",
     note: "The hover, focus, and pressed state for anything sitting on chip rest.",
   },
-  {
-    hex: "#f6f8fb",
-    token: "--surface-2",
-    name: "Unused",
-    note: "Declared in :root and referenced nowhere. Do not reach for it; pick one of the surfaces above.",
-  },
 ]
 
 const INK = [
-  { hex: "#111111", token: "--body-color / --heading-color", use: "Body default and headings" },
+  { hex: "#111111", token: "--body-color", use: "Body default and headings" },
   { hex: "#141414", token: "--ink", use: "App wrapper text colour" },
   { hex: "#171717", token: "—", use: "Text inside white cards and the preview dialog" },
   { hex: "#2d2d2d", token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
+  { hex: "#363636", token: "—", use: "Inline links on hover" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
   { hex: "#545454", token: "—", use: "About-panel prose and the Work history heading" },
   { hex: "#6b6b6b", token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions" },
@@ -265,11 +260,6 @@ const BRAND = [
   { hex: "#0f1419", name: "X ink", note: "Follow button fill and the card's name and bio." },
   { hex: "#1d9bf0", name: "X mention", note: "The @mention link inside the X hover card only." },
   { hex: "#536471", name: "X muted", note: "Handle and stat labels inside the X hover card only." },
-]
-
-const DECLARED_ONLY = [
-  { hex: "#3e9fff", token: "--primary", note: "Declared in :root; no component paints text or a surface with it." },
-  { hex: "#f09637", token: "--secondary", note: "Declared in :root; unused. Neither is a brand colour yet." },
 ]
 
 /* -------------------------------------------------------------- typography */
@@ -364,9 +354,9 @@ const ELEVATION = [
     use: "Contact pills and the mobile reveal button. Goes to 0 4px 12px on hover, back to 0 1px 4px when pressed.",
   },
   {
-    name: "Hover card",
-    shadow: "0 1px 2px rgb(16 16 20 / 0.06), 0 12px 32px rgb(16 16 20 / 0.16)",
-    use: "LinkedIn and X cards, the work-history popover, the takeover close, and the top edge of the About takeover. About pairs it with a 0.08 black hairline so the overlapping sheet stays crisp.",
+    name: "Overlay — --shadow-overlay",
+    shadow: "var(--shadow-overlay)",
+    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, and the top edge of the About takeover. Surfaces without a border prepend a zero-blur 0 0 0 1px hairline ring before the var().",
   },
   {
     name: "Dialog",
@@ -379,22 +369,28 @@ const ELEVATION = [
 
 const EASINGS = [
   {
-    name: "Standard",
+    name: "Standard — --ease-standard",
     css: "cubic-bezier(0.2, 0, 0, 1)",
     duration: "160–300ms",
-    use: "The house curve. Chips, icons, expand buttons, sticker tracking, and card-title reveals — anything changing state in place.",
+    use: "The house curve, and the default for a bare timing function. Chips, icons, expand buttons, sticker tracking, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
+  },
+  {
+    name: "Smooth — --ease-smooth",
+    css: "cubic-bezier(0.16, 1, 0.3, 1)",
+    duration: "160–700ms",
+    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the emoji toss, the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
+  },
+  {
+    name: "Exit — --ease-exit",
+    css: "cubic-bezier(0.4, 0, 1, 1)",
+    duration: "120–160ms",
+    use: "Hover cards, the local-time card, the takeover close, and the preview gallery leaving. Always shorter than the entrance it reverses.",
   },
   {
     name: "Responsive resize",
     css: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-    duration: "180ms",
-    use: "The hero's min-height and padding as the viewport crosses layout states.",
-  },
-  {
-    name: "Entrance",
-    css: "cubic-bezier(0.16, 1, 0.3, 1)",
-    duration: "200–240ms",
-    use: "Overlays arriving: hover cards, popovers, the local-time card, and the takeover close. Fast out of the gate, long settle.",
+    duration: "160ms",
+    use: "The hero's min-height and padding as the viewport crosses layout states. Inline, not a token — two uses.",
   },
   {
     name: "Gallery open",
@@ -403,34 +399,16 @@ const EASINGS = [
     use: "The preview gallery's origin-aware, whole-surface expansion and its fallback lift.",
   },
   {
-    name: "Exit",
-    css: "cubic-bezier(0.4, 0, 1, 1)",
-    duration: "120–160ms",
-    use: "Hover cards, the takeover close, and the preview gallery leaving. Always shorter than the entrance it reverses.",
-  },
-  {
     name: "Popover exit",
     css: "cubic-bezier(0.55, 0, 1, 0.45)",
     duration: "160ms",
-    use: "The work-history popover only — a slightly firmer close than the other overlays.",
-  },
-  {
-    name: "First load",
-    css: "cubic-bezier(0.19, 1, 0.22, 1)",
-    duration: "160–700ms",
-    use: "--ease-smooth. The hero and mosaic intro cascades; the bottom scroll edge and emoji toss use a slower 700ms physical settle; the avatar press reuses it at 160ms.",
-  },
-  {
-    name: "Coin flip",
-    css: "cubic-bezier(0.22, 1, 0.36, 1)",
-    duration: "700ms",
-    use: "The avatar's 180-degree flip and its long settle.",
+    use: "The work-history popover only — a slightly firmer close than the other overlays. Scoped as --mosaic-popover-exit-ease.",
   },
   {
     name: "Overshoot",
     css: "cubic-bezier(0.34, 1.56, 0.64, 1)",
     duration: "220ms",
-    use: "The copy-email reaction only. The single place in the system that overshoots — keep it that way.",
+    use: "The copy-email reaction only, and now the only 220ms left in the file. The single place in the system that overshoots — keep it that way.",
   },
   {
     name: "Scroll linked",
@@ -441,11 +419,13 @@ const EASINGS = [
 ]
 
 const DURATIONS = [
-  { value: "100–120ms", use: "Fallback fades, popover-content swaps, and the shortest exit feedback." },
-  { value: "140–160ms", use: "Colour, opacity, and shadow on hover or focus. The default for a state change." },
-  { value: "180–240ms", use: "Anything that also moves: overlays and title reveals." },
+  { value: "--duration-fast · 120ms", use: "Taps, small fades, popover-content swaps, and the shortest exit feedback." },
+  { value: "--duration-quick · 160ms", use: "Colour, opacity, and shadow on hover or focus, and every overlay exit. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
+  { value: "--duration-base · 200ms", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close. Absorbed the old 220ms entrances." },
+  { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
   { value: "300ms", use: "The gallery expand/minimise icon swap." },
-  { value: "360ms", use: "Media un-blurring as it decodes." },
+  { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
+  { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes." },
   { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
   { value: "700ms", use: "The bottom scroll edge, its emoji toss, and the avatar coin flip." },
 ]
@@ -467,18 +447,31 @@ const BREAKPOINTS = [
 ]
 
 const STACKING = [
-  { z: "0–20", name: "Base, dock, chrome", note: "Tailwind's z-base / z-dock / z-chrome. The page, mosaic, and bottom scroll edge." },
+  {
+    z: "0–20",
+    name: "--z-dock / --z-chrome",
+    note: "The page, main content wrapper (Tailwind's z-dock maps onto the token), and the bottom scroll edge.",
+  },
   { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
   {
     z: "30 / 50",
-    name: "Corner controls",
-    note: "The section corner and takeover close sit at 30; the social corner sits at 50 so its hover cards clear other overlays.",
+    name: "--z-corner / --z-social",
+    note: "The section corner and takeover close sit at --z-corner; the social corner sits at --z-social so its hover cards clear other overlays.",
   },
-  { z: "40", name: "Hover cards", note: "LinkedIn, X, work-history popovers, the local-time card." },
-  { z: "60 / 70", name: "Dialog", note: "The preview gallery backdrop, then its shell." },
-  { z: "100", name: "Copy reaction", note: "Has to clear the dialog trigger it sits under." },
-  { z: "120", name: "Skip link", note: "Above everything, always." },
+  {
+    z: "40",
+    name: "--z-overlay",
+    note: "Hover cards, the local-time card, and the work-history block. The popover inside that block stacks locally (z 4 within its isolated container), so only the container carries the tier.",
+  },
+  { z: "60 / 70", name: "--z-dialog-backdrop / --z-dialog", note: "The preview gallery backdrop and pending veil, then its shell." },
+  { z: "100", name: "--z-reaction", note: "The copy-email reaction has to clear the dialog trigger it sits under." },
+  { z: "120", name: "--z-skip-link", note: "Above everything, always." },
+  {
+    z: "500 (scoped)",
+    name: "Map attribution",
+    note: "Clears Leaflet's internal panes inside the transformed local-time card — its own stacking context, so it never meets the ladder.",
+  },
 ]
 
 /* ------------------------------------------------------------------- shell */
@@ -699,16 +692,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </div>
             <ul className="ds-list">
               <li data-ds-terms={terms("grey colour signal accent neutral ink saturated availability linkedin x brand")}>
-                <strong>Grey does the work; colour is a signal.</strong> The entire interface is built from nine steps of
+                <strong>Grey does the work; colour is a signal.</strong> The entire interface is built from ten steps of
                 neutral ink on four near-white surfaces. The only saturated colours on screen belong to a status (the
                 availability dot) or to somebody else's brand (LinkedIn, X). A new accent needs a reason beyond
                 decoration.
               </li>
-              <li data-ds-terms={terms("hover reveal relocate reflow min-height 6.225rem work-history reserve space")}>
+              <li data-ds-terms={terms("hover reveal relocate reflow work-history popover float overlay space")}>
                 <strong>Hover reveals; it never relocates.</strong> Cards, titles, and icons fade and settle in place.
-                Space is reserved ahead of time — the work-history block holds <code>min-height: 6.225rem</code> so the
-                first chip expansion cannot push the page. If an interaction would reflow the layout, reserve the room
-                instead.
+                Anything larger floats — the work-history popovers overlay the page instead of expanding it. If an
+                interaction would reflow the layout, float it or reserve the room instead.
               </li>
               <li data-ds-terms={terms("entrance exit curve opacity transform duration overlay")}>
                 <strong>Every entrance owns its exit.</strong> Overlays enter on the entrance curve and leave on the exit
@@ -722,7 +714,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </li>
               <li data-ds-terms={terms("prefers-reduced-motion reset motion accessibility opt out")}>
                 <strong>Nothing is required to move.</strong> A global{" "}
-                <code>prefers-reduced-motion</code> reset zeroes durations, and nine further blocks opt individual
+                <code>prefers-reduced-motion</code> reset zeroes durations, and seven further blocks opt individual
                 components out by hand where the reset alone would leave them stuck mid-animation.
               </li>
             </ul>
@@ -857,30 +849,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
             </div>
 
-            <div className="ds-block">
-              <p className="ds-subhead">Declared but unused</p>
-              <div className="ds-grid">
-                {DECLARED_ONLY.map((entry) => (
-                  <SpecCard
-                    key={entry.token}
-                    className="ds-swatch-card"
-                    terms={terms(entry.token, entry.hex, entry.note, "unused declared dead token")}
-                    proof={<div className="ds-swatch" style={{ background: entry.hex }} />}
-                    name={entry.token}
-                    copy={entry.hex}
-                    note={entry.note}
-                  />
-                ))}
-              </div>
-              <div className="ds-rule" data-ds-terms={terms("--primary --secondary --surface-2 unused root canonical")}>
-                <strong>Do not treat these as the brand palette.</strong>
-                <p>
-                  <code>--primary</code>, <code>--secondary</code>, and <code>--surface-2</code> survive in{" "}
-                  <code>:root</code> from an earlier direction. Nothing renders them. Either give one a real job
-                  deliberately, or leave them alone — do not reach for them because they sound canonical.
-                </p>
-              </div>
-            </div>
           </section>
 
           {/* ------------------------------------------------- typography -- */}
@@ -897,13 +865,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Families</p>
               <div className="ds-grid ds-grid-wide">
                 <SpecCard
-                  terms={terms("ui system stack font-body apple sf pro inter webfont")}
-                  name="UI — the system stack"
+                  terms={terms("ui system stack font-ui font-body apple sf pro inter webfont")}
+                  name="UI — --font-ui"
                   copy='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif'
                   note={
                     <>
-                      All interface copy and controls. No webfont, no layout shift, SF Pro on Apple hardware. Prefer{" "}
-                      <code>var(--font-body)</code> — twelve rules currently write the stack out inline instead.
+                      All interface copy and controls. No webfont, no layout shift, SF Pro on Apple hardware. Use{" "}
+                      <code>var(--font-ui)</code>; <code>var(--font-body)</code> is the Inter-first fallback stack the
+                      page root sets.
                     </>
                   }
                 />
@@ -927,15 +896,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--font-primary --font-secondary --font-fallback --font-inter --font-newsreader face")}
+                data-ds-terms={terms("--font-primary --font-fallback --font-ui face")}
               >
                 <strong>There is no second general-purpose face.</strong>
                 <p>
-                  <code>--font-primary</code> and <code>--font-secondary</code> both resolve to{" "}
-                  <code>--font-fallback</code>, because <code>--font-inter</code> and <code>--font-newsreader</code> are
-                  never defined. Asking for <code>--font-secondary</code> gets the interface stack, not the narrowly
-                  scoped Handlee display face. Any additional general-purpose face needs a real <code>@font-face</code>,
-                  not that variable.
+                  Two stacks exist: <code>--font-ui</code> (system-first, what interface text renders with) and{" "}
+                  <code>--font-fallback</code> (Inter-first, what <code>--font-body</code> resolves to on the page
+                  root). Any additional general-purpose face needs a real <code>@font-face</code>, not a new variable.
                 </p>
               </div>
             </div>
@@ -1141,19 +1108,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--overlay-shadow --overlay-filter blur seven layers glass expensive")}
-              >
-                <strong>
-                  <code>--overlay-shadow</code> is a fifth level, and it is expensive.
-                </strong>
-                <p>
-                  Seven stacked layers from <code>0 0 0.125rem</code> out to <code>0 1.625rem 3.375rem</code>, paired with{" "}
-                  <code>--overlay-filter: blur(1rem)</code>. It exists for full-bleed glass surfaces. For a card, use the
-                  hover-card level above — the seven-layer stack costs paint time it will not earn back at that size.
-                </p>
-              </div>
-              <div
-                className="ds-rule"
                 data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 62% 100% 0.68 360ms")}
               >
                 <strong>
@@ -1280,7 +1234,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 deliberately the same value, because a chip that is open and a chip under the cursor mean the same
                 thing. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
                 40px while the visible label stays 2rem. The takeover close is a 51.2px white raised control with the
-                hover-card shadow and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
+                overlay shadow and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
                 its viewport crossing.
               </p>
             </div>
@@ -1290,7 +1244,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div className="ds-grid ds-grid-wide">
                 <div
                   className="ds-specimen ds-specimen-white ds-specimen-block"
-                  style={{ boxShadow: "var(--overlay-shadow)" }}
+                  style={{ boxShadow: "0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay)" }}
                   data-ds-terms={terms("raised #ffffff hover card popover dialog border #e6e6e8 zero-blur")}
                 >
                   <strong className="ds-specimen-title">Raised — #ffffff</strong>
@@ -1328,7 +1282,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
           <section id="motion" className="ds-section">
             <div className="ds-section-heading">
               <h2>Motion</h2>
-              <p>Ten curves and seven duration bands, including the deliberate component outliers. Hover a card to replay its easing.</p>
+              <p>
+                Three tokened curves plus the deliberate component outliers, and four duration tokens with their
+                one-off bands. Hover a card to replay its easing.
+              </p>
             </div>
 
             <div className="ds-block">
@@ -1383,10 +1340,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </div>
 
             <div className="ds-block">
-              <div className="ds-rule" data-ds-terms={terms("exit entrance 220ms 150ms opacity transform dropped frame")}>
+              <div className="ds-rule" data-ds-terms={terms("exit entrance 200ms 160ms opacity transform dropped frame")}>
                 <strong>Exits are shorter than entrances, and both are honest about it.</strong>
                 <p>
-                  A hover card enters over 220ms on the entrance curve and leaves over 150ms on the exit curve. Opacity and
+                  A hover card enters over 200ms on the smooth curve and leaves over 160ms on the exit curve. Opacity and
                   transform share a duration within each direction — if they differ, the card finishes fading while it is
                   still moving and reads as a dropped frame. Where an element unmounts on transition end, the exit has to
                   outlast the fade, not merely match it.
@@ -1460,7 +1417,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>display: contents</code>; the white sheet stays full-bleed but no pinning or overlap is applied.
                 </li>
                 <li data-ds-terms={terms("seam hairline shadow ambient cast 120px 0.35 chevron 17px 22deg scroll cue 100dvw")}>
-                  <strong>The seam is three layers, and two of them move.</strong> The hover-card shadow only spills
+                  <strong>The seam is three layers, and two of them move.</strong> The overlay shadow only spills
                   about 20px past the hairline, so a 120px gradient cast sits above it and carries the penumbra —
                   ramping from 0.35 opacity to full across the crossing, so the sheet reads as passing in front of the
                   gallery rather than butting against it. Above that, a scroll cue: two 17px bars hinged at the joint

@@ -18,6 +18,8 @@ import { ContactActionRow } from "./ContactActionRow"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { useHoverCard } from "../lib/hoverCard"
+import { isVideoSource } from "../lib/media"
+import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
@@ -152,10 +154,6 @@ const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
 
 declare global {
   var __PRERENDERED_AT__: number | undefined
-}
-
-function isVideoPreviewSource(source: string) {
-  return source.toLowerCase().endsWith(".webm")
 }
 
 // Support never changes for the life of the document, so there is nothing to
@@ -587,7 +585,7 @@ function SocialCorner({
 }
 
 export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const prefersReducedMotion = usePrefersReducedMotion()
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
@@ -599,6 +597,13 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
+
+  // Reduced motion suppresses animationend, so retire the one-shot intro
+  // marker as soon as the preference reads true — and latch it, so a later
+  // preference change cannot start the intro mid-session.
+  if (prefersReducedMotion && !hasCompletedWorkIntro) {
+    setHasCompletedWorkIntro(true)
+  }
 
   const handleGalleryLoadError = useCallback(() => {
     trackEvent("work_preview_load_error", {})
@@ -663,7 +668,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     label = card.title,
     eager = false,
   ) => {
-    if (isVideoPreviewSource(source)) {
+    if (isVideoSource(source)) {
       return (
         <RowVideoMedia
           source={source}
@@ -687,27 +692,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       />
     )
   }
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
-
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const syncPreference = () => {
-      setPrefersReducedMotion(mediaQuery.matches)
-      // Reduced motion suppresses animationend, so retire the one-shot marker
-      // here before a later preference change can start the intro mid-session.
-      if (mediaQuery.matches) setHasCompletedWorkIntro(true)
-    }
-    syncPreference()
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncPreference)
-      return () => mediaQuery.removeEventListener("change", syncPreference)
-    }
-
-    mediaQuery.addListener(syncPreference)
-    return () => mediaQuery.removeListener(syncPreference)
-  }, [])
 
   useEffect(() => {
     let intervalId: number | undefined

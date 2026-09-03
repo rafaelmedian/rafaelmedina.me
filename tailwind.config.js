@@ -3,25 +3,11 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      fontFamily: {
-        sans: [
-          "SF Pro Rounded",
-          "SF Pro Text",
-          "SF Pro Display",
-          "Inter",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "sans-serif",
-        ],
-      },
+      // Mirrors the --z-* ladder in src/index.css so both sides agree.
       zIndex: {
         base: "0",
-        dock: "10",
-        chrome: "20",
-        overlay: "30",
-        modal: "40",
-        toast: "50",
+        dock: "var(--z-dock)",
+        chrome: "var(--z-chrome)",
       },
     },
   },
