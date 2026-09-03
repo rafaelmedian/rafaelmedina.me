@@ -2927,6 +2927,26 @@ img {
   transition: opacity var(--pg-backdrop-in-ms, 180ms) ease-out;
 }
 
+/* Suspense owns this lightweight first-tap response. It paints quickly while
+   the gallery chunk is in flight, then disappears as soon as the real backdrop
+   mounts. Keeping it filter-free avoids re-rasterising the page just to
+   acknowledge a tap. */
+.preview-gallery-pending {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgb(18 18 18 / 0.28);
+  opacity: 0;
+  pointer-events: none;
+  animation: preview-gallery-pending-in 160ms ease-out 120ms forwards;
+}
+
+@keyframes preview-gallery-pending-in {
+  to {
+    opacity: 1;
+  }
+}
+
 .preview-gallery-backdrop[data-starting-style],
 .preview-gallery-backdrop[data-ending-style] {
   opacity: 0;
@@ -3648,13 +3668,27 @@ img {
   }
 
   .mosaic-row-card-title {
+    display: block;
+    bottom: 0.875rem;
+    max-width: calc(100% - 1.75rem);
+    transform: translate(-50%, 0);
+    opacity: 1;
+    font-size: var(--text-xs);
+  }
+
+  /* Touch has no hover reveal. Keep the label and cheap tint permanently
+     visible, but leave the four-layer backdrop-filter ramp off so a scrolling
+     phone never has to continuously re-rasterise every tile. */
+  .mosaic-row-card-scrim {
+    opacity: 1;
+  }
+
+  .mosaic-row-card-scrim > span {
     display: none;
   }
 
-  /* Hiding the container is enough -- it takes the ramp and the tint with it,
-     whatever the layers inside are doing. */
-  .mosaic-row-card-scrim {
-    opacity: 0;
+  .mosaic-row-card-scrim::after {
+    opacity: 1;
   }
 
   .mosaic-row-card-preview-protector .mosaic-row-media {
@@ -3700,5 +3734,10 @@ img {
   .elastic-scroll-edge,
   .elastic-scroll-edge-emojis {
     display: none;
+  }
+
+  .preview-gallery-pending {
+    opacity: 1;
+    animation: none;
   }
 }

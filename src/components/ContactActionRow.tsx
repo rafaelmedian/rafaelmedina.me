@@ -53,7 +53,14 @@ export function ContactActionRow({
     <>
       <div className="mosaic-profile-actions" role="group" aria-label="Profile contact actions">
         <div className="mosaic-hover-anchor" {...copyCard.hoverProps}>
-          <button type="button" className="mosaic-contact-pill mosaic-contact-pill-default" onClick={handleCopyEmail}>
+          {/* The tooltip is the one place near the action where the address is
+              readable before committing to a copy. */}
+          <button
+            type="button"
+            title={email}
+            className="mosaic-contact-pill mosaic-contact-pill-default"
+            onClick={handleCopyEmail}
+          >
             <span className="mosaic-contact-pill-default-label">{isCopySuccess ? "Copied!" : "Copy email"}</span>
           </button>
           {isCopySuccess || copyCard.isOpen ? (
@@ -152,7 +159,7 @@ export function ContactActionRow({
         ) : null}
       </div>
       <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {isCopySuccess ? "Email copied to clipboard" : ""}
+        {isCopySuccess ? `${email} copied to clipboard` : ""}
       </span>
     </>
   )

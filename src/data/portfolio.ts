@@ -335,22 +335,6 @@ export const portfolioCards: PortfolioCard[] = [
     team: [collaborators.simon, collaborators.jakub],
   },
   {
-    id: "preview-shot-15",
-    category: "Preview",
-    title: "Matcha - Mobile navigation",
-    summary: "",
-    detail:
-      "Rethinking Matcha's mobile navigation so the core actions stayed one thumb-reach away as the product grew.",
-    role: "Lead product designer for mobile navigation.",
-    outcome:
-      "Core actions stayed one thumb-reach away as the product added surfaces, so navigation did not have to be relearned each release.",
-    image: "/Projects/6842e94938956d9ae25a45e0_shot-small-15.jpg",
-    previewWidth: 1600,
-    previewHeight: 1200,
-    ...matchaMeta,
-    team: [collaborators.simon],
-  },
-  {
     id: "preview-shot-23",
     category: "Preview",
     title: "Matcha Pro",

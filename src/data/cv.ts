@@ -26,7 +26,7 @@ export type CvEducation = {
 
 export const cvExperience: CvExperience[] = [
   {
-    company: "Startup",
+    company: "Stealth fintech",
     location: "Remote",
     dates: "2026 - Present",
     role: "Co-founder",

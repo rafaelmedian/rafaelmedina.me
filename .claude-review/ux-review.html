@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UX Review — rafaelmedina.me</title>
+<style>
+  :root {
+    --canvas: #f6f5f2;
+    --card: #ffffff;
+    --ink: #1c1c1a;
+    --ink-soft: #6b6b66;
+    --line: #e6e4de;
+    --high: #c73a3a;
+    --high-bg: #fbeeee;
+    --medium: #b5750f;
+    --medium-bg: #faf3e4;
+    --low: #66707d;
+    --low-bg: #eef0f3;
+    --pass: #2e7d4f;
+    --pass-bg: #e9f4ee;
+    --reject: #a03535;
+    --reject-bg: #f9ecec;
+    --discuss: #3d5fa0;
+    --discuss-bg: #ebf0fa;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.25rem 9rem; }
+  header h1 { font-size: 1.55rem; margin: 0 0 0.2rem; letter-spacing: -0.01em; }
+  .meta { color: var(--ink-soft); font-size: 0.85rem; margin: 0 0 0.35rem; }
+  .scope { color: var(--ink-soft); font-size: 0.92rem; margin: 0; }
+  .howto {
+    margin: 1.4rem 0 1.8rem;
+    padding: 0.9rem 1.1rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+  .howto b { color: var(--ink); }
+  .filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.2rem; }
+  .filter {
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+  .filter:hover { color: var(--ink); }
+  .filter.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.3rem 1.05rem;
+    margin-bottom: 0.9rem;
+    transition: border-color 150ms ease, opacity 150ms ease;
+  }
+  .card[data-decision="pass"] { border-color: color-mix(in srgb, var(--pass) 45%, var(--line)); }
+  .card[data-decision="reject"] { border-color: color-mix(in srgb, var(--reject) 45%, var(--line)); opacity: 0.75; }
+  .card[data-decision="discuss"] { border-color: color-mix(in srgb, var(--discuss) 45%, var(--line)); }
+  .card-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+  .chip {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 0.14rem 0.55rem;
+  }
+  .chip-high { color: var(--high); background: var(--high-bg); }
+  .chip-medium { color: var(--medium); background: var(--medium-bg); }
+  .chip-low { color: var(--low); background: var(--low-bg); }
+  .chip-plain { color: var(--ink-soft); background: var(--canvas); font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .fid { color: var(--ink-soft); font-size: 0.78rem; font-variant-numeric: tabular-nums; margin-left: auto; }
+  .card h2 { font-size: 1.05rem; margin: 0 0 0.45rem; letter-spacing: -0.005em; }
+  .loc {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.76rem;
+    color: var(--ink-soft);
+    background: var(--canvas);
+    border-radius: 6px;
+    padding: 0.1rem 0.45rem;
+    display: inline-block;
+    margin-bottom: 0.6rem;
+    word-break: break-all;
+  }
+  .card p { margin: 0 0 0.55rem; }
+  .card p.suggestion { color: var(--ink); }
+  .card p .lbl { font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); display: block; margin-bottom: 0.1rem; }
+  .actions { display: flex; gap: 0.45rem; margin-top: 0.85rem; flex-wrap: wrap; }
+  .btn {
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 0.42rem 1rem;
+    font-size: 0.86rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 120ms ease;
+    min-height: 36px;
+  }
+  .btn:hover { color: var(--ink); border-color: #cfcdc6; }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--discuss); outline-offset: 2px; }
+  .btn-pass.is-on { background: var(--pass-bg); border-color: var(--pass); color: var(--pass); }
+  .btn-reject.is-on { background: var(--reject-bg); border-color: var(--reject); color: var(--reject); }
+  .btn-discuss.is-on { background: var(--discuss-bg); border-color: var(--discuss); color: var(--discuss); }
+  .note { margin-top: 0.7rem; }
+  .note textarea {
+    width: 100%;
+    min-height: 52px;
+    resize: vertical;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+    font: inherit;
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: var(--canvas);
+  }
+  .note textarea:focus-visible { outline: 2px solid var(--discuss); outline-offset: 1px; }
+  .empty { color: var(--ink-soft); text-align: center; padding: 2rem 0; display: none; }
+  footer {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line);
+    padding: 0.85rem 1.25rem calc(0.85rem + env(safe-area-inset-bottom));
+  }
+  .foot-inner { max-width: 780px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
+  .progress { flex: 1; min-width: 0; }
+  .progress-label { font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 0.3rem; display: flex; gap: 0.8rem; flex-wrap: wrap; }
+  .progress-label b { color: var(--ink); font-weight: 600; }
+  .bar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; display: flex; }
+  .bar span { height: 100%; transition: width 200ms ease; }
+  .bar .b-pass { background: var(--pass); }
+  .bar .b-reject { background: var(--reject); }
+  .bar .b-discuss { background: var(--discuss); }
+  .copy-btn {
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.62rem 1.3rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 120ms ease, background 120ms ease;
+  }
+  .copy-btn:hover { background: #000; }
+  .copy-btn:active { transform: scale(0.97); }
+  .copy-btn.is-copied { background: var(--pass); }
+  @media (max-width: 560px) {
+    .foot-inner { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+    .copy-btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>UX Review — rafaelmedina.me</h1>
+    <p class="meta">September 2, 2026 · report id <code>ux-review-rafaelmedina-me-2026-09-02</code></p>
+    <p class="scope">Whole site: home mosaic, preview gallery, About panel, contact actions, metadata & data layer</p>
+    <div class="howto">
+      For each suggestion pick <b>Pass</b> (do it), <b>Reject</b> (skip it), or
+      <b>Discuss</b> (talk it through) — add a note if you want. Your choices are
+      saved locally as you go. When you're done, hit <b>Copy decisions</b> below
+      and paste the result back to Claude.
+    </div>
+  </header>
+
+  <div class="filters" id="filters"></div>
+  <div id="cards"></div>
+  <p class="empty" id="empty">Nothing matches this filter.</p>
+</div>
+
+<footer>
+  <div class="foot-inner">
+    <div class="progress">
+      <div class="progress-label" id="progress-label"></div>
+      <div class="bar" id="bar"></div>
+    </div>
+    <button type="button" class="copy-btn" id="copy">Copy decisions</button>
+  </div>
+</footer>
+
+<script>
+const FINDINGS = [
+  {
+    "id": "UX-01",
+    "title": "A failed gallery chunk load blanks the whole site",
+    "severity": "high",
+    "category": "States",
+    "area": "Preview gallery",
+    "location": "src/components/SimpleFeed.tsx:871",
+    "problem": "PreviewGalleryDialog is lazy-loaded inside a Suspense with no error boundary anywhere in the tree (main.tsx renders App bare). If the chunk fails to load — classically, a visitor has the tab open across a redeploy and the old hashed chunk URL 404s — the lazy component throws during render, React unmounts the root, and the entire portfolio goes blank on the very click that shows your work. The clever URL-retry machinery in loadPreviewGallery only helps on a *later* interaction, which never comes because the app is gone.",
+    "suggestion": "Wrap the gallery Suspense in a small error boundary that catches the load failure, resets hasOpenedWorkPreview/activeWorkPreviewIndex (so the feed stays alive), and optionally retries via the existing failedGalleryModuleUrl path on the next click.",
+    "effort": "M"
+  },
+  {
+    "id": "UX-02",
+    "title": "Work history leads with 'Co-founder at Startup'",
+    "severity": "medium",
+    "category": "Content",
+    "area": "About panel / résumé",
+    "location": "src/data/cv.ts:29",
+    "problem": "The first — most-read — entry in work history is 'Co-founder at Startup, 2026 – Present'. 'Startup' reads as unfinished placeholder copy to a recruiter, even though the highlight below it is specific and good. The same string flows into the generated PDF via scripts/build-resume.mjs.",
+    "suggestion": "Name the venture, or if it's intentionally unnamed/stealth, phrase it so it reads deliberate: e.g. 'Co-founder, stealth fintech' or 'Independent — Co-founder'. Update cv.ts and regenerate the résumé PDF in the same change (the Playwright test compares them).",
+    "effort": "S"
+  },
+  {
+    "id": "UX-03",
+    "title": "Mobile tiles are anonymous — titles and scrim hidden",
+    "severity": "medium",
+    "category": "Mobile & touch",
+    "area": "Work mosaic",
+    "location": "src/index.css:3651",
+    "problem": "Below 700px (and on any coarse-pointer device) .mosaic-row-card-title is display:none and the scrim is hidden, so the grid is eleven unlabeled screenshots. Eight of them are Matcha shots that look alike at phone size; a visitor can't tell what a project is, or that two tiles differ, without tapping each one. Screen readers still get the label — sighted mobile users are the ones left guessing.",
+    "suggestion": "Give mobile tiles a lightweight visible label: a one-line caption under the tile, or keep the title overlay with a simpler static gradient instead of the four-layer blur stack that was presumably the perf reason for hiding it.",
+    "effort": "M"
+  },
+  {
+    "id": "UX-04",
+    "title": "Email address is never actually visible",
+    "severity": "medium",
+    "category": "Conversion",
+    "area": "Contact actions",
+    "location": "src/components/ContactActionRow.tsx:56",
+    "problem": "The primary contact action is 'Copy email', which copies hey@rafaelmedina.me without ever showing it — hovering shows a reaction image, not the address. The only place the address could be seen is the mailto link text 'Send me an email' deep in the About panel, which also hides it. Visitors who want to read or verify an address before pasting it into their mail client (or who are on a device where the clipboard write silently fails) have no way to see it.",
+    "suggestion": "Surface the address somewhere: show it briefly after copy ('hey@rafaelmedina.me copied'), put it in the pill's title/tooltip, or print it plainly in the About closing line.",
+    "effort": "S"
+  },
+  {
+    "id": "UX-05",
+    "title": "'Matcha - Mobile navigation' card is unreachable",
+    "severity": "medium",
+    "category": "Content",
+    "area": "Work mosaic",
+    "location": "src/data/portfolio.ts:338",
+    "problem": "preview-shot-15 (Matcha - Mobile navigation) is fully authored — detail, role, outcome, team, and three shipped image variants in public/Projects — but it appears in no homeRows entry, so it never renders in the grid or the gallery. A finished case study is dead weight in the bundle and invisible to visitors.",
+    "suggestion": "Either place it in a row (row-4 has three tiles; a fourth row or a swap would fit) or delete the card and its image variants so the data reflects what ships.",
+    "effort": "S"
+  },
+  {
+    "id": "UX-06",
+    "title": "No pending state while the gallery chunk loads",
+    "severity": "low",
+    "category": "States",
+    "area": "Preview gallery",
+    "location": "src/components/SimpleFeed.tsx:871",
+    "problem": "The gallery Suspense fallback is null. The hover/pointerdown prefetch hides this on fast connections, but on a slow one the first tap on a tile does nothing visible for however long the chunk takes — no dialog, no spinner, no pressed state — which invites rage-tapping.",
+    "suggestion": "Add a minimal pending affordance: a data-loading attribute on the clicked card (dim/pulse via CSS), or a backdrop that appears immediately from the Suspense fallback.",
+    "effort": "S"
+  },
+  {
+    "id": "UX-07",
+    "title": "Resume link: two names, two behaviors",
+    "severity": "low",
+    "category": "Consistency",
+    "area": "Navigation / About panel",
+    "location": "src/components/SimpleFeed.tsx:459",
+    "problem": "The top-corner link says 'Resume' and opens the PDF in a new tab; the About panel says 'Download CV in PDF' and forces a download via the download attribute. Same artifact, different noun (Resume vs CV) and different verb (view vs download), so clicking the second one behaves unexpectedly if you tried the first.",
+    "suggestion": "Pick one term (the file and site are US-flavored — 'Resume') and one behavior (open in new tab is friendlier; the browser's PDF viewer has its own download button), and use them in both places.",
+    "effort": "S"
+  },
+  {
+    "id": "UX-08",
+    "title": "Mobile gallery: horizontal swipe, vertical everything else",
+    "severity": "low",
+    "category": "Consistency",
+    "area": "Preview gallery",
+    "location": "src/components/PreviewGalleryDialog.tsx:510",
+    "problem": "On phones you change previews by swiping horizontally, but the switch animation slides vertically ('up'/'down' phases) and the toolbar chevrons are rotated 90° to point up/down (index.css:3646). The gesture says carousel-left-right; the feedback says stack-up-down.",
+    "suggestion": "Align the axis on mobile: either animate the card switch horizontally when the trigger was a swipe, or leave the chevrons as left/right and make the animation horizontal under the coarse-pointer media query.",
+    "effort": "M"
+  },
+  {
+    "id": "UX-09",
+    "title": "Eight sticker tab stops between About copy and Work history",
+    "severity": "low",
+    "category": "Accessibility",
+    "area": "About panel",
+    "location": "src/components/AboutPanel.tsx:350",
+    "problem": "The movable emoji stickers are eight focusable buttons (four per section), each announcing 'X sticker. Use arrow keys to move; Home to reset.' A keyboard user tabbing from the About copy to Work history wades through four decorative toys, then four more before the CV download. The feature is genuinely accessible — it's just expensive in tab stops for people who don't care about it.",
+    "suggestion": "Make each sticker group one tab stop with a roving tabindex (arrow keys already move stickers, so Tab-into-group + arrows to pick fits the existing model), or move the sticker buttons after the section's last interactive element.",
+    "effort": "M"
+  },
+  {
+    "id": "UX-10",
+    "title": "Hand-typed X follower counts will drift stale",
+    "severity": "low",
+    "category": "Content",
+    "area": "Contact hover cards",
+    "location": "src/data/portfolio.ts:149",
+    "problem": "The X hover card shows 'Following 2,566 / Followers 713' typed by hand. The type's own doc comment says 'leave them off rather than showing a stale number', and these numbers are already frozen at whenever they were last transcribed. A visibly wrong count on a card that mimics X's real UI reads worse than no count.",
+    "suggestion": "Drop the following/followers fields (the card already handles their absence), or accept the maintenance and add a reminder note where the profile is updated.",
+    "effort": "S"
+  }
+]
+;
+const REPORT_ID = "ux-review-rafaelmedina-me-2026-09-02";
+const REPORT_TITLE = "UX Review — rafaelmedina.me";
+const STORE_KEY = "ux-review:" + REPORT_ID;
+
+const state = (() => {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
+  catch { return {}; }
+})();
+const save = () => localStorage.setItem(STORE_KEY, JSON.stringify(state));
+
+const DECISIONS = ["pass", "reject", "discuss"];
+const DECISION_LABEL = { pass: "Pass", reject: "Reject", discuss: "Discuss" };
+const NOTE_PLACEHOLDER = {
+  pass: "Optional note — constraints or preferences for the implementation…",
+  reject: "Optional note — why this one's a no…",
+  discuss: "What do you want to talk through? (optional)",
+};
+const sevRank = { high: 0, medium: 1, low: 2 };
+const sorted = [...FINDINGS].sort((a, b) => (sevRank[a.severity] ?? 3) - (sevRank[b.severity] ?? 3));
+
+let activeFilter = "all";
+const cardsEl = document.getElementById("cards");
+const filtersEl = document.getElementById("filters");
+const emptyEl = document.getElementById("empty");
+
+function decisionOf(id) { return state[id]?.decision ?? null; }
+
+function buildCard(f) {
+  const card = document.createElement("article");
+  card.className = "card";
+  card.dataset.id = f.id;
+
+  const top = document.createElement("div");
+  top.className = "card-top";
+  const sev = document.createElement("span");
+  sev.className = "chip chip-" + f.severity;
+  sev.textContent = f.severity;
+  top.appendChild(sev);
+  for (const extra of [f.category, f.area, f.effort ? "effort " + f.effort : null]) {
+    if (!extra) continue;
+    const c = document.createElement("span");
+    c.className = "chip chip-plain";
+    c.textContent = extra;
+    top.appendChild(c);
+  }
+  const fid = document.createElement("span");
+  fid.className = "fid";
+  fid.textContent = f.id;
+  top.appendChild(fid);
+  card.appendChild(top);
+
+  const h = document.createElement("h2");
+  h.textContent = f.title;
+  card.appendChild(h);
+
+  if (f.location) {
+    const loc = document.createElement("code");
+    loc.className = "loc";
+    loc.textContent = f.location;
+    card.appendChild(loc);
+  }
+
+  const prob = document.createElement("p");
+  prob.innerHTML = '<span class="lbl">Problem</span>';
+  prob.appendChild(document.createTextNode(f.problem));
+  card.appendChild(prob);
+
+  const sug = document.createElement("p");
+  sug.className = "suggestion";
+  sug.innerHTML = '<span class="lbl">Suggestion</span>';
+  sug.appendChild(document.createTextNode(f.suggestion));
+  card.appendChild(sug);
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  for (const d of DECISIONS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn btn-" + d;
+    b.textContent = (d === "pass" ? "✓ " : d === "reject" ? "✕ " : "💬 ") + DECISION_LABEL[d];
+    b.addEventListener("click", () => {
+      const current = decisionOf(f.id);
+      state[f.id] = { ...(state[f.id] || {}), decision: current === d ? null : d };
+      save();
+      syncCard(card, f);
+      syncFooter();
+      syncFilters();
+      applyFilter();
+    });
+    actions.appendChild(b);
+  }
+  card.appendChild(actions);
+
+  const noteWrap = document.createElement("div");
+  noteWrap.className = "note";
+  noteWrap.hidden = true;
+  const ta = document.createElement("textarea");
+  ta.value = state[f.id]?.note ?? "";
+  ta.addEventListener("input", () => {
+    state[f.id] = { ...(state[f.id] || {}), note: ta.value };
+    save();
+  });
+  noteWrap.appendChild(ta);
+  card.appendChild(noteWrap);
+
+  syncCard(card, f);
+  return card;
+}
+
+function syncCard(card, f) {
+  const d = decisionOf(f.id);
+  if (d) card.dataset.decision = d; else delete card.dataset.decision;
+  for (const btn of card.querySelectorAll(".btn")) {
+    const kind = DECISIONS.find((k) => btn.classList.contains("btn-" + k));
+    btn.classList.toggle("is-on", kind === d);
+    btn.setAttribute("aria-pressed", kind === d ? "true" : "false");
+  }
+  const noteWrap = card.querySelector(".note");
+  noteWrap.hidden = !d;
+  if (d) noteWrap.querySelector("textarea").placeholder = NOTE_PLACEHOLDER[d];
+}
+
+function counts() {
+  const c = { all: sorted.length, pending: 0, pass: 0, reject: 0, discuss: 0 };
+  for (const f of sorted) {
+    const d = decisionOf(f.id);
+    if (d) c[d] += 1; else c.pending += 1;
+  }
+  return c;
+}
+
+const FILTERS = ["all", "pending", "pass", "reject", "discuss"];
+function syncFilters() {
+  const c = counts();
+  filtersEl.textContent = "";
+  for (const key of FILTERS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "filter" + (activeFilter === key ? " is-active" : "");
+    const label = key === "all" ? "All" : key === "pending" ? "Pending" : DECISION_LABEL[key];
+    b.textContent = label + " " + c[key];
+    b.addEventListener("click", () => { activeFilter = key; syncFilters(); applyFilter(); });
+    filtersEl.appendChild(b);
+  }
+}
+
+function applyFilter() {
+  let visible = 0;
+  for (const card of cardsEl.children) {
+    const d = decisionOf(card.dataset.id);
+    const show =
+      activeFilter === "all" ||
+      (activeFilter === "pending" ? !d : d === activeFilter);
+    card.style.display = show ? "" : "none";
+    if (show) visible += 1;
+  }
+  emptyEl.style.display = visible === 0 ? "block" : "none";
+}
+
+function syncFooter() {
+  const c = counts();
+  const done = c.all - c.pending;
+  document.getElementById("progress-label").innerHTML =
+    "<b>" + done + "/" + c.all + " triaged</b>" +
+    "<span>✓ " + c.pass + "</span><span>✕ " + c.reject + "</span><span>💬 " + c.discuss + "</span>";
+  const bar = document.getElementById("bar");
+  bar.textContent = "";
+  for (const [key, cls] of [["pass", "b-pass"], ["reject", "b-reject"], ["discuss", "b-discuss"]]) {
+    const seg = document.createElement("span");
+    seg.className = cls;
+    seg.style.width = (c[key] / c.all) * 100 + "%";
+    bar.appendChild(seg);
+  }
+}
+
+function exportMarkdown() {
+  const c = counts();
+  const groups = { pass: [], reject: [], discuss: [], pending: [] };
+  for (const f of sorted) {
+    const d = decisionOf(f.id);
+    groups[d || "pending"].push(f);
+  }
+  const lines = ["## UX Review Decisions — " + REPORT_TITLE, "Triaged " + (c.all - c.pending) + "/" + c.all, ""];
+  const section = (title, items) => {
+    if (!items.length) return;
+    lines.push("### " + title);
+    for (const f of items) {
+      lines.push("- " + f.id + " " + f.title);
+      const note = (state[f.id]?.note ?? "").trim();
+      if (note) lines.push("  note: " + note.replace(/\n/g, " "));
+    }
+    lines.push("");
+  };
+  section("Pass", groups.pass);
+  section("Reject", groups.reject);
+  section("Discuss", groups.discuss);
+  section("Not triaged", groups.pending);
+  return lines.join("\n").trim() + "\n";
+}
+
+document.getElementById("copy").addEventListener("click", async (event) => {
+  const btn = event.currentTarget;
+  const text = exportMarkdown();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  btn.classList.add("is-copied");
+  btn.textContent = "Copied — paste it to Claude";
+  setTimeout(() => {
+    btn.classList.remove("is-copied");
+    btn.textContent = "Copy decisions";
+  }, 2200);
+});
+
+for (const f of sorted) cardsEl.appendChild(buildCard(f));
+syncFilters();
+syncFooter();
+applyFilter();
+</script>
+</body>
+</html>
