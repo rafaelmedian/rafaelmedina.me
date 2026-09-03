@@ -15,6 +15,8 @@
     U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* ----------------------------------------------------------------- tokens --- */
+
 :root {
   --font-fallback:
     "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
@@ -97,6 +99,8 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ----------------------------------------------------------- base & focus --- */
+
 *,
 *::before,
 *::after {
@@ -153,6 +157,8 @@ body {
   scroll-margin-top: 5rem;
 }
 
+/* ------------------------------------------------ work-tile caption title --- */
+
 .mosaic-row-card-title {
   position: absolute;
   left: 50%;
@@ -189,6 +195,8 @@ img {
 #root {
   min-height: 100dvh;
 }
+
+/* ----------------------------------------------------- bottom scroll edge --- */
 
 .elastic-scroll-edge {
   --elastic-edge-opacity: 0;
@@ -317,6 +325,8 @@ img {
   }
 }
 
+/* ----------------------------------------------------------- shell & hero --- */
+
 .mosaic-shell {
   position: relative;
   margin: 0 auto;
@@ -342,6 +352,8 @@ img {
   justify-items: center;
   text-align: center;
 }
+
+/* --------------------------------------- corner controls & takeover close --- */
 
 .mosaic-social-corner,
 .mosaic-section-corner {
@@ -420,6 +432,8 @@ img {
     stroke-width: 1.75;
   }
 }
+
+/* ------------------------------------------------------- local time & map --- */
 
 .mosaic-local-time-anchor {
   min-height: 2.5rem;
@@ -615,6 +629,8 @@ img {
   }
 }
 
+/* ----------------------------------------------------------- social links --- */
+
 .mosaic-social-link {
   position: relative;
   display: inline-flex;
@@ -724,6 +740,8 @@ img {
     transform: translateY(0);
   }
 }
+
+/* -------------------------------------------------- hero profile & avatar --- */
 
 .mosaic-profile-info {
   display: flex;
@@ -888,6 +906,8 @@ img {
    the mosaic answers the hero instead of arriving with it. The steps are
    tightened to pay for the later start -- the last card still begins under
    800ms. */
+/* ------------------------------------------------------- first-load intro --- */
+
 .mosaic-work-intro {
   --work-intro-base: 520ms;
   --work-intro-row-step: 70ms;
@@ -927,6 +947,8 @@ img {
    threshold, but the headroom is thin -- re-measure before putting anything
    else on the critical path, and do not try to win it back by shortening the
    fade. That has been tried three ways and does nothing. */
+
+/* ------------------------------------------------------------ about sheet --- */
 
 .mosaic-about {
   position: relative;
@@ -1309,6 +1331,8 @@ img {
   }
 }
 
+/* --------------------------------- profile meta, availability & live time --- */
+
 .mosaic-profile-meta h2 {
   margin: 0;
   font-family: var(--font-ui);
@@ -1446,6 +1470,8 @@ img {
   opacity: 1;
 }
 
+/* ----------------------------------------------------------- inline links --- */
+
 .mosaic-profile-summary {
   margin: 1.45rem 0 0;
   width: min(525px, 100%);
@@ -1487,6 +1513,8 @@ img {
   text-underline-offset: 0.11em;
   transition: color var(--duration-base) ease, text-decoration-color var(--duration-base) ease;
 }
+
+/* ------------------------------------------------- work history & popover --- */
 
 .mosaic-work-history {
   --mosaic-popover-enter-duration: 240ms;
@@ -1753,6 +1781,8 @@ img {
   }
 }
 
+/* ------------------------------------- company inline links & hover logos --- */
+
 .mosaic-company-inline-list {
   display: inline;
 }
@@ -1862,6 +1892,8 @@ img {
 }
 
 
+/* ---------------------------------------- contact actions & copy reaction --- */
+
 .mosaic-profile-actions {
   margin-top: 1.55rem;
   display: flex;
@@ -1916,6 +1948,8 @@ img {
     transform: translate(var(--mosaic-copy-reaction-x), 0) scale(1) rotate(0);
   }
 }
+
+/* ---------------------------------------------------------- contact pills --- */
 
 .mosaic-contact-pill {
   box-sizing: border-box;
@@ -2110,6 +2144,8 @@ img {
 .mosaic-contact-pill-dark:active {
   box-shadow: 0 1px 6px rgb(0 0 0 / 0.16);
 }
+
+/* --------------------------------------------- hover cards (LinkedIn / X) --- */
 
 .mosaic-hover-anchor {
   position: relative;
@@ -2361,6 +2397,8 @@ img {
 }
 
 
+/* ------------------------------------------------------- work grid & rows --- */
+
 .mosaic-work {
   border-radius: 0;
   overflow: visible;
@@ -2386,6 +2424,8 @@ img {
 
 /* The wrappers disappear on compact screens, where the stacked project rows
    are taller than the viewport and cannot become a useful pinned background. */
+/* -------------------------------------------- about takeover choreography --- */
+
 .mosaic-takeover-runway,
 .mosaic-takeover-stage {
   display: contents;
@@ -2738,6 +2778,8 @@ img {
   }
 }
 
+/* -------------------------------------------------- work tiles & captions --- */
+
 .mosaic-row-item {
   flex: var(--row-span, 1) 1 0;
   min-width: 0;
@@ -3057,6 +3099,8 @@ img {
   }
 }
 
+
+/* ------------------------------------------------- preview gallery dialog --- */
 
 .preview-gallery-backdrop {
   position: fixed;
@@ -3607,6 +3651,8 @@ img {
   width: 1.25rem;
   height: 1.25rem;
 }
+
+/* ------------------------------------------- responsive layout overrides --- */
 
 @media (min-width: 900px) {
   .mosaic-shell {
