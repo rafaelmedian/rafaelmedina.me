@@ -368,22 +368,28 @@ const ELEVATION = [
 
 const EASINGS = [
   {
-    name: "Standard",
+    name: "Standard — --ease-standard",
     css: "cubic-bezier(0.2, 0, 0, 1)",
     duration: "160–300ms",
     use: "The house curve. Chips, icons, expand buttons, sticker tracking, and card-title reveals — anything changing state in place.",
   },
   {
+    name: "Smooth — --ease-smooth",
+    css: "cubic-bezier(0.16, 1, 0.3, 1)",
+    duration: "160–700ms",
+    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the emoji toss. Used to be three near-identical expo-outs; they are one token now.",
+  },
+  {
+    name: "Exit — --ease-exit",
+    css: "cubic-bezier(0.4, 0, 1, 1)",
+    duration: "120–160ms",
+    use: "Hover cards, the takeover close, and the preview gallery leaving. Always shorter than the entrance it reverses.",
+  },
+  {
     name: "Responsive resize",
     css: "cubic-bezier(0.2, 0.8, 0.2, 1)",
     duration: "180ms",
-    use: "The hero's min-height and padding as the viewport crosses layout states.",
-  },
-  {
-    name: "Entrance",
-    css: "cubic-bezier(0.16, 1, 0.3, 1)",
-    duration: "200–240ms",
-    use: "Overlays arriving: hover cards, popovers, the local-time card, and the takeover close. Fast out of the gate, long settle.",
+    use: "The hero's min-height and padding as the viewport crosses layout states. Inline, not a token — two uses.",
   },
   {
     name: "Gallery open",
@@ -392,28 +398,10 @@ const EASINGS = [
     use: "The preview gallery's origin-aware, whole-surface expansion and its fallback lift.",
   },
   {
-    name: "Exit",
-    css: "cubic-bezier(0.4, 0, 1, 1)",
-    duration: "120–160ms",
-    use: "Hover cards, the takeover close, and the preview gallery leaving. Always shorter than the entrance it reverses.",
-  },
-  {
     name: "Popover exit",
     css: "cubic-bezier(0.55, 0, 1, 0.45)",
     duration: "160ms",
-    use: "The work-history popover only — a slightly firmer close than the other overlays.",
-  },
-  {
-    name: "First load",
-    css: "cubic-bezier(0.19, 1, 0.22, 1)",
-    duration: "160–700ms",
-    use: "--ease-smooth. The hero and mosaic intro cascades; the bottom scroll edge and emoji toss use a slower 700ms physical settle; the avatar press reuses it at 160ms.",
-  },
-  {
-    name: "Coin flip",
-    css: "cubic-bezier(0.22, 1, 0.36, 1)",
-    duration: "700ms",
-    use: "The avatar's 180-degree flip and its long settle.",
+    use: "The work-history popover only — a slightly firmer close than the other overlays. Scoped as --mosaic-popover-exit-ease.",
   },
   {
     name: "Overshoot",
@@ -430,11 +418,12 @@ const EASINGS = [
 ]
 
 const DURATIONS = [
-  { value: "100–120ms", use: "Fallback fades, popover-content swaps, and the shortest exit feedback." },
-  { value: "140–160ms", use: "Colour, opacity, and shadow on hover or focus. The default for a state change." },
-  { value: "180–240ms", use: "Anything that also moves: overlays and title reveals." },
+  { value: "--duration-fast · 120ms", use: "Taps, small fades, popover-content swaps, and the shortest exit feedback." },
+  { value: "--duration-quick · 160ms", use: "Colour, opacity, and shadow on hover or focus. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
+  { value: "--duration-base · 200ms", use: "Larger surface moves: the gallery open and close." },
+  { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration." },
   { value: "300ms", use: "The gallery expand/minimise icon swap." },
-  { value: "360ms", use: "Media un-blurring as it decodes." },
+  { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes." },
   { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
   { value: "700ms", use: "The bottom scroll edge, its emoji toss, and the avatar coin flip." },
 ]

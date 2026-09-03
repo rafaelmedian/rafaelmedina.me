@@ -27,7 +27,23 @@
   --body-color: #111;
   --body-bg: #fdfdfc;
   --mosaic-card-surface: #ececee;
-  --ease-smooth: cubic-bezier(0.19, 1, 0.22, 1);
+  /* Motion. Three curves cover the site: --ease-standard is the house curve
+     for state changes, --ease-smooth the long expo-out for entrances and
+     settles, --ease-exit the accelerating leave. The file used to carry three
+     visually indistinguishable expo-outs (0.19/1/0.22/1, 0.16/1/0.3/1,
+     0.22/1/0.36/1); they are now all --ease-smooth. */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* Durations. Four steps; pick the nearest one instead of minting a new
+     number. The 140/150/160/180ms spread this file used to carry was one
+     perceptual step, so it all collapsed onto --duration-quick. Longer
+     one-off choreography (240ms popover settle, 520ms work intro) stays
+     component-scoped. */
+  --duration-fast: 120ms; /* taps, small fades */
+  --duration-quick: 160ms; /* most hover and state transitions */
+  --duration-base: 200ms; /* larger surface moves */
+  --duration-slow: 360ms; /* scrims, captions, big reveals */
   --canvas: #ffffff;
   --ink: #141414;
   /* Muted text ramp. Both steps clear WCAG AA (4.5:1) against --body-bg:
@@ -105,7 +121,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.01em;
   text-decoration: none;
-  transition: transform 150ms ease;
+  transition: transform var(--duration-quick) ease;
 }
 
 .skip-link:focus-visible {
@@ -143,8 +159,8 @@ body {
   text-align: center;
   text-shadow: 0 1px 8px rgb(0 0 0 / 0.28);
   transition:
-    opacity 160ms ease-out,
-    transform 180ms cubic-bezier(0.2, 0, 0, 1);
+    opacity var(--duration-quick) ease-out,
+    transform var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-row-card:hover .mosaic-row-card-title,
@@ -305,8 +321,8 @@ img {
   place-items: center;
   padding-block: clamp(1.6rem, 5vw, 3.2rem);
   transition:
-    min-height 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    padding-block 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    min-height var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1),
+    padding-block var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .mosaic-hero-profile {
@@ -365,8 +381,8 @@ img {
     pointer-events: none;
     transform: translateY(-0.75rem) scale(0.96);
     transition-property: opacity, transform, visibility, box-shadow;
-    transition-duration: 150ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--ease-exit);
   }
 
   .mosaic-takeover-close[data-visible="true"] {
@@ -375,7 +391,7 @@ img {
     pointer-events: auto;
     transform: translateY(0) scale(1);
     transition-duration: 220ms;
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-timing-function: var(--ease-smooth);
   }
 
   .mosaic-takeover-close:hover,
@@ -417,8 +433,8 @@ img {
   white-space: nowrap;
   cursor: default;
   transition:
-    background-color 160ms ease,
-    color 160ms ease;
+    background-color var(--duration-quick) ease,
+    color var(--duration-quick) ease;
 }
 
 .mosaic-local-time-anchor:hover .mosaic-social-time,
@@ -455,9 +471,9 @@ img {
   visibility: hidden;
   pointer-events: none;
   transition:
-    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 150ms ease,
-    visibility 150ms ease;
+    transform var(--duration-base) var(--ease-smooth),
+    opacity var(--duration-quick) ease,
+    visibility var(--duration-quick) ease;
 }
 
 .mosaic-local-time-card::before {
@@ -611,9 +627,9 @@ img {
   letter-spacing: 0;
   text-decoration: none;
   transition:
-    color 160ms ease,
-    opacity 160ms ease,
-    transform 160ms ease;
+    color var(--duration-quick) ease,
+    opacity var(--duration-quick) ease,
+    transform var(--duration-quick) ease;
 }
 
 .mosaic-social-link::before {
@@ -637,9 +653,9 @@ img {
   transform: scale(0.25);
   transform-origin: center;
   transition:
-    opacity 180ms cubic-bezier(0.2, 0, 0, 1),
-    filter 180ms cubic-bezier(0.2, 0, 0, 1),
-    transform 180ms cubic-bezier(0.2, 0, 0, 1);
+    opacity var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-social-link:hover .mosaic-social-link-external-icon,
@@ -660,7 +676,7 @@ img {
 
 /* The hero has to lead the work cards. The top mosaic row now starts transparent
    despite the +1240ms LCP cost described under `.mosaic-work-intro`, so the two
-   cascades need to remain distinct: every hero item is in flight by 200ms, the
+   cascades need to remain distinct: every hero item is in flight by var(--duration-base), the
    first four have landed by 500ms, and the cards start lifting at 520ms before
    the final hero item settles at ~580ms.
    Keep the last delay plus the duration under `--work-intro-base` + 60ms. */
@@ -682,15 +698,15 @@ img {
 }
 
 .mosaic-hero-profile-animated > :nth-child(4) {
-  animation-delay: 120ms;
+  animation-delay: var(--duration-fast);
 }
 
 .mosaic-hero-profile-animated > :nth-child(5) {
-  animation-delay: 160ms;
+  animation-delay: var(--duration-quick);
 }
 
 .mosaic-hero-profile-animated > :nth-child(6) {
-  animation-delay: 200ms;
+  animation-delay: var(--duration-base);
 }
 
 @keyframes mosaic-intro-rise {
@@ -739,7 +755,7 @@ img {
   inset: 0;
   border-radius: inherit;
   transform-style: preserve-3d;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.7s var(--ease-smooth);
   will-change: transform;
 }
 
@@ -769,7 +785,7 @@ img {
   padding: 0;
   background: none;
   display: block;
-  transition: transform 160ms var(--ease-smooth);
+  transition: transform var(--duration-quick) var(--ease-smooth);
 }
 
 .mosaic-avatar-button:active {
@@ -796,7 +812,7 @@ img {
   width: max-content;
   white-space: nowrap;
   transition:
-    opacity 200ms var(--ease-smooth),
+    opacity var(--duration-base) var(--ease-smooth),
     transform 260ms var(--ease-smooth);
 }
 
@@ -851,7 +867,7 @@ img {
   .mosaic-avatar-button:hover .mosaic-avatar-hint,
   .mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
     transform: translateY(-50%) rotate(-3deg);
-    transition: opacity 120ms linear;
+    transition: opacity var(--duration-fast) linear;
   }
 }
 
@@ -865,7 +881,7 @@ img {
    Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
    700px the rows collapse into one flex column, and a smaller row step would
    make a card arrive before the card above it.
-   The base is tuned against the hero cascade above, which now runs 0ms to 200ms
+   The base is tuned against the hero cascade above, which now runs 0ms to var(--duration-base)
    delays at 380ms each. Under the previous 40ms-to-350ms hero schedule, the old
    320ms card base let work begin before the last two hero items, so both
    cascades read as one undifferentiated wash. The 520ms base now puts the first
@@ -902,7 +918,7 @@ img {
    context: 845ms with the top row transform-only, 2085ms once it fades.
    The +1240ms is FIXED, not tunable. The same element wins LCP either way, and
    the penalty does not scale with the animation: base 520ms + 540ms duration,
-   base 520ms + 360ms, and base 60ms + 360ms (fade fully finished by 420ms) all
+   base 520ms + var(--duration-slow), and base 60ms + var(--duration-slow) (fade fully finished by 420ms) all
    measured ~2085ms. Chrome defers an opacity-animated element's recorded paint
    to a later repaint however brief the fade is. There is no timing that buys
    the metric back -- the choice is binary, which is why the choreography above
@@ -996,8 +1012,8 @@ img {
   transform: translate3d(var(--sticker-x, 0px), var(--sticker-y, 0px), 0)
     rotate(var(--sticker-rotate, 0deg));
   transition:
-    transform 160ms cubic-bezier(0.2, 0, 0, 1),
-    filter 160ms cubic-bezier(0.2, 0, 0, 1);
+    transform var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -1170,7 +1186,7 @@ img {
   text-decoration-color: #c8c8c8;
   text-decoration-thickness: 0.0625rem;
   text-underline-offset: 0.16em;
-  transition: text-decoration-color 160ms ease;
+  transition: text-decoration-color var(--duration-quick) ease;
 }
 
 .mosaic-about-link:hover,
@@ -1367,7 +1383,7 @@ img {
   box-shadow: 0 0 0 2px rgb(52 162 106 / 0.16);
   opacity: 0;
   transform: translateY(1px);
-  transition: opacity 160ms ease;
+  transition: opacity var(--duration-quick) ease;
 }
 
 .mosaic-profile-availability:hover .mosaic-availability-dot {
@@ -1410,8 +1426,8 @@ img {
   display: inline-block;
   will-change: transform, opacity;
   transition:
-    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 240ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform 240ms var(--ease-smooth),
+    opacity 240ms var(--ease-smooth);
 }
 
 .mosaic-live-time-value-current {
@@ -1470,13 +1486,13 @@ img {
   text-decoration-thickness: 0.0625rem;
   text-decoration-skip-ink: none;
   text-underline-offset: 0.11em;
-  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  transition: color var(--duration-base) ease, text-decoration-color var(--duration-base) ease;
 }
 
 .mosaic-work-history {
   --mosaic-popover-enter-duration: 240ms;
-  --mosaic-popover-exit-duration: 160ms;
-  --mosaic-popover-enter-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --mosaic-popover-exit-duration: var(--duration-quick);
+  --mosaic-popover-enter-ease: var(--ease-smooth);
   --mosaic-popover-exit-ease: cubic-bezier(0.55, 0, 1, 0.45);
   position: relative;
   z-index: 40;
@@ -1529,9 +1545,9 @@ img {
   white-space: nowrap;
   cursor: pointer;
   transition:
-    background-color 200ms cubic-bezier(0.2, 0, 0, 1),
-    border-color 200ms cubic-bezier(0.2, 0, 0, 1),
-    color 160ms cubic-bezier(0.2, 0, 0, 1);
+    background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-work-history-chip:hover,
@@ -1595,7 +1611,7 @@ img {
   pointer-events: auto;
   transition:
     transform var(--mosaic-popover-enter-duration) var(--mosaic-popover-enter-ease),
-    opacity 160ms ease-out,
+    opacity var(--duration-quick) ease-out,
     visibility 0ms linear;
 }
 
@@ -1618,7 +1634,7 @@ img {
 }
 
 .mosaic-work-history-popover-content {
-  animation: mosaic-work-history-popover-swap 120ms ease both;
+  animation: mosaic-work-history-popover-swap var(--duration-fast) ease both;
 }
 
 .mosaic-work-history-popover-heading {
@@ -1679,8 +1695,8 @@ img {
   line-height: 1.5;
   text-decoration: none;
   transition:
-    background-color 160ms ease,
-    color 160ms ease;
+    background-color var(--duration-quick) ease,
+    color var(--duration-quick) ease;
 }
 
 .mosaic-work-history-popover-link:hover {
@@ -1779,7 +1795,7 @@ img {
   text-decoration-thickness: 0.0625rem;
   text-decoration-skip-ink: none;
   text-underline-offset: 0.11em;
-  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  transition: color var(--duration-base) ease, text-decoration-color var(--duration-base) ease;
 }
 
 
@@ -1837,7 +1853,7 @@ img {
   visibility: hidden;
   pointer-events: none;
   will-change: transform, opacity;
-  transition: opacity 140ms ease, transform 160ms cubic-bezier(0.16, 1, 0.3, 1), visibility 140ms ease;
+  transition: opacity var(--duration-quick) ease, transform var(--duration-quick) var(--ease-smooth), visibility var(--duration-quick) ease;
   z-index: 3;
   backdrop-filter: blur(10px);
 }
@@ -1868,7 +1884,7 @@ img {
     rotateX(var(--mosaic-hover-chip-tilt-x))
     rotateY(var(--mosaic-hover-chip-tilt-y))
     scale(var(--mosaic-hover-chip-lift));
-  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--duration-quick) var(--ease-smooth), box-shadow var(--duration-quick) var(--ease-smooth);
 }
 
 .mosaic-company-inline-hover-logo {
@@ -1961,7 +1977,7 @@ img {
   isolation: isolate;
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
-  transition: box-shadow 140ms ease, filter 140ms ease, border-color 140ms ease;
+  transition: box-shadow var(--duration-quick) ease, filter var(--duration-quick) ease, border-color var(--duration-quick) ease;
 }
 
 .mosaic-contact-pill:focus-visible {
@@ -2102,7 +2118,7 @@ img {
   display: block;
   flex: none;
   object-fit: contain;
-  transition: opacity 160ms ease;
+  transition: opacity var(--duration-quick) ease;
 }
 
 .mosaic-contact-pill:active .mosaic-contact-pill-icon {
@@ -2198,8 +2214,8 @@ img {
      fading while it is still moving (or vice versa) — either mismatch reads as
      a clipped animation. */
   transition:
-    opacity 150ms cubic-bezier(0.4, 0, 1, 1),
-    transform 150ms cubic-bezier(0.4, 0, 1, 1);
+    opacity var(--duration-quick) var(--ease-exit),
+    transform var(--duration-quick) var(--ease-exit);
 }
 
 /* Bridges the gap between pill and card so the pointer can travel without
@@ -2220,8 +2236,8 @@ img {
   transform: translateY(0) scale(1);
   pointer-events: auto;
   transition:
-    opacity 140ms ease-out,
-    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity var(--duration-quick) ease-out,
+    transform 220ms var(--ease-smooth);
 }
 
 .mosaic-linkedin-card-media {
@@ -2277,8 +2293,8 @@ img {
   transform: translateY(-4px) scale(0.97);
   pointer-events: none;
   transition:
-    opacity 150ms cubic-bezier(0.4, 0, 1, 1),
-    transform 150ms cubic-bezier(0.4, 0, 1, 1);
+    opacity var(--duration-quick) var(--ease-exit),
+    transform var(--duration-quick) var(--ease-exit);
 }
 
 /* Bridges the gap between pill and card so the pointer can travel without
@@ -2297,8 +2313,8 @@ img {
   transform: translateY(0) scale(1);
   pointer-events: auto;
   transition:
-    opacity 140ms ease-out,
-    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity var(--duration-quick) ease-out,
+    transform 220ms var(--ease-smooth);
 }
 
 .mosaic-x-card-top {
@@ -2328,7 +2344,7 @@ img {
   border-radius: var(--radius-full);
   object-fit: cover;
   background: #f1f1f3;
-  transition: opacity 140ms ease;
+  transition: opacity var(--duration-quick) ease;
 }
 
 .mosaic-x-card-avatar-link:hover .mosaic-x-card-avatar {
@@ -2348,7 +2364,7 @@ img {
   letter-spacing: -0.00563rem;
   line-height: 1;
   text-decoration: none;
-  transition: background-color 140ms ease;
+  transition: background-color var(--duration-quick) ease;
 }
 
 .mosaic-x-card-follow:hover {
@@ -2859,9 +2875,9 @@ img {
   cursor: pointer;
   text-align: left;
   transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease;
+    background-color var(--duration-quick) ease,
+    border-color var(--duration-quick) ease,
+    box-shadow var(--duration-quick) ease;
 }
 
 /* The caption backdrop. Four separately masked layers step the blur radius from
@@ -2896,11 +2912,11 @@ img {
   inset: 0;
   display: block;
   opacity: 0;
-  /* 360ms is the scale's "media un-blurring as it decodes" step. This is the
+  /* var(--duration-slow) is the scale's "media un-blurring as it decodes" step. This is the
      same event -- a blur resolving -- so it borrows that value rather than
      adding one. It also means a raster that lands late lands mid-fade, which
      reads as softening rather than as a pop. */
-  transition: opacity 360ms ease-out;
+  transition: opacity var(--duration-slow) ease-out;
 }
 
 .mosaic-row-card-scrim > span:nth-child(1) {
@@ -2945,7 +2961,7 @@ img {
   opacity: 0;
   /* The scale's default for opacity on hover, and the same curve the caption
      itself uses -- tint and label arrive together, ahead of the blur. */
-  transition: opacity 160ms ease-out;
+  transition: opacity var(--duration-quick) ease-out;
 }
 
 /* Where the backdrop cannot be sampled, fall back to the staggered ramps this
@@ -2984,7 +3000,7 @@ img {
   object-fit: cover;
   opacity: 0;
   filter: blur(14px);
-  transition: opacity 360ms ease-out, filter 360ms ease-out;
+  transition: opacity var(--duration-slow) ease-out, filter var(--duration-slow) ease-out;
   will-change: opacity, filter;
 }
 
@@ -3166,7 +3182,7 @@ img {
   -webkit-backdrop-filter: blur(10px) saturate(0.92);
   /* Opacity only. Ramping `backdrop-filter` re-blurs the whole viewport every
      frame, which is not worth it — a longer fade already takes off the snap. */
-  transition: opacity var(--pg-backdrop-in-ms, 180ms) ease-out;
+  transition: opacity var(--pg-backdrop-in-ms, var(--duration-quick)) ease-out;
 }
 
 /* Suspense owns this lightweight first-tap response. It paints quickly while
@@ -3180,7 +3196,7 @@ img {
   background: rgb(18 18 18 / 0.28);
   opacity: 0;
   pointer-events: none;
-  animation: preview-gallery-pending-in 160ms ease-out 120ms forwards;
+  animation: preview-gallery-pending-in var(--duration-quick) ease-out var(--duration-fast) forwards;
 }
 
 @keyframes preview-gallery-pending-in {
@@ -3195,7 +3211,7 @@ img {
 }
 
 .preview-gallery-backdrop[data-ending-style] {
-  transition: opacity var(--pg-backdrop-out-ms, 150ms) ease-in;
+  transition: opacity var(--pg-backdrop-out-ms, var(--duration-quick)) ease-in;
 }
 
 .preview-gallery-shell {
@@ -3257,8 +3273,8 @@ img {
   transform: translateY(0) scale(1);
   transform-origin: center center;
   transition:
-    opacity var(--pg-content-in-ms, 140ms) ease-out,
-    transform var(--pg-open-ms, 200ms) var(--pg-open-ease, cubic-bezier(0.32, 0.8, 0.32, 1));
+    opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out,
+    transform var(--pg-open-ms, var(--duration-base)) var(--pg-open-ease, cubic-bezier(0.32, 0.8, 0.32, 1));
 }
 
 .preview-gallery-popup[data-wide="true"] {
@@ -3275,8 +3291,8 @@ img {
 
 .preview-gallery-popup[data-ending-style] {
   transition:
-    opacity var(--pg-content-out-ms, 120ms) ease-in,
-    transform var(--pg-close-ms, 150ms) var(--pg-close-ease, cubic-bezier(0.4, 0, 1, 1));
+    opacity var(--pg-content-out-ms, var(--duration-fast)) ease-in,
+    transform var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
 }
 
 /* Shrinking a playing video reads as a glitch, so it only fades. */
@@ -3293,7 +3309,7 @@ img {
 }
 
 .preview-gallery-popup[data-origin-motion] {
-  transition: opacity var(--pg-content-in-ms, 140ms) ease-out;
+  transition: opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out;
 }
 
 .preview-gallery-popup[data-origin-motion][data-starting-style] {
@@ -3304,7 +3320,7 @@ img {
    outlast the wrapper's travel rather than merely match the content fade. */
 .preview-gallery-popup[data-origin-motion][data-ending-style] {
   opacity: 0;
-  transition: opacity var(--pg-close-ms, 150ms) var(--pg-close-ease, cubic-bezier(0.4, 0, 1, 1));
+  transition: opacity var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
 }
 
 .preview-gallery-card {
@@ -3327,7 +3343,7 @@ img {
      stepped by a JS timer — hence the shared duration. */
   transition:
     opacity var(--pg-switch-ms, 190ms) ease-out,
-    transform var(--pg-switch-ms, 190ms) cubic-bezier(0.2, 0, 0, 1);
+    transform var(--pg-switch-ms, 190ms) var(--ease-standard);
   box-shadow:
     0 1px 1px rgb(0 0 0 / 0.04),
     0 18px 44px -18px rgb(0 0 0 / 0.28),
@@ -3402,8 +3418,8 @@ img {
   scale: 1;
   transform: translateY(-0.3rem);
   transition-property: background-color, opacity, scale, transform;
-  transition-duration: 160ms;
-  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  transition-duration: var(--duration-quick);
+  transition-timing-function: var(--ease-standard);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -3437,7 +3453,7 @@ img {
   transform: scale(0.25);
   transition-property: filter, opacity, transform;
   transition-duration: 300ms;
-  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  transition-timing-function: var(--ease-standard);
 }
 
 .preview-gallery-expand-icon.is-active {
@@ -3644,7 +3660,7 @@ img {
   border-radius: var(--radius-full);
   color: #171717;
   text-decoration: none;
-  transition: background-color 160ms ease;
+  transition: background-color var(--duration-quick) ease;
 }
 
 .preview-gallery-detail-row .preview-gallery-person:hover,
@@ -3696,10 +3712,10 @@ img {
     0 1px 1px rgb(0 0 0 / 0.05),
     0 12px 24px -14px rgb(0 0 0 / 0.36);
   transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out,
-    transform 150ms ease-out,
-    box-shadow 150ms ease-out;
+    background-color var(--duration-quick) ease-out,
+    color var(--duration-quick) ease-out,
+    transform var(--duration-quick) ease-out,
+    box-shadow var(--duration-quick) ease-out;
 }
 
 .preview-gallery-nav:hover:not(:disabled),

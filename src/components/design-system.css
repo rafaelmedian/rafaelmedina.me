@@ -124,8 +124,8 @@
   line-height: 1;
   text-decoration: none;
   transition:
-    background-color 160ms cubic-bezier(0.2, 0, 0, 1),
-    color 160ms cubic-bezier(0.2, 0, 0, 1);
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
 .ds-home-link:hover,
@@ -180,7 +180,7 @@
   min-height: 2rem;
   border-radius: var(--radius-sm);
   background: #f2f2f2;
-  transition: background-color 160ms cubic-bezier(0.2, 0, 0, 1);
+  transition: background-color var(--duration-quick) var(--ease-standard);
 }
 
 .ds-filter:focus-within {
@@ -292,9 +292,9 @@
   line-height: 1;
   text-decoration: none;
   transition:
-    background-color 160ms cubic-bezier(0.2, 0, 0, 1),
-    color 160ms cubic-bezier(0.2, 0, 0, 1),
-    opacity 160ms cubic-bezier(0.2, 0, 0, 1);
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard),
+    opacity var(--duration-quick) var(--ease-standard);
 }
 
 .ds-nav-link:hover,
@@ -319,8 +319,8 @@
   opacity: 0;
   transform: scaleY(0.4);
   transition:
-    opacity 160ms cubic-bezier(0.2, 0, 0, 1),
-    transform 160ms cubic-bezier(0.2, 0, 0, 1);
+    opacity var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard);
 }
 
 .ds-nav-link[data-active="true"] .ds-nav-marker {
@@ -543,8 +543,8 @@
   cursor: pointer;
   text-align: left;
   transition:
-    background-color 160ms cubic-bezier(0.2, 0, 0, 1),
-    color 160ms cubic-bezier(0.2, 0, 0, 1);
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
 .ds-copy code {
@@ -569,7 +569,7 @@
   width: 0.75rem;
   height: 0.75rem;
   opacity: 0;
-  transition: opacity 160ms cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
 .ds-copy-icon svg {
@@ -868,7 +868,7 @@
   background: #2d2d2d;
   transform: translateY(-50%) translateX(0);
   transition-property: transform;
-  transition-duration: var(--ds-motion-duration, 160ms);
+  transition-duration: var(--ds-motion-duration, var(--duration-quick));
   transition-timing-function: var(--ds-motion-ease, ease);
 }
 
