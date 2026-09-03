@@ -1,4 +1,16 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react"
+import {
+  Component,
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type ReactNode,
+} from "react"
 import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
@@ -47,9 +59,37 @@ function loadPreviewGallery() {
   return galleryModulePromise
 }
 
-const PreviewGalleryDialog = lazy(() =>
-  loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })),
-)
+// React caches a lazy component's rejection forever, so a retry needs a fresh
+// component identity — each call hands back a new one over the same
+// loadPreviewGallery, whose own bookkeeping cache-busts the failed chunk URL.
+function createPreviewGalleryComponent() {
+  return lazy(() => loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })))
+}
+
+type GalleryLoadBoundaryProps = {
+  onLoadError: () => void
+  children: ReactNode
+}
+
+// Without this, a chunk that 404s at click time (a tab held open across a
+// redeploy) throws out of the lazy dialog's render and unmounts the whole app.
+// Swallow the failure and let the parent reset, so the feed survives and the
+// next click retries the load.
+class GalleryLoadBoundary extends Component<GalleryLoadBoundaryProps, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch() {
+    this.props.onLoadError()
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children
+  }
+}
 
 function PuntaCanaMapScreenshot() {
   return (
@@ -465,7 +505,7 @@ function SectionCorner({
         className="mosaic-social-link"
         onClick={() => {
           trackEvent("social_link_click", {
-            social_label: "Download Resume",
+            social_label: "View Resume",
             social_href: resumeHref,
             social_placement: "top_corner",
           })
@@ -558,6 +598,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
+  const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
+
+  const handleGalleryLoadError = useCallback(() => {
+    trackEvent("work_preview_load_error", {})
+    // Closing resets the boundary (it unmounts with the Suspense tree); the
+    // fresh lazy component means the next click re-attempts the fetch instead
+    // of replaying the cached rejection.
+    setGalleryDialog(() => createPreviewGalleryComponent())
+    setActiveWorkPreviewIndex(null)
+    setHasOpenedWorkPreview(false)
+  }, [])
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -984,21 +1035,33 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           {/* Stays mounted after the first open so Base UI can run the close
               transition instead of the dialog vanishing on unmount. */}
           {hasOpenedWorkPreview && flatWorkCards.length > 0 ? (
-            <Suspense fallback={null}>
-              <PreviewGalleryDialog
-                cards={flatWorkCards}
-                open={activeWorkPreviewIndex != null}
-                selectedIndex={selectedWorkPreviewIndex}
-                prefersReducedMotion={prefersReducedMotion}
-                getOriginRect={getPreviewOriginRect}
-                onOpenChange={(nextOpen) => {
-                  if (!nextOpen) {
-                    setActiveWorkPreviewIndex(null)
-                  }
-                }}
-                onSelectedIndexChange={setSelectedWorkPreviewIndex}
-              />
-            </Suspense>
+            <GalleryLoadBoundary onLoadError={handleGalleryLoadError}>
+              <Suspense
+                // A dim that fades in on a short delay: a slow chunk fetch gets
+                // visible feedback for the tap, a warm cache never shows it.
+                fallback={
+                  activeWorkPreviewIndex != null ? (
+                    <div className="preview-gallery-pending" role="status">
+                      <span className="sr-only">Loading project preview</span>
+                    </div>
+                  ) : null
+                }
+              >
+                <GalleryDialog
+                  cards={flatWorkCards}
+                  open={activeWorkPreviewIndex != null}
+                  selectedIndex={selectedWorkPreviewIndex}
+                  prefersReducedMotion={prefersReducedMotion}
+                  getOriginRect={getPreviewOriginRect}
+                  onOpenChange={(nextOpen) => {
+                    if (!nextOpen) {
+                      setActiveWorkPreviewIndex(null)
+                    }
+                  }}
+                  onSelectedIndexChange={setSelectedWorkPreviewIndex}
+                />
+              </Suspense>
+            </GalleryLoadBoundary>
           ) : null}
       </>
     </section>

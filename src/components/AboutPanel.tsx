@@ -2,6 +2,7 @@ import {
   Fragment,
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   type CSSProperties,
@@ -99,20 +100,35 @@ function getOffsetBounds(element: HTMLButtonElement, offset: Offset): OffsetBoun
   }
 }
 
+/** Group context a keyboard event needs for roving focus between stickers. */
+type StickerGroup = {
+  groupId: string
+  stickers: AboutSticker[]
+}
+
 /**
  * Peel-and-move stickers. Each one keeps a bounded translation offset in state,
  * so pointer and keyboard movement survives re-renders. The active sticker is
  * raised above its siblings and stays raised afterward, keeping overlaps in
  * last-touched order.
+ *
+ * Keyboard model: each group is one tab stop (roving tabindex), so the eight
+ * decorative toys cost two Tab presses instead of eight on the way through the
+ * About panel. Inside a group, arrow keys switch stickers; Enter or Space picks
+ * the focused sticker up, arrow keys then move it, Enter/Space/Escape drops it,
+ * and Home resets its position.
  */
 function useStickerMovement() {
   const [offsets, setOffsets] = useState<Record<string, Offset>>({})
   const [order, setOrder] = useState<string[]>([])
   const [dragging, setDragging] = useState<string | null>(null)
+  const [grabbed, setGrabbed] = useState<string | null>(null)
+  const [activeByGroup, setActiveByGroup] = useState<Record<string, string>>({})
   const dragRef = useRef<DragState | null>(null)
   /** Mirrors `offsets` so a drag can read the current position without a stale closure. */
   const offsetsRef = useRef<Record<string, Offset>>({})
   const boundsRef = useRef<Record<string, OffsetBounds>>({})
+  const stickerElementsRef = useRef(new Map<string, HTMLButtonElement>())
 
   useEffect(() => {
     const invalidateBounds = () => {
@@ -144,13 +160,28 @@ function useStickerMovement() {
     [],
   )
 
-  const onPointerDown = useCallback((event: PointerEvent<HTMLButtonElement>, emoji: string) => {
+  const setStickerActive = useCallback((groupId: string, emoji: string) => {
+    setActiveByGroup((current) =>
+      current[groupId] === emoji ? current : { ...current, [groupId]: emoji },
+    )
+  }, [])
+
+  const registerSticker = useCallback((emoji: string, element: HTMLButtonElement | null) => {
+    if (element) stickerElementsRef.current.set(emoji, element)
+    else stickerElementsRef.current.delete(emoji)
+  }, [])
+
+  const onPointerDown = useCallback((event: PointerEvent<HTMLButtonElement>, emoji: string, groupId: string) => {
     // Left button / touch / pen only, so a right-click doesn't strand a drag.
     if (event.button !== 0) return
 
     event.preventDefault()
     event.currentTarget.focus({ preventScroll: true })
     event.currentTarget.setPointerCapture(event.pointerId)
+    // The pointer takes over: whatever the keyboard had picked up is dropped,
+    // and the group's tab stop follows the sticker just touched.
+    setGrabbed(null)
+    setStickerActive(groupId, emoji)
 
     const origin = offsetsRef.current[emoji] ?? { x: 0, y: 0 }
     const bounds = getStickerBounds(emoji, event.currentTarget, origin)
@@ -167,7 +198,7 @@ function useStickerMovement() {
     }
     setDragging(emoji)
     raiseSticker(emoji)
-  }, [getStickerBounds, raiseSticker])
+  }, [getStickerBounds, raiseSticker, setStickerActive])
 
   const onPointerMove = useCallback((event: PointerEvent<HTMLButtonElement>) => {
     const drag = dragRef.current
@@ -194,7 +225,7 @@ function useStickerMovement() {
   }, [])
 
   const onKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLButtonElement>, emoji: string) => {
+    (event: KeyboardEvent<HTMLButtonElement>, emoji: string, group: StickerGroup) => {
       const movementByKey: Partial<Record<string, Offset>> = {
         ArrowUp: { x: 0, y: -keyboardMoveDistance },
         ArrowDown: { x: 0, y: keyboardMoveDistance },
@@ -202,6 +233,36 @@ function useStickerMovement() {
         ArrowRight: { x: keyboardMoveDistance, y: 0 },
       }
       const movement = movementByKey[event.key]
+      const held = grabbed === emoji
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault()
+        setGrabbed(held ? null : emoji)
+        if (!held) raiseSticker(emoji)
+        return
+      }
+
+      if (event.key === "Escape" && held) {
+        event.preventDefault()
+        setGrabbed(null)
+        return
+      }
+
+      // Ungrabbed, arrows rove between the group's stickers instead of moving
+      // one — that is what makes the group a single tab stop.
+      if (movement && !held) {
+        event.preventDefault()
+        const stickers = group.stickers
+        const index = stickers.findIndex((sticker) => sticker.emoji === emoji)
+        const delta = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1
+        const next = stickers[(index + delta + stickers.length) % stickers.length]
+        if (!next) return
+
+        setStickerActive(group.groupId, next.emoji)
+        stickerElementsRef.current.get(next.emoji)?.focus()
+        return
+      }
+
       if (!movement && event.key !== "Home") return
 
       event.preventDefault()
@@ -215,13 +276,23 @@ function useStickerMovement() {
       setStickerOffset(emoji, bounds ? clampOffset(nextOffset, bounds) : nextOffset)
       raiseSticker(emoji)
     },
-    [getStickerBounds, raiseSticker, setStickerOffset],
+    [getStickerBounds, grabbed, raiseSticker, setStickerActive, setStickerOffset],
   )
+
+  const onBlur = useCallback((emoji: string) => {
+    // Leaving the sticker drops it, so focus can't wander off with a sticker
+    // still announced as picked up.
+    setGrabbed((current) => (current === emoji ? null : current))
+  }, [])
 
   return {
     offsets,
     order,
     dragging,
+    grabbed,
+    activeByGroup,
+    registerSticker,
+    onBlur,
     onKeyDown,
     onPointerDown,
     onPointerMove,
@@ -289,9 +360,21 @@ function ResumeCompany({ job }: { job: CvExperience }) {
 }
 
 export function AboutPanel({ links }: AboutPanelProps) {
-  const { offsets, order, dragging, onKeyDown, onPointerDown, onPointerMove, onPointerUp } =
-    useStickerMovement()
+  const {
+    offsets,
+    order,
+    dragging,
+    grabbed,
+    activeByGroup,
+    registerSticker,
+    onBlur,
+    onKeyDown,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+  } = useStickerMovement()
   const panelRef = useRef<HTMLElement | null>(null)
+  const stickerInstructionsId = useId()
 
   // The copy blocks ship visible — the attribute is empty in the prerendered
   // markup, so nothing depends on JavaScript. On mount, blocks still below
@@ -347,21 +430,30 @@ export function AboutPanel({ links }: AboutPanelProps) {
     return () => observer.disconnect()
   }, [])
 
-  const renderStickers = (stickers: AboutSticker[]) =>
+  const renderStickers = (stickers: AboutSticker[], groupId: string) =>
     stickers.map((sticker) => {
       const offset = offsets[sticker.emoji]
       const stackIndex = order.indexOf(sticker.emoji)
+      const activeEmoji = activeByGroup[groupId] ?? stickers[0]?.emoji
+      const isHeld = grabbed === sticker.emoji
 
       return (
         <button
           key={sticker.emoji}
           type="button"
-          aria-label={`${sticker.label} sticker. Use arrow keys to move; Home to reset.`}
-          aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home"
+          ref={(element) => registerSticker(sticker.emoji, element)}
+          // Roving tabindex: one tab stop per sticker group. Arrow keys reach
+          // the rest; the shared description spells the model out.
+          tabIndex={sticker.emoji === activeEmoji ? 0 : -1}
+          aria-label={`${sticker.label} sticker`}
+          aria-describedby={stickerInstructionsId}
+          aria-pressed={isHeld}
+          aria-keyshortcuts="Enter Space Escape ArrowUp ArrowDown ArrowLeft ArrowRight Home"
           className="mosaic-about-sticker"
-          data-dragging={dragging === sticker.emoji ? "" : undefined}
-          onKeyDown={(event) => onKeyDown(event, sticker.emoji)}
-          onPointerDown={(event) => onPointerDown(event, sticker.emoji)}
+          data-dragging={dragging === sticker.emoji || isHeld ? "" : undefined}
+          onBlur={() => onBlur(sticker.emoji)}
+          onKeyDown={(event) => onKeyDown(event, sticker.emoji, { groupId, stickers })}
+          onPointerDown={(event) => onPointerDown(event, sticker.emoji, groupId)}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
@@ -454,8 +546,10 @@ export function AboutPanel({ links }: AboutPanelProps) {
                 ))}
               </ul>
 
+              {/* The address is spelled out here as persistent text; the hero
+                  copy action also exposes it in a pointer tooltip. */}
               <p className="mosaic-about-closing">
-                Taking on new work. Building something?{" "}
+                Taking on new work. Building something? Email me at{" "}
                 <a
                   href={`mailto:${links.email}`}
                   className="mosaic-about-link"
@@ -467,7 +561,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
                     })
                   }}
                 >
-                  Send me an email
+                  {links.email}
                 </a>
                 .
               </p>
@@ -475,7 +569,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
 
             {/* Keyboard users reach the section copy before its four movable
                 decorative stickers. The intro section owns their bounds. */}
-            {renderStickers(aboutStickers)}
+            {renderStickers(aboutStickers, "about")}
           </section>
 
           <section
@@ -542,17 +636,38 @@ export function AboutPanel({ links }: AboutPanelProps) {
                 </ul>
               </div>
 
+              {/* Same term and behavior as the corner "Resume" link: one
+                  artifact, one verb. The browser's PDF viewer keeps its own
+                  download button for people who want the file. */}
               <p className="mosaic-about-resume-download" data-about-fade="">
-                <a href={links.resumePdf} download className="mosaic-about-link">
-                  Download CV in PDF
+                <a
+                  href={links.resumePdf}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mosaic-about-link"
+                  onClick={() => {
+                    trackEvent("social_link_click", {
+                      social_label: "View Resume",
+                      social_href: links.resumePdf,
+                      social_placement: "about_panel",
+                    })
+                  }}
+                >
+                  View resume (PDF)
                 </a>
               </p>
             </div>
 
-            {renderStickers(workHistoryStickers)}
+            {renderStickers(workHistoryStickers, "work-history")}
           </section>
         </div>
       </div>
+      {/* One shared description for all eight stickers keeps each button's own
+          announcement short. */}
+      <span id={stickerInstructionsId} className="sr-only">
+        Arrow keys switch between the group&rsquo;s stickers. Press Enter or Space to pick a sticker up,
+        arrow keys to move it, Enter or Space to drop it, and Home to reset its position.
+      </span>
     </article>
   )
 }

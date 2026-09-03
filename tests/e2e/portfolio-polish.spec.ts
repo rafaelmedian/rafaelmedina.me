@@ -629,6 +629,7 @@ test("previews the copy reaction without copying on hover", async ({ page }) => 
   await copyButton.hover()
   await expect(reaction).toBeVisible()
   await expect(copyButton).toHaveText("Copy email")
+  await expect(copyButton).toHaveAttribute("title", "hey@rafaelmedina.me")
   await expect(reaction.locator("source")).toHaveAttribute("srcset", "/reactions/copy-email-before-still.webp")
   await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 })
@@ -2038,29 +2039,29 @@ test("keeps Dark mode beside Protector", async ({ page }) => {
   const protectorCard = page.getByRole("button", { name: /Open Protector/ })
   const row = page.locator(".mosaic-row").filter({ has: protectorCard })
 
-  await expect(row.getByRole("button", { name: /Open Matcha Dark mode/ })).toHaveCount(1)
+  await expect(row.getByRole("button", { name: /Open Matcha dark mode/ })).toHaveCount(1)
 })
 
 test("restores the former three projects to the third row", async ({ page }) => {
   await page.goto("/")
 
-  const tokenCard = page.getByRole("button", { name: /Open Matcha - Token Page/ })
+  const tokenCard = page.getByRole("button", { name: /Open Matcha token page/ })
   const row = page.locator(".mosaic-row").filter({ has: tokenCard })
   const cards = row.locator(".mosaic-row-card")
 
   await expect(cards).toHaveCount(3)
-  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha - Token Page/)
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha Trade Page/)
-  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha Trade module/)
+  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha token page/)
+  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha trade page/)
+  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha trade module/)
 })
 
 test("keeps the restored third-row projects equal width", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/")
 
-  const tokenCard = page.getByRole("button", { name: /Open Matcha - Token Page/ })
-  const tradePageCard = page.getByRole("button", { name: /Open Matcha Trade Page/ })
-  const tradeModuleCard = page.getByRole("button", { name: /Open Matcha Trade module/ })
+  const tokenCard = page.getByRole("button", { name: /Open Matcha token page/ })
+  const tradePageCard = page.getByRole("button", { name: /Open Matcha trade page/ })
+  const tradeModuleCard = page.getByRole("button", { name: /Open Matcha trade module/ })
   const row = page.locator(".mosaic-row").filter({ has: tokenCard })
   await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
 
@@ -2089,10 +2090,10 @@ test("caps each row at three projects and omits Mobile navigation", async ({ pag
   )
   expect(rowCardCounts.every((count) => count <= 3)).toBe(true)
   await expect(cards).toHaveCount(3)
-  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha - Mobile Screens/)
+  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha on mobile/)
   await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha Pro/)
-  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha - Security Audit/)
-  await expect(page.getByRole("button", { name: /Open Matcha - Mobile navigation/ })).toHaveCount(0)
+  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha security audit/)
+  await expect(page.getByRole("button", { name: /Open Matcha mobile navigation/ })).toHaveCount(0)
   await expect(cards.nth(0).locator("img")).toHaveAttribute("src", /shot-small-14\.jpg$/)
   await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
   await expect(cards.nth(2).locator("video")).toHaveAttribute("poster", "/Projects/shot-small-20-poster.webp")
@@ -2150,7 +2151,7 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
     }
   })
 
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
@@ -2163,7 +2164,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
@@ -2227,7 +2228,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
   })
   const page = await context.newPage()
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).tap()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).tap()
 
   const card = page.locator(".preview-gallery-card")
   await card.evaluate((element) => {
@@ -2252,7 +2253,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
   })
   const page = await context.newPage()
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).tap()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).tap()
 
   const card = page.locator(".preview-gallery-card")
   await card.evaluate((element) => {
@@ -2293,7 +2294,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
 test("returns focus to the originating project after closing the gallery", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
-  const trigger = page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ })
+  const trigger = page.getByRole("button", { name: /Open Matcha multiwallet flow/ })
   await trigger.focus()
   await trigger.press("Enter")
   // The gallery chunk is lazy: an Escape fired before it mounts closes
@@ -2320,7 +2321,7 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("button", { name: /Open Matcha - Token Page preview/ })
+  const trigger = page.getByRole("button", { name: /Open Matcha token page preview/ })
   await trigger.hover()
   await failedPrefetch
   await page.unroute(galleryChunk)
@@ -2328,6 +2329,72 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
 
   await expect(page.getByRole("dialog")).toBeVisible()
   expect(errors).toEqual([])
+})
+
+test("keeps the site usable when the gallery chunk fails at click time", async ({ page }) => {
+  const galleryChunk = "**/assets/PreviewGalleryDialog-*.js"
+  await page.route(galleryChunk, (route) => route.abort("failed"))
+  await page.goto("/")
+  await settleWorkCards(page)
+
+  const trigger = page.getByRole("button", { name: /Open Matcha token page preview/ })
+  await trigger.click()
+
+  await expect(page.getByRole("heading", { name: "Rafael Medina portfolio" })).toBeAttached()
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+  await expect(page.locator(".preview-gallery-pending")).toHaveCount(0)
+
+  await page.unroute(galleryChunk)
+  await trigger.click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+})
+
+test("acknowledges the first gallery tap while its chunk loads", async ({ page }) => {
+  let releaseChunk: (() => void) | undefined
+  const chunkBlocked = new Promise<void>((resolve) => {
+    releaseChunk = resolve
+  })
+  const galleryChunk = "**/assets/PreviewGalleryDialog-*.js"
+
+  await page.route(galleryChunk, async (route) => {
+    await chunkBlocked
+    await route.continue()
+  })
+  await page.goto("/")
+  await settleWorkCards(page)
+
+  const trigger = page.getByRole("button", { name: /Open Matcha token page preview/ })
+  await trigger.click()
+  const pending = page.locator(".preview-gallery-pending")
+  await expect(pending).toBeVisible()
+  await expect(pending).toContainText("Loading project preview")
+  await expect(pending).toHaveCSS("background-color", "rgba(18, 18, 18, 0.28)")
+
+  releaseChunk?.()
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(pending).toHaveCount(0)
+})
+
+test("keeps the gallery pending state visible without motion", async ({ page }) => {
+  let releaseChunk: (() => void) | undefined
+  const chunkBlocked = new Promise<void>((resolve) => {
+    releaseChunk = resolve
+  })
+
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.route("**/assets/PreviewGalleryDialog-*.js", async (route) => {
+    await chunkBlocked
+    await route.continue()
+  })
+  await page.goto("/")
+
+  await page.getByRole("button", { name: /Open Matcha token page preview/ }).click()
+  const pending = page.locator(".preview-gallery-pending")
+  await expect(pending).toBeVisible()
+  await expect(pending).toHaveCSS("animation-name", "none")
+
+  releaseChunk?.()
+  await expect(page.getByRole("dialog")).toBeVisible()
 })
 
 test("shows about and the work history summary together", async ({ page }) => {
@@ -2338,8 +2405,8 @@ test("shows about and the work history summary together", async ({ page }) => {
   await expect(panel.getByRole("heading", { name: "Work history" })).toBeVisible()
 
   const entries = panel.locator(".mosaic-about-resume-entry")
-  await expect(entries.first()).toContainText("Startup")
-  await expect(entries.first().locator(".mosaic-about-resume-title")).toHaveText("Co-founder at Startup")
+  await expect(entries.first()).toContainText("Stealth fintech")
+  await expect(entries.first().locator(".mosaic-about-resume-title")).toHaveText("Co-founder at Stealth fintech")
   await expect(entries.first().locator(".mosaic-about-resume-dates")).toHaveText("2026 - Present")
   await expect(entries.first()).toContainText(
     "Building a mobile wallet for colmados, helping neighborhood store owners in the Dominican Republic manage payments and day-to-day finances from their phones.",
@@ -2358,6 +2425,10 @@ test("shows about and the work history summary together", async ({ page }) => {
   await expect(panel).toContainText("ITLA")
   await expect(panel).not.toContainText("hellorafaelmedina@gmail.com")
   await expect(panel).not.toContainText("786 9580")
+  await expect(panel.getByRole("link", { name: "hey@rafaelmedina.me", exact: true })).toHaveAttribute(
+    "href",
+    "mailto:hey@rafaelmedina.me",
+  )
   await expect(panel.getByRole("link", { name: "Download résumé PDF" })).toHaveCount(0)
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "href",
@@ -2409,15 +2480,16 @@ test("presents work history as a focused summary", async ({ page }) => {
   await expect(workHistory.locator(".mosaic-about-sticker")).toHaveCount(4)
 })
 
-test("offers a CV download after the education list", async ({ page }) => {
+test("offers the résumé in a new tab after the education list", async ({ page }) => {
   await page.goto("/#about-panel-resume")
 
   const workHistory = page.locator("#about-panel-resume")
   const education = workHistory.locator(".mosaic-about-resume-education")
-  const download = workHistory.getByRole("link", { name: "Download CV in PDF", exact: true })
+  const download = workHistory.getByRole("link", { name: "View resume (PDF)", exact: true })
 
   await expect(download).toHaveAttribute("href", "/rafael-medina-resume.pdf")
-  await expect(download).toHaveAttribute("download", "")
+  await expect(download).toHaveAttribute("target", "_blank")
+  await expect(download).not.toHaveAttribute("download", "")
   const downloadGap = await workHistory.evaluate((section) => {
     const educationSection = section.querySelector(".mosaic-about-resume-education")
     const downloadRow = section.querySelector(".mosaic-about-resume-download")
@@ -2467,7 +2539,7 @@ test("formats desktop work history as dates beside role, company, location, and 
   const dates = entry.locator(".mosaic-about-resume-dates")
   const details = entry.locator(".mosaic-about-resume-details")
 
-  await expect(entry.getByRole("heading", { name: "Co-founder at Startup" })).toBeVisible()
+  await expect(entry.getByRole("heading", { name: "Co-founder at Stealth fintech" })).toBeVisible()
   await expect(entry.locator(".mosaic-about-resume-location")).toHaveText("Remote")
   await expect(entry.locator(".mosaic-about-resume-description")).toHaveText(
     "Building a mobile wallet for colmados, helping neighborhood store owners in the Dominican Republic manage payments and day-to-day finances from their phones.",
@@ -2725,14 +2797,37 @@ test("lets keyboard users move and reset about stickers", async ({ page }) => {
   const initialBox = await sticker.boundingBox()
   expect(initialBox).not.toBeNull()
 
+  await sticker.press("Enter")
+  await expect(sticker).toHaveAttribute("aria-pressed", "true")
   await sticker.press("ArrowRight")
   await expect
     .poll(async () => (await sticker.boundingBox())?.x)
     .toBeGreaterThan(initialBox!.x)
 
+  await sticker.press("Enter")
+  await expect(sticker).toHaveAttribute("aria-pressed", "false")
   await sticker.press("Home")
   await expect.poll(async () => (await sticker.boundingBox())?.x).toBeCloseTo(initialBox!.x, 0)
   await expect(sticker).toBeFocused()
+})
+
+test("uses one tab stop per sticker group and arrows between stickers", async ({ page }) => {
+  await page.goto("/#about-panel")
+
+  const aboutStickers = page.locator("#about-section .mosaic-about-sticker")
+  const workStickers = page.locator("#about-panel-resume .mosaic-about-sticker")
+  await expect(aboutStickers).toHaveCount(4)
+  await expect(workStickers).toHaveCount(4)
+  await expect(page.locator('#about-section .mosaic-about-sticker[tabindex="0"]')).toHaveCount(1)
+  await expect(page.locator('#about-panel-resume .mosaic-about-sticker[tabindex="0"]')).toHaveCount(1)
+
+  const first = aboutStickers.nth(0)
+  const second = aboutStickers.nth(1)
+  await first.focus()
+  await first.press("ArrowRight")
+  await expect(second).toBeFocused()
+  await expect(first).toHaveAttribute("tabindex", "-1")
+  await expect(second).toHaveAttribute("tabindex", "0")
 })
 
 test("keeps moved about stickers recoverable inside the panel", async ({ page }) => {
@@ -2749,6 +2844,7 @@ test("keeps moved about stickers recoverable inside the panel", async ({ page })
   expect(stickerBox).not.toBeNull()
 
   await sticker.focus()
+  await sticker.press("Enter")
   for (let step = 0; step < 100; step += 1) {
     await sticker.press("ArrowRight")
   }
@@ -2764,7 +2860,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   const card = dialog.locator(".preview-gallery-card")
@@ -2808,7 +2904,7 @@ test("does not use dots to navigate between projects in the main feed", async ({
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
@@ -2821,7 +2917,7 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   await page.setViewportSize({ width: 1320, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveAttribute("data-wide", "true")
@@ -2836,7 +2932,7 @@ test("opens the gallery wide without clipping navigation at the large desktop br
 
   await page.setViewportSize({ width: 1280, height: 1000 })
   await page.reload()
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   await expect(dialog).not.toHaveAttribute("data-wide", "true")
   await expect(dialog.getByRole("button", { name: "Expand preview" })).toHaveAttribute("aria-pressed", "false")
@@ -2847,7 +2943,7 @@ test("expands and restores the gallery without losing the selected preview", asy
   await page.setViewportSize({ width: 1280, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   const nextProject = dialog
@@ -2884,7 +2980,7 @@ test("fills the expanded card width with cropped project artwork", async ({ page
   await page.setViewportSize({ width: 1024, height: 545 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Protector preview/ }).click()
+  await page.getByRole("button", { name: /Open Protector booking preview/ }).click()
 
   const dialog = page.getByRole("dialog")
   await dialog.getByRole("button", { name: "Expand preview" }).click()
@@ -2916,7 +3012,7 @@ test("keeps the expanded gallery scrollable without visible scrollbars", async (
   try {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto(baseURL ?? "/")
-    await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+    await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
     const dialog = page.getByRole("dialog")
     await expect(dialog).toHaveAttribute("data-wide", "true")
@@ -3189,22 +3285,24 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
-test("keeps project images free of captions on mobile", async ({ page }) => {
+test("keeps project captions legible without the blur ramp on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
   const firstCaption = page.locator(".mosaic-row-card-title").first()
-  await expect(firstCaption).toBeHidden()
+  await expect(firstCaption).toBeVisible()
+  await expect(firstCaption).toHaveCSS("opacity", "1")
   expect(
     await page.locator(".mosaic-row-card-scrim").first().evaluate((scrim) => getComputedStyle(scrim).opacity),
-  ).toBe("0")
+  ).toBe("1")
+  await expect(page.locator(".mosaic-row-card-scrim > span").first()).toHaveCSS("display", "none")
 })
 
 test("ramps the blur radius behind desktop project captions", async ({ page }) => {
   await page.setViewportSize({ width: 2446, height: 1239 })
   await page.goto("/")
 
-  const card = page.getByRole("button", { name: /Open Matcha - Homepage preview 2 of/ })
+  const card = page.getByRole("button", { name: /Open Matcha homepage preview 2 of/ })
   const scrim = card.locator(".mosaic-row-card-scrim")
   await card.hover()
 
@@ -3247,7 +3345,7 @@ test("keeps desktop project captions readable over white artwork", async ({ page
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
 
-  const card = page.getByRole("button", { name: /Open Matcha - Homepage preview 2 of/ })
+  const card = page.getByRole("button", { name: /Open Matcha homepage preview 2 of/ })
   const scrim = card.locator(".mosaic-row-card-scrim")
   await card.hover()
 
@@ -3283,7 +3381,7 @@ test("fills the mobile cards with the featured Matcha previews", async ({ page }
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  for (const title of ["Matcha - Multiwallet flow", "Matcha - Homepage"]) {
+  for (const title of ["Matcha multiwallet flow", "Matcha homepage"]) {
     const card = page.getByRole("button", { name: new RegExp(`Open ${title}`) })
     const media = card.locator(".mosaic-row-media")
     const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), media.boundingBox()])
@@ -3308,13 +3406,13 @@ test("crops and zooms the Protector artwork on mobile", async ({ page }) => {
   expect(scale).toBeGreaterThan(1)
 })
 
-test("describes Protector as an on-demand private security app", async ({ page }) => {
+test("describes the stakes and choices in a Protector booking", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Protector preview/ }).click()
+  await page.getByRole("button", { name: /Open Protector booking preview/ }).click()
 
   await expect(page.getByRole("dialog")).toContainText(
-    "A private security app for booking short-term personal protection from veteran and former law enforcement professionals. I designed the booking flow—from choosing an operator and uniform to arranging escorted transportation—to make high-stakes decisions feel clear and discreet.",
+    "Protector lets people book short-term personal security. I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
   )
 })
 
@@ -3330,7 +3428,7 @@ test("renders intrinsic media dimensions and does not autoplay under reduced mot
   await expect(video).toHaveAttribute("poster", /\S+/)
   expect(await video.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
 
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
   const previewVideo = page.getByRole("dialog").locator("video")
   expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
   expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(false)
@@ -3339,7 +3437,7 @@ test("renders intrinsic media dimensions and does not autoplay under reduced mot
 test("autoplays gallery clips without native playback controls", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   const previewVideo = page.getByRole("dialog").locator("video")
   expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(true)
@@ -3549,7 +3647,7 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
 test("states my role and the outcome on every project preview", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   const details = dialog.locator(".preview-gallery-detail-row")
@@ -3558,7 +3656,9 @@ test("states my role and the outcome on every project preview", async ({ page })
   await expect(details.locator("dt")).toHaveText(["Product", "Industry", "Role", "Outcome", "Team", "Link"])
 
   const rowValue = (label: string) => details.filter({ has: page.getByText(label, { exact: true }) }).locator("dd")
-  await expect(rowValue("Role")).toHaveText("Lead product designer for the multiwallet experience.")
+  await expect(rowValue("Role")).toHaveText(
+    "I mapped the full flow and designed the wallet menu and its edge cases.",
+  )
   await expect(rowValue("Outcome")).not.toBeEmpty()
 
   // Every card in the gallery, not just the one that happens to open first.
@@ -3598,7 +3698,7 @@ test("keeps the preview role and outcome inside the card on desktop", async ({ p
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).click()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
 
   await expectPreviewContributionFits(page, 900)
 })
@@ -3612,7 +3712,7 @@ test("keeps the preview role and outcome inside the card on mobile", async ({ br
   })
   const page = await context.newPage()
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha - Multiwallet flow/ }).tap()
+  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).tap()
 
   await expectPreviewContributionFits(page, mobileViewport.height)
   await context.close()
@@ -3637,6 +3737,7 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   const text = content.items.map((item) => ("str" in item ? item.str : "")).join("")
   expect(text.length).toBeGreaterThan(500)
 
+  expect(text).toContain("Stealth fintech")
   expect(text).toContain("Co-founder")
   expect(text).toContain("2026 - Present")
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)
