@@ -42,7 +42,7 @@ export function LinkedInHoverCard({ media, isOpen }: LinkedInHoverCardProps) {
 
   return (
     <span
-      className={`mosaic-linkedin-card${isOpen ? " is-open" : ""}`}
+      className={`mosaic-hover-card mosaic-linkedin-card${isOpen ? " is-open" : ""}`}
       data-state={isOpen ? "open" : "closed"}
       aria-hidden="true"
     >

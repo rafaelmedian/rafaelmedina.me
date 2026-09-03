@@ -353,9 +353,9 @@ const ELEVATION = [
     use: "Contact pills and the mobile reveal button. Goes to 0 4px 12px on hover, back to 0 1px 4px when pressed.",
   },
   {
-    name: "Hover card",
-    shadow: "0 1px 2px rgb(16 16 20 / 0.06), 0 12px 32px rgb(16 16 20 / 0.16)",
-    use: "LinkedIn and X cards, the work-history popover, the takeover close, and the top edge of the About takeover. About pairs it with a 0.08 black hairline so the overlapping sheet stays crisp.",
+    name: "Overlay — --shadow-overlay",
+    shadow: "var(--shadow-overlay)",
+    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, and the top edge of the About takeover. Surfaces without a border prepend a zero-blur 0 0 0 1px hairline ring before the var().",
   },
   {
     name: "Dialog",
@@ -1094,19 +1094,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--overlay-shadow blur seven layers glass expensive")}
-              >
-                <strong>
-                  <code>--overlay-shadow</code> is a fifth level, and it is expensive.
-                </strong>
-                <p>
-                  Seven stacked layers from <code>0 0 0.125rem</code> out to <code>0 1.625rem 3.375rem</code>. It exists
-                  for full-bleed glass surfaces. For a card, use the hover-card level above — the seven-layer stack
-                  costs paint time it will not earn back at that size.
-                </p>
-              </div>
-              <div
-                className="ds-rule"
                 data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 62% 100% 0.68 360ms")}
               >
                 <strong>
@@ -1243,7 +1230,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div className="ds-grid ds-grid-wide">
                 <div
                   className="ds-specimen ds-specimen-white ds-specimen-block"
-                  style={{ boxShadow: "var(--overlay-shadow)" }}
+                  style={{ boxShadow: "0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay)" }}
                   data-ds-terms={terms("raised #ffffff hover card popover dialog border #e6e6e8 zero-blur")}
                 >
                   <strong className="ds-specimen-title">Raised — #ffffff</strong>
