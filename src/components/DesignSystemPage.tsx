@@ -691,16 +691,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </div>
             <ul className="ds-list">
               <li data-ds-terms={terms("grey colour signal accent neutral ink saturated availability linkedin x brand")}>
-                <strong>Grey does the work; colour is a signal.</strong> The entire interface is built from nine steps of
+                <strong>Grey does the work; colour is a signal.</strong> The entire interface is built from ten steps of
                 neutral ink on four near-white surfaces. The only saturated colours on screen belong to a status (the
                 availability dot) or to somebody else's brand (LinkedIn, X). A new accent needs a reason beyond
                 decoration.
               </li>
-              <li data-ds-terms={terms("hover reveal relocate reflow min-height 6.225rem work-history reserve space")}>
+              <li data-ds-terms={terms("hover reveal relocate reflow work-history popover float overlay space")}>
                 <strong>Hover reveals; it never relocates.</strong> Cards, titles, and icons fade and settle in place.
-                Space is reserved ahead of time — the work-history block holds <code>min-height: 6.225rem</code> so the
-                first chip expansion cannot push the page. If an interaction would reflow the layout, reserve the room
-                instead.
+                Anything larger floats — the work-history popovers overlay the page instead of expanding it. If an
+                interaction would reflow the layout, float it or reserve the room instead.
               </li>
               <li data-ds-terms={terms("entrance exit curve opacity transform duration overlay")}>
                 <strong>Every entrance owns its exit.</strong> Overlays enter on the entrance curve and leave on the exit
@@ -714,7 +713,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </li>
               <li data-ds-terms={terms("prefers-reduced-motion reset motion accessibility opt out")}>
                 <strong>Nothing is required to move.</strong> A global{" "}
-                <code>prefers-reduced-motion</code> reset zeroes durations, and nine further blocks opt individual
+                <code>prefers-reduced-motion</code> reset zeroes durations, and seven further blocks opt individual
                 components out by hand where the reset alone would leave them stuck mid-animation.
               </li>
             </ul>
@@ -1234,7 +1233,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 deliberately the same value, because a chip that is open and a chip under the cursor mean the same
                 thing. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
                 40px while the visible label stays 2rem. The takeover close is a 51.2px white raised control with the
-                hover-card shadow and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
+                overlay shadow and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
                 its viewport crossing.
               </p>
             </div>
@@ -1282,7 +1281,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
           <section id="motion" className="ds-section">
             <div className="ds-section-heading">
               <h2>Motion</h2>
-              <p>Ten curves and seven duration bands, including the deliberate component outliers. Hover a card to replay its easing.</p>
+              <p>
+                Three tokened curves plus the deliberate component outliers, and four duration tokens with their
+                one-off bands. Hover a card to replay its easing.
+              </p>
             </div>
 
             <div className="ds-block">
@@ -1337,10 +1339,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </div>
 
             <div className="ds-block">
-              <div className="ds-rule" data-ds-terms={terms("exit entrance 220ms 150ms opacity transform dropped frame")}>
+              <div className="ds-rule" data-ds-terms={terms("exit entrance 220ms 160ms opacity transform dropped frame")}>
                 <strong>Exits are shorter than entrances, and both are honest about it.</strong>
                 <p>
-                  A hover card enters over 220ms on the entrance curve and leaves over 150ms on the exit curve. Opacity and
+                  A hover card enters over 220ms on the smooth curve and leaves over 160ms on the exit curve. Opacity and
                   transform share a duration within each direction — if they differ, the card finishes fading while it is
                   still moving and reads as a dropped frame. Where an element unmounts on transition end, the exit has to
                   outlast the fade, not merely match it.
@@ -1414,7 +1416,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>display: contents</code>; the white sheet stays full-bleed but no pinning or overlap is applied.
                 </li>
                 <li data-ds-terms={terms("seam hairline shadow ambient cast 120px 0.35 chevron 17px 22deg scroll cue 100dvw")}>
-                  <strong>The seam is three layers, and two of them move.</strong> The hover-card shadow only spills
+                  <strong>The seam is three layers, and two of them move.</strong> The overlay shadow only spills
                   about 20px past the hairline, so a 120px gradient cast sits above it and carries the penumbra —
                   ramping from 0.35 opacity to full across the crossing, so the sheet reads as passing in front of the
                   gallery rather than butting against it. Above that, a scroll cue: two 17px bars hinged at the joint
