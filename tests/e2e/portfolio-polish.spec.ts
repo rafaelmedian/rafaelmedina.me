@@ -1435,6 +1435,339 @@ test("reuses the hover-card shadow for the about takeover", async ({ page }) => 
   expect(aboutShadow).toBe(hoverCardShadow)
 })
 
+/**
+ * Parks the About sheet's top edge a given fraction of the way up the viewport,
+ * which is also its progress through the takeover: the crossing is exactly one
+ * viewport of scrolling, so 0 is the seam arriving at the bottom and 1 is the
+ * seam leaving at the top.
+ */
+async function scrollSeamTo(page: Page, fraction: number) {
+  await page.evaluate((target) => {
+    const about = document.querySelector("#about-panel")
+    if (!about) throw new Error("about panel missing")
+    window.scrollBy(0, about.getBoundingClientRect().top - window.innerHeight * (1 - target))
+  }, fraction)
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+  )
+}
+
+function readArmAngle(page: Page, side: "left" | "right") {
+  return page.locator(`.mosaic-takeover-cue-arm-${side}`).evaluate((element) => {
+    const matrix = getComputedStyle(element).transform.match(/matrix\(([^,]+),\s*([^,]+)/)
+    if (!matrix) return null
+    return (
+      Math.round(Math.atan2(Number.parseFloat(matrix[2]), Number.parseFloat(matrix[1])) * (180 / Math.PI) * 10) / 10
+    )
+  })
+}
+
+test("reveals the takeover close only after the sheet passes 70%", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+
+  const close = page.locator(".mosaic-takeover-close")
+  await page.locator(".mosaic-takeover-stage").evaluate((element) => element.scrollIntoView({ block: "end" }))
+
+  await scrollSeamTo(page, 0.7)
+  await expect(close).toHaveCount(1)
+  await expect(close).toHaveAttribute("data-visible", "false")
+
+  await scrollSeamTo(page, 0.71)
+  await expect(close).toHaveAttribute("data-visible", "true")
+
+  await scrollSeamTo(page, 0.69)
+  await expect(close).toHaveAttribute("data-visible", "false")
+})
+
+test("keeps the takeover close wrapper at the compact design-system size", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+
+  const size = await page.locator(".mosaic-takeover-close").evaluate((element) => {
+    const styles = getComputedStyle(element)
+    return {
+      width: Number.parseFloat(styles.width),
+      height: Number.parseFloat(styles.height),
+    }
+  })
+
+  expect(size.width).toBeCloseTo(51.2, 0)
+  expect(size.height).toBeCloseTo(51.2, 0)
+})
+
+test("returns to the top of the page from the takeover close", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  await page.locator(".mosaic-takeover-stage").evaluate((element) => element.scrollIntoView({ block: "end" }))
+  await scrollSeamTo(page, 0.71)
+  await page.getByRole("button", { name: "Close about" }).click()
+
+  const restored = await page.evaluate(() => ({
+    scrollY: Math.round(window.scrollY),
+    focusedId: document.activeElement?.id,
+  }))
+
+  expect(restored).toEqual({
+    scrollY: 0,
+    focusedId: "portfolio-title",
+  })
+})
+
+test("keeps preview playback paused until the close return settles", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+
+  const video = page.locator(".mosaic-row-card video.mosaic-row-media").first()
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
+
+  await page.locator(".mosaic-takeover-stage").evaluate((element) => element.scrollIntoView({ block: "end" }))
+  await scrollSeamTo(page, 0.71)
+  await video.evaluate((element) => {
+    const probeWindow = window as Window & { __previewPlayedBeforeCloseSettled?: boolean }
+    probeWindow.__previewPlayedBeforeCloseSettled = false
+    element.addEventListener(
+      "play",
+      () => {
+        probeWindow.__previewPlayedBeforeCloseSettled = window.scrollY > 0
+      },
+      { once: true },
+    )
+  })
+  await page.getByRole("button", { name: "Close about" }).click()
+
+  await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0)
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __previewPlayedBeforeCloseSettled?: boolean }).__previewPlayedBeforeCloseSettled,
+    ),
+  ).toBe(false)
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused)).toBe(true)
+})
+
+test("squeezes the takeover cue flat as the about sheet climbs", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+
+  const cue = page.locator(".mosaic-takeover-cue")
+  const chevron = page.locator(".mosaic-takeover-cue-chevron")
+  await page.locator(".mosaic-takeover-stage").evaluate((element) => element.scrollIntoView({ block: "end" }))
+
+  await scrollSeamTo(page, 0.05)
+  const opening = {
+    left: await readArmAngle(page, "left"),
+    right: await readArmAngle(page, "right"),
+    opacity: Number.parseFloat(await chevron.evaluate((element) => getComputedStyle(element).opacity)),
+    // The cue rides above the seam, never over the sheet it is pointing at.
+    aboveSeam: await cue.evaluate((element) => {
+      const about = document.querySelector("#about-panel")
+      return about ? element.getBoundingClientRect().bottom <= about.getBoundingClientRect().top : null
+    }),
+  }
+
+  await scrollSeamTo(page, 0.45)
+  const middle = {
+    left: await readArmAngle(page, "left"),
+    right: await readArmAngle(page, "right"),
+    opacity: Number.parseFloat(await chevron.evaluate((element) => getComputedStyle(element).opacity)),
+  }
+
+  await scrollSeamTo(page, 0.95)
+  const closing = {
+    left: await readArmAngle(page, "left"),
+    right: await readArmAngle(page, "right"),
+    opacity: Number.parseFloat(await chevron.evaluate((element) => getComputedStyle(element).opacity)),
+  }
+
+  // A chevron on the way in, mirrored across the joint the two arms share.
+  expect(opening.left).toBe(22)
+  expect(opening.right).toBe(-22)
+  expect(opening.opacity).toBeGreaterThan(0)
+  expect(opening.aboveSeam).toBe(true)
+
+  expect(middle.left).toBeLessThan(opening.left as number)
+  expect(middle.right).toBeGreaterThan(opening.right as number)
+  // On `difference` the opacity is the contrast dial, not a fade, so it tops
+  // out at the cue's resting 0.32 rather than at 1.
+  expect(middle.opacity).toBe(0.32)
+
+  // Flat, and gone, before the seam reaches the top of the viewport.
+  expect(closing.left).toBe(0)
+  expect(closing.right).toBe(0)
+  expect(closing.opacity).toBe(0)
+})
+
+test("runs every takeover seam layer edge to edge with the sheet", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+
+  const edges = await page.locator(".mosaic-takeover-runway").evaluate((element) => {
+    const rect = element.getBoundingClientRect()
+    // `left: 50%` resolves against the runway's padding box, so a pseudo-element's
+    // own span is its centre plus its negative margin, plus its width.
+    const span = (pseudo: string) => {
+      const styles = getComputedStyle(element, pseudo)
+      const left = rect.left + rect.width / 2 + Number.parseFloat(styles.marginLeft)
+      return [Math.round(left), Math.round(left + Number.parseFloat(styles.width))]
+    }
+    const cue = document.querySelector(".mosaic-takeover-cue")?.getBoundingClientRect()
+    const sheet = document.querySelector(".mosaic-about")?.getBoundingClientRect()
+
+    return {
+      viewport: window.innerWidth,
+      overflows: document.documentElement.scrollWidth > window.innerWidth,
+      runway: [Math.round(rect.left), Math.round(rect.right)],
+      cast: span("::before"),
+      hairline: span("::after"),
+      cue: cue ? [Math.round(cue.left), Math.round(cue.right)] : null,
+      sheet: sheet ? [Math.round(sheet.left), Math.round(sheet.right)] : null,
+    }
+  })
+
+  const bleed = [0, edges.viewport]
+
+  // The runway itself stops at the 1560px reading measure. The layers marking
+  // the sheet's top edge have to break out of it, or they end short of the
+  // edges the white surface reaches.
+  expect(edges.runway[0]).toBeGreaterThan(0)
+  expect(edges.cast).toEqual(bleed)
+  expect(edges.hairline).toEqual(bleed)
+  expect(edges.sheet).toEqual(bleed)
+  expect(edges.overflows).toBe(false)
+
+  // The cue is the exception: it is a mark on the seam, not a layer of it, and
+  // its box is the group Chrome composites to blend. Centred on the viewport,
+  // and no wider than the chevron needs.
+  expect(edges.cue).not.toBeNull()
+  const [cueLeft, cueRight] = edges.cue as number[]
+  expect(cueRight - cueLeft).toBeLessThanOrEqual(48)
+  expect(Math.round((cueLeft + cueRight) / 2)).toBe(Math.round(edges.viewport / 2))
+})
+
+test("deepens the seam's ambient cast across the takeover", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+
+  const runway = page.locator(".mosaic-takeover-runway")
+  const readCast = () =>
+    runway.evaluate((element) => {
+      const cast = getComputedStyle(element, "::before")
+      return { opacity: Number.parseFloat(cast.opacity), height: cast.height, image: cast.backgroundImage }
+    })
+
+  await page.locator(".mosaic-takeover-stage").evaluate((element) => element.scrollIntoView({ block: "end" }))
+
+  await scrollSeamTo(page, 0.05)
+  const arriving = await readCast()
+  await scrollSeamTo(page, 0.95)
+  const seated = await readCast()
+
+  // The hover-card shadow on ::after only spills ~20px past the hairline, so
+  // the penumbra is a separate gradient layer that ramps as the sheet climbs.
+  expect(arriving.height).toBe("120px")
+  expect(arriving.image).toContain("linear-gradient")
+  expect(arriving.opacity).toBeLessThan(0.5)
+  expect(seated.opacity).toBeGreaterThan(0.9)
+})
+
+test("rests the takeover cue as a plain chevron under reduced motion", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  await page.locator(".mosaic-takeover-stage").evaluate((element) => element.scrollIntoView({ block: "end" }))
+  await scrollSeamTo(page, 0.45)
+
+  await expect(page.locator(".mosaic-takeover-cue-chevron")).toHaveCSS("opacity", "0.32")
+  expect(await readArmAngle(page, "left")).toBe(22)
+  expect(await readArmAngle(page, "right")).toBe(-22)
+})
+
+test("draws the takeover cue as the inverse of whatever it crosses", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+
+  const cue = page.locator(".mosaic-takeover-cue")
+  const chevron = page.locator(".mosaic-takeover-cue-chevron")
+
+  // White on `difference` is what makes the chevron read dark over the pale
+  // cards and light over the dark ones. A fixed ink cannot do both.
+  await expect(chevron).toHaveCSS("mix-blend-mode", "difference")
+  await expect(chevron).toHaveCSS("color", "rgb(255, 255, 255)")
+  await expect(cue.locator(".mosaic-takeover-cue-arm").first()).toHaveCSS("box-shadow", "none")
+
+  // The button around it must stay out of the way of the blend: an `opacity`
+  // or a `z-index` here would make it a stacking context, isolating the group
+  // and leaving the chevron inverting transparency to plain white.
+  await expect(cue).toHaveCSS("opacity", "1")
+  await expect(cue).toHaveCSS("z-index", "auto")
+  await expect(cue).toHaveCSS("mix-blend-mode", "normal")
+
+  // And the blend needs a backdrop inside `main`'s stacking context. App's
+  // wrapper paints the same white, but from outside it — drop the runway's own
+  // background and the chevron inverts transparency to plain white over the
+  // runway, which is where it spends most of the crossing.
+  await expect(page.locator("main")).toHaveCSS("z-index", "10")
+  await expect(page.locator(".mosaic-takeover-runway")).toHaveCSS("background-color", "rgb(255, 255, 255)")
+})
+
+test("finishes the takeover when the cue is tapped", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  // Reduced motion makes the scroll instant, so the assertion isn't racing a
+  // smooth-scroll animation.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const cue = page.getByRole("button", { name: "Continue to About" })
+  await page.locator(".mosaic-takeover-stage").evaluate((element) => element.scrollIntoView({ block: "end" }))
+  await scrollSeamTo(page, 0.3)
+
+  // Mid-crossing: the sheet is well short of covering the viewport.
+  const about = page.locator("#about-panel")
+  expect(await about.evaluate((element) => Math.round(element.getBoundingClientRect().top))).toBeGreaterThan(100)
+
+  // A real tap on the rendered pixels, not a synthetic dispatch — the point is
+  // that the 44px target is actually reachable where the chevron is drawn.
+  await cue.click()
+
+  expect(await about.evaluate((element) => Math.round(element.getBoundingClientRect().top))).toBe(0)
+  await expect(about).toBeFocused()
+})
+
+test("gives the takeover cue a full tap target and its own name", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 913 })
+  await page.goto("/")
+
+  const cue = page.locator(".mosaic-takeover-cue")
+  const box = await cue.boundingBox()
+
+  expect(box).not.toBeNull()
+  expect(box!.width).toBeGreaterThanOrEqual(44)
+  expect(box!.height).toBeGreaterThanOrEqual(44)
+
+  // It sits above the seam, clear of the sheet it points at.
+  const seam = await page.locator("#about-panel").evaluate((element) => element.getBoundingClientRect().top)
+  const cueBottom = await cue.evaluate((element) => element.getBoundingClientRect().bottom)
+  expect(cueBottom).toBeLessThanOrEqual(seam)
+
+  // Distinct from the avatar, which scrolls to the same place: two buttons
+  // reading "Read about Rafael Medina" would be ambiguous in a rotor list.
+  await expect(cue).toHaveAccessibleName("Continue to About")
+  await expect(page.getByRole("button", { name: "Read about Rafael Medina" })).toHaveCount(1)
+})
+
+test("drops the takeover cue below the breakpoint that pins the gallery", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+
+  await expect(page.locator(".mosaic-takeover-cue")).toHaveCSS("display", "none")
+})
+
 test("retreats the complete project grid as one surface during takeover", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.emulateMedia({ reducedMotion: "no-preference" })

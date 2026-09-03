@@ -11,7 +11,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
 import { ContactActionRow } from "./ContactActionRow"
@@ -139,6 +139,7 @@ type RowVideoMediaProps = {
   width?: number
   height?: number
   prefersReducedMotion: boolean
+  pausePlayback: boolean
 }
 
 const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -243,6 +244,7 @@ function RowVideoMedia({
   width,
   height,
   prefersReducedMotion,
+  pausePlayback,
 }: RowVideoMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const supportsIntersectionObserver = useSyncExternalStore(
@@ -302,12 +304,12 @@ function RowVideoMedia({
     // `galleryCovered` every loop keeps decoding and uploading frames to the
     // GPU behind an opaque sheet — starving the raster budget the sheet's own
     // text needs during scroll.
-    if (!prefersReducedMotion && loadNow && visibleNow && !galleryCovered) {
+    if (!prefersReducedMotion && !pausePlayback && loadNow && visibleNow && !galleryCovered) {
       void video.play().catch(() => undefined)
     } else {
       video.pause()
     }
-  }, [galleryCovered, loadNow, prefersReducedMotion, visibleNow])
+  }, [galleryCovered, loadNow, pausePlayback, prefersReducedMotion, visibleNow])
 
   return (
     <video
@@ -586,6 +588,8 @@ function SocialCorner({
 
 export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
+  const [isReturningToTop, setIsReturningToTop] = useState(false)
   const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [hasOpenedWorkPreview, setHasOpenedWorkPreview] = useState(false)
@@ -668,6 +672,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           width={card.previewWidth}
           height={card.previewHeight}
           prefersReducedMotion={prefersReducedMotion}
+          pausePlayback={isReturningToTop}
         />
       )
     }
@@ -729,6 +734,73 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     }
   }, [])
 
+  useEffect(() => {
+    const aboutPanel = document.getElementById("about-panel")
+    if (!aboutPanel) return
+
+    const takeoverMedia = window.matchMedia("(min-width: 700px)")
+    let frameId: number | null = null
+    let visible = false
+
+    const syncVisibility = () => {
+      frameId = null
+      const bounds = aboutPanel.getBoundingClientRect()
+      const nextVisible =
+        takeoverMedia.matches && bounds.top < window.innerHeight * 0.3 && bounds.bottom > 0
+
+      if (nextVisible === visible) return
+      visible = nextVisible
+      setIsTakeoverCloseVisible(nextVisible)
+    }
+
+    const scheduleSync = () => {
+      if (frameId !== null) return
+      frameId = window.requestAnimationFrame(syncVisibility)
+    }
+
+    scheduleSync()
+    window.addEventListener("scroll", scheduleSync, { passive: true })
+    window.addEventListener("resize", scheduleSync)
+    takeoverMedia.addEventListener("change", scheduleSync)
+
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId)
+      window.removeEventListener("scroll", scheduleSync)
+      window.removeEventListener("resize", scheduleSync)
+      takeoverMedia.removeEventListener("change", scheduleSync)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isReturningToTop) return
+
+    let idleTimeoutId: number | null = null
+    let fallbackTimeoutId: number | null = null
+    const finishReturn = () => setIsReturningToTop(false)
+    const scheduleFallback = () => {
+      if (fallbackTimeoutId !== null) {
+        window.clearTimeout(fallbackTimeoutId)
+        fallbackTimeoutId = null
+      }
+      if (idleTimeoutId !== null) window.clearTimeout(idleTimeoutId)
+      idleTimeoutId = window.setTimeout(finishReturn, 120)
+    }
+
+    if (Reflect.has(window, "onscrollend")) {
+      window.addEventListener("scrollend", finishReturn)
+    } else {
+      fallbackTimeoutId = window.setTimeout(finishReturn, 1500)
+      window.addEventListener("scroll", scheduleFallback, { passive: true })
+    }
+
+    return () => {
+      if (idleTimeoutId !== null) window.clearTimeout(idleTimeoutId)
+      if (fallbackTimeoutId !== null) window.clearTimeout(fallbackTimeoutId)
+      window.removeEventListener("scroll", scheduleFallback)
+      window.removeEventListener("scrollend", finishReturn)
+    }
+  }, [isReturningToTop])
+
   const scrollToAbout = (trigger: string) => {
     trackEvent("about_scroll", { about_scroll_trigger: trigger })
     const aboutPanel = document.getElementById("about-panel")
@@ -741,6 +813,15 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     aboutPanel.focus({ preventScroll: true })
   }
 
+  const closeAbout = () => {
+    document.getElementById("portfolio-title")?.focus({ preventScroll: true })
+    setIsReturningToTop(true)
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    })
+  }
+
   const openAbout = (href: string) => {
     if (window.location.hash !== href) window.history.pushState(null, "", href)
     scrollToAbout("nav_about")
@@ -748,12 +829,24 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
   return (
     <section className="mosaic-shell">
-      <h1 className="sr-only">{profile.name} portfolio</h1>
+      <h1 id="portfolio-title" className="sr-only" tabIndex={-1}>{profile.name} portfolio</h1>
       <SectionCorner
         onSelect={openAbout}
         resumeHref={links.resumePdf}
       />
       <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+      <button
+        type="button"
+        className="mosaic-takeover-close"
+        data-visible={isTakeoverCloseVisible}
+        aria-label="Close about"
+        aria-hidden={!isTakeoverCloseVisible}
+        tabIndex={isTakeoverCloseVisible ? 0 : -1}
+        inert={!isTakeoverCloseVisible}
+        onClick={closeAbout}
+      >
+        <X aria-hidden="true" />
+      </button>
       <header id="about" className="mosaic-hero">
         <div className="mosaic-hero-profile mosaic-hero-profile-animated">
           <div className="mosaic-profile-info">
@@ -911,6 +1004,29 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                     })}
                   </div>
                 </div>
+                {/* The scroll cue rides the runway, not the sheet, for the same
+                    reason the hairline below does: nothing may paint outside
+                    the sheet's own opaque layer. Two bars hinged at their
+                    shared inner end, so the squeeze is a pair of rotations —
+                    the caps keep their weight all the way to flat, which a
+                    scaled chevron would not. */}
+                {/* The chevron is nested rather than blended on the button
+                    itself because the blend needs a backdrop: `opacity` on an
+                    ancestor would isolate the group and leave it inverting
+                    transparency. The button therefore carries no opacity of its
+                    own, and no `z-index` — a stacking context here would do the
+                    same damage. */}
+                <button
+                  type="button"
+                  className="mosaic-takeover-cue"
+                  aria-label="Continue to About"
+                  onClick={() => scrollToAbout("takeover_cue")}
+                >
+                  <span className="mosaic-takeover-cue-chevron" aria-hidden="true">
+                    <span className="mosaic-takeover-cue-arm mosaic-takeover-cue-arm-left" />
+                    <span className="mosaic-takeover-cue-arm mosaic-takeover-cue-arm-right" />
+                  </span>
+                </button>
               </div>
           </article>
 
