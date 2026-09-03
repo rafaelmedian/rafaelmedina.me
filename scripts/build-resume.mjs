@@ -36,7 +36,7 @@ const links = ["rafaelmedina.me", "dribbble.com/rafaelmedian", "linkedin.com/in/
 
 const work = [
   {
-    company: "Startup",
+    company: "Stealth fintech",
     place: "Remote",
     dates: "2026 - Present",
     role: "Co-founder",
