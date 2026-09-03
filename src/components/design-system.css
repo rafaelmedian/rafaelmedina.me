@@ -15,7 +15,6 @@
 .ds-page {
   --ds-gutter: clamp(1rem, 3vw, 2.5rem);
   --ds-hairline: rgb(0 0 0 / 0.08);
-  --ds-hairline-soft: rgb(0 0 0 / 0.055);
   --ds-rail: 15.5rem;
   position: relative;
   z-index: 1;
@@ -504,8 +503,7 @@
   line-height: 1.35;
 }
 
-.ds-card-spec,
-.ds-swatch-body code {
+.ds-card-spec {
   display: block;
   margin-top: 0.2rem;
   color: #6b6b6b;
@@ -1136,6 +1134,16 @@
 @media (max-width: 699.98px) {
   .ds-rail-inner {
     flex-wrap: wrap;
+  }
+
+  /* Force the second row rather than leave it to whether the three items
+     happen to overflow. From about 440px up they fit on one line, and the
+     6rem offset below would then float every sticky heading 44px clear of a
+     52px bar. `justify-content: start` keeps the head's own two columns packed
+     left now that its track has the whole line to stretch into. */
+  .ds-rail-head {
+    flex-basis: 100%;
+    justify-content: start;
   }
 
   .ds-rail-title {
