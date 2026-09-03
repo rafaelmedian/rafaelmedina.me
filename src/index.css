@@ -357,6 +357,64 @@ img {
   justify-content: flex-start;
 }
 
+.mosaic-takeover-close {
+  display: none;
+}
+
+@media (min-width: 700px) {
+  .mosaic-takeover-close {
+    position: fixed;
+    top: max(2.5rem, env(safe-area-inset-top));
+    right: max(1.5rem, env(safe-area-inset-right));
+    z-index: 30;
+    width: 51.2px;
+    height: 51.2px;
+    border: 0;
+    border-radius: var(--radius-full);
+    display: grid;
+    place-items: center;
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow:
+      0 1px 2px rgb(16 16 20 / 0.06),
+      0 12px 32px rgb(16 16 20 / 0.16);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-0.75rem) scale(0.96);
+    transition-property: opacity, transform, visibility, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  .mosaic-takeover-close[data-visible="true"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mosaic-takeover-close:hover,
+  .mosaic-takeover-close:focus-visible {
+    box-shadow:
+      0 1px 2px rgb(16 16 20 / 0.08),
+      0 16px 36px rgb(16 16 20 / 0.2);
+  }
+
+  .mosaic-takeover-close:active {
+    transform: translateY(0) scale(0.96);
+  }
+
+  .mosaic-takeover-close svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    stroke-width: 1.75;
+  }
+}
+
 .mosaic-local-time-anchor {
   min-height: 2.5rem;
   align-items: center;
@@ -2510,6 +2568,13 @@ img {
     height: calc(var(--takeover-gallery-height) + 100vh);
     height: calc(var(--takeover-gallery-height) + 100dvh);
     display: block;
+    /* Identical to what shows through here — App's wrapper already paints
+       `--canvas` behind the whole page. It has to be painted *inside* the
+       runway all the same: `main` is `position: relative; z-index: 10`, so it
+       is a stacking context, and the wrapper's white sits outside it. Without
+       this the cue's `difference` blend finds a transparent backdrop over the
+       gallery's white runway and inverts to plain white — invisible. */
+    background: var(--canvas);
   }
 
   .mosaic-takeover-stage {
@@ -2541,24 +2606,245 @@ img {
      mid-scroll. Anchored here the same shadow reads identically (the sheet
      still covers the downward spill), while a missed sheet tile now resolves
      to solid canvas instead of a see-through band. */
+  /* The runway is a shell child, so it stops at the 1560px reading measure —
+     but the sheet it marks is full-bleed. Every seam layer therefore breaks out
+     to the viewport the same way the sheet does, or the hairline and its cast
+     end 100px short of the edges the white surface actually reaches. */
+  .mosaic-takeover-runway::before,
+  .mosaic-takeover-runway::after {
+    left: 50%;
+    right: auto;
+    width: 100vw;
+    width: 100dvw;
+    margin-left: -50vw;
+    margin-left: -50dvw;
+  }
+
+  .mosaic-takeover-runway::before,
   .mosaic-takeover-runway::after {
     content: "";
     position: absolute;
-    right: 0;
     bottom: 100vh;
     bottom: 100dvh;
-    left: 0;
     z-index: 1;
-    height: 1px;
     pointer-events: none;
+    /* Keep each layer on its own compositor layer. Without this Chrome
+       squashes them into the sheet's layer, whose bounds then regrow past the
+       opaque background — undoing the whole reason the shadow moved here. */
+    will-change: transform;
+  }
+
+  /* Contact edge: the hairline and the hover-card shadow it has always
+     carried. Fixed, because the seam itself does not get deeper — only the
+     cast above it does. */
+  .mosaic-takeover-runway::after {
+    height: 1px;
     background: rgb(0 0 0 / 0.08);
     box-shadow:
       0 1px 2px rgb(16 16 20 / 0.06),
       0 12px 32px rgb(16 16 20 / 0.16);
-    /* Keep the shadow on its own compositor layer. Without this Chrome
-       squashes it into the sheet's layer, whose bounds then regrow past the
-       opaque background — undoing the whole reason the shadow moved here. */
-    will-change: transform;
+  }
+
+  /* Ambient cast, thrown upward onto the retreating gallery. The hover-card
+     shadow above only spills ~20px past the seam, which reads as a seam rather
+     than as one surface passing in front of another; this is the penumbra that
+     was missing. A stacked gradient rather than a wider blur radius: the
+     falloff is hand-shaped, and a gradient this size rasterises once instead of
+     re-blurring a 100px radius across a full-width strip every frame. */
+  .mosaic-takeover-runway::before {
+    height: 120px;
+    background: linear-gradient(
+      to top,
+      rgb(16 16 20 / 0.1) 0%,
+      rgb(16 16 20 / 0.056) 16%,
+      rgb(16 16 20 / 0.028) 34%,
+      rgb(16 16 20 / 0.012) 55%,
+      rgb(16 16 20 / 0.004) 78%,
+      rgb(16 16 20 / 0) 100%
+    );
+  }
+
+  /* Scroll cue, and the shortcut through the rest of the crossing. The button
+     is the 44px target; the chevron inside it is the mark.
+
+     Splitting them is not cosmetic. The blend below needs a real backdrop, and
+     anything that creates a stacking context isolates the group inside it — so
+     the button carries no `opacity` (that is on the chevron, where it doubles
+     as the contrast dial) and no `z-index`. It does not need one: it is a
+     positioned sibling that follows the stage in document order, so it already
+     paints above it, and it sits entirely above the seam, so it never meets the
+     About sheet at z-index 1. */
+  .mosaic-takeover-cue {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100vh + 1px);
+    bottom: calc(100dvh + 1px);
+    width: 44px;
+    margin-left: -22px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0 0 19px;
+    color: #ffffff;
+    cursor: pointer;
+  }
+
+  .mosaic-takeover-cue:focus-visible {
+    /* The ring rides the button, which is unblended — inside the chevron it
+       would invert along with the stroke. */
+    border-radius: var(--radius-sm);
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* The bars are laid out collinear and hinged at the joint they share, so the
+     rotations below open them into a chevron without moving the vertex.
+
+     The seam climbs the whole project grid, so the cue crosses card art of any
+     value on its way up. Rather than pick one ink and prop it up with a halo,
+     white on `difference` subtracts the backdrop from itself: the stroke lands
+     dark on the pale cards and light on the dark ones, and the 0.32 opacity
+     that interpolates back toward the backdrop holds the contrast near even
+     across all of them — about 82 levels on white, 62 on the darkest card.
+
+     The box is kept to the chevron's own width rather than the button's: the
+     group Chrome composites to blend is this element's bounds. */
+  .mosaic-takeover-cue-chevron {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    width: 40px;
+    height: 14px;
+    mix-blend-mode: difference;
+    opacity: 0.32;
+  }
+
+  .mosaic-takeover-cue-arm {
+    flex: none;
+    width: 17px;
+    height: 1.5px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .mosaic-takeover-cue-arm-left {
+    transform-origin: 100% 50%;
+    transform: rotate(22deg);
+  }
+
+  .mosaic-takeover-cue-arm-right {
+    transform-origin: 0 50%;
+    transform: rotate(-22deg);
+  }
+}
+
+/* Below the takeover breakpoint the runway is `display: contents` and there is
+   no edge to cue. */
+@media (max-width: 699.98px) {
+  .mosaic-takeover-cue {
+    display: none;
+  }
+}
+
+/* The sheet squeezes the chevron flat as it climbs, and its cast deepens on the
+   way. Both ride the same view timeline as the retreating stage, so the whole
+   crossing stays one scroll-linked, compositor-driven gesture.
+
+   The cue's resting state is the flat, invisible one on purpose: `entry 100%`
+   leaves the seam at the very top of the viewport, so a `fill-mode` of `none`
+   there resolves to exactly what the last keyframe drew. No fill means no
+   layer retained past the crossing — the same trade the stage makes. */
+/* Peaks at the cue's resting 0.32 rather than at 1: on `difference` that
+   opacity is the contrast dial, not a fade. Full strength would invert the
+   backdrop outright and put a black chevron on the white runway. */
+@keyframes mosaic-takeover-cue-reveal {
+  0% {
+    opacity: 0;
+  }
+
+  16%,
+  68% {
+    opacity: 0.32;
+  }
+
+  92%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes mosaic-takeover-cue-squeeze-left {
+  0%,
+  8% {
+    transform: rotate(22deg);
+  }
+
+  86%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes mosaic-takeover-cue-squeeze-right {
+  0%,
+  8% {
+    transform: rotate(-22deg);
+  }
+
+  86%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes mosaic-takeover-edge-deepen {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Browsers without scroll-driven animations keep the static states above: a
+   resting chevron at the seam and a shadow at full depth. */
+@supports (animation-timeline: view()) {
+  @media (min-width: 700px) and (prefers-reduced-motion: no-preference) {
+    .mosaic-takeover-cue-chevron {
+      opacity: 0;
+      animation-name: mosaic-takeover-cue-reveal;
+    }
+
+    .mosaic-takeover-cue-arm-left {
+      transform: rotate(0deg);
+      animation-name: mosaic-takeover-cue-squeeze-left;
+    }
+
+    .mosaic-takeover-cue-arm-right {
+      transform: rotate(0deg);
+      animation-name: mosaic-takeover-cue-squeeze-right;
+    }
+
+    /* `backwards` only: the shadow is already at full depth once the seam
+       clears the viewport, so the resting style is the end state. */
+    .mosaic-takeover-runway::before {
+      animation-name: mosaic-takeover-edge-deepen;
+      animation-fill-mode: backwards;
+    }
+
+    .mosaic-takeover-cue-chevron,
+    .mosaic-takeover-cue-arm,
+    .mosaic-takeover-runway::before {
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-timeline: --about-takeover;
+      animation-range: entry 0% entry 100%;
+    }
   }
 }
 
