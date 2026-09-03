@@ -4,6 +4,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize2, Minimize2
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
+import { isVideoSource } from "../lib/media"
 import { backSound, nextSound, openSound } from "../lib/sounds"
 
 type PreviewGalleryDialogProps = {
@@ -156,10 +157,6 @@ function buildOriginKeyframes(
   }
 
   return keyframes
-}
-
-function isVideoPreviewSource(source: string) {
-  return source.toLowerCase().endsWith(".webm")
 }
 
 function wrapIndex(index: number, length: number) {
@@ -444,7 +441,7 @@ export function PreviewGalleryDialog({
 
   if (!activeCard) return null
 
-  const activeMediaIsVideo = isVideoPreviewSource(activeMediaSource)
+  const activeMediaIsVideo = isVideoSource(activeMediaSource)
   const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
   const mediaFrameStyle = activeCard.previewMediaPaddingBlock
     ? ({ "--preview-gallery-media-padding-block": activeCard.previewMediaPaddingBlock } as CSSProperties)

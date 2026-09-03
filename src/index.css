@@ -592,10 +592,11 @@ img {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* The global reduced-motion reset at the end of the file clamps every
+     transition-duration, so only travel needs removing here. */
   .mosaic-local-time-card,
   .mosaic-local-time-card.is-open {
     transform: none;
-    transition: opacity 100ms ease, visibility 100ms ease;
   }
 }
 
@@ -837,9 +838,6 @@ img {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mosaic-avatar-coin-inner {
-    transition: none;
-  }
   .mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
   .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
     transform: none;
@@ -847,15 +845,13 @@ img {
   .mosaic-avatar-button,
   .mosaic-avatar-button:active {
     transform: none;
-    transition: none;
   }
 
-  /* Keep the hint's fade, drop its slide. */
+  /* Pin the hint's resting pose so only its (clamped) fade remains. */
   .mosaic-avatar-hint,
   .mosaic-avatar-button:hover .mosaic-avatar-hint,
   .mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
     transform: translateY(-50%) rotate(-3deg);
-    transition: opacity var(--duration-fast) linear;
   }
 }
 
@@ -1381,12 +1377,6 @@ img {
   opacity: 1;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .mosaic-availability-dot {
-    transition: none;
-  }
-}
-
 .mosaic-profile-contact .mosaic-profile-actions {
   margin-top: 1.1rem;
 }
@@ -1731,19 +1721,10 @@ img {
 @media (prefers-reduced-motion: reduce) {
   .mosaic-work-history-popover {
     transform: translate(-50%, -100%);
-    transition:
-      opacity 80ms linear,
-      visibility 0ms linear 80ms;
   }
 
   .mosaic-work-history-popover[data-side="below"] {
     transform: translate(-50%, 0);
-  }
-
-  .mosaic-work-history-popover[data-open="true"] {
-    transition:
-      opacity 80ms linear,
-      visibility 0ms linear;
   }
 
   .mosaic-work-history-popover,
@@ -3357,11 +3338,6 @@ img {
   .preview-gallery-expand {
     transform: none;
   }
-
-  .preview-gallery-expand,
-  .preview-gallery-expand-icon {
-    transition: none;
-  }
 }
 
 .preview-gallery-popup[data-preview-media="video"] .preview-gallery-media-frame {
@@ -3549,12 +3525,6 @@ img {
 .preview-gallery-detail-row .preview-gallery-person:hover,
 .preview-gallery-detail-row .preview-gallery-person:focus-visible {
   background: #f2f2f2;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .preview-gallery-detail-row .preview-gallery-person {
-    transition: none;
-  }
 }
 
 .preview-gallery-person-avatar {
@@ -3845,6 +3815,11 @@ img {
   }
 }
 
+/* THE reduced-motion mechanism. Durations are clamped here with !important,
+   so per-component reduced-motion blocks earlier in the file never restate
+   transition timings (they would be dead on arrival) — they only remove
+   travel (transform), kill delayed `both`-filled entrances the clamp cannot
+   reach (animation-delay survives it), or restore visibility. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

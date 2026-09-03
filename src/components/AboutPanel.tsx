@@ -14,6 +14,7 @@ import { cvEducation, cvExperience } from "../data/cv"
 import type { CvExperience } from "../data/cv"
 import type { SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
+import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
 type AboutPanelProps = {
   links: SiteLinks
@@ -375,6 +376,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
   } = useStickerMovement()
   const panelRef = useRef<HTMLElement | null>(null)
   const stickerInstructionsId = useId()
+  const prefersReducedMotion = usePrefersReducedMotion()
 
   // The copy blocks ship visible — the attribute is empty in the prerendered
   // markup, so nothing depends on JavaScript. On mount, blocks still below
@@ -384,8 +386,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
   // to rasterise fresh text tiles behind intent instead of as a late paint.
   useEffect(() => {
     const panel = panelRef.current
-    if (!panel || typeof window.matchMedia !== "function") return
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    if (!panel || prefersReducedMotion) return
     if (!("IntersectionObserver" in window)) return
 
     // Scroll restoration can land mid-sheet; anything already on screen (or
@@ -428,7 +429,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
       observer.observe(block)
     }
     return () => observer.disconnect()
-  }, [])
+  }, [prefersReducedMotion])
 
   const renderStickers = (stickers: AboutSticker[], groupId: string) =>
     stickers.map((sticker) => {
