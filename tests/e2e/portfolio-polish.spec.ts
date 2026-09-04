@@ -3363,30 +3363,44 @@ test("ramps the blur radius behind desktop project captions", async ({ page }) =
   expect(tint).toContain("linear-gradient")
 })
 
-test("keeps desktop project captions readable over white artwork", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 })
+test("keeps wrapped desktop project captions readable over white artwork", async ({ page }) => {
+  await page.setViewportSize({ width: 700, height: 1000 })
   await page.goto("/")
 
-  const card = page.getByRole("button", { name: /Open Matcha homepage preview 2 of/ })
+  const card = page.getByRole("button", { name: /Open Matcha multiwallet flow preview 1 of/ })
   const scrim = card.locator(".mosaic-row-card-scrim")
+  const title = card.locator(".mosaic-row-card-title")
   await card.hover()
+
+  expect(
+    await title.evaluate(
+      (element) => element.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(element).lineHeight),
+    ),
+  ).toBeGreaterThan(1.5)
 
   const contrastOverWhite = await scrim.evaluate((element) => {
     const background = getComputedStyle(element, "::after").backgroundImage
-    const gradient = background.match(
-      /rgba\(0, 0, 0, ([\d.]+)\) 0%, rgba\(0, 0, 0, 0\) ([\d.]+)%/,
-    )
+    // The tint is an eased ramp, so its alpha at the caption has to be read off
+    // the stop list rather than assumed to fall in a straight line.
+    const stops = Array.from(background.matchAll(/rgba\(0, 0, 0, ([\d.]+)\) ([\d.]+)%/g), (stop) => ({
+      alpha: Number(stop[1]),
+      at: Number(stop[2]) / 100,
+    }))
     const title = element.nextElementSibling
 
-    if (!gradient || !(title instanceof HTMLElement)) return Number.NaN
+    if (stops.length < 2 || !(title instanceof HTMLElement)) return Number.NaN
 
     const scrimBox = element.getBoundingClientRect()
     const titleBox = title.getBoundingClientRect()
-    const startAlpha = Number(gradient[1])
-    const fadeEnd = Number(gradient[2]) / 100
-    const titleFromBottom = scrimBox.bottom - (titleBox.top + titleBox.height / 2)
+    const titleFromBottom = scrimBox.bottom - titleBox.top
     const titleProgress = titleFromBottom / scrimBox.height
-    const tintAlpha = startAlpha * Math.max(0, 1 - titleProgress / fadeEnd)
+    const upper = stops.find((stop) => stop.at >= titleProgress) ?? stops[stops.length - 1]
+    const lower = [...stops].reverse().find((stop) => stop.at <= titleProgress) ?? stops[0]
+    const span = upper.at - lower.at
+    const tintAlpha =
+      span === 0
+        ? lower.alpha
+        : lower.alpha + ((titleProgress - lower.at) / span) * (upper.alpha - lower.alpha)
     const compositedChannel = 1 - tintAlpha
     const luminance =
       compositedChannel <= 0.04045

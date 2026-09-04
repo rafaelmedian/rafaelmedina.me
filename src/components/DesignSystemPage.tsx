@@ -1108,7 +1108,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 62% 100% 0.68 360ms")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 360ms eased compact desktop")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1118,9 +1118,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   100% of that value, so the artwork softens toward the bottom edge instead of stopping at a seam. A
                   single masked blur layer is not the same effect — a mask fades the opacity of a uniformly blurred
                   layer, which leaves the top of the band a half-strength blend of sharp and blurred. A{" "}
-                  <code>rgb(0 0 0 / 0.68)</code> ramp sits above all four: blur cannot promise contrast on its own,
-                  because a blurred white screenshot is still white. Its bottom stop keeps the caption at 4.5:1 even
-                  over white artwork. The two fade on separate clocks — the tint at the 160ms hover default alongside
+                  <code>rgb(0 0 0 / 0.62)</code> ramp sits above all four: blur cannot promise contrast on its own,
+                  because a blurred white screenshot is still white. On wide layouts it is nearly flat across the
+                  bottom seventh of the band, where the caption sits. From 700px through 899px, the shorter band holds
+                  56% black through 40% of its height so a wrapped two-line label also clears 4.5:1 over white artwork.
+                  Contrast is only owed at the label, so the rest of each band sheds its weight quickly and reads far
+                  lighter than a ramp that starts at the same value. Every ramp here — the
+                  four masks and the tint — fades on an eased stop list rather than a straight line, and trails off
+                  across the whole band instead of ending partway up: a linear ramp changes slope where it reaches
+                  zero, and the eye reads that break as an edge. The two fade on separate clocks — the tint at the 160ms hover default alongside
                   the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
                   illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
                   on hover and focus, one tile at a time. Below 700px and on coarse pointers, the four blur layers stay
