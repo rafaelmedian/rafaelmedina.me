@@ -2863,6 +2863,49 @@ img {
 .mosaic-row-card-scrim {
   --card-caption-blur: 2.5rem;
 
+  /* Every ramp in this band -- the four blur masks below and the tint at the
+     end -- dies out on the same eased curve rather than a straight line. A
+     linear alpha ramp changes slope abruptly at the point it reaches zero, and
+     the eye reads that break as an edge even though nothing is drawn there;
+     these stops flatten the approach so the band has no top. Only the span
+     differs between them. */
+  --card-caption-mask-1: linear-gradient(
+    to top,
+    #000 22%,
+    rgb(0 0 0 / 0.54) 30.2%,
+    rgb(0 0 0 / 0.28) 35.6%,
+    rgb(0 0 0 / 0.13) 39.5%,
+    rgb(0 0 0 / 0.04) 42.6%,
+    transparent 46%
+  );
+  --card-caption-mask-2: linear-gradient(
+    to top,
+    #000 14%,
+    rgb(0 0 0 / 0.54) 20.8%,
+    rgb(0 0 0 / 0.28) 25.3%,
+    rgb(0 0 0 / 0.13) 28.6%,
+    rgb(0 0 0 / 0.04) 31.2%,
+    transparent 34%
+  );
+  --card-caption-mask-3: linear-gradient(
+    to top,
+    #000 8%,
+    rgb(0 0 0 / 0.54) 13.4%,
+    rgb(0 0 0 / 0.28) 17%,
+    rgb(0 0 0 / 0.13) 19.7%,
+    rgb(0 0 0 / 0.04) 21.8%,
+    transparent 24%
+  );
+  --card-caption-mask-4: linear-gradient(
+    to top,
+    #000 0%,
+    rgb(0 0 0 / 0.54) 5.1%,
+    rgb(0 0 0 / 0.28) 8.5%,
+    rgb(0 0 0 / 0.13) 11%,
+    rgb(0 0 0 / 0.04) 12.9%,
+    transparent 15%
+  );
+
   position: absolute;
   inset: auto 0 0;
   z-index: 1;
@@ -2891,29 +2934,29 @@ img {
 .mosaic-row-card-scrim > span:nth-child(1) {
   -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.12));
   backdrop-filter: blur(calc(var(--card-caption-blur) * 0.12));
-  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 22%, transparent 46%);
-  mask-image: linear-gradient(to top, #000 0%, #000 22%, transparent 46%);
+  -webkit-mask-image: var(--card-caption-mask-1);
+  mask-image: var(--card-caption-mask-1);
 }
 
 .mosaic-row-card-scrim > span:nth-child(2) {
   -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.3));
   backdrop-filter: blur(calc(var(--card-caption-blur) * 0.3));
-  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 14%, transparent 34%);
-  mask-image: linear-gradient(to top, #000 0%, #000 14%, transparent 34%);
+  -webkit-mask-image: var(--card-caption-mask-2);
+  mask-image: var(--card-caption-mask-2);
 }
 
 .mosaic-row-card-scrim > span:nth-child(3) {
   -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.62));
   backdrop-filter: blur(calc(var(--card-caption-blur) * 0.62));
-  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 8%, transparent 24%);
-  mask-image: linear-gradient(to top, #000 0%, #000 8%, transparent 24%);
+  -webkit-mask-image: var(--card-caption-mask-3);
+  mask-image: var(--card-caption-mask-3);
 }
 
 .mosaic-row-card-scrim > span:nth-child(4) {
   -webkit-backdrop-filter: blur(var(--card-caption-blur));
   backdrop-filter: blur(var(--card-caption-blur));
-  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 15%);
-  mask-image: linear-gradient(to top, #000 0%, transparent 15%);
+  -webkit-mask-image: var(--card-caption-mask-4);
+  mask-image: var(--card-caption-mask-4);
 }
 
 /* The tint rides above the whole ramp rather than inside the blurriest layer.
@@ -2924,9 +2967,33 @@ img {
   content: "";
   position: absolute;
   inset: 0;
-  /* After the 72% fade reaches the caption's position, this still composites
-     white artwork dark enough for the white label to clear 4.5:1. */
-  background: linear-gradient(to top, rgb(0 0 0 / 0.68) 0%, transparent 72%);
+  /* On wide layouts this is nearly flat across the bottom seventh, where the
+     caption sits, then eased to nothing over the rest of the band. The plateau
+     is what buys the weight back: contrast is only owed at the label, so the
+     tint holds ~0.57 behind it -- the same composite the old 0.68 straight ramp
+     put there, and the same margin over 4.5:1 on white artwork -- and sheds
+     about a third of its weight through the middle of the band, which is the
+     part you actually read as heavy. It also has no top: a ramp that reaches
+     zero partway up changes slope there, and the eye reads that break as an
+     edge. Compact desktop overrides the stop positions below because its
+     labels can wrap inside a shorter band. */
+  background: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.62) 0%,
+    rgb(0 0 0 / 0.595) 8%,
+    rgb(0 0 0 / 0.56) 14%,
+    rgb(0 0 0 / 0.475) 21%,
+    rgb(0 0 0 / 0.36) 30%,
+    rgb(0 0 0 / 0.27) 38%,
+    rgb(0 0 0 / 0.19) 47%,
+    rgb(0 0 0 / 0.13) 56%,
+    rgb(0 0 0 / 0.085) 65%,
+    rgb(0 0 0 / 0.05) 74%,
+    rgb(0 0 0 / 0.027) 82%,
+    rgb(0 0 0 / 0.012) 89%,
+    rgb(0 0 0 / 0.003) 95%,
+    transparent 100%
+  );
   opacity: 0;
   /* The scale's default for opacity on hover, and the same curve the caption
      itself uses -- tint and label arrive together, ahead of the blur. */
@@ -2942,6 +3009,32 @@ img {
       linear-gradient(to top, rgb(0 0 0 / 0.34) 0%, transparent 48%),
       linear-gradient(to top, rgb(0 0 0 / 0.2) 0%, transparent 74%),
       linear-gradient(to top, rgb(0 0 0 / 0.1) 0%, transparent 100%);
+  }
+}
+
+/* Compact desktop cards are short enough that long labels wrap above the
+   wide layout's bottom plateau. Hold the tint through the full two-line label,
+   then spend the remaining height on the same eased exit. This comes after the
+   no-backdrop fallback so contrast does not depend on blur support. */
+@media (min-width: 700px) and (max-width: 899.98px) {
+  .mosaic-row-card-scrim::after {
+    background: linear-gradient(
+      to top,
+      rgb(0 0 0 / 0.62) 0%,
+      rgb(0 0 0 / 0.595) 18%,
+      rgb(0 0 0 / 0.56) 40%,
+      rgb(0 0 0 / 0.475) 48%,
+      rgb(0 0 0 / 0.36) 56%,
+      rgb(0 0 0 / 0.27) 64%,
+      rgb(0 0 0 / 0.19) 72%,
+      rgb(0 0 0 / 0.13) 80%,
+      rgb(0 0 0 / 0.085) 87%,
+      rgb(0 0 0 / 0.05) 92%,
+      rgb(0 0 0 / 0.027) 96%,
+      rgb(0 0 0 / 0.012) 98%,
+      rgb(0 0 0 / 0.003) 99%,
+      transparent 100%
+    );
   }
 }
 
