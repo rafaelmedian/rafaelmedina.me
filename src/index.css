@@ -2449,15 +2449,31 @@ img {
   display: contents;
 }
 
+/* The blur is deliberately back-loaded. A linear 0 -> 8px ramp reads as the
+   gallery going soft the instant the sheet appears, which fights the sheet for
+   attention; holding near-focus through the first third and spending most of
+   the radius in the last quarter matches how a lens racks focus — nothing, then
+   all at once. The stops are the curve, because the animation's own timing
+   function has to stay `linear` for the scroll to feel direct. */
 @keyframes mosaic-takeover-retreat {
   from {
     opacity: 1;
     transform: scale(1);
+    filter: blur(0px);
+  }
+
+  32% {
+    filter: blur(0.8px);
+  }
+
+  66% {
+    filter: blur(3px);
   }
 
   to {
     opacity: 0.78;
     transform: scale(0.98);
+    filter: blur(8px);
   }
 }
 
@@ -2766,8 +2782,15 @@ img {
 
 @media (min-width: 700px) and (prefers-reduced-motion: no-preference) {
   /* View Timelines keep scroll-linked motion off the main thread. The complete
-     gallery retreats as one composited surface, preserving every card gap and
-     avoiding continuously painted blur. */
+     gallery retreats as one composited surface, preserving every card gap.
+
+     Opacity, transform and filter are the three properties Chrome can animate
+     on the compositor, so the blur re-runs a shader over the stage's existing
+     texture each frame rather than repainting the grid — the tiles are not
+     re-rastered at a new radius. It is still the most expensive thing in the
+     crossing: a full-viewport surface, and the videos inside it are only
+     paused once the sheet fully covers it. Keep the radius modest and do not
+     add a fourth animated property here. */
   .mosaic-takeover-stage {
     animation-name: mosaic-takeover-retreat;
     animation-duration: 1ms;
