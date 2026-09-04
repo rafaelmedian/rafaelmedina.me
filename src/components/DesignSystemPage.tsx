@@ -414,7 +414,7 @@ const EASINGS = [
     name: "Scroll linked",
     css: "linear",
     duration: "1 viewport of scroll",
-    use: "One View Timeline drives the whole About takeover: the pinned gallery scales and fades, the seam's ambient cast deepens from 0.35 to full, and the scroll cue squeezes from a 22° chevron to a flat line before it fades.",
+    use: "One View Timeline drives the whole About takeover: the pinned gallery scales, fades and racks out of focus to blur(8px), the seam's ambient cast deepens from 0.35 to full, and the scroll cue squeezes from a 22° chevron to a flat line before it fades.",
   },
 ]
 
@@ -1415,6 +1415,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   remains continuous through the page end. The gallery retreats as one surface, and About
                   continues in normal flow after the cover. Below 700px both wrappers collapse with{" "}
                   <code>display: contents</code>; the white sheet stays full-bleed but no pinning or overlap is applied.
+                </li>
+                <li data-ds-terms={terms("gallery retreat blur 8px focus rack opacity 0.78 scale 0.98 compositor filter")}>
+                  <strong>The gallery retreats out of focus, not just backwards.</strong> Across the same crossing the
+                  stage runs three properties together — <code>opacity</code> to 0.78, <code>scale</code> to 0.98, and{" "}
+                  <code>filter: blur()</code> to 8px — so the sheet reads as the focal plane rather than as a white
+                  rectangle sliding over a sharp one. The blur is back-loaded (0.8px at a third of the crossing, 3px at
+                  two thirds) because a linear ramp softens the gallery before the sheet has earned the attention. All
+                  three are compositor-animated properties, so the ramp re-runs a shader over the stage's texture
+                  instead of repainting the grid; a fourth animated property here would not be free.
                 </li>
                 <li data-ds-terms={terms("seam hairline shadow ambient cast 120px 0.35 chevron 17px 22deg scroll cue 100dvw")}>
                   <strong>The seam is three layers, and two of them move.</strong> The overlay shadow only spills
