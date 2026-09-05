@@ -1,4 +1,4 @@
-// Builds public/rafael-medina-resume.pdf.
+// Builds public/rafael-medina-resume.pdf and its hover-preview image.
 //
 // The résumé used to be a Figma export, which meant the downloadable PDF drifted
 // away from the live site every time src/data/cv.ts changed. This script renders
@@ -23,6 +23,7 @@ import { chromium } from "playwright-core"
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const outputPath = join(rootDir, "public", "rafael-medina-resume.pdf")
+const previewPath = join(rootDir, "public", "rafael-medina-resume-preview.png")
 
 const profile = {
   name: "Rafael Medina",
@@ -243,7 +244,8 @@ await writeFile(htmlPath, html, "utf-8")
 
 const browser = await chromium.launch()
 try {
-  const page = await browser.newPage()
+  const page = await browser.newPage({ viewport: { width: 816, height: 1056 } })
+  await page.emulateMedia({ media: "print" })
   await page.goto(pathToFileURL(htmlPath).href, { waitUntil: "load" })
 
   // `tagged` keeps the structure tree, so the résumé stays screen-reader
@@ -263,6 +265,8 @@ try {
   }
 
   await writeFile(outputPath, pdf)
+  // Letter at 96dpi, using the same print styles and content as the PDF.
+  await page.screenshot({ path: previewPath })
 
   console.log(`Wrote ${outputPath} (${(pdf.length / 1024).toFixed(0)} KB, ${pageCount} page)`)
 } finally {

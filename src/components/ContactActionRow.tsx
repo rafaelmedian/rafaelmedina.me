@@ -58,7 +58,7 @@ export function ContactActionRow({
           <button
             type="button"
             title={email}
-            className="mosaic-contact-pill mosaic-contact-pill-default"
+            className="mosaic-contact-pill mosaic-contact-pill-default mosaic-contact-pill-dark"
             onClick={handleCopyEmail}
           >
             <span className="mosaic-contact-pill-default-label">{isCopySuccess ? "Copied!" : "Copy email"}</span>
@@ -140,7 +140,7 @@ export function ContactActionRow({
               target="_blank"
               rel="noreferrer"
               aria-label="Follow on X"
-              className="mosaic-contact-pill mosaic-contact-pill-dark"
+              className="mosaic-contact-pill mosaic-contact-pill-follow"
             >
               <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
                 <img
