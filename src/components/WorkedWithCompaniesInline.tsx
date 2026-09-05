@@ -155,7 +155,7 @@ function WorkHistoryTrigger({
       href={company.href}
       target="_blank"
       rel="noreferrer"
-      className={`mosaic-work-history-chip${active ? " is-active" : ""}`}
+      className={`mosaic-work-history-chip${company.id === recentGroupId ? " mosaic-work-history-chip-filled" : ""}${active ? " is-active" : ""}`}
       // No aria-expanded/aria-controls: activating this chip navigates to the
       // company site, it does not toggle the popover, so a disclosure state here
       // would misreport what Enter does.

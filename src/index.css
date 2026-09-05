@@ -69,6 +69,9 @@
   /* Focus indicators need 3:1 against the adjacent surface (WCAG 1.4.11), which
      rules out mid-greys on our near-white backgrounds. */
   --focus-ring: #2d2d2d;
+  /* The availability dot's accent is 3.0:1 on --body-bg for a non-text
+     graphic. The availability label uses the neutral --muted text colour. */
+  --accent: #34a26a;
   --elastic-edge-height: 56px;
   /* The floating-surface elevation. Hover cards, popovers, the takeover
      close and seam — one visual tier, one recipe. Surfaces without a border
@@ -373,6 +376,7 @@ img {
 }
 
 .mosaic-section-corner {
+  z-index: var(--z-social);
   left: clamp(0.75rem, 2vw, 1.7rem);
   justify-content: flex-start;
 }
@@ -466,7 +470,8 @@ img {
   color: #2d2d2d;
 }
 
-.mosaic-local-time-card {
+.mosaic-local-time-card,
+.mosaic-resume-card {
   position: absolute;
   top: calc(100% + 0.125rem);
   right: 0;
@@ -495,7 +500,8 @@ img {
     visibility var(--duration-quick) linear;
 }
 
-.mosaic-local-time-card::before {
+.mosaic-local-time-card::before,
+.mosaic-resume-card::before {
   content: "";
   position: absolute;
   top: -0.75rem;
@@ -504,7 +510,8 @@ img {
   height: 0.75rem;
 }
 
-.mosaic-local-time-card.is-open {
+.mosaic-local-time-card.is-open,
+.mosaic-resume-card.is-open {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -515,6 +522,50 @@ img {
     transform var(--duration-base) var(--ease-smooth),
     opacity var(--duration-quick) ease-out,
     visibility var(--duration-base) linear;
+}
+
+.mosaic-resume-card {
+  right: auto;
+  left: 0;
+  transform-origin: top left;
+}
+
+/* A window onto the top of the page rather than the whole of it. A full 17:22
+   page inside a 22.5rem card is 29rem tall, which made this the largest
+   floating surface on the site to preview a document the link opens anyway,
+   and at that size every line was far too small to read. The masthead and the
+   first roles are the part worth showing; the rest is a wheel away.
+
+   10rem is the local-time map's height, and these two cards hang off the same
+   corner rail -- the pair should read as one component with two contents. */
+.mosaic-resume-card-frame {
+  display: block;
+  height: 10rem;
+  overflow: hidden auto;
+  /* Deliberately *not* overscroll-behavior: contain. The wheel handler already
+     swallows every gesture while the résumé still has travel, so containment
+     would only apply to the events it hands back at either end -- and those are
+     exactly the ones that should reach the page. With it set, the document
+     froze whenever the pointer sat over this card. */
+  border-radius: calc(var(--radius-md) - 0.375rem);
+  /* The résumé is a white page on a white card. Same inset hairline the map
+     screenshot uses, for the same reason: without it the media has no edge. */
+  outline: 1px solid rgb(0 0 0 / 0.1);
+  outline-offset: -1px;
+  cursor: pointer;
+  /* A scrollbar on a 22.5rem preview is more chrome than the thing it meters,
+     and the page it scrolls is the whole content. */
+  scrollbar-width: none;
+}
+
+.mosaic-resume-card-frame::-webkit-scrollbar {
+  display: none;
+}
+
+.mosaic-resume-card-image {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .mosaic-local-time-map {
@@ -625,7 +676,8 @@ img {
 }
 
 @media (hover: none) {
-  .mosaic-local-time-card {
+  .mosaic-local-time-card,
+  .mosaic-resume-card {
     display: none;
   }
 }
@@ -634,7 +686,9 @@ img {
   /* The global reduced-motion reset at the end of the file clamps every
      transition-duration, so only travel needs removing here. */
   .mosaic-local-time-card,
-  .mosaic-local-time-card.is-open {
+  .mosaic-local-time-card.is-open,
+  .mosaic-resume-card,
+  .mosaic-resume-card.is-open {
     transform: none;
   }
 }
@@ -992,79 +1046,6 @@ img {
   overflow: hidden;
 }
 
-/*
- * A die-cut sticker: a thick white border cut around the emoji's own
- * silhouette rather than a disc behind it. Real vinyl has a hard edge, so the
- * cut is an `feMorphology` dilation of the glyph's alpha channel flooded
- * white, with a zero-blur result — only the cast shadow is blurred. The
- * dilation radius is in `objectBoundingBox` units so the border still scales
- * with the button, which tracks the `clamp()`ed font size.
- *
- * The cut used to be eight chained `drop-shadow()`s. Do not go back: Chrome
- * gives every function in a filter chain its own GPU render pass and
- * re-evaluates the whole chain each frame (promotion does not cache it), so
- * eight stickers cost ~64 passes per frame and dropped the About takeover
- * from ~107fps to ~27fps. `text-shadow` is equally cheap but wrong — it
- * offsets the raw glyph instead of dilating cumulatively, so concave gaps
- * like the ones between palm fronds never fill in.
- */
-.mosaic-about-sticker-filter {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-
-/* The cut rides the glyph, not the button, for two reasons: its
-   `objectBoundingBox` radius then tracks the `clamp()`ed font size exactly
-   instead of the button's 44px tap-target floor, and it keeps `url()` out of
-   the button's own filter list — a list containing a filter reference can only
-   animate discretely, which would snap the cast shadow on drag release while
-   the scale eased. */
-.mosaic-about-sticker-glyph {
-  filter: url(#about-sticker-die-cut);
-}
-
-.mosaic-about-sticker {
-  position: absolute;
-  display: grid;
-  min-width: 44px;
-  min-height: 44px;
-  place-items: center;
-  appearance: none;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: inherit;
-  font-family: inherit;
-  font-size: clamp(2rem, 3.4vw, 3rem);
-  line-height: 1;
-  filter: drop-shadow(0.02em 0.045em 0.035em rgb(0 0 0 / 0.3));
-  transform: translate3d(var(--sticker-x, 0px), var(--sticker-y, 0px), 0)
-    rotate(var(--sticker-rotate, 0deg));
-  transition:
-    transform var(--duration-quick) var(--ease-standard),
-    filter var(--duration-quick) var(--ease-standard);
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.mosaic-about-sticker[data-dragging] {
-  cursor: grabbing;
-  transform: translate3d(var(--sticker-x, 0px), var(--sticker-y, 0px), 0)
-    rotate(var(--sticker-rotate, 0deg)) scale(1.12);
-  filter: drop-shadow(0.04em 0.11em 0.1em rgb(0 0 0 / 0.3));
-  transition-duration: 0ms;
-}
-
-@media (max-width: 899.98px) {
-  .mosaic-about-sticker {
-    display: none;
-  }
-}
-
 .mosaic-about-body {
   width: 100%;
   margin-top: 0;
@@ -1134,7 +1115,7 @@ img {
 .mosaic-about-work-history {
   position: relative;
   width: 100%;
-  margin-block-start: 5rem;
+  margin-block-start: 2.5rem;
   padding-block: 0 clamp(2rem, 6vw, 5rem);
   scroll-margin-top: clamp(1rem, 4vw, 3rem);
   text-align: left;
@@ -1142,7 +1123,7 @@ img {
 
 @media (min-width: 700px) {
   .mosaic-about-work-history {
-    margin-block-start: 8.75rem;
+    margin-block-start: 5rem;
   }
 }
 
@@ -1411,19 +1392,22 @@ img {
   color: var(--muted);
 }
 
+/* The dot used to be opacity 0 until the line was hovered, which meant the only
+   chromatic pixel in the site's own chrome was invisible at rest -- and it sits
+   next to the one fact a visitor is scanning for. It is on now; hover only
+   widens the halo. */
 .mosaic-availability-dot {
   width: 0.375rem;
   height: 0.375rem;
   border-radius: var(--radius-full);
-  background: #34a26a;
+  background: var(--accent);
   box-shadow: 0 0 0 2px rgb(52 162 106 / 0.16);
-  opacity: 0;
   transform: translateY(1px);
-  transition: opacity var(--duration-quick) var(--ease-standard);
+  transition: box-shadow var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-profile-availability:hover .mosaic-availability-dot {
-  opacity: 1;
+  box-shadow: 0 0 0 4px rgb(52 162 106 / 0.18);
 }
 
 .mosaic-profile-contact .mosaic-profile-actions {
@@ -1574,9 +1558,12 @@ img {
 .mosaic-work-history-chip {
   appearance: none;
   position: relative;
-  border: 1px solid #f2f2f2;
+  /* White on the near-white page with a hairline, rather than a filled grey
+     block: the pills read as a row of separate places instead of one grey mass,
+     and the border does the separating that the fill used to. */
+  border: 1px solid rgb(0 0 0 / 0.09);
   border-radius: var(--radius-sm);
-  background: #f2f2f2;
+  background: var(--canvas);
   color: #2d2d2d;
   text-decoration: none;
   display: inline-flex;
@@ -1593,6 +1580,11 @@ img {
     background-color var(--duration-quick) var(--ease-standard),
     border-color var(--duration-quick) var(--ease-standard),
     color var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-work-history-chip-filled {
+  background: #f2f2f2;
+  border-color: #f2f2f2;
 }
 
 .mosaic-work-history-chip:hover,
@@ -2001,7 +1993,7 @@ img {
 
 /* One light 3D-pill treatment, two wearers. Only width and label colour
    differ; the shine, inset bevel, and press shadows are shared. */
-.mosaic-contact-pill-default,
+.mosaic-contact-pill-follow,
 .mosaic-contact-pill-linkedin {
   border-color: #dedee0;
   background: linear-gradient(180deg, #f4f4f4 0%, #ffffff 69.12%);
@@ -2010,6 +2002,10 @@ img {
 
 .mosaic-contact-pill-default {
   width: 7rem;
+}
+
+.mosaic-contact-pill-follow {
+  min-width: 80px;
   color: #2d2d2d;
 }
 
@@ -2018,7 +2014,7 @@ img {
   color: #0a66c2;
 }
 
-.mosaic-contact-pill-default::before,
+.mosaic-contact-pill-follow::before,
 .mosaic-contact-pill-linkedin::before {
   content: "";
   position: absolute;
@@ -2037,7 +2033,7 @@ img {
   width: calc(100% - 16px);
 }
 
-.mosaic-contact-pill-default::after,
+.mosaic-contact-pill-follow::after,
 .mosaic-contact-pill-linkedin::after {
   content: "";
   position: absolute;
@@ -2052,14 +2048,14 @@ img {
   pointer-events: none;
 }
 
-.mosaic-contact-pill-default:hover,
-.mosaic-contact-pill-default:focus-visible,
+.mosaic-contact-pill-follow:hover,
+.mosaic-contact-pill-follow:focus-visible,
 .mosaic-contact-pill-linkedin:hover,
 .mosaic-contact-pill-linkedin:focus-visible {
   box-shadow: 0 4px 12px rgb(46 42 42 / 0.12);
 }
 
-.mosaic-contact-pill-default:active,
+.mosaic-contact-pill-follow:active,
 .mosaic-contact-pill-linkedin:active {
   box-shadow: 0 1px 4px rgb(46 42 42 / 0.08);
 }
@@ -2110,6 +2106,10 @@ img {
 .mosaic-contact-pill-icon-linkedin {
   width: 0.875rem;
   height: 0.875rem;
+}
+
+.mosaic-contact-pill-follow .mosaic-contact-pill-icon-x {
+  filter: brightness(0);
 }
 
 .mosaic-contact-pill-icon-x {
@@ -3016,7 +3016,7 @@ img {
    wide layout's bottom plateau. Hold the tint through the full two-line label,
    then spend the remaining height on the same eased exit. This comes after the
    no-backdrop fallback so contrast does not depend on blur support. */
-@media (min-width: 700px) and (max-width: 899.98px) {
+@media (max-width: 899.98px), (hover: none), (pointer: coarse) {
   .mosaic-row-card-scrim::after {
     background: linear-gradient(
       to top,
@@ -3122,6 +3122,16 @@ img {
     left: calc(50% + 0.5rem);
     justify-content: center;
     transform: translateX(-50%);
+  }
+
+  .mosaic-resume-anchor {
+    position: static;
+  }
+
+  .mosaic-resume-card {
+    left: 50%;
+    translate: -50% 0;
+    transform-origin: top center;
   }
 
   .mosaic-hero-profile {
@@ -3233,6 +3243,259 @@ img {
   }
 }
 
+
+/* ----------------------------------------------------- personal photos --- */
+
+.personal-photos {
+  width: min(100%, 36rem);
+  margin: 1.5rem auto 0;
+  display: flex;
+  justify-content: flex-start;
+  padding: 0.75rem 0.75rem 0.5rem;
+}
+
+.personal-photos-trigger {
+  position: relative;
+  width: min(27rem, calc(100% - 7.5rem));
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+}
+
+.personal-photos-stack {
+  position: relative;
+  display: flex;
+  width: 100%;
+  isolation: isolate;
+}
+
+.personal-photos-print {
+  --print-tilt: -7deg;
+  --print-hover-tilt: -10deg;
+  --print-offset-x: 0rem;
+  --print-offset-y: 0rem;
+  --print-spread-x: -0.5rem;
+  --print-spread-y: -0.5rem;
+  --print-hover-delay: 0ms;
+  position: relative;
+  flex: 0 0 28%;
+  margin-left: -9.8%;
+  padding: 0.25rem 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
+  transform: translate(var(--print-offset-x), var(--print-offset-y)) rotate(var(--print-tilt));
+  transition: transform var(--duration-base) var(--ease-smooth);
+}
+
+.personal-photos-print:first-child { margin-left: 0; }
+
+/* One overlapping row of equally sized prints. */
+.personal-photos-print:nth-child(2) { --print-tilt: 2deg; --print-hover-tilt: 6deg; --print-offset-x: -0.2rem; --print-offset-y: 0.25rem; --print-spread-x: -0.25rem; --print-hover-delay: calc(var(--duration-fast) / 4); }
+.personal-photos-print:nth-child(3) { --print-tilt: -2deg; --print-hover-tilt: -4deg; --print-offset-y: -0.3rem; --print-spread-x: 0rem; --print-hover-delay: calc(var(--duration-fast) / 2); }
+.personal-photos-print:nth-child(4) { --print-tilt: -5deg; --print-hover-tilt: -8deg; --print-offset-x: 0.25rem; --print-offset-y: 0.2rem; --print-spread-x: 0.25rem; --print-hover-delay: calc(var(--duration-fast) * 0.75); }
+.personal-photos-print:nth-child(5) { --print-tilt: 4deg; --print-hover-tilt: 8deg; --print-offset-x: 0.35rem; --print-offset-y: -0.2rem; --print-spread-x: 0.5rem; --print-hover-delay: var(--duration-fast); }
+
+.personal-photos-print img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: center 40%;
+  border-radius: calc(var(--radius-sm) - 0.375rem);
+}
+
+.personal-photos-hint {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 1rem);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: max-content;
+  max-width: 6.5rem;
+  color: #e5352b;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(-0.5rem) rotate(-3deg);
+  transition:
+    opacity var(--duration-base) var(--ease-smooth),
+    transform var(--duration-base) var(--ease-smooth);
+  font-family: "Handlee", "Bradley Hand", "Segoe Print", cursive;
+  font-size: var(--text-md);
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: left;
+  -webkit-text-stroke: 0.45px currentColor;
+}
+
+.personal-photos-hint svg { flex-shrink: 0; width: 2.25rem; height: 1.25rem; overflow: visible; }
+
+.personal-photos-trigger:focus-visible .personal-photos-hint {
+  opacity: 1;
+  transform: translateY(-50%) rotate(-3deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .personal-photos-trigger:hover .personal-photos-hint {
+    opacity: 1;
+    transform: translateY(-50%) rotate(-3deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .personal-photos-trigger:focus-visible .personal-photos-print {
+    transform:
+      translate(
+        calc(var(--print-offset-x) + var(--print-spread-x)),
+        calc(var(--print-offset-y) + var(--print-spread-y))
+      )
+      rotate(var(--print-hover-tilt));
+    transition-duration: var(--duration-slow);
+    transition-delay: var(--print-hover-delay);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .personal-photos-trigger:hover .personal-photos-print {
+      transform:
+        translate(
+          calc(var(--print-offset-x) + var(--print-spread-x)),
+          calc(var(--print-offset-y) + var(--print-spread-y))
+        )
+        rotate(var(--print-hover-tilt));
+      transition-duration: var(--duration-slow);
+      transition-delay: var(--print-hover-delay);
+    }
+  }
+}
+
+@media (min-width: 700px) {
+  .personal-photos-hint { max-width: none; white-space: nowrap; }
+}
+
+@media (max-width: 699.98px) {
+  .personal-photos { padding-bottom: 1.5rem; }
+  .personal-photos-trigger { width: 100%; }
+  .personal-photos-hint {
+    top: calc(100% + 1.5rem);
+    left: auto;
+    right: 0;
+    max-width: none;
+    white-space: nowrap;
+  }
+}
+
+.personal-photos-trigger:active .personal-photos-stack { scale: 0.96; }
+.personal-photos-stack { transition: scale var(--duration-fast) var(--ease-standard); }
+
+.personal-photos-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog-backdrop);
+  background: rgb(18 18 18 / 0.46);
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+.personal-photos-backdrop[data-starting-style],
+.personal-photos-backdrop[data-ending-style] { opacity: 0; }
+
+.personal-photos-dialog {
+  --photo-width: min(76vw, 40dvh, 24rem);
+  --photo-gutter: clamp(1.25rem, 4vw, 5rem);
+  position: fixed;
+  top: 50%;
+  left: 0;
+  z-index: var(--z-dialog);
+  width: 100%;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  translate: 0 -50%;
+  outline: none;
+  color: var(--canvas);
+  transition: opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth);
+}
+
+.personal-photos-dialog[data-starting-style] { opacity: 0; transform: translateX(2.5rem); }
+.personal-photos-dialog[data-ending-style] {
+  opacity: 0;
+  transform: translateX(0.75rem);
+  transition-duration: var(--duration-quick);
+}
+
+.personal-photos-strip {
+  position: relative;
+  display: flex;
+  gap: 2.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline-start: var(--photo-gutter);
+  /* The horizontal scroller also clips vertically, so the long print shadows
+     need enough room to finish fading before they reach its edges. */
+  padding: 6rem var(--photo-gutter);
+  scrollbar-width: none;
+  user-select: none;
+  cursor: grab;
+}
+.personal-photos-strip:active { cursor: grabbing; }
+.personal-photos-strip::-webkit-scrollbar { display: none; }
+.personal-photos-strip:focus-visible { outline-color: var(--canvas); outline-offset: -4px; }
+
+.personal-photos-slide {
+  flex: 0 0 var(--photo-width);
+  margin: 0;
+  padding: 1rem 1rem 0;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04), 0 18px 44px -18px rgb(0 0 0 / 0.28), 0 48px 92px -42px rgb(0 0 0 / 0.38);
+  scroll-snap-align: start;
+}
+.personal-photos-slide img {
+  border-radius: calc(var(--radius-sm) / 2);
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: contain;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: grab;
+}
+.personal-photos-slide img:active { cursor: grabbing; }
+.personal-photos-slide img[data-orientation="portrait"],
+.personal-photos-slide img[data-orientation="landscape"] {
+  object-fit: cover;
+  background-size: cover;
+}
+.personal-photos-slide figcaption {
+  display: grid;
+  place-items: center;
+  min-height: 4rem;
+  font-family: "Handlee", cursive;
+  font-size: var(--text-lg);
+}
+
+@media (max-width: 699.98px) {
+  .personal-photos-strip { gap: 1.25rem; }
+}
+
+@media (max-height: 500px) {
+  .personal-photos-dialog { --photo-width: min(60vw, 36dvh, 24rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .personal-photos-print,
+  .personal-photos-stack,
+  .personal-photos-hint,
+  .personal-photos-backdrop,
+  .personal-photos-dialog { transition: none; }
+  .personal-photos-dialog[data-starting-style],
+  .personal-photos-dialog[data-ending-style] { transform: none; }
+}
 
 /* ------------------------------------------------- preview gallery dialog --- */
 
@@ -3960,28 +4223,34 @@ img {
     transform: rotate(90deg);
   }
 
+  /* Touch has no hover reveal, so the label is permanent -- and a permanent
+     full-width band is a different object from a band that appears under the
+     pointer. It landed on whatever the screenshot had at its own bottom edge
+     (on Popparazi, directly on the words "Featured pops of the day"), and on
+     letterboxed tiles it ran past the artwork onto the card's grey, where white
+     text has nothing to sit on.
+
+     A pill carries its own contrast, so it is legible over any artwork and over
+     the letterbox alike, and it reads as a label rather than as a second title
+     competing with the interface underneath. It is also cheaper than what it
+     replaces: no backdrop-filter, so a scrolling phone never re-rasterises a
+     band per tile. */
   .mosaic-row-card-title {
     display: block;
-    bottom: 0.875rem;
-    max-width: calc(100% - 1.75rem);
+    width: max-content;
+    bottom: 0.75rem;
+    max-width: calc(100% - 1.5rem);
+    padding: 0.28rem 0.6rem;
+    border-radius: var(--radius-full);
+    background: rgb(20 20 20 / 0.82);
     transform: translate(-50%, 0);
     opacity: 1;
     font-size: var(--text-xs);
+    text-shadow: none;
   }
 
-  /* Touch has no hover reveal. Keep the label and cheap tint permanently
-     visible, but leave the four-layer backdrop-filter ramp off so a scrolling
-     phone never has to continuously re-rasterise every tile. */
   .mosaic-row-card-scrim {
-    opacity: 1;
-  }
-
-  .mosaic-row-card-scrim > span {
     display: none;
-  }
-
-  .mosaic-row-card-scrim::after {
-    opacity: 1;
   }
 
   .mosaic-row-card-preview-protector .mosaic-row-media {

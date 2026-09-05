@@ -17,9 +17,11 @@ import { AboutPanel } from "./AboutPanel"
 import { ContactActionRow } from "./ContactActionRow"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
+import { formatAvailability } from "../lib/availability"
 import { useHoverCard } from "../lib/hoverCard"
 import { isVideoSource } from "../lib/media"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
@@ -270,7 +272,7 @@ function RowVideoMedia({
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video || !supportsIntersectionObserver || holdForLightweightMedia) return
+    if (!video || !supportsIntersectionObserver || holdForLightweightMedia || pausePlayback) return
 
     const loadObserver = new IntersectionObserver(
       ([entry]) => {
@@ -291,7 +293,7 @@ function RowVideoMedia({
       loadObserver.disconnect()
       visibilityObserver.disconnect()
     }
-  }, [holdForLightweightMedia, supportsIntersectionObserver])
+  }, [holdForLightweightMedia, pausePlayback, supportsIntersectionObserver])
 
   useEffect(() => {
     const video = videoRef.current
@@ -477,6 +479,51 @@ function SectionCorner({
   onSelect: (href: string) => void
   resumeHref: string
 }) {
+  const { isOpen, hoverProps } = useHoverCard()
+  const [previewLoaded, setPreviewLoaded] = useState(false)
+  const previewFrameRef = useRef<HTMLAnchorElement>(null)
+
+  // The frame shows the top ~160px of a ~450px page, so an ordinary wheel
+  // gesture would cover the whole travel in one flick and the middle of the
+  // résumé would never be on screen. Damping the delta turns the same gesture
+  // into a slow pan. React registers its wheel listener passively, so this has
+  // to be wired by hand to be allowed to preventDefault.
+  useEffect(() => {
+    const frame = previewFrameRef.current
+    if (!frame) return
+
+    const handleWheel = (event: WheelEvent) => {
+      const travel = frame.scrollHeight - frame.clientHeight
+      if (travel <= 0) return
+
+      // Firefox reports mouse wheels in lines rather than pixels.
+      const pixels =
+        event.deltaMode === 1
+          ? event.deltaY * 16
+          : event.deltaMode === 2
+            ? event.deltaY * frame.clientHeight
+            : event.deltaY
+      const next = Math.min(Math.max(frame.scrollTop + pixels * 0.25, 0), travel)
+      // At either end, hand the gesture back so the page keeps scrolling
+      // instead of stalling under the pointer.
+      if (Math.abs(next - frame.scrollTop) < 0.5) return
+
+      event.preventDefault()
+      frame.scrollTop = next
+    }
+
+    frame.addEventListener("wheel", handleWheel, { passive: false })
+    return () => frame.removeEventListener("wheel", handleWheel)
+  }, [previewLoaded])
+
+  // The card is mounted for the rest of the session once it has loaded, so a
+  // reopen would otherwise resume wherever the last hover left off.
+  useEffect(() => {
+    if (isOpen) return
+    const frame = previewFrameRef.current
+    if (frame) frame.scrollTop = 0
+  }, [isOpen])
+
   return (
     <nav className="mosaic-section-corner" aria-label="Sections">
       {sectionLinks.map((link) => (
@@ -496,27 +543,68 @@ function SectionCorner({
           {link.label}
         </a>
       ))}
-      <a
-        href={resumeHref}
-        target="_blank"
-        rel="noreferrer"
-        className="mosaic-social-link"
-        onClick={() => {
-          trackEvent("social_link_click", {
-            social_label: "View Resume",
-            social_href: resumeHref,
-            social_placement: "top_corner",
-          })
-        }}
-      >
-        Resume
-        <ExternalLink
-          className="mosaic-social-link-external-icon"
-          size={12}
-          strokeWidth={1.75}
+      <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
+        <a
+          href={resumeHref}
+          target="_blank"
+          rel="noreferrer"
+          className="mosaic-social-link"
+          onClick={() => {
+            trackEvent("social_link_click", {
+              social_label: "View Resume",
+              social_href: resumeHref,
+              social_placement: "top_corner",
+            })
+          }}
+        >
+          Resume
+          <ExternalLink
+            className="mosaic-social-link-external-icon"
+            size={12}
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
+        </a>
+        <span
+          className={`mosaic-resume-card${isOpen ? " is-open" : ""}`}
+          data-state={isOpen ? "open" : "closed"}
           aria-hidden="true"
-        />
-      </a>
+          inert={!isOpen}
+        >
+          {isOpen || previewLoaded ? (
+            <a
+              ref={previewFrameRef}
+              href={resumeHref}
+              target="_blank"
+              rel="noreferrer"
+              // Out of the tab order, and mousedown's default is cancelled so a
+              // click cannot move focus into this aria-hidden card either. The
+              // keyboard path is the Resume link the card hangs off; this is the
+              // same destination for a pointer already sitting on the preview.
+              tabIndex={-1}
+              className="mosaic-resume-card-frame"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                trackEvent("social_link_click", {
+                  social_label: "View Resume",
+                  social_href: resumeHref,
+                  social_placement: "resume_preview",
+                })
+              }}
+            >
+              <img
+                src="/rafael-medina-resume-preview.png"
+                alt=""
+                width={816}
+                height={1056}
+                decoding="async"
+                onLoad={() => setPreviewLoaded(true)}
+                className="mosaic-resume-card-image"
+              />
+            </a>
+          ) : null}
+        </span>
+      </span>
     </nav>
   )
 }
@@ -588,12 +676,15 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
-  const [activeWorkPreviewIndex, setActiveWorkPreviewIndex] = useState<number | null>(null)
+  const { projectId, selectProject, clearProject } = useProjectUrl()
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [hasOpenedWorkPreview, setHasOpenedWorkPreview] = useState(false)
   const previewCardNodesRef = useRef(new Map<number, HTMLButtonElement>())
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
+  )
+  const [availabilityLabel, setAvailabilityLabel] = useState(() =>
+    formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
@@ -611,9 +702,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     // fresh lazy component means the next click re-attempts the fetch instead
     // of replaying the cached rejection.
     setGalleryDialog(() => createPreviewGalleryComponent())
-    setActiveWorkPreviewIndex(null)
+    clearProject()
     setHasOpenedWorkPreview(false)
-  }, [])
+  }, [clearProject])
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
@@ -640,11 +731,18 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     () => rowsRender.flatMap((row) => row.items.map((item) => item.card)),
     [rowsRender],
   )
+  const projectIndex = flatWorkCards.findIndex((card) => card.id === projectId)
+  const activeWorkPreviewIndex = projectIndex < 0 ? null : projectIndex
+  // Keep the last preview mounted for its exit, including direct URL visits
+  // and browser Forward, which do not pass through a card's click handler.
+  if (activeWorkPreviewIndex !== null && (!hasOpenedWorkPreview || lastWorkPreviewIndex !== activeWorkPreviewIndex)) {
+    setHasOpenedWorkPreview(true)
+    setLastWorkPreviewIndex(activeWorkPreviewIndex)
+  }
   const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(flatWorkCards.length - 1, 0))
   const setSelectedWorkPreviewIndex = (index: number) => {
-    setLastWorkPreviewIndex(index)
-    setActiveWorkPreviewIndex(index)
-    setHasOpenedWorkPreview(true)
+    const card = flatWorkCards[index]
+    if (card) selectProject(card.id, projectId !== null)
   }
 
   // The gallery grows out of (and shrinks back into) the card it represents, so
@@ -677,7 +775,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           width={card.previewWidth}
           height={card.previewHeight}
           prefersReducedMotion={prefersReducedMotion}
-          pausePlayback={isReturningToTop}
+          // A modal covers the feed even though its videos still intersect
+          // the viewport. Rest their decoders and defer new video loads until
+          // the preview closes, just as we do during the return from About.
+          pausePlayback={isReturningToTop || activeWorkPreviewIndex !== null}
         />
       )
     }
@@ -699,6 +800,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
     const updatePuntaCanaTime = () => {
       setPuntaCanaTimeLabel(formatPuntaCanaLocalTime())
+      setAvailabilityLabel(formatAvailability())
     }
 
     updatePuntaCanaTime()
@@ -789,6 +891,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     trackEvent("about_scroll", { about_scroll_trigger: trigger })
     const aboutPanel = document.getElementById("about-panel")
     if (!aboutPanel) return
+    if (window.location.hash !== "#about-panel") {
+      pushPortfolioUrl("#about-panel", "about")
+    }
 
     aboutPanel.scrollIntoView({
       behavior: prefersReducedMotion ? "auto" : "smooth",
@@ -798,6 +903,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   }
 
   const closeAbout = () => {
+    const url = new URL(window.location.href)
+    url.hash = ""
+    closePortfolioUrl(url, "about")
     document.getElementById("portfolio-title")?.focus({ preventScroll: true })
     setIsReturningToTop(true)
     window.scrollTo({
@@ -806,8 +914,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     })
   }
 
-  const openAbout = (href: string) => {
-    if (window.location.hash !== href) window.history.pushState(null, "", href)
+  const openAbout = () => {
     scrollToAbout("nav_about")
   }
 
@@ -872,7 +979,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
             <span className="mosaic-profile-location-place">Punta Cana & NYC</span>
             <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
             <span className="mosaic-profile-availability">
-              Available for work
+              {availabilityLabel}
               <span className="mosaic-availability-dot" aria-hidden="true" />
             </span>
           </p>
@@ -1039,7 +1146,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   getOriginRect={getPreviewOriginRect}
                   onOpenChange={(nextOpen) => {
                     if (!nextOpen) {
-                      setActiveWorkPreviewIndex(null)
+                      clearProject()
                     }
                   }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}

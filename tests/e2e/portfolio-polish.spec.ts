@@ -584,18 +584,17 @@ test("adds breathing room below the previous-work label on mobile", async ({ pag
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const previousWorkLabel = page.getByText("previously worked with and at", { exact: true })
-  const firstPreviousCompany = page
-    .locator(".mosaic-work-history")
-    .getByRole("link", { name: "Moody's", exact: true })
-  const [labelBox, companyBox] = await Promise.all([
-    previousWorkLabel.boundingBox(),
-    firstPreviousCompany.boundingBox(),
-  ])
+  const gap = await page.locator(".mosaic-work-history").evaluate((workHistory) => {
+    const label = workHistory.querySelector(".mosaic-work-history-line:first-child .mosaic-work-history-copy:last-child")
+    const company = workHistory.querySelector(".mosaic-work-history-line:nth-child(2) .mosaic-work-history-chip:first-child")
+    if (!label || !company) return Number.POSITIVE_INFINITY
 
-  expect(labelBox).not.toBeNull()
-  expect(companyBox).not.toBeNull()
-  expect(companyBox!.y - (labelBox!.y + labelBox!.height)).toBeCloseTo(12, 0)
+    const labelBox = label.getBoundingClientRect()
+    const companyBox = company.getBoundingClientRect()
+    return companyBox.top - labelBox.bottom
+  })
+
+  expect(gap).toBeCloseTo(12, 0)
 })
 
 test("reserves balanced wrapping for headings", async ({ page }) => {
@@ -1066,6 +1065,7 @@ test("keeps the mobile profile clear of the section navigation", async ({ page }
 })
 
 test("keeps local time separate from the navigation", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
   await page.goto("/")
 
   const localTime = page.locator(".mosaic-social-corner")
@@ -1075,7 +1075,7 @@ test("keeps local time separate from the navigation", async ({ page }) => {
 
   const location = page.locator(".mosaic-profile-location")
   await expect(location).toContainText("Punta Cana & NYC")
-  await expect(location).toContainText("Available for work")
+  await expect(location).toContainText("Available in September")
   await expect(location).not.toContainText("Local time:")
   await expect(page.locator(".mosaic-profile-contact > .mosaic-profile-availability")).toHaveCount(0)
 })
@@ -1098,11 +1098,12 @@ test("keeps the location and availability copy together at 320px", async ({ page
 })
 
 test("shows current availability with the status dot on the right", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
 
   const availability = page.locator(".mosaic-profile-availability")
-  await expect(availability).toHaveText("Available for work")
+  await expect(availability).toHaveText("Available in September")
   await page.locator(".mosaic-profile-location").evaluate((element) =>
     Promise.all(element.getAnimations().map((animation) => animation.finished)),
   )
@@ -1140,32 +1141,45 @@ test("uses a compact availability dot", async ({ page }) => {
   await expect(page.locator(".mosaic-availability-dot")).toHaveCSS("height", "6px")
 })
 
-test("reveals the availability dot only while the label is hovered", async ({ page }) => {
+// The dot used to be opacity 0 until the label was hovered, which hid the only
+// chromatic pixel in the site's own chrome behind an interaction — on the one
+// line a visitor is scanning for. It rests visible now; hover widens the halo.
+test("keeps the availability dot visible at rest and widens its halo on hover", async ({ page }) => {
   await page.goto("/")
 
   const availability = page.locator(".mosaic-profile-availability")
   const dot = availability.locator(".mosaic-availability-dot")
   await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
-  await expect(dot).toHaveCSS("opacity", "0")
+  await expect(dot).toHaveCSS("opacity", "1")
 
+  const restHalo = await dot.evaluate((element) => getComputedStyle(element).boxShadow)
   await availability.hover()
+  await expect(dot).not.toHaveCSS("box-shadow", restHalo)
   await expect(dot).toHaveCSS("opacity", "1")
 
   await page.mouse.move(1, 1)
-  await expect(dot).toHaveCSS("opacity", "0")
+  await expect(dot).toHaveCSS("box-shadow", restHalo)
 })
 
-test("reveals the availability dot without motion when reduced motion is requested", async ({ page }) => {
+test("keeps the availability dot visible without motion when reduced motion is requested", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
   const availability = page.locator(".mosaic-profile-availability")
   const dot = availability.locator(".mosaic-availability-dot")
-  await expect(dot).toHaveCSS("opacity", "0")
+  await expect(dot).toHaveCSS("opacity", "1")
 
   await availability.hover()
   await expect(dot).toHaveCSS("opacity", "1")
   await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
+})
+
+test("keeps availability text gray and its status dot green", async ({ page }) => {
+  await page.goto("/")
+
+  await expect(page.locator(".mosaic-profile-availability")).toHaveCSS("color", "rgb(107, 107, 107)")
+  await expect(page.locator(".mosaic-profile-location-place")).toHaveCSS("color", "rgb(107, 107, 107)")
+  await expect(page.locator(".mosaic-availability-dot")).toHaveCSS("background-color", "rgb(52, 162, 106)")
 })
 
 test("places the resume link beside about in the section navigation", async ({ page }) => {
@@ -1237,6 +1251,83 @@ test("reveals an external-link icon when the resume link is hovered", async ({ p
   await expect(externalIcon).toHaveCSS("opacity", "1")
 })
 
+test("matches the resume preview to the local-time map and opens on the top of the page", async ({ page }) => {
+  await page.goto("/")
+
+  await page.locator(".mosaic-resume-anchor").hover()
+  const frame = page.locator(".mosaic-resume-card-frame")
+  await expect(frame).toBeVisible()
+
+  // The two cards hang off the same corner rail and should read as one
+  // component with two contents.
+  await page.locator(".mosaic-social-time").hover()
+  const mapHeight = await page.locator(".mosaic-local-time-map").evaluate((map) => map.clientHeight)
+
+  await page.locator(".mosaic-resume-anchor").hover()
+  const geometry = await frame.evaluate((element) => ({
+    height: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+    scrollTop: element.scrollTop,
+  }))
+  expect(geometry.height).toBe(mapHeight)
+  // A window onto the page, not the whole page — and it opens at the masthead.
+  expect(geometry.scrollHeight).toBeGreaterThan(geometry.height)
+  expect(geometry.scrollTop).toBe(0)
+})
+
+test("pans the resume preview slowly under the wheel and hands the page back at the end", async ({ page }) => {
+  await page.goto("/")
+  await page.locator(".mosaic-resume-anchor").hover()
+
+  const frame = page.locator(".mosaic-resume-card-frame")
+  const box = await frame.boundingBox()
+  expect(box).not.toBeNull()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+
+  const travel = await frame.evaluate((element) => element.scrollHeight - element.clientHeight)
+
+  // Damped: one gesture moves the résumé a fraction of its own delta, so the
+  // middle of the page is reachable rather than skipped over.
+  await page.mouse.wheel(0, 300)
+  await page.waitForTimeout(150)
+  const afterOneGesture = await frame.evaluate((element) => element.scrollTop)
+  expect(afterOneGesture).toBeGreaterThan(0)
+  expect(afterOneGesture).toBeLessThan(300)
+  // And the document stayed put while the résumé had somewhere to go.
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+
+  // Run it to the bottom, then keep going: the page has to take over, or the
+  // pointer would be parked on a card that swallows every gesture.
+  for (let gesture = 0; gesture < 12; gesture += 1) await page.mouse.wheel(0, 300)
+  await page.waitForTimeout(200)
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+  expect(travel).toBeGreaterThan(0)
+})
+
+test("opens the resume from the preview without moving focus into the hidden card", async ({ context, page }) => {
+  await page.goto("/")
+  await page.locator(".mosaic-resume-anchor").hover()
+
+  const frame = page.locator(".mosaic-resume-card-frame")
+  const resumeHref = await page
+    .getByRole("navigation", { name: "Sections" })
+    .getByRole("link", { name: "Resume", exact: true })
+    .getAttribute("href")
+
+  // Same destination as the link it hangs off, in a new tab.
+  await expect(frame).toHaveAttribute("href", resumeHref!)
+  await expect(frame).toHaveAttribute("target", "_blank")
+  // Out of the tab order: the card is aria-hidden, so the keyboard path is the
+  // Resume link, not this.
+  await expect(frame).toHaveAttribute("tabindex", "-1")
+
+  const [opened] = await Promise.all([context.waitForEvent("page"), frame.click()])
+  expect(opened).toBeTruthy()
+  // mousedown's default is cancelled, so the click cannot focus an element
+  // inside an aria-hidden subtree.
+  expect(await page.evaluate(() => document.activeElement?.tagName)).toBe("BODY")
+})
+
 test("gives about links comfortable mobile targets", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
@@ -1296,22 +1387,20 @@ test("left aligns the about introduction with the work-history reading axis", as
   })
 })
 
-test("separates work history from about with 140px of desktop whitespace and no hairline", async ({ page }) => {
+test("keeps work history on the desktop reading axis without a divider", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
 
-  const separation = await page.locator("#about-section, .mosaic-about-work-history-copy").evaluateAll(([about, workHistory]) => {
-    const styles = getComputedStyle(workHistory)
+  const workHistory = await page.locator(".mosaic-about-work-history-copy").evaluate((element) => {
+    const styles = getComputedStyle(element)
     return {
-      gap: Math.round(workHistory.getBoundingClientRect().top - about.getBoundingClientRect().bottom),
-      width: Math.round(workHistory.getBoundingClientRect().width),
+      width: Math.round(element.getBoundingClientRect().width),
       borderTopWidth: styles.borderTopWidth,
       paddingTop: styles.paddingTop,
     }
   })
 
-  expect(separation).toEqual({
-    gap: 140,
+  expect(workHistory).toEqual({
     width: 576,
     borderTopWidth: "0px",
     paddingTop: "0px",
@@ -2461,7 +2550,7 @@ test("shows about and the work history summary together", async ({ page }) => {
     "_blank",
   )
 
-  await expect(panel.getByRole("button", { name: /Palm tree sticker/ })).toBeVisible()
+  await expect(panel.getByRole("button", { name: "View personal photos" })).toBeVisible()
   await expect(panel.getByRole("button", { name: /Briefcase sticker/ })).toHaveCount(0)
 })
 
@@ -2499,7 +2588,7 @@ test("presents work history as a focused summary", async ({ page }) => {
   await expect(
     workHistory.locator(".mosaic-about-work-list > .mosaic-about-work-entry .mosaic-about-resume-description"),
   ).toHaveCount(6)
-  await expect(workHistory.locator(".mosaic-about-sticker")).toHaveCount(4)
+  await expect(workHistory.locator(".mosaic-about-sticker")).toHaveCount(0)
 })
 
 test("offers the résumé in a new tab after the education list", async ({ page }) => {
@@ -2615,109 +2704,23 @@ test("formats education with dates beside its details and extra section spacing"
   expect(datesBox!.y).toBeCloseTo(detailsBox!.y, 0)
 })
 
-test("spreads the stickers across the About and Work history desktop gutters", async ({ page }) => {
-  await page.setViewportSize({ width: 2560, height: 1239 })
-  await page.goto("/#about-panel")
 
-  const layout = await page.locator(".mosaic-about-body").evaluate((body) => {
-    const bodyRect = body.getBoundingClientRect()
-    const stickers = Array.from(body.querySelectorAll<HTMLElement>(".mosaic-about-sticker"))
-    const centers = stickers.map((sticker) => {
-      const rect = sticker.getBoundingClientRect()
-      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+
+
+test("keeps a compact gap between the photo row and work history", async ({ page }) => {
+  for (const { width, expectedGap } of [{ width: 1440, expectedGap: 80 }, { width: 390, expectedGap: 40 }]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto("/#about-panel")
+
+    const gap = await page.evaluate(() => {
+      const closing = document.querySelector(".personal-photos")
+      const photos = document.querySelector("#about-panel-resume")
+      if (!closing || !photos) return Number.POSITIVE_INFINITY
+      return Math.round(photos.getBoundingClientRect().top - closing.getBoundingClientRect().bottom)
     })
-    const nearestEdgeInsets = centers.map(({ x }) =>
-      Math.min(x - bodyRect.left, bodyRect.right - x),
-    )
-    const verticalCenters = centers.map(({ y }) => y)
 
-    return {
-      stickerCount: stickers.length,
-      aboutStickerCount: body.querySelectorAll("#about-section .mosaic-about-sticker").length,
-      workStickerCount: body.querySelectorAll("#about-panel-resume .mosaic-about-sticker").length,
-      allInOuterGutters: nearestEdgeInsets.every((inset) => inset <= bodyRect.width * 0.08),
-      verticalCoverage:
-        verticalCenters.length > 0
-          ? (Math.max(...verticalCenters) - Math.min(...verticalCenters)) / bodyRect.height
-          : 0,
-    }
-  })
-
-  expect(layout.stickerCount).toBe(8)
-  expect(layout.aboutStickerCount).toBe(4)
-  expect(layout.workStickerCount).toBe(4)
-  expect(layout.allInOuterGutters).toBe(true)
-  expect(layout.verticalCoverage).toBeGreaterThan(0.75)
-})
-
-test("cuts the stickers with one dilate pass rather than a drop-shadow chain", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/#about-panel")
-
-  // Chrome gives every function in a filter chain its own GPU render pass and
-  // re-evaluates the whole chain each frame, so the eight stickers' die-cut is
-  // multiplied by however many passes it costs. The chained `drop-shadow()`
-  // version measured ~27fps across the About takeover against ~110fps here.
-  const cut = await page.locator(".mosaic-about-sticker").first().evaluate((sticker) => {
-    const glyphFilter = getComputedStyle(
-      sticker.querySelector(".mosaic-about-sticker-glyph") as HTMLElement,
-    ).filter
-    const reference = glyphFilter.match(/url\(["']?#?([\w-]+)["']?\)/)?.[1]
-    const svgFilter = reference ? document.getElementById(reference) : null
-    const buttonFilter = getComputedStyle(sticker).filter
-    return {
-      dilates: svgFilter?.querySelectorAll("feMorphology[operator='dilate']").length ?? 0,
-      glyphPasses: glyphFilter.split(/(?=url\(|drop-shadow\()/).length,
-      buttonDropShadows: buttonFilter.split("drop-shadow(").length - 1,
-      // A `url()` anywhere in the button's list would make the drag release
-      // snap instead of easing.
-      buttonReferences: buttonFilter.split("url(").length - 1,
-    }
-  })
-
-  expect(cut.dilates).toBe(1)
-  expect(cut.glyphPasses).toBe(1)
-  // One blurred cast shadow, and nothing else.
-  expect(cut.buttonDropShadows).toBe(1)
-  expect(cut.buttonReferences).toBe(0)
-})
-
-test("keeps desktop stickers static during pointer movement and page scrolling", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/#about-panel")
-
-  const pointerSticker = page.getByRole("button", { name: /Palm tree sticker/ })
-  const initialPointerTranslate = await pointerSticker.evaluate((sticker) => getComputedStyle(sticker).translate)
-  await page.mouse.move(1420, 880)
-  await page.evaluate(
-    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
-  )
-  await expect(pointerSticker).toHaveCSS("translate", initialPointerTranslate)
-
-  await page.goto("/#about-panel-resume")
-  const scrollSticker = page.getByRole("button", { name: /Statue of Liberty sticker/ })
-  const scrollVisual = scrollSticker.locator(":scope > span")
-  const initialScrollTransform = await scrollVisual.evaluate((visual) => getComputedStyle(visual).transform)
-
-  await page.evaluate(() => window.scrollBy(0, 300))
-  await page.evaluate(
-    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
-  )
-  await expect(scrollVisual).toHaveCSS("transform", initialScrollTransform)
-})
-
-test("keeps 140px between the about close and the work-history heading on desktop", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/#about-panel")
-
-  const gap = await page.evaluate(() => {
-    const closing = document.querySelector(".mosaic-about-closing")
-    const heading = document.querySelector("#about-work-history-heading")
-    if (!closing || !heading) return Number.POSITIVE_INFINITY
-    return Math.round(heading.getBoundingClientRect().top - closing.getBoundingClientRect().bottom)
-  })
-
-  expect(gap).toBe(140)
+    expect(gap).toBe(expectedGap)
+  }
 })
 
 test("left aligns the work-history reading hierarchy", async ({ page }) => {
@@ -2806,77 +2809,8 @@ test("opens work history directly from its deep link", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Work history" })).toBeVisible()
 })
 
-test("lets keyboard users move and reset about stickers", async ({ page }) => {
-  await page.setViewportSize({ width: 1000, height: 900 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.locator(".mosaic-avatar-button").click()
 
-  const sticker = page.getByRole("button", { name: /Palm tree sticker/ })
-  await expect(sticker).toBeVisible()
-  await sticker.focus()
 
-  const initialBox = await sticker.boundingBox()
-  expect(initialBox).not.toBeNull()
-
-  await sticker.press("Enter")
-  await expect(sticker).toHaveAttribute("aria-pressed", "true")
-  await sticker.press("ArrowRight")
-  await expect
-    .poll(async () => (await sticker.boundingBox())?.x)
-    .toBeGreaterThan(initialBox!.x)
-
-  await sticker.press("Enter")
-  await expect(sticker).toHaveAttribute("aria-pressed", "false")
-  await sticker.press("Home")
-  await expect.poll(async () => (await sticker.boundingBox())?.x).toBeCloseTo(initialBox!.x, 0)
-  await expect(sticker).toBeFocused()
-})
-
-test("uses one tab stop per sticker group and arrows between stickers", async ({ page }) => {
-  await page.goto("/#about-panel")
-
-  const aboutStickers = page.locator("#about-section .mosaic-about-sticker")
-  const workStickers = page.locator("#about-panel-resume .mosaic-about-sticker")
-  await expect(aboutStickers).toHaveCount(4)
-  await expect(workStickers).toHaveCount(4)
-  await expect(page.locator('#about-section .mosaic-about-sticker[tabindex="0"]')).toHaveCount(1)
-  await expect(page.locator('#about-panel-resume .mosaic-about-sticker[tabindex="0"]')).toHaveCount(1)
-
-  const first = aboutStickers.nth(0)
-  const second = aboutStickers.nth(1)
-  await first.focus()
-  await first.press("ArrowRight")
-  await expect(second).toBeFocused()
-  await expect(first).toHaveAttribute("tabindex", "-1")
-  await expect(second).toHaveAttribute("tabindex", "0")
-})
-
-test("keeps moved about stickers recoverable inside the panel", async ({ page }) => {
-  await page.setViewportSize({ width: 1000, height: 900 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.locator(".mosaic-avatar-button").click()
-
-  const panel = page.locator(".mosaic-about-panel")
-  const sticker = page.getByRole("button", { name: /Palm tree sticker/ })
-  const panelBox = await panel.boundingBox()
-  const stickerBox = await sticker.boundingBox()
-  expect(panelBox).not.toBeNull()
-  expect(stickerBox).not.toBeNull()
-
-  await sticker.focus()
-  await sticker.press("Enter")
-  for (let step = 0; step < 100; step += 1) {
-    await sticker.press("ArrowRight")
-  }
-
-  const movedBox = await sticker.boundingBox()
-  expect(movedBox).not.toBeNull()
-  expect(movedBox!.x).toBeGreaterThan(stickerBox!.x + 500)
-  expect(movedBox!.x).toBeGreaterThanOrEqual(panelBox!.x)
-  expect(movedBox!.x + movedBox!.width).toBeLessThanOrEqual(panelBox!.x + panelBox!.width)
-})
 
 test("keeps desktop gallery navigation fixed near the modal top", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
@@ -3307,17 +3241,32 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
-test("keeps project captions legible without the blur ramp on mobile", async ({ page }) => {
+// On touch the caption is permanent, and a permanent full-width band landed on
+// whatever the screenshot had at its own bottom edge — and ran past letterboxed
+// artwork onto the card's grey, where white text had nothing to sit on. A pill
+// carries its own contrast over either, and costs no backdrop-filter.
+test("labels project cards with a self-contained pill on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
   const firstCaption = page.locator(".mosaic-row-card-title").first()
   await expect(firstCaption).toBeVisible()
   await expect(firstCaption).toHaveCSS("opacity", "1")
-  expect(
-    await page.locator(".mosaic-row-card-scrim").first().evaluate((scrim) => getComputedStyle(scrim).opacity),
-  ).toBe("1")
-  await expect(page.locator(".mosaic-row-card-scrim > span").first()).toHaveCSS("display", "none")
+  await expect(firstCaption).toHaveCSS("background-color", "rgba(20, 20, 20, 0.82)")
+  await expect(firstCaption).toHaveCSS("text-shadow", "none")
+
+  // The pill is narrower than the card, so it reads as a label rather than as a
+  // second title spanning the artwork.
+  const [captionBox, cardBox] = await Promise.all([
+    firstCaption.boundingBox(),
+    page.locator(".mosaic-row-card").first().boundingBox(),
+  ])
+  expect(captionBox).not.toBeNull()
+  expect(cardBox).not.toBeNull()
+  expect(captionBox!.width).toBeLessThan(cardBox!.width)
+
+  // The band it replaced is gone entirely, not merely faded.
+  await expect(page.locator(".mosaic-row-card-scrim").first()).toHaveCSS("display", "none")
 })
 
 test("ramps the blur radius behind desktop project captions", async ({ page }) => {

@@ -272,6 +272,15 @@ export function PreviewGalleryDialog({
     }
   }, [])
 
+  // Browser history can close this controlled dialog without going through
+  // handleOpenChange. Cancel any delayed selection before it can write a
+  // project back into the URL, and leave the next open in an idle phase.
+  useIsomorphicLayoutEffect(() => {
+    if (open) return
+    cancelSwitchTransition()
+    setSwitchPhase("idle")
+  }, [cancelSwitchTransition, open])
+
   // Read through a ref so the animation callback stays stable: it must not be
   // re-created (and re-fire the open effect) when the selected index changes.
   const originInputsRef = useRef({ getOriginRect, prefersReducedMotion, safeIndex })

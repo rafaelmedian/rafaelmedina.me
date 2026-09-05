@@ -4,6 +4,8 @@ import { Check, Copy, Search, X } from "lucide-react"
 import { linkedinHoverMedia, xProfilePreview, type SiteLinks } from "../data/portfolio"
 import { ContactActionRow } from "./ContactActionRow"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
+import { PersonalPhotos } from "./PersonalPhotos"
+import { formatAvailability } from "../lib/availability"
 
 import "./design-system.css"
 
@@ -210,7 +212,7 @@ const SURFACES = [
     hex: "#f2f2f2",
     token: "—",
     name: "Chip rest",
-    note: "Work-history chips, the person chip's hover, the popover's inline link.",
+    note: "The 0x.org and Matcha.xyz chip, the person chip's hover, and the popover's inline link. Other work-history chips are white with a hairline.",
   },
   {
     hex: "#e9e9e9",
@@ -245,7 +247,7 @@ const NON_TEXT = [
     hex: "#34a26a",
     kind: "non-text",
     name: "Available",
-    note: "The availability dot. Never used behind text.",
+    note: "--accent, on the availability dot and visible at rest. A graphic only; the availability label uses --muted gray text.",
   },
   {
     hex: "#e5352b",
@@ -331,12 +333,14 @@ const SPACE = [
   { value: "0.75rem", use: "Work-history description offset and compact floating offsets" },
   { value: "1.25rem", use: "Maximum mobile contact-pill side padding" },
   { value: "1.5rem", use: "Takeover close offset from the right viewport edge" },
-  { value: "2.5rem", use: "Takeover close offset from the top viewport edge" },
-  { value: "5rem", use: "Minimum About inset, mobile Work-history gap, and rendered spacing before the CV download" },
-  { value: "8.75rem", use: "Maximum About inset and desktop whitespace before Work history" },
+  { value: "2.5rem", use: "Takeover close offset from the top viewport edge and mobile whitespace before Work history" },
+  { value: "5rem", use: "Minimum About inset, desktop whitespace before Work history, and rendered spacing before the CV download" },
+  { value: "6rem", use: "Vertical clearance around the personal-photo carousel shadows" },
+  { value: "8.75rem", use: "Maximum About inset" },
   { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
   { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
   { value: "clamp(16px, 3vw, 32px)", use: "Page gutter from 700px to 899px" },
+  { value: "clamp(1.25rem, 4vw, 5rem)", use: "Personal-photo carousel side gutters" },
   { value: "clamp(12rem, 30vh, 18rem)", use: "Desktop white runway before the About takeover" },
 ]
 
@@ -351,17 +355,17 @@ const ELEVATION = [
   {
     name: "Resting control",
     shadow: "0 1px 5px rgb(46 42 42 / 0.08)",
-    use: "Contact pills and the mobile reveal button. Goes to 0 4px 12px on hover, back to 0 1px 4px when pressed.",
+    use: "Contact pills and the mobile reveal button. Controls go to 0 4px 12px on hover, back to 0 1px 4px when pressed.",
   },
   {
     name: "Overlay — --shadow-overlay",
     shadow: "var(--shadow-overlay)",
-    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, and the top edge of the About takeover. Surfaces without a border prepend a zero-blur 0 0 0 1px hairline ring before the var().",
+    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, personal-photo prints, and the top edge of the About takeover. Surfaces without a border prepend a zero-blur 0 0 0 1px hairline ring before the var().",
   },
   {
     name: "Dialog",
     shadow: "0 1px 1px rgb(0 0 0 / 0.04), 0 18px 44px -18px rgb(0 0 0 / 0.28), 0 48px 92px -42px rgb(0 0 0 / 0.38)",
-    use: "The preview gallery card. Three layers, negative spread, over a blurred backdrop.",
+    use: "The preview gallery card. Three layers, negative spread. Personal photos use the existing 46% dark scrim without blur; their prints use --shadow-overlay and a 6% hairline.",
   },
 ]
 
@@ -372,7 +376,7 @@ const EASINGS = [
     name: "Standard — --ease-standard",
     css: "cubic-bezier(0.2, 0, 0, 1)",
     duration: "160–300ms",
-    use: "The house curve, and the default for a bare timing function. Chips, icons, expand buttons, sticker tracking, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
+    use: "The house curve, and the default for a bare timing function. Chips, icons, expand buttons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
   },
   {
     name: "Smooth — --ease-smooth",
@@ -425,7 +429,7 @@ const DURATIONS = [
   { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
   { value: "300ms", use: "The gallery expand/minimise icon swap." },
   { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
-  { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes." },
+  { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes and the personal-photo strip arriving with a 2.5rem horizontal slide. Photos exit over --duration-quick with 0.75rem travel; reduced motion removes transitions and smooth scrolling." },
   { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
   { value: "700ms", use: "The bottom scroll edge, its emoji toss, and the avatar coin flip." },
 ]
@@ -455,16 +459,21 @@ const STACKING = [
   { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
   {
-    z: "30 / 50",
-    name: "--z-corner / --z-social",
-    note: "The section corner and takeover close sit at --z-corner; the social corner sits at --z-social so its hover cards clear other overlays.",
+    z: "30",
+    name: "--z-corner",
+    note: "The About takeover close.",
+  },
+  {
+    z: "50 / 50",
+    name: "Section / social corners — --z-social",
+    note: "Both navigation corners sit at --z-social so the résumé and map hover cards clear other overlays.",
   },
   {
     z: "40",
     name: "--z-overlay",
     note: "Hover cards, the local-time card, and the work-history block. The popover inside that block stacks locally (z 4 within its isolated container), so only the container carries the tier.",
   },
-  { z: "60 / 70", name: "--z-dialog-backdrop / --z-dialog", note: "The preview gallery backdrop and pending veil, then its shell." },
+  { z: "60 / 70", name: "--z-dialog-backdrop / --z-dialog", note: "The preview gallery and personal-photo backdrops, then their dialog shells." },
   { z: "100", name: "--z-reaction", note: "The copy-email reaction has to clear the dialog trigger it sits under." },
   { z: "120", name: "--z-skip-link", note: "Above everything, always." },
   {
@@ -857,7 +866,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <h2>Typography</h2>
               <p>
                 Interface text uses one face, four sizes, and four weights. The handwritten avatar hint and draggable
-                emoji stickers are deliberate display exceptions.
+                hobby emoji are deliberate display exceptions.
               </p>
             </div>
 
@@ -1130,7 +1139,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
                   illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
                   on hover and focus, one tile at a time. Below 700px and on coarse pointers, the four blur layers stay
-                  off while the tint and caption remain visible as a static, scroll-friendly label.
+                  off while the tint and caption remain visible as a static, scroll-friendly label. The mobile tint
+                  occupies only 6rem instead of 46% of the card; the compact stop list holds 56% black through
+                  its bottom 40% to preserve caption contrast while leaving more artwork clear.
                 </p>
               </div>
             </div>
@@ -1143,6 +1154,20 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p>
                 Rendered from the real components and classes, on the surfaces they actually ship on. Hover and focus
                 them — the states are live.
+              </p>
+            </div>
+
+            <div className="ds-block" data-ds-terms={terms("personal photos stack polaroid carousel modal Handlee shadow radius slide")}>
+              <p className="ds-subhead">Personal photos</p>
+              <p>Five square-cropped prints sit in one row below the contact text on every screen size, each overlapping the preceding print by 35% of its width. A few prints shift slightly sideways and vertically to loosen the stack. The row uses the shared About scroll entrance, with reduced motion leaving it static. Resting and hover angles alternate in both directions; hover or keyboard focus fans the prints over --duration-slow with a short cascading delay and reveals the hand-drawn note. The preview keeps only 0.5rem of bottom padding on larger screens and 1.5rem on mobile. Each print keeps the original --shadow-overlay card shadow plus a 6% hairline, and its 1:1 image crop sits slightly above center to keep faces in view. Clicking opens the eleven-photo gallery; Escape returns focus to the row. Portrait and landscape photos fill a consistent 3:4 crop; the square bridge photo remains fully visible within that frame. Captions use Handlee at --text-lg and images use a subtle inner radius of calc(var(--radius-sm) / 2) (4px). Horizontal gutters use clamp(1.25rem, 4vw, 5rem), keeping the first print close to the left edge even on wide screens. The strip reserves 6rem above and below the prints so their shadows finish fading inside the scroll container. The whole strip is draggable, including the gaps between prints. Touch panning, wheel scrolling, and keyboard arrows browse the eleven photos with firm stops at both ends. The first and last prints stop at the matching horizontal gutters, with no trailing empty area. Escape or clicking outside closes it.</p>
+              <PersonalPhotos />
+            </div>
+
+            <div className="ds-block">
+              <p className="ds-subhead">Hero hierarchy</p>
+              <p>
+                Name and role lead directly into the company list.
+                Email owns the dark primary pill; LinkedIn and Follow use the light treatment.
               </p>
             </div>
 
@@ -1171,26 +1196,26 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ds-terms={terms("default pill #f4f4f4 #fff #dedee0 112px primary action")}>
-                      <td>Default</td>
+                    <tr data-ds-terms={terms("email dark pill #171717 #000 white label 112px primary action")}>
+                      <td>Email</td>
                       <td>
-                        <code>#f4f4f4 → #fff</code> gradient, <code>#dedee0</code> border, 112px fixed
+                        <code>#171717 → #000</code> gradient, white label, 112px fixed
                       </td>
                       <td>The primary action. One per row.</td>
                     </tr>
                     <tr data-ds-terms={terms("linkedin pill #0a66c2 92px secondary vendor")}>
                       <td>LinkedIn</td>
                       <td>
-                        Same shell, <code>#0a66c2</code> label, 92px min
+                        Light shell, <code>#0a66c2</code> label, 92px min
                       </td>
                       <td>Secondary. Carries a vendor mark, so it borrows the vendor colour.</td>
                     </tr>
-                    <tr data-ds-terms={terms("dark pill #171717 #000 white label 80px tertiary")}>
-                      <td>Dark</td>
+                    <tr data-ds-terms={terms("follow light pill #f4f4f4 #fff #dedee0 80px tertiary")}>
+                      <td>Follow</td>
                       <td>
-                        <code>#171717 → #000</code> gradient, white label, 80px min
+                        <code>#f4f4f4 → #fff</code> gradient, dark label and mark, 80px min
                       </td>
-                      <td>Tertiary. Heaviest fill but the smallest footprint, so it does not lead.</td>
+                      <td>Tertiary. The light treatment keeps email as the primary action.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1216,6 +1241,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <button type="button" className="mosaic-work-history-chip is-active">
                   Chip · active
                 </button>
+                <button type="button" className="mosaic-work-history-chip mosaic-work-history-chip-filled">
+                  0x.org and Matcha.xyz
+                </button>
                 <a href="#components" className="mosaic-social-link">
                   Nav link
                 </a>
@@ -1232,13 +1260,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </button>
                 <p className="mosaic-profile-availability" style={{ margin: 0 }}>
                   <span className="mosaic-availability-dot" style={{ opacity: 1 }} aria-hidden="true" />
-                  Available for work
+                  {formatAvailability()}
                 </p>
               </div>
               <p className="ds-caption">
-                Chips carry <code>#f2f2f2</code> at rest and <code>#e9e9e9</code> for hover, focus, and selected —
-                deliberately the same value, because a chip that is open and a chip under the cursor mean the same
-                thing. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
+                Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.09)</code> hairline.
+                0x.org and Matcha.xyz uses a <code>#f2f2f2</code> background and matching border.
+                All chips fill to <code>#e9e9e9</code>{" "}
+                for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
+                under the cursor mean the same thing. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
                 40px while the visible label stays 2rem. The takeover close is a 51.2px white raised control with the
                 overlay shadow and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
                 its viewport crossing.
@@ -1478,10 +1508,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   share one left-aligned 36rem reading axis in normal document flow. The introduction starts with a
                   fluid <code>clamp(5rem, 10vw, 8.75rem)</code> (80–140px) inset from the sheet&rsquo;s top: 5rem on
                   mobile, growing to 8.75rem on wide desktops. Work history sits 5rem below About on mobile and
-                  8.75rem below it on desktop, without a hairline. Eight stickers are split evenly between About and
-                  Work history and span the outer 8% of the desktop side gutters, so the decoration follows the full
-                  reading surface without crowding the copy. They stay fixed while the pointer and page move, but can
-                  still be repositioned directly with pointer dragging or the keyboard. Each role shows one representative result, aligns its
+                  8.75rem below it on desktop, without a hairline. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users. Each role shows one representative result, aligns its
                   dates opposite the company on wider screens, then ends with a PDF download 5rem (80px) after Education.
                   Company names are keyboard-focusable external links without hover or focus tooltips. There is no tab state or
                   hidden panel; <code>#about-panel-resume</code> anchors directly to the visible Work history section.
@@ -1571,10 +1598,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 smaller — the 2rem nav links, the map attribution, the takeover cue's 34px chevron — an invisible{" "}
                 <code>::before</code> or extra padding makes up the difference rather than the label growing.
               </li>
+              <li data-ds-terms={terms("resume résumé preview map hover focus 260ms 140ms 22.5rem")}>
+                <strong>The Resume link previews the document.</strong> It shares the map card's surface,
+                6px inset, 16px radius, shadow, and motion, opening after 260ms of hover or immediately on
+                focus and closing after 140ms away or Escape. The preview is at most 22.5rem wide, fits
+                the viewport height, and centers under the navigation below 700px. Its decorative image
+                is generated alongside the PDF and loads on demand; clicking the link opens the PDF in a new tab.
+              </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>
                 <strong>Hover-only content has a non-hover fate.</strong> Every hover card is{" "}
-                <code>display: none</code> under <code>(hover: none)</code>; project cards stay image-only on touch while
-                their button labels continue to expose each project title to assistive technology.
+                <code>display: none</code> under <code>(hover: none)</code>; project cards keep their titles visible on touch over a compact 6rem tint. Their button labels
+                also expose each project title to assistive technology.
               </li>
               <li data-ds-terms={terms("aria-live polite copy email announcement asynchronous")}>
                 <strong>Asynchronous results are announced.</strong> Copying the email writes to an{" "}
