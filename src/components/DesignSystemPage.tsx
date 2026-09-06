@@ -212,7 +212,7 @@ const SURFACES = [
     hex: "#f2f2f2",
     token: "—",
     name: "Chip rest",
-    note: "The 0x.org and Matcha.xyz chip, the person chip's hover, and the popover's inline link. Other work-history chips are white with a hairline.",
+    note: "The person chip's hover and the popover's inline link. All work-history chips are white with a hairline.",
   },
   {
     hex: "#e9e9e9",
@@ -271,14 +271,14 @@ const TYPE_SCALE = [
     token: "--text-xs",
     sample: "Punta Cana · Local time",
     spec: "0.75rem · 12px",
-    where: "Map attribution, count pills, avatar initials, compact project captions",
+    where: "Map attribution, count pills, avatar initials, compact project captions, mobile table-of-contents numbers",
     style: { fontSize: "var(--text-xs)", lineHeight: 1.25 },
   },
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
     spec: "0.875rem · 14px",
-    where: "Pill labels, body copy, detail rows, hover-card text, mobile corner nav, wider project captions",
+    where: "Pill labels, body copy, detail rows, hover-card text, desktop corner nav, mobile table-of-contents labels, wider project captions",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
@@ -360,7 +360,7 @@ const ELEVATION = [
   {
     name: "Overlay — --shadow-overlay",
     shadow: "var(--shadow-overlay)",
-    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, personal-photo prints, and the top edge of the About takeover. Surfaces without a border prepend a zero-blur 0 0 0 1px hairline ring before the var().",
+    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, personal-photo prints, the mobile table of contents, and the top edge of the About takeover. Surfaces without a border prepend a zero-blur 0 0 0 1px hairline ring before the var().",
   },
   {
     name: "Dialog",
@@ -376,7 +376,7 @@ const EASINGS = [
     name: "Standard — --ease-standard",
     css: "cubic-bezier(0.2, 0, 0, 1)",
     duration: "160–300ms",
-    use: "The house curve, and the default for a bare timing function. Chips, icons, expand buttons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
+    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
   },
   {
     name: "Smooth — --ease-smooth",
@@ -433,7 +433,6 @@ const DURATIONS = [
   { value: "--duration-quick · 160ms", use: "Colour, opacity, and shadow on hover or focus, and every overlay exit. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
   { value: "--duration-base · 200ms", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close. Absorbed the old 220ms entrances." },
   { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
-  { value: "300ms", use: "The gallery expand/minimise icon swap." },
   { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
   { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes and the personal-photo stack fanning on hover or focus." },
   { value: "360ms / 200ms", use: "Personal-photo carousel: --photo-open-duration aliases --duration-slow; --photo-close-duration aliases --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
@@ -446,8 +445,8 @@ const DURATIONS = [
 const BREAKPOINTS = [
   { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; the wrapped X card centers on its trigger; location and availability stack without a separator." },
   { at: "≤ 479.98px", change: "Contact pills gain up to 1.25rem side padding and wrap when their container cannot accommodate them." },
-  { at: "≤ 639.98px", change: "The hero reserves 4rem of top clearance." },
-  { at: "≤ 699.98px", change: "Local time hides; the 14px About and Resume labels centre optically; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; card captions stay visible over a static gradient without the desktop blur ramp." },
+  { at: "≤ 639.98px", change: "The hero uses 2rem of top padding plus the top safe area." },
+  { at: "≤ 699.98px", change: "Local time and corner navigation hide; a centered floating control labeled with the current section opens a table of contents with 14px labels; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; card captions stay visible over a static gradient without the desktop blur ramp." },
   { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
@@ -473,7 +472,7 @@ const STACKING = [
   {
     z: "50 / 50",
     name: "Section / social corners — --z-social",
-    note: "Both navigation corners sit at --z-social so the résumé and map hover cards clear other overlays.",
+    note: "Both navigation corners and the mobile table-of-contents trigger sit at --z-social so they clear other overlays.",
   },
   {
     z: "40",
@@ -1092,8 +1091,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   When one rounded box sits inside another, the outer radius is the inner radius plus the gap between
                   them. Those cases are written as <code>calc()</code> off one of the four tokens rather than measured
                   and hard-coded: the LinkedIn card's media is <code>calc(var(--radius-md) - 5px)</code>, the preview dialog is{" "}
-                  <code>calc(var(--radius-lg) + card-padding)</code>. That is how 11px, 11.5px, and 10px corners exist
+                  <code>calc(var(--radius-lg) + card-padding)</code> on desktop. That is how 11px, 11.5px, and 10px corners exist
                   without being scale steps — and why they stay correct when a padding changes.
+                  On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
+                  insets; its counter and 44px up, down, and close controls stay pinned above the media on a white
+                  header at z-index 1.
                 </p>
               </div>
             </div>
@@ -1248,7 +1250,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <button type="button" className="mosaic-work-history-chip is-active">
                   Chip · active
                 </button>
-                <button type="button" className="mosaic-work-history-chip mosaic-work-history-chip-filled">
+                <button type="button" className="mosaic-work-history-chip">
                   0x.org and Matcha.xyz
                 </button>
                 <a href="#components" className="mosaic-social-link">
@@ -1272,7 +1274,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <p className="ds-caption">
                 Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.09)</code> hairline.
-                0x.org and Matcha.xyz uses a <code>#f2f2f2</code> background and matching border.
                 All chips fill to <code>#e9e9e9</code>{" "}
                 for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
                 under the cursor mean the same thing. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
@@ -1438,6 +1439,28 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>clamp(1rem, 5vw, 1.5rem)</code> gutter from 700px to 899px — dropped entirely at 900px so the
                   mosaic can run full-bleed.
                 </li>
+                <li data-ds-terms={terms("responsive mobile desktop table of contents TOC current section label Work About Work history 700px 14px 48px safe-area 24px 16px 360ms 200ms 160ms 120ms blur 16px #e9e9e9 --toc-compact-width --toc-resize-duration")}>
+                  <strong>Floating table of contents</strong> appears after 96px of scrolling at every screen size,
+                  centered 0.75rem above the bottom safe area. It fades in over 160ms with standard easing
+                  and rises 0.375rem over 200ms with smooth easing. Returning to the first 96px hides and closes it;
+                  while hidden it is inert and excluded from assistive technology. Reduced motion removes the transition. From 700px up, the top section navigation and local time remain visible alongside it. Its numbered label follows the visible section: 01 Work, 02 About, or 03 Work history.
+                  One 24px-radius surface expands from the measured label width to 17rem, keeping its
+                  bottom edge fixed. The expanded list shows three 48px rows in page order, with no header
+                  or repeated footer, 0.5rem padding and 16px row corners. Labels are 14px; section numbers are 12px.
+                  The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity, ink text,
+                  and a 16px close icon. The collapsed row shows an upward chevron instead.
+                  The shared surface uses 92% white, 16px backdrop blur, the overlay shadow and a 5% hairline.
+                  Width, padding, row height and icon transforms use smooth easing over 360ms on open and 200ms on close.
+                  Rows and icons fade over 160ms; the chevron rotates 90 degrees while the close icon scales from 0.8 to 1.
+                  Transitions retarget during rapid taps; reduced motion makes them instant. Scroll-driven label
+                  changes keep the collapsed row at full height while its width adjusts. Other rows are inert and
+                  hidden from assistive technology when closed; keyboard focus rings sit 2px inside the row.
+                  Selection, outside click, Escape, or focus leaving the control closes it. Resizing preserves its open state.
+                  Selection scrolls and focuses the section. Colour changes use 160ms standard easing;
+                  pressing scales the trigger content to 0.96 over 120ms, keeping the glass and shadow stable.
+                  Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
+                  The shell reserves 6rem plus the safe area so the control clears the final content.
+                </li>
                 <li data-ds-terms={terms("mosaic row flex 1rem gap --row-height --row-span 320px 420px clamp(340px, 92vw, 380px)")}>
                   <strong>Mosaic rows</strong> are flex, <code>1rem</code> gap, with height driven by{" "}
                   <code>--row-height</code>: <code>clamp(340px, 92vw, 380px)</code> stacked on mobile, 320px base, and
@@ -1602,14 +1625,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </li>
               <li data-ds-terms={terms("target 24px 44px tap nav link map attribution chevron 34px ::before")}>
                 <strong>Targets meet 24px; primary touch controls reach 44px.</strong> Where the visible control is
-                smaller — the 2rem nav links, the map attribution, the takeover cue's 34px chevron — an invisible{" "}
+                smaller — the desktop 2rem nav links, the map attribution, the takeover cue's 34px chevron — an invisible{" "}
                 <code>::before</code> or extra padding makes up the difference rather than the label growing.
               </li>
               <li data-ds-terms={terms("resume résumé preview map hover focus 260ms 140ms 22.5rem")}>
                 <strong>The Resume link previews the document.</strong> It shares the map card's surface,
                 6px inset, 16px radius, shadow, and motion, opening after 260ms of hover or immediately on
                 focus and closing after 140ms away or Escape. The preview is at most 22.5rem wide, fits
-                the viewport height, and centers under the navigation below 700px. Its decorative image
+                the viewport height, and is available from the desktop corner navigation. The mobile Work history entry scrolls to the on-page experience section; the PDF link lives below that section. Its decorative image
                 is generated alongside the PDF and loads on demand; clicking the link opens the PDF in a new tab.
               </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>

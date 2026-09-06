@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize2, Minimize2, X } from "lucide-react"
+import { ChevronDown, ChevronUp, X } from "lucide-react"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
@@ -522,6 +522,40 @@ export function PreviewGalleryDialog({
                 }}
               >
                 <div className="preview-gallery-card-inner">
+                  <div className="preview-gallery-toolbar">
+                    <span className="preview-gallery-count">
+                      {safeIndex + 1} / {cards.length}
+                    </span>
+
+                    <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
+                      <button
+                        type="button"
+                        className="preview-gallery-nav preview-gallery-nav-prev"
+                        aria-label="Previous preview"
+                        aria-keyshortcuts="ArrowUp ArrowLeft"
+                        onClick={() => moveBy(-1)}
+                        disabled={cards.length <= 1}
+                      >
+                        <ChevronUp aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="preview-gallery-nav preview-gallery-nav-next"
+                        aria-label="Next preview"
+                        aria-keyshortcuts="ArrowDown ArrowRight"
+                        onClick={() => moveBy(1)}
+                        disabled={cards.length <= 1}
+                      >
+                        <ChevronDown aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                      </button>
+
+                      <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
+                        <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                      </Dialog.Close>
+                    </div>
+                  </div>
+
                   <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
                     {activeMediaIsVideo ? (
                       <video
@@ -552,59 +586,6 @@ export function PreviewGalleryDialog({
                         decoding="async"
                       />
                     )}
-
-                    <button
-                      type="button"
-                      className="preview-gallery-expand"
-                      aria-label={isWide ? "Exit wide view" : "Expand preview"}
-                      aria-pressed={isWide}
-                      onClick={() => setIsWide((current) => !current)}
-                    >
-                      <Maximize2
-                        aria-hidden="true"
-                        strokeWidth={2}
-                        className={`preview-gallery-expand-icon${isWide ? "" : " is-active"}`}
-                      />
-                      <Minimize2
-                        aria-hidden="true"
-                        strokeWidth={2}
-                        className={`preview-gallery-expand-icon${isWide ? " is-active" : ""}`}
-                      />
-                    </button>
-                  </div>
-
-                  <div className="preview-gallery-toolbar">
-                    <span className="preview-gallery-count">
-                      {safeIndex + 1} / {cards.length}
-                    </span>
-
-                    <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
-                      <button
-                        type="button"
-                        className="preview-gallery-nav preview-gallery-nav-prev"
-                        aria-label="Previous preview"
-                        aria-keyshortcuts="ArrowUp ArrowLeft"
-                        onClick={() => moveBy(-1)}
-                        disabled={cards.length <= 1}
-                      >
-                        <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-                      </button>
-
-                      <button
-                        type="button"
-                        className="preview-gallery-nav preview-gallery-nav-next"
-                        aria-label="Next preview"
-                        aria-keyshortcuts="ArrowDown ArrowRight"
-                        onClick={() => moveBy(1)}
-                        disabled={cards.length <= 1}
-                      >
-                        <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-                      </button>
-
-                      <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
-                        <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-                      </Dialog.Close>
-                    </div>
                   </div>
 
                   <div className="preview-gallery-content">

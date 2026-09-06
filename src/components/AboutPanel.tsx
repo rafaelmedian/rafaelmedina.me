@@ -213,6 +213,7 @@ export function AboutPanel({ links }: AboutPanelProps) {
 
           <section
             id="about-panel-resume"
+            tabIndex={-1}
             className="mosaic-about-section mosaic-about-work-history"
             aria-labelledby="about-work-history-heading"
           >
