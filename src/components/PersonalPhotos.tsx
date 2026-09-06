@@ -1,20 +1,34 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { useCallback, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
+import { useCallback, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
 
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
 
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 
 type OpenPhoto = (index: number, opener: HTMLElement) => void
+type PreviewPhoto = { photo: typeof photos[number]; src: string }
+const initialPreview = photos.slice(0, 5).map((photo) => ({ photo, src: `/images/personal/${photo.name}-thumb.webp` }))
 
-export function PersonalPhotosPreview({ onOpen, className = "" }: { onOpen: OpenPhoto; className?: string }) {
+function subscribePreviewWidth(callback: () => void) {
+  window.addEventListener("resize", callback)
+  return () => window.removeEventListener("resize", callback)
+}
+
+function usePreviewCount() {
+  return useSyncExternalStore(subscribePreviewWidth, () => window.innerWidth >= 700 ? 5 : 4, () => 5)
+}
+
+export function PersonalPhotosPreview({ onOpen, className = "", items, position = 0 }: { onOpen: OpenPhoto; className?: string; items?: PreviewPhoto[]; position?: number }) {
+  const count = usePreviewCount()
+  const preview = items ?? initialPreview.slice(0, count)
   return (
     <div className={`personal-photos ${className}`} data-about-fade="">
-      <button type="button" className="personal-photos-trigger" aria-label="View personal photos" aria-haspopup="dialog" onClick={(event) => onOpen(0, event.currentTarget)}>
-        <span className="personal-photos-stack" aria-hidden="true">
-          {photos.slice(0, 5).map((photo) => (
-            <span className="personal-photos-print" key={photo.id}>
-              <img src={`/images/personal/${photo.name}-thumb.webp`} alt="" width="300" height="400" loading="lazy" decoding="async" />
+      <button type="button" className="personal-photos-trigger" aria-label="View personal photos" aria-haspopup="dialog" onClick={(event) => onOpen(position, event.currentTarget)}>
+        <span className="personal-photos-stack" aria-hidden="true" style={{ "--photo-preview-count": preview.length } as CSSProperties}>
+          {preview.map(({ photo, src }) => (
+            <span className="personal-photos-print" data-photo-id={photo.id} key={photo.id}>
+              <img src={src} alt="" width={photo.width} height={photo.height} loading="lazy" decoding="async" />
             </span>
           ))}
         </span>
@@ -32,43 +46,58 @@ export function PersonalPhotosPreview({ onOpen, className = "" }: { onOpen: Open
 
 export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto) => ReactNode }) {
   const [open, setOpen] = useState(false)
-  const [initialIndex, setInitialIndex] = useState(0)
+  const [initialPosition, setInitialPosition] = useState(0)
+  const [resumePosition, setResumePosition] = useState(0)
+  const previewCount = usePreviewCount()
+  const [previewAnchor, setPreviewAnchor] = useState(0)
+  const [previewImages, setPreviewImages] = useState<Record<string, string>>({})
+  const previewStart = Math.min(previewAnchor, photos.length - previewCount)
+  const preview = photos.slice(previewStart, previewStart + previewCount).map((photo) => ({
+    photo, src: previewImages[photo.id] ?? `/images/personal/${photo.name}-thumb.webp`,
+  }))
   const [opener, setOpener] = useState<HTMLElement | null>(null)
+  const [origins, setOrigins] = useState<ReturnType<typeof measurePhotoOrigins>>([])
   const openPhoto: OpenPhoto = (index, opener) => {
+    setOrigins(measurePhotoOrigins(opener))
     setOpener(opener)
-    setInitialIndex(index)
+    setInitialPosition(index)
     setOpen(true)
   }
   const stripRef = useRef<HTMLDivElement>(null)
+  const [stripNode, setStripNode] = useState<HTMLDivElement | null>(null)
   const popupRef = useRef<HTMLDivElement>(null)
+  const dialogActions = useRef<Dialog.Root.Actions>(null)
+  const finishPhotoClose = useCallback(() => dialogActions.current?.unmount(), [])
   const dragRef = useRef<{ pointerId: number; startX: number; startScroll: number; dragged: boolean } | null>(null)
   const snapTimerRef = useRef(0)
   const registerStrip = useCallback((strip: HTMLDivElement | null) => {
     stripRef.current = strip
+    setStripNode(strip)
     if (!strip) return
-    const first = strip.children[0] as HTMLElement
-    const selected = strip.children[initialIndex] as HTMLElement
-    strip.scrollLeft = selected.offsetLeft - first.offsetLeft
-  }, [initialIndex])
+    const slides = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")
+    const step = slides[1].offsetLeft - slides[0].offsetLeft
+    strip.scrollLeft = initialPosition * step
+  }, [initialPosition])
   const reducedMotion = usePrefersReducedMotion()
+  usePhotoOriginTransition(stripNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
   const moveTo = (index: number) => {
     const strip = stripRef.current
     if (!strip) return
     const next = Math.max(0, Math.min(photos.length - 1, index))
-    const slide = strip.children[next] as HTMLElement
-    const first = strip.children[0] as HTMLElement
+    const slide = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[next]
+    const first = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[0]
     strip.scrollTo({ left: slide.offsetLeft - first.offsetLeft, behavior: reducedMotion ? "instant" : "smooth" })
   }
 
   const nearestIndex = () => {
     const strip = stripRef.current
     if (!strip) return 0
-    const first = strip.children[0] as HTMLElement
+    const first = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[0]
     let nearest = 0
     let distance = Infinity
     photos.forEach((_, index) => {
-      const slide = strip.children[index] as HTMLElement
+      const slide = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[index]
       const target = Math.min(slide.offsetLeft - first.offsetLeft, strip.scrollWidth - strip.clientWidth)
       const delta = Math.abs(target - strip.scrollLeft)
       if (delta < distance) {
@@ -124,8 +153,25 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
     moveTo(event.key === "Home" ? 0 : event.key === "End" ? photos.length - 1 : nearestIndex() + (event.key === "ArrowRight" ? 1 : -1))
   }
 
-  const onOpenChange = (nextOpen: boolean) => {
+  const onOpenChange = (nextOpen: boolean, details: Dialog.Root.ChangeEventDetails) => {
     if (!nextOpen) {
+      const strip = stripRef.current
+      if (strip) {
+        const slides = Array.from(strip.querySelectorAll<HTMLElement>(".personal-photos-slide"))
+        const step = slides[1].offsetLeft - slides[0].offsetLeft
+        setResumePosition(strip.scrollLeft / step)
+        const bounds = strip.getBoundingClientRect()
+        const firstVisible = slides.findIndex((slide) => slide.getBoundingClientRect().right > bounds.left)
+        setPreviewAnchor(Math.max(0, firstVisible))
+        setPreviewImages(Object.fromEntries(slides.map((slide, index) => {
+          const image = slide.querySelector("img")!
+          const photo = photos[index]
+          return [photo.id, image.complete && image.naturalWidth ? image.currentSrc : `/images/personal/${photo.name}-thumb.webp`]
+        })))
+      }
+      // The flight owns its final frame. An interrupted CSS opacity transition
+      // can finish early and must not unmount the returning photos underneath it.
+      if (!reducedMotion && origins.length) details.preventUnmountOnClose()
       window.clearTimeout(snapTimerRef.current)
       dragRef.current = null
     }
@@ -133,8 +179,8 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      {children ? children(openPhoto) : <PersonalPhotosPreview onOpen={openPhoto} />}
+    <Dialog.Root open={open} onOpenChange={onOpenChange} actionsRef={dialogActions}>
+      {children ? children(openPhoto) : <PersonalPhotosPreview onOpen={openPhoto} items={preview} position={resumePosition} />}
       <Dialog.Portal>
         <Dialog.Backdrop className="personal-photos-backdrop" />
         <Dialog.Popup ref={popupRef} initialFocus={popupRef} finalFocus={() => opener} className="personal-photos-dialog" onKeyDown={onKeyDown}>
@@ -152,21 +198,23 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
             onPointerUp={onPointerEnd}
             onPointerCancel={onPointerEnd}
           >
-            {photos.map((photo, index) => (
-              <figure className="personal-photos-slide" key={photo.id} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${photos.length}`}>
-                <img
-                  src={`/images/personal/${photo.name}.webp`}
-                  alt={photo.alt}
-                  width={photo.width}
-                  height={photo.height}
-                  data-orientation={photo.height === photo.width ? "square" : photo.height > photo.width ? "portrait" : "landscape"}
-                  decoding="async"
-                  draggable={false}
-                  style={{ backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
-                />
-                <figcaption>{photo.caption}</figcaption>
-              </figure>
-            ))}
+            <div className="personal-photos-track">
+              {photos.map((photo, index) => (
+                <figure className="personal-photos-slide" data-photo-id={photo.id} key={photo.id} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${photos.length}`}>
+                  <img
+                    src={`/images/personal/${photo.name}.webp`}
+                    alt={photo.alt}
+                    width={photo.width}
+                    height={photo.height}
+                    data-orientation={photo.height === photo.width ? "square" : photo.height > photo.width ? "portrait" : "landscape"}
+                    decoding="async"
+                    draggable={false}
+                    style={{ backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
+                  />
+                  <figcaption>{photo.caption}</figcaption>
+                </figure>
+              ))}
+            </div>
           </div>
         </Dialog.Popup>
       </Dialog.Portal>
