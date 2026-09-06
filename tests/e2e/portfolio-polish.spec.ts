@@ -2943,21 +2943,24 @@ test("fills the expanded card width with cropped project artwork", async ({ page
   await expect(dialog).toHaveAttribute("data-wide", "true")
 
   const card = dialog.locator(".preview-gallery-card")
-  const mediaFrame = dialog.locator(".preview-gallery-media-frame")
-  const [cardBox, mediaFrameBox, horizontalInset] = await Promise.all([
-    card.boundingBox(),
-    mediaFrame.boundingBox(),
-    card.evaluate((element) => {
-      const styles = getComputedStyle(element)
-      return [styles.borderLeftWidth, styles.paddingLeft, styles.paddingRight, styles.borderRightWidth]
-        .map(Number.parseFloat)
-        .reduce((total, value) => total + value, 0)
-    }),
-  ])
+  await expect
+    .poll(() =>
+      card.evaluate((element) => {
+        const mediaFrame = element.querySelector(".preview-gallery-media-frame")
 
-  expect(cardBox).not.toBeNull()
-  expect(mediaFrameBox).not.toBeNull()
-  expect(mediaFrameBox!.width).toBeCloseTo(cardBox!.width - horizontalInset, 0)
+        if (!(mediaFrame instanceof HTMLElement)) return Number.POSITIVE_INFINITY
+
+        const cardBox = element.getBoundingClientRect()
+        const mediaFrameBox = mediaFrame.getBoundingClientRect()
+        const styles = getComputedStyle(element)
+        const horizontalInset = [styles.borderLeftWidth, styles.paddingLeft, styles.paddingRight, styles.borderRightWidth]
+          .map(Number.parseFloat)
+          .reduce((total, value) => total + value, 0)
+
+        return Math.abs(mediaFrameBox.width - (cardBox.width - horizontalInset))
+      }),
+    )
+    .toBeLessThan(1)
 })
 
 test("keeps the expanded gallery scrollable without visible scrollbars", async ({ playwright, baseURL }) => {
@@ -3320,6 +3323,9 @@ test("keeps wrapped desktop project captions readable over white artwork", async
   const scrim = card.locator(".mosaic-row-card-scrim")
   const title = card.locator(".mosaic-row-card-title")
   await card.hover()
+  await title.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished))
+  })
 
   expect(
     await title.evaluate(

@@ -3022,7 +3022,7 @@ img {
       to top,
       rgb(0 0 0 / 0.62) 0%,
       rgb(0 0 0 / 0.595) 18%,
-      rgb(0 0 0 / 0.56) 40%,
+      rgb(0 0 0 / 0.57) 40%,
       rgb(0 0 0 / 0.475) 48%,
       rgb(0 0 0 / 0.36) 56%,
       rgb(0 0 0 / 0.27) 64%,
@@ -3266,6 +3266,7 @@ img {
 }
 
 .personal-photos-stack {
+  --photo-print-width: min(28%, calc(100% / (1 + (var(--photo-preview-count, 5) - 1) * 0.65)));
   position: relative;
   display: flex;
   width: 100%;
@@ -3279,25 +3280,24 @@ img {
   --print-offset-y: 0rem;
   --print-spread-x: -0.5rem;
   --print-spread-y: -0.5rem;
-  --print-hover-delay: 0ms;
   position: relative;
-  flex: 0 0 28%;
-  margin-left: -9.8%;
+  flex: 0 0 var(--photo-print-width);
+  margin-left: calc(var(--photo-print-width) * -0.35);
   padding: 0.25rem 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   background: var(--canvas);
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
   transform: translate(var(--print-offset-x), var(--print-offset-y)) rotate(var(--print-tilt));
-  transition: transform var(--duration-base) var(--ease-smooth);
+  transition: transform var(--duration-slow) var(--photo-motion-ease);
 }
 
 .personal-photos-print:first-child { margin-left: 0; }
 
 /* One overlapping row of equally sized prints. */
-.personal-photos-print:nth-child(2) { --print-tilt: 2deg; --print-hover-tilt: 6deg; --print-offset-x: -0.2rem; --print-offset-y: 0.25rem; --print-spread-x: -0.25rem; --print-hover-delay: calc(var(--duration-fast) / 4); }
-.personal-photos-print:nth-child(3) { --print-tilt: -2deg; --print-hover-tilt: -4deg; --print-offset-y: -0.3rem; --print-spread-x: 0rem; --print-hover-delay: calc(var(--duration-fast) / 2); }
-.personal-photos-print:nth-child(4) { --print-tilt: -5deg; --print-hover-tilt: -8deg; --print-offset-x: 0.25rem; --print-offset-y: 0.2rem; --print-spread-x: 0.25rem; --print-hover-delay: calc(var(--duration-fast) * 0.75); }
-.personal-photos-print:nth-child(5) { --print-tilt: 4deg; --print-hover-tilt: 8deg; --print-offset-x: 0.35rem; --print-offset-y: -0.2rem; --print-spread-x: 0.5rem; --print-hover-delay: var(--duration-fast); }
+.personal-photos-print:nth-child(2) { --print-tilt: 2deg; --print-hover-tilt: 6deg; --print-offset-x: -0.2rem; --print-offset-y: 0.25rem; --print-spread-x: -0.25rem; }
+.personal-photos-print:nth-child(3) { --print-tilt: -2deg; --print-hover-tilt: -4deg; --print-offset-y: -0.3rem; --print-spread-x: 0rem; }
+.personal-photos-print:nth-child(4) { --print-tilt: -5deg; --print-hover-tilt: -8deg; --print-offset-x: 0.25rem; --print-offset-y: 0.2rem; --print-spread-x: 0.25rem; }
+.personal-photos-print:nth-child(5) { --print-tilt: 4deg; --print-hover-tilt: 8deg; --print-offset-x: 0.35rem; --print-offset-y: -0.2rem; --print-spread-x: 0.5rem; }
 
 .personal-photos-print img {
   width: 100%;
@@ -3322,8 +3322,8 @@ img {
   pointer-events: none;
   transform: translateY(-50%) translateX(-0.5rem) rotate(-3deg);
   transition:
-    opacity var(--duration-base) var(--ease-smooth),
-    transform var(--duration-base) var(--ease-smooth);
+    opacity var(--duration-slow) var(--photo-motion-ease),
+    transform var(--duration-slow) var(--photo-motion-ease);
   font-family: "Handlee", "Bradley Hand", "Segoe Print", cursive;
   font-size: var(--text-md);
   font-weight: 400;
@@ -3354,8 +3354,6 @@ img {
         calc(var(--print-offset-y) + var(--print-spread-y))
       )
       rotate(var(--print-hover-tilt));
-    transition-duration: var(--duration-slow);
-    transition-delay: var(--print-hover-delay);
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -3366,8 +3364,6 @@ img {
           calc(var(--print-offset-y) + var(--print-spread-y))
         )
         rotate(var(--print-hover-tilt));
-      transition-duration: var(--duration-slow);
-      transition-delay: var(--print-hover-delay);
     }
   }
 }
@@ -3391,18 +3387,32 @@ img {
 .personal-photos-trigger:active .personal-photos-stack { scale: 0.96; }
 .personal-photos-stack { transition: scale var(--duration-fast) var(--ease-standard); }
 
+.personal-photos,
+.personal-photos-backdrop,
+.personal-photos-dialog {
+  /* Apple's CAMediaTimingFunction.default, with the original photo durations.
+     https://developer.apple.com/documentation/quartzcore/camediatimingfunctionname/default */
+  --photo-open-duration: var(--duration-slow);
+  --photo-close-duration: var(--duration-base);
+  --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
 .personal-photos-backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog-backdrop);
   background: rgb(18 18 18 / 0.46);
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--photo-open-duration) var(--photo-motion-ease);
 }
+
+.personal-photos-backdrop[data-ending-style] { transition-duration: var(--photo-close-duration); }
 
 .personal-photos-backdrop[data-starting-style],
 .personal-photos-backdrop[data-ending-style] { opacity: 0; }
 
 .personal-photos-dialog {
+  /* Shadow clearance belongs to the backdrop; only the card row takes input. */
+  pointer-events: none;
   --photo-width: min(76vw, 40dvh, 24rem);
   --photo-gutter: clamp(1.25rem, 4vw, 5rem);
   position: fixed;
@@ -3415,37 +3425,46 @@ img {
   translate: 0 -50%;
   outline: none;
   color: var(--canvas);
-  transition: opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth);
+  transition: opacity var(--photo-open-duration) var(--photo-motion-ease);
 }
 
-.personal-photos-dialog[data-starting-style] { opacity: 0; transform: translateX(2.5rem); }
+.personal-photos-dialog[data-starting-style] { opacity: 0; }
 .personal-photos-dialog[data-ending-style] {
   opacity: 0;
-  transform: translateX(0.75rem);
-  transition-duration: var(--duration-quick);
+  transition-duration: var(--photo-close-duration);
 }
 
 .personal-photos-strip {
+  --photo-gap: 2.5rem;
   position: relative;
-  display: flex;
-  gap: 2.5rem;
+  pointer-events: none;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scroll-padding-inline-start: var(--photo-gutter);
   /* The horizontal scroller also clips vertically, so the long print shadows
      need enough room to finish fading before they reach its edges. */
-  padding: 6rem var(--photo-gutter);
+  padding: 6rem 0;
   scrollbar-width: none;
   user-select: none;
   cursor: grab;
 }
+.personal-photos-track {
+  display: flex;
+  gap: var(--photo-gap);
+  width: max-content;
+  min-width: 100%;
+  padding-inline: var(--photo-gutter);
+  pointer-events: auto;
+}
 .personal-photos-strip:active { cursor: grabbing; }
 .personal-photos-strip::-webkit-scrollbar { display: none; }
-.personal-photos-strip:focus-visible { outline-color: var(--canvas); outline-offset: -4px; }
+/* The modal is the keyboard browsing context; don't frame the entire scroller. */
+.personal-photos-strip:focus { outline: none; }
 
 .personal-photos-slide {
   flex: 0 0 var(--photo-width);
+  width: var(--photo-width);
   margin: 0;
   padding: 1rem 1rem 0;
   border-radius: var(--radius-sm);
@@ -3466,6 +3485,18 @@ img {
   cursor: grab;
 }
 .personal-photos-slide img:active { cursor: grabbing; }
+.personal-photos-flight {
+  position: fixed;
+  z-index: var(--z-dialog);
+  pointer-events: none;
+  transform-origin: center;
+  overflow: hidden;
+}
+.personal-photos-flight figcaption {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+}
 .personal-photos-slide img[data-orientation="portrait"],
 .personal-photos-slide img[data-orientation="landscape"] {
   object-fit: cover;
@@ -3480,7 +3511,7 @@ img {
 }
 
 @media (max-width: 699.98px) {
-  .personal-photos-strip { gap: 1.25rem; }
+  .personal-photos-strip { --photo-gap: 1.25rem; }
 }
 
 @media (max-height: 500px) {
