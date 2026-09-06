@@ -1124,7 +1124,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 360ms eased compact desktop")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1137,7 +1137,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>rgb(0 0 0 / 0.62)</code> ramp sits above all four: blur cannot promise contrast on its own,
                   because a blurred white screenshot is still white. On wide layouts it is nearly flat across the
                   bottom seventh of the band, where the caption sits. From 700px through 899px, the shorter band holds
-                  56% black through 40% of its height so a wrapped two-line label also clears 4.5:1 over white artwork.
+                  57% black through 40% of its height so a wrapped two-line label also clears 4.5:1 over white artwork.
                   Contrast is only owed at the label, so the rest of each band sheds its weight quickly and reads far
                   lighter than a ramp that starts at the same value. Every ramp here — the
                   four masks and the tint — fades on an eased stop list rather than a straight line, and trails off
@@ -1147,7 +1147,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
                   on hover and focus, one tile at a time. Below 700px and on coarse pointers, the four blur layers stay
                   off while the tint and caption remain visible as a static, scroll-friendly label. The mobile tint
-                  occupies only 6rem instead of 46% of the card; the compact stop list holds 56% black through
+                  occupies only 6rem instead of 46% of the card; the compact stop list holds 57% black through
                   its bottom 40% to preserve caption contrast while leaving more artwork clear.
                 </p>
               </div>
