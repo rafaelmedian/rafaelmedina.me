@@ -15,6 +15,7 @@ import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
 import { ContactActionRow } from "./ContactActionRow"
+import { MobileTableOfContents } from "./MobileTableOfContents"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
@@ -887,12 +888,23 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     }
   }, [isReturningToTop])
 
-  const scrollToAbout = (trigger: string) => {
-    trackEvent("about_scroll", { about_scroll_trigger: trigger })
-    const aboutPanel = document.getElementById("about-panel")
+  const scrollToSection = (trigger: string, sectionId = "about-panel") => {
+    if (sectionId === "work") {
+      trackEvent("section_scroll", { section_id: sectionId, section_scroll_trigger: trigger })
+    } else {
+      trackEvent("about_scroll", { about_scroll_trigger: trigger })
+    }
+    const aboutPanel = document.getElementById(sectionId)
     if (!aboutPanel) return
-    if (window.location.hash !== "#about-panel") {
-      pushPortfolioUrl("#about-panel", "about")
+    const hash = `#${sectionId}`
+    if (window.location.hash !== hash) {
+      // Section links share one visit instead of adding a history entry for
+      // every jump within the same page.
+      if (["#work", "#about-panel", "#about-panel-resume"].includes(window.location.hash)) {
+        window.history.replaceState(window.history.state, "", hash)
+      } else {
+        pushPortfolioUrl(hash, "about")
+      }
     }
 
     aboutPanel.scrollIntoView({
@@ -905,17 +917,20 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const closeAbout = () => {
     const url = new URL(window.location.href)
     url.hash = ""
-    closePortfolioUrl(url, "about")
     document.getElementById("portfolio-title")?.focus({ preventScroll: true })
-    setIsReturningToTop(true)
-    window.scrollTo({
-      top: 0,
-      behavior: prefersReducedMotion ? "auto" : "smooth",
+    setIsReturningToTop(window.scrollY > 0)
+    closePortfolioUrl(url, "about", () => {
+      // History restores the previous scroll position after popstate. Wait
+      // until that finishes so the Work tab always returns to the top.
+      window.requestAnimationFrame(() => window.scrollTo({
+        top: 0,
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+      }))
     })
   }
 
   const openAbout = () => {
-    scrollToAbout("nav_about")
+    scrollToSection("nav_about")
   }
 
   return (
@@ -926,6 +941,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         resumeHref={links.resumePdf}
       />
       <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+      <MobileTableOfContents
+        onWork={() => scrollToSection("toc_work", "work")}
+        onAbout={() => scrollToSection("toc_about")}
+        onWorkHistory={() => scrollToSection("toc_work_history", "about-panel-resume")}
+      />
       <button
         type="button"
         className="mosaic-takeover-close"
@@ -945,7 +965,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
               aria-label={`Read about ${profile.name}`}
-              onClick={() => scrollToAbout("avatar")}
+              onClick={() => scrollToSection("avatar")}
             >
               <div className="mosaic-avatar-coin-inner">
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
@@ -997,7 +1017,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       </header>
 
       <>
-          <article id="work" className="mosaic-work">
+          <article id="work" className="mosaic-work" tabIndex={-1}>
               <h2 className="sr-only">Selected work</h2>
               {/* No `prefersReducedMotion` here on purpose: it is false on the
                   server and on the first client render, so a JS gate would flash
@@ -1111,7 +1131,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   type="button"
                   className="mosaic-takeover-cue"
                   aria-label="Continue to About"
-                  onClick={() => scrollToAbout("takeover_cue")}
+                  onClick={() => scrollToSection("takeover_cue")}
                 >
                   <span className="mosaic-takeover-cue-chevron" aria-hidden="true">
                     <span className="mosaic-takeover-cue-arm mosaic-takeover-cue-arm-left" />

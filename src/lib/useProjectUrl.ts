@@ -23,7 +23,7 @@ export function pushPortfolioUrl(url: string | URL, entry: PortfolioEntry) {
   window.history.pushState(stateForPortfolioEntry(entry), "", url)
 }
 
-export function closePortfolioUrl(url: string | URL, entry: PortfolioEntry) {
+export function closePortfolioUrl(url: string | URL, entry: PortfolioEntry, onClosed?: () => void) {
   if (getPortfolioEntry() === entry) {
     // Dialog libraries and app-level Escape handlers can both request the same
     // close before traversal completes. Consume an owned entry only once.
@@ -32,6 +32,7 @@ export function closePortfolioUrl(url: string | URL, entry: PortfolioEntry) {
 
     const finishClose = () => {
       pendingPortfolioClose = null
+      onClosed?.()
 
       const projectId = queuedProjectSelection
       queuedProjectSelection = null
@@ -49,6 +50,7 @@ export function closePortfolioUrl(url: string | URL, entry: PortfolioEntry) {
   }
 
   window.history.replaceState(window.history.state, "", url)
+  onClosed?.()
 }
 
 function subscribe(listener: () => void) {

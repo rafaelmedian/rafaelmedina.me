@@ -47,7 +47,7 @@ function App() {
         )}
         {Agentation ? (
           <Suspense fallback={null}>
-            <Agentation />
+            <Agentation className="portfolio-feedback-toolbar max-[699.98px]:!bottom-[calc(6rem+env(safe-area-inset-bottom))]" />
           </Suspense>
         ) : null}
     </div>
