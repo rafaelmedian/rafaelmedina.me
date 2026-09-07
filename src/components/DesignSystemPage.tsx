@@ -447,7 +447,7 @@ const BREAKPOINTS = [
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
   {
     at: "≥ 1320px",
-    change: "Project previews open in the 1090px wide view with a 5vh top inset.",
+    change: "Project previews open in the 981px wide view with a 5vh top inset.",
   },
 ]
 
@@ -1132,7 +1132,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg previous next rail flank 44px 16px artwork middle 42vh 72vh 383px 780px 50%")}
+                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg previous next rail flank 44px 16px artwork middle 42vh 72vh 345px 684px 50%")}
               >
                 <strong>Nested corners are concentric, and they are derived — not a fifth step.</strong>
                 <p>
@@ -1145,7 +1145,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   edge and level with the middle of the artwork — the card runs on into the title and details below the
                   image, so its own centre would sit in the text. That offset is the card padding plus half the artwork
                   the popup width gives the common preview ratio, under the same cap the media carries
-                  (<code>min(383px, 42vh)</code>, and <code>min(780px, 72vh)</code> in the wide view). It is fixed per
+                  (<code>min(345px, 42vh)</code>, and <code>min(684px, 72vh)</code> in the wide view). It is fixed per
                   layout rather than measured per preview, so a taller or shorter image never slides the pair out from
                   under the pointer, and it stops at half the popup so a card taller than the viewport still keeps
                   paging reachable without scrolling back up. The

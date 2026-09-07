@@ -3305,7 +3305,7 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   await expect(dialog).toHaveAttribute("data-wide", "true")
   await expect(dialog.getByRole("button", { name: /Expand preview|Exit wide view/ })).toHaveCount(0)
   const wideDialogBox = await dialog.boundingBox()
-  expect(wideDialogBox?.width).toBeCloseTo(1090, 0)
+  expect(wideDialogBox?.width).toBeCloseTo(981, 0)
   expect(wideDialogBox?.y).toBeCloseTo(50, 0)
 
   // The controls flank the card, so both edges have to clear the viewport --

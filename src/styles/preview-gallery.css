@@ -90,13 +90,13 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: min(544px, 100%);
+  width: min(490px, 100%);
   min-height: 0;
   transform-origin: center center;
 }
 
 .preview-gallery-origin-wrap[data-wide="true"] {
-  width: min(1090px, 100%);
+  width: min(981px, 100%);
 }
 
 .preview-gallery-popup {
@@ -106,7 +106,7 @@
      to sit here and drift from it. */
   --pg-outer-radius: calc(var(--radius-lg) + clamp(1rem, 1.7vw, 1.4rem));
   position: relative;
-  width: min(544px, 100%);
+  width: min(490px, 100%);
   max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
   outline: none;
   overscroll-behavior: contain;
@@ -329,7 +329,7 @@
 
 .preview-gallery-media {
   width: 100%;
-  max-height: min(42vh, 480px);
+  max-height: min(42vh, 432px);
   display: block;
   object-fit: contain;
   margin-inline: auto;
@@ -345,7 +345,7 @@
 }
 
 .preview-gallery-popup[data-wide="true"] .preview-gallery-media {
-  max-height: min(72vh, 780px);
+  max-height: min(72vh, 684px);
 }
 
 .preview-gallery-popup[data-preview-media="video"] .preview-gallery-media {
@@ -368,7 +368,7 @@
    the crop stays put while the popup width changes. */
 .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
   aspect-ratio: 16 / 9;
-  max-height: min(42vh, 480px);
+  max-height: min(42vh, 432px);
 }
 
 .preview-gallery-popup[data-wide="true"][data-preview-crop="true"] .preview-gallery-media-frame {
@@ -430,11 +430,11 @@
 .preview-gallery-rail {
   --preview-gallery-rail-inset: calc(-1 * var(--preview-gallery-rail-clearance));
   /* The card's padding plus half the artwork under it. The artwork is the
-     shorter of what the popup width gives the common preview ratio -- 383px at
-     544px wide -- and the cap the media carries, so this follows it down as the
+     shorter of what the popup width gives the common preview ratio -- 345px at
+     490px wide -- and the cap the media carries, so this follows it down as the
      window shortens instead of drifting toward the text. */
   --preview-gallery-rail-anchor: calc(
-    var(--preview-gallery-card-padding) + min(383px, 42vh) / 2
+    var(--preview-gallery-card-padding) + min(345px, 42vh) / 2
   );
   position: absolute;
   z-index: 1;
@@ -447,11 +447,11 @@
   pointer-events: none;
 }
 
-/* Same derivation at the 1090px popup, where the artwork is 780px tall and its
+/* Same derivation at the 981px popup, where the artwork is 684px tall and its
    cap is the one on `.preview-gallery-media` below. */
 .preview-gallery-popup[data-wide="true"] .preview-gallery-rail {
   --preview-gallery-rail-anchor: calc(
-    var(--preview-gallery-card-padding) + min(780px, 72vh) / 2
+    var(--preview-gallery-card-padding) + min(684px, 72vh) / 2
   );
 }
 
