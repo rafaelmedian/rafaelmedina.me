@@ -9,6 +9,19 @@ const openDesignSystem = async (page: Page) => {
   await expect(page.getByRole("heading", { name: "Design system" })).toBeVisible()
 }
 
+test("documents the mobile caption pill instead of the removed tint band", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/")
+  const title = page.locator(".mosaic-row-card-title").first()
+  await expect(title).toHaveCSS("background-color", "rgba(20, 20, 20, 0.82)")
+  await expect(page.locator(".mosaic-row-card-scrim").first()).toHaveCSS("display", "none")
+  await openDesignSystem(page)
+  const captionRule = page.locator("#elevation .ds-rule")
+  await expect(captionRule).toContainText("rgb(20 20 20 / 0.82)")
+  await expect(captionRule).toContainText("entire scrim is hidden")
+  await expect(captionRule).not.toContainText("occupies only 6rem")
+})
+
 const customPropertyPattern = /^--[\w-]+$/
 const cssVariablePattern = /var\((--[\w-]+)/g
 
