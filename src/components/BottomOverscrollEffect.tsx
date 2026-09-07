@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type CSSProperties } from "react"
 
 import {
   DEFAULT_ELASTIC_EDGE_SETTINGS,
   ELASTIC_EDGE_RANDOMIZE_EVENT,
+  ELASTIC_EDGE_REPLAY_EVENT,
   ELASTIC_EDGE_SETTINGS_EVENT,
   paintElasticEdgeSettings,
   randomizeElasticEdgePalette,
@@ -10,53 +11,17 @@ import {
 } from "../lib/elasticEdgeGradient"
 
 const MAX_PULL = 72
+const MAX_CONTENT_TRAVEL = 8
 const MAX_OPACITY = 0.92
 const RELEASE_DELAY_MS = 90
-const EMOJI_COMPANIONS = ["✨", "🥳", "🌴", "🚀", "💫", "🎉", "🫶", "😎"]
-const EMOJI_ANCHORS = [18, 39, 61, 82]
 
-function randomBetween(min: number, max: number) {
-  return min + Math.random() * (max - min)
-}
-
-function pickEmojiCompanions(count: number) {
-  const choices = [...EMOJI_COMPANIONS]
-
-  for (let index = choices.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1))
-    const choice = choices[index]
-    choices[index] = choices[swapIndex]
-    choices[swapIndex] = choice
-  }
-
-  return choices.slice(0, count)
-}
-
-function launchEmojiBurst(layer: HTMLDivElement) {
-  const emojis = ["😉", ...pickEmojiCompanions(3)]
-  const fragment = document.createDocumentFragment()
-
-  layer.replaceChildren()
-
-  emojis.forEach((emoji, index) => {
-    const particle = document.createElement("span")
-
-    particle.className = "elastic-scroll-edge-emoji"
-    particle.style.left = `${EMOJI_ANCHORS[index] + randomBetween(-6, 6)}%`
-    particle.style.setProperty("--emoji-rise", `${randomBetween(-168, -104)}px`)
-    particle.style.setProperty("--emoji-start-rotation", `${randomBetween(-22, 22)}deg`)
-    particle.style.setProperty("--emoji-end-rotation", `${randomBetween(-70, 70)}deg`)
-    particle.style.setProperty("--emoji-delay", `${index * 35}ms`)
-    particle.style.setProperty("--emoji-size", `${randomBetween(1.3, 1.85)}rem`)
-    particle.addEventListener("animationend", (event) => {
-      if (event.target === particle) particle.remove()
-    })
-    particle.textContent = emoji
-    fragment.append(particle)
-  })
-
-  layer.append(fragment)
-}
+/* ANIMATION STORYBOARD (defaults live in DEFAULT_ELASTIC_EDGE_SETTINGS)
+ *   0ms  the low wash follows scroll pressure; first curtain starts rising
+ *  40ms  each next curtain fades upward, for 240ms total stagger
+ * 700ms  each curtain finishes its small rise at a different height
+ *1260ms  the released glow finishes fading; curtains reset for the next pull
+ */
+const CURTAIN_HEIGHTS = [0.8, 1, 0.86, 0.96, 0.76, 0.92, 0.82]
 
 function isAtDocumentBottom() {
   const root = document.documentElement
@@ -78,12 +43,11 @@ function isInsideScrollableRegion(target: EventTarget | null) {
 
 export function BottomOverscrollEffect() {
   const edgeRef = useRef<HTMLDivElement | null>(null)
-  const emojiLayerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const edge = edgeRef.current
-    const emojiLayer = emojiLayerRef.current
-    if (!edge || !emojiLayer || typeof window.matchMedia !== "function") return
+    if (!edge || typeof window.matchMedia !== "function") return
+    const content = document.querySelector<HTMLElement>(".mosaic-about-body")
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     let pull = 0
@@ -105,6 +69,7 @@ export function BottomOverscrollEffect() {
         edge.style.setProperty("--elastic-edge-opacity", String(progress * MAX_OPACITY))
         edge.style.setProperty("--elastic-edge-offset", `${(1 - progress) * 44}px`)
         edge.style.setProperty("--elastic-edge-scale", String(0.35 + progress * 0.65))
+        content?.style.setProperty("--elastic-content-offset", `${-progress * MAX_CONTENT_TRAVEL}px`)
       })
     }
 
@@ -114,6 +79,7 @@ export function BottomOverscrollEffect() {
       if (pull === 0) return
 
       edge.dataset.pulling = "false"
+      if (content) content.dataset.edgePulling = "false"
       // Let the release transition take over from the exact point reached by
       // the gesture, including when intent reverses mid-pull.
       void edge.offsetHeight
@@ -125,7 +91,7 @@ export function BottomOverscrollEffect() {
       releaseTimer = window.setTimeout(release, RELEASE_DELAY_MS)
     }
 
-    const pullBy = (distance: number) => {
+    const pullBy = (distance: number, changePalette = true) => {
       if (reducedMotion.matches || distance <= 0) return
 
       if (edge.dataset.pulling !== "true") {
@@ -136,11 +102,12 @@ export function BottomOverscrollEffect() {
           pull = Math.max(0, Math.min(MAX_PULL, (renderedOpacity / MAX_OPACITY) * MAX_PULL))
         }
 
-        randomizeElasticEdgePalette(edge)
-        launchEmojiBurst(emojiLayer)
+        if (changePalette && edge.dataset.glowing !== "true") randomizeElasticEdgePalette(edge)
       }
 
       edge.dataset.pulling = "true"
+      edge.dataset.glowing = "true"
+      if (content) content.dataset.edgePulling = "true"
       // Resistance increases near the limit, like a short rubber sheet rather
       // than a progress bar that stops abruptly.
       const resistance = 1 - (pull / MAX_PULL) * 0.55
@@ -160,7 +127,9 @@ export function BottomOverscrollEffect() {
         return
       }
 
-      pullBy(event.deltaY)
+      const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1
+      pullBy(event.deltaY * unit)
     }
 
     const handleTouchStart = (event: TouchEvent) => {
@@ -193,11 +162,23 @@ export function BottomOverscrollEffect() {
     const handleMotionPreference = () => {
       if (reducedMotion.matches) {
         release()
-        emojiLayer.replaceChildren()
+        edge.dataset.glowing = "false"
+      }
+    }
+
+    const handleGlowEnd = (event: TransitionEvent) => {
+      if (event.target === edge && event.propertyName === "opacity" && pull === 0) {
+        edge.dataset.glowing = "false"
       }
     }
 
     const handleRandomize = () => randomizeElasticEdgePalette(edge)
+    const handleReplay = () => {
+      if (reducedMotion.matches) return
+      edge.dataset.glowing = "false"
+      void edge.offsetHeight
+      pullBy(MAX_PULL / 0.24, false)
+    }
     const handleSettings = (event: Event) => {
       paintElasticEdgeSettings(edge, (event as CustomEvent<ElasticEdgeSettings>).detail)
     }
@@ -211,11 +192,14 @@ export function BottomOverscrollEffect() {
     reducedMotion.addEventListener("change", handleMotionPreference)
     window.addEventListener(ELASTIC_EDGE_RANDOMIZE_EVENT, handleRandomize)
     window.addEventListener(ELASTIC_EDGE_SETTINGS_EVENT, handleSettings)
+    window.addEventListener(ELASTIC_EDGE_REPLAY_EVENT, handleReplay)
+    edge.addEventListener("transitionend", handleGlowEnd)
 
     return () => {
       if (paintFrame !== undefined) window.cancelAnimationFrame(paintFrame)
       if (releaseTimer !== undefined) window.clearTimeout(releaseTimer)
-      emojiLayer.replaceChildren()
+      content?.style.removeProperty("--elastic-content-offset")
+      if (content) delete content.dataset.edgePulling
       window.removeEventListener("wheel", handleWheel)
       window.removeEventListener("scroll", handleScroll)
       document.removeEventListener("touchstart", handleTouchStart)
@@ -225,15 +209,25 @@ export function BottomOverscrollEffect() {
       reducedMotion.removeEventListener("change", handleMotionPreference)
       window.removeEventListener(ELASTIC_EDGE_RANDOMIZE_EVENT, handleRandomize)
       window.removeEventListener(ELASTIC_EDGE_SETTINGS_EVENT, handleSettings)
+      window.removeEventListener(ELASTIC_EDGE_REPLAY_EVENT, handleReplay)
+      edge.removeEventListener("transitionend", handleGlowEnd)
     }
   }, [])
 
   return (
-    <>
-      <div ref={edgeRef} className="elastic-scroll-edge" data-pulling="false" aria-hidden="true">
-        <div className="elastic-scroll-edge-shade" />
-      </div>
-      <div ref={emojiLayerRef} className="elastic-scroll-edge-emojis" aria-hidden="true" />
-    </>
+    <div ref={edgeRef} className="elastic-scroll-edge" data-pulling="false" aria-hidden="true">
+      <div className="elastic-scroll-edge-shade" />
+      {CURTAIN_HEIGHTS.map((height, index) => (
+        <div
+          key={index}
+          className="elastic-scroll-edge-curtain"
+          style={{
+            "--curtain-index": index,
+            "--curtain-height": height,
+            "--curtain-color": `var(--elastic-edge-color-${index + 1})`,
+          } as CSSProperties}
+        />
+      ))}
+    </div>
   )
 }

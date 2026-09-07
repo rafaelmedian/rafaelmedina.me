@@ -1,4 +1,5 @@
 import { expect, type BrowserContext, type Page, test } from "@playwright/test"
+import { createElasticEdgePalette } from "../../src/lib/elasticEdgeGradient"
 
 const mobileViewport = { width: 390, height: 844 }
 const openStreetMapTileUrl = /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/
@@ -67,7 +68,7 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
       shadeCount: element.querySelectorAll(".elastic-scroll-edge-shade").length,
       shadeFilter: shade ? getComputedStyle(shade).filter : "missing",
       backgroundImage: shade ? getComputedStyle(shade).backgroundImage : "none",
-      palette: [1, 2, 3, 4, 5].map((index) =>
+      palette: [1, 2, 3, 4, 5, 6, 7].map((index) =>
         (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
       ),
       shadeOpacity: Number.parseFloat((element as HTMLElement).style.getPropertyValue("--elastic-edge-shade-opacity")),
@@ -88,7 +89,7 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
   expect(pulledState.shadeFilter).toBe("none")
   expect(pulledState.backgroundImage.match(/radial-gradient/g)).toHaveLength(7)
   expect(pulledState.palette.every(Boolean)).toBe(true)
-  expect(new Set(pulledState.palette).size).toBe(5)
+  expect(new Set(pulledState.palette).size).toBe(7)
   expect(pulledState.coreOpacity).toBeGreaterThan(pulledState.shadeOpacity)
   expect(pulledState.lightOpacity).toBeGreaterThan(0)
   expect(pulledState.lightOpacity).toBeLessThan(0.5)
@@ -97,12 +98,19 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
 
   const nextPalette = await edge.evaluate((element) => {
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    return [1, 2, 3, 4, 5].map((index) =>
+    return [1, 2, 3, 4, 5, 6, 7].map((index) =>
       (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
     )
   })
 
   expect(nextPalette).not.toEqual(pulledState.palette)
+})
+
+test("randomizes elastic-edge palettes across the full color spectrum", () => {
+  const centralHues = [0, 0.25, 0.5, 0.75, 0.999].map((random) =>
+    Number(createElasticEdgePalette(() => random)[3].match(/^hsl\((\d+)/)?.[1]),
+  )
+  expect(centralHues).toEqual([0, 90, 180, 270, 359])
 })
 
 test("changes the elastic-edge palette when the random source repeats", async ({ page }) => {
@@ -114,14 +122,13 @@ test("changes the elastic-edge palette when the random source repeats", async ({
 
   const palettes = await page.locator(".elastic-scroll-edge").evaluate((element) => {
     const readPalette = () =>
-      [1, 2, 3, 4, 5].map((index) =>
+      [1, 2, 3, 4, 5, 6, 7].map((index) =>
         (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
       )
 
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
     const first = readPalette()
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: -1 }))
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    window.dispatchEvent(new Event("elastic-edge:randomize"))
 
     return { first, second: readPalette() }
   })
@@ -159,69 +166,6 @@ test("coalesces a burst of elastic-edge input into one visual update per frame",
 
   expect(progress.beforeFrame).toBe("")
   expect(Number(progress.afterFrame)).toBeGreaterThan(0)
-})
-
-test("tosses a wink and three varied emoji once per bottom overscroll gesture", async ({ page }) => {
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-
-  const emojiLayer = page.locator(".elastic-scroll-edge-emojis")
-  const firstBurst = await emojiLayer.evaluate((element) => {
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    return [...element.querySelectorAll<HTMLElement>(".elastic-scroll-edge-emoji")].map((emoji) => emoji.textContent)
-  })
-
-  expect(firstBurst).toHaveLength(4)
-  expect(firstBurst).toContain("😉")
-  expect(new Set(firstBurst).size).toBe(4)
-  await expect(emojiLayer).toHaveCSS("pointer-events", "none")
-
-  await emojiLayer.evaluate((element) => {
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 80 }))
-    return element.querySelectorAll(".elastic-scroll-edge-emoji").length
-  })
-  await expect(emojiLayer.locator(".elastic-scroll-edge-emoji")).toHaveCount(4)
-  await expect(emojiLayer.locator(".elastic-scroll-edge-emoji")).toHaveCount(0, { timeout: 2_000 })
-})
-
-test("tosses each emoji on one animated layer with no horizontal drift", async ({ page }) => {
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-
-  // The burst used to nest a drift wrapper around each glyph for a parallax
-  // arc, which doubled the animated layers mid-interaction. Each emoji is now
-  // a single childless span that rises and falls in place.
-  const toss = await page.locator(".elastic-scroll-edge").evaluate(() => {
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    const element = document.querySelector<HTMLElement>(".elastic-scroll-edge-emoji")
-    if (!element) throw new Error("Emoji burst did not launch")
-    const animation = element.getAnimations()[0]
-    if (!animation) throw new Error("Emoji toss animation did not start")
-    animation.pause()
-
-    const sample = (time: number) => {
-      animation.currentTime = time
-      const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
-      return { x: matrix.m41, y: matrix.m42 }
-    }
-
-    const rising = sample(175)
-    const apex = sample(350)
-    const falling = sample(650)
-    return {
-      childCount: element.childElementCount,
-      animationCount: element.getAnimations().length,
-      horizontalTravel: Math.max(Math.abs(rising.x), Math.abs(apex.x), Math.abs(falling.x)),
-      roseToApex: apex.y < rising.y,
-      fellAfterApex: falling.y > apex.y,
-    }
-  })
-
-  expect(toss.childCount).toBe(0)
-  expect(toss.animationCount).toBe(1)
-  expect(toss.horizontalTravel).toBe(0)
-  expect(toss.roseToApex).toBe(true)
-  expect(toss.fellAfterApex).toBe(true)
 })
 
 test("previews the gradient while applying live height and shape settings", async ({ page }) => {
@@ -274,7 +218,7 @@ test("previews the gradient while applying live height and shape settings", asyn
   await expect(edge).toHaveCSS("opacity", "0")
 })
 
-test("releases the elastic scroll edge with one slow physical settle", async ({ page }) => {
+test("staggers low aurora curtains and resets them after the shortened fade", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
 
@@ -287,11 +231,26 @@ test("releases the elastic scroll edge with one slow physical settle", async ({ 
     }
   })
 
-  expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0s" })
+  expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0.12s" })
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
-  await expect(edge).toHaveCSS("transition-duration", "0.7s")
-  await expect(edge).toHaveCSS("transition-timing-function", "cubic-bezier(0.16, 1, 0.3, 1)")
+  await expect(edge).toHaveCSS("transition-duration", "1.26s")
+  await expect(edge).toHaveCSS("transition-timing-function", "ease-in-out")
+  const curtains = edge.locator(".elastic-scroll-edge-curtain")
+  await expect(curtains).toHaveCount(7)
+  const sections = await curtains.evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element)
+    return { delay: parseFloat(style.animationDelay), height: parseFloat(style.height) }
+  }))
+  expect(sections.map((section) => section.delay)).toEqual([0, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24])
+  expect(sections.every((section) => section.height >= 40 && section.height <= 56)).toBe(true)
+  const lingeringOpacity = await edge.evaluate(async (element) => {
+    await new Promise((resolve) => window.setTimeout(resolve, 700))
+    return Number.parseFloat(getComputedStyle(element).opacity)
+  })
+  expect(lingeringOpacity).toBeGreaterThan(0.2)
+  await expect(edge).toHaveCSS("opacity", "0")
+  await expect(curtains.first()).toHaveCSS("animation-name", "none")
 })
 
 test("continues the elastic scroll edge from its visible position when release is interrupted", async ({ page }) => {
@@ -314,6 +273,51 @@ test("continues the elastic scroll edge from its visible position when release i
   expect(interruption.opacityAfterInterruption).toBeGreaterThanOrEqual(interruption.opacityBeforeInterruption)
 })
 
+test("gives the page-end content a small upward nudge and settles without changing scroll position", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const content = page.locator(".mosaic-about-body")
+  const nudge = await content.evaluate(async (element) => {
+    const scrollBefore = window.scrollY
+    const topBefore = element.getBoundingClientRect().top
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    await new Promise((resolve) => window.setTimeout(resolve, 80))
+    return {
+      travel: topBefore - element.getBoundingClientRect().top,
+      scrollBefore,
+      scrollAfter: window.scrollY,
+    }
+  })
+
+  expect(nudge.travel).toBeGreaterThan(1)
+  expect(nudge.travel).toBeLessThanOrEqual(8)
+  expect(nudge.scrollAfter).toBe(nudge.scrollBefore)
+  await expect(content).toHaveCSS("translate", "0px")
+  await expect(page.locator(".elastic-scroll-edge-emoji")).toHaveCount(0)
+})
+
+test("keeps the page-end content still above the bottom and inside nested scrollers", async ({ page }) => {
+  await page.goto("/")
+  const content = page.locator(".mosaic-about-body")
+  await page.evaluate(() => window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 })))
+  await expect(content).not.toHaveAttribute("data-edge-pulling", "true")
+
+  await page.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight)
+    const scroller = document.createElement("div")
+    scroller.style.cssText = "position:fixed;inset:0;width:100px;height:100px;overflow-y:auto"
+    const child = document.createElement("div")
+    child.style.height = "200px"
+    scroller.append(child)
+    document.body.append(scroller)
+    child.dispatchEvent(new WheelEvent("wheel", { deltaY: 600, bubbles: true }))
+    scroller.remove()
+  })
+  await expect(content).not.toHaveAttribute("data-edge-pulling", "true")
+  await expect(content).toHaveCSS("translate", "0px")
+})
+
 test("removes the elastic scroll edge when reduced motion is preferred", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
@@ -324,8 +328,7 @@ test("removes the elastic scroll edge when reduced motion is preferred", async (
 
   await expect(edge).toHaveCSS("display", "none")
   await expect(edge).toHaveAttribute("data-pulling", "false")
-  await expect(page.locator(".elastic-scroll-edge-emojis")).toHaveCSS("display", "none")
-  await expect(page.locator(".elastic-scroll-edge-emoji")).toHaveCount(0)
+  await expect(page.locator(".mosaic-about-body")).toHaveCSS("translate", "none")
 })
 
 test("defines the overlapping About surface with a top border and shadow", async ({ page }) => {
