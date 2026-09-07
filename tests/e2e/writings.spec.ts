@@ -10,7 +10,13 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 320, height: 568
     await folder.click()
     const dialog = page.getByRole("dialog")
     const original = (await dialog.boundingBox())!
-    expect(original.height).toBe(viewport.height - (viewport.width < 700 ? 16 : 48))
+    // Collapsed, the dialog hangs from the line a project preview opens on --
+    // 5vh at this width -- over a 1rem bottom gutter. A phone keeps the sheet's
+    // half-rem margin on both edges instead.
+    const top = viewport.width < 700 ? 8 : viewport.height * 0.05
+    const bottom = viewport.width < 700 ? 8 : 16
+    expect(original.y).toBeCloseTo(top, 0)
+    expect(original.height).toBeCloseTo(viewport.height - top - bottom, 0)
     await expect(dialog.getByRole("button", { name: "Expand modal" })).toBeInViewport()
     await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
     const reader = dialog.locator('[data-page-id="2"]')

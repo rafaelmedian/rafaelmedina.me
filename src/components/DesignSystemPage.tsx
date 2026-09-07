@@ -1233,8 +1233,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 layout-affecting scale keeps it off the label.
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
                 with 8px corners and 14px type scaled to one third. Papers fan over 360ms with smooth easing.
-                The list and reader share one modal up to 52rem wide and the viewport height minus 3rem, with 1.5rem desktop viewport
-                vertical margins and room for the navigation rail, white, overlay elevation, and 24px corners. Selecting a note preserves the modal dimensions.
+                The list and reader share one modal up to 52rem wide that hangs from the line a project preview opens on — 8vh
+                from the top of the viewport, 5vh from 1320px — and runs to 1rem above the bottom, with room for the navigation
+                rail, white, overlay elevation, and 24px corners. Selecting a note preserves the modal dimensions.
                 The list contains only titles grouped by publication or archive year, newest first; eight writings are visible, with seven in 2026 and one in 2025.
                 Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s title rows.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
@@ -1252,9 +1253,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
                 Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
                 during the switch, and closing or returning to Notes cancels pending selection. Reduced motion switches instantly.
-                An expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, retaining 1.5rem desktop margins and 24px corners,
+                An expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, giving up the shared top edge for 1.5rem desktop margins on all four sides and 24px corners,
                 keeps the reading column centered with 1.5rem top padding plus the safe area, and brings the rail inside the right edge.
-                Modal width, column width, toolbar padding, and rail position transition together with --ease-smooth: 360ms to expand and 200ms to restore.
+                Modal width and height, column width, toolbar padding, and rail position transition together with --ease-smooth: 360ms to expand and 200ms to restore.
                 Rapid toggles reverse from the current position; reduced motion makes resizing immediate. Toggling preserves the selected note and scroll;
                 closing restores the default size. On mobile, the modal retains its 0.5rem margins and safe-area clearance, and expand and navigation controls share the bottom bar.
                 The desktop header has no close icon; Escape and outside click dismiss it. On mobile, navigation and close sit in a bottom bar.
