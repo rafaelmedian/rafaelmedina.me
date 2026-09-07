@@ -1660,25 +1660,33 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>clamp(1rem, 5vw, 1.5rem)</code> gutter from 700px to 899px — dropped entirely at 900px so the
                   mosaic can run full-bleed.
                 </li>
-                <li data-ds-terms={terms("responsive mobile desktop table of contents TOC current section label Work About Work history 700px 14px 48px safe-area 24px 16px 360ms 200ms 160ms 120ms blur 16px #e9e9e9 --toc-compact-width --toc-resize-duration")}>
+                <li data-ds-terms={terms("responsive mobile desktop table of contents TOC current section label Work About Work history 700px 14px 48px safe-area 24px 16px 360ms 200ms 160ms 120ms #e9e9e9 card 8px inset --toc-compact-width --toc-resize-duration --toc-row-height --toc-inset --blur-reveal")}>
                   <strong>Floating table of contents</strong> appears after 96px of scrolling at every screen size,
                   centered 0.75rem above the bottom safe area. It fades in over 160ms with standard easing
                   and rises 0.375rem over 200ms with smooth easing. Returning to the first 96px hides and closes it;
                   while hidden it is inert and excluded from assistive technology. Reduced motion removes the transition. From 700px up, the top section navigation and local time remain visible alongside it. Its numbered label follows the visible section: 01 Work, 02 About, or 03 Work history.
-                  One 24px-radius surface expands from the measured label width to 17rem, keeping its
-                  bottom edge fixed. The expanded list shows three 48px rows in page order, with no header
-                  or repeated footer, 0.5rem padding and 16px row corners. Labels are 14px; section numbers are 12px.
+                  That change carries a direction: the outgoing label leaves the chip over 120ms on the exit
+                  curve, travelling 0.25rem and resolving into <code>--blur-reveal</code> (4px), while the new one
+                  arrives from the opposite edge over 160ms with standard easing. Scrolling further down the page
+                  sends the label up; scrolling back sends it down. The chip keeps its 48px height throughout and
+                  only its width eases to the new label.
+                  Open, the control is one continuous card with three rows. The surface expands from the measured
+                  label width to 17rem and from 48px to 160px — three adjacent 48px rows with an 8px outer inset —
+                  keeping its bottom edge fixed. The card has 24px corners and the inset rows have concentric 16px
+                  corners; labels are 14px and section numbers 12px. Its white fill is 92% opaque over a 16px backdrop
+                  blur, with a 5% hairline and <code>--shadow-overlay</code> around the whole card.
+                  Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
+                  them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
+                  <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
                   The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity, ink text,
                   and a 16px close icon. The collapsed row shows an upward chevron instead.
-                  The shared surface uses 92% white, 16px backdrop blur, the overlay shadow and a 5% hairline.
-                  Width, padding, row height and icon transforms use smooth easing over 360ms on open and 200ms on close.
-                  Rows and icons fade over 160ms; the chevron rotates 90 degrees while the close icon scales from 0.8 to 1.
-                  Transitions retarget during rapid taps; reduced motion makes them instant. Scroll-driven label
-                  changes keep the collapsed row at full height while its width adjusts. Other rows are inert and
+                  Icons fade over 160ms; the chevron rotates 90 degrees while the close icon scales from 0.8 to 1.
+                  Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
+                  label. Other rows are inert and
                   hidden from assistive technology when closed; keyboard focus rings sit 2px inside the row.
                   Selection, outside click, Escape, or focus leaving the control closes it. Resizing preserves its open state.
                   Selection scrolls and focuses the section. Colour changes use 160ms standard easing;
-                  pressing scales the trigger content to 0.96 over 120ms, keeping the glass and shadow stable.
+                  pressing scales the trigger content to 0.96 over 120ms, keeping the shadow stable.
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
                 </li>

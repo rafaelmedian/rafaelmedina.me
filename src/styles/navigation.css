@@ -145,6 +145,13 @@
 }
 
 .mosaic-mobile-toc {
+  --toc-row-height: 48px;
+  --toc-inset: 8px;
+  /* One term per entry in `SECTIONS` in MobileTableOfContents. That array also
+     drives each row's `--toc-slot`, so a section added there without a bump
+     here moves the rows correctly but leaves the open card at the old height. */
+  --toc-slot-count: 3;
+  --toc-swap-duration: var(--duration-quick);
   position: fixed;
   z-index: var(--z-social);
   bottom: calc(0.75rem + env(safe-area-inset-bottom));
@@ -168,11 +175,15 @@
   transition-delay: 0s;
 }
 
+/* One continuous card grows upward around the section rows. */
 .mosaic-mobile-toc-surface {
   --toc-resize-duration: var(--duration-base);
+  position: relative;
+  display: block;
   width: var(--toc-compact-width, max-content);
+  height: var(--toc-row-height);
   max-width: calc(100vw - 2rem);
-  padding: 0;
+  overflow: hidden;
   border-radius: var(--radius-lg);
   background: rgb(255 255 255 / 0.92);
   color: var(--ink);
@@ -181,15 +192,13 @@
   backdrop-filter: blur(16px);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
-  transition:
-    width var(--toc-resize-duration) var(--ease-smooth),
-    padding var(--toc-resize-duration) var(--ease-smooth);
+  transition: width var(--toc-resize-duration) var(--ease-smooth), height var(--toc-resize-duration) var(--ease-smooth);
 }
 
 .mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-surface {
   --toc-resize-duration: var(--duration-slow);
   width: min(17rem, calc(100vw - 2rem));
-  padding: 0.5rem;
+  height: calc(var(--toc-slot-count) * var(--toc-row-height) + 2 * var(--toc-inset));
 }
 
 /* Keep the development feedback control clear of the expanded contents. */
@@ -198,42 +207,48 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
 }
 
 .mosaic-mobile-toc-list {
+  position: absolute;
+  inset: 0;
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: calc(100dvh - 5rem - env(safe-area-inset-bottom) - env(safe-area-inset-top));
-  overflow-y: auto;
 }
 
 .mosaic-mobile-toc-slot {
-  display: grid;
-  grid-template-rows: 0fr;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--toc-row-height);
   opacity: 0;
+  filter: blur(var(--blur-reveal));
+  transform: translateY(0);
   transition:
-    grid-template-rows var(--toc-resize-duration) var(--ease-smooth),
-    opacity var(--duration-quick) var(--ease-standard);
+    transform var(--toc-resize-duration) var(--ease-smooth),
+    left var(--toc-resize-duration) var(--ease-smooth),
+    right var(--toc-resize-duration) var(--ease-smooth),
+    opacity var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
 }
 
-.mosaic-mobile-toc-slot[data-current="true"],
-.mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-slot {
-  grid-template-rows: 1fr;
+.mosaic-mobile-toc-slot[data-current="true"] {
   opacity: 1;
+  filter: blur(0);
 }
 
-.mosaic-mobile-toc[data-open="false"][data-swapping="true"] .mosaic-mobile-toc-slot {
-  transition: none;
-}
-
-.mosaic-mobile-toc-clip {
-  min-height: 0;
-  overflow: hidden;
+.mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-slot {
+  left: var(--toc-inset);
+  right: var(--toc-inset);
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(calc(var(--toc-slot) * var(--toc-row-height) * -1 - var(--toc-inset)));
 }
 
 .mosaic-mobile-toc-row {
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 3rem;
+  height: 100%;
   padding: 0.75rem 1rem;
   border: 0;
   border-radius: var(--radius-md);
@@ -272,6 +287,12 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   transition: transform var(--duration-fast) var(--ease-standard);
 }
 
+.mosaic-mobile-toc-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .mosaic-mobile-toc-number {
   color: var(--muted);
   font-size: var(--text-xs);
@@ -292,7 +313,7 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   inset: 0;
   transition:
     opacity var(--duration-quick) var(--ease-standard),
-    transform var(--toc-resize-duration) var(--ease-smooth);
+    transform var(--toc-resize-duration, var(--duration-base)) var(--ease-smooth);
 }
 
 .mosaic-mobile-toc-close {
@@ -314,6 +335,56 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   transform: scale(0.96);
 }
 
+/* ------------------------------------------------------------ label swap --- */
+
+/* Scrolling into a section sends the old label out of the chip and brings the
+   new one in from the opposite edge, so the change carries a direction. */
+.mosaic-mobile-toc-ghost {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--toc-row-height);
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: var(--ink);
+  line-height: 1.25;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: mosaic-toc-label-exit var(--duration-fast) var(--ease-exit) both;
+}
+
+/* data-swap names where the label travels: scrolling further down the page
+   sends the old label up and brings the new one in from below. */
+.mosaic-mobile-toc[data-swap="up"] {
+  --toc-swap-direction: 1;
+}
+
+.mosaic-mobile-toc[data-swap="down"] {
+  --toc-swap-direction: -1;
+}
+
+.mosaic-mobile-toc[data-swap][data-open="false"] .mosaic-mobile-toc-slot[data-current="true"] .mosaic-mobile-toc-label {
+  animation: mosaic-toc-label-enter var(--toc-swap-duration) var(--ease-standard) both;
+}
+
+@keyframes mosaic-toc-label-exit {
+  to {
+    transform: translateY(calc(var(--toc-swap-direction, 1) * -0.25rem));
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
+@keyframes mosaic-toc-label-enter {
+  from {
+    transform: translateY(calc(var(--toc-swap-direction, 1) * 0.25rem));
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mosaic-mobile-toc,
   .mosaic-mobile-toc-surface,
@@ -322,6 +393,10 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   .mosaic-mobile-toc-row-content,
   .mosaic-mobile-toc-row {
     transition: none;
+  }
+
+  .mosaic-mobile-toc-ghost {
+    display: none;
   }
 
   .mosaic-mobile-toc-trigger:active .mosaic-mobile-toc-row-content {

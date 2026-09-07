@@ -1240,6 +1240,69 @@ test("the TOC keeps its collapsed height while scrolling between sections", asyn
   }
 })
 
+test("the TOC label leaves in the direction the page is travelling", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, 160))
+  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
+  // The swap lives for one exit beat, so record it as it happens rather than
+  // polling for a state that is meant to be gone by the time we look.
+  const swap = (target: string) => page.evaluate(async (id) => {
+    const root = document.querySelector<HTMLElement>(".mosaic-mobile-toc")!
+    const seen: Array<{ direction?: string; leaving: string; travel: number }> = []
+    const observer = new MutationObserver(() => {
+      const ghost = document.querySelector(".mosaic-mobile-toc-ghost")
+      if (!ghost) return
+      seen.push({
+        direction: root.dataset.swap,
+        leaving: ghost.textContent!.replace(/\s+/g, " ").trim(),
+        travel: Number(getComputedStyle(root).getPropertyValue("--toc-swap-direction")),
+      })
+    })
+    observer.observe(root, { attributes: true, childList: true, subtree: true })
+    document.getElementById(id)!.scrollIntoView({ behavior: "instant" })
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    observer.disconnect()
+    return seen[0]
+  }, target)
+
+  expect(await swap("about-panel")).toMatchObject({ direction: "up", leaving: "01 Work", travel: 1 })
+  expect(await swap("work")).toMatchObject({ direction: "down", leaving: "02 About", travel: -1 })
+  await expect(page.locator(".mosaic-mobile-toc-ghost")).toHaveCount(0)
+  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("01 Work")
+
+  // Reduced motion keeps the label change, drops the departure.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect(page.locator(".mosaic-mobile-toc-ghost")).toHaveCount(0)
+})
+
+test("the TOC contains all three rows in one inset card", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, 160))
+  const surface = page.locator(".mosaic-mobile-toc-surface")
+  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+  await trigger.click()
+  await expect(surface).toHaveCSS("border-radius", "24px")
+  await expect(surface).toHaveCSS("backdrop-filter", "blur(16px)")
+  await expect(surface).not.toHaveCSS("box-shadow", "none")
+  const card = (await surface.boundingBox())!
+  const rows = await page.locator(".mosaic-mobile-toc-row").all()
+  for (const [index, row] of rows.entries()) {
+    const bounds = (await row.boundingBox())!
+    expect(bounds.x).toBeCloseTo(card.x + 8, 0)
+    expect(bounds.width).toBeCloseTo(card.width - 16, 0)
+    expect(bounds.y).toBeCloseTo(card.y + 8 + index * 48, 0)
+    expect(bounds.height).toBe(48)
+    await expect(row).toHaveCSS("border-radius", "16px")
+    await expect(row).toHaveCSS("box-shadow", "none")
+  }
+  await page.keyboard.press("Escape")
+  await expect(surface).toHaveCSS("height", "48px")
+})
+
 test("table of contents dismisses outside and stays open when resizing to desktop", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
