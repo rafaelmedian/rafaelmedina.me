@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react"
+import { lazy, Suspense, useState, useSyncExternalStore } from "react"
 
 import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
@@ -28,11 +28,25 @@ function normalizePath(pathname: string) {
   return pathname.replace(/\/+$/, "")
 }
 
+// False through the hydration pass and true from the first client render
+// after it, so a swap made on this lands in a commit React already schedules.
+const neverChanges = () => () => {}
+function useIsHydrated() {
+  return useSyncExternalStore(neverChanges, () => true, () => false)
+}
+
 function App({ pathname }: { pathname?: string }) {
   // Select the document at mount. History changes within the homepage keep its
-  // enhanced gallery mounted; refreshing a project opens its static page.
+  // enhanced gallery mounted.
   const [currentPath] = useState(() => normalizePath(pathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)))
-  const project = projectAtPath(currentPath)
+  // A project path is prerendered as a standalone article, so a crawler or a
+  // visitor without JavaScript reads the whole project from the HTML. Once
+  // React is running the same URL belongs in the gallery it was shared from:
+  // hand the feed the path and `useProjectUrl` opens that project's preview
+  // over it. The article still renders on the first client pass, so hydration
+  // matches the prerendered markup before the swap.
+  const isHydrated = useIsHydrated()
+  const standaloneProject = isHydrated ? undefined : projectAtPath(currentPath)
   const isDesignSystemPage = DesignSystemPage !== null && DESIGN_SYSTEM_PATHS.has(currentPath)
   const isTuningEdge = ElasticEdgeTuner !== null && !isDesignSystemPage
     && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tune") === "edge"
@@ -49,7 +63,7 @@ function App({ pathname }: { pathname?: string }) {
         ) : (
           <>
             <main id="main-content" tabIndex={-1} className="relative z-dock">
-              {project ? <ProjectPage card={project} /> : (
+              {standaloneProject ? <ProjectPage card={standaloneProject} /> : (
                 <>
                   <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
                   <BottomOverscrollEffect />

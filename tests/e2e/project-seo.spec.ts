@@ -25,11 +25,11 @@ test("project pages ship distinct metadata and readable content without JavaScri
   await context.close()
 })
 
-test("project pages hydrate and homepage project links support a new tab", async ({ page, context }) => {
+test("project pages hydrate into the gallery and homepage project links support a new tab", async ({ page, context }) => {
   const errors: string[] = []
   page.on("pageerror", error => errors.push(error.message))
   await page.goto("/work/matcha-multiwallet-flow/")
-  await expect(page.getByRole("heading", { name: "Matcha multiwallet flow", exact: true })).toBeVisible()
+  await expect(page.getByRole("dialog")).toHaveAccessibleName("Matcha multiwallet flow")
   const socialImage = await page.evaluate(async () => {
     const content = (property: string) => document.querySelector(`meta[property="${property}"]`)!.getAttribute("content")!
     const image = new Image()
@@ -42,9 +42,9 @@ test("project pages hydrate and homepage project links support a new tab", async
   })
   expect(socialImage.declared).toEqual(socialImage.actual)
   await page.reload()
-  await expect(page.getByRole("heading", { name: "Matcha multiwallet flow", exact: true })).toBeVisible()
+  await expect(page.getByRole("dialog")).toHaveAccessibleName("Matcha multiwallet flow")
   await page.goto("/work/matcha-multiwallet-flow/index.html")
-  await expect(page.getByRole("heading", { name: "Matcha multiwallet flow", exact: true })).toBeVisible()
+  await expect(page.getByRole("dialog")).toHaveAccessibleName("Matcha multiwallet flow")
   await page.goto("/")
   // The cards can be momentarily stable during their entrance delay. Wait for
   // the actual cascade to finish before sending a native modified click.

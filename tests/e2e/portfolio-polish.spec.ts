@@ -3327,8 +3327,8 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   expect(tightNextBox!.x + tightNextBox!.width).toBeLessThanOrEqual(700)
 
   await page.setViewportSize({ width: 1280, height: 1000 })
-  // A project URL now reloads its standalone page. Enter from the feed to
-  // exercise the enhanced gallery at the second viewport as well.
+  // A reload would reopen the gallery without a card to grow out of. Enter from
+  // the feed to exercise the same anchored open at the second viewport.
   await page.goto("/")
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
