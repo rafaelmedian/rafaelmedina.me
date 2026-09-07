@@ -38,7 +38,7 @@ function App({ pathname }: { pathname?: string }) {
     && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tune") === "edge"
 
   return (
-    <div className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]">
+    <div className="relative isolate min-h-dvh overflow-x-clip bg-canvas text-ink">
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>

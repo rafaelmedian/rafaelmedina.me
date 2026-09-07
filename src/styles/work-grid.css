@@ -1,0 +1,828 @@
+/* ------------------------------------------------ work-tile caption title --- */
+
+.mosaic-row-card-title {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(0.875rem, 1.4vw, 1.25rem);
+  z-index: 2;
+  max-width: calc(100% - clamp(1.75rem, 2.8vw, 2.5rem));
+  transform: translate(-50%, 0.25rem);
+  opacity: 0;
+  pointer-events: none;
+  color: white;
+  font-size: clamp(var(--text-xs), 1vw, var(--text-sm));
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  text-align: center;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.28);
+  transition:
+    opacity var(--duration-quick) ease-out,
+    transform var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-row-card:hover .mosaic-row-card-title,
+.mosaic-row-card:focus-visible .mosaic-row-card-title {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+
+/* ------------------------------------------------------- work grid & rows --- */
+
+.mosaic-work {
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+}
+
+.mosaic-rows {
+  --row-gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--row-gap);
+  margin: 0;
+  padding: 0 clamp(16px, 3vw, 32px) 16px;
+}
+
+.mosaic-row {
+  --row-height: var(--row-height-input, 320px);
+  display: flex;
+  gap: var(--row-gap);
+  align-items: stretch;
+  height: var(--row-height, 320px);
+  min-height: var(--row-height, 320px);
+}
+
+/* The wrappers disappear on compact screens, where the stacked project rows
+   are taller than the viewport and cannot become a useful pinned background. */
+/* -------------------------------------------- about takeover choreography --- */
+
+.mosaic-takeover-runway,
+.mosaic-takeover-stage {
+  display: contents;
+}
+
+/* The blur is deliberately back-loaded. A linear 0 -> 8px ramp reads as the
+   gallery going soft the instant the sheet appears, which fights the sheet for
+   attention; holding near-focus through the first third and spending most of
+   the radius in the last quarter matches how a lens racks focus — nothing, then
+   all at once. The stops are the curve, because the animation's own timing
+   function has to stay `linear` for the scroll to feel direct. */
+@keyframes mosaic-takeover-retreat {
+  from {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+
+  32% {
+    filter: blur(0.8px);
+  }
+
+  66% {
+    filter: blur(3px);
+  }
+
+  to {
+    opacity: 0.78;
+    transform: scale(0.98);
+    filter: blur(8px);
+  }
+}
+
+@media (min-width: 700px) {
+  .mosaic-shell {
+    timeline-scope: --about-takeover;
+  }
+
+  /* The runway adds one viewport after the gallery. Its sticky child keeps the
+     complete grid intact and pins only when the gallery's white breathing room
+     reaches the viewport, leaving About one viewport of space to cross it. */
+  .mosaic-rows {
+    padding-bottom: var(--takeover-breathing-room);
+  }
+
+  .mosaic-takeover-runway {
+    --takeover-row-height: clamp(180px, 16vw, 260px);
+    --takeover-breathing-room: clamp(12rem, 30vh, 18rem);
+    --takeover-gallery-height: calc(
+      var(--takeover-row-height) + var(--takeover-row-height) + var(--takeover-row-height) +
+        var(--takeover-row-height) + 3rem + var(--takeover-breathing-room)
+    );
+
+    position: relative;
+    width: 100%;
+    height: calc(var(--takeover-gallery-height) + 100vh);
+    height: calc(var(--takeover-gallery-height) + 100dvh);
+    display: block;
+    /* Identical to what shows through here — App's wrapper already paints
+       `--canvas` behind the whole page. It has to be painted *inside* the
+       runway all the same: `main` is `position: relative; z-index: 10`, so it
+       is a stacking context, and the wrapper's white sits outside it. Without
+       this the cue's `difference` blend finds a transparent backdrop over the
+       gallery's white runway and inverts to plain white — invisible. */
+    background: var(--canvas);
+  }
+
+  .mosaic-takeover-stage {
+    position: sticky;
+    top: calc(100vh - var(--takeover-gallery-height));
+    top: calc(100dvh - var(--takeover-gallery-height));
+    z-index: 0;
+    width: 100%;
+    height: var(--takeover-gallery-height);
+    display: block;
+    transform-origin: center bottom;
+  }
+
+  .mosaic-takeover-stage .mosaic-rows {
+    width: 100%;
+  }
+
+  .mosaic-about {
+    margin-top: -100vh;
+    margin-top: -100dvh;
+    view-timeline-name: --about-takeover;
+    view-timeline-axis: block;
+  }
+
+  /* The sheet's top hairline and shadow live on the runway rather than the
+     sheet. Painting outside the sheet's own bounds would keep its composited
+     layer non-opaque, and a missed raster tile on a non-opaque layer
+     composites as transparent — the retreating grid flashes through
+     mid-scroll. Anchored here the same shadow reads identically (the sheet
+     still covers the downward spill), while a missed sheet tile now resolves
+     to solid canvas instead of a see-through band. */
+  /* The runway is a shell child, so it stops at the 1560px reading measure —
+     but the sheet it marks is full-bleed. Every seam layer therefore breaks out
+     to the viewport the same way the sheet does, or the hairline and its cast
+     end 100px short of the edges the white surface actually reaches. */
+  .mosaic-takeover-runway::before,
+  .mosaic-takeover-runway::after {
+    left: 50%;
+    right: auto;
+    width: 100vw;
+    width: 100dvw;
+    margin-left: -50vw;
+    margin-left: -50dvw;
+    content: "";
+    position: absolute;
+    bottom: 100vh;
+    bottom: 100dvh;
+    z-index: 1;
+    pointer-events: none;
+    /* Keep each layer on its own compositor layer. Without this Chrome
+       squashes them into the sheet's layer, whose bounds then regrow past the
+       opaque background — undoing the whole reason the shadow moved here. */
+    will-change: transform;
+  }
+
+  /* Contact edge: the hairline and the hover-card shadow it has always
+     carried. Fixed, because the seam itself does not get deeper — only the
+     cast above it does. */
+  .mosaic-takeover-runway::after {
+    height: 1px;
+    background: rgb(0 0 0 / 0.08);
+    box-shadow: var(--shadow-overlay);
+  }
+
+  /* Ambient cast, thrown upward onto the retreating gallery. The hover-card
+     shadow above only spills ~20px past the seam, which reads as a seam rather
+     than as one surface passing in front of another; this is the penumbra that
+     was missing. A stacked gradient rather than a wider blur radius: the
+     falloff is hand-shaped, and a gradient this size rasterises once instead of
+     re-blurring a 100px radius across a full-width strip every frame. */
+  .mosaic-takeover-runway::before {
+    height: 120px;
+    background: linear-gradient(
+      to top,
+      rgb(16 16 20 / 0.1) 0%,
+      rgb(16 16 20 / 0.056) 16%,
+      rgb(16 16 20 / 0.028) 34%,
+      rgb(16 16 20 / 0.012) 55%,
+      rgb(16 16 20 / 0.004) 78%,
+      rgb(16 16 20 / 0) 100%
+    );
+  }
+
+  /* Scroll cue, and the shortcut through the rest of the crossing. The button
+     is the 44px target; the chevron inside it is the mark.
+
+     Splitting them is not cosmetic. The blend below needs a real backdrop, and
+     anything that creates a stacking context isolates the group inside it — so
+     the button carries no `opacity` (that is on the chevron, where it doubles
+     as the contrast dial) and no `z-index`. It does not need one: it is a
+     positioned sibling that follows the stage in document order, so it already
+     paints above it, and it sits entirely above the seam, so it never meets the
+     About sheet at z-index 1. */
+  .mosaic-takeover-cue {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100vh + 1px);
+    bottom: calc(100dvh + 1px);
+    width: 44px;
+    margin-left: -22px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0 0 19px;
+    color: #ffffff;
+    cursor: pointer;
+  }
+
+  .mosaic-takeover-cue:focus-visible {
+    /* The ring rides the button, which is unblended — inside the chevron it
+       would invert along with the stroke. */
+    border-radius: var(--radius-sm);
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* The bars are laid out collinear and hinged at the joint they share, so the
+     rotations below open them into a chevron without moving the vertex.
+
+     The seam climbs the whole project grid, so the cue crosses card art of any
+     value on its way up. Rather than pick one ink and prop it up with a halo,
+     white on `difference` subtracts the backdrop from itself: the stroke lands
+     dark on the pale cards and light on the dark ones, and the 0.32 opacity
+     that interpolates back toward the backdrop holds the contrast near even
+     across all of them — about 82 levels on white, 62 on the darkest card.
+
+     The box is kept to the chevron's own width rather than the button's: the
+     group Chrome composites to blend is this element's bounds. */
+  .mosaic-takeover-cue-chevron {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    width: 40px;
+    height: 14px;
+    mix-blend-mode: difference;
+    opacity: 0.32;
+  }
+
+  .mosaic-takeover-cue-arm {
+    flex: none;
+    width: 17px;
+    height: 1.5px;
+    border-radius: var(--radius-full);
+    background: currentColor;
+  }
+
+  .mosaic-takeover-cue-arm-left {
+    transform-origin: 100% 50%;
+    transform: rotate(22deg);
+  }
+
+  .mosaic-takeover-cue-arm-right {
+    transform-origin: 0 50%;
+    transform: rotate(-22deg);
+  }
+}
+
+/* Below the takeover breakpoint the runway is `display: contents` and there is
+   no edge to cue. */
+@media (max-width: 699.98px) {
+  .mosaic-takeover-cue {
+    display: none;
+  }
+}
+
+/* The sheet squeezes the chevron flat as it climbs, and its cast deepens on the
+   way. Both ride the same view timeline as the retreating stage, so the whole
+   crossing stays one scroll-linked, compositor-driven gesture.
+
+   The cue's resting state is the flat, invisible one on purpose: `entry 100%`
+   leaves the seam at the very top of the viewport, so a `fill-mode` of `none`
+   there resolves to exactly what the last keyframe drew. No fill means no
+   layer retained past the crossing — the same trade the stage makes. */
+/* Peaks at the cue's resting 0.32 rather than at 1: on `difference` that
+   opacity is the contrast dial, not a fade. Full strength would invert the
+   backdrop outright and put a black chevron on the white runway. */
+@keyframes mosaic-takeover-cue-reveal {
+  0% {
+    opacity: 0;
+  }
+
+  16%,
+  68% {
+    opacity: 0.32;
+  }
+
+  92%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes mosaic-takeover-cue-squeeze-left {
+  0%,
+  8% {
+    transform: rotate(22deg);
+  }
+
+  86%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes mosaic-takeover-cue-squeeze-right {
+  0%,
+  8% {
+    transform: rotate(-22deg);
+  }
+
+  86%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes mosaic-takeover-edge-deepen {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Browsers without scroll-driven animations keep the static states above: a
+   resting chevron at the seam and a shadow at full depth. */
+@supports (animation-timeline: view()) {
+  @media (min-width: 700px) and (prefers-reduced-motion: no-preference) {
+    .mosaic-takeover-cue-chevron {
+      opacity: 0;
+      animation-name: mosaic-takeover-cue-reveal;
+    }
+
+    .mosaic-takeover-cue-arm-left {
+      transform: rotate(0deg);
+      animation-name: mosaic-takeover-cue-squeeze-left;
+    }
+
+    .mosaic-takeover-cue-arm-right {
+      transform: rotate(0deg);
+      animation-name: mosaic-takeover-cue-squeeze-right;
+    }
+
+    /* `backwards` only: the shadow is already at full depth once the seam
+       clears the viewport, so the resting style is the end state. */
+    .mosaic-takeover-runway::before {
+      animation-name: mosaic-takeover-edge-deepen;
+      animation-fill-mode: backwards;
+    }
+
+    .mosaic-takeover-cue-chevron,
+    .mosaic-takeover-cue-arm,
+    .mosaic-takeover-runway::before {
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-timeline: --about-takeover;
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
+
+@media (min-width: 700px) and (prefers-reduced-motion: no-preference) {
+  /* View Timelines keep scroll-linked motion off the main thread. The complete
+     gallery retreats as one composited surface, preserving every card gap.
+
+     Opacity, transform and filter are the three properties Chrome can animate
+     on the compositor, so the blur re-runs a shader over the stage's existing
+     texture each frame rather than repainting the grid — the tiles are not
+     re-rastered at a new radius. It is still the most expensive thing in the
+     crossing: a full-viewport surface, and the videos inside it are only
+     paused once the sheet fully covers it. Keep the radius modest and do not
+     add a fourth animated property here. */
+  .mosaic-takeover-stage {
+    animation-name: mosaic-takeover-retreat;
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+    /* The start and end states are visually redundant outside the takeover:
+       before it, the default stage already matches the first keyframe; after
+       it, the opaque About sheet covers the gallery. Do not retain the final
+       transform, or Chrome keeps this large off-screen surface composited
+       while it should be rasterizing the long About reading surface. */
+    animation-fill-mode: none;
+    animation-timeline: --about-takeover;
+    animation-range: entry 0% entry 100%;
+  }
+}
+
+/* Row data supplies --row-height-input. CSS owns the effective height, so
+   responsive layouts can override it without fighting an inline property. */
+@media (min-width: 900px) {
+  .mosaic-takeover-runway {
+    --takeover-row-height: 420px;
+  }
+
+  .mosaic-row {
+    --row-height: 420px;
+  }
+}
+
+/* -------------------------------------------------- work tiles & captions --- */
+
+.mosaic-row-item {
+  flex: var(--row-span, 1) 1 0;
+  min-width: 0;
+  display: flex;
+}
+
+.mosaic-row-card {
+  appearance: none;
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  background: var(--mosaic-card-surface);
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    border-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+/* The caption backdrop. Four separately masked layers step the blur radius from
+   a twelfth of `--card-caption-blur` up to all of it, so the artwork softens
+   progressively toward the bottom edge rather than stopping at a seam.
+
+   One masked blur layer is the obvious cheaper version of this and it does not
+   read the same: a mask fades the *opacity* of a uniformly blurred layer, so
+   the top of the band ends up a half-strength blend of sharp and blurred
+   instead of a gentler blur. This ramps the radius itself.
+
+   These have to be real nodes -- an element only gets ::before and ::after, and
+   the ramp needs four. */
+.mosaic-row-card-scrim {
+  --card-caption-blur: 2.5rem;
+
+  /* Every ramp in this band -- the four blur masks below and the tint at the
+     end -- dies out on the same eased curve rather than a straight line. A
+     linear alpha ramp changes slope abruptly at the point it reaches zero, and
+     the eye reads that break as an edge even though nothing is drawn there;
+     these stops flatten the approach so the band has no top. Only the span
+     differs between them. */
+  --card-caption-mask-1: linear-gradient(
+    to top,
+    #000 22%,
+    rgb(0 0 0 / 0.54) 30.2%,
+    rgb(0 0 0 / 0.28) 35.6%,
+    rgb(0 0 0 / 0.13) 39.5%,
+    rgb(0 0 0 / 0.04) 42.6%,
+    transparent 46%
+  );
+  --card-caption-mask-2: linear-gradient(
+    to top,
+    #000 14%,
+    rgb(0 0 0 / 0.54) 20.8%,
+    rgb(0 0 0 / 0.28) 25.3%,
+    rgb(0 0 0 / 0.13) 28.6%,
+    rgb(0 0 0 / 0.04) 31.2%,
+    transparent 34%
+  );
+  --card-caption-mask-3: linear-gradient(
+    to top,
+    #000 8%,
+    rgb(0 0 0 / 0.54) 13.4%,
+    rgb(0 0 0 / 0.28) 17%,
+    rgb(0 0 0 / 0.13) 19.7%,
+    rgb(0 0 0 / 0.04) 21.8%,
+    transparent 24%
+  );
+  --card-caption-mask-4: linear-gradient(
+    to top,
+    #000 0%,
+    rgb(0 0 0 / 0.54) 5.1%,
+    rgb(0 0 0 / 0.28) 8.5%,
+    rgb(0 0 0 / 0.13) 11%,
+    rgb(0 0 0 / 0.04) 12.9%,
+    transparent 15%
+  );
+
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  height: max(46%, 6rem);
+  pointer-events: none;
+}
+
+/* The tint and the ramp fade on separate clocks, and the split is the point.
+   Fading the whole scrim as one meant the caption could not become legible
+   until the four backdrop rasters were ready, so the entire effect arrived at
+   once and read as a stall. The tint is an ordinary gradient that paints
+   immediately, so it carries the contrast on the hover beat while the blur
+   resolves behind it over the longer curve. */
+.mosaic-row-card-scrim > span {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  /* var(--duration-slow) is the scale's "media un-blurring as it decodes" step. This is the
+     same event -- a blur resolving -- so it borrows that value rather than
+     adding one. It also means a raster that lands late lands mid-fade, which
+     reads as softening rather than as a pop. */
+  transition: opacity var(--duration-slow) ease-out;
+}
+
+.mosaic-row-card-scrim > span:nth-child(1) {
+  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.12));
+  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.12));
+  -webkit-mask-image: var(--card-caption-mask-1);
+  mask-image: var(--card-caption-mask-1);
+}
+
+.mosaic-row-card-scrim > span:nth-child(2) {
+  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.3));
+  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.3));
+  -webkit-mask-image: var(--card-caption-mask-2);
+  mask-image: var(--card-caption-mask-2);
+}
+
+.mosaic-row-card-scrim > span:nth-child(3) {
+  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.62));
+  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.62));
+  -webkit-mask-image: var(--card-caption-mask-3);
+  mask-image: var(--card-caption-mask-3);
+}
+
+.mosaic-row-card-scrim > span:nth-child(4) {
+  -webkit-backdrop-filter: blur(var(--card-caption-blur));
+  backdrop-filter: blur(var(--card-caption-blur));
+  -webkit-mask-image: var(--card-caption-mask-4);
+  mask-image: var(--card-caption-mask-4);
+}
+
+/* The tint rides above the whole ramp rather than inside the blurriest layer.
+   Blur cannot promise contrast on its own -- a blurred white screenshot is
+   still white -- and folded into the bottom layer this only covered the lowest
+   fifteenth of the band, which is under the caption rather than behind it. */
+.mosaic-row-card-scrim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* On wide layouts this is nearly flat across the bottom seventh, where the
+     caption sits, then eased to nothing over the rest of the band. The plateau
+     is what buys the weight back: contrast is only owed at the label, so the
+     tint holds ~0.57 behind it -- the same composite the old 0.68 straight ramp
+     put there, and the same margin over 4.5:1 on white artwork -- and sheds
+     about a third of its weight through the middle of the band, which is the
+     part you actually read as heavy. It also has no top: a ramp that reaches
+     zero partway up changes slope there, and the eye reads that break as an
+     edge. Compact desktop overrides the stop positions below because its
+     labels can wrap inside a shorter band. */
+  background: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.62) 0%,
+    rgb(0 0 0 / 0.595) 8%,
+    rgb(0 0 0 / 0.56) 14%,
+    rgb(0 0 0 / 0.475) 21%,
+    rgb(0 0 0 / 0.36) 30%,
+    rgb(0 0 0 / 0.27) 38%,
+    rgb(0 0 0 / 0.19) 47%,
+    rgb(0 0 0 / 0.13) 56%,
+    rgb(0 0 0 / 0.085) 65%,
+    rgb(0 0 0 / 0.05) 74%,
+    rgb(0 0 0 / 0.027) 82%,
+    rgb(0 0 0 / 0.012) 89%,
+    rgb(0 0 0 / 0.003) 95%,
+    transparent 100%
+  );
+  opacity: 0;
+  /* The scale's default for opacity on hover, and the same curve the caption
+     itself uses -- tint and label arrive together, ahead of the blur. */
+  transition: opacity var(--duration-quick) ease-out;
+}
+
+/* Where the backdrop cannot be sampled, fall back to the staggered ramps this
+   replaced: translucent enough to keep the caption legible without leaving the
+   broad gray shelf a single multi-stop scrim left. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .mosaic-row-card-scrim::after {
+    background:
+      linear-gradient(to top, rgb(0 0 0 / 0.34) 0%, transparent 48%),
+      linear-gradient(to top, rgb(0 0 0 / 0.2) 0%, transparent 74%),
+      linear-gradient(to top, rgb(0 0 0 / 0.1) 0%, transparent 100%);
+  }
+}
+
+/* Compact desktop cards are short enough that long labels wrap above the
+   wide layout's bottom plateau. Hold the tint through the full two-line label,
+   then spend the remaining height on the same eased exit. This comes after the
+   no-backdrop fallback so contrast does not depend on blur support. */
+@media (max-width: 899.98px), (hover: none), (pointer: coarse) {
+  .mosaic-row-card-scrim::after {
+    background: linear-gradient(
+      to top,
+      rgb(0 0 0 / 0.62) 0%,
+      rgb(0 0 0 / 0.595) 18%,
+      rgb(0 0 0 / 0.57) 40%,
+      rgb(0 0 0 / 0.475) 48%,
+      rgb(0 0 0 / 0.36) 56%,
+      rgb(0 0 0 / 0.27) 64%,
+      rgb(0 0 0 / 0.19) 72%,
+      rgb(0 0 0 / 0.13) 80%,
+      rgb(0 0 0 / 0.085) 87%,
+      rgb(0 0 0 / 0.05) 92%,
+      rgb(0 0 0 / 0.027) 96%,
+      rgb(0 0 0 / 0.012) 98%,
+      rgb(0 0 0 / 0.003) 99%,
+      transparent 100%
+    );
+  }
+}
+
+.mosaic-row-card:hover .mosaic-row-card-scrim > span,
+.mosaic-row-card:focus-visible .mosaic-row-card-scrim > span,
+.mosaic-row-card:hover .mosaic-row-card-scrim::after,
+.mosaic-row-card:focus-visible .mosaic-row-card-scrim::after {
+  opacity: 1;
+}
+
+.mosaic-row-card:focus-visible {
+  border-color: var(--focus-ring);
+  background: #e9e9e9;
+  box-shadow:
+    0 0 0 1px rgb(45 45 45 / 0.5),
+    0 0 0 6px rgb(45 45 45 / 0.14);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.mosaic-row-media {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  opacity: 0;
+  filter: blur(var(--blur-reveal));
+  transition: opacity var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
+  will-change: opacity, filter;
+}
+
+/* Once the blur-up settles the hint would only pin ~10 tile textures in GPU
+   memory for the rest of the session — memory the About sheet needs while it
+   rasterises during the takeover crossing (it is force-composited because it
+   slides over this grid). Release it. */
+.mosaic-row-media[data-loaded="true"] {
+  opacity: 1;
+  filter: none;
+  will-change: auto;
+}
+
+/* Cropped tiles focus on the first row of phones, with the next row peeking in.
+   The gallery reads the same two values, so opening the card keeps you looking
+   at what you clicked instead of swapping in a differently framed image. */
+.mosaic-row-card-preview-protector,
+.preview-gallery-popup[data-preview-crop="true"] {
+  --preview-crop-scale: 1.38;
+  --preview-crop-position: 21% 14%;
+}
+
+.mosaic-row-card-preview-protector .mosaic-row-media {
+  object-position: var(--preview-crop-position);
+  transform: scale(var(--preview-crop-scale));
+  transform-origin: var(--preview-crop-position);
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card {
+  padding: clamp(0.6rem, 1vw, 1rem);
+  display: grid;
+  place-items: center;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-media {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: var(--row-media-max-height, 100%);
+  object-fit: contain;
+}
+
+@media (max-width: 699.98px) {
+
+  .mosaic-rows {
+    padding-inline: 0;
+  }
+
+  .mosaic-row {
+    --row-height: clamp(340px, 92vw, 380px);
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+  }
+
+  .mosaic-row-item {
+    flex: 1 1 auto;
+    height: var(--row-height, 240px);
+    min-height: var(--row-height, 240px);
+  }
+
+  video.mosaic-row-media {
+    padding-inline: 8px;
+  }
+
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16 {
+    display: block;
+    padding: 0;
+  }
+
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9 .mosaic-row-media,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16 .mosaic-row-media {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    object-fit: cover;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The global reset in reduced-motion.css clamps
+     animation-duration but not animation-delay, so a delayed `both`-filled
+     entrance still holds its from-state -- invisible -- for the whole delay
+     window. These selectors have to match or beat the specificity of the rules
+     that set the animation, or those win despite coming earlier -- a bare
+     `.mosaic-row-item` reset would not reach `.mosaic-work-intro
+     .mosaic-row-item`. */
+  .mosaic-work-intro .mosaic-row-item {
+    animation: none;
+  }
+
+  .mosaic-row-card-title,
+  .mosaic-row-card-scrim > span,
+  .mosaic-row-card-scrim::after {
+    transition: none;
+  }
+
+  .mosaic-row-media {
+    opacity: 1;
+    filter: none;
+    transition: none;
+  }
+
+  .mosaic-row-card:hover .mosaic-row-card-title,
+  .mosaic-row-card:focus-visible .mosaic-row-card-title {
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (max-width: 699.98px), (hover: none), (pointer: coarse) {
+
+  /* Touch has no hover reveal, so the label is permanent -- and a permanent
+     full-width band is a different object from a band that appears under the
+     pointer. It landed on whatever the screenshot had at its own bottom edge
+     (on Popparazi, directly on the words "Featured pops of the day"), and on
+     letterboxed tiles it ran past the artwork onto the card's grey, where white
+     text has nothing to sit on.
+
+     A pill carries its own contrast, so it is legible over any artwork and over
+     the letterbox alike, and it reads as a label rather than as a second title
+     competing with the interface underneath. It is also cheaper than what it
+     replaces: no backdrop-filter, so a scrolling phone never re-rasterises a
+     band per tile. */
+  .mosaic-row-card-title {
+    display: block;
+    width: max-content;
+    bottom: 0.75rem;
+    max-width: calc(100% - 1.5rem);
+    padding: 0.28rem 0.6rem;
+    border-radius: var(--radius-full);
+    background: rgb(20 20 20 / 0.82);
+    transform: translate(-50%, 0);
+    opacity: 1;
+    font-size: var(--text-xs);
+    text-shadow: none;
+  }
+
+  .mosaic-row-card-scrim {
+    display: none;
+  }
+
+  .mosaic-row-card-preview-protector .mosaic-row-media {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    object-fit: cover;
+    object-position: var(--preview-crop-position);
+    transform: scale(var(--preview-crop-scale));
+    transform-origin: var(--preview-crop-position);
+  }
+}

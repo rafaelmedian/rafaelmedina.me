@@ -168,6 +168,37 @@ test("coalesces a burst of elastic-edge input into one visual update per frame",
   expect(Number(progress.afterFrame)).toBeGreaterThan(0)
 })
 
+test("resets the elastic edge when release happens before its first paint", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const state = await page.locator(".elastic-scroll-edge").evaluate(async (element) => {
+    const scheduledFrames: FrameRequestCallback[] = []
+    const requestFrame = window.requestAnimationFrame
+
+    window.requestAnimationFrame = (callback) => {
+      scheduledFrames.push(callback)
+      return scheduledFrames.length
+    }
+
+    try {
+      window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+      await new Promise((resolve) => window.setTimeout(resolve, 150))
+      scheduledFrames.splice(0).forEach((callback) => callback(performance.now()))
+
+      return {
+        glowing: element.getAttribute("data-glowing"),
+        opacity: (element as HTMLElement).style.getPropertyValue("--elastic-edge-opacity"),
+        pulling: element.getAttribute("data-pulling"),
+      }
+    } finally {
+      window.requestAnimationFrame = requestFrame
+    }
+  })
+
+  expect(state).toEqual({ glowing: "false", opacity: "0", pulling: "false" })
+})
+
 test("previews the gradient while applying live height and shape settings", async ({ page }) => {
   await page.goto("/")
 

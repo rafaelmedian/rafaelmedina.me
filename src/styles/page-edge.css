@@ -1,0 +1,121 @@
+/* ----------------------------------------------------- bottom scroll edge --- */
+
+.elastic-scroll-edge {
+  --elastic-edge-opacity: 0;
+  --elastic-edge-offset: 44px;
+  --elastic-edge-scale: 0.35;
+
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-chrome);
+  height: calc(var(--elastic-edge-height) + env(safe-area-inset-bottom));
+  pointer-events: none;
+  opacity: var(--elastic-edge-opacity);
+  transform: translate3d(0, var(--elastic-edge-offset), 0) scaleY(var(--elastic-edge-scale));
+  transform-origin: center bottom;
+  transition-property: transform, opacity;
+  transition-duration: var(--elastic-edge-fade-duration, 1260ms);
+  transition-timing-function: ease-in-out;
+  will-change: transform, opacity;
+}
+
+.elastic-scroll-edge-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse calc(var(--elastic-edge-center-width) - 4%) 88% at 50% 116%,
+      rgb(255 255 255 / var(--elastic-edge-light-opacity)) 0%,
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse var(--elastic-edge-center-width) 122% at 50% 124%,
+      color-mix(in srgb, var(--elastic-edge-color-3) var(--elastic-edge-core-strength), transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse var(--elastic-edge-color-spread) 142% at 30% 120%,
+      color-mix(in srgb, var(--elastic-edge-color-2) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 73%
+    ),
+    radial-gradient(
+      ellipse var(--elastic-edge-color-spread) 142% at 70% 120%,
+      color-mix(in srgb, var(--elastic-edge-color-4) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 73%
+    ),
+    radial-gradient(
+      ellipse calc(var(--elastic-edge-color-spread) + 6%) 155% at 4% 126%,
+      color-mix(in srgb, var(--elastic-edge-color-1) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse calc(var(--elastic-edge-color-spread) + 6%) 155% at 98% 126%,
+      color-mix(in srgb, var(--elastic-edge-color-5) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 92% 168% at 50% 132%,
+      color-mix(in srgb, var(--elastic-edge-color-3) var(--elastic-edge-shade-strength), transparent) 0%,
+      transparent 78%
+    );
+  /* No filter here on purpose: a blur pass over a full-width strip re-rasters
+     the whole surface at device scale every palette change. The ellipses
+     already fade to transparent, and the old 4% saturate() is baked into the
+     palette generator instead. */
+}
+
+.elastic-scroll-edge[data-preview="true"] {
+  opacity: 0.92;
+  transform: translate3d(0, 0, 0) scaleY(1);
+}
+
+/* Low, overlapping curtains retain the original page-edge height. Each
+   feathered section rises independently; no rotating bands or blur pass. */
+.elastic-scroll-edge-curtain {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--curtain-index) * 16.6667% - 16%);
+  width: 32%;
+  height: calc(100% * var(--curtain-height));
+  opacity: 0;
+  transform-origin: center bottom;
+  background:
+    radial-gradient(ellipse 16% 88% at 42% 100%,
+      color-mix(in srgb, var(--curtain-color) 64%, transparent), transparent 100%),
+    radial-gradient(ellipse 22% 76% at 65% 108%,
+      color-mix(in srgb, var(--curtain-color) 48%, transparent), transparent 100%),
+    radial-gradient(ellipse 52% 95% at 50% 112%,
+      var(--curtain-color), transparent 100%);
+}
+
+.elastic-scroll-edge[data-glowing="true"] .elastic-scroll-edge-curtain,
+.elastic-scroll-edge[data-preview="true"] .elastic-scroll-edge-curtain {
+  animation: elastic-curtain-rise var(--elastic-edge-rise-duration, 700ms) var(--ease-smooth) both;
+  animation-delay: calc(var(--curtain-index) * var(--elastic-edge-stagger, 40ms));
+}
+
+@keyframes elastic-curtain-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--elastic-edge-rise, 8px), 0) scaleY(0.8);
+  }
+  to {
+    opacity: var(--elastic-edge-section-opacity, 0.65);
+    transform: translate3d(0, 0, 0) scaleY(1);
+  }
+}
+
+.elastic-scroll-edge[data-pulling="true"],
+.mosaic-about-body[data-edge-pulling="true"] {
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-smooth);
+}
+
+/* Move the page-end content inside its surface so fixed navigation and
+   portalled dialogs retain their viewport coordinates. */
+.mosaic-about-body {
+  translate: 0 var(--elastic-content-offset, 0px);
+  transition: translate 700ms var(--ease-smooth);
+}
