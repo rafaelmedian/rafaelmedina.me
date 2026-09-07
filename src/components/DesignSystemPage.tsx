@@ -373,6 +373,12 @@ const ELEVATION = [
 
 const EASINGS = [
   {
+    name: "Aurora",
+    css: "ease-in-out",
+    duration: "1260ms",
+    use: "The page-end aurora fades symmetrically, keeping its colors visible through the middle of the release. Pull input and the staggered curtains use --ease-smooth.",
+  },
+  {
     name: "Standard — --ease-standard",
     css: "cubic-bezier(0.2, 0, 0, 1)",
     duration: "160–300ms",
@@ -382,7 +388,7 @@ const EASINGS = [
     name: "Smooth — --ease-smooth",
     css: "cubic-bezier(0.16, 1, 0.3, 1)",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the emoji toss, the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
@@ -437,7 +443,8 @@ const DURATIONS = [
   { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes and the personal-photo stack fanning on hover or focus." },
   { value: "360ms / 200ms", use: "Personal-photo carousel: --photo-open-duration aliases --duration-slow; --photo-close-duration aliases --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
   { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
-  { value: "700ms", use: "The bottom scroll edge, its emoji toss, and the avatar coin flip." },
+  { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
+  { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
 ]
 
 /* ------------------------------------------------------------------ layout */
@@ -460,7 +467,7 @@ const STACKING = [
   {
     z: "0–20",
     name: "--z-dock / --z-chrome",
-    note: "The page, main content wrapper (Tailwind's z-dock maps onto the token), and the bottom scroll edge.",
+    note: "The page and main content wrapper (Tailwind's z-dock maps onto the token). The bottom scroll edge sits inside main at --z-chrome, below the table of contents at --z-social.",
   },
   { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
@@ -823,18 +830,37 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Elastic page edge</p>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("elastic page edge overscroll 56px wash analogous emoji toss 700ms gravity")}
+                data-ds-terms={terms("elastic page edge overscroll aurora curtains random palette 56px 8px nudge 40ms stagger 700ms 1260ms DialKit")}
               >
-                <strong>A quiet, changing wash.</strong>
+                <strong>A soft aurora at the page edge.</strong>
                 <p>
-                  The 56px page-end curve blends five clean analogous shades, chosen again for each pull. Its deeper,
-                  more saturated centre sits beneath a translucent white highlight while broader pale layers recede
-                  toward the sides. The soft-edged ellipses blend without any filter pass, keeping the strip cheap to
-                  repaint while the gesture and 700ms release remain the effect's dominant motion. Each fresh gesture
-                  also tosses a wink and three non-repeating companions from below the viewport on staggered 700ms
-                  rises — each a single layer that eases upward, tumbles, and accelerates down under gravity. They
-                  remain decorative and pointer-free, clean up after landing, and disappear with the entire effect
-                  under reduced motion.
+                  The glow stays within the original 56px page-edge band. Seven overlapping curtains fade upward
+                  by 8px over 700ms using --ease-smooth, staggered by 40ms (240ms total). Their heights vary between
+                  76% and 100% of the band, with feathered vertical streaks and soft curved tops. Only transform and
+                  opacity animate, without filters or continuous loops. Each new glow chooses a random hue across
+                  the full 360-degree spectrum, with seven neighboring offsets from -54 to +54 degrees in 18-degree
+                  steps, saturation of 60–76%, and lightness of 74–84%. Repeated input during a glow keeps its palette
+                  and continues the existing rise. The wash follows input over 120ms, fades over 1260ms with
+                  ease-in-out, then resets the curtains. The content nudge stays capped at 8px and settles over 700ms.
+                  Colors remain behind the table of contents. Nested scrollers retain their behavior, and reduced
+                  motion disables the entire effect. Dev-only DialKit controls at <a href="/?tune=edge">/?tune=edge</a>
+                  adjust height, rise, stagger, rise duration, fade duration, and intensity, with replay and new-color
+                  actions. Those controls and their styles are excluded from production.
+                </p>
+                <p>
+                  The DialKit lab offers four studies: Soft Curve uses a broad concave fade; Feathered Curtains
+                  separates the vertical wisps; Overlapping Arcs blends shallow bands; Rolling Glow uses wider,
+                  asymmetric hills. All retain the same random palette when switching and replay automatically.
+                  The tuner defaults to Soft Curve, 65px height, 10px rise, 40ms stagger, 710ms rise duration,
+                  1148ms fade duration, and 0.91 intensity.
+                  A static 128px grayscale grain tile blends into each colored section with soft-light at 41%
+                  opacity by default, adjustable from 0–60%. Feathered masks keep it away from the white page
+                  and the table of contents. The softer curve takes inspiration from{' '}
+                  <a href="https://21st.dev/@ibelick/components/light-theme-tailwind-css-background-snippet" target="_blank" rel="noreferrer">Light Theme Background</a>;
+                  only the grain texture is inspired by{' '}
+                  <a href="https://21st.dev/@dhileepkumargm/components/aurora-shader" target="_blank" rel="noreferrer">Aurora Shader</a>.
+                  The studies and grain asset load only with the dev tuner; the standard effect stays available
+                  while the four options are compared.
                 </p>
               </div>
             </div>

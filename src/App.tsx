@@ -18,6 +18,9 @@ const DESIGN_SYSTEM_PATHS = new Set(["/design-system", "/styleguide"])
 const Agentation = import.meta.env.DEV
   ? lazy(() => import("agentation").then((module) => ({ default: module.Agentation })))
   : null
+const ElasticEdgeTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/ElasticEdgeTuner"))
+  : null
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -27,6 +30,8 @@ function normalizePath(pathname: string) {
 function App() {
   const currentPath = typeof window === "undefined" ? "/" : normalizePath(window.location.pathname)
   const isDesignSystemPage = DesignSystemPage !== null && DESIGN_SYSTEM_PATHS.has(currentPath)
+  const isTuningEdge = ElasticEdgeTuner !== null && !isDesignSystemPage
+    && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tune") === "edge"
 
   return (
     <div className="relative isolate min-h-dvh overflow-x-clip bg-[var(--canvas)] text-[var(--ink)]">
@@ -41,13 +46,18 @@ function App() {
           <>
             <main id="main-content" tabIndex={-1} className="relative z-dock">
               <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
+              <BottomOverscrollEffect />
             </main>
-            <BottomOverscrollEffect />
           </>
         )}
         {Agentation ? (
           <Suspense fallback={null}>
             <Agentation className="portfolio-feedback-toolbar max-[699.98px]:!bottom-[calc(6rem+env(safe-area-inset-bottom))]" />
+          </Suspense>
+        ) : null}
+        {isTuningEdge && ElasticEdgeTuner ? (
+          <Suspense fallback={null}>
+            <ElasticEdgeTuner />
           </Suspense>
         ) : null}
     </div>

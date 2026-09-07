@@ -51,7 +51,7 @@
      Leaflet-clearing 500) stays raw because it lives inside an isolated or
      transformed context and never meets these tiers. */
   --z-dock: 10; /* main content wrapper */
-  --z-chrome: 20; /* bottom scroll edge and its emoji layer */
+  --z-chrome: 20; /* bottom scroll edge */
   --z-corner: 30; /* section corner, takeover close */
   --z-overlay: 40; /* hover cards, work-history, the local-time card */
   --z-social: 50; /* social corner, so its cards clear other overlays */
@@ -217,8 +217,8 @@ img {
   transform: translate3d(0, var(--elastic-edge-offset), 0) scaleY(var(--elastic-edge-scale));
   transform-origin: center bottom;
   transition-property: transform, opacity;
-  transition-duration: 700ms;
-  transition-timing-function: var(--ease-smooth);
+  transition-duration: var(--elastic-edge-fade-duration, 1260ms);
+  transition-timing-function: ease-in-out;
   will-change: transform, opacity;
 }
 
@@ -272,60 +272,53 @@ img {
   transform: translate3d(0, 0, 0) scaleY(1);
 }
 
-.elastic-scroll-edge[data-pulling="true"] {
-  transition-duration: 0ms;
-}
-
-.elastic-scroll-edge-emojis {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-chrome);
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* One animated span per emoji. The burst used to nest a linear-drift wrapper
-   around an eased glyph for a projectile arc, but that doubled the animated
-   compositor layers for a decoration that fires mid-interaction, exactly when
-   raster headroom is scarcest. The toss keeps the rise, fall, and tumble in a
-   single layer and drops the horizontal parallax. */
-.elastic-scroll-edge-emoji {
+/* Low, overlapping curtains retain the original page-edge height. Each
+   feathered section rises independently; no rotating bands or blur pass. */
+.elastic-scroll-edge-curtain {
   position: absolute;
-  bottom: -2rem;
-  display: block;
+  bottom: 0;
+  left: calc(var(--curtain-index) * 16.6667% - 16%);
+  width: 32%;
+  height: calc(100% * var(--curtain-height));
   opacity: 0;
-  font-size: var(--emoji-size);
-  line-height: 1;
-  transform-origin: center;
-  animation: elastic-edge-emoji-toss 700ms both;
-  animation-delay: var(--emoji-delay);
+  transform-origin: center bottom;
+  background:
+    radial-gradient(ellipse 16% 88% at 42% 100%,
+      color-mix(in srgb, var(--curtain-color) 64%, transparent), transparent 100%),
+    radial-gradient(ellipse 22% 76% at 65% 108%,
+      color-mix(in srgb, var(--curtain-color) 48%, transparent), transparent 100%),
+    radial-gradient(ellipse 52% 95% at 50% 112%,
+      var(--curtain-color), transparent 100%);
 }
 
-@keyframes elastic-edge-emoji-toss {
-  0% {
+.elastic-scroll-edge[data-glowing="true"] .elastic-scroll-edge-curtain,
+.elastic-scroll-edge[data-preview="true"] .elastic-scroll-edge-curtain {
+  animation: elastic-curtain-rise var(--elastic-edge-rise-duration, 700ms) var(--ease-smooth) both;
+  animation-delay: calc(var(--curtain-index) * var(--elastic-edge-stagger, 40ms));
+}
+
+@keyframes elastic-curtain-rise {
+  from {
     opacity: 0;
-    transform: translate3d(0, 2rem, 0) rotate(var(--emoji-start-rotation)) scale(0.78);
-    animation-timing-function: var(--ease-smooth);
+    transform: translate3d(0, var(--elastic-edge-rise, 8px), 0) scaleY(0.8);
   }
+  to {
+    opacity: var(--elastic-edge-section-opacity, 0.65);
+    transform: translate3d(0, 0, 0) scaleY(1);
+  }
+}
 
-  16% {
-    opacity: 1;
-  }
+.elastic-scroll-edge[data-pulling="true"],
+.mosaic-about-body[data-edge-pulling="true"] {
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-smooth);
+}
 
-  52% {
-    opacity: 1;
-    transform: translate3d(0, var(--emoji-rise), 0) rotate(0deg) scale(1);
-    animation-timing-function: ease-in;
-  }
-
-  82% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate3d(0, 3rem, 0) rotate(var(--emoji-end-rotation)) scale(0.9);
-  }
+/* Move the page-end content inside its surface so fixed navigation and
+   portalled dialogs retain their viewport coordinates. */
+.mosaic-about-body {
+  translate: 0 var(--elastic-content-offset, 0px);
+  transition: translate 700ms var(--ease-smooth);
 }
 
 /* ----------------------------------------------------------- shell & hero --- */
@@ -4447,9 +4440,12 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
     overflow: visible;
   }
 
-  .elastic-scroll-edge,
-  .elastic-scroll-edge-emojis {
+  .elastic-scroll-edge {
     display: none;
+  }
+
+  .mosaic-about-body {
+    translate: none;
   }
 
   .preview-gallery-pending {
