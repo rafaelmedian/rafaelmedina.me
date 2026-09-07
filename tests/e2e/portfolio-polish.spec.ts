@@ -3840,7 +3840,7 @@ test("describes the stakes and choices in a Protector booking", async ({ page })
   await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
 
   await expect(page.getByRole("dialog")).toContainText(
-    "Protector lets people book short-term personal security. I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
+    "Protector lets people book short-term personal security. As the sole product designer for the booking experience, I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
   )
 })
 
