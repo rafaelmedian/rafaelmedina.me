@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 import { groupWritingsByYear } from "../../src/lib/writings"
 
-for (const viewport of [{ width: 2283, height: 1239 }, { width: 320, height: 568 }]) {
+for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 768 }]) {
   test(`notes expand within viewport margins and preserve reading at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport)
     await page.emulateMedia({ reducedMotion: "reduce" })
@@ -10,14 +10,14 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 320, height: 568
     await folder.click()
     const dialog = page.getByRole("dialog")
     const original = (await dialog.boundingBox())!
-    expect(original.height).toBe(viewport.height - (viewport.width < 700 ? 16 : 48))
+    expect(original.height).toBe(viewport.height - 48)
     await expect(dialog.getByRole("button", { name: "Expand modal" })).toBeInViewport()
     await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
     const reader = dialog.locator('[data-page-id="2"]')
     await reader.evaluate((element) => element.scrollTo(0, 400))
     await dialog.getByRole("button", { name: "Expand modal" }).click()
     await expect(dialog.getByRole("button", { name: "Restore modal size" })).toHaveAttribute("aria-pressed", "true")
-    const margin = viewport.width < 700 ? 8 : 24
+    const margin = 24
     expect(await dialog.boundingBox()).toEqual({ x: margin, y: margin, width: viewport.width - margin * 2, height: viewport.height - margin * 2 })
     expect(await dialog.evaluate((element) => getComputedStyle(element).borderRadius)).toBe("24px")
     expect((await dialog.getByRole("navigation", { name: "Breadcrumb" }).boundingBox())!.y).toBeLessThan(80)
@@ -35,6 +35,30 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 320, height: 568
     expect(await dialog.boundingBox()).toEqual(original)
   })
 }
+
+test("the phone sheet drops expand and moves navigation onto the breadcrumb line", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("button", { name: "Open writings folder" }).click()
+  const dialog = page.getByRole("dialog")
+  expect(await dialog.boundingBox()).toEqual({ x: 8, y: 8, width: 304, height: 552 })
+  // The sheet is already within half a rem of the viewport, so there is nothing to expand into.
+  await expect(dialog.getByRole("button", { name: /modal/ })).toHaveCount(0)
+  const crumbs = (await dialog.getByRole("navigation", { name: "Breadcrumb" }).boundingBox())!
+  const close = (await dialog.getByRole("button", { name: "Close writings" }).boundingBox())!
+  expect(close.y).toBe(crumbs.y)
+  expect(close.x + close.width).toBe(292)
+  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  const prev = (await dialog.getByRole("button", { name: "Previous note" }).boundingBox())!
+  expect(prev.y).toBe(crumbs.y)
+  expect(prev.x).toBeGreaterThanOrEqual(crumbs.x + crumbs.width)
+  // Reading and browsing leave the close button where the list put it.
+  expect(await dialog.getByRole("button", { name: "Close writings" }).boundingBox()).toEqual(close)
+  // No bottom bar: the article scrolls to the foot of the sheet.
+  const reader = (await dialog.locator('[data-page-id="2"]').boundingBox())!
+  expect(reader.y + reader.height).toBe(560)
+})
 
 test("archive orders years and dates newest first without assigning dates to undated notes", () => {
   const entries = [

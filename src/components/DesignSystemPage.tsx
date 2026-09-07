@@ -1245,12 +1245,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
                 Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
                 during the switch, and closing or returning to Notes cancels pending selection. Reduced motion switches instantly.
-                An expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, retaining 1.5rem desktop margins and 24px corners,
+                From 700px an expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, retaining 1.5rem desktop margins and 24px corners,
                 keeps the reading column centered with 1.5rem top padding plus the safe area, and brings the rail inside the right edge.
                 Modal width, column width, toolbar padding, and rail position transition together with --ease-smooth: 360ms to expand and 200ms to restore.
                 Rapid toggles reverse from the current position; reduced motion makes resizing immediate. Toggling preserves the selected note and scroll;
-                closing restores the default size. On mobile, the modal retains its 0.5rem margins and safe-area clearance, and expand and navigation controls share the bottom bar.
-                The desktop header has no close icon; Escape and outside click dismiss it. On mobile, navigation and close sit in a bottom bar.
+                closing restores the default size. On mobile, the modal retains its 0.5rem margins and safe-area clearance and there is no expand control,
+                because the sheet already sits within half a rem of the viewport and has nothing to grow into.
+                The desktop header has no close icon; Escape and outside click dismiss it. On mobile, previous, next, and close ride the breadcrumb line at the
+                top right instead of a bottom bar, which returns that bar's 68px of height to the article. Below 360px the breadcrumb
+                steps from 1.5rem to --text-lg so it clears those controls, and a long year label ellipses rather than running under them.
                 List and reader occupy overlapping, independently scrolling layers with stable scrollbar gutters.
                 Forward navigation sends the list left and brings the reader from 48px right over 360ms; back reverses
                 that direction over 200ms. Opacity uses 200ms standard easing, transforms use smooth easing, and blur is zero.
