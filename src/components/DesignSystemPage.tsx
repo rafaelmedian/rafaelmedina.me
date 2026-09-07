@@ -442,7 +442,7 @@ const BREAKPOINTS = [
   { at: "≤ 479.98px", change: "Contact pills gain up to 1.25rem side padding and wrap when their container cannot accommodate them." },
   { at: "≤ 639.98px", change: "The hero uses 2rem of top padding plus the top safe area." },
   { at: "≤ 699.98px", change: "Local time and corner navigation hide; a centered floating control labeled with the current section opens a table of contents with 14px labels; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; card captions stay visible over a static gradient without the desktop blur ramp." },
-  { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall." },
+  { at: "480–699.98px + fine hover", change: "Contact pills stay 34px tall." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
   {
@@ -1415,11 +1415,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </table>
               </div>
               <p className="ds-caption">
-                All three use a 2rem fine-pointer height and <code>--radius-full</code>; below 700px, touch inputs keep a
+                All three use a 2.125rem fine-pointer height and <code>--radius-full</code>; below 700px, touch inputs keep a
                 44px target. They share the same physical build: an outer shadow, a{" "}
                 <code>::before</code> specular highlight across the top, and a <code>::after</code> ring of inset
-                shadows for the bottom bevel. Labels sit at <code>top: -1px</code> because SF rides low in its em box at
-                13px. Shadow, not scale, carries the press.
+                shadows for the bottom bevel. Labels are trimmed with{" "}
+                <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
+                low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
+                carries the press.
               </p>
             </div>
 

@@ -63,14 +63,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2rem;
-  height: 2rem;
+  min-height: 2.125rem;
+  height: 2.125rem;
   padding: 0 clamp(0.75rem, 4vw, 1rem);
   border-radius: var(--radius-full);
   border: 1px solid #dedee0;
   font-size: var(--text-sm);
   font-weight: 500;
-  /* Line box hugs the glyphs so the flex centering is also optical centering. */
+  /* Fallback for browsers without text-box trim: the line box hugs the em box,
+     which lands the label about half a pixel below the optical centre. */
   line-height: 1;
   letter-spacing: -0.00563rem;
   font-family: var(--font-ui);
@@ -156,22 +157,25 @@
   box-shadow: 0 1px 4px rgb(46 42 42 / 0.08);
 }
 
+/* Trimming the line box down to cap height and the baseline makes the flex
+   centring optical centring: SF's ascent and descent are lopsided, so an
+   untrimmed em box parks the label ~0.5px low inside the pill. */
 .mosaic-contact-pill-default-label {
   position: relative;
   z-index: 1;
-  display: inline-flex;
-  align-items: center;
+  display: block;
   line-height: inherit;
   font-weight: inherit;
+  text-box: trim-both cap alphabetic;
 }
 
 .mosaic-contact-pill-linkedin-label,
 .mosaic-contact-pill-dark-label {
   position: relative;
   z-index: 1;
-  display: inline-flex;
-  align-items: center;
+  display: block;
   line-height: inherit;
+  text-box: trim-both cap alphabetic;
 }
 
 .mosaic-contact-pill-content {
@@ -559,7 +563,7 @@
 @media (min-width: 480px) and (max-width: 699.98px) and (hover: hover) and (pointer: fine) {
 
   .mosaic-contact-pill {
-    height: 2rem;
-    min-height: 2rem;
+    height: 2.125rem;
+    min-height: 2.125rem;
   }
 }

@@ -492,8 +492,8 @@ test("matches the desktop contact-pill height at compact desktop widths", async 
   await page.goto("/")
 
   const message = page.getByRole("link", { name: "Message on LinkedIn" })
-  await expect(message).toHaveCSS("height", "32px")
-  await expect(message).toHaveCSS("min-height", "32px")
+  await expect(message).toHaveCSS("height", "34px")
+  await expect(message).toHaveCSS("min-height", "34px")
 })
 
 test("keeps comfortable contact targets on wide touch viewports", async ({ browser }) => {
