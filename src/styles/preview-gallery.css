@@ -385,7 +385,9 @@
 }
 
 .preview-gallery-content {
-  padding: clamp(0.85rem, 1.8vw, 1.25rem) 0 0;
+  width: min(100%, 48rem);
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 0;
 }
 
 .preview-gallery-toolbar {
@@ -761,5 +763,11 @@
   .preview-gallery-popup .preview-gallery-card .preview-gallery-title,
   .preview-gallery-media[data-loaded] {
     filter: none;
+  }
+}
+
+@media (max-width: 699.98px) {
+  .preview-gallery-content {
+    padding-inline: 1.25rem;
   }
 }
