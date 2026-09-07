@@ -107,9 +107,14 @@ test("catching an early slide transition follows the pointer without a jump", as
     return Math.abs(new DOMMatrixReadOnly(getComputedStyle(node).transform).m41)
   })
   expect(caught).toBeGreaterThan(box.width * 0.7)
-  const x = box.x + box.width / 2
-  const y = box.y + box.height * 0.25
-  await page.mouse.move(x, y)
+  // Selecting a dot can scroll the card, so press through a hit-tested hover
+  // rather than the bounds measured before it. A stale point lands off the
+  // surface, and the press that never reaches it starts no drag at all.
+  const grabX = box.width / 2
+  const grabY = box.height * 0.25
+  await surface.hover({ position: { x: grabX, y: grabY } })
+  const grabbed = await surface.boundingBox()
+  if (!grabbed) throw new Error("Quote surface has no rendered bounds")
   await page.mouse.down()
   // The caught transition keeps driving the transform until the drag commits and
   // cancels it. Sampling either side of the move before that commit reads the
@@ -117,7 +122,7 @@ test("catching an early slide transition follows the pointer without a jump", as
   await expect(card).toHaveAttribute("data-dragging", "true")
   const offset = () => slide.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).m41)
   const before = await offset()
-  await page.mouse.move(x + 8, y)
+  await page.mouse.move(grabbed.x + grabX + 8, grabbed.y + grabY)
   await expect.poll(async () => (await offset()) - before).toBeCloseTo(8, 0)
   await page.mouse.up()
 })
