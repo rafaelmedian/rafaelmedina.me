@@ -47,6 +47,10 @@ PR ──► CI (lint · build · e2e) ──► merge to main ──► Deploy 
 and `public/`. The custom domain ships as `public/CNAME`, and the deploy fails
 loudly if it ever goes missing.
 
+Branches are split into a series of commits, one per coherent change, and the PR
+body lists them. `AGENTS.md` holds that convention in full; it is the single set of
+instructions every agent on this repo reads.
+
 See `PROJECT_STATUS.md` for the branch layout.
 
 ## Shared note likes

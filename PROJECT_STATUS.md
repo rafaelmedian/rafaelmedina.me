@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-07-30
+Last updated: 2026-09-07
 
 ## Current state
 
@@ -21,6 +21,18 @@ Last updated: 2026-07-30
 Feature branches are cut from `main` and merged back via PR. There is no longer
 a split between a "source" branch and a "built output" branch — that split is
 exactly what let the two drift apart.
+
+A branch is not a single commit. Work is split into a series of commits, one per
+coherent change, each with a title and a description of what it fixes and why;
+the PR body lists those changes in order. `AGENTS.md` holds the full format —
+this is the layout note, not the spec.
+
+The repo squash-merges with `squash_merge_commit_message: COMMIT_MESSAGES`, so
+those commit messages are concatenated into the body of the single commit that
+lands on `main`. Every commit on `main` since #65 — the last merge commit — is
+one squash per PR, and the reasoning inside it survives only as far as the branch
+commits carried it. A branch that was one "Implement X" commit leaves `git log` and
+`git blame` with nothing to say.
 
 ## Dead code
 
