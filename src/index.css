@@ -2291,6 +2291,15 @@ img {
   transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
+.mosaic-x-card-avatar-fallback {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--muted);
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
 .mosaic-x-card-avatar-link:hover .mosaic-x-card-avatar {
   opacity: 0.88;
 }
@@ -2436,6 +2445,363 @@ img {
   min-height: var(--row-height, 320px);
 }
 
+.mosaic-row-quote .mosaic-quote {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+@media (min-width: 700px) and (max-width: 899.98px) {
+  .mosaic-row-with-quote {
+    --row-height: 340px !important;
+  }
+
+  .mosaic-row-quote .mosaic-quote {
+    --quote-inline-padding: 1rem;
+  }
+}
+
+.mosaic-quote {
+  --quote-inline-padding: 1.5rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 340px;
+  margin: 0;
+  padding: 1.5rem var(--quote-inline-padding) 3.5rem;
+  overflow: hidden;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: var(--radius-lg);
+  background: #f2f2f2;
+  color: #2d2d2d;
+}
+
+.mosaic-quote blockquote {
+  width: min(100%, 21rem);
+  justify-self: center;
+  margin: 0 auto 1.5rem;
+  font-size: var(--text-md);
+  line-height: 1.5;
+  letter-spacing: -0.005rem;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.mosaic-quote-slide[data-short="true"] blockquote {
+  font-size: var(--text-lg);
+}
+
+.mosaic-quote blockquote p {
+  margin: 0;
+  text-align: center;
+}
+
+.mosaic-quote strong {
+  font-weight: 600;
+}
+
+.mosaic-quote-credit {
+  display: grid;
+  grid-row: 2 / span 2;
+  grid-template-rows: subgrid;
+  justify-items: center;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+.mosaic-quote-person {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mosaic-quote-note {
+  width: 100%;
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* The linked name sits above the next-quote surface; the rest of the slide
+   lets taps and drags reach that button. The preview is portaled past the clip. */
+.mosaic-quote-profile-link {
+  appearance: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 0.375rem transparent;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+/* Extend the hit target without adding space between the name and caption. */
+.mosaic-quote-profile-link::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -0.5rem;
+  right: -0.5rem;
+  min-height: 40px;
+  height: 100%;
+  transform: translateY(-50%);
+}
+
+.mosaic-quote-profile-link:hover,
+.mosaic-quote-profile-link:focus-visible {
+  background: var(--mosaic-card-surface);
+  box-shadow: 0 0 0 0.375rem var(--mosaic-card-surface);
+}
+
+.mosaic-quote-profile-link:hover,
+.mosaic-quote-profile-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mosaic-quote-profile-link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.mosaic-quote-profile-positioner {
+  z-index: var(--z-overlay);
+}
+
+.mosaic-quote-profile-popup {
+  outline: none;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transform-origin: var(--transform-origin);
+  transition: opacity var(--duration-quick) ease-out, transform var(--duration-base) var(--ease-smooth);
+}
+
+.mosaic-quote-profile-popup[data-starting-style],
+.mosaic-quote-profile-popup[data-ending-style] {
+  opacity: 0;
+  transform: translateY(4px) scale(0.97);
+}
+
+.mosaic-quote-profile-popup[data-ending-style] {
+  transition: opacity var(--duration-quick) var(--ease-exit), transform var(--duration-quick) var(--ease-exit);
+}
+
+.mosaic-quote-profile-popup .mosaic-x-card {
+  position: relative;
+  inset: auto;
+  display: flex;
+  transform: none;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-quote-profile-popup {
+    transition: none;
+    transform: none;
+  }
+}
+
+.mosaic-quote-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--canvas);
+  border-radius: var(--radius-full);
+  background: var(--mosaic-card-surface);
+  object-fit: cover;
+}
+
+.mosaic-quote-attribution {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
+}
+
+.mosaic-quote-name {
+  font-weight: 500;
+}
+
+.mosaic-quote-role {
+  color: var(--muted);
+}
+
+.mosaic-quote-slides {
+  pointer-events: none;
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  flex: none;
+  /* The edge treatment occupies the card gutters, so resting copy stays sharp. */
+  width: calc(100% + var(--quote-inline-padding) * 2);
+  min-height: 12rem;
+  overflow: clip;
+}
+
+.mosaic-quote-slide {
+  grid-area: 1 / 1 / 4 / 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: subgrid;
+  justify-items: center;
+  align-items: end;
+  margin: 0;
+  min-width: 0;
+  padding-inline: var(--quote-inline-padding);
+  transform: translateX(calc(var(--quote-position, 0) * 100% + var(--quote-drag-x, 0px)));
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+.mosaic-quote[data-dragging="true"] .mosaic-quote-slide,
+.mosaic-quote-slide[data-repositioning="true"] {
+  transition: none;
+}
+
+/* As with the work-tile scrim, separate masked layers increase the actual
+   blur radius toward the edge. The final tint dissolves it into the card. */
+.mosaic-quote-edge {
+  position: absolute;
+  inset-block: 0;
+  width: var(--quote-inline-padding);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.mosaic-quote-edge-left {
+  left: 0;
+  --quote-edge-direction: to right;
+}
+
+.mosaic-quote-edge-right {
+  right: 0;
+  --quote-edge-direction: to left;
+}
+
+.mosaic-quote-edge > span {
+  position: absolute;
+  inset: 0;
+  -webkit-backdrop-filter: blur(var(--quote-edge-blur));
+  backdrop-filter: blur(var(--quote-edge-blur));
+  -webkit-mask-image: linear-gradient(var(--quote-edge-direction), #000, transparent var(--quote-edge-reach));
+  mask-image: linear-gradient(var(--quote-edge-direction), #000, transparent var(--quote-edge-reach));
+}
+
+.mosaic-quote-edge > span:nth-child(1) {
+  --quote-edge-blur: 1px;
+  --quote-edge-reach: 100%;
+}
+
+.mosaic-quote-edge > span:nth-child(2) {
+  --quote-edge-blur: 2px;
+  --quote-edge-reach: 75%;
+}
+
+.mosaic-quote-edge > span:nth-child(3) {
+  --quote-edge-blur: 4px;
+  --quote-edge-reach: 50%;
+}
+
+.mosaic-quote-edge > span:nth-child(4) {
+  --quote-edge-blur: 8px;
+  --quote-edge-reach: 25%;
+}
+
+.mosaic-quote-edge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--quote-edge-direction),
+    #f2f2f2,
+    rgb(242 242 242 / 0.95) 12%,
+    rgb(242 242 242 / 0.6) 45%,
+    rgb(242 242 242 / 0) 100%
+  );
+}
+
+.mosaic-quote-next {
+  position: absolute;
+  inset: 0 0 40px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: grab;
+  touch-action: pan-y pinch-zoom;
+  user-select: none;
+}
+
+.mosaic-quote[data-dragging="true"] .mosaic-quote-next {
+  cursor: grabbing;
+}
+
+.mosaic-quote-dots {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.mosaic-quote-dot {
+  display: grid;
+  place-items: center;
+  width: 10px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
+}
+
+.mosaic-quote-dot:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.mosaic-quote-dot span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--muted-soft);
+  opacity: 0.3;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-quote-dot[aria-pressed="true"] span {
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-quote-slide,
+  .mosaic-quote-dot span {
+    transition: none;
+  }
+}
+
 /* The wrappers disappear on compact screens, where the stacked project rows
    are taller than the viewport and cannot become a useful pinned background. */
 /* -------------------------------------------- about takeover choreography --- */
@@ -2490,7 +2856,7 @@ img {
     --takeover-breathing-room: clamp(12rem, 30vh, 18rem);
     --takeover-gallery-height: calc(
       var(--takeover-row-height) + var(--takeover-row-height) + var(--takeover-row-height) +
-        var(--takeover-row-height) + 3rem + var(--takeover-breathing-room)
+        max(var(--takeover-row-height), 340px) + 3rem + var(--takeover-breathing-room)
     );
 
     position: relative;

@@ -2320,13 +2320,14 @@ test("uses eight pixel mobile gutters and taller project cards", async ({ page }
   expect(cardBox!.height).toBeGreaterThanOrEqual(340)
 })
 
-test("keeps Dark mode beside Protector", async ({ page }) => {
+test("places the quote slider beside Protector instead of Dark mode", async ({ page }) => {
   await page.goto("/")
 
   const protectorCard = page.getByRole("button", { name: /Open Protector/ })
   const row = page.locator(".mosaic-row").filter({ has: protectorCard })
 
-  await expect(row.getByRole("button", { name: /Open Matcha dark mode/ })).toHaveCount(1)
+  await expect(row.locator(".mosaic-quote")).toHaveCount(1)
+  await expect(page.getByRole("button", { name: /Open Matcha dark mode/ })).toHaveCount(0)
 })
 
 test("restores the former three projects to the third row", async ({ page }) => {
@@ -2500,7 +2501,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  await expect(dialog.getByText("2 / 11", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("2 / 10", { exact: true })).toBeVisible()
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -2527,7 +2528,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 11")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 10")
   await context.close()
 })
 
@@ -2564,7 +2565,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 11")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 10")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -2574,7 +2575,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 11")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 10")
   await context.close()
 })
 
@@ -3018,7 +3019,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
 
   await next.click()
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 11")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 10")
 
   const changedDialogBox = await dialog.boundingBox()
   const changedRailBox = await rail.boundingBox()
@@ -3029,7 +3030,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 11")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 10")
 })
 
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
