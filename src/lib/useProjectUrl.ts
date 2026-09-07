@@ -1,4 +1,6 @@
-import { useCallback, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useSyncExternalStore } from "react"
+import { portfolioCards } from "../data/portfolio"
+import { projectAtPath, projectPath, updatePageMetadata } from "./projectMetadata"
 
 const projectUrlEvent = "portfolio-project-url"
 const portfolioEntryKey = "__rafaelMedinaPortfolioEntry"
@@ -6,6 +8,13 @@ const portfolioEntryKey = "__rafaelMedinaPortfolioEntry"
 type PortfolioEntry = "about" | "project"
 let pendingPortfolioClose: PortfolioEntry | null = null
 let queuedProjectSelection: string | null = null
+
+function setProjectLocation(url: URL, projectId: string) {
+  const card = portfolioCards.find(card => card.id === projectId)
+  if (!card) return
+  url.pathname = projectPath(card)
+  url.searchParams.delete("project")
+}
 
 function getPortfolioEntry() {
   const state = window.history.state
@@ -39,7 +48,7 @@ export function closePortfolioUrl(url: string | URL, entry: PortfolioEntry, onCl
       if (!projectId) return
 
       const projectUrl = new URL(window.location.href)
-      projectUrl.searchParams.set("project", projectId)
+      setProjectLocation(projectUrl, projectId)
       pushPortfolioUrl(projectUrl, "project")
       window.dispatchEvent(new Event(projectUrlEvent))
     }
@@ -67,7 +76,7 @@ function getProjectId() {
   // asynchronous. Report the closed state immediately so error-boundary resets
   // cannot remount the failed gallery against the stale project URL.
   if (pendingPortfolioClose === "project") return null
-  return new URLSearchParams(window.location.search).get("project")
+  return projectAtPath(window.location.pathname)?.id ?? new URLSearchParams(window.location.search).get("project")
 }
 
 // Prerender and the first hydration pass agree; a shared URL opens afterward.
@@ -76,6 +85,10 @@ const getServerProjectId = () => null
 export function useProjectUrl() {
   const projectId = useSyncExternalStore(subscribe, getProjectId, getServerProjectId)
 
+  useEffect(() => {
+    updatePageMetadata(portfolioCards.find(card => card.id === projectId))
+  }, [projectId])
+
   const selectProject = useCallback((id: string, replaceCurrent: boolean) => {
     if (pendingPortfolioClose === "project") {
       queuedProjectSelection = id
@@ -83,7 +96,7 @@ export function useProjectUrl() {
     }
 
     const url = new URL(window.location.href)
-    url.searchParams.set("project", id)
+    setProjectLocation(url, id)
     // One history entry per gallery visit. Paging updates that entry so Back
     // returns to the portfolio rather than walking through eleven previews.
     if (replaceCurrent) window.history.replaceState(window.history.state, "", url)
@@ -94,6 +107,7 @@ export function useProjectUrl() {
   const clearProject = useCallback(() => {
     const url = new URL(window.location.href)
     url.searchParams.delete("project")
+    if (projectAtPath(url.pathname)) url.pathname = "/"
     // Pop entries created by this portfolio, but close direct bookmarks in
     // place so an external previous entry cannot take the visitor off-site.
     closePortfolioUrl(url, "project")

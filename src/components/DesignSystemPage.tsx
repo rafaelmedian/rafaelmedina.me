@@ -292,7 +292,7 @@ const TYPE_SCALE = [
     token: "--text-lg",
     sample: "Ten years prototyping in code.",
     spec: "1.125rem · 18px",
-    where: "About ledes — the largest text on the site",
+    where: "About ledes and standalone-page headings — the largest text on the site",
     style: { fontSize: "var(--text-lg)", lineHeight: 1.5, letterSpacing: "-0.015rem", fontWeight: 600 },
   },
 ]
@@ -1152,7 +1152,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop mobile pill rgb(20 20 20 / 0.82) --radius-full --text-xs 0.75rem 0.28rem 0.6rem")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1173,10 +1173,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   zero, and the eye reads that break as an edge. The two fade on separate clocks — the tint at the 160ms hover default alongside
                   the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
                   illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
-                  on hover and focus, one tile at a time. Below 700px and on coarse pointers, the four blur layers stay
-                  off while the tint and caption remain visible as a static, scroll-friendly label. The mobile tint
-                  occupies only 6rem instead of 46% of the card; the compact stop list holds 57% black through
-                  its bottom 40% to preserve caption contrast while leaving more artwork clear.
+                  on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden.
+                  The permanent caption is a compact pill with a <code>rgb(20 20 20 / 0.82)</code> background,
+                  <code> --radius-full</code> corners, and <code>--text-xs</code> type. It sits 0.75rem from the
+                  bottom with 0.28rem by 0.6rem padding, carrying its own contrast without a blur or tint band.
                 </p>
               </div>
             </div>
@@ -1474,6 +1474,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ----------------------------------------------------- layout -- */}
           <section id="layout" className="ds-section">
+            <div className="ds-rule" data-ds-terms={terms("standalone project pages 404 --text-lg --text-md --text-sm --muted --canvas --ink --radius-md 46rem 5rem 1.5rem 70vh")}>
+              <strong>Standalone pages reuse the same system.</strong>
+              <p>
+                Direct project pages and the 404 use a 46rem content width, 5rem vertical and 1.5rem horizontal
+                padding with safe-area minimums. Headings use --text-lg at 600; prose uses --text-md and --muted;
+                navigation uses --text-sm. Project media has --radius-md corners on --mosaic-card-surface and a
+                70vh height cap. The 404 uses --canvas, --ink, and the existing contact pill. Its production HTML
+                loads the same compiled stylesheet, so these values cannot drift into a separate palette.
+              </p>
+            </div>
             <div className="ds-section-heading">
               <h2>Layout</h2>
               <p>One shell, one mosaic, and a stacking order that the Tailwind scale only half describes.</p>

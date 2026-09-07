@@ -1,11 +1,12 @@
-import { lazy, Suspense } from "react"
+import { lazy, Suspense, useState } from "react"
 
 import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
 import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
+import { projectAtPath } from "./lib/projectMetadata"
+import { ProjectPage } from "./components/ProjectPage"
 
-// Dev-only. The build prerenders `/` alone, so in production `/design-system`
-// is served by public/404.html and redirected home — shipping the chunk would
+// Dev-only. In production `/design-system` is served by public/404.html — shipping the chunk would
 // be dead weight. The page's CSS rides the same lazy chunk, so none of it
 // reaches the production stylesheet either.
 const DesignSystemPage = import.meta.env.DEV
@@ -13,7 +14,7 @@ const DesignSystemPage = import.meta.env.DEV
   : null
 
 // `/styleguide` was the original path; keep it working rather than leaving a
-// stale bookmark to fall through to the 404 redirect.
+// stale development bookmark to fall through to the portfolio.
 const DESIGN_SYSTEM_PATHS = new Set(["/design-system", "/styleguide"])
 const Agentation = import.meta.env.DEV
   ? lazy(() => import("agentation").then((module) => ({ default: module.Agentation })))
@@ -27,8 +28,11 @@ function normalizePath(pathname: string) {
   return pathname.replace(/\/+$/, "")
 }
 
-function App() {
-  const currentPath = typeof window === "undefined" ? "/" : normalizePath(window.location.pathname)
+function App({ pathname }: { pathname?: string }) {
+  // Select the document at mount. History changes within the homepage keep its
+  // enhanced gallery mounted; refreshing a project opens its static page.
+  const [currentPath] = useState(() => normalizePath(pathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)))
+  const project = projectAtPath(currentPath)
   const isDesignSystemPage = DesignSystemPage !== null && DESIGN_SYSTEM_PATHS.has(currentPath)
   const isTuningEdge = ElasticEdgeTuner !== null && !isDesignSystemPage
     && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tune") === "edge"
@@ -45,8 +49,12 @@ function App() {
         ) : (
           <>
             <main id="main-content" tabIndex={-1} className="relative z-dock">
-              <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
-              <BottomOverscrollEffect />
+              {project ? <ProjectPage card={project} /> : (
+                <>
+                  <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
+                  <BottomOverscrollEffect />
+                </>
+              )}
             </main>
           </>
         )}

@@ -9,7 +9,7 @@ test("rests feed videos while a project preview covers them and resumes on close
     videos.filter(video => !(video as HTMLVideoElement).paused).length,
   )
   await expect.poll(playingCount).toBe(2)
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect.poll(playingCount).toBe(0)
   await expect.poll(() => page.getByRole("dialog").locator("video").evaluate(video => video.paused)).toBe(false)
@@ -59,7 +59,7 @@ test("uses posters on 3g and responds when the connection changes", async ({ pag
   await page.goto("/")
   const videos = page.locator("video.mosaic-row-media")
   await expect(videos).toHaveCount(3)
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).hover()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).hover()
   expect(requests).toEqual([])
   await page.evaluate(() => {
     const connection = (navigator as Navigator & { connection: EventTarget & { effectiveType: string } }).connection
@@ -84,7 +84,7 @@ test("keeps a thumbnail visible during a slow preview and offers retry after fai
     await route.abort("failed")
   })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Protector booking preview/ }).click()
+  await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
   const dialog = page.getByRole("dialog")
   await expect(dialog.getByRole("status")).toContainText("Loading preview")
   const thumbnail = dialog.locator(".preview-gallery-media-placeholder")
@@ -110,7 +110,7 @@ test("slow connections only fetch a preview video after an explicit play", async
     if (/\/Projects\/.*\.(webm|mp4)$/.test(request.url())) requests.push(request.url())
   })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   const video = page.getByRole("dialog").locator("video")
   await expect(video).toBeVisible()
   await expect(video).toHaveAttribute("controls", "")
@@ -126,7 +126,7 @@ test("resumes preview autoplay when the connection improves", async ({ page }) =
     Object.defineProperty(navigator, "connection", { value: connection, configurable: true })
   })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   const video = page.getByRole("dialog").locator("video")
   await expect(video).toHaveAttribute("controls", "")
   await expect(video).toHaveJSProperty("paused", true)
@@ -141,7 +141,7 @@ test("resumes preview autoplay when the connection improves", async ({ page }) =
 test("reduced motion clears preview blur during loading and switching", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Protector booking preview/ }).click()
+  await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveCSS("filter", "none")
   await expect(dialog.locator(".preview-gallery-media[data-loaded]")).toHaveCSS("filter", "none")
@@ -170,7 +170,7 @@ for (const slow of [false, true]) {
     if (slow) {
       await expect(video).not.toHaveAttribute("src")
       expect(requests).toEqual([])
-      await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+      await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
       const preview = page.getByRole("dialog").locator("video")
       await expect(preview).toHaveAttribute("controls", "")
       await expect(preview).toHaveAttribute("preload", "none")
