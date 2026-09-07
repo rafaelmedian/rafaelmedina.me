@@ -1843,11 +1843,17 @@ test("reuses the hover-card shadow for the about takeover", async ({ page }) => 
  * viewport of scrolling, so 0 is the seam arriving at the bottom and 1 is the
  * seam leaving at the top.
  */
+// Chrome quantises scroll offsets to 1/64px, so an exact delta can overshoot the
+// seam by a hundredth of a pixel -- enough to flip the strict `bounds.top <
+// innerHeight * 0.3` comparison the takeover close reads. Flooring stops the
+// seam a fraction short of the requested fraction rather than a fraction past
+// it, so `scrollSeamTo(0.7)` means "not yet 70%" no matter where the page's
+// layout happens to leave the fractional part.
 async function scrollSeamTo(page: Page, fraction: number) {
   await page.evaluate((target) => {
     const about = document.querySelector("#about-panel")
     if (!about) throw new Error("about panel missing")
-    window.scrollBy(0, about.getBoundingClientRect().top - window.innerHeight * (1 - target))
+    window.scrollBy(0, Math.floor(about.getBoundingClientRect().top - window.innerHeight * (1 - target)))
   }, fraction)
   await page.evaluate(
     () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
@@ -2137,7 +2143,9 @@ test("finishes the takeover when the cue is tapped", async ({ page }) => {
   // that the 44px target is actually reachable where the chevron is drawn.
   await cue.click()
 
-  expect(await about.evaluate((element) => Math.round(element.getBoundingClientRect().top))).toBe(0)
+  // Within half a pixel of the top: the settle lands on a subpixel offset that
+  // Math.round can report as -0, which Object.is separates from 0.
+  expect(await about.evaluate((element) => Math.abs(element.getBoundingClientRect().top))).toBeLessThan(1)
   await expect(about).toBeFocused()
 })
 
