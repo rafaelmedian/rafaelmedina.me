@@ -9,7 +9,7 @@ test("rests feed videos while a project preview covers them and resumes on close
     videos.filter(video => !(video as HTMLVideoElement).paused).length,
   )
   await expect.poll(playingCount).toBe(2)
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect.poll(playingCount).toBe(0)
   await expect.poll(() => page.getByRole("dialog").locator("video").evaluate(video => video.paused)).toBe(false)
