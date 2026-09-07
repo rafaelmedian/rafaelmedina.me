@@ -2,6 +2,9 @@ import { defineConfig } from "@playwright/test"
 
 export default defineConfig({
   testDir: "./tests/design-system",
+  // Distinct from the e2e suite's default `test-results`: Playwright wipes
+  // outputDir at the start of every run, and this suite runs after e2e in CI.
+  outputDir: "test-results-design-system",
   fullyParallel: true,
   forbidOnly: true,
   retries: 0,

@@ -17,9 +17,12 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
+      // Serves an existing dist/ — the build runs once ahead of Playwright
+      // (npm run test:e2e locally, a build step in CI) rather than again here.
+      // VITE_LIKES_API_URL belongs on that build: Vite inlines it, so setting
+      // it on this static file server would do nothing.
       command: "npm run test:e2e:serve",
       url: "http://127.0.0.1:4174",
-      env: { VITE_LIKES_API_URL: "http://127.0.0.1:8787" },
       reuseExistingServer: false,
     },
   ],
