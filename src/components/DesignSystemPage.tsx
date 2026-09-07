@@ -1867,6 +1867,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>:where()</code> base rule to every interactive element. <code>#2d2d2d</code> was chosen over a
                 grey because 1.4.11 wants 3:1 against the adjacent surface, which the greys cannot reach on near-white.
               </li>
+              <li data-ds-terms={terms("tabindex -1 landing container hash #work skip link outline none focus ring")}>
+                <strong>Landing containers take focus without taking a ring.</strong> Sections that receive focus
+                rather than earn it — the <code>#work</code> article, the About sheet, <code>#main-content</code> —
+                are <code>tabindex="-1"</code> and get <code>outline: none</code> on <code>:focus</code>. Left to the
+                browser, loading <code>/#work</code> painted its default ring around the whole section, reading as a
+                selection. The focus still moves, so reading and tabbing continue from the section.
+              </li>
               <li data-ds-terms={terms("target 24px 44px tap nav link map attribution chevron 34px ::before")}>
                 <strong>Targets meet 24px; primary touch controls reach 44px.</strong> Where the visible control is
                 smaller — the desktop 2rem nav links, the map attribution, the takeover cue's 34px chevron — an invisible{" "}
