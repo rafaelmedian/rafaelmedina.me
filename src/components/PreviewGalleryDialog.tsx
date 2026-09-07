@@ -171,7 +171,7 @@ function getPreviewDescription(card: PortfolioCard) {
 
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
   const teammates = card.team ?? []
-  // Credit myself alongside anyone I worked with; solo shots keep the Team row hidden.
+  // Credit myself alongside anyone I worked with; solo shots keep the team credits hidden.
   return teammates.length > 0 ? [collaborators.rafael, ...teammates] : []
 }
 
@@ -216,16 +216,6 @@ export function PreviewGalleryDialog({
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
   const activeLink = activeCard ? getPreviewLink(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
-  const activeMetaRows = activeCard
-    ? [
-        // No "Project" row — the dialog title directly above already says it.
-        ["Product", activeCard.product ?? activeCard.category],
-        ["Industry", activeCard.industry ?? "Product Design"],
-        // What I owned and what changed, in that order -- scope before impact.
-        ["Role", activeCard.role],
-        ["Outcome", activeCard.outcome],
-      ]
-    : []
 
   const playOpen = useSound(openSound, { volume: 0.3 })
   const playNext = useSound(nextSound, { volume: 0.26 })
@@ -565,67 +555,47 @@ export function PreviewGalleryDialog({
                   </div>
 
                   <div className="preview-gallery-content">
-                    <div className="preview-gallery-heading">
-                      <div>
-                        <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
-                        <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
+                    {activeCollaborators.length > 0 ? (
+                      <div className="preview-gallery-team">
+                        <span className="preview-gallery-team-label">Team</span>
+                        <ul className="preview-gallery-people" aria-label="Team">
+                          {activeCollaborators.map((person) => (
+                            <li key={person.href}>
+                              <a
+                                className="preview-gallery-person"
+                                href={person.href}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {person.photo ? (
+                                  <img
+                                    className="preview-gallery-person-avatar"
+                                    src={person.photo}
+                                    alt=""
+                                    width={22}
+                                    height={22}
+                                    loading="lazy"
+                                    decoding="async"
+                                  />
+                                ) : (
+                                  <span className="preview-gallery-person-avatar" aria-hidden="true">
+                                    {getInitials(person.name)}
+                                  </span>
+                                )}
+                                <span className="preview-gallery-person-name">{person.name}</span>
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    </div>
-
-                    <dl className="preview-gallery-details">
-                      {activeMetaRows.map(([label, value]) => (
-                        <div key={label} className="preview-gallery-detail-row">
-                          <dt>{label}</dt>
-                          <dd>{value}</dd>
-                        </div>
-                      ))}
-                      {activeCollaborators.length > 0 ? (
-                        <div className="preview-gallery-detail-row">
-                          <dt>Team</dt>
-                          <dd>
-                            <ul className="preview-gallery-people">
-                              {activeCollaborators.map((person) => (
-                                <li key={person.href}>
-                                  <a
-                                    className="preview-gallery-person"
-                                    href={person.href}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    {person.photo ? (
-                                      <img
-                                        className="preview-gallery-person-avatar"
-                                        src={person.photo}
-                                        alt=""
-                                        width={22}
-                                        height={22}
-                                        loading="lazy"
-                                        decoding="async"
-                                      />
-                                    ) : (
-                                      <span className="preview-gallery-person-avatar" aria-hidden="true">
-                                        {getInitials(person.name)}
-                                      </span>
-                                    )}
-                                    <span className="preview-gallery-person-name">{person.name}</span>
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
-                          </dd>
-                        </div>
-                      ) : null}
-                      {activeLink ? (
-                        <div className="preview-gallery-detail-row">
-                          <dt>Link</dt>
-                          <dd>
-                            <a href={activeLink} target="_blank" rel="noreferrer">
-                              {activeLink.replace(/^https?:\/\//, "")}
-                            </a>
-                          </dd>
-                        </div>
-                      ) : null}
-                    </dl>
+                    ) : null}
+                    <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                    <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
+                    {activeLink ? (
+                      <a className="preview-gallery-project-link" href={activeLink} target="_blank" rel="noreferrer">
+                        {activeLink.replace(/^https?:\/\//, "")}
+                      </a>
+                    ) : null}
                   </div>
                 </div>
               </article>

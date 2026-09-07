@@ -479,10 +479,10 @@
 .preview-gallery-description {
   margin: 0.5rem 0 0;
   max-width: 46rem;
-  color: var(--muted);
-  font-size: var(--text-sm);
+  color: #545454;
+  font-size: var(--text-md);
   font-weight: 400;
-  line-height: 1.45;
+  line-height: 1.6;
   letter-spacing: 0;
   text-wrap: pretty;
 }
@@ -543,20 +543,39 @@
   text-wrap: pretty;
 }
 
+.preview-gallery-team {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.preview-gallery-team-label {
+  color: var(--muted);
+}
+
+.preview-gallery-project-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  text-underline-offset: 0.16em;
+}
+
 .preview-gallery-people {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.35rem 0.85rem;
+  justify-content: flex-start;
+  gap: 0.5rem 1rem;
 }
 
-/* Scoped past `.preview-gallery-detail-row a` below, which underlines every
-   anchor -- these read as chips like the hero's work-history pills instead:
-   no underline, a background that arrives on hover. */
-.preview-gallery-detail-row .preview-gallery-person {
+/* Team credits keep the existing avatar links, above the project prose. */
+.preview-gallery-person {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -569,8 +588,8 @@
   transition: background-color var(--duration-quick) var(--ease-standard);
 }
 
-.preview-gallery-detail-row .preview-gallery-person:hover,
-.preview-gallery-detail-row .preview-gallery-person:focus-visible {
+.preview-gallery-person:hover,
+.preview-gallery-person:focus-visible {
   background: #f2f2f2;
 }
 
