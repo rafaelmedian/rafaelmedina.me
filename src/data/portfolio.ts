@@ -97,27 +97,28 @@ export const homeRows: HomeRow[] = [
   // Where they can go is tighter than it looks. All three want a span-1 slot in
   // a three-unit row (~509px against a 420px row): the dealership shot and the
   // phone mockup are matted, so a wider slot only grows the mat, and the
-  // Rewards composite is a 1.10 frame that a span-2 slot would crop by a
-  // quarter of its height. The Matcha 4:3 shots have the same requirement from
-  // the other side -- at span 1 in a four-unit row `cover` eats a third of
-  // their width. That leaves three-unit rows as the only home for most of the
-  // cards, so the three newest take one row each on the way down: Rewards in
-  // row 2, the dealership hub in row 4, the phone mockup in row 5. Row 1 keeps
-  // its pair of clips: index.html preloads their posters, and the first is the
-  // LCP element.
+  // Rewards diptych is matted too -- a wider slot is the one thing that would
+  // genuinely help it, but not enough to reshape the row around. The Matcha
+  // 4:3 shots have the same requirement from the other side -- at span 1 in a
+  // four-unit row `cover` eats a third of their width. That leaves three-unit
+  // rows as the home for most of the cards, so the three newest take one row
+  // each on the way down: Rewards in row 2, the dealership hub in row 4, the
+  // phone mockup in row 5. Row 1 keeps its pair of clips: index.html preloads
+  // their posters, and the first is the LCP element.
   {
     id: "row-2",
     height: homeTileRowHeight,
     // The writings tile is this row's third unit, so the two projects keep the
     // ~509px slot the note above asks for.
     writings: true,
-    // `contain` is explicit: the Rewards composite's ratio falls inside the
-    // band where `defaultFitForCard` would otherwise pick `cover`, and it
-    // cannot afford one -- it holds two banners whose headlines run the full
-    // width of each.
+    // The Rewards diptych takes `defaultFitForCard`'s `contain` — at 3.2 it is
+    // far past the 1.45 threshold, and it has to be: `cover` on a slot this
+    // close to square would show only the middle third of the strip, cutting
+    // the outer half of each banner. Contained it mats top and bottom instead,
+    // and the artwork's transparent margins make that mat invisible.
     items: [
       { cardId: "preview-shot-23", span: 1 },
-      { cardId: "preview-matcha-rewards", span: 1, fit: "contain" },
+      { cardId: "preview-matcha-rewards", span: 1 },
     ],
   },
   {
@@ -137,9 +138,9 @@ export const homeRows: HomeRow[] = [
   {
     id: "row-4",
     height: homeTileRowHeight,
-    // `contain` is explicit for the same reason as the Rewards composite in
-    // row 2: the dealership shot is a browser frame, so `cover` would trim its
-    // chrome off the edge.
+    // `contain` is explicit here rather than inferred: the dealership shot's
+    // 1.6 ratio sits just past the threshold either way, and it is a browser
+    // frame, so `cover` would trim its chrome off the edge.
     items: [
       { cardId: "preview-shot-21", span: 1 },
       { cardId: "preview-shot-1", span: 1 },
@@ -480,16 +481,19 @@ export const portfolioCards: PortfolioCard[] = [
     role: "I designed the campaign key visual and the variants it ships in.",
     outcome:
       "The rewards program launched with one visual system shared by its social posts and link previews.",
-    // Both deliverables in one frame — the green link preview above, the purple
-    // countdown post below — composed as a single asset rather than two tiles
-    // so one campaign reads as one project. Each banner sits whole inside the
-    // canvas: their headlines run edge to edge, so anything that trims a side
-    // cuts a word. The 1540x1400 frame is sized to the tile's own ratio for the
-    // same reason, leaving `contain` almost nothing to mat.
+    // Both deliverables in one frame — the green link preview left, the purple
+    // countdown post right — composed as a single asset rather than two tiles
+    // so one campaign reads as one project. Side by side is what sets the
+    // frame's shape: two 1.9:1 banners laid out as a diptych can't be framed
+    // much tighter than 3.2, which is why this is a wide strip rather than
+    // something near the tile's own ratio. Both banners sit whole inside it,
+    // headlines uncut, and the canvas is transparent outside them — the
+    // margins are only shadow room, so the `contain` mat the grid tile adds
+    // reads as one continuous surface with the artwork's own background.
     image: "/Projects/matcha-rewards.webp",
     previewWidth: 1540,
-    previewHeight: 1400,
+    previewHeight: 480,
     ...matchaMeta,
-    previewAspectRatio: 1540 / 1400,
+    previewAspectRatio: 1540 / 480,
   },
 ]
