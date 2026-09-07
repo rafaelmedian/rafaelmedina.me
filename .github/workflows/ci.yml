@@ -23,18 +23,35 @@ jobs:
 
       - run: npm run likes:check
 
+      # Vite inlines this at build time, so the e2e build — not the preview
+      # server — is where the local worker URL has to be set.
       - run: npm run build
+        env:
+          VITE_LIKES_API_URL: http://127.0.0.1:8787
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - run: npm run test:e2e
+      # `npm run test:e2e` would rebuild; dist/ is already there from the step
+      # above, and Playwright's preview server serves it as-is.
+      - name: Run e2e tests
+        run: npx playwright test
 
-      - run: npm run test:design-system
+      # `/design-system` is dev-only, so this suite needs its own vite dev
+      # server and cannot share the preview above. Run it even when e2e fails
+      # so one CI round reports every failure instead of one at a time.
+      - name: Run design-system tests
+        if: ${{ !cancelled() }}
+        run: npm run test:design-system
 
+      # The `line` reporter writes no playwright-report/; failure traces land
+      # in the two suites' output dirs, which is what is actually worth
+      # downloading. Both are listed because each run wipes only its own.
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: playwright-traces
+          path: |
+            test-results/
+            test-results-design-system/
           retention-days: 7
