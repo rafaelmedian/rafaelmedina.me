@@ -14,6 +14,7 @@ import {
 import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
+import { WritingsFolder } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
@@ -688,6 +689,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
+  const [writingsOpen, setWritingsOpen] = useState(false)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
   // Reduced motion suppresses animationend, so retire the one-shot intro
@@ -779,7 +781,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={isReturningToTop || activeWorkPreviewIndex !== null}
+          pausePlayback={isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
         />
       )
     }
@@ -1110,6 +1112,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                               </div>
                             )
                           })}
+                          {row.id === "row-2" ? (
+                            <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length } as CSSProperties}>
+                              <WritingsFolder onOpenChange={setWritingsOpen} />
+                            </div>
+                          ) : null}
                         </div>
                       )
                     })}

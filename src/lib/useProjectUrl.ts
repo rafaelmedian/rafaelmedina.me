@@ -1,11 +1,12 @@
 import { useCallback, useSyncExternalStore } from "react"
 
-const projectUrlEvent = "portfolio-project-url"
+const portfolioUrlEvent = "portfolio-item-url"
 const portfolioEntryKey = "__rafaelMedinaPortfolioEntry"
 
-type PortfolioEntry = "about" | "project"
+type PortfolioItem = "project" | "writing"
+type PortfolioEntry = "about" | PortfolioItem
 let pendingPortfolioClose: PortfolioEntry | null = null
-let queuedProjectSelection: string | null = null
+let queuedSelection: { entry: PortfolioItem; id: string } | null = null
 
 function getPortfolioEntry() {
   const state = window.history.state
@@ -34,14 +35,14 @@ export function closePortfolioUrl(url: string | URL, entry: PortfolioEntry, onCl
       pendingPortfolioClose = null
       onClosed?.()
 
-      const projectId = queuedProjectSelection
-      queuedProjectSelection = null
-      if (!projectId) return
+      const selection = queuedSelection
+      queuedSelection = null
+      if (!selection) return
 
-      const projectUrl = new URL(window.location.href)
-      projectUrl.searchParams.set("project", projectId)
-      pushPortfolioUrl(projectUrl, "project")
-      window.dispatchEvent(new Event(projectUrlEvent))
+      const url = new URL(window.location.href)
+      url.searchParams.set(selection.entry, selection.id)
+      pushPortfolioUrl(url, selection.entry)
+      window.dispatchEvent(new Event(portfolioUrlEvent))
     }
 
     window.addEventListener("popstate", finishClose, { once: true })
@@ -55,50 +56,50 @@ export function closePortfolioUrl(url: string | URL, entry: PortfolioEntry, onCl
 
 function subscribe(listener: () => void) {
   window.addEventListener("popstate", listener)
-  window.addEventListener(projectUrlEvent, listener)
+  window.addEventListener(portfolioUrlEvent, listener)
   return () => {
     window.removeEventListener("popstate", listener)
-    window.removeEventListener(projectUrlEvent, listener)
+    window.removeEventListener(portfolioUrlEvent, listener)
   }
 }
 
-function getProjectId() {
-  // An owned close has already been requested even though history traversal is
-  // asynchronous. Report the closed state immediately so error-boundary resets
-  // cannot remount the failed gallery against the stale project URL.
-  if (pendingPortfolioClose === "project") return null
-  return new URLSearchParams(window.location.search).get("project")
-}
-
 // Prerender and the first hydration pass agree; a shared URL opens afterward.
-const getServerProjectId = () => null
+const getServerItemId = () => null
 
-export function useProjectUrl() {
-  const projectId = useSyncExternalStore(subscribe, getProjectId, getServerProjectId)
+export function usePortfolioItemUrl(entry: PortfolioItem) {
+  const getItemId = useCallback(() => {
+    // Report a requested close immediately while history traversal completes.
+    if (pendingPortfolioClose === entry) return null
+    return new URLSearchParams(window.location.search).get(entry)
+  }, [entry])
+  const itemId = useSyncExternalStore(subscribe, getItemId, getServerItemId)
 
-  const selectProject = useCallback((id: string, replaceCurrent: boolean) => {
-    if (pendingPortfolioClose === "project") {
-      queuedProjectSelection = id
+  const selectItem = useCallback((id: string, replaceCurrent: boolean) => {
+    if (pendingPortfolioClose === entry) {
+      queuedSelection = { entry, id }
       return
     }
 
     const url = new URL(window.location.href)
-    url.searchParams.set("project", id)
-    // One history entry per gallery visit. Paging updates that entry so Back
-    // returns to the portfolio rather than walking through eleven previews.
+    url.searchParams.set(entry, id)
+    // One history entry per visit, so Back skips intermediate selections.
     if (replaceCurrent) window.history.replaceState(window.history.state, "", url)
-    else pushPortfolioUrl(url, "project")
-    window.dispatchEvent(new Event(projectUrlEvent))
-  }, [])
+    else pushPortfolioUrl(url, entry)
+    window.dispatchEvent(new Event(portfolioUrlEvent))
+  }, [entry])
 
-  const clearProject = useCallback(() => {
+  const clearItem = useCallback(() => {
     const url = new URL(window.location.href)
-    url.searchParams.delete("project")
-    // Pop entries created by this portfolio, but close direct bookmarks in
-    // place so an external previous entry cannot take the visitor off-site.
-    closePortfolioUrl(url, "project")
-    window.dispatchEvent(new Event(projectUrlEvent))
-  }, [])
+    url.searchParams.delete(entry)
+    // Pop entries created here, but close direct bookmarks in place.
+    closePortfolioUrl(url, entry)
+    window.dispatchEvent(new Event(portfolioUrlEvent))
+  }, [entry])
 
+  return { itemId, selectItem, clearItem }
+}
+
+export function useProjectUrl() {
+  const { itemId: projectId, selectItem: selectProject, clearItem: clearProject } = usePortfolioItemUrl("project")
   return { projectId, selectProject, clearProject }
 }

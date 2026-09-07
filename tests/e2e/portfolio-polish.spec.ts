@@ -3531,7 +3531,7 @@ test("crops and zooms the Protector artwork on mobile", async ({ page }) => {
   const scale = await protectorMedia.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).a)
 
   await expect(protectorMedia).toHaveCSS("object-fit", "cover")
-  await expect(protectorMedia).toHaveCSS("object-position", "50% 50%")
+  await expect(protectorMedia).toHaveCSS("object-position", "21% 14%")
   expect(scale).toBeGreaterThan(1)
 })
 

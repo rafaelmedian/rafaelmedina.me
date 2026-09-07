@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ChevronDown, ChevronUp, X } from "lucide-react"
+import { ChevronRight, ChevronLeft, X } from "lucide-react"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
@@ -536,7 +536,7 @@ export function PreviewGalleryDialog({
                         onClick={() => moveBy(-1)}
                         disabled={cards.length <= 1}
                       >
-                        <ChevronUp aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                        <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
                       </button>
 
                       <button
@@ -547,7 +547,7 @@ export function PreviewGalleryDialog({
                         onClick={() => moveBy(1)}
                         disabled={cards.length <= 1}
                       >
-                        <ChevronDown aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                        <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
                       </button>
 
                       <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
@@ -663,7 +663,7 @@ export function PreviewGalleryDialog({
                   onClick={() => moveBy(-1)}
                   disabled={cards.length <= 1}
                 >
-                  <ChevronUp aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
                 </button>
 
                 <button
@@ -674,7 +674,7 @@ export function PreviewGalleryDialog({
                   onClick={() => moveBy(1)}
                   disabled={cards.length <= 1}
                 >
-                  <ChevronDown aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
                 </button>
               </div>
             </Dialog.Popup>
