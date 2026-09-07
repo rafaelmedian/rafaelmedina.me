@@ -5,6 +5,7 @@ import { linkedinHoverMedia, xProfilePreview, type SiteLinks } from "../data/por
 import { ContactActionRow } from "./ContactActionRow"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 import { PersonalPhotos } from "./PersonalPhotos"
+import { WritingsFolder } from "./WritingsFolder"
 import { QuoteCard } from "./QuoteCard"
 import { portfolioQuotes } from "../data/quotes"
 import { sampleQuotes } from "../data/quoteExamples"
@@ -250,7 +251,7 @@ const NON_TEXT_ENTRIES = [
     hex: "#e5352b",
     kind: "text",
     name: "Hint",
-    note: "The Handlee avatar hint — display-sized, so 3:1 is the floor.",
+    note: "The Handlee avatar hint. Display-sized text and non-text icons use a 3:1 floor.",
   },
 ] satisfies ReadonlyArray<{ hex?: string; token?: string; kind: ContrastKind; name: string; note: string }>
 
@@ -285,7 +286,7 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-lg",
     sample: "Ten years prototyping in code.",
-    where: "About ledes, short quotes, and standalone-page headings — the largest text on the site",
+    where: "About ledes, short quotes, standalone-page headings, writing entry titles, and article prose at every viewport. Editorial writing headings have a scoped 24–40px exception.",
     style: { fontSize: "var(--text-lg)", lineHeight: 1.5, letterSpacing: "-0.015rem", fontWeight: 600 },
   },
 ]
@@ -999,7 +1000,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   This ramp used to carry twelve distinct sizes, half of them a fraction of a pixel from a neighbour —{" "}
                   <code>0.82rem</code> beside <code>0.8125rem</code>, <code>0.9rem</code> beside <code>0.875rem</code>.
                   That is noise, not a scale. Use a token; if a new element will not fit one of the four, change the
-                  element.
+                  element. Long-form writing headings are the documented exception: 24–40px editorial titles,
+                  scoped to the writings archive and reader rather than added to the UI scale.
                 </p>
               </div>
               <div
@@ -1011,7 +1013,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   16px and up take <code>-0.005rem</code>; 14px takes <code>-0.00563rem</code>; 12px takes none.
                   Line-height is not part of the token — it is set per role: <code>1</code> for a pill label whose box
                   must optically centre, <code>1.25–1.35</code> for dense rows, <code>1.5–1.6</code> for lists, and{" "}
-                  <code>1.7</code> for prose.
+                  <code>1.7</code> for prose. Writing titles use <code>-0.025em</code> tracking;
+                  section headings and archive titles use <code>-0.015rem</code>. The writings dialog explicitly enables font kerning.
                 </p>
               </div>
             </div>
@@ -1209,6 +1212,59 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years breadcrumbs reader images 200ms 160ms 360ms --mosaic-card-surface --radius-lg --shadow-overlay")}>
+              <p className="ds-subhead">Writings folder</p>
+              <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder /></div>
+              <p className="ds-caption">
+                A tile on --mosaic-card-surface with 24px corners and one label, “Writings &amp; notes”.
+                The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
+                with 8px corners and 14px type scaled to one third. Papers fan over 360ms with smooth easing.
+                The list and reader share one modal up to 52rem wide and the viewport height minus 3rem, with 1.5rem desktop viewport
+                vertical margins and room for the navigation rail, white, overlay elevation, and 24px corners. Selecting a note preserves the modal dimensions.
+                The list contains only titles grouped by publication or archive year, newest first; eight writings are visible, with seven in 2026 and one in 2025.
+                Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s title rows.
+                The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
+                Breadcrumbs contain only Notes and the selected year, and return to the list with its scroll and focus restored.
+                There is no search, document count, author byline, or subtitle. Notes and the year both use 24px type in the top bar,
+                aligned with the archive titles in the same 48rem column and shared side gutters when the list is open.
+                Toolbar top padding matches the column inset from the modal edge: up to 56px on desktop and 20px plus the safe area on mobile.
+                Notes stays aligned at the left edge in both the archive and reader; its breadcrumb returns to the list.
+                Opening a note reveals the year breadcrumb, which fades over 160ms and translates from -8px over 200ms with smooth easing.
+                Previous/next controls reuse the project gallery’s 44px round buttons, border, shadow and press state.
+                Previous/next controls sit outside the desktop reader and cycle through notes in archive order, resetting scroll.
+                An expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, retaining 1.5rem desktop margins and 24px corners,
+                keeps the reading column centered with 1.5rem top padding plus the safe area, and brings the rail inside the right edge.
+                Modal width, column width, toolbar padding, and rail position transition together with --ease-smooth: 360ms to expand and 200ms to restore.
+                Rapid toggles reverse from the current position; reduced motion makes resizing immediate. Toggling preserves the selected note and scroll;
+                closing restores the default size. On mobile, the modal retains its 0.5rem margins and safe-area clearance, and expand and navigation controls share the bottom bar.
+                The desktop header has no close icon; Escape and outside click dismiss it. On mobile, navigation and close sit in a bottom bar.
+                List and reader occupy overlapping, independently scrolling layers with stable scrollbar gutters.
+                Forward navigation sends the list left and brings the reader from 48px right over 360ms; back reverses
+                that direction over 200ms. Opacity uses 200ms standard easing, transforms use smooth easing, and blur is zero.
+                Inactive panels are inert and hidden from assistive technology. Both remain mounted to preserve the
+                return animation and archive scroll. Rapid reversals retarget the same CSS transitions without timers.
+                Personal essays are text-only; project writings reuse existing portfolio illustrations as covers or within their sections.
+                The date sits above the title in month, day, year format; sample articles use illustrative dates.
+                Titles use clamp(2rem, 3vw, 2.5rem), 600 weight, 1.2 line height and -0.025em tracking,
+                a scoped editorial exception to the four-step UI scale. Prose stays 18px on desktop and mobile,
+                with 1.7 line height, -0.005rem tracking, and a 60ch maximum paragraph measure aligned to the left edge.
+                Paragraphs are separated by 24px. Section headings are 24px, 600 weight, with 1.35 line height,
+                -0.015rem tracking, balanced wrapping, and a 36ch maximum measure; sections begin after 48px.
+                List entries use 18px, 1.5 line height, -0.015rem tracking, and pretty wrapping. Dates use 14px,
+                1.5 line height, and -0.00563rem tracking. Font kerning is enabled throughout the dialog.
+                Inline images retain their intrinsic
+                aspect ratio, fill the reading column, load lazily, and use 16px corners. Optional image captions are 14px.
+                The reading column is 48rem wide including its side padding. Prose uses #545454; secondary text uses --muted.
+                Archive and reader begin 24px below the toolbar and end with 48px of breathing room.
+                More articles is separated from the article by a 1px black divider at 8% opacity, with 48px above the line and 32px below.
+                Rows have 12px vertical padding, year headings sit 8px above their entries, and groups are separated by 48px on desktop or 32px on mobile.
+                Reader headers have a 32px bottom margin. Desktop side padding is 24px; mobile side padding is 20px.
+                Open takes 200ms and close 160ms at scale 0.96 with smooth easing. Reduced motion removes transitions
+                and the paper fan. Control hit areas are at least 44px; the dialog traps focus, closes on Escape or outside click,
+                and returns focus to the folder. Notes receives focus on open; opening an article focuses its heading,
+                and returning through the breadcrumb restores focus to the selected row. Reduced motion disables the panel and breadcrumb transitions.
+              </p>
+            </div>
             <div className="ds-section-heading">
               <h2>Components</h2>
               <p>
@@ -1220,8 +1276,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-block" data-ds-terms={terms("quote blockquote attribution avatars --radius-lg --text-lg --text-md --text-sm 340px")}>
               <p className="ds-subhead">Quote slider</p>
               <p>
-                The slider replaces the dark-mode tile at the start of project row two and takes one
-                column beside Protector. Between 700px and 899px, that row grows to 340px to fit the quote;
+                The slider replaces the dark-mode tile at the start of project row two and takes a 1.25-unit
+                column beside a 1.75-unit Protector, so the row still totals four units with the writings tile. Between 700px and 899px, that row grows to 340px to fit the quote;
                 from 900px it shares the usual 420px row height. The card uses the existing #f2f2f2 chip surface, an 8%
                 black hairline, and --radius-lg corners. Quotes up to 80 characters (including spaces)
                 use --text-lg (18px); longer quotes use --text-md (16px). Both use 1.5 line height with a

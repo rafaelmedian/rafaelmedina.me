@@ -1039,19 +1039,19 @@
   will-change: auto;
 }
 
-/* Cropped tiles show a zoomed corner of the shot rather than the whole frame.
+/* Cropped tiles focus on the first row of phones, with the next row peeking in.
    The gallery reads the same two values, so opening the card keeps you looking
    at what you clicked instead of swapping in a differently framed image. */
 .mosaic-row-card-preview-protector,
 .preview-gallery-popup[data-preview-crop="true"] {
-  --preview-crop-scale: 1.18;
-  --preview-crop-position: left top;
+  --preview-crop-scale: 1.38;
+  --preview-crop-position: 21% 14%;
 }
 
 .mosaic-row-card-preview-protector .mosaic-row-media {
   object-position: var(--preview-crop-position);
   transform: scale(var(--preview-crop-scale));
-  transform-origin: left top;
+  transform-origin: var(--preview-crop-position);
 }
 
 .mosaic-row-item-fit-contain .mosaic-row-card {
@@ -1175,8 +1175,8 @@
     height: 100%;
     padding: 0;
     object-fit: cover;
-    object-position: center;
+    object-position: var(--preview-crop-position);
     transform: scale(var(--preview-crop-scale));
-    transform-origin: center;
+    transform-origin: var(--preview-crop-position);
   }
 }

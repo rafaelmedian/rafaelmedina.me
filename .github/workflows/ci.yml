@@ -21,6 +21,8 @@ jobs:
 
       - run: npm run lint
 
+      - run: npm run likes:check
+
       - run: npm run build
 
       - name: Install Playwright browsers

@@ -327,8 +327,13 @@ test("gives the page-end content a small upward nudge and settles without changi
   const nudge = await content.evaluate(async (element) => {
     const scrollBefore = window.scrollY
     const topBefore = element.getBoundingClientRect().top
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    await new Promise((resolve) => window.setTimeout(resolve, 80))
+    // Keep the gesture alive the way a trackpad does. A single wheel event
+    // releases after 90ms, and a starved frame lets that release reset the pull
+    // before it ever paints, leaving the nudge at zero on a loaded runner.
+    for (let pulls = 0; pulls < 6; pulls += 1) {
+      window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+      await new Promise((resolve) => window.setTimeout(resolve, 40))
+    }
     return {
       travel: topBefore - element.getBoundingClientRect().top,
       scrollBefore,
@@ -3583,7 +3588,7 @@ test("crops and zooms the Protector artwork on mobile", async ({ page }) => {
   const scale = await protectorMedia.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).a)
 
   await expect(protectorMedia).toHaveCSS("object-fit", "cover")
-  await expect(protectorMedia).toHaveCSS("object-position", "50% 50%")
+  await expect(protectorMedia).toHaveCSS("object-position", "21% 14%")
   expect(scale).toBeGreaterThan(1)
 })
 

@@ -340,7 +340,7 @@
   object-fit: cover;
   object-position: var(--preview-crop-position);
   transform: scale(var(--preview-crop-scale));
-  transform-origin: left top;
+  transform-origin: var(--preview-crop-position);
 }
 
 .preview-gallery-content {
@@ -637,7 +637,7 @@
   }
 
   /* The compact gallery still shows the full composition even though the
-     feed tile now uses the tighter, centered crop requested for mobile. */
+     feed tile focuses on the first row of phones. */
   .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
     aspect-ratio: auto;
     max-height: none;

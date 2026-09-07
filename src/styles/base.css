@@ -76,15 +76,16 @@
   --shadow-overlay:
     0 1px 2px rgb(16 16 20 / 0.06),
     0 12px 32px rgb(16 16 20 / 0.16);
-  /* Type scale. Four steps, and the whole site is built from them -- see
+  /* UI type scale. Four steps cover interface text -- see
      /design-system. The ramp used to carry twelve distinct sizes, half of them
      sitting a fraction of a pixel from a neighbour (0.82 next to 0.8125, 0.9
      next to 0.875), which is noise rather than a scale. If a new element does
-     not fit one of these four, change the element, not the scale. */
+     not fit one of these four, change the element, not the scale.
+     Long-form writing titles have a scoped 24–40px editorial exception. */
   --text-xs: 0.75rem; /* 12px -- map attribution, count pills, avatar initials */
   --text-sm: 0.875rem; /* 14px -- pill labels, body copy, detail rows */
   --text-md: 1rem; /* 16px -- card titles, prose, hero name */
-  --text-lg: 1.125rem; /* 18px -- the about lede, the largest text on the site */
+  --text-lg: 1.125rem; /* 18px -- about ledes, writing titles and reading prose at every viewport */
   /* Radius. Four steps. Anything nested is derived from one of them by the
      concentric rule (outer = inner + the padding between them) rather than
      becoming a fifth value -- that is why the hover-card media uses a

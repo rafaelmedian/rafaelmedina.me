@@ -14,6 +14,7 @@ import {
 import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
+import { WritingsFolder } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { QuoteCard } from "./QuoteCard"
@@ -658,6 +659,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
+  const [writingsOpen, setWritingsOpen] = useState(false)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
   // Reduced motion suppresses animationend, so retire the one-shot intro
@@ -694,7 +696,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, items }
+      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, items }
     })
   }, [cards])
 
@@ -749,7 +751,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={isReturningToTop || activeWorkPreviewIndex !== null}
+          pausePlayback={isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
         />
       )
     }
@@ -1015,7 +1017,13 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           {row.quote ? (
                             <div
                               className="mosaic-row-item mosaic-row-quote"
-                              style={{ "--work-intro-row": rowIndex, "--work-intro-col": 0 } as CSSProperties}
+                              style={
+                                {
+                                  "--row-span": row.quoteSpan ?? 1,
+                                  "--work-intro-row": rowIndex,
+                                  "--work-intro-col": 0,
+                                } as CSSProperties
+                              }
                             >
                               <QuoteCard quotes={portfolioQuotes} />
                             </div>
@@ -1090,6 +1098,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                               </div>
                             )
                           })}
+                          {row.id === "row-2" ? (
+                            <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) } as CSSProperties}>
+                              <WritingsFolder onOpenChange={setWritingsOpen} />
+                            </div>
+                          ) : null}
                         </div>
                       )
                     })}

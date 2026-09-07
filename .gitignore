@@ -38,3 +38,6 @@ playwright-report
 
 # Temporary ux-review triage reports — never commit
 .claude-review/
+
+# Local Cloudflare database and build state
+.wrangler

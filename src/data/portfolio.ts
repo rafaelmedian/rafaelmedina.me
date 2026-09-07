@@ -73,6 +73,8 @@ export type HomeRow = {
   items: HomeRowItem[]
   /** Place the quote slider before the project tiles in this row. */
   quote?: boolean
+  /** Flex span for that quote slider, in the same units as `HomeRowItem.span`. */
+  quoteSpan?: number
 }
 
 const homeTileRowHeight = "clamp(180px, 16vw, 260px)"
@@ -91,8 +93,11 @@ export const homeRows: HomeRow[] = [
     id: "row-2",
     height: homeTileRowHeight,
     quote: true,
+    // Widens the quote at Protector's expense; the writings tile keeps its
+    // 1-unit column since the row still totals 4.
+    quoteSpan: 1.25,
     items: [
-      { cardId: "preview-protector", span: 2 },
+      { cardId: "preview-protector", span: 1.75 },
     ],
   },
   {
