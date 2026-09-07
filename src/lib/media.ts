@@ -17,7 +17,13 @@ const previewVariantWidths = [480, 960]
 // The webp previews are one-offs, so their resized siblings are listed
 // explicitly instead of pattern-matched. Regenerate with
 // scripts/generate-preview-variants.mjs when one of these sources changes.
-const webpPreviewVariantSources = new Set(["/Projects/protector.webp", "/Projects/popparazi_v1.webp"])
+const webpPreviewVariantSources = new Set([
+  "/Projects/protector.webp",
+  "/Projects/popparazi_v1.webp",
+  "/Projects/dealership-lead-hub.webp",
+  "/Projects/shared-family-stories.webp",
+  "/Projects/matcha-rewards.webp",
+])
 const hasPreviewVariants = (source: string) =>
   /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)
 

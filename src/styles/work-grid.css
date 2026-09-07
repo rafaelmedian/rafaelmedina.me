@@ -460,9 +460,15 @@
   .mosaic-takeover-runway {
     --takeover-row-height: clamp(180px, 16vw, 260px);
     --takeover-breathing-room: clamp(12rem, 30vh, 18rem);
+    /* One term per row in `homeRows`, plus a `--row-gap` between each pair.
+       Adding or removing a row means updating the count here. The `max` covers
+       the quote row: `.mosaic-quote` carries a 340px floor, which is taller
+       than `--takeover-row-height` between 700px and 900px. */
+    --takeover-row-count: 5;
     --takeover-gallery-height: calc(
-      var(--takeover-row-height) + var(--takeover-row-height) + var(--takeover-row-height) +
-        max(var(--takeover-row-height), 340px) + 3rem + var(--takeover-breathing-room)
+      var(--takeover-row-height) * (var(--takeover-row-count) - 1) +
+        max(var(--takeover-row-height), 340px) +
+        1rem * (var(--takeover-row-count) - 1) + var(--takeover-breathing-room)
     );
 
     position: relative;
@@ -1066,6 +1072,30 @@
   height: auto;
   max-height: var(--row-media-max-height, 100%);
   object-fit: contain;
+}
+
+/* The phone mockup's alpha box is already tight around the devices, and its
+   composition runs into the bottom corners, so the mat every other contained
+   tile gets reads here as slack rather than as framing -- the phones ended up
+   floating small in the middle of the card.
+
+   `cover` is the wrong correction: the artwork is wider than the tile, so
+   filling it by height shaves the outer edge off both phones. Instead the art
+   keeps its whole width and gives up the mat, and the slack it cannot avoid
+   collects above the phones -- which is where the composition already leaves
+   its empty corners. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories {
+  padding: 0;
+  place-items: end center;
+}
+
+/* `width: auto` leaves the art at its density-corrected intrinsic width, which
+   `previewSizes` pins to the 446px slot -- on the wide layout that is narrower
+   than the card and the mat comes back. Take the full width instead; the
+   inherited `max-height` still stops the art before it outgrows a card that is
+   ever narrower than the artwork. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
+  width: 100%;
 }
 
 @media (max-width: 699.98px) {

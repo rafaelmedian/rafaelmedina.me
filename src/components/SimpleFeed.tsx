@@ -696,7 +696,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, items }
+      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, writings: row.writings, items }
     })
   }, [cards])
 
@@ -1098,7 +1098,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                               </div>
                             )
                           })}
-                          {row.id === "row-2" ? (
+                          {row.writings ? (
                             <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) } as CSSProperties}>
                               <WritingsFolder onOpenChange={setWritingsOpen} />
                             </div>

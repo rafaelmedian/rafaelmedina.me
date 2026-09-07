@@ -239,8 +239,9 @@
    cascades read as one undifferentiated wash. The 520ms base now puts the first
    card after every hero item is in flight and the first four have landed, so
    the mosaic answers the hero instead of arriving with it. The steps are
-   tightened to pay for the later start -- the last card still begins under
-   800ms. */
+   tightened to pay for the later start -- across five rows the last card still
+   begins under 900ms (520ms + 4 x 70ms + 2 x 32ms = 864ms). A sixth row would
+   push the tail past that; retune the row step rather than let it run. */
 /* ------------------------------------------------------- first-load intro --- */
 
 .mosaic-work-intro {

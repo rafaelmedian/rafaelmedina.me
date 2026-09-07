@@ -75,6 +75,8 @@ export type HomeRow = {
   quote?: boolean
   /** Flex span for that quote slider, in the same units as `HomeRowItem.span`. */
   quoteSpan?: number
+  /** Close this row with the writings folder tile, at a 1-unit span. */
+  writings?: boolean
 }
 
 const homeTileRowHeight = "clamp(180px, 16vw, 260px)"
@@ -89,32 +91,69 @@ export const homeRows: HomeRow[] = [
       { cardId: "preview-popparazi-v1", span: 1, fit: "contain", mediaMaxHeight: "84%" },
     ],
   },
+  // The three newest projects are spread through the grid rather than parked in
+  // a block at the end, so the Matcha run is broken up on the way down.
+  //
+  // Where they can go is tighter than it looks. All three want a span-1 slot in
+  // a three-unit row (~509px against a 420px row): the dealership shot and the
+  // phone mockup are matted, so a wider slot only grows the mat, and the
+  // Rewards composite is a 1.10 frame that a span-2 slot would crop by a
+  // quarter of its height. The Matcha 4:3 shots have the same requirement from
+  // the other side -- at span 1 in a four-unit row `cover` eats a third of
+  // their width. That leaves three-unit rows as the only home for most of the
+  // cards, so the three newest take one row each on the way down: Rewards in
+  // row 2, the dealership hub in row 4, the phone mockup in row 5. Row 1 keeps
+  // its pair of clips: index.html preloads their posters, and the first is the
+  // LCP element.
   {
     id: "row-2",
     height: homeTileRowHeight,
+    // The writings tile is this row's third unit, so the two projects keep the
+    // ~509px slot the note above asks for.
+    writings: true,
+    // `contain` is explicit: the Rewards composite's ratio falls inside the
+    // band where `defaultFitForCard` would otherwise pick `cover`, and it
+    // cannot afford one -- it holds two banners whose headlines run the full
+    // width of each.
+    items: [
+      { cardId: "preview-shot-23", span: 1 },
+      { cardId: "preview-matcha-rewards", span: 1, fit: "contain" },
+    ],
+  },
+  {
+    id: "row-3",
+    height: homeTileRowHeight,
     quote: true,
-    // Widens the quote at Protector's expense; the writings tile keeps its
-    // 1-unit column since the row still totals 4.
+    // Widens the quote at Protector's expense. The span was tuned when the
+    // writings tile shared this row and it totalled 4; the tile now closes row
+    // 2, so this is a 3-unit row and both tiles sit wider than that tuning
+    // assumed -- the quote's blockquote is capped at 21rem, so its extra width
+    // lands in side padding.
     quoteSpan: 1.25,
     items: [
       { cardId: "preview-protector", span: 1.75 },
     ],
   },
   {
-    id: "row-3",
+    id: "row-4",
     height: homeTileRowHeight,
+    // `contain` is explicit for the same reason as the Rewards composite in
+    // row 2: the dealership shot is a browser frame, so `cover` would trim its
+    // chrome off the edge.
     items: [
       { cardId: "preview-shot-21", span: 1 },
       { cardId: "preview-shot-1", span: 1 },
-      { cardId: "preview-shot-19", span: 1 },
+      { cardId: "preview-dealership-lead-hub", span: 1, fit: "contain" },
     ],
   },
   {
-    id: "row-4",
+    id: "row-5",
     height: homeTileRowHeight,
+    // The phone mockup drops its mat and sits on the bottom edge; see
+    // `.mosaic-row-card-preview-family-stories` in work-grid.css.
     items: [
       { cardId: "preview-shot-14", span: 1 },
-      { cardId: "preview-shot-23", span: 1 },
+      { cardId: "preview-family-stories", span: 1, fit: "contain" },
       { cardId: "preview-shot-20", span: 1 },
     ],
   },
@@ -391,5 +430,66 @@ export const portfolioCards: PortfolioCard[] = [
     previewPoster: "/Projects/shot-small-20-poster.webp",
     ...matchaMeta,
     team: [collaborators.simon, collaborators.jakub],
+  },
+  {
+    id: "preview-dealership-lead-hub",
+    slug: "dealership-lead-hub",
+    category: "Preview",
+    title: "Dealership lead hub",
+    summary: "",
+    detail:
+      "A workspace for dealership staff to find sales and service opportunities inside their existing customer base. The hub pairs outcome counters for recent outreach and retention rates for signed and non-signed customers with a filtered customer list that can be sent to the dealer app in bulk.",
+    role: "I designed the hub layout, its overview metrics, and the filtering and bulk-send flow for leads.",
+    outcome:
+      "Staff can read how recent outreach landed and send a filtered batch of customers without leaving the page.",
+    image: "/Projects/dealership-lead-hub.webp",
+    previewWidth: 1600,
+    previewHeight: 1200,
+    ctaHref: "#",
+    product: "Dealer retention platform",
+    industry: "Automotive Retail",
+    previewAspectRatio: 4 / 3,
+  },
+  {
+    id: "preview-family-stories",
+    slug: "shared-family-stories",
+    category: "Preview",
+    title: "Shared family stories",
+    summary: "",
+    detail:
+      "A private space where a family keeps its memories together. Stories are grouped by the period they belong to, each one holding a strip of photos and clips, and opening a moment shows when it happened alongside the comments and likes it collected.",
+    role: "I designed the story feed, the moment detail view, and the commenting patterns.",
+    outcome:
+      "Families can browse their memories by period and keep each conversation attached to the moment it belongs to.",
+    image: "/Projects/shared-family-stories.webp",
+    previewWidth: 1600,
+    previewHeight: 1214,
+    ctaHref: "#",
+    product: "Family memory app",
+    industry: "Consumer Social",
+    previewAspectRatio: 1600 / 1214,
+  },
+  {
+    id: "preview-matcha-rewards",
+    slug: "matcha-rewards",
+    category: "Preview",
+    title: "Matcha Rewards",
+    summary: "",
+    detail:
+      "Campaign artwork for Matcha's weekly rewards program. The key visual sets the live leaderboard — wallets, cash prizes, trades, referrals, and points — on an angle behind the headline, and the same construction carries the weekly countdown posts as well as the link previews.",
+    role: "I designed the campaign key visual and the variants it ships in.",
+    outcome:
+      "The rewards program launched with one visual system shared by its social posts and link previews.",
+    // Both deliverables in one frame — the green link preview above, the purple
+    // countdown post below — composed as a single asset rather than two tiles
+    // so one campaign reads as one project. Each banner sits whole inside the
+    // canvas: their headlines run edge to edge, so anything that trims a side
+    // cuts a word. The 1540x1400 frame is sized to the tile's own ratio for the
+    // same reason, leaving `contain` almost nothing to mat.
+    image: "/Projects/matcha-rewards.webp",
+    previewWidth: 1540,
+    previewHeight: 1400,
+    ...matchaMeta,
+    previewAspectRatio: 1540 / 1400,
   },
 ]

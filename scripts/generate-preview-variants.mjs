@@ -13,6 +13,9 @@ const variantWidths = [480, 960]
 const sources = [
   ["public/Projects/protector.webp", 1200],
   ["public/Projects/popparazi_v1.webp", 630],
+  ["public/Projects/dealership-lead-hub.webp", 1600],
+  ["public/Projects/shared-family-stories.webp", 1600],
+  ["public/Projects/matcha-rewards.webp", 1540],
 ]
 
 function resize(input, output, width) {
