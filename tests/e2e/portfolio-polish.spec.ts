@@ -234,6 +234,17 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0.12s" })
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
+  // Hold the release fade as soon as it starts so the opacity below is sampled
+  // at a known point in it. Sleeping 700ms instead measured from whenever the
+  // assertions in between happened to finish, which on CI is late enough that
+  // the fade has already dropped past the threshold.
+  await edge.evaluate((element) => {
+    const fade = element
+      .getAnimations()
+      .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")
+    if (!fade) throw new Error("The release fade did not start")
+    fade.pause()
+  })
   await expect(edge).toHaveCSS("transition-duration", "1.26s")
   await expect(edge).toHaveCSS("transition-timing-function", "ease-in-out")
   const curtains = edge.locator(".elastic-scroll-edge-curtain")
@@ -244,11 +255,15 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   }))
   expect(sections.map((section) => section.delay)).toEqual([0, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24])
   expect(sections.every((section) => section.height >= 40 && section.height <= 56)).toBe(true)
-  const lingeringOpacity = await edge.evaluate(async (element) => {
-    await new Promise((resolve) => window.setTimeout(resolve, 700))
+  const lingeringOpacity = await edge.evaluate((element) => {
+    const fade = element
+      .getAnimations()
+      .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")!
+    fade.currentTime = 700
     return Number.parseFloat(getComputedStyle(element).opacity)
   })
   expect(lingeringOpacity).toBeGreaterThan(0.2)
+  await edge.evaluate((element) => element.getAnimations().forEach((animation) => animation.play()))
   await expect(edge).toHaveCSS("opacity", "0")
   await expect(curtains.first()).toHaveCSS("animation-name", "none")
 })

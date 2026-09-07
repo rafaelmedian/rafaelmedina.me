@@ -111,11 +111,15 @@ test("catching an early slide transition follows the pointer without a jump", as
   const y = box.y + box.height * 0.25
   await page.mouse.move(x, y)
   await page.mouse.down()
-  const before = await slide.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).m41)
+  // The caught transition keeps driving the transform until the drag commits and
+  // cancels it. Sampling either side of the move before that commit reads the
+  // still-paused transition twice and sees no movement at all.
+  await expect(card).toHaveAttribute("data-dragging", "true")
+  const offset = () => slide.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).m41)
+  const before = await offset()
   await page.mouse.move(x + 8, y)
-  const after = await slide.evaluate((node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).m41)
+  await expect.poll(async () => (await offset()) - before).toBeCloseTo(8, 0)
   await page.mouse.up()
-  expect(after - before).toBeCloseTo(8, 0)
 })
 
 test("a vertical touch scroll leaves the selected quote unchanged", async ({ page, browserName }) => {
