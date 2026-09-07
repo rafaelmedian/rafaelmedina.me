@@ -18,7 +18,7 @@ type PreviewGalleryDialogProps = {
   getOriginRect?: (index: number) => DOMRect | null
 }
 
-type PreviewSwitchDirection = "up" | "down"
+type PreviewSwitchDirection = "prev" | "next"
 type PreviewSwitchPhase = "idle" | "out" | "in"
 
 const previewSwitchExitMs = 190
@@ -208,7 +208,7 @@ export function PreviewGalleryDialog({
   // `open`, so the open animation keys off the node arriving, not off `open`.
   const [originWrapNode, setOriginWrapNode] = useState<HTMLDivElement | null>(null)
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
-  const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("down")
+  const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("next")
   const [isWide, setIsWide] = useState(shouldOpenPreviewWide)
   const safeIndex = useMemo(() => wrapIndex(selectedIndex, cards.length), [cards.length, selectedIndex])
   const activeCard = cards[safeIndex]
@@ -386,7 +386,7 @@ export function PreviewGalleryDialog({
       else playBack()
 
       const nextIndex = wrapIndex(safeIndex + direction, cards.length)
-      const nextDirection = direction < 0 ? "up" : "down"
+      const nextDirection = direction < 0 ? "prev" : "next"
 
       if (prefersReducedMotion) {
         onSelectedIndexChange(nextIndex)

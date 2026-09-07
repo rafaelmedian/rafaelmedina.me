@@ -3089,7 +3089,7 @@ test("opens work history directly from its deep link", async ({ page }) => {
 
 
 
-test("keeps desktop gallery navigation fixed near the modal top", async ({ page }) => {
+test("levels desktop gallery navigation with the middle of the artwork", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
@@ -3109,30 +3109,108 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   await expect(card).toHaveCSS("border-bottom-left-radius", "24px")
   await expect(card).toHaveCSS("border-bottom-right-radius", "24px")
 
-  const initialDialogBox = await dialog.boundingBox()
-  const initialRailBox = await rail.boundingBox()
-  expect(initialDialogBox).not.toBeNull()
-  expect(initialRailBox).not.toBeNull()
-  expect(initialDialogBox!.y).toBeCloseTo(50, 0)
-  expect(initialRailBox!.x - (initialDialogBox!.x + initialDialogBox!.width)).toBeCloseTo(16, 0)
-  expect(initialRailBox!.y + initialRailBox!.height / 2 - initialDialogBox!.y).toBeCloseTo(128, 0)
+  // One control per side, level with each other and 16px clear of the card.
+  const placement = async () => {
+    const dialogBox = (await dialog.boundingBox())!
+    const previousBox = (await previous.boundingBox())!
+    const nextBox = (await next.boundingBox())!
+    return {
+      dialogTop: dialogBox.y,
+      previousGap: dialogBox.x - (previousBox.x + previousBox.width),
+      nextGap: nextBox.x - (dialogBox.x + dialogBox.width),
+      previousCentre: previousBox.y + previousBox.height / 2 - dialogBox.y,
+      nextCentre: nextBox.y + nextBox.height / 2 - dialogBox.y,
+    }
+  }
+
+  const initial = await placement()
+  expect(initial.dialogTop).toBeCloseTo(50, 0)
+  expect(initial.previousGap).toBeCloseTo(16, 0)
+  expect(initial.nextGap).toBeCloseTo(16, 0)
+
+  // Level with the middle of the image rather than the middle of the dialog:
+  // the card carries on into the title and details below the artwork, so its
+  // own centre sits in the text. Read from the frame so the expectation follows
+  // the popup width and the media's height cap instead of restating them.
+  const dialogBox = (await dialog.boundingBox())!
+  const frameBox = (await dialog.locator(".preview-gallery-media-frame").boundingBox())!
+  const artworkCentre = frameBox.y + frameBox.height / 2 - dialogBox.y
+  expect(Math.abs(initial.previousCentre - artworkCentre)).toBeLessThanOrEqual(2)
+  expect(Math.abs(initial.nextCentre - artworkCentre)).toBeLessThanOrEqual(2)
+
+  // The span between the two controls belongs to the card, not the group.
+  await expect(rail).toHaveCSS("pointer-events", "none")
 
   await next.click()
   await next.click()
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 12")
 
-  const changedDialogBox = await dialog.boundingBox()
-  const changedRailBox = await rail.boundingBox()
-  expect(changedDialogBox).not.toBeNull()
-  expect(changedRailBox).not.toBeNull()
-  expect(changedDialogBox!.y).toBeCloseTo(initialDialogBox!.y, 0)
-  expect(changedRailBox!.x).toBeCloseTo(initialRailBox!.x, 0)
-  expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
+  // A taller or shorter preview must not move them.
+  expect(await placement()).toEqual(initial)
 
   await previous.click()
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 12")
 })
 
+// The rail's affordance is a left and a right chevron, and the card already
+// takes horizontal swipes on touch. A vertical switch contradicted both.
+test("pages previews along the axis its arrows point down", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const card = dialog.locator(".preview-gallery-card")
+  await expect(card).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+
+  // The switch is stepped by a JS timer, so on a busy runner a whole 190ms leg
+  // can pass without a paint. Reading frames races that; the poses do not.
+  // Each phase change is observed as it lands, and the transform it is heading
+  // for is read off the CSS transition's own keyframes -- the same value a
+  // frame would eventually show, available the moment the class flips.
+  const poses = (navSelector: string) =>
+    card.evaluate(async (element, selector) => {
+      const seen: Array<{ phase: string; from: number; to: number; y: number }> = []
+      const observer = new MutationObserver(() => {
+        const phase = [...element.classList].find((name) => name.includes("switch-")) ?? "idle"
+        // Reading computed style here flushes the class change into a transition.
+        const resting = getComputedStyle(element).transform
+        const transition = element
+          .getAnimations()
+          .filter((animation): animation is CSSTransition => animation instanceof CSSTransition && animation.transitionProperty === "transform")
+          .at(-1)
+        const frames = transition?.effect?.getKeyframes() ?? []
+        const from = new DOMMatrixReadOnly(String(frames[0]?.transform ?? resting))
+        const to = new DOMMatrixReadOnly(String(frames.at(-1)?.transform ?? resting))
+        seen.push({ phase, from: from.e, to: to.e, y: Math.max(Math.abs(from.f), Math.abs(to.f)) })
+      })
+      observer.observe(element, { attributes: true, attributeFilter: ["class"] })
+      document.querySelector<HTMLButtonElement>(selector)?.click()
+      await new Promise((resolve) => setTimeout(resolve, 600))
+      observer.disconnect()
+      return seen
+    }, navSelector)
+
+  // 1.4rem of travel each way; assert well inside it. The outgoing pose leaves
+  // in the arrow's direction, the incoming one arrives from the opposite edge
+  // and settles at zero, and nothing moves on Y.
+  const forward = await poses(".preview-gallery-rail .preview-gallery-nav-next")
+  expect(forward.find((pose) => pose.phase.endsWith("out-next"))?.to).toBeLessThan(-8)
+  expect(forward.find((pose) => pose.phase.endsWith("in-next"))?.to).toBeGreaterThan(8)
+  expect(forward.at(-1)).toMatchObject({ phase: "idle", to: 0 })
+  expect(forward.at(-1)!.from).toBeGreaterThan(8)
+  expect(Math.max(...forward.map((pose) => pose.y))).toBeLessThan(0.5)
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 12")
+
+  const back = await poses(".preview-gallery-rail .preview-gallery-nav-prev")
+  expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(8)
+  expect(back.find((pose) => pose.phase.endsWith("in-prev"))?.to).toBeLessThan(-8)
+  expect(back.at(-1)).toMatchObject({ phase: "idle", to: 0 })
+  expect(back.at(-1)!.from).toBeLessThan(-8)
+  expect(Math.max(...back.map((pose) => pose.y))).toBeLessThan(0.5)
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 12")
+})
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -3159,9 +3237,23 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   expect(wideDialogBox?.width).toBeCloseTo(1090, 0)
   expect(wideDialogBox?.y).toBeCloseTo(50, 0)
 
+  // The controls flank the card, so both edges have to clear the viewport --
+  // the shell hides horizontal overflow rather than scrolling to reach them.
   const nextPreviewBox = await dialog.getByRole("button", { name: "Next preview" }).boundingBox()
   expect(nextPreviewBox).not.toBeNull()
   expect(nextPreviewBox!.x + nextPreviewBox!.width).toBeLessThanOrEqual(1320)
+
+  const previousPreviewBox = await dialog.getByRole("button", { name: "Previous preview" }).boundingBox()
+  expect(previousPreviewBox).not.toBeNull()
+  expect(previousPreviewBox!.x).toBeGreaterThanOrEqual(0)
+
+  // 700px is the narrowest viewport that still shows the rail rather than the
+  // in-card toolbar, so it is where the flanking controls are tightest.
+  await page.setViewportSize({ width: 700, height: 1000 })
+  const tightPreviousBox = await dialog.getByRole("button", { name: "Previous preview" }).boundingBox()
+  const tightNextBox = await dialog.getByRole("button", { name: "Next preview" }).boundingBox()
+  expect(tightPreviousBox!.x).toBeGreaterThanOrEqual(0)
+  expect(tightNextBox!.x + tightNextBox!.width).toBeLessThanOrEqual(700)
 
   await page.setViewportSize({ width: 1280, height: 1000 })
   // A project URL now reloads its standalone page. Enter from the feed to

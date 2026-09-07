@@ -1132,7 +1132,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg")}
+                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg previous next rail flank 44px 16px artwork middle 42vh 72vh 383px 780px 50%")}
               >
                 <strong>Nested corners are concentric, and they are derived — not a fifth step.</strong>
                 <p>
@@ -1141,8 +1141,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   and hard-coded: the LinkedIn card's media is <code>calc(var(--radius-md) - 5px)</code>, the preview dialog is{" "}
                   <code>calc(var(--radius-lg) + card-padding)</code> on desktop. That is how 11px, 11.5px, and 10px corners exist
                   without being scale steps — and why they stay correct when a padding changes.
+                  On desktop the 44px previous and next controls flank the card, one <code>16px</code> clear of each
+                  edge and level with the middle of the artwork — the card runs on into the title and details below the
+                  image, so its own centre would sit in the text. That offset is the card padding plus half the artwork
+                  the popup width gives the common preview ratio, under the same cap the media carries
+                  (<code>min(383px, 42vh)</code>, and <code>min(780px, 72vh)</code> in the wide view). It is fixed per
+                  layout rather than measured per preview, so a taller or shorter image never slides the pair out from
+                  under the pointer, and it stops at half the popup so a card taller than the viewport still keeps
+                  paging reachable without scrolling back up. The
+                  shell adds that clearance to its own gutter wherever the pair is shown, since it hides horizontal
+                  overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
-                  insets; its counter and 44px up, down, and close controls stay pinned above the media on a white
+                  insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
                   header at z-index 1.
                 </p>
               </div>
@@ -1549,6 +1559,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   transform share a duration within each direction — if they differ, the card finishes fading while it is
                   still moving and reads as a dropped frame. Where an element unmounts on transition end, the exit has to
                   outlast the fade, not merely match it.
+                </p>
+              </div>
+
+              <div
+                className="ds-rule"
+                data-ds-terms={terms("direction axis preview gallery paging arrows chevron swipe translateX 1.4rem 0.985 190ms")}
+              >
+                <strong>Motion moves along the axis its control points down.</strong>
+                <p>
+                  The preview gallery pages sideways because that is what it offers to page with: a left and a right
+                  chevron on the rail, and a horizontal swipe on touch. The outgoing card leaves{" "}
+                  <code>1.4rem</code> in the direction of travel at <code>scale(0.985)</code> and the incoming one
+                  arrives from the opposite edge, both over the shared <code>190ms</code> switch, so the set reads as a
+                  strip moving past rather than two unrelated fades. This used to translate on Y, which contradicted
+                  both affordances. Reduced motion swaps the preview outright.
                 </p>
               </div>
 

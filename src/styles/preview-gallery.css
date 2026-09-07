@@ -1,5 +1,15 @@
 /* ------------------------------------------------- preview gallery dialog --- */
 
+/* `.preview-gallery-nav` is the shared round control: the writings dialog wears
+   it too, outside any gallery shell. The size lives at the root so the button
+   keeps its 44px wherever it is used — scoped to the shell it silently
+   collapsed to icon width elsewhere. */
+:root {
+  --preview-gallery-nav-size: 44px;
+  --preview-gallery-nav-gap: 16px;
+  --preview-gallery-rail-clearance: calc(var(--preview-gallery-nav-size) + var(--preview-gallery-nav-gap));
+}
+
 .preview-gallery-backdrop {
   position: fixed;
   inset: 0;
@@ -44,6 +54,11 @@
 
 .preview-gallery-shell {
   --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
+  --preview-gallery-gutter: clamp(1rem, 3vw, 2.5rem);
+  /* Lives here rather than on the card because the rail, which is a sibling of
+     the card, measures its own offset from the artwork inside it. The compact
+     override below still sets it on the card itself. */
+  --preview-gallery-card-padding: clamp(1rem, 1.7vw, 1.4rem);
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog);
@@ -55,9 +70,9 @@
   overscroll-behavior: contain;
   padding:
     var(--preview-gallery-fixed-top)
-    max(clamp(1rem, 3vw, 2.5rem), env(safe-area-inset-right))
+    max(var(--preview-gallery-gutter), env(safe-area-inset-right))
     max(1rem, env(safe-area-inset-bottom))
-    max(clamp(1rem, 3vw, 2.5rem), env(safe-area-inset-left));
+    max(var(--preview-gallery-gutter), env(safe-area-inset-left));
   cursor: pointer;
 }
 
@@ -154,7 +169,6 @@
 }
 
 .preview-gallery-card {
-  --preview-gallery-card-padding: clamp(1rem, 1.7vw, 1.4rem);
   --preview-gallery-media-radius: var(--radius-lg);
   --preview-gallery-card-radius: calc(var(--preview-gallery-media-radius) + var(--preview-gallery-card-padding));
   max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
@@ -168,7 +182,9 @@
   color: #171717;
   outline: none;
   opacity: 1;
-  transform: translateY(0) scale(1);
+  /* Matches the axis of the switch poses below so the transition interpolates
+     one transform list rather than falling back to matrix interpolation. */
+  transform: translateX(0) scale(1);
   /* This transition belongs to the between-previews switch below, which is
      stepped by a JS timer — hence the shared duration. */
   transition:
@@ -199,17 +215,31 @@
   will-change: transform;
 }
 
-/* Leaving upward and arriving from above share a pose, as do their mirrors. */
-.preview-gallery-card-switch-out-up,
-.preview-gallery-card-switch-in-down {
+/* Previews page sideways, in the direction the arrow points: the outgoing card
+   leaves that way and the incoming one arrives from the opposite edge, so the
+   set reads as a strip travelling past rather than two unrelated fades.
+   Leaving towards the next preview and arriving from the previous one share a
+   pose, as do their mirrors. */
+.preview-gallery-card-switch-out-next,
+.preview-gallery-card-switch-in-prev {
   opacity: 0;
-  transform: translateY(-1.4rem) scale(0.985);
+  transform: translateX(-1.4rem) scale(0.985);
 }
 
-.preview-gallery-card-switch-out-down,
-.preview-gallery-card-switch-in-up {
+.preview-gallery-card-switch-out-prev,
+.preview-gallery-card-switch-in-next {
   opacity: 0;
-  transform: translateY(1.4rem) scale(0.985);
+  transform: translateX(1.4rem) scale(0.985);
+}
+
+/* The incoming pose is a placement, not a move: it has to be installed without
+   a transition so the card really starts from the far edge. Left to transition,
+   it set off from the outgoing pose towards the far edge and, two frames later,
+   turned round from wherever it had got to -- on a fast machine barely past
+   where it left, so the new preview re-entered from the side the old one
+   exited. The settle to zero is the only leg that animates. */
+.preview-gallery-card[class*="preview-gallery-card-switch-in-"] {
+  transition: none;
 }
 
 /* Keep the entrance/exit blur on a small detail. Filtering the full popup
@@ -372,15 +402,59 @@
   gap: 0.45rem;
 }
 
+/* One control on each side of the card, pointing the way it pages. Stacked on
+   a single edge they read as up and down, which is what the switch used to do;
+   flanking the card they agree with both the chevrons and the horizontal
+   switch.
+
+   They sit level with the middle of the artwork rather than the middle of the
+   popup. The card runs artwork first, then title, description, and details, so
+   its own centre lands in the text; the controls belong to the image they page.
+   The 128px this replaces put them within a chevron's height of the artwork's
+   top edge, which read as pinned to the corner.
+
+   The anchor is fixed per layout instead of measured per preview. Previews
+   differ in height, and a pair of buttons that slides out from under the cursor
+   between clicks is worse than one sitting a little off centre on the two
+   previews whose artwork is not the common ratio.
+
+   `min(..., 50%)` is the short-window case, and it is why this is not simply a
+   larger fixed number: the card is capped at the viewport and scrolls
+   internally, so half the popup is always the middle of what can actually be
+   seen, and paging stays reachable without scrolling back up.
+
+   Spanning the card is the only way one group can hold both edges, so the span
+   between them gives the pointer back to the card underneath. */
 .preview-gallery-rail {
+  --preview-gallery-rail-inset: calc(-1 * var(--preview-gallery-rail-clearance));
+  /* The card's padding plus half the artwork under it. The artwork is the
+     shorter of what the popup width gives the common preview ratio -- 383px at
+     544px wide -- and the cap the media carries, so this follows it down as the
+     window shortens instead of drifting toward the text. */
+  --preview-gallery-rail-anchor: calc(
+    var(--preview-gallery-card-padding) + min(383px, 42vh) / 2
+  );
   position: absolute;
   z-index: 1;
-  top: 128px;
-  left: calc(100% + 16px);
+  top: min(var(--preview-gallery-rail-anchor), 50%);
+  right: var(--preview-gallery-rail-inset);
+  left: var(--preview-gallery-rail-inset);
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+  justify-content: space-between;
   transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Same derivation at the 1090px popup, where the artwork is 780px tall and its
+   cap is the one on `.preview-gallery-media` below. */
+.preview-gallery-popup[data-wide="true"] .preview-gallery-rail {
+  --preview-gallery-rail-anchor: calc(
+    var(--preview-gallery-card-padding) + min(780px, 72vh) / 2
+  );
+}
+
+.preview-gallery-rail .preview-gallery-nav {
+  pointer-events: auto;
 }
 
 .preview-gallery-heading {
@@ -523,10 +597,10 @@
 }
 
 .preview-gallery-nav {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
+  width: var(--preview-gallery-nav-size);
+  height: var(--preview-gallery-nav-size);
+  min-width: var(--preview-gallery-nav-size);
+  min-height: var(--preview-gallery-nav-size);
   border-radius: var(--radius-full);
   border: 1px solid rgb(0 0 0 / 0.08);
   background: rgb(255 255 255 / 0.92);
@@ -660,6 +734,18 @@
     object-fit: contain;
     object-position: center;
     transform: none;
+  }
+}
+
+/* Where the rail shows, the shell owes it a control plus its gap on each side
+   on top of the gutter -- the shell hides horizontal overflow, so a card that
+   fills the viewport would push a control off-screen with no way to reach it.
+   The complement of the query above, which hides the rail for the toolbar. */
+@media (min-width: 700px) and (hover: hover) and (pointer: fine) {
+  .preview-gallery-shell {
+    padding-inline:
+      max(calc(var(--preview-gallery-gutter) + var(--preview-gallery-rail-clearance)), env(safe-area-inset-left))
+      max(calc(var(--preview-gallery-gutter) + var(--preview-gallery-rail-clearance)), env(safe-area-inset-right));
   }
 }
 
