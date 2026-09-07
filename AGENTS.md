@@ -86,9 +86,11 @@ brings it back.
 
 `public/rafael-medina-resume.pdf` is generated, not exported by hand. It used to
 be a Figma export, which is how it drifted into advertising a role I had left and
-an email address the site no longer uses. Edit the content in
+an address the site had already moved off. Edit the content in
 `scripts/build-resume.mjs`, run `node scripts/build-resume.mjs`, and commit the
-regenerated PDF.
+regenerated PDF. The rule is that the PDF matches the site, not that any
+particular address is wrong: whatever `siteLinks.email` says today is what
+belongs on the résumé.
 
 Keep it in step with `src/data/cv.ts` (work history, dates, education) and
 `siteLinks.email` in `src/data/portfolio.ts` (contact address) — a Playwright test

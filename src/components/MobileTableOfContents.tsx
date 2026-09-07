@@ -1,6 +1,22 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react"
 import { ChevronUp, X } from "lucide-react"
 
+const SECTIONS = [
+  { id: "work", number: "01", label: "Work", href: "#work" },
+  { id: "about", number: "02", label: "About", href: "#about-panel" },
+  { id: "history", number: "03", label: "Work history", href: "#about-panel-resume" },
+] as const
+
+type SectionId = (typeof SECTIONS)[number]["id"]
+
+const readDuration = (element: Element, property: string, fallback: number) => {
+  const value = getComputedStyle(element).getPropertyValue(property).trim()
+  if (!value) return fallback
+  const amount = parseFloat(value)
+  if (Number.isNaN(amount)) return fallback
+  return amount * (value.endsWith("ms") ? 1 : 1000)
+}
+
 export function MobileTableOfContents({
   onWork,
   onAbout,
@@ -17,7 +33,12 @@ export function MobileTableOfContents({
   const [compactWidth, setCompactWidth] = useState<number>()
   const [isOpen, setIsOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
-  const [activeSection, setActiveSection] = useState("work")
+  const [activeSection, setActiveSection] = useState<SectionId>("work")
+  // The label the pill is leaving behind, kept alive for one exit beat so the
+  // scroll-driven change reads as a direction rather than a jump cut.
+  const [leaving, setLeaving] = useState<{ id: SectionId; direction: "up" | "down" }>()
+
+  const actions: Record<SectionId, () => void> = { work: onWork, about: onAbout, history: onWorkHistory }
 
   useEffect(() => {
     const updateVisibility = () => {
@@ -103,6 +124,23 @@ export function MobileTableOfContents({
     }
   }, [])
 
+  // The label swaps in the direction the page is travelling: further down the
+  // page sends the old label up and brings the new one in from below.
+  const previousSection = useRef(activeSection)
+  useLayoutEffect(() => {
+    const from = previousSection.current
+    previousSection.current = activeSection
+    const root = rootRef.current
+    if (from === activeSection || !root) return
+    const order = (id: SectionId) => SECTIONS.findIndex((section) => section.id === id)
+    setLeaving({ id: from, direction: order(activeSection) > order(from) ? "up" : "down" })
+    const timer = window.setTimeout(
+      () => setLeaving(undefined),
+      readDuration(root, "--toc-swap-duration", 160),
+    )
+    return () => window.clearTimeout(timer)
+  }, [activeSection])
+
   const navigate = (event: MouseEvent<HTMLAnchorElement>, action: () => void) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
     event.preventDefault()
@@ -110,25 +148,7 @@ export function MobileTableOfContents({
     action()
   }
 
-  const sections = [
-    { id: "work", number: "01", label: "Work", href: "#work", action: onWork },
-    { id: "about", number: "02", label: "About", href: "#about-panel", action: onAbout },
-    { id: "history", number: "03", label: "Work history", href: "#about-panel-resume", action: onWorkHistory },
-  ]
-  // A scroll-driven label swap must not briefly collapse both rows. Width still
-  // eases to the new label; row expansion remains animated when toggling open.
-  useLayoutEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-    root.dataset.swapping = "true"
-    let frame = requestAnimationFrame(() => {
-      frame = requestAnimationFrame(() => { delete root.dataset.swapping })
-    })
-    return () => {
-      cancelAnimationFrame(frame)
-      delete root.dataset.swapping
-    }
-  }, [activeSection])
+  const leavingSection = leaving && SECTIONS.find((section) => section.id === leaving.id)
 
   return (
     <div
@@ -136,6 +156,7 @@ export function MobileTableOfContents({
       className="mosaic-mobile-toc"
       data-open={isOpen}
       data-visible={isVisible}
+      data-swap={leaving?.direction}
       inert={!isVisible}
       aria-hidden={!isVisible}
       style={compactWidth ? { "--toc-compact-width": `${compactWidth}px` } as CSSProperties : undefined}
@@ -145,15 +166,17 @@ export function MobileTableOfContents({
     >
       <nav aria-label="Table of contents" className="mosaic-mobile-toc-surface">
         <ol id={panelId} className="mosaic-mobile-toc-list">
-          {sections.map((section) => {
+          {SECTIONS.map((section, index) => {
             const isCurrent = activeSection === section.id
             const content = (
               <span
                 ref={isCurrent ? triggerContentRef : undefined}
                 className="mosaic-mobile-toc-row-content"
               >
-                <span className="mosaic-mobile-toc-number" aria-hidden="true">{section.number}</span>{" "}
-                <span>{section.label}</span>
+                <span className="mosaic-mobile-toc-label">
+                  <span className="mosaic-mobile-toc-number" aria-hidden="true">{section.number}</span>{" "}
+                  <span>{section.label}</span>
+                </span>
                 {isCurrent && (
                   <span className="mosaic-mobile-toc-icon" aria-hidden="true">
                     <ChevronUp className="mosaic-mobile-toc-chevron" size={16} strokeWidth={1.75} />
@@ -167,37 +190,44 @@ export function MobileTableOfContents({
                 key={section.id}
                 className="mosaic-mobile-toc-slot"
                 data-current={isCurrent}
+                style={{ "--toc-slot": SECTIONS.length - 1 - index } as CSSProperties}
                 inert={!isOpen && !isCurrent}
                 aria-hidden={!isOpen && !isCurrent}
               >
-                <div className="mosaic-mobile-toc-clip">
-                  {isCurrent ? (
-                    <button
-                      ref={triggerRef}
-                      type="button"
-                      className="mosaic-mobile-toc-row mosaic-mobile-toc-trigger"
-                      aria-expanded={isOpen}
-                      aria-controls={panelId}
-                      aria-current="location"
-                      aria-label={`Table of contents: ${section.label}`}
-                      onClick={() => setIsOpen((open) => !open)}
-                    >
-                      {content}
-                    </button>
-                  ) : (
-                    <a
-                      href={section.href}
-                      className="mosaic-mobile-toc-row"
-                      onClick={(event) => navigate(event, section.action)}
-                    >
-                      {content}
-                    </a>
-                  )}
-                </div>
+                {isCurrent ? (
+                  <button
+                    ref={triggerRef}
+                    type="button"
+                    className="mosaic-mobile-toc-row mosaic-mobile-toc-trigger"
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    aria-current="location"
+                    aria-label={`Table of contents: ${section.label}`}
+                    onClick={() => setIsOpen((open) => !open)}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <a
+                    href={section.href}
+                    className="mosaic-mobile-toc-row"
+                    onClick={(event) => navigate(event, actions[section.id])}
+                  >
+                    {content}
+                  </a>
+                )}
               </li>
             )
           })}
         </ol>
+        {leavingSection && !isOpen && (
+          <span className="mosaic-mobile-toc-ghost" aria-hidden="true">
+            <span className="mosaic-mobile-toc-label">
+              <span className="mosaic-mobile-toc-number">{leavingSection.number}</span>{" "}
+              <span>{leavingSection.label}</span>
+            </span>
+          </span>
+        )}
       </nav>
     </div>
   )

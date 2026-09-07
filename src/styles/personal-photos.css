@@ -221,6 +221,13 @@
   padding-inline: var(--photo-gutter);
   pointer-events: auto;
 }
+/* A thumb lands wherever it lands, and the clearance is over a third of a phone
+   screen. Touch pans the whole strip instead; taps that miss a card still
+   dismiss, through the strip's own click handler. */
+@media (pointer: coarse) {
+  .personal-photos-strip { pointer-events: auto; }
+}
+
 .personal-photos-strip:active { cursor: grabbing; }
 .personal-photos-strip::-webkit-scrollbar { display: none; }
 /* The modal is the keyboard browsing context; don't frame the entire scroller. */

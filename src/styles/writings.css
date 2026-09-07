@@ -14,7 +14,7 @@
   min-width: 0;
   min-height: 100%;
   padding: 2.5rem 1rem;
-  border: 0;
+  border: 1px solid rgb(0 0 0 / 0.08);
   border-radius: var(--radius-lg);
   background: var(--mosaic-card-surface);
   color: var(--muted);
@@ -52,6 +52,18 @@
   .writings-tile:hover .writings-paper:nth-of-type(3) { transform: translate(4px, -8px) rotate(18deg); }
 }
 .writings-tile:focus-visible .writings-paper { translate: 0 -8px; }
+/* Between 700px and 900px this tile is a 180px-tall row unit, not the 420px one
+   the folder was drawn for. The folder's own box is flex and shrank to 66px,
+   but everything inside it is absolutely positioned at fixed offsets, so the
+   artwork carried on at full size straight over the label underneath -- the
+   papers clipped at the card's top edge and "Writings & notes" disappeared
+   behind the folder. `zoom` is the one scale that takes the layout box with it,
+   so the label gets its room back rather than being covered by a `transform`. */
+@media (min-width: 700px) and (max-width: 899.98px) {
+  .writings-tile { padding: 1rem; }
+  .writings-folder { zoom: 0.7; }
+}
+
 .writings-backdrop { position: fixed; inset: 0; z-index: var(--z-dialog-backdrop); background: rgb(18 18 18 / 0.46); transition: opacity var(--duration-base) var(--ease-standard); }
 .writings-backdrop[data-starting-style], .writings-backdrop[data-ending-style] { opacity: 0; }
 .writings-backdrop[data-ending-style] { transition-duration: var(--duration-quick); }
@@ -87,6 +99,25 @@
 }
 .writings-dialog.t-modal.is-closing {
   transition-duration: var(--modal-close-dur), var(--modal-close-dur), var(--writings-resize-dur);
+}
+/* Page the whole reader with the same mirrored poses as project previews.
+   The incoming pose is installed without a transition while the note swaps. */
+.writings-dialog.t-modal.is-open[data-switch-phase]:not([data-switch-phase="idle"]) {
+  transition-duration: var(--writings-switch-duration), var(--writings-switch-duration), var(--writings-resize-dur);
+  transition-timing-function: var(--ease-standard), ease-out, var(--ease-smooth);
+}
+.writings-dialog.t-modal.is-open[data-switch-phase="out"][data-switch-direction="next"],
+.writings-dialog.t-modal.is-open[data-switch-phase="in"][data-switch-direction="prev"] {
+  opacity: 0;
+  transform: translateX(-1.4rem) scale(0.985);
+}
+.writings-dialog.t-modal.is-open[data-switch-phase="out"][data-switch-direction="prev"],
+.writings-dialog.t-modal.is-open[data-switch-phase="in"][data-switch-direction="next"] {
+  opacity: 0;
+  transform: translateX(1.4rem) scale(0.985);
+}
+.writings-dialog.t-modal.is-open[data-switch-phase="in"] {
+  transition: none;
 }
 .writings-dialog[data-expanded="true"] { --writings-resize-dur: var(--duration-slow); }
 .writings-dialog :is(.writings-toolbar-leading, .writings-archive, .writing-reader) {
@@ -124,13 +155,32 @@
 
 .writings-archive { width: min(100%, 48rem); margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 .writings-page-title { margin: 0; font-size: clamp(2rem, 3vw, 2.5rem); font-weight: 600; line-height: 1.2; letter-spacing: -0.025em; overflow-wrap: anywhere; }
-.writings-navigation { position: absolute; top: 1.25rem; left: calc(100% + 16px); display: flex; flex-direction: column; gap: 0.45rem; transition: left var(--writings-resize-dur) var(--ease-smooth); }
+/* The controls sit on rails just outside the two long edges of the dialog:
+   previous on the left, next on the right, expand above the right rail. The
+   group itself is only a positioning frame, so it lets pointer events through
+   to the page underneath. */
+.writings-navigation {
+  --writings-nav-rail: calc(100% + var(--preview-gallery-nav-gap));
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.writings-navigation > * {
+  position: absolute;
+  pointer-events: auto;
+  transition: left var(--writings-resize-dur) var(--ease-smooth), right var(--writings-resize-dur) var(--ease-smooth);
+}
+.writings-expand-nav { top: 1.25rem; left: var(--writings-nav-rail); }
+.writings-note-nav { top: 50%; translate: 0 -50%; }
+.writings-note-nav-prev { right: var(--writings-nav-rail); }
+.writings-note-nav-next { left: var(--writings-nav-rail); }
 .writings-dialog[data-reading="false"] .writings-note-nav { visibility: hidden; }
 @media (min-width: 700px) {
   .writings-dialog[data-expanded="true"] { width: calc(100vw - 3rem); }
 }
 .writings-dialog[data-expanded="true"] .writings-toolbar { padding-top: calc(1.5rem + env(safe-area-inset-top)); }
-.writings-dialog[data-expanded="true"] .writings-navigation { left: calc(100% - 1.5rem - 44px); }
+/* Expanded there is no room beside the dialog, so the rails move inside it. */
+.writings-dialog[data-expanded="true"] .writings-navigation { --writings-nav-rail: calc(100% - 1.5rem - var(--preview-gallery-nav-size)); }
 @media (min-width: 700px) {
   .writings-dialog[data-expanded="true"] :is(.writings-toolbar-leading, .writings-archive, .writing-reader) { width: min(calc(100% - 8rem), 48rem); }
 }
@@ -191,7 +241,10 @@
   .writings-toolbar { padding: calc(1.25rem + env(safe-area-inset-top)) 0 0.75rem; }
   .writings-breadcrumbs ol, .writings-year-crumb { gap: 0.25rem; }
   .writings-toolbar-leading { padding-inline: 1.25rem; }
-  .writings-navigation { position: static; flex-shrink: 0; flex-direction: row; justify-content: flex-end; padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom)); transform: none; }
+  /* No room for side rails on a phone: the controls become a toolbar row
+     inside the bottom of the sheet. */
+  .writings-navigation { position: static; flex-shrink: 0; display: flex; justify-content: flex-end; gap: 0.45rem; padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom)); pointer-events: auto; transform: none; }
+  .writings-navigation > * { position: static; translate: none; }
   .writings-dialog[data-reading="false"] .writings-navigation { visibility: visible; }
   .writings-mobile-close { display: grid; }
   .writings-archive, .writing-reader { padding: 1.5rem 1.25rem calc(3rem + env(safe-area-inset-bottom)); }
@@ -228,7 +281,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .writings-paper, .writings-backdrop { transition: none; }
-  .writings-dialog :is(.writings-toolbar, .writings-toolbar-leading, .writings-archive, .writing-reader, .writings-navigation) { transition: none !important; }
+  .writings-dialog :is(.writings-toolbar, .writings-toolbar-leading, .writings-archive, .writing-reader, .writings-navigation, .writings-navigation > *) { transition: none !important; }
   .writings-tile .writings-paper { translate: none; }
   .writings-tile:hover .writings-paper:nth-of-type(1) { transform: rotate(-10deg); }
   .writings-tile:hover .writings-paper:nth-of-type(2) { transform: none; }

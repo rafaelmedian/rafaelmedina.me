@@ -50,7 +50,11 @@
   --mosaic-popover-enter-duration: 240ms;
   --mosaic-popover-exit-duration: var(--duration-quick);
   --mosaic-popover-enter-ease: var(--ease-smooth);
-  --mosaic-popover-exit-ease: cubic-bezier(0.55, 0, 1, 0.45);
+  /* The house exit curve, not the old cubic-bezier(0.55, 0, 1, 0.45): that one
+     held the card still for the first half of the exit and then spent the rest
+     of its travel after the fade had already finished, so the 6px retreat was
+     never on screen. The alias stays so the motion note below can name it. */
+  --mosaic-popover-exit-ease: var(--ease-exit);
   position: relative;
   z-index: var(--z-overlay);
   isolation: isolate;
@@ -64,10 +68,12 @@
   gap: 0.25rem;
   color: var(--muted);
   font-family: var(--font-ui);
-  font-size: var(--text-md);
+  /* One size for the whole hero -- see .mosaic-profile-meta h2. The chips take
+     `font: inherit`, so this line sets the copy and the chips together. */
+  font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.7;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
 }
 
 .mosaic-work-history-line {
@@ -88,11 +94,18 @@
   position: relative;
   /* White on the near-white page with a hairline, rather than a filled grey
      block: the pills read as a row of separate places instead of one grey mass,
-     and the border does the separating that the fill used to. */
-  border: 1px solid rgb(0 0 0 / 0.09);
+     and the border does the separating that the fill used to.
+     The label sits on --muted with the line it belongs to. It used to be
+     #2d2d2d -- the hero name's exact ink -- and a chip's border and white fill
+     made that ink read heavier inside the box than it does on the name, so a
+     row of company names outranked the one name the hero is about. The border
+     drops with it; at 0.09 the hairlines were the loudest edges in the hero.
+     Hover and the active state still go to #171717, so the chips get darker
+     than the name only while you are pointing at one. */
+  border: 1px solid rgb(0 0 0 / 0.07);
   border-radius: var(--radius-sm);
   background: var(--canvas);
-  color: #2d2d2d;
+  color: var(--muted);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -123,7 +136,8 @@
  *
  *   0ms        card appears 6px above its resting position
  *   0-240ms    card settles top-to-bottom while opacity reaches 1
- *   0-160ms    exit reverses upward, then visibility switches off
+ *   0-160ms    exit reverses upward and fades on the same clock, then
+ *              visibility switches off
  */
 .mosaic-work-history-popover {
   --mosaic-popover-offset-y: 0.375rem;
@@ -147,7 +161,7 @@
   will-change: transform, opacity;
   transition:
     transform var(--mosaic-popover-exit-duration) var(--mosaic-popover-exit-ease),
-    opacity 130ms ease-in,
+    opacity var(--mosaic-popover-exit-duration) var(--mosaic-popover-exit-ease),
     visibility 0ms linear var(--mosaic-popover-exit-duration);
 }
 

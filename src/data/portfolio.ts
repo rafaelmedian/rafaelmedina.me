@@ -180,7 +180,7 @@ export const siteLinks: SiteLinks = {
   x: "https://x.com/rafaelmedian",
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
-  email: "hey@rafaelmedina.me",
+  email: "hellorafaelmedina@gmail.com",
   // Self-hosted so the link survives Drive permission changes and skips the
   // Drive viewer interstitial.
   resumePdf: "/rafael-medina-resume.pdf",

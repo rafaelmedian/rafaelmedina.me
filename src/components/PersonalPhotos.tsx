@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
 
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
@@ -42,7 +42,13 @@ export function PersonalPhotosPreview({ onOpen, className = "", items, position 
   }, [])
   return (
     <div ref={previewRef} className={`personal-photos ${className}`} data-about-fade="">
-      <button type="button" className="personal-photos-trigger" aria-label="View personal photos" aria-haspopup="dialog" onClick={(event) => onOpen(position, event.currentTarget)}>
+      <button type="button" className="personal-photos-trigger" aria-label="View personal photos" aria-haspopup="dialog" onClick={(event) => {
+        // A pointer names a photo; a keyboard press doesn't, so Enter and Space
+        // land on the button itself and resume where the last visit left off.
+        const print = (event.target as HTMLElement).closest<HTMLElement>(".personal-photos-print")
+        const tapped = print ? photos.findIndex((photo) => photo.id === print.dataset.photoId) : -1
+        onOpen(tapped < 0 ? position : tapped, event.currentTarget)
+      }}>
         <span className="personal-photos-stack" aria-hidden="true" style={{ "--photo-preview-count": preview.length } as CSSProperties}>
           {preview.map(({ photo, src }) => (
             <span className="personal-photos-print" data-photo-id={photo.id} key={photo.id}>
@@ -87,6 +93,7 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
   const dialogActions = useRef<Dialog.Root.Actions>(null)
   const finishPhotoClose = useCallback(() => dialogActions.current?.unmount(), [])
   const dragRef = useRef<{ pointerId: number; startX: number; startScroll: number; dragged: boolean } | null>(null)
+  const pressedClearance = useRef(false)
   const snapTimerRef = useRef(0)
   const registerStrip = useCallback((strip: HTMLDivElement | null) => {
     stripRef.current = strip
@@ -131,6 +138,9 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
   // once the release scroll settles on the nearest slide.
 
   const onPointerDown = (event: ReactPointerEvent) => {
+    // Pointer capture retargets the closing click to the strip, so remember
+    // where the press actually landed rather than trusting the click's target.
+    pressedClearance.current = event.target === event.currentTarget
     if (event.pointerType !== "mouse" || event.button !== 0) return
     const strip = stripRef.current
     if (!strip) return
@@ -158,10 +168,18 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
     if (!drag || event.pointerId !== drag.pointerId) return
     dragRef.current = null
     if (!drag.dragged || !strip) return
+    pressedClearance.current = false
     moveTo(nearestIndex())
     snapTimerRef.current = window.setTimeout(() => {
       strip.style.scrollSnapType = ""
     }, reducedMotion ? 0 : 450)
+  }
+
+  // Coarse pointers pan the whole strip, shadow clearance included, so the
+  // clearance has to take over the dismissal the backdrop used to give us. Only
+  // the strip's own padding counts; the card row keeps swallowing its clicks.
+  const onStripClick = (event: ReactMouseEvent) => {
+    if (pressedClearance.current && event.target === event.currentTarget) dialogActions.current?.close()
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -211,6 +229,7 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
             aria-label="Photo carousel"
             aria-roledescription="carousel"
             tabIndex={0}
+            onClick={onStripClick}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerEnd}

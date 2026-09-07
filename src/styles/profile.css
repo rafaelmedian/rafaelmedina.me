@@ -286,14 +286,19 @@
 
 /* --------------------------------- profile meta, availability & live time --- */
 
+/* The hero is one size, --text-sm, from the name down to the contact pills, and
+   it matches the corner nav above it. Nothing here ranks by size: the name
+   leads because it is the darkest ink and the only 600 in the block, the work
+   history and location sit on --muted, and the nav sits lighter still. Tracking
+   follows the size per /design-system -- 14px takes -0.00563rem. */
 .mosaic-profile-meta h2 {
   margin: 0;
   font-family: var(--font-ui);
   font-style: normal;
   font-weight: 600;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.7;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
   color: #2d2d2d;
 }
 
@@ -304,9 +309,9 @@
   gap: 0;
   flex-wrap: wrap;
   justify-content: center;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.7;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
   color: var(--muted);
 }
 
@@ -318,9 +323,9 @@
   font-family: var(--font-ui);
   font-style: normal;
   font-weight: 400;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.7;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
   color: var(--muted);
   text-align: center;
   display: flex;
@@ -468,12 +473,6 @@
        needs real top clearance; the bottom padding only bites once chip
        expansions push further, keeping the profile off the mosaic. */
     padding-block: clamp(2.25rem, 4.5vh, 3.5rem) clamp(1.75rem, 3vw, 3rem);
-  }
-}
-
-@media (min-width: 1320px) {
-  .mosaic-profile-meta h2 {
-    font-size: var(--text-md);
   }
 }
 

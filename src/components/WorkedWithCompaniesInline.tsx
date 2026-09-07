@@ -181,6 +181,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
   const closeTimeoutRef = useRef<number | undefined>(undefined)
   const pointerFocusCompanyIdRef = useRef<string | null>(null)
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null)
+  const [shownCompanyId, setShownCompanyId] = useState<string | null>(null)
   const [isSwitchingCompany, setIsSwitchingCompany] = useState(false)
   const [position, setPosition] = useState<PopoverPosition>({ side: "below", x: 192, y: 0 })
 
@@ -205,13 +206,25 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
     return { previousCompanies, recentGroup }
   }, [])
 
-  const activeCompany =
-    activeCompanyId === recentGroupId
+  const findCompany = (companyId: string | null) =>
+    companyId === recentGroupId
       ? profileCompanies.recentGroup
-      : profileCompanies.previousCompanies.find((company) => company.id === activeCompanyId)
+      : profileCompanies.previousCompanies.find((company) => company.id === companyId)
 
-  const activeCompanyHostname = activeCompany
-    ? new URL(activeCompany.href).hostname.replace(/^www\./, "")
+  const activeCompany = findCompany(activeCompanyId)
+
+  // The card keeps rendering the company it was showing while it fades out.
+  // Closing clears activeCompanyId, and unmounting the content in the same
+  // frame the exit transition starts collapsed the card to an empty 32px
+  // sliver -- so the exit used to fade out a blank white box instead of the
+  // card you were reading. shownCompanyId only ever moves forward to the next
+  // company; the stale content sits there until then, by which point the card
+  // is visibility: hidden and aria-hidden, so nothing can see or reach it.
+  if (activeCompanyId && activeCompanyId !== shownCompanyId) setShownCompanyId(activeCompanyId)
+  const shownCompany = activeCompany ?? findCompany(shownCompanyId)
+
+  const shownCompanyHostname = shownCompany
+    ? new URL(shownCompany.href).hostname.replace(/^www\./, "")
     : ""
 
   const clearOpenTimeout = () => window.clearTimeout(openTimeoutRef.current)
@@ -439,30 +452,30 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
             scheduleClose()
           }}
         >
-          {activeCompany ? (
-            <div key={activeCompany.id} className="mosaic-work-history-popover-content">
+          {shownCompany ? (
+            <div key={shownCompany.id} className="mosaic-work-history-popover-content">
               <div className="mosaic-work-history-popover-heading">
                 <span className="mosaic-work-history-popover-logos" aria-hidden="true">
-                  {activeCompany.logoUrls.map((logoUrl) => (
-                    <span key={`${activeCompany.id}-${logoUrl}`} className="mosaic-work-history-popover-logo-wrap">
+                  {shownCompany.logoUrls.map((logoUrl) => (
+                    <span key={`${shownCompany.id}-${logoUrl}`} className="mosaic-work-history-popover-logo-wrap">
                       <img src={logoUrl} alt="" loading="eager" decoding="async" />
                     </span>
                   ))}
                 </span>
                 <span className="mosaic-work-history-popover-title">
-                  <span className="mosaic-work-history-popover-name">{activeCompany.name}</span>
-                  <span className="mosaic-work-history-popover-role">{activeCompany.role}</span>
+                  <span className="mosaic-work-history-popover-name">{shownCompany.name}</span>
+                  <span className="mosaic-work-history-popover-role">{shownCompany.role}</span>
                 </span>
               </div>
-              <p className="mosaic-work-history-popover-description">{activeCompany.description}</p>
+              <p className="mosaic-work-history-popover-description">{shownCompany.description}</p>
               <a
-                href={activeCompany.href}
+                href={shownCompany.href}
                 target="_blank"
                 rel="noreferrer"
                 className="mosaic-work-history-popover-link"
-                aria-label={`Visit ${activeCompanyHostname}`}
+                aria-label={`Visit ${shownCompanyHostname}`}
               >
-                {activeCompanyHostname}
+                {shownCompanyHostname}
                 <span aria-hidden="true">›</span>
               </a>
             </div>
