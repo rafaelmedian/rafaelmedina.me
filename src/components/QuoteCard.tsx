@@ -13,7 +13,7 @@ function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean
   return (
     <figcaption className="mosaic-quote-credit">
       <span className="mosaic-quote-person">
-        {quote.photo && <img className="mosaic-quote-avatar" src={quote.photo} width="32" height="32" alt="" loading="lazy" decoding="async" />}
+        {quote.photo && <img className="mosaic-quote-avatar" src={quote.photo} width="40" height="40" alt="" loading="lazy" decoding="async" />}
         <span className="mosaic-quote-attribution">
           {href ? (
             <Popover.Root
