@@ -850,7 +850,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Elastic page edge</p>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("elastic page edge overscroll aurora curtains random palette 56px 8px nudge 40ms stagger 700ms 1260ms DialKit")}
+                data-ds-terms={terms("elastic page edge overscroll aurora curtains random palette 56px 8px nudge 40ms stagger 700ms 1260ms touch gain DialKit")}
               >
                 <strong>A soft aurora at the page edge.</strong>
                 <p>
@@ -861,7 +861,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the full 360-degree spectrum, with seven neighboring offsets from -54 to +54 degrees in 18-degree
                   steps, saturation of 60–76%, and lightness of 74–84%. Repeated input during a glow keeps its palette
                   and continues the existing rise. The wash follows input over 120ms, fades over 1260ms with
-                  ease-in-out, then resets the curtains. The content nudge stays capped at 8px and settles over 700ms.
+                  ease-in-out, then resets the curtains. A fling keeps feeding the wheel long after the page has
+                  stopped, so pointer input converts at 0.24 of its delta; a finger only spends the travel it has,
+                  and touch converts at 0.6 so the band an overscroll drag can reach still fills. The content nudge stays capped at 8px and settles over 700ms.
                   Colors remain behind the table of contents. Nested scrollers retain their behavior, and reduced
                   motion disables the entire effect. Dev-only DialKit controls at <a href="/?tune=edge">/?tune=edge</a>
                   adjust height, rise, stagger, rise duration, fade duration, and intensity, with replay and new-color

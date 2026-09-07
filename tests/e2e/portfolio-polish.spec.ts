@@ -305,6 +305,36 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   await expect(curtains.first()).toHaveCSS("animation-name", "none")
 })
 
+test("a thumb\u2019s worth of overscroll fills the elastic edge the way a fling does", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const edge = page.locator(".elastic-scroll-edge")
+  // A wheel fling keeps arriving after the page has stopped and easily spends
+  // thousands of pixels; a finger only spends what the rubber band gives it,
+  // which on a phone runs out around 150px. Sharing the wheel's conversion left
+  // that whole gesture painting four tenths of the glow.
+  const reached = await edge.evaluate(async (element) => {
+    const touch = (type: string, clientY: number) => document.dispatchEvent(new TouchEvent(type, {
+      bubbles: true,
+      touches: type === "touchend"
+        ? []
+        : [new Touch({ identifier: 1, target: document.body, clientX: 195, clientY })],
+    }))
+    let y = 600
+    touch("touchstart", y)
+    for (let travelled = 0; travelled < 140; travelled += 5) touch("touchmove", (y -= 5))
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    const scale = Number.parseFloat(element.style.getPropertyValue("--elastic-edge-scale"))
+    touch("touchend", y)
+    return (scale - 0.35) / 0.65
+  })
+
+  expect(reached).toBeGreaterThan(0.8)
+  expect(reached).toBeLessThanOrEqual(1)
+})
+
 test("continues the elastic scroll edge from its visible position when release is interrupted", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
