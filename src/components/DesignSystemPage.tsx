@@ -1132,7 +1132,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg previous next rail flank 44px 16px artwork middle 42vh 72vh 345px 684px 50%")}
+                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media inset half card padding previous next rail flank 44px 16px artwork middle 42vh 72vh 345px 684px 50%")}
               >
                 <strong>Nested corners are concentric, and they are derived — not a fifth step.</strong>
                 <p>
@@ -1141,10 +1141,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   and hard-coded: the LinkedIn card's media is <code>calc(var(--radius-md) - 5px)</code>, the preview dialog is{" "}
                   <code>calc(var(--radius-lg) + card-padding)</code> on desktop. That is how 11px, 11.5px, and 10px corners exist
                   without being scale steps — and why they stay correct when a padding changes.
+                  The artwork sits in a mat of <code>card-padding / 2</code> on all four sides, so the frame's grey and
+                  hairline surround the image instead of meeting it, and the image carries the third radius in the
+                  nest: <code>calc(var(--radius-lg) - mat)</code>.
                   On desktop the 44px previous and next controls flank the card, one <code>16px</code> clear of each
                   edge and level with the middle of the artwork — the card runs on into the title and details below the
-                  image, so its own centre would sit in the text. That offset is the card padding plus half the artwork
-                  the popup width gives the common preview ratio, under the same cap the media carries
+                  image, so its own centre would sit in the text. That offset is the card padding and the mat plus half
+                  the artwork the popup width gives the common preview ratio, under the same cap the media carries
                   (<code>min(345px, 42vh)</code>, and <code>min(684px, 72vh)</code> in the wide view). It is fixed per
                   layout rather than measured per preview, so a taller or shorter image never slides the pair out from
                   under the pointer, and it stops at half the popup so a card taller than the viewport still keeps

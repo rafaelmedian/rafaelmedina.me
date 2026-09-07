@@ -55,10 +55,13 @@
 .preview-gallery-shell {
   --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
   --preview-gallery-gutter: clamp(1rem, 3vw, 2.5rem);
-  /* Lives here rather than on the card because the rail, which is a sibling of
-     the card, measures its own offset from the artwork inside it. The compact
-     override below still sets it on the card itself. */
+  /* Both live here rather than on the card because the rail, which is a sibling
+     of the card, measures its own offset from the artwork inside it. The compact
+     override below still sets them on the card itself. */
   --preview-gallery-card-padding: clamp(1rem, 1.7vw, 1.4rem);
+  /* Half the card's padding, so the artwork sits in a mat that reads as one
+     step inside the card rather than a second border of equal weight. */
+  --preview-gallery-media-inset: calc(var(--preview-gallery-card-padding) / 2);
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog);
@@ -260,13 +263,25 @@
   transition-duration: var(--pg-switch-ms, 190ms);
 }
 
+/* The frame is the mat: its grey and hairline surround the artwork on all four
+   sides instead of meeting it. Previews that carry their own extra breathing
+   room stack it on top of the shared inset, on every side rather than only
+   above and below -- a wider band overhead than beside reads as a mistake. */
 .preview-gallery-media-frame {
+  --pg-mat: calc(var(--preview-gallery-media-inset) + var(--preview-gallery-media-padding, 0px));
   position: relative;
+  /* The mat is a border, not padding: `overflow` clips at the padding box, so
+     this puts the clip on the artwork's own edge rather than the frame's, and a
+     cropped preview's scaled artwork can no longer paint across the mat.
+     Clipping the frame itself instead would take its grey and hairline with it. */
   overflow: hidden;
+  border: var(--pg-mat) solid #f0f0f1;
   border-radius: var(--preview-gallery-media-radius);
   background: #f0f0f1;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
-  padding-block: var(--preview-gallery-media-padding-block, 0);
+  /* Where the inset shadow used to sit. An inset shadow is drawn at the padding
+     box, which is now inside the mat rather than around it. */
+  outline: 1px solid rgb(0 0 0 / 0.06);
+  outline-offset: -1px;
 }
 
 .preview-gallery-popup[data-preview-media="video"] .preview-gallery-media-frame {
@@ -290,6 +305,8 @@
   filter: blur(var(--blur-reveal));
 }
 
+/* Absolute positioning resolves against the frame's padding box, which the mat
+   being a border makes the artwork's box. */
 .preview-gallery-media-placeholder {
   position: absolute;
   inset: 0;
@@ -331,6 +348,9 @@
   width: 100%;
   max-height: min(42vh, 432px);
   display: block;
+  /* Concentric with the frame across the mat, matching the curve the frame's
+     own border already clips this to. */
+  border-radius: calc(var(--preview-gallery-media-radius) - var(--pg-mat));
   object-fit: contain;
   margin-inline: auto;
 }
@@ -429,12 +449,13 @@
    between them gives the pointer back to the card underneath. */
 .preview-gallery-rail {
   --preview-gallery-rail-inset: calc(-1 * var(--preview-gallery-rail-clearance));
-  /* The card's padding plus half the artwork under it. The artwork is the
-     shorter of what the popup width gives the common preview ratio -- 345px at
-     490px wide -- and the cap the media carries, so this follows it down as the
-     window shortens instead of drifting toward the text. */
+  /* The card's padding and the frame's mat, plus half the artwork under them.
+     The artwork is the shorter of what the popup width gives the common preview
+     ratio -- 345px at 490px wide -- and the cap the media carries, so this
+     follows it down as the window shortens instead of drifting toward the
+     text. */
   --preview-gallery-rail-anchor: calc(
-    var(--preview-gallery-card-padding) + min(345px, 42vh) / 2
+    var(--preview-gallery-card-padding) + var(--preview-gallery-media-inset) + min(345px, 42vh) / 2
   );
   position: absolute;
   z-index: 1;
@@ -451,7 +472,7 @@
    cap is the one on `.preview-gallery-media` below. */
 .preview-gallery-popup[data-wide="true"] .preview-gallery-rail {
   --preview-gallery-rail-anchor: calc(
-    var(--preview-gallery-card-padding) + min(684px, 72vh) / 2
+    var(--preview-gallery-card-padding) + var(--preview-gallery-media-inset) + min(684px, 72vh) / 2
   );
 }
 
@@ -661,6 +682,7 @@
 
   .preview-gallery-card {
     --preview-gallery-card-padding: 0.85rem;
+    --preview-gallery-media-inset: calc(var(--preview-gallery-card-padding) / 2);
     --preview-gallery-media-radius: var(--radius-md);
   }
 

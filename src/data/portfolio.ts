@@ -29,7 +29,7 @@ export type PortfolioCard = {
   /** Teammates on this work; Rafael is credited automatically alongside them. */
   team?: Collaborator[]
   previewAspectRatio?: number
-  previewMediaPaddingBlock?: string
+  previewMediaPadding?: string
   /** The grid tile crops this shot; the gallery repeats the same crop. */
   previewCropped?: boolean
 }
@@ -335,7 +335,7 @@ export const portfolioCards: PortfolioCard[] = [
     industry: "Consumer Social",
     team: [collaborators.nick],
     previewAspectRatio: 0.46,
-    previewMediaPaddingBlock: "clamp(0.7rem, 1.6vw, 1.4rem)",
+    previewMediaPadding: "clamp(0.7rem, 1.6vw, 1.4rem)",
   },
   {
     id: "preview-shot-21",

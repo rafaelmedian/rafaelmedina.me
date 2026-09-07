@@ -438,8 +438,8 @@ export function PreviewGalleryDialog({
 
   const activeMediaIsVideo = isVideoSource(activeMediaSource)
   const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
-  const mediaFrameStyle = activeCard.previewMediaPaddingBlock
-    ? ({ "--preview-gallery-media-padding-block": activeCard.previewMediaPaddingBlock } as CSSProperties)
+  const mediaFrameStyle = activeCard.previewMediaPadding
+    ? ({ "--preview-gallery-media-padding": activeCard.previewMediaPadding } as CSSProperties)
     : undefined
   const switchClassName =
     switchPhase === "idle" ? "" : ` preview-gallery-card-switch-${switchPhase}-${switchDirection}`
