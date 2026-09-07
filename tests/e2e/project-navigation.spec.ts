@@ -6,16 +6,20 @@ test.beforeEach(async ({ page }) => {
 
 test("project URLs follow selection and browser Back and Forward", async ({ page }) => {
   await page.goto("/?ref=portfolio")
-  const trigger = page.getByRole("button", { name: /Open Matcha multiwallet flow/ })
+  const trigger = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
   await trigger.click()
   await expect(page.getByRole("dialog")).toBeVisible()
-  await expect(page).toHaveURL(/\?ref=portfolio&project=preview-shot-9$/)
+  await expect(page).toHaveURL(/\/work\/matcha-multiwallet-flow\/\?ref=portfolio$/)
   await page.getByRole("button", { name: "Next preview", exact: true }).click()
   await expect(page.getByRole("dialog")).toHaveAccessibleName("Matcha homepage")
-  await expect(page).toHaveURL(/project=preview-shot-16$/)
+  await expect(page).toHaveURL(/\/work\/matcha-homepage\/\?ref=portfolio$/)
+  await expect(page).toHaveTitle("Matcha homepage — Rafael Medina")
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/work/matcha-homepage/")
   await page.goBack()
   await expect(page.getByRole("dialog")).toBeHidden()
   await expect(page).toHaveURL(/\?ref=portfolio$/)
+  await expect(page).toHaveTitle("Rafael Medina — Product Designer")
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/")
   await expect(trigger).toBeFocused()
   await page.goForward()
   await expect(page.getByRole("dialog")).toHaveAccessibleName("Matcha homepage")
@@ -27,7 +31,7 @@ test("project URLs follow selection and browser Back and Forward", async ({ page
 test("closing a locally opened project consumes its history entry", async ({ page }) => {
   await page.goto("/?from=previous")
   await page.goto("/?ref=portfolio")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
 
   await page.keyboard.press("Escape")
@@ -41,7 +45,7 @@ test("closing a locally opened project consumes its history entry", async ({ pag
 test("browser Back during a preview switch keeps the gallery closed", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/?ref=portfolio")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
 
   await page.getByRole("button", { name: "Next preview", exact: true }).click()
@@ -72,7 +76,7 @@ test("an unknown project URL keeps the portfolio usable", async ({ page }) => {
   await page.goto("/?project=missing")
   await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeVisible()
   await expect(page.getByRole("dialog")).toHaveCount(0)
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toHaveAccessibleName("Matcha multiwallet flow")
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()

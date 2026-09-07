@@ -24,6 +24,7 @@ import { useHoverCard } from "../lib/hoverCard"
 import { isVideoSource } from "../lib/media"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
+import { projectPath } from "../lib/projectMetadata"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
@@ -681,7 +682,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const { projectId, selectProject, clearProject } = useProjectUrl()
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [hasOpenedWorkPreview, setHasOpenedWorkPreview] = useState(false)
-  const previewCardNodesRef = useRef(new Map<number, HTMLButtonElement>())
+  const previewCardNodesRef = useRef(new Map<number, HTMLAnchorElement>())
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
@@ -1071,8 +1072,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                     : undefined
                                 }
                               >
-                                <button
-                                  type="button"
+                                <a
+                                  href={projectPath(item.card)}
                                   ref={(node) => {
                                     const nodes = previewCardNodesRef.current
                                     if (node) nodes.set(item.previewIndex, node)
@@ -1082,7 +1083,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                   onPointerEnter={prefetchPreviewGallery}
                                   onPointerDown={prefetchPreviewGallery}
                                   onFocus={prefetchPreviewGallery}
-                                  onClick={() => {
+                                  onClick={(event) => {
+                                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                                    event.preventDefault()
                                     openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
                                   }}
                                   aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
@@ -1108,7 +1111,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                   <span id={`${itemKey}-description`} className="sr-only">
                                     {item.card.detail}
                                   </span>
-                                </button>
+                                </a>
                               </div>
                             )
                           })}
