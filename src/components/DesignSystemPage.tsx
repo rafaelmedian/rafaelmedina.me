@@ -388,7 +388,7 @@ const EASINGS_ENTRIES = [
     name: "Exit — --ease-exit",
     css: "--ease-exit",
     duration: "120–160ms",
-    use: "Hover cards, the local-time card, the takeover close, and the preview gallery leaving. Always shorter than the entrance it reverses.",
+    use: "Hover cards, the local-time card, the takeover close, the preview gallery leaving, and the work-history popover (aliased as --mosaic-popover-exit-ease). Always shorter than the entrance it reverses.",
   },
   {
     name: "Responsive resize",
@@ -409,16 +409,10 @@ const EASINGS_ENTRIES = [
     use: "Apple Core Animation’s documented default timing curve, scoped to the personal-photo hover fan, hint, flights, captions, and backdrop. Movement builds before easing into place; opening and closing share a quick 200ms beat and captions move with the prints without delay.",
   },
   {
-    name: "Popover exit",
-    css: "cubic-bezier(0.55, 0, 1, 0.45)",
-    duration: "160ms",
-    use: "The work-history popover only — a slightly firmer close than the other overlays. Scoped as --mosaic-popover-exit-ease.",
-  },
-  {
     name: "Overshoot",
     css: "cubic-bezier(0.34, 1.56, 0.64, 1)",
     duration: "220ms",
-    use: "The copy-email reaction only, and now the only 220ms left in the file. The single place in the system that overshoots — keep it that way.",
+    use: "The copy-email reaction (220ms, and the only 220ms left in the file). The only curve in the system that overshoots — the reaction needs a shape to travel past its mark and settle, so keep new work off it unless it does too.",
   },
   {
     name: "Scroll linked",

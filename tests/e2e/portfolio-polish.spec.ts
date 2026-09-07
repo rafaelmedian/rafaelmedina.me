@@ -3336,6 +3336,39 @@ test("keeps a work-history pill engaged while the pointer moves into its card", 
   await expect(onit).toHaveCSS("background-color", "rgb(233, 233, 233)")
 })
 
+test("fades the work-history card out with the company still inside it", async ({ page }) => {
+  await page.goto("/")
+
+  const onit = getPreviousCompanyLink(page, "Onit")
+  const popover = page.locator(".mosaic-work-history-popover")
+
+  await onit.hover()
+  await expect(popover).toBeVisible()
+  const openHeight = Math.round((await popover.boundingBox())!.height)
+
+  await page.mouse.move(4, 4)
+  await expect(popover).toBeHidden()
+
+  // The card that fades out is the card you were reading: clearing the active
+  // company used to unmount the content on the first frame of the exit, so the
+  // card collapsed to an empty sliver and faded that out instead.
+  const exited = await popover.evaluate((element) => ({
+    height: Math.round(element.getBoundingClientRect().height),
+    name: element.querySelector(".mosaic-work-history-popover-name")?.textContent,
+  }))
+  expect(exited.name).toBe("Onit")
+  expect(exited.height).toBe(openHeight)
+
+  // The 6px retreat and the fade run on one clock, so the movement is on
+  // screen rather than finishing after the card has already gone.
+  const exitMotion = await popover.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return { duration: style.transitionDuration, ease: style.transitionTimingFunction }
+  })
+  expect(exitMotion.duration).toBe("0.16s, 0.16s, 0s")
+  expect(exitMotion.ease).toBe("cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1), linear")
+})
+
 test("opens the work-history popover from the keyboard and links each chip to its company", async ({
   context,
   page,

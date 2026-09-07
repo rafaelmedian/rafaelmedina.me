@@ -50,7 +50,11 @@
   --mosaic-popover-enter-duration: 240ms;
   --mosaic-popover-exit-duration: var(--duration-quick);
   --mosaic-popover-enter-ease: var(--ease-smooth);
-  --mosaic-popover-exit-ease: cubic-bezier(0.55, 0, 1, 0.45);
+  /* The house exit curve, not the old cubic-bezier(0.55, 0, 1, 0.45): that one
+     held the card still for the first half of the exit and then spent the rest
+     of its travel after the fade had already finished, so the 6px retreat was
+     never on screen. The alias stays so the motion note below can name it. */
+  --mosaic-popover-exit-ease: var(--ease-exit);
   position: relative;
   z-index: var(--z-overlay);
   isolation: isolate;
@@ -132,7 +136,8 @@
  *
  *   0ms        card appears 6px above its resting position
  *   0-240ms    card settles top-to-bottom while opacity reaches 1
- *   0-160ms    exit reverses upward, then visibility switches off
+ *   0-160ms    exit reverses upward and fades on the same clock, then
+ *              visibility switches off
  */
 .mosaic-work-history-popover {
   --mosaic-popover-offset-y: 0.375rem;
@@ -156,7 +161,7 @@
   will-change: transform, opacity;
   transition:
     transform var(--mosaic-popover-exit-duration) var(--mosaic-popover-exit-ease),
-    opacity 130ms ease-in,
+    opacity var(--mosaic-popover-exit-duration) var(--mosaic-popover-exit-ease),
     visibility 0ms linear var(--mosaic-popover-exit-duration);
 }
 
