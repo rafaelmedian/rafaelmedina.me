@@ -696,7 +696,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, items }
+      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, items }
     })
   }, [cards])
 
@@ -1017,7 +1017,13 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           {row.quote ? (
                             <div
                               className="mosaic-row-item mosaic-row-quote"
-                              style={{ "--work-intro-row": rowIndex, "--work-intro-col": 0 } as CSSProperties}
+                              style={
+                                {
+                                  "--row-span": row.quoteSpan ?? 1,
+                                  "--work-intro-row": rowIndex,
+                                  "--work-intro-col": 0,
+                                } as CSSProperties
+                              }
                             >
                               <QuoteCard quotes={portfolioQuotes} />
                             </div>
