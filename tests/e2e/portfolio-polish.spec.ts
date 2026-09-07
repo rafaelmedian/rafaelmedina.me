@@ -1210,6 +1210,20 @@ test("mobile table of contents selects and tracks each section", async ({ page }
   await expect(trigger).toHaveAttribute("aria-current", "location")
 })
 
+test("lands on a section from the URL without drawing a ring around it", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+
+  for (const id of ["work", "about-panel", "about-panel-resume"]) {
+    await page.goto(`/#${id}`)
+    const section = page.locator(`#${id}`)
+    // The browser focuses the fragment target on load. Its default ring boxes
+    // the whole section, which reads as a selection rather than a landing.
+    await expect(section).toBeFocused()
+    await expect(section).toHaveCSS("outline-style", "none")
+  }
+})
+
 test("the TOC keeps its collapsed height while scrolling between sections", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
@@ -1734,7 +1748,10 @@ test("scrolls to and focuses the about section from the avatar button", async ({
   const about = page.locator("#about-panel")
   await expect(about).toBeInViewport()
   await expect(about).toBeFocused()
-  await expect(about).not.toHaveCSS("outline-style", "none")
+  // The section is a landing container, not a control: it takes focus so
+  // reading continues from there, and draws no ring. The browser's default one
+  // boxes the whole sheet, which reads as a selection.
+  await expect(about).toHaveCSS("outline-style", "none")
 })
 
 test("keeps every project row together inside the takeover stage", async ({ page }) => {
