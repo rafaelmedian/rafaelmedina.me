@@ -323,6 +323,17 @@
   transform: translateZ(0);
 }
 
+/* The Rewards composite's two banners run off its own left and right edges, so
+   unlike every other preview it has no margin to be letterboxed in. Contained,
+   the shared `max-height` mats it as soon as the viewport is short, and those
+   cut edges then float mid-frame and read as a mishandled crop rather than as a
+   bleed. `cover` keeps it meeting the frame the way it meets its grid tile; on
+   a tall viewport the frame already matches the artwork's ratio and nothing is
+   taken, and on a short one what goes is the shadow room above and below. */
+.preview-gallery-popup[data-preview-id="preview-matcha-rewards"] .preview-gallery-media {
+  object-fit: cover;
+}
+
 /* The frame, not the image, carries the landscape shape of the grid tile, so
    the crop stays put while the popup width changes. */
 .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {

@@ -97,28 +97,39 @@ export const homeRows: HomeRow[] = [
   // Where they can go is tighter than it looks. All three want a span-1 slot in
   // a three-unit row (~509px against a 420px row): the dealership shot and the
   // phone mockup are matted, so a wider slot only grows the mat, and the
-  // Rewards diptych is matted too -- a wider slot is the one thing that would
-  // genuinely help it, but not enough to reshape the row around. The Matcha
-  // 4:3 shots have the same requirement from the other side -- at span 1 in a
-  // four-unit row `cover` eats a third of their width. That leaves three-unit
-  // rows as the home for most of the cards, so the three newest take one row
-  // each on the way down: Rewards in row 2, the dealership hub in row 4, the
-  // phone mockup in row 5. Row 1 keeps its pair of clips: index.html preloads
-  // their posters, and the first is the LCP element.
+  // Rewards composite is cut to the tile's own ratio, so a slot with a
+  // different shape only mats it. The Matcha 4:3 shots have the same
+  // requirement from the other side -- at span 1 in a four-unit row `cover`
+  // eats a third of their width. That leaves three-unit rows as the home for
+  // most of the cards, so the three newest take one row each on the way down:
+  // Rewards and the phone mockup in row 2, the dealership hub in row 4. Row 1
+  // keeps its pair of clips: index.html preloads their posters, and the first
+  // is the LCP element.
+  //
+  // Pulling the phone mockup up into row 2 leaves row 5 all Matcha, which the
+  // spread above was meant to avoid. It is unavoidable once the mockup moves:
+  // rows 4 and 5 hold six slots and five Matcha shots between them, and the
+  // dealership hub can only break up one of the two.
   {
     id: "row-2",
     height: homeTileRowHeight,
     // The writings tile is this row's third unit, so the two projects keep the
     // ~509px slot the note above asks for.
     writings: true,
-    // The Rewards diptych takes `defaultFitForCard`'s `contain` — at 3.2 it is
-    // far past the 1.45 threshold, and it has to be: `cover` on a slot this
-    // close to square would show only the middle third of the strip, cutting
-    // the outer half of each banner. Contained it mats top and bottom instead,
-    // and the artwork's transparent margins make that mat invisible.
+    // Both tiles are `contain` and both drop the mat that normally comes with
+    // it; see `.mosaic-row-card-preview-family-stories` and
+    // `.mosaic-row-card-preview-matcha-rewards` in work-grid.css.
+    //
+    // Rewards is `contain` against 1.16, which is what this slot measures at
+    // 1440px and wider, so on the wide layout the artwork fills the tile edge
+    // to edge and the crop the composition wants is the one it was built with.
+    // `cover` would have re-cut it at every breakpoint instead: the same slot
+    // swings from 0.65 at 900px to 1.16 at 1440, and at the portrait end that
+    // is a quarter of the frame off each side — enough to take "left" off the
+    // countdown headline.
     items: [
-      { cardId: "preview-shot-23", span: 1 },
-      { cardId: "preview-matcha-rewards", span: 1 },
+      { cardId: "preview-family-stories", span: 1, fit: "contain" },
+      { cardId: "preview-matcha-rewards", span: 1, fit: "contain" },
     ],
   },
   {
@@ -150,11 +161,9 @@ export const homeRows: HomeRow[] = [
   {
     id: "row-5",
     height: homeTileRowHeight,
-    // The phone mockup drops its mat and sits on the bottom edge; see
-    // `.mosaic-row-card-preview-family-stories` in work-grid.css.
     items: [
       { cardId: "preview-shot-14", span: 1 },
-      { cardId: "preview-family-stories", span: 1, fit: "contain" },
+      { cardId: "preview-shot-23", span: 1 },
       { cardId: "preview-shot-20", span: 1 },
     ],
   },
@@ -481,19 +490,26 @@ export const portfolioCards: PortfolioCard[] = [
     role: "I designed the campaign key visual and the variants it ships in.",
     outcome:
       "The rewards program launched with one visual system shared by its social posts and link previews.",
-    // Both deliverables in one frame — the green link preview left, the purple
-    // countdown post right — composed as a single asset rather than two tiles
-    // so one campaign reads as one project. Side by side is what sets the
-    // frame's shape: two 1.9:1 banners laid out as a diptych can't be framed
-    // much tighter than 3.2, which is why this is a wide strip rather than
-    // something near the tile's own ratio. Both banners sit whole inside it,
-    // headlines uncut, and the canvas is transparent outside them — the
-    // margins are only shadow room, so the `contain` mat the grid tile adds
-    // reads as one continuous surface with the artwork's own background.
+    // Both deliverables in one frame — the green link preview behind and to the
+    // left, the purple countdown post in front and to the right — composed as a
+    // single asset rather than two tiles so one campaign reads as one project.
+    //
+    // They overlap and each runs off its own edge instead of sitting side by
+    // side. Laid out whole as a diptych, two 1.9:1 banners force a ~3.2 frame,
+    // and a strip that wide gets matted down to a sliver in a tile close to
+    // square — the banners ended up too small to read as artwork. Overlapping
+    // them lets each render about as wide as the whole tile, and the crop is
+    // part of the composition rather than something the tile does: the frame is
+    // 1.16, the slot's own ratio on the wide layout, so `contain` fills it edge
+    // to edge there. The green banner's subtitle is cut by design — it is the
+    // layer behind, and the cut lands in the space before "cash" — while both
+    // headlines and the whole countdown post stay inside the frame. The wedges
+    // the two banners leave in the opposite corners are transparent, so the
+    // tile's own surface shows through them.
     image: "/Projects/matcha-rewards.webp",
     previewWidth: 1540,
-    previewHeight: 480,
+    previewHeight: 1325,
     ...matchaMeta,
-    previewAspectRatio: 1540 / 480,
+    previewAspectRatio: 1540 / 1325,
   },
 ]

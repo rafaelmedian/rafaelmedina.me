@@ -2458,11 +2458,11 @@ test("caps each row at three projects and omits Mobile navigation", async ({ pag
   expect(rowCardCounts.every((count) => count <= 3)).toBe(true)
   await expect(cards).toHaveCount(3)
   await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha on mobile/)
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Shared family stories/)
+  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha Pro/)
   await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha security audit/)
   await expect(page.getByRole("link", { name: /Open Matcha mobile navigation/ })).toHaveCount(0)
   await expect(cards.nth(0).locator("img")).toHaveAttribute("src", /shot-small-14\.jpg$/)
-  await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shared-family-stories/)
+  await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
   await expect(cards.nth(2).locator("video")).toHaveAttribute("poster", "/Projects/shot-small-20-poster.webp")
 })
 

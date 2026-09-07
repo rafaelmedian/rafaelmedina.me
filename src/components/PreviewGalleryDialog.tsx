@@ -485,6 +485,9 @@ export function PreviewGalleryDialog({
               initialFocus={popupRef}
               data-preview-media={activeMediaIsVideo ? "video" : "image"}
               data-preview-crop={activeCard.previewCropped ? "true" : undefined}
+              // Mirrors `mosaic-row-card-${id}` on the tile: a hook for the one
+              // artwork whose framing the shared rules get wrong.
+              data-preview-id={activeCard.id}
               data-origin-motion={originMotionEnabled ? "true" : undefined}
               data-wide={isWide ? "true" : undefined}
               // No aria-label here: it would override the aria-labelledby Base UI
