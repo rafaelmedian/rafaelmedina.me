@@ -10,19 +10,21 @@ import { portfolioQuotes } from "../data/quotes"
 import { sampleQuotes } from "../data/quoteExamples"
 import { formatAvailability } from "../lib/availability"
 
+import { useDesignTokens } from "./useDesignTokens"
+
 import "./design-system.css"
 
 /*
  * The reference for what this site already is.
  *
- * Everything below was read out of src/index.css, tailwind.config.js, and the
+ * Everything below reflects src/styles/, tailwind.config.js, and the
  * components — it documents the system that shipped rather than one somebody
  * would like to have. Three consequences worth knowing before editing:
  *
- * 1. When you change a value in index.css, change it here too, or this page
- *    starts lying. The live specimens (ContactActionRow, the chips, the inline
- *    links) import the real components and cannot drift; the swatches, scale,
- *    and motion tables are transcriptions and can.
+ * 1. Shared token values are read from computed root styles, including after
+ *    CSS hot updates. Live specimens import the real components. Descriptions
+ *    and component-specific exceptions remain editorial: update those when
+ *    their behavior changes.
  * 2. Where the code and the intent disagree, the code wins and the gap is
  *    written down as a rule rather than quietly cleaned up. See the muted-ramp
  *    warning under Colour and the second-face note under Typography.
@@ -57,12 +59,6 @@ function terms(...parts: Array<string | number | undefined>) {
 }
 
 /* ------------------------------------------------------------------ colour */
-
-/* The colour text is actually measured against. `--body-bg` is set on <body>,
-   but App's wrapper is `min-h-dvh bg-[var(--canvas)]`, so white covers the
-   viewport and #fdfdfc only shows in overscroll. */
-const PAGE_BG = "#ffffff"
-
 /* WCAG 2.x relative luminance. Computed rather than transcribed so a swatch
    edit can never leave a stale ratio next to it. */
 function luminance(hex: string) {
@@ -98,6 +94,7 @@ function ContrastBadge({
   label?: string
   on: string
 }) {
+  if (!color || !on) return <span className="ds-ratio">Loading…</span>
   const ratio = contrast(color, on)
   const grade = ratioGrade(ratio, kind)
   const verdict =
@@ -192,21 +189,18 @@ function SpecCard({
   )
 }
 
-const SURFACES = [
+const SURFACES_ENTRIES = [
   {
-    hex: "#ffffff",
     token: "--canvas",
     name: "Page & raised",
     note: "App's wrapper paints this across the viewport, so white is both the page and the colour of the full-bleed About sheet and anything floating above it — hover cards, popovers, the dialog, logo chips. Every ratio on this page is measured against it.",
   },
   {
-    hex: "#fdfdfc",
     token: "--body-bg",
     name: "Beneath",
-    note: "Set on <body>, then covered by the wrapper's --canvas. Visible only in overscroll. The contrast comments in index.css cite it; the difference is under 0.1:1, but measure against white.",
+    note: "Set on <body>, then covered by the wrapper's --canvas. Visible only in overscroll. The contrast comments in styles/base.css cite it; the difference is under 0.1:1, but measure against white.",
   },
   {
-    hex: "#ececee",
     token: "--mosaic-card-surface",
     name: "Tile",
     note: "Work tiles. The one surface that is meaningfully darker than the page.",
@@ -225,20 +219,20 @@ const SURFACES = [
   },
 ]
 
-const INK = [
-  { hex: "#111111", token: "--body-color", use: "Body default and headings" },
-  { hex: "#141414", token: "--ink", use: "App wrapper text colour" },
+const INK_ENTRIES = [
+  { token: "--body-color", use: "Body default and headings" },
+  { token: "--ink", use: "App wrapper text colour" },
   { hex: "#171717", token: "—", use: "Text inside white cards and the preview dialog" },
-  { hex: "#2d2d2d", token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
+  { token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
   { hex: "#363636", token: "—", use: "Inline links on hover" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
   { hex: "#545454", token: "—", use: "About-panel prose and the Work history heading" },
-  { hex: "#6b6b6b", token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions" },
+  { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions" },
   { hex: "#747474", token: "—", use: "Corner nav links and the local-time label" },
-  { hex: "#757575", token: "--muted-soft", use: "Tertiary labels: definition terms and hobby notes" },
+  { token: "--muted-soft", use: "Tertiary labels: definition terms and hobby notes" },
 ]
 
-const NON_TEXT = [
+const NON_TEXT_ENTRIES = [
   { hex: "#b5b5b5", kind: "non-text", name: "Separator", note: "The middot between a company and its role." },
   {
     hex: "#c8c8c8",
@@ -247,7 +241,7 @@ const NON_TEXT = [
     note: "Resting link underlines; darkens to #9b9b9b on hover.",
   },
   {
-    hex: "#34a26a",
+    token: "--accent",
     kind: "non-text",
     name: "Available",
     note: "--accent, on the availability dot and visible at rest. A graphic only; the availability label uses --muted gray text.",
@@ -258,7 +252,7 @@ const NON_TEXT = [
     name: "Hint",
     note: "The Handlee avatar hint — display-sized, so 3:1 is the floor.",
   },
-] satisfies ReadonlyArray<{ hex: string; kind: ContrastKind; name: string; note: string }>
+] satisfies ReadonlyArray<{ hex?: string; token?: string; kind: ContrastKind; name: string; note: string }>
 
 const BRAND = [
   { hex: "#0a66c2", name: "LinkedIn", note: "Pill label. Vendor blue — do not re-tint to match the greys." },
@@ -269,32 +263,28 @@ const BRAND = [
 
 /* -------------------------------------------------------------- typography */
 
-const TYPE_SCALE = [
+const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-xs",
     sample: "Punta Cana · Local time",
-    spec: "0.75rem · 12px",
     where: "Map attribution, count pills, avatar initials, compact project captions, mobile table-of-contents numbers",
     style: { fontSize: "var(--text-xs)", lineHeight: 1.25 },
   },
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    spec: "0.875rem · 14px",
     where: "Pill labels, body copy, detail rows, hover-card text, desktop corner nav, mobile table-of-contents labels, wider project captions",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
     token: "--text-md",
     sample: "Senior Product Designer",
-    spec: "1rem · 16px",
     where: "Hero name; About prose, longer quotes, labels, section headings, card titles, and metadata",
     style: { fontSize: "var(--text-md)", lineHeight: 1.5, letterSpacing: "-0.005rem", fontWeight: 600 },
   },
   {
     token: "--text-lg",
     sample: "Ten years prototyping in code.",
-    spec: "1.125rem · 18px",
     where: "About ledes, short quotes, and standalone-page headings — the largest text on the site",
     style: { fontSize: "var(--text-lg)", lineHeight: 1.5, letterSpacing: "-0.015rem", fontWeight: 600 },
   },
@@ -309,23 +299,23 @@ const WEIGHTS = [
 
 /* ------------------------------------------------------------------- space */
 
-const RADII = [
+const RADII_ENTRIES = [
   {
-    value: "--radius-sm · 8px",
+    value: "--radius-sm",
     use: "Chips, nav hover targets, popover links, focus rings",
-    css: "8px",
+    css: "--radius-sm",
   },
   {
-    value: "--radius-md · 16px",
+    value: "--radius-md",
     use: "Hover cards, popovers, the local-time card, the social-time pill",
-    css: "16px",
+    css: "--radius-md",
   },
   {
-    value: "--radius-lg · 24px",
+    value: "--radius-lg",
     use: "Work tiles, quote cards, dialog media and bottom corners",
-    css: "24px",
+    css: "--radius-lg",
   },
-  { value: "--radius-full · 999px", use: "Pills, dots, avatars, nav buttons, the skip link", css: "999px" },
+  { value: "--radius-full", use: "Pills, dots, avatars, nav buttons, the skip link", css: "--radius-full" },
 ]
 
 const SPACE = [
@@ -374,7 +364,7 @@ const ELEVATION = [
 
 /* ------------------------------------------------------------------ motion */
 
-const EASINGS = [
+const EASINGS_ENTRIES = [
   {
     name: "Aurora",
     css: "ease-in-out",
@@ -383,19 +373,19 @@ const EASINGS = [
   },
   {
     name: "Standard — --ease-standard",
-    css: "cubic-bezier(0.2, 0, 0, 1)",
+    css: "--ease-standard",
     duration: "160–300ms",
     use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
   },
   {
     name: "Smooth — --ease-smooth",
-    css: "cubic-bezier(0.16, 1, 0.3, 1)",
+    css: "--ease-smooth",
     duration: "160–700ms",
     use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
-    css: "cubic-bezier(0.4, 0, 1, 1)",
+    css: "--ease-exit",
     duration: "120–160ms",
     use: "Hover cards, the local-time card, the takeover close, and the preview gallery leaving. Always shorter than the entrance it reverses.",
   },
@@ -437,13 +427,13 @@ const EASINGS = [
   },
 ]
 
-const DURATIONS = [
-  { value: "--duration-fast · 120ms", use: "Taps, small fades, popover-content swaps, and the shortest exit feedback." },
-  { value: "--duration-quick · 160ms", use: "Colour, opacity, and shadow on hover or focus, and every overlay exit. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
-  { value: "--duration-base · 200ms", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close. Absorbed the old 220ms entrances." },
+const DURATIONS_ENTRIES = [
+  { value: "--duration-fast", use: "Taps, small fades, popover-content swaps, and the shortest exit feedback." },
+  { value: "--duration-quick", use: "Colour, opacity, and shadow on hover or focus, and every overlay exit. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
+  { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close. Absorbed the old 220ms entrances." },
   { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
   { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
-  { value: "--duration-slow · 360ms", use: "Feed and preview media resolving from --blur-reveal (4px) as they decode, and the personal-photo stack fanning on hover or focus." },
+  { value: "--duration-slow", use: "Feed and preview media resolving from --blur-reveal as they decode, and the personal-photo stack fanning on hover or focus." },
   { value: "360ms / 200ms", use: "Personal-photo carousel: --photo-open-duration aliases --duration-slow; --photo-close-duration aliases --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
   { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
   { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
@@ -466,32 +456,32 @@ const BREAKPOINTS = [
   },
 ]
 
-const STACKING = [
+const STACKING_ENTRIES = [
   {
-    z: "0–20",
+    z: "0 / --z-dock / --z-chrome",
     name: "--z-dock / --z-chrome",
     note: "The page and main content wrapper (Tailwind's z-dock maps onto the token). The bottom scroll edge sits inside main at --z-chrome, below the table of contents at --z-social.",
   },
   { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
   {
-    z: "30",
+    z: "--z-corner",
     name: "--z-corner",
     note: "The About takeover close.",
   },
   {
-    z: "50 / 50",
+    z: "--z-social / --z-social",
     name: "Section / social corners — --z-social",
     note: "Both navigation corners and the mobile table-of-contents trigger sit at --z-social so they clear other overlays.",
   },
   {
-    z: "40",
+    z: "--z-overlay",
     name: "--z-overlay",
     note: "Hover cards, the local-time card, and the work-history block. The popover inside that block stacks locally (z 4 within its isolated container), so only the container carries the tier.",
   },
-  { z: "60 / 70", name: "--z-dialog-backdrop / --z-dialog", note: "The preview gallery and personal-photo backdrops, then their dialog shells." },
-  { z: "100", name: "--z-reaction", note: "The copy-email reaction has to clear the dialog trigger it sits under." },
-  { z: "120", name: "--z-skip-link", note: "Above everything, always." },
+  { z: "--z-dialog-backdrop / --z-dialog", name: "--z-dialog-backdrop / --z-dialog", note: "The preview gallery and personal-photo backdrops, then their dialog shells." },
+  { z: "--z-reaction", name: "--z-reaction", note: "The copy-email reaction has to clear the dialog trigger it sits under." },
+  { z: "--z-skip-link", name: "--z-skip-link", note: "Above everything, always." },
   {
     z: "500 (scoped)",
     name: "Map attribution",
@@ -536,11 +526,9 @@ function useActiveSection(enabled: boolean) {
   return active
 }
 
-/* The filter runs over the DOM rather than over the data, because the entries
-   are static markup that React never re-renders — a hidden attribute toggled
-   here cannot be clobbered by a later render, and it keeps the prose lists,
-   table rows, and card grids on one mechanism instead of three. */
-function useValueFilter(query: string, rootRef: React.RefObject<HTMLElement | null>) {
+/* One filter for prose, tables, and specimens. Rebuild searchable text when
+   token values change so HMR cannot leave the search index stale. */
+function useValueFilter(query: string, rootRef: React.RefObject<HTMLElement | null>, tokens: Record<string, string>) {
   const [matches, setMatches] = useState<number | null>(null)
   const [emptySections, setEmptySections] = useState<ReadonlySet<string>>(new Set())
 
@@ -551,17 +539,10 @@ function useValueFilter(query: string, rootRef: React.RefObject<HTMLElement | nu
     let found = 0
 
     for (const item of root.querySelectorAll<HTMLElement>("[data-ds-terms]")) {
-      /* An entry is findable by anything the reader can see on it plus the
-         synonyms its data-ds-terms adds — searching "radius" should reach the
-         caption that only mentions --radius-full in passing, not just the four
-         cards somebody remembered to tag. Cached on first pass because the
-         markup is static and textContent on the prose lists is not cheap. */
-      if (item.dataset.dsHaystack === undefined) {
-        item.dataset.dsHaystack = `${item.dataset.dsTerms ?? ""} ${item.textContent ?? ""}`
-          .replace(/\s+/g, " ")
-          .toLowerCase()
-      }
-      const hit = !needle || item.dataset.dsHaystack.includes(needle)
+      const haystack = `${item.dataset.dsTerms ?? ""} ${item.textContent ?? ""}`
+        .replace(/\s+/g, " ")
+        .toLowerCase()
+      const hit = !needle || haystack.includes(needle)
       item.toggleAttribute("hidden", !hit)
       if (hit) found += 1
     }
@@ -582,7 +563,7 @@ function useValueFilter(query: string, rootRef: React.RefObject<HTMLElement | nu
 
     setEmptySections(empty)
     setMatches(needle ? found : null)
-  }, [query, rootRef])
+  }, [query, rootRef, tokens])
 
   return { matches, emptySections }
 }
@@ -592,7 +573,45 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
   const filterRef = useRef<HTMLInputElement | null>(null)
   const [query, setQuery] = useState("")
   const filterId = useId()
-  const { matches, emptySections } = useValueFilter(query, rootRef)
+  const tokens = useDesignTokens()
+  const { matches, emptySections } = useValueFilter(query, rootRef, tokens)
+  const readToken = (name: string) => tokens[name] ?? ""
+  const resolveColor = <T extends { token?: string; hex?: string }>(entry: T) => {
+    const value = entry.token?.startsWith("--") ? readToken(entry.token) : entry.hex ?? ""
+    // Expand CSS shorthand for the contrast calculator and copy buttons.
+    const hex = /^#[\da-f]{3}$/i.test(value)
+      ? `#${[...value.slice(1)].map((digit) => digit + digit).join("")}`
+      : value
+    return { ...entry, hex }
+  }
+  const PAGE_BG = resolveColor({ token: "--canvas" }).hex
+  const SURFACES = SURFACES_ENTRIES.map(resolveColor)
+  const INK = INK_ENTRIES.map(resolveColor)
+  const NON_TEXT = NON_TEXT_ENTRIES.map(resolveColor)
+  const muted = resolveColor({ token: "--muted" }).hex
+  const mutedSoft = resolveColor({ token: "--muted-soft" }).hex
+  const tile = resolveColor({ token: "--mosaic-card-surface" }).hex
+  const ratioText = (foreground: string, background: string) =>
+    foreground && background ? `${contrast(foreground, background).toFixed(2)}:1` : "…"
+  const TYPE_SCALE = TYPE_SCALE_ENTRIES.map((entry) => {
+    const value = readToken(entry.token)
+    const pixels = value.endsWith("rem")
+      ? Number.parseFloat(value) * Number.parseFloat(tokens.rootFontSize)
+      : Number.parseFloat(value)
+    return { ...entry, spec: value ? `${value} · ${pixels}px` : "Loading…" }
+  })
+  const RADII = RADII_ENTRIES.map((entry) => ({
+    ...entry, value: `${entry.value} · ${readToken(entry.css)}`, css: readToken(entry.css),
+  }))
+  const EASINGS = EASINGS_ENTRIES.map((entry) => ({
+    ...entry, css: entry.css.startsWith("--") ? readToken(entry.css) : entry.css,
+  }))
+  const DURATIONS = DURATIONS_ENTRIES.map((entry) => ({
+    ...entry, value: entry.value.startsWith("--") ? `${entry.value} · ${readToken(entry.value)}` : entry.value,
+  }))
+  const STACKING = STACKING_ENTRIES.map((entry) => ({
+    ...entry, z: entry.z.replace(/--[\w-]+/g, readToken),
+  }))
   const active = useActiveSection(query.trim().length === 0)
 
   /* A reference gets consulted mid-keystroke, so the filter takes "/" the way
@@ -684,7 +703,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </nav>
 
             <p className="ds-rail-foot">
-              Read out of <code>index.css</code> and the components. Change a value there, change it here.
+              Token values follow the live CSS. Keep descriptions and component exceptions in step with the source.
             </p>
           </div>
         </div>
@@ -698,7 +717,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <p className="ds-lede">
               Not a proposal — an inventory. Every value here was read back out of the shipped stylesheet and
               components, so it describes what this site already does. Treat it as the constraint: reach for something
-              on this page before inventing a new one, and when you do change a value, change it in both places.
+              on this page before inventing a new one. Token values update automatically; keep component descriptions
+              and exceptions in step when their behavior changes.
             </p>
           </header>
 
@@ -778,7 +798,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div className="ds-ramp">
                 {INK.map((step) => (
                   <div
-                    key={step.hex}
+                    key={step.use}
                     className="ds-ramp-row"
                     data-ds-terms={terms(step.hex, step.token, step.use, "ink text colour")}
                   >
@@ -802,8 +822,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               >
                 <strong>The ramp is calibrated for the page, not for the tile.</strong>
                 <p>
-                  On white both muted steps clear AA — <code>--muted</code> at 5.33:1 and <code>--muted-soft</code> at
-                  4.61:1. On <code>--mosaic-card-surface</code> (#ececee) they fall to 4.52:1 and 3.91:1, so{" "}
+                  On white both muted steps clear AA — <code>--muted</code> at {ratioText(muted, PAGE_BG)} and{" "}
+                  <code>--muted-soft</code> at {ratioText(mutedSoft, PAGE_BG)}. On{" "}
+                  <code>--mosaic-card-surface</code> ({tile}) they measure {ratioText(muted, tile)} and{" "}
+                  {ratioText(mutedSoft, tile)}, so{" "}
                   <code>--muted-soft</code> stops passing for normal-size text. The About sheet is white, so its hobby
                   notes, definition terms, and résumé headings can use <code>--muted-soft</code>; on work tiles, stop at{" "}
                   <code>--muted</code>.
@@ -911,7 +933,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <SpecCard
                   terms={terms("ui system stack font-ui font-body apple sf pro inter webfont")}
                   name="UI — --font-ui"
-                  copy='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif'
+                  copy={readToken("--font-ui")}
                   note={
                     <>
                       All interface copy and controls. No webfont, no layout shift, SF Pro on Apple hardware. Use{" "}
@@ -956,7 +978,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div>
                 {TYPE_SCALE.map((entry) => (
                   <div
-                    key={entry.spec}
+                    key={entry.token}
                     className="ds-type-row"
                     data-ds-terms={terms(entry.token, entry.spec, entry.where, "type scale size")}
                   >
@@ -1576,8 +1598,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </li>
                 <li data-ds-terms={terms("mosaic row flex 1rem gap --row-height --row-span 320px 420px clamp(340px, 92vw, 380px)")}>
                   <strong>Mosaic rows</strong> are flex, <code>1rem</code> gap, with height driven by{" "}
-                  <code>--row-height</code>: <code>clamp(340px, 92vw, 380px)</code> stacked on mobile, 320px base, and
-                  420px from 900px up. Items flex by an inline <code>--row-span</code>.
+                  <code>--row-height</code>, which CSS resolves from the row data's{" "}
+                  <code>--row-height-input</code>: <code>clamp(340px, 92vw, 380px)</code> stacked on mobile, 320px
+                  base, and 420px from 900px up. Items flex by an inline <code>--row-span</code>.
                 </li>
                 <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish scale opacity translate initial load entrance blur 4px reduced motion")}>
                   <strong>Row height is asserted at exactly 420px</strong> in{" "}
@@ -1702,7 +1725,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   </thead>
                   <tbody>
                     {STACKING.map((entry) => (
-                      <tr key={entry.z} data-ds-terms={terms(entry.z, entry.name, entry.note, "z-index stacking layer")}>
+                      <tr key={entry.name} data-ds-terms={terms(entry.z, entry.name, entry.note, "z-index stacking layer")}>
                         <td>{entry.z}</td>
                         <td>{entry.name}</td>
                         <td>{entry.note}</td>
@@ -1713,13 +1736,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("tailwind z-scale base dock chrome overlay modal toast stacking context")}
+                data-ds-terms={terms("tailwind z-scale base dock chrome corner overlay social dialog backdrop reaction skip-link stacking context")}
               >
-                <strong>The Tailwind z-scale covers the bottom half only.</strong>
+                <strong>Tailwind and CSS share the same tokens.</strong>
                 <p>
-                  <code>tailwind.config.js</code> names base/dock/chrome/overlay/modal/toast at 0–50, but the CSS above
-                  30 uses raw numbers that do not line up with those names. Before adding a layer, read the table above
-                  rather than the config — and prefer raising a stacking context to inventing a higher number.
+                  <code>tailwind.config.js</code> maps the full global stacking ladder to the CSS custom properties.
+                  Colours, type sizes, radii, shadows, and motion utilities use those same tokens; responsive utilities
+                  use the breakpoints documented above. Prefer an existing tier when adding a layer.
                 </p>
               </div>
             </div>

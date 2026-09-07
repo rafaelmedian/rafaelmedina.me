@@ -186,6 +186,39 @@ test("documents component-specific motion curves that still ship", async ({ page
   }
 })
 
+test("refreshes token values, specimens, and contrast when the stylesheet changes", async ({ page }) => {
+  await openDesignSystem(page)
+
+  await page.addStyleTag({ content: `:root {
+    --canvas: #fafafa;
+    --accent: #225588;
+    --text-md: 1.0625rem;
+    --radius-md: 18px;
+    --duration-quick: 170ms;
+    --ease-standard: cubic-bezier(0.1, 0.2, 0.3, 1);
+  }` })
+
+  const availability = page.locator("#colour .ds-swatch-card").filter({ hasText: "Available" })
+  await expect(availability).toContainText("#225588")
+  await expect(availability.locator(".ds-swatch")).toHaveCSS("background-color", "rgb(34, 85, 136)")
+  await expect(availability.locator(".ds-ratio")).toContainText("7.39:1")
+  await expect(page.locator("#typography .ds-type-row").filter({ hasText: "--text-md" })).toContainText("1.0625rem · 17px")
+  await expect(page.locator("#space .ds-card").filter({ hasText: "--radius-md" })).toContainText("18px")
+  await expect(page.locator("#motion tr").filter({ hasText: "--duration-quick" })).toContainText("170ms")
+  await expect(page.locator("#motion .ds-motion-card").filter({ hasText: "--ease-standard" })).toContainText("cubic-bezier(0.1, 0.2, 0.3, 1)")
+
+  await page.getByRole("searchbox").fill("#225588")
+  await expect(availability).toBeVisible()
+  await page.addStyleTag({ content: ":root { --accent: #334455; }" })
+  await expect(availability).toBeHidden()
+  await page.getByRole("searchbox").fill("#334455")
+  await expect(availability).toBeVisible()
+  await page.getByRole("searchbox").clear()
+  await page.addStyleTag({ content: ":root { --accent: rgb(34 85 136); }" })
+  await expect(availability.locator(".ds-swatch")).toHaveCSS("background-color", "rgb(34, 85, 136)")
+  await expect(availability.locator(".ds-ratio")).toContainText("7.39:1")
+})
+
 // Guards the invariant behind the token cleanup: a custom property defined in
 // the stylesheets must be consumed somewhere (CSS var(), a JS property read,
 // or the Tailwind config) — otherwise it is drift and should be deleted, not
@@ -199,7 +232,7 @@ test("every custom property defined in the stylesheets is referenced", () => {
     })
 
   const definitions = new Set<string>()
-  for (const file of ["src/index.css", "src/components/design-system.css"]) {
+  for (const file of walk("src").filter((path) => path.endsWith(".css"))) {
     const css = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "")
     for (const match of css.matchAll(/^\s*(--[\w-]+)\s*:/gm)) {
       definitions.add(match[1])

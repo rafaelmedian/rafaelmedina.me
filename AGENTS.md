@@ -15,10 +15,16 @@ inventory of what already ships, not a proposal.
 
 Read it before adding a colour, a font size, a radius, an easing curve, or a
 z-index, and prefer a value that is already on it. When you do change one of
-those values in `src/index.css`, update
-`src/components/DesignSystemPage.tsx` in the same commit — the live component
-specimens cannot drift, but the swatches, scales, and tables are transcriptions
-and will.
+those values in `src/styles/`, update any affected descriptions and exceptions in
+`src/components/DesignSystemPage.tsx` in the same commit. Shared token values are
+read from computed CSS and the specimens use real components; component-specific
+values and explanatory prose still need to be kept in step.
+
+`src/index.css` is the ordered stylesheet entry point. Shared tokens and base
+rules live in `src/styles/base.css`; component files own their responsive rules.
+Keep the Tailwind reset first and the global reduced-motion policy last. See
+`src/styles/README.md` for ownership and cascade details. `npm run lint` includes
+CSS linting.
 
 ## Shipping
 

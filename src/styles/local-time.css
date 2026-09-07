@@ -1,0 +1,290 @@
+/* ------------------------------------------------------- local time & map --- */
+
+.mosaic-local-time-anchor {
+  min-height: 2.5rem;
+  align-items: center;
+}
+
+.mosaic-social-time {
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.54rem;
+  border-radius: var(--radius-md);
+  color: #747474;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: default;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-local-time-anchor:hover .mosaic-social-time,
+.mosaic-social-time:focus-visible {
+  background: rgb(17 17 17 / 0.055);
+  color: #2d2d2d;
+}
+
+.mosaic-local-time-card,
+.mosaic-resume-card {
+  position: absolute;
+  top: calc(100% + 0.125rem);
+  right: 0;
+  z-index: var(--z-overlay);
+  display: block;
+  width: min(22.5rem, calc(100vw - 2rem));
+  padding: 0.375rem;
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
+  color: #171717;
+  font-family: var(--font-ui);
+  text-align: left;
+  transform: translateY(-0.25rem) scale(0.97);
+  transform-origin: top right;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  /* Exit. Transform used to run --duration-base while opacity and visibility
+     ran --duration-quick, so the card was hidden 40ms before it stopped
+     moving -- the clipped-animation bug .mosaic-hover-card documents. One
+     duration across all three, on the exit curve. Enter lives on .is-open. */
+  transition:
+    transform var(--duration-quick) var(--ease-exit),
+    opacity var(--duration-quick) var(--ease-exit),
+    visibility var(--duration-quick) linear;
+}
+
+.mosaic-local-time-card::before,
+.mosaic-resume-card::before {
+  content: "";
+  position: absolute;
+  top: -0.75rem;
+  right: 0;
+  left: 0;
+  height: 0.75rem;
+}
+
+.mosaic-local-time-card.is-open,
+.mosaic-resume-card.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  /* Enter: the open state drives the way in, matching .mosaic-hover-card --
+     the long expo-out settle arriving, the quick exit curve dismissing. */
+  transition:
+    transform var(--duration-base) var(--ease-smooth),
+    opacity var(--duration-quick) ease-out,
+    visibility var(--duration-base) linear;
+}
+
+.mosaic-resume-card {
+  right: auto;
+  left: 0;
+  transform-origin: top left;
+}
+
+/* A window onto the top of the page rather than the whole of it. A full 17:22
+   page inside a 22.5rem card is 29rem tall, which made this the largest
+   floating surface on the site to preview a document the link opens anyway,
+   and at that size every line was far too small to read. The masthead and the
+   first roles are the part worth showing; the rest is a wheel away.
+
+   10rem is the local-time map's height, and these two cards hang off the same
+   corner rail -- the pair should read as one component with two contents. */
+.mosaic-resume-card-frame {
+  display: block;
+  height: 10rem;
+  overflow: hidden auto;
+  /* Deliberately *not* overscroll-behavior: contain. The wheel handler already
+     swallows every gesture while the résumé still has travel, so containment
+     would only apply to the events it hands back at either end -- and those are
+     exactly the ones that should reach the page. With it set, the document
+     froze whenever the pointer sat over this card. */
+  border-radius: calc(var(--radius-md) - 0.375rem);
+  /* The résumé is a white page on a white card. Same inset hairline the map
+     screenshot uses, for the same reason: without it the media has no edge. */
+  outline: 1px solid rgb(0 0 0 / 0.1);
+  outline-offset: -1px;
+  cursor: pointer;
+  /* A scrollbar on a 22.5rem preview is more chrome than the thing it meters,
+     and the page it scrolls is the whole content. */
+  scrollbar-width: none;
+}
+
+.mosaic-resume-card-frame::-webkit-scrollbar {
+  display: none;
+}
+
+.mosaic-resume-card-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mosaic-local-time-map {
+  position: relative;
+  display: grid;
+  height: 10rem;
+  place-items: center;
+  overflow: hidden;
+  border-radius: calc(var(--radius-md) - 0.375rem);
+  background:
+    radial-gradient(circle at 82% 26%, rgb(255 255 255 / 0.72), transparent 29%),
+    #eaf2f0;
+}
+
+.mosaic-local-time-map-screenshot,
+.mosaic-punta-cana-map,
+.mosaic-punta-cana-map-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mosaic-local-time-map-screenshot {
+  object-fit: cover;
+  outline: 1px solid rgb(0 0 0 / 0.1);
+  outline-offset: -1px;
+}
+
+.mosaic-punta-cana-map-canvas {
+  background: #eaf2f0;
+  opacity: 0;
+}
+
+.mosaic-punta-cana-map.is-ready .mosaic-punta-cana-map-canvas {
+  opacity: 1;
+}
+
+.mosaic-punta-cana-map-marker {
+  filter: drop-shadow(0 2px 3px rgb(30 52 46 / 0.26));
+}
+
+.mosaic-local-time-map-attribution {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.25rem;
+  /* Clears Leaflet's internal pane stack. Scoped: the transformed card is its
+     own stacking context, so this 500 never meets the global ladder. */
+  z-index: 500;
+  /* 11px text + this padding lands the link at the 24px minimum target
+     (WCAG 2.5.8); the opaque backing keeps contrast steady over any tile. */
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: #555b58;
+  font-size: var(--text-xs);
+  line-height: 1.1;
+  text-decoration: none;
+}
+
+.mosaic-local-time-map-attribution:hover,
+.mosaic-local-time-map-attribution:focus-visible {
+  color: #202422;
+  text-decoration: underline;
+}
+
+.mosaic-local-time-map-attribution:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.mosaic-local-time-card-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.625rem 0.625rem;
+}
+
+.mosaic-local-time-card-copy > span:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.mosaic-local-time-card-copy strong {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: -0.0125rem;
+  line-height: 1.2;
+}
+
+.mosaic-local-time-card-copy > span:first-child > span {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.25;
+}
+
+.mosaic-local-time-card-clock {
+  flex: none;
+  color: #315d52;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+}
+
+@media (hover: none) {
+  .mosaic-local-time-card,
+  .mosaic-resume-card {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The global reduced-motion reset at the end of the file clamps every
+     transition-duration, so only travel needs removing here. */
+  .mosaic-local-time-card,
+  .mosaic-local-time-card.is-open,
+  .mosaic-resume-card,
+  .mosaic-resume-card.is-open {
+    transform: none;
+  }
+}
+
+@media (max-width: 699.98px) {
+
+  .mosaic-resume-anchor {
+    position: static;
+  }
+
+  .mosaic-resume-card {
+    left: 50%;
+    translate: -50% 0;
+    transform-origin: top center;
+  }
+
+}
+
+@media (max-width: 639.98px) {
+
+  .mosaic-local-time-card {
+    right: auto;
+    left: 50%;
+    translate: -50% 0;
+    transform-origin: top center;
+  }
+
+  .mosaic-social-time {
+    padding: 0 0.34rem;
+    font-size: var(--text-xs);
+  }
+}
+
+@media (min-width: 480px) and (max-width: 699.98px) and (hover: hover) and (pointer: fine) {
+  .mosaic-social-time {
+    font-size: 0.875rem;
+  }
+}
