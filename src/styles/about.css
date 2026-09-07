@@ -1,0 +1,325 @@
+/* ------------------------------------------------------------ about sheet --- */
+
+.mosaic-about {
+  position: relative;
+  left: 50%;
+  z-index: 1;
+  display: block;
+  width: 100vw;
+  width: 100dvw;
+  margin-top: 0;
+  margin-left: -50vw;
+  margin-left: -50dvw;
+  padding: 0;
+  background: var(--canvas);
+}
+
+.mosaic-about:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.mosaic-about-panel {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: start center;
+  border-radius: 0;
+  border: 0;
+  background: var(--canvas);
+  padding: clamp(5rem, 10vw, 8.75rem) clamp(1.25rem, 6vw, 5rem) clamp(2.5rem, 7vw, 5.5rem);
+  overflow: hidden;
+}
+
+.mosaic-about-body {
+  width: 100%;
+  margin-top: 0;
+  display: grid;
+  gap: 0;
+  text-align: left;
+}
+
+.mosaic-about-section {
+  width: min(100%, 34rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1.05rem;
+}
+
+.mosaic-about-section-intro {
+  position: relative;
+  width: 100%;
+}
+
+.mosaic-about-section-copy {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1.05rem;
+  text-align: left;
+}
+
+/* About copy rises in from below, released per block the first time it
+   scrolls into the sheet — the same family as the hero and mosaic entrances
+   but with more travel, so the text reads as arriving from the bottom edge.
+   The markup ships the attribute empty, so without JavaScript nothing is
+   ever hidden; the panel's observer holds only below-the-fold blocks
+   transparent. The entrance also gives the sheet's composited layer a beat
+   to rasterise fresh text tiles behind intent instead of as a late paint. */
+[data-about-fade="pending"] {
+  opacity: 0;
+}
+
+[data-about-fade="in"] {
+  animation: mosaic-about-rise 440ms var(--ease-smooth) both;
+  /* Set per batch by the panel's observer: blocks that arrive together
+     cascade top-down, so the sheet reads in order however far a gesture
+     jumps. `both` keeps a delayed block at the from-frame while it waits. */
+  animation-delay: var(--about-fade-delay, 0ms);
+}
+
+@keyframes mosaic-about-rise {
+  from {
+    opacity: 0;
+    filter: blur(var(--blur-reveal));
+    transform: translateY(1.75rem);
+  }
+
+  to {
+    opacity: 1;
+    filter: none;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-about-fade] {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+.mosaic-about-work-history {
+  position: relative;
+  width: 100%;
+  margin-block-start: 2.5rem;
+  padding-block: 0 clamp(2rem, 6vw, 5rem);
+  scroll-margin-top: clamp(1rem, 4vw, 3rem);
+  text-align: left;
+}
+
+@media (min-width: 700px) {
+  .mosaic-about-work-history {
+    margin-block-start: 5rem;
+  }
+}
+
+.mosaic-about-work-history-copy {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+  text-align: left;
+}
+
+.mosaic-about-section-heading {
+  margin: 0;
+  color: #545454;
+  font-size: var(--text-md);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
+}
+
+.mosaic-about-body p {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: 1.7;
+  letter-spacing: -0.005rem;
+  color: #545454;
+  text-wrap: pretty;
+}
+
+.mosaic-about-body .mosaic-about-lede {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.015rem;
+  color: #2d2d2d;
+}
+
+.mosaic-about-hobbies {
+  margin: 0.5rem 0 0.9rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.5rem 1.25rem;
+}
+
+.mosaic-about-hobbies li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: var(--text-md);
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
+  color: #2d2d2d;
+}
+
+.mosaic-about-hobby-emoji {
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+.mosaic-about-hobby-note {
+  color: var(--muted-soft);
+}
+
+.mosaic-about-link {
+  /* Darker than the hero's inline links: it sits in long-form prose. The
+     underline mechanics match the shared link archetype. */
+  color: #2d2d2d;
+  text-decoration-line: underline;
+  text-decoration-color: #c8c8c8;
+  text-decoration-thickness: 0.0625rem;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 0.11em;
+  transition: text-decoration-color var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-about-link:hover,
+.mosaic-about-link:focus-visible {
+  text-decoration-color: #2d2d2d;
+}
+
+.mosaic-about-closing {
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding-top: 1.25rem;
+}
+
+.mosaic-about-body .mosaic-about-resume-download {
+  margin-top: 4rem;
+}
+
+.mosaic-about-resume {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+}
+
+.mosaic-about-work-list {
+  margin-top: 1.5rem;
+  gap: 3rem;
+}
+
+.mosaic-about-resume-entry {
+  display: grid;
+  gap: 0.35rem;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding-block: 1.25rem;
+}
+
+.mosaic-about-resume > .mosaic-about-resume-entry:first-child {
+  border-top: 0;
+}
+
+.mosaic-about-work-entry {
+  display: grid;
+  grid-template-columns: 6.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: 2rem;
+  border-top: 0;
+  padding-block: 0;
+}
+
+.mosaic-about-resume-details {
+  min-width: 0;
+}
+
+.mosaic-about-body .mosaic-about-resume-title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.005rem;
+  color: #2d2d2d;
+  text-wrap: balance;
+}
+
+.mosaic-about-body .mosaic-about-resume-location {
+  margin-top: 0.1rem;
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.mosaic-about-body .mosaic-about-resume-dates {
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: var(--muted-soft);
+  white-space: nowrap;
+}
+
+.mosaic-about-body .mosaic-about-resume-description {
+  margin-top: 0.75rem;
+  font-size: var(--text-md);
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.mosaic-about-resume-education {
+  margin-top: 4rem;
+  padding-top: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.mosaic-about-education-list {
+  margin-top: 0;
+  gap: 3rem;
+}
+
+.mosaic-about-body .mosaic-about-resume-heading {
+  font-size: var(--text-md);
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
+  color: var(--muted-soft);
+}
+
+@media (max-width: 479.98px) {
+  .mosaic-about-work-list {
+    gap: 3rem;
+  }
+
+  .mosaic-about-work-entry {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  .mosaic-about-body .mosaic-about-resume-dates {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 699.98px) {
+
+  .mosaic-about {
+    padding-inline: 0;
+  }
+
+  .mosaic-about-link {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+}

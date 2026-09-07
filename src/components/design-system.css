@@ -510,7 +510,7 @@
   font-family: var(--font-code);
   font-size: var(--text-xs);
   line-height: 1.45;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .ds-card-note {
@@ -550,7 +550,7 @@
   font-family: var(--font-code);
   font-size: var(--text-xs);
   line-height: 1.45;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .ds-copy:hover,

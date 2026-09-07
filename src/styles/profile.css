@@ -1,0 +1,503 @@
+/* ----------------------------------------------------------- shell & hero --- */
+
+.mosaic-shell {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1560px;
+  padding-top: 0;
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  padding-inline: clamp(1rem, 5vw, 1.5rem);
+}
+
+.mosaic-hero {
+  min-height: clamp(17rem, 42vh, 25rem);
+  display: grid;
+  place-items: center;
+  padding-block: clamp(1.6rem, 5vw, 3.2rem);
+  transition:
+    min-height var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1),
+    padding-block var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mosaic-hero-profile {
+  width: min(calc(100vw - 2rem), 64rem);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+/* The hero has to lead the work cards. The top mosaic row now starts transparent
+   despite the +1240ms LCP cost described under `.mosaic-work-intro`, so the two
+   cascades need to remain distinct: every hero item is in flight by var(--duration-base), the
+   first four have landed by 500ms, and the cards start lifting at 520ms before
+   the final hero item settles at ~580ms.
+   Keep the last delay plus the duration under `--work-intro-base` + 60ms. */
+.mosaic-hero-profile-animated > * {
+  animation: mosaic-intro-rise 380ms var(--ease-smooth) both;
+  will-change: opacity, transform;
+}
+
+.mosaic-hero-profile-animated > :nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.mosaic-hero-profile-animated > :nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.mosaic-hero-profile-animated > :nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.mosaic-hero-profile-animated > :nth-child(4) {
+  animation-delay: var(--duration-fast);
+}
+
+.mosaic-hero-profile-animated > :nth-child(5) {
+  animation-delay: var(--duration-quick);
+}
+
+.mosaic-hero-profile-animated > :nth-child(6) {
+  animation-delay: var(--duration-base);
+}
+
+@keyframes mosaic-intro-rise {
+  from {
+    opacity: 0;
+    filter: blur(var(--blur-reveal));
+    transform: translateY(0.8rem);
+  }
+
+  to {
+    opacity: 1;
+    filter: none;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------------------------------------- hero profile & avatar --- */
+
+.mosaic-profile-info {
+  display: flex;
+  width: min(100%, 28.6875rem);
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mosaic-profile-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mosaic-avatar {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mosaic-avatar-coin {
+  position: relative;
+  perspective: 600px;
+  object-fit: unset;
+  cursor: pointer;
+}
+
+.mosaic-avatar-coin-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  transition: transform 0.7s var(--ease-smooth);
+  will-change: transform;
+}
+
+.mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
+.mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
+  transform: rotateY(180deg);
+}
+
+.mosaic-avatar-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.mosaic-avatar-face-back {
+  transform: rotateY(180deg) scaleX(-1);
+}
+
+.mosaic-avatar-button {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  display: block;
+  transition: transform var(--duration-quick) var(--ease-smooth);
+}
+
+.mosaic-avatar-button:active {
+  transform: scale(0.94);
+}
+
+/* The global :where() focus rule supplies the outline; only the offset grows. */
+.mosaic-avatar-button:focus-visible {
+  outline-offset: 3px;
+}
+
+.mosaic-avatar-hint {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.5rem);
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: #e5352b;
+  opacity: 0;
+  transform: translateY(-50%) translateX(-0.5rem) rotate(-3deg);
+  transform-origin: left center;
+  pointer-events: none;
+  width: max-content;
+  white-space: nowrap;
+  transition:
+    opacity var(--duration-base) var(--ease-smooth),
+    transform 260ms var(--ease-smooth);
+}
+
+.mosaic-avatar-button:hover .mosaic-avatar-hint,
+.mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0) rotate(-3deg);
+}
+
+.mosaic-avatar-hint-arrow {
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.mosaic-avatar-hint-label {
+  white-space: nowrap;
+  text-wrap: nowrap;
+  font-family: "Handlee", "Bradley Hand", "Segoe Print", cursive;
+  font-size: var(--text-md);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+  /* Handlee ships a single weight, so thicken the strokes instead of asking
+     for a faux-bold synthesis. */
+  -webkit-text-stroke: 0.45px currentColor;
+  /* Sit level with the tail of the arrow, which ends near the top of its box. */
+  transform: translateY(-4px);
+}
+
+@media (max-width: 699.98px) {
+  .mosaic-avatar-hint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
+  .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
+    transform: none;
+  }
+  .mosaic-avatar-button,
+  .mosaic-avatar-button:active {
+    transform: none;
+  }
+
+  /* Pin the hint's resting pose so only its (clamped) fade remains. */
+  .mosaic-avatar-hint,
+  .mosaic-avatar-button:hover .mosaic-avatar-hint,
+  .mosaic-avatar-button:focus-visible .mosaic-avatar-hint {
+    transform: translateY(-50%) rotate(-3deg);
+  }
+}
+
+/* First-load entrance for the work cards. It has to exist in the prerendered
+   HTML: CSS animations start at first paint, long before hydration, so the
+   class comes from `!hasCompletedWorkIntro` in SimpleFeed rather than from an
+   effect. Delays are data-driven from inline
+   `--work-intro-row` and
+   `--work-intro-col` rather than nth-child, so all twelve cards stagger; the
+   values continue through every row.
+   Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
+   700px the rows collapse into one flex column, and a smaller row step would
+   make a card arrive before the card above it.
+   The base is tuned against the hero cascade above, which now runs 0ms to var(--duration-base)
+   delays at 380ms each. Under the previous 40ms-to-350ms hero schedule, the old
+   320ms card base let work begin before the last two hero items, so both
+   cascades read as one undifferentiated wash. The 520ms base now puts the first
+   card after every hero item is in flight and the first four have landed, so
+   the mosaic answers the hero instead of arriving with it. The steps are
+   tightened to pay for the later start -- the last card still begins under
+   800ms. */
+/* ------------------------------------------------------- first-load intro --- */
+
+.mosaic-work-intro {
+  --work-intro-base: 520ms;
+  --work-intro-row-step: 70ms;
+  --work-intro-col-step: 32ms;
+}
+
+/* Fade, blur-to-sharp, and translateY. A scale would change the measured box of
+   `.mosaic-row`, whose height is asserted at exactly 420px in
+   tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
+   stays under the 1rem row gap, so a rising card never covers the one below. */
+.mosaic-work-intro .mosaic-row-item {
+  animation: mosaic-intro-rise 480ms var(--ease-smooth) both;
+  animation-delay: calc(
+    var(--work-intro-base) +
+    var(--work-intro-row, 0) * var(--work-intro-row-step) +
+    var(--work-intro-col, 0) * var(--work-intro-col-step)
+  );
+}
+
+/* The top row used to be exempted from the fade (a transform-only
+   `mosaic-intro-lift` keyframe, now deleted) to protect LCP. That exemption
+   left it fully opaque at first paint, so the cards were on screen before the
+   header existed -- the one thing this entrance must not do. Every row fades
+   now.
+   Know what it costs. The LCP element is the row-0 video poster
+   (Projects/shot-small-9-poster.webp). Measured at Fast 3G + 4x CPU, cold
+   context: 845ms with the top row transform-only, 2085ms once it fades.
+   The +1240ms is FIXED, not tunable. The same element wins LCP either way, and
+   the penalty does not scale with the animation: base 520ms + 540ms duration,
+   base 520ms + var(--duration-slow), and base 60ms + var(--duration-slow) (fade fully finished by 420ms) all
+   measured ~2085ms. Chrome defers an opacity-animated element's recorded paint
+   to a later repaint however brief the fade is. There is no timing that buys
+   the metric back -- the choice is binary, which is why the choreography above
+   is tuned purely for feel.
+   Perceptually the cards are on screen at ~1000ms (base + duration); the 2085ms
+   is the metric catching up afterwards. That is still inside the 2.5s "good"
+   threshold, but the headroom is thin -- re-measure before putting anything
+   else on the critical path, and do not try to win it back by shortening the
+   fade. That has been tried three ways and does nothing. */
+
+/* --------------------------------- profile meta, availability & live time --- */
+
+.mosaic-profile-meta h2 {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-weight: 600;
+  font-size: var(--text-md);
+  line-height: 1.7;
+  letter-spacing: -0.005rem;
+  color: #2d2d2d;
+}
+
+.mosaic-profile-subtitle {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: var(--text-md);
+  line-height: 1.7;
+  letter-spacing: -0.005rem;
+  color: var(--muted);
+}
+
+
+.mosaic-profile-location {
+  margin: 2.1rem 0 0;
+  width: auto;
+  height: auto;
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-weight: 400;
+  font-size: var(--text-md);
+  line-height: 1.7;
+  letter-spacing: -0.005rem;
+  color: var(--muted);
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 0.5rem;
+}
+
+.mosaic-profile-location-place,
+.mosaic-profile-availability {
+  white-space: nowrap;
+}
+
+.mosaic-profile-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mosaic-profile-availability {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-ui);
+  font-size: inherit;
+  font-weight: 400;
+  letter-spacing: -0.005rem;
+  color: var(--muted);
+}
+
+/* The dot used to be opacity 0 until the line was hovered, which meant the only
+   chromatic pixel in the site's own chrome was invisible at rest -- and it sits
+   next to the one fact a visitor is scanning for. It is on now; hover only
+   widens the halo. */
+.mosaic-availability-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgb(52 162 106 / 0.16);
+  transform: translateY(1px);
+  transition: box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-profile-availability:hover .mosaic-availability-dot {
+  box-shadow: 0 0 0 4px rgb(52 162 106 / 0.18);
+}
+
+.mosaic-profile-contact .mosaic-profile-actions {
+  margin-top: 1.1rem;
+}
+
+.mosaic-profile-location > span[aria-hidden="true"] {
+  color: var(--muted-soft);
+  margin-inline: 0.25rem;
+}
+
+.mosaic-live-time {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  overflow: hidden;
+  vertical-align: baseline;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.mosaic-live-time-track {
+  position: relative;
+  display: inline-grid;
+  min-width: max-content;
+}
+
+.mosaic-live-time-value {
+  grid-area: 1 / 1;
+  display: inline-block;
+  will-change: transform, opacity, filter;
+  /* The blur lane is what makes the roll read as one label moving rather than
+     two boxes sliding past each other; 2px is the text-swap default. */
+  filter: blur(0);
+  transition:
+    transform 240ms var(--ease-smooth),
+    opacity 240ms var(--ease-smooth),
+    filter 240ms var(--ease-smooth);
+}
+
+.mosaic-live-time-value-current {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.mosaic-live-time-value-next {
+  transform: translateY(1.05em);
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.mosaic-live-time.is-animating .mosaic-live-time-value-current {
+  transform: translateY(-1.05em);
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.mosaic-live-time.is-animating .mosaic-live-time-value-next {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (max-width: 699.98px) {
+  .mosaic-shell {
+    padding-inline: 8px;
+  }
+
+  .mosaic-hero-profile {
+    width: 100%;
+  }
+
+}
+
+@media (max-width: 327.98px) {
+
+  .mosaic-profile-location {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .mosaic-profile-location-separator {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .mosaic-shell {
+    width: 100%;
+    padding-top: 0;
+    padding-inline: 0;
+  }
+
+  .mosaic-hero {
+    min-height: 25rem;
+    margin: 0;
+    /* The contact block grew the hero past its min-height, so the avatar
+       needs real top clearance; the bottom padding only bites once chip
+       expansions push further, keeping the profile off the mosaic. */
+    padding-block: clamp(2.25rem, 4.5vh, 3.5rem) clamp(1.75rem, 3vw, 3rem);
+  }
+}
+
+@media (min-width: 1320px) {
+  .mosaic-profile-meta h2 {
+    font-size: var(--text-md);
+  }
+}
+
+@media (min-width: 700px) and (max-width: 899.98px) {
+  .mosaic-shell {
+    padding-inline: 0;
+  }
+
+  .mosaic-hero {
+    min-height: clamp(18rem, 40vh, 24rem);
+    padding-block: clamp(1.7rem, 4vw, 2.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* reduced-motion.css clamps durations but not delays. Remove the delayed
+     entrance too, so its filled from-state never hides the hero's content. */
+  .mosaic-hero-profile-animated > * {
+    animation: none;
+  }
+}
+
+@media (max-width: 639.98px) {
+
+  .mosaic-hero {
+    padding-top: calc(2rem + env(safe-area-inset-top));
+  }
+}

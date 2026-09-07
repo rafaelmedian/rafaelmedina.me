@@ -1,0 +1,168 @@
+/* Handlee (SIL OFL 1.1), the handwriting face Figma ships. Used only for the
+   hover hint on the profile photo, so it loads lazily and falls back to a
+   system cursive. */
+@font-face {
+  font-family: "Handlee";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Handlee-Regular.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ----------------------------------------------------------------- tokens --- */
+
+:root {
+  --font-fallback:
+    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-primary: var(--font-fallback);
+  --font-body: var(--font-primary);
+  /* The stack most interface text actually renders with: system-first, so SF
+     on Apple hardware. Distinct from --font-fallback, which leads with Inter. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
+  --body-color: #111;
+  --body-bg: #fdfdfc;
+  --mosaic-card-surface: #ececee;
+  /* Motion. Three curves cover the site: --ease-standard is the house curve
+     for state changes, --ease-smooth the long expo-out for entrances and
+     settles, --ease-exit the accelerating leave. The file used to carry three
+     visually indistinguishable expo-outs (0.19/1/0.22/1, 0.16/1/0.3/1,
+     0.22/1/0.36/1); they are now all --ease-smooth. */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  /* Durations. Four steps; pick the nearest one instead of minting a new
+     number. The 140/150/160/180ms spread this file used to carry was one
+     perceptual step, so it all collapsed onto --duration-quick. Longer
+     one-off choreography (240ms popover settle, 520ms work intro) stays
+     component-scoped. */
+  --duration-fast: 120ms; /* taps, small fades */
+  --duration-quick: 160ms; /* most hover and state transitions */
+  --duration-base: 200ms; /* larger surface moves */
+  --duration-slow: 360ms; /* scrims, captions, big reveals */
+  --blur-reveal: 4px; /* load, preview entrance, switch, and exit */
+  /* Stacking. The global ladder; Tailwind's z-dock/z-chrome map onto the
+     same tokens. Component-internal stacking (0-5, and the map attribution's
+     Leaflet-clearing 500) stays raw because it lives inside an isolated or
+     transformed context and never meets these tiers. */
+  --z-dock: 10; /* main content wrapper */
+  --z-chrome: 20; /* bottom scroll edge */
+  --z-corner: 30; /* section corner, takeover close */
+  --z-overlay: 40; /* hover cards, work-history, the local-time card */
+  --z-social: 50; /* social corner, so its cards clear other overlays */
+  --z-dialog-backdrop: 60; /* preview-gallery backdrop and pending veil */
+  --z-dialog: 70; /* the preview-gallery shell itself */
+  --z-reaction: 100; /* copy-email reaction over the dialog trigger */
+  --z-skip-link: 120; /* above everything, always */
+  --canvas: #ffffff;
+  --ink: #141414;
+  /* Muted text ramp. Both steps clear WCAG AA (4.5:1) against --body-bg:
+     --muted is 5.3:1, --muted-soft 4.6:1. Keep new muted text on these two
+     rather than reaching for a lighter one-off grey. */
+  --muted: #6b6b6b;
+  --muted-soft: #757575;
+  /* Focus indicators need 3:1 against the adjacent surface (WCAG 1.4.11), which
+     rules out mid-greys on our near-white backgrounds. */
+  --focus-ring: #2d2d2d;
+  /* The availability dot's accent is 3.0:1 on --body-bg for a non-text
+     graphic. The availability label uses the neutral --muted text colour. */
+  --accent: #34a26a;
+  --elastic-edge-height: 56px;
+  /* The floating-surface elevation. Hover cards, popovers, the takeover
+     close and seam — one visual tier, one recipe. Surfaces without a border
+     prepend their own hairline ring before the var(). */
+  --shadow-overlay:
+    0 1px 2px rgb(16 16 20 / 0.06),
+    0 12px 32px rgb(16 16 20 / 0.16);
+  /* Type scale. Four steps, and the whole site is built from them -- see
+     /design-system. The ramp used to carry twelve distinct sizes, half of them
+     sitting a fraction of a pixel from a neighbour (0.82 next to 0.8125, 0.9
+     next to 0.875), which is noise rather than a scale. If a new element does
+     not fit one of these four, change the element, not the scale. */
+  --text-xs: 0.75rem; /* 12px -- map attribution, count pills, avatar initials */
+  --text-sm: 0.875rem; /* 14px -- pill labels, body copy, detail rows */
+  --text-md: 1rem; /* 16px -- card titles, prose, hero name */
+  --text-lg: 1.125rem; /* 18px -- the about lede, the largest text on the site */
+  /* Radius. Four steps. Anything nested is derived from one of them by the
+     concentric rule (outer = inner + the padding between them) rather than
+     becoming a fifth value -- that is why the hover-card media uses a
+     calc() expression rather than a new token. */
+  --radius-sm: 8px; /* chips, nav targets, focus rings */
+  --radius-md: 16px; /* hover cards, popovers, the local-time card */
+  --radius-lg: 24px; /* work tiles, dialog media and corners */
+  --radius-full: 999px; /* pills, dots, avatars, nav buttons */
+  color-scheme: light;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ----------------------------------------------------------- base & focus --- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--body-bg);
+  color: var(--body-color);
+}
+
+:where(h1, h2, h3, h4, h5, h6) {
+  text-wrap: balance;
+}
+
+:where(p, li, dd) {
+  text-wrap: pretty;
+}
+
+.skip-link {
+  position: fixed;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: var(--z-skip-link);
+  transform: translateY(-160%);
+  border-radius: var(--radius-full);
+  background: var(--ink);
+  color: var(--canvas);
+  padding: 0.6rem 0.9rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: transform var(--duration-quick) var(--ease-standard);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+:where(a, button, input, textarea, select, summary, label, [role="button"], [tabindex]:not([tabindex="-1"])) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgb(138 138 138 / 0.24);
+}
+
+:where(a, button, input, textarea, select, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+:where(h1, h2, h3, h4, h5, h6, #about, #feed, #work, #contact, #cv) {
+  scroll-margin-top: 5rem;
+}
+
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+#root {
+  min-height: 100dvh;
+}
