@@ -170,9 +170,9 @@ function getPreviewDescription(card: PortfolioCard) {
 }
 
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
-  const teammates = card.team ?? []
-  // Credit myself alongside anyone I worked with; solo shots keep the team credits hidden.
-  return teammates.length > 0 ? [collaborators.rafael, ...teammates] : []
+  // Credited on every project, with or without company: a shot with no names
+  // under it reads as unattributed rather than as solo work.
+  return [collaborators.rafael, ...(card.team ?? [])]
 }
 
 function getInitials(name: string) {

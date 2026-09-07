@@ -1155,7 +1155,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
                   header at z-index 1.
                   Below the artwork, the project title and a single description cover the product, contribution,
-                  and result. Left-aligned collaborator avatar links follow the description without a visible label.
+                  and result. Left-aligned collaborator avatar links follow the description without a visible label,
+                  starting with mine on every project so a solo shot is credited rather than unattributed.
                   The description uses <code>--text-md</code>, a 1.6 line height, the existing prose colour
                   <code>#545454</code>, and a 46rem maximum measure. Credits use <code>--text-sm</code>
                   with 1.5rem of space above them. The text column matches the notes reader: a centered 48rem

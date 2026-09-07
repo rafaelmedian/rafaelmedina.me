@@ -4091,14 +4091,15 @@ test("puts unlabelled credits below the description without a site link", async 
   await expect(dialog.getByRole("link", { name: "matcha.xyz", exact: true })).toHaveCount(0)
   await expect(dialog.locator(".preview-gallery-project-link")).toHaveCount(0)
 
-  // Paging must update the prose and credits, including projects with no team.
+  // Paging must update the prose and credits, including solo projects, which
+  // carry my credit alone rather than none.
   const total = Number((await dialog.locator(".preview-gallery-count").innerText()).split("/")[1])
   for (let index = 0; index < total; index += 1) {
     await expect(description).not.toBeEmpty()
     await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined)|sole product designer/)
     await expect(dialog.locator("dl")).toHaveCount(0)
     if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
-      await expect(team).toHaveCount(0)
+      await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
     }
     await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   }
