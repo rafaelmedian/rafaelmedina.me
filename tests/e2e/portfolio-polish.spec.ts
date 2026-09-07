@@ -2384,6 +2384,29 @@ test("places the quote slider beside Protector instead of Dark mode", async ({ p
   await expect(page.getByRole("link", { name: /Open Matcha dark mode/ })).toHaveCount(0)
 })
 
+// Protector is the one tile that owns most of its row, so it is the one the
+// flat three-up `sizes` used to under-declare: it asked for 446px, rendered at
+// ~790, and the crop scale magnified that again. The variant it loads has to
+// keep up with the slot, not with the three-up baseline.
+test("asks for a variant that matches Protector's wide slot", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/")
+
+  const media = page.locator(".mosaic-row-card-preview-protector img")
+  const { itemWidth, declared, chosen } = await media.evaluate((element) => {
+    const image = element as HTMLImageElement
+    const declaredWide = /(\d+)px$/.exec(image.sizes)
+    return {
+      itemWidth: element.closest(".mosaic-row-item")!.getBoundingClientRect().width,
+      declared: declaredWide ? Number(declaredWide[1]) : 0,
+      chosen: image.currentSrc,
+    }
+  })
+
+  expect(declared).toBeGreaterThanOrEqual(itemWidth * 0.9)
+  expect(chosen).toMatch(/protector-960w\.webp$/)
+})
+
 test("closes the token-page row with the dealership hub", async ({ page }) => {
   await page.goto("/")
 

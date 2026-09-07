@@ -1090,7 +1090,7 @@
 }
 
 /* `width: auto` leaves the art at its density-corrected intrinsic width, which
-   `previewSizes` pins to the 446px slot -- on the wide layout that is narrower
+   `previewSizesForShare` pins to the 446px slot -- on the wide layout that is narrower
    than the card and the mat comes back. Take the full width instead; the
    inherited `max-height` still stops the art before it outgrows a card that is
    ever narrower than the artwork. */
