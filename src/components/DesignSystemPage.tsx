@@ -344,7 +344,7 @@ const ELEVATION = [
   {
     name: "Hairline",
     shadow: "inset 0 0 0 1px rgb(0 0 0 / 0.05)",
-    use: "Logo chips at 0.05, dialog media frames at 0.06. Reads as an edge, not a lift.",
+    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content.",
   },
   {
     name: "Resting control",
@@ -1282,8 +1282,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 black hairline, and --radius-lg corners. Quotes up to 80 characters (including spaces)
                 use --text-lg (18px); longer quotes use --text-md (16px). Both use 1.5 line height with a
                 centered 21rem measure and balanced line breaks; attribution uses --text-sm and --muted. A shared grid reserves the longest
-                quote's height, author row, and attribution-note row using subgrid. Each 32px portrait and attribution fit their content and are centered
-                together, with text wrapping naturally when the available width runs out.
+                quote's height, author row, and attribution-note row using subgrid. Each 40px portrait and attribution fit their content and are centered
+                together, with text wrapping naturally when the available width runs out. Portraits
+                carry a 12% black hairline inside the crop so pale photos keep an edge on the card.
                 Confirmed authors' names are buttons with invisible 40px-tall hit targets. Hovering for
                 260ms, focusing, or tapping the button opens the full X profile popover above the name, centered on the button and portaled
                 beyond the carousel clip with viewport collision handling at --z-overlay. The preview
