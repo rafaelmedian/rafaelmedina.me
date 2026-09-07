@@ -351,6 +351,10 @@
   cursor: grab;
   touch-action: pan-y pinch-zoom;
   user-select: none;
+  /* This button covers the whole card, so the global tap highlight painted the
+     entire quote grey on every tap and every swipe. The slide itself is the
+     feedback. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mosaic-quote[data-dragging="true"] .mosaic-quote-next {
@@ -375,6 +379,9 @@
   border-radius: var(--radius-full);
   background: transparent;
   cursor: pointer;
+  /* The tap target is four times the dot it draws; the dot filling in says
+     enough without a grey slab around it. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mosaic-quote-dot:focus-visible {

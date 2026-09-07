@@ -1313,7 +1313,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 (capped at 24px) selects the adjacent quote and wraps at either end; shorter drags snap
                 back over --duration-slow (360ms) with --ease-smooth. Movement under 6px remains a tap. Vertical touch gestures
                 scroll the page, and dragging never triggers an extra click. The surface uses grab and
-                grabbing cursors. The original dots-only navigation uses 6px dots with 4px gaps,
+                grabbing cursors. The card button and the dots opt out of the global tap highlight:
+                the button covers the whole quote, so the highlight greyed the entire card on every
+                touch, and the slide and the filling dot already report the tap. The original dots-only navigation uses 6px dots with 4px gaps,
                 centered 18px above the bottom edge. Their buttons remain 10px wide and 40px tall;
                 the whole-card Advance quote button is the larger alternative target.
                 Dots use --muted-soft at 30% opacity, increasing to 75% when selected without changing size.
