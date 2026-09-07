@@ -1239,6 +1239,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Opening a note reveals the year breadcrumb, which fades over 160ms and translates from -8px over 200ms with smooth easing.
                 Previous/next controls reuse the project gallery’s 44px round buttons, border, shadow and press state.
                 Previous/next controls sit outside the desktop reader and cycle through notes in archive order, resetting scroll.
+                Switching notes pages the whole modal like project previews: next sends the current note 1.4rem left,
+                previous sends it right, fading to zero at scale(0.985) over 190ms. The new note arrives from the
+                opposite side over the same 190ms, using standard transform easing and ease-out opacity.
+                The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
+                Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
+                during the switch, and closing or returning to Notes cancels pending selection. Reduced motion switches instantly.
                 An expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, retaining 1.5rem desktop margins and 24px corners,
                 keeps the reading column centered with 1.5rem top padding plus the safe area, and brings the rail inside the right edge.
                 Modal width, column width, toolbar padding, and rail position transition together with --ease-smooth: 360ms to expand and 200ms to restore.

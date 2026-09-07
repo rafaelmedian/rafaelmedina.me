@@ -1,13 +1,16 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
 import { ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Minimize2, X } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
 
 
 import { writings, type WritingImage } from "../data/writings"
 import { backSound, nextSound, openSound } from "../lib/sounds"
 import { groupWritingsByYear, writingYear } from "../lib/writings"
 import { usePortfolioItemUrl } from "../lib/useProjectUrl"
+
+// Match the project gallery’s sideways paging beat; CSS receives the same duration.
+const writingSwitchMs = 190
 
 function NoteImage({ image }: { image: WritingImage }) {
   return (
@@ -25,6 +28,19 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
   const { itemId: writingId, selectItem: selectWriting, clearItem: clearWriting } = usePortfolioItemUrl("writing")
   const [folderOpen, setFolderOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [switchPhase, setSwitchPhase] = useState<"idle" | "out" | "in" | "settle">("idle")
+  const [switchDirection, setSwitchDirection] = useState<"prev" | "next">("next")
+  const switchTimer = useRef<number | undefined>(undefined)
+  const switchFrame = useRef<number | undefined>(undefined)
+  const switchWritingId = useRef<string | null>(null)
+  const cancelSwitch = useCallback(() => {
+    window.clearTimeout(switchTimer.current)
+    if (switchFrame.current !== undefined) window.cancelAnimationFrame(switchFrame.current)
+    switchTimer.current = undefined
+    switchFrame.current = undefined
+    switchWritingId.current = null
+    setSwitchPhase("idle")
+  }, [])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const activeWriting = writings.find((writing) => writing.id === writingId)
   const open = folderOpen || Boolean(activeWriting)
@@ -42,6 +58,16 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
   const moreWritings = orderedWritings.filter((writing) => writing.id !== selectedId).slice(0, 3)
 
   useEffect(() => {
+    // History can close or replace a note without going through a dialog control.
+    if (!open || !reading || (switchWritingId.current !== null && switchWritingId.current !== writingId)) cancelSwitch()
+  }, [open, reading, writingId, cancelSwitch])
+
+  useEffect(() => () => {
+    window.clearTimeout(switchTimer.current)
+    if (switchFrame.current !== undefined) window.cancelAnimationFrame(switchFrame.current)
+  }, [])
+
+  useEffect(() => {
     onOpenChange?.(open)
   }, [open, onOpenChange])
 
@@ -56,6 +82,7 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
   }, [selectedId, reading, open])
 
   function readWriting(id: string, playSound = playOpen, focusTitle = true) {
+    cancelSwitch()
     playSound()
     focusTitleOnRead.current = focusTitle
     setFolderOpen(false)
@@ -64,18 +91,40 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
 
   function moveWriting(direction: -1 | 1, pointerTarget?: HTMLButtonElement) {
     const index = orderedWritings.findIndex((writing) => writing.id === selectedId)
-    if (!reading || index < 0 || orderedWritings.length <= 1) return
+    if (!reading || index < 0 || orderedWritings.length <= 1 || switchPhase !== "idle") return
     // Keep pointer navigation on its control, including browsers that don't focus clicked buttons.
     pointerTarget?.focus({ preventScroll: true })
-    readWriting(
-      orderedWritings[(index + direction + orderedWritings.length) % orderedWritings.length].id,
-      direction > 0 ? playNext : playBack,
-      !pointerTarget,
-    )
+    const nextId = orderedWritings[(index + direction + orderedWritings.length) % orderedWritings.length].id
+    const playSound = direction > 0 ? playNext : playBack
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      readWriting(nextId, playSound, !pointerTarget)
+      return
+    }
+
+    playSound()
+    focusTitleOnRead.current = !pointerTarget
+    switchWritingId.current = writingId
+    setSwitchDirection(direction > 0 ? "next" : "prev")
+    setSwitchPhase("out")
+    switchTimer.current = window.setTimeout(() => {
+      // Keep the old note (and its scroll position) until it has faded out.
+      switchWritingId.current = nextId
+      selectWriting(nextId, true)
+      setSwitchPhase("in")
+      switchFrame.current = window.requestAnimationFrame(() => {
+        switchFrame.current = window.requestAnimationFrame(() => {
+          setSwitchPhase("settle")
+          switchFrame.current = undefined
+          switchTimer.current = window.setTimeout(cancelSwitch, writingSwitchMs)
+        })
+      })
+      switchTimer.current = undefined
+    }, writingSwitchMs)
   }
 
   function returnToNotes() {
     if (!reading) return
+    cancelSwitch()
     playBack()
     setFolderOpen(true)
     clearWriting()
@@ -85,6 +134,7 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
   return (
     <Dialog.Root open={open}
       onOpenChange={(nextOpen) => {
+        if (!nextOpen) cancelSwitch()
         if (nextOpen && !open) playOpen()
         setFolderOpen(nextOpen)
         if (!nextOpen && writingId !== null) clearWriting()
@@ -109,7 +159,9 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="writings-backdrop" />
-        <Dialog.Popup initialFocus={reading ? titleRef : notesRef} data-reading={reading} data-expanded={expanded}
+        <Dialog.Popup data-switch-phase={switchPhase} data-switch-direction={switchDirection}
+          style={{ "--writings-switch-duration": `${writingSwitchMs}ms` } as CSSProperties}
+          initialFocus={reading ? titleRef : notesRef} data-reading={reading} data-expanded={expanded}
           onKeyDown={(event) => {
             if (!reading || orderedWritings.length <= 1 || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
             if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return
@@ -194,14 +246,14 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
             </div>
           </div>
           <div className="writings-navigation" role="group" aria-label="Note navigation">
-            <button type="button" className="preview-gallery-nav" aria-label={expanded ? "Restore modal size" : "Expand modal"}
+            <button type="button" className="preview-gallery-nav writings-expand-nav" aria-label={expanded ? "Restore modal size" : "Expand modal"}
               title={expanded ? "Restore modal size" : "Expand modal"} aria-pressed={expanded} onClick={() => setExpanded((current) => !current)}>
               {expanded ? <Minimize2 className="preview-gallery-nav-icon" aria-hidden="true" /> : <Maximize2 className="preview-gallery-nav-icon" aria-hidden="true" />}
             </button>
-            <button type="button" className="preview-gallery-nav writings-note-nav" aria-label="Previous note" aria-keyshortcuts="ArrowLeft" onClick={(event) => moveWriting(-1, event.detail > 0 ? event.currentTarget : undefined)} disabled={!reading || orderedWritings.length <= 1}>
+            <button type="button" className="preview-gallery-nav writings-note-nav writings-note-nav-prev" aria-label="Previous note" aria-keyshortcuts="ArrowLeft" onClick={(event) => moveWriting(-1, event.detail > 0 ? event.currentTarget : undefined)} disabled={!reading || orderedWritings.length <= 1}>
               <ChevronLeft className="preview-gallery-nav-icon" aria-hidden="true" />
             </button>
-            <button type="button" className="preview-gallery-nav writings-note-nav" aria-label="Next note" aria-keyshortcuts="ArrowRight" onClick={(event) => moveWriting(1, event.detail > 0 ? event.currentTarget : undefined)} disabled={!reading || orderedWritings.length <= 1}>
+            <button type="button" className="preview-gallery-nav writings-note-nav writings-note-nav-next" aria-label="Next note" aria-keyshortcuts="ArrowRight" onClick={(event) => moveWriting(1, event.detail > 0 ? event.currentTarget : undefined)} disabled={!reading || orderedWritings.length <= 1}>
               <ChevronRight className="preview-gallery-nav-icon" aria-hidden="true" />
             </button>
             <Dialog.Close className="preview-gallery-nav writings-mobile-close" aria-label="Close writings"><X className="preview-gallery-nav-icon" aria-hidden="true" /></Dialog.Close>
