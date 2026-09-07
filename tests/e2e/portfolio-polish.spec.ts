@@ -244,8 +244,15 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   }))
   expect(sections.map((section) => section.delay)).toEqual([0, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24])
   expect(sections.every((section) => section.height >= 40 && section.height <= 56)).toBe(true)
-  const lingeringOpacity = await edge.evaluate(async (element) => {
-    await new Promise((resolve) => window.setTimeout(resolve, 700))
+  const lingeringOpacity = await edge.evaluate((element) => {
+    const fade = element
+      .getAnimations()
+      .find((animation) => animation instanceof CSSTransition && animation.transitionProperty === "opacity")
+    if (!fade) throw new Error("the released glow finished fading before it could be sampled")
+    // Sample 700ms along the fade's own timeline. Sleeping for 700ms here would
+    // also count the round trips above, and that overhead carried a loaded CI
+    // runner past the middle of the 1.26s curve.
+    fade.currentTime = 700
     return Number.parseFloat(getComputedStyle(element).opacity)
   })
   expect(lingeringOpacity).toBeGreaterThan(0.2)
