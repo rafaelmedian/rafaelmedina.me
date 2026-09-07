@@ -1211,6 +1211,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder /></div>
               <p className="ds-caption">
                 A tile on --mosaic-card-surface with 24px corners and one label, “Writings &amp; notes”.
+                Between 700px and 899px the corners drop to 16px and the folder is zoomed to 0.7 so it and the
+                label both fit a 180px row; the artwork is absolutely positioned at fixed offsets, so only a
+                layout-affecting scale keeps it off the label.
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
                 with 8px corners and 14px type scaled to one third. Papers fan over 360ms with smooth easing.
                 The list and reader share one modal up to 52rem wide and the viewport height minus 3rem, with 1.5rem desktop viewport
@@ -1273,7 +1276,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The slider replaces the dark-mode tile at the start of project row two and takes a 1.25-unit
                 column beside a 1.75-unit Protector, so the row still totals four units with the writings tile. Between 700px and 899px, that row grows to 340px to fit the quote;
                 from 900px it shares the usual 420px row height. The card uses the existing #f2f2f2 chip surface, an 8%
-                black hairline, and --radius-lg corners. Quotes up to 80 characters (including spaces)
+                black hairline, and --radius-lg corners (--radius-md between 700px and 899px, with the rest of the row). Quotes up to 80 characters (including spaces)
                 use --text-lg (18px); longer quotes use --text-md (16px). Both use 1.5 line height with a
                 centered 21rem measure and balanced line breaks; attribution uses --text-sm and --muted. A shared grid reserves the longest
                 quote's height, author row, and attribution-note row using subgrid. Each 40px portrait and attribution fit their content and are centered
@@ -1458,7 +1461,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 >
                   <strong className="ds-specimen-title">Tile — #ececee</strong>
                   <p className="ds-specimen-note">
-                    Work cards only. They use a 24px radius, <code>1px solid rgb(0 0 0 / 0.08)</code>, and no shadow —
+                    Work cards only. They use a 24px radius — 16px between 700px and 899px, where the row is 180px tall —{" "}
+                    <code>1px solid rgb(0 0 0 / 0.08)</code>, and no shadow —
                     they sit in the page rather than above it. About uses the full-bleed white canvas surface.
                   </p>
                 </div>
@@ -1647,11 +1651,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
                 </li>
-                <li data-ds-terms={terms("mosaic row flex 1rem gap --row-height --row-span 320px 420px clamp(340px, 92vw, 380px)")}>
+                <li data-ds-terms={terms("mosaic row flex 1rem gap 0.625rem 10px tablet --row-height --row-span 320px 420px clamp(340px, 92vw, 380px) contain letterbox minmax(0, 1fr) 16px radius")}>
                   <strong>Mosaic rows</strong> are flex, <code>1rem</code> gap, with height driven by{" "}
                   <code>--row-height</code>, which CSS resolves from the row data's{" "}
                   <code>--row-height-input</code>: <code>clamp(340px, 92vw, 380px)</code> stacked on mobile, 320px
-                  base, and 420px from 900px up. Items flex by an inline <code>--row-span</code>.
+                  base, and 420px from 900px up. Items flex by an inline <code>--row-span</code>. Between 700px and
+                  899px the row is only <code>clamp(180px, 16vw, 260px)</code> tall, so the gap closes to{" "}
+                  <code>0.625rem</code> (10px), the page inset to 1rem, and every tile — card, quote, and writings —
+                  drops to a 16px radius. Contained artwork letterboxes inside the card at that width: the card's grid
+                  gets one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
+                  height to resolve against, and the inset drops to <code>0.375rem</code> (to zero for the two featured
+                  clips, whose files already carry their own margin). The two bleed compositions — Family Stories and
+                  Matcha Rewards, the same pair that drop the mat from 900px up — instead fill the card with{" "}
+                  <code>cover</code>, so their artwork's own cut lands on the card's rounded edge rather than stopping
+                  short of it in grey. Family Stories anchors to <code>center top</code>, since its phones already
+                  trail off the bottom of their frame.
                 </li>
                 <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish scale opacity translate initial load entrance blur 4px reduced motion")}>
                   <strong>Row height is asserted at exactly 420px</strong> in{" "}
@@ -1662,8 +1676,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway clamp(12rem, 30vh, 18rem) 100dvh z-index 1 display contents")}>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
-                  remain in one sticky stage with 1rem gaps, including the quote tile in row two, followed by a responsive white
-                  runway of <code>clamp(12rem, 30vh, 18rem)</code>.
+                  remain in one sticky stage with 1rem gaps (10px between 700px and 899px), including the quote tile in row two, followed by a responsive white
+                  runway of <code>clamp(12rem, 30vh, 18rem)</code>. The runway carries its own{" "}
+                  <code>--takeover-row-gap</code> mirroring that value, since the scroll distance it reserves has to
+                  match the gaps the stage actually draws.
                   The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
                   full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards.
                   A top-only layer pairs that shadow with a <code>rgb(0 0 0 / 0.08)</code> hairline while the white sheet
