@@ -30,6 +30,7 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
   const hasCounts = Boolean(profile.following || profile.followers)
   const handle = profile.handle.replace(/^@/, "")
   const followHref = `https://x.com/intent/follow?screen_name=${encodeURIComponent(handle)}`
+  const avatarFallback = profile.name.trim().charAt(0).toUpperCase() || "?"
 
   return (
     <div
@@ -40,18 +41,24 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
       inert={!isOpen}
     >
       <div className="mosaic-x-card-top">
-        <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-avatar-link">
-          <img
-            src={profile.photo}
-            alt=""
-            width={96}
-            height={96}
-            decoding="async"
-            loading="lazy"
-            className="mosaic-x-card-avatar"
-          />
-          <span className="sr-only">{`${profile.name} on X`}</span>
-        </a>
+        {profile.photo ? (
+          <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-avatar-link">
+            <img
+              src={profile.photo}
+              alt=""
+              width={96}
+              height={96}
+              decoding="async"
+              loading="lazy"
+              className="mosaic-x-card-avatar"
+            />
+            <span className="sr-only">{`${profile.name} on X`}</span>
+          </a>
+        ) : (
+          <span className="mosaic-x-card-avatar mosaic-x-card-avatar-fallback" aria-hidden="true">
+            {avatarFallback}
+          </span>
+        )}
         <a href={followHref} target="_blank" rel="noreferrer" className="mosaic-x-card-follow">
           Follow
         </a>
@@ -77,7 +84,7 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
         </span>
         <span className="mosaic-x-card-handle">{profile.handle}</span>
       </a>
-      <p className="mosaic-x-card-bio">{renderBio(profile.bio)}</p>
+      {profile.bio ? <p className="mosaic-x-card-bio">{renderBio(profile.bio)}</p> : null}
       {hasCounts ? (
         <p className="mosaic-x-card-stats">
           {profile.following ? (

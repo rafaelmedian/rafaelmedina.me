@@ -16,6 +16,8 @@ import { ExternalLink, X } from "lucide-react"
 import { AboutPanel } from "./AboutPanel"
 import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
+import { QuoteCard } from "./QuoteCard"
+import { portfolioQuotes } from "../data/quotes"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
@@ -692,7 +694,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, items }
+      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, items }
     })
   }, [cards])
 
@@ -1007,9 +1009,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                       return (
                         <div
                           key={row.id}
-                          className="mosaic-row"
+                          className={`mosaic-row${row.quote ? " mosaic-row-with-quote" : ""}`}
                           style={rowStyle}
                         >
+                          {row.quote ? (
+                            <div
+                              className="mosaic-row-item mosaic-row-quote"
+                              style={{ "--work-intro-row": rowIndex, "--work-intro-col": 0 } as CSSProperties}
+                            >
+                              <QuoteCard quotes={portfolioQuotes} />
+                            </div>
+                          ) : null}
                           {row.items.map((item, itemIndex) => {
                             const itemKey = `${item.card.id}-${item.previewIndex}`
                             const itemStyle = {
@@ -1017,7 +1027,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                               // Feeds the first-load stagger in `.mosaic-work-intro`.
                               // Inert without that class, so set unconditionally.
                               "--work-intro-row": rowIndex,
-                              "--work-intro-col": itemIndex,
+                              "--work-intro-col": itemIndex + (row.quote ? 1 : 0),
                               ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
                               ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
                             } as CSSProperties

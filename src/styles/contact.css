@@ -391,6 +391,15 @@
   transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
+.mosaic-x-card-avatar-fallback {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--muted);
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
 .mosaic-x-card-avatar-link:hover .mosaic-x-card-avatar {
   opacity: 0.88;
 }

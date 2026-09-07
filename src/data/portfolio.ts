@@ -71,6 +71,8 @@ export type HomeRow = {
   height?: string
   gap?: string
   items: HomeRowItem[]
+  /** Place the quote slider before the project tiles in this row. */
+  quote?: boolean
 }
 
 const homeTileRowHeight = "clamp(180px, 16vw, 260px)"
@@ -88,8 +90,8 @@ export const homeRows: HomeRow[] = [
   {
     id: "row-2",
     height: homeTileRowHeight,
+    quote: true,
     items: [
-      { cardId: "preview-shot-22", span: 1 },
       { cardId: "preview-protector", span: 2 },
     ],
   },
