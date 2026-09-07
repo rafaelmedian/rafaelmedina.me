@@ -42,6 +42,35 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 320, height: 568
   })
 }
 
+test("the header Notes link opens the folder on the project preview's line", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const card = page.locator(".mosaic-row-card").first()
+  await card.scrollIntoViewIfNeeded()
+  await card.click()
+  const preview = page.locator(".preview-gallery-popup")
+  await expect(preview).toBeVisible()
+  const previewTop = (await preview.boundingBox())!.y
+  await page.keyboard.press("Escape")
+  await expect(preview).toBeHidden()
+  await page.evaluate(() => window.scrollTo(0, 0))
+
+  const notes = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Notes", exact: true })
+  await notes.click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+  // The two modals share a top edge, so moving between them holds the header still.
+  expect((await dialog.boundingBox())!.y).toBeCloseTo(previewTop, 0)
+
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeHidden()
+  // Focus returns to the header link, not to the folder tile down in the mosaic.
+  await expect(notes).toBeFocused()
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+})
+
 test("archive orders years and dates newest first without assigning dates to undated notes", () => {
   const entries = [
     { id: "older", publishedAt: "2024-12-31" },

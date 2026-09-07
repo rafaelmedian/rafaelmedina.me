@@ -96,6 +96,9 @@
   line-height: 1;
   letter-spacing: 0;
   text-decoration: none;
+  /* Notes wears this as a <button> — it opens a dialog rather than going
+     anywhere — so the class carries the pointer the anchors get for free. */
+  cursor: pointer;
   transition:
     color var(--duration-quick) var(--ease-standard),
     opacity var(--duration-quick) var(--ease-standard),
