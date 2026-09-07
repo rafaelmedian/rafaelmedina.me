@@ -154,6 +154,15 @@ body {
   outline-offset: 2px;
 }
 
+/* Landing containers — the sections a hash, a skip link, or a closing overlay
+   hands focus to — carry `tabindex="-1"` so reading continues from there. They
+   are not controls, so the browser's own ring is wrong: loading /#work drew a
+   blue box around the entire work section, which reads as a selection. The
+   focus still lands; only the ring goes. Real controls keep the ring above. */
+:where([tabindex="-1"]):focus {
+  outline: none;
+}
+
 :where(h1, h2, h3, h4, h5, h6, #about, #feed, #work, #contact, #cv) {
   scroll-margin-top: 5rem;
 }
