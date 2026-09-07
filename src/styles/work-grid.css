@@ -228,12 +228,16 @@
 
 .mosaic-quote-avatar {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--canvas);
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
   background: var(--mosaic-card-surface);
   object-fit: cover;
+  /* Portraits with pale edges dissolve into the card surface, so they carry
+     a hairline of their own. An inset box-shadow paints under replaced
+     content, so the ring is an outline pulled inside the crop. */
+  outline: 1px solid rgb(0 0 0 / 0.12);
+  outline-offset: -1px;
 }
 
 .mosaic-quote-attribution {
