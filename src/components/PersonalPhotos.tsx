@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { useCallback, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
 
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
@@ -20,10 +20,28 @@ function usePreviewCount() {
 }
 
 export function PersonalPhotosPreview({ onOpen, className = "", items, position = 0 }: { onOpen: OpenPhoto; className?: string; items?: PreviewPhoto[]; position?: number }) {
+  const previewRef = useRef<HTMLDivElement>(null)
   const count = usePreviewCount()
   const preview = items ?? initialPreview.slice(0, count)
+  useEffect(() => {
+    const element = previewRef.current
+    if (!element) return
+    // Wide screens reveal photos beyond the stack. Warm their small bitmaps
+    // before opening so every flight can show its own photo from the first frame.
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      photos.forEach((photo) => {
+        const image = new Image()
+        image.src = `/images/personal/${photo.name}-thumb.webp`
+        void image.decode().catch(() => undefined)
+      })
+      observer.disconnect()
+    }, { rootMargin: "200px" })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
   return (
-    <div className={`personal-photos ${className}`} data-about-fade="">
+    <div ref={previewRef} className={`personal-photos ${className}`} data-about-fade="">
       <button type="button" className="personal-photos-trigger" aria-label="View personal photos" aria-haspopup="dialog" onClick={(event) => onOpen(position, event.currentTarget)}>
         <span className="personal-photos-stack" aria-hidden="true" style={{ "--photo-preview-count": preview.length } as CSSProperties}>
           {preview.map(({ photo, src }) => (

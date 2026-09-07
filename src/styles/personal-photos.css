@@ -48,6 +48,16 @@
 
 .personal-photos-print:first-child { margin-left: 0; }
 
+/* Leave a quiet card-shaped marker where each expanded photo belongs. */
+.personal-photos-print[data-photo-away] {
+  background: #f2f2f2;
+  border: 0;
+  outline: 1px solid rgb(0 0 0 / 0.06);
+  outline-offset: -1px;
+  box-shadow: none;
+}
+.personal-photos-print[data-photo-away] img { opacity: 0; }
+
 /* One overlapping row of equally sized prints. */
 .personal-photos-print:nth-child(2) { --print-tilt: 2deg; --print-hover-tilt: 6deg; --print-offset-x: -0.2rem; --print-offset-y: 0.25rem; --print-spread-x: -0.25rem; }
 .personal-photos-print:nth-child(3) { --print-tilt: -2deg; --print-hover-tilt: -4deg; --print-offset-y: -0.3rem; --print-spread-x: 0rem; }
@@ -144,9 +154,9 @@
 .personal-photos,
 .personal-photos-backdrop,
 .personal-photos-dialog {
-  /* Apple's CAMediaTimingFunction.default, with the original photo durations.
+  /* Apple's CAMediaTimingFunction.default, with a quick, unified gallery reveal.
      https://developer.apple.com/documentation/quartzcore/camediatimingfunctionname/default */
-  --photo-open-duration: var(--duration-slow);
+  --photo-open-duration: var(--duration-base);
   --photo-close-duration: var(--duration-base);
   --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }

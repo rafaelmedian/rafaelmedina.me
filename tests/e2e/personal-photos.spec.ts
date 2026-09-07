@@ -6,7 +6,7 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
   await page.getByRole("button", { name: "View personal photos" }).click()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCSS("opacity", "1")
-  await expect(page.locator(".personal-photos-print").first()).toHaveCSS("opacity", "0")
+  await expect(page.locator(".personal-photos-print img").first()).toHaveCSS("opacity", "0")
   await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
   await page.evaluate(() => {
     const animate = Element.prototype.animate
@@ -37,6 +37,12 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
       actual: flight.getBoundingClientRect().toJSON(), expected: source.getBoundingClientRect().toJSON(),
       frame: delta(flight, source), image: delta(image, sourceImage),
       crop: getComputedStyle(image).objectPosition, sourceCrop: getComputedStyle(sourceImage).objectPosition,
+      // The print wears the flat placeholder while away; the landing frame must
+      // still carry the card shadow it hands off to.
+      shadowAlpha: Math.max(...(getComputedStyle(flight).boxShadow.match(/rgba?\([^)]+\)/g) ?? []).map((color) => {
+        const channels = color.replace(/^rgba?\(|\)$/g, "").split(",")
+        return channels.length > 3 ? parseFloat(channels[3]) : 1
+      })),
       distortion: Math.abs(Math.hypot(matrix.a, matrix.b) - Math.hypot(matrix.c, matrix.d)),
     }
   })
@@ -44,6 +50,7 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
   expect(landing.frame, JSON.stringify(landing)).toBeLessThan(1)
   expect(landing.image).toBeLessThan(1)
   expect(landing.crop).toBe(landing.sourceCrop)
+  expect(landing.shadowAlpha).toBeGreaterThan(0)
   expect(landing.distortion).toBeLessThan(0.001)
 })
 
@@ -131,13 +138,16 @@ for (const width of [390, 900]) {
       timing: element.getAnimations()[0].effect!.getTiming(),
     })))
     expect(expanding.map(({ id }) => id)).toEqual(retained)
-    expect(expanding.every(({ timing }) => timing.duration === 360 && timing.delay === 0)).toBe(true)
+    expect(expanding.every(({ timing }) => timing.duration === 200 && timing.delay === 0)).toBe(true)
   })
 }
 
-test("visible photos without preview origins do not duplicate a flight", async ({ page }) => {
+test("wide-screen photos open together from the stack with their own images", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 900 })
+  const extraThumbnail = page.waitForResponse((response) => response.url().endsWith("/personal/dumbo-thumb.webp"))
   await page.goto("/#about-panel")
+  await page.getByRole("button", { name: "View personal photos" }).scrollIntoViewIfNeeded()
+  await (await extraThumbnail).finished()
   await page.evaluate(() => {
     const animate = Element.prototype.animate
     Element.prototype.animate = function (...args) {
@@ -156,8 +166,21 @@ test("visible photos without preview origins do not duplicate a flight", async (
     id: (element as HTMLElement).dataset.photoId,
     timing: element.getAnimations()[0].effect!.getTiming(),
   })))
-  expect(flights.map(({ id }) => id)).toEqual(previewIds)
-  expect(flights.every(({ timing }) => timing.duration === 360 && timing.delay === 0)).toBe(true)
+  const visibleIds = await page.locator(".personal-photos-strip .personal-photos-slide").evaluateAll((slides) => slides
+    .filter((slide) => { const rect = slide.getBoundingClientRect(); return rect.right > 0 && rect.left < innerWidth })
+    .map((slide) => (slide as HTMLElement).dataset.photoId))
+  expect(visibleIds.length).toBeGreaterThan(previewIds.length)
+  expect(flights.map(({ id }) => id)).toEqual([...new Set([...previewIds, ...visibleIds])])
+  const extraFlights = page.locator(".personal-photos-flight").filter({ has: page.locator('img[src*="dumbo"]') })
+  await expect(extraFlights).toHaveCount(1)
+  const originError = await extraFlights.evaluate((flight) => {
+    const source = document.querySelector(".personal-photos-print:last-child")!
+    const actual = flight.getBoundingClientRect(), expected = source.getBoundingClientRect()
+    return Math.max(Math.abs(actual.x - expected.x), Math.abs(actual.y - expected.y), Math.abs(actual.width - expected.width), Math.abs(actual.height - expected.height))
+  })
+  expect(originError).toBeLessThan(1)
+  await expect(page.locator('.personal-photos-strip [data-photo-id="dumbo"]')).toHaveCSS("opacity", "0")
+  expect(flights.every(({ timing }) => timing.duration === 200 && timing.delay === 0)).toBe(true)
 })
 
 test("photo gallery stops at both ends without empty trailing space", async ({ page }) => {
