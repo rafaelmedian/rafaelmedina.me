@@ -80,10 +80,14 @@ export function BottomOverscrollEffect() {
 
       edge.dataset.pulling = "false"
       if (content) content.dataset.edgePulling = "false"
+      const glowWasPainted = Number.parseFloat(window.getComputedStyle(edge).opacity) > 0
       // Let the release transition take over from the exact point reached by
       // the gesture, including when intent reverses mid-pull.
       void edge.offsetHeight
       paint(0)
+      // A busy frame can release before the first paint. In that case there is
+      // no opacity transition (and no transitionend) to reset the curtains.
+      if (!glowWasPainted) edge.dataset.glowing = "false"
     }
 
     const scheduleRelease = () => {
