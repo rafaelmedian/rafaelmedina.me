@@ -1,0 +1,32 @@
+/* THE reduced-motion mechanism. Durations are clamped here with !important,
+   so per-component reduced-motion blocks in the preceding imports never restate
+   transition timings (they would be dead on arrival) — they only remove
+   travel (transform), kill delayed `both`-filled entrances the clamp cannot
+   reach (animation-delay survives it), or restore visibility. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .mosaic-live-time {
+    overflow: visible;
+  }
+
+  .elastic-scroll-edge {
+    display: none;
+  }
+
+  .mosaic-about-body {
+    translate: none;
+  }
+
+  .preview-gallery-pending {
+    opacity: 1;
+    animation: none;
+  }
+}

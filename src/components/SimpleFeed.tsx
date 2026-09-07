@@ -1000,7 +1000,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   >
                     {rowsRender.map((row, rowIndex) => {
                       const rowStyle = {
-                        ...(row.height ? { "--row-height": row.height } : {}),
+                        ...(row.height ? { "--row-height-input": row.height } : {}),
                         ...(row.gap ? { "--row-gap": row.gap } : {}),
                       } as CSSProperties
                       const eagerRow = rowIndex === 0

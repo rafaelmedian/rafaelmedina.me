@@ -1,0 +1,664 @@
+/* ------------------------------------------------- preview gallery dialog --- */
+
+.preview-gallery-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog-backdrop);
+  background: rgb(18 18 18 / 0.46);
+  cursor: pointer;
+  backdrop-filter: blur(10px) saturate(0.92);
+  -webkit-backdrop-filter: blur(10px) saturate(0.92);
+  /* Opacity only. Ramping `backdrop-filter` re-blurs the whole viewport every
+     frame, which is not worth it — a longer fade already takes off the snap. */
+  transition: opacity var(--pg-backdrop-in-ms, var(--duration-quick)) ease-out;
+}
+
+/* Suspense owns this lightweight first-tap response. It paints quickly while
+   the gallery chunk is in flight, then disappears as soon as the real backdrop
+   mounts. Keeping it filter-free avoids re-rasterising the page just to
+   acknowledge a tap. */
+.preview-gallery-pending {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog-backdrop);
+  background: rgb(18 18 18 / 0.28);
+  opacity: 0;
+  pointer-events: none;
+  animation: preview-gallery-pending-in var(--duration-quick) ease-out var(--duration-fast) forwards;
+}
+
+@keyframes preview-gallery-pending-in {
+  to {
+    opacity: 1;
+  }
+}
+
+.preview-gallery-backdrop[data-starting-style],
+.preview-gallery-backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.preview-gallery-backdrop[data-ending-style] {
+  transition: opacity var(--pg-backdrop-out-ms, var(--duration-quick)) ease-in;
+}
+
+.preview-gallery-shell {
+  --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding:
+    var(--preview-gallery-fixed-top)
+    max(clamp(1rem, 3vw, 2.5rem), env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(clamp(1rem, 3vw, 2.5rem), env(safe-area-inset-left));
+  cursor: pointer;
+}
+
+.preview-gallery-shell[data-wide="true"] {
+  --preview-gallery-fixed-top: max(5vh, env(safe-area-inset-top));
+}
+
+.preview-gallery-shell[data-origin-animating] {
+  overflow: hidden;
+}
+
+/* Carries the origin-aware travel (card -> centre) so the popup keeps its own
+   fade. Driven by the Web Animations API in the dialog. */
+.preview-gallery-origin-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(544px, 100%);
+  min-height: 0;
+  transform-origin: center center;
+}
+
+.preview-gallery-origin-wrap[data-wide="true"] {
+  width: min(1090px, 100%);
+}
+
+.preview-gallery-popup {
+  /* The card inside carries the real surface; this box only has to trace the
+     same outline. Both are the concentric rule applied to --radius-lg, so the
+     popup follows the card's padding instead of the hand-tuned clamp that used
+     to sit here and drift from it. */
+  --pg-outer-radius: calc(var(--radius-lg) + clamp(1rem, 1.7vw, 1.4rem));
+  position: relative;
+  width: min(544px, 100%);
+  max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  outline: none;
+  overscroll-behavior: contain;
+  border-radius: var(--pg-outer-radius) var(--pg-outer-radius) var(--radius-lg) var(--radius-lg);
+  cursor: default;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transform-origin: center center;
+  transition:
+    opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out,
+    transform var(--pg-open-ms, var(--duration-base)) var(--pg-open-ease, cubic-bezier(0.32, 0.8, 0.32, 1));
+}
+
+.preview-gallery-popup[data-wide="true"] {
+  width: 100%;
+}
+
+/* Fallback for when there is no card to travel from (it scrolled off-screen, or
+   motion is reduced): a plain lift, owned entirely by CSS. */
+.preview-gallery-popup[data-starting-style],
+.preview-gallery-popup[data-ending-style] {
+  opacity: 0;
+  transform: translateY(1.25rem) scale(0.96);
+}
+
+.preview-gallery-popup[data-ending-style] {
+  transition:
+    opacity var(--pg-content-out-ms, var(--duration-fast)) ease-in,
+    transform var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
+}
+
+/* Shrinking a playing video reads as a glitch, so it only fades. */
+.preview-gallery-popup[data-preview-media="video"][data-ending-style] {
+  transform: translateY(0) scale(1);
+}
+
+/* When the wrapper is doing the positional travel, the popup only cross-fades —
+   its own translate/scale would fight the origin animation. */
+.preview-gallery-popup[data-origin-motion],
+.preview-gallery-popup[data-origin-motion][data-starting-style],
+.preview-gallery-popup[data-origin-motion][data-ending-style] {
+  transform: none;
+}
+
+.preview-gallery-popup[data-origin-motion] {
+  transition:
+    opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out;
+}
+
+.preview-gallery-popup[data-origin-motion][data-starting-style] {
+  opacity: 0;
+}
+
+/* Base UI unmounts the popup when this transition ends, so on close it has to
+   outlast the wrapper's travel rather than merely match the content fade. */
+.preview-gallery-popup[data-origin-motion][data-ending-style] {
+  opacity: 0;
+  transition:
+    opacity var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
+}
+
+.preview-gallery-card {
+  --preview-gallery-card-padding: clamp(1rem, 1.7vw, 1.4rem);
+  --preview-gallery-media-radius: var(--radius-lg);
+  --preview-gallery-card-radius: calc(var(--preview-gallery-media-radius) + var(--preview-gallery-card-padding));
+  max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--preview-gallery-card-radius) var(--preview-gallery-card-radius) var(--radius-lg) var(--radius-lg);
+  border: 1px solid rgb(0 0 0 / 0.08);
+  background: #ffffff;
+  padding: var(--preview-gallery-card-padding);
+  color: #171717;
+  outline: none;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  /* This transition belongs to the between-previews switch below, which is
+     stepped by a JS timer — hence the shared duration. */
+  transition:
+    opacity var(--pg-switch-ms, 190ms) ease-out,
+    transform var(--pg-switch-ms, 190ms) var(--ease-standard);
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.04),
+    0 18px 44px -18px rgb(0 0 0 / 0.28),
+    0 48px 92px -42px rgb(0 0 0 / 0.38);
+  scrollbar-width: none;
+}
+
+/* Wide previews can outgrow the viewport vertically. Keep wheel, trackpad, and
+   touch scrolling available without drawing scrollbars over the rounded card. */
+.preview-gallery-card::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Mid-flight the translated surface can overflow the shell, so clip it rather
+   than flashing a scrollbar. */
+.preview-gallery-shell[data-origin-animating] .preview-gallery-card {
+  overflow: hidden;
+}
+
+.preview-gallery-shell[data-origin-animating] .preview-gallery-origin-wrap {
+  will-change: transform;
+}
+
+/* Leaving upward and arriving from above share a pose, as do their mirrors. */
+.preview-gallery-card-switch-out-up,
+.preview-gallery-card-switch-in-down {
+  opacity: 0;
+  transform: translateY(-1.4rem) scale(0.985);
+}
+
+.preview-gallery-card-switch-out-down,
+.preview-gallery-card-switch-in-up {
+  opacity: 0;
+  transform: translateY(1.4rem) scale(0.985);
+}
+
+/* Keep the entrance/exit blur on a small detail. Filtering the full popup
+   and card together adds two large offscreen surfaces during every flight.
+   The title's resting `filter: none` sits with the rest of its rule below. */
+.preview-gallery-popup[data-starting-style] .preview-gallery-title,
+.preview-gallery-popup[data-ending-style] .preview-gallery-title,
+.preview-gallery-card[class*="preview-gallery-card-switch-"] .preview-gallery-title {
+  filter: blur(var(--blur-reveal));
+}
+
+.preview-gallery-popup[data-ending-style] .preview-gallery-title {
+  transition-duration: var(--pg-content-out-ms, var(--duration-fast));
+  transition-timing-function: var(--ease-exit);
+}
+
+.preview-gallery-card[class*="preview-gallery-card-switch-"] .preview-gallery-title {
+  transition-duration: var(--pg-switch-ms, 190ms);
+}
+
+.preview-gallery-media-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--preview-gallery-media-radius);
+  background: #f0f0f1;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+  padding-block: var(--preview-gallery-media-padding-block, 0);
+}
+
+.preview-gallery-popup[data-preview-media="video"] .preview-gallery-media-frame {
+  backface-visibility: hidden;
+  contain: paint;
+  transform: translateZ(0);
+}
+
+/* Media keeps its intrinsic box while a cached tile remains underneath. */
+.preview-gallery-media[data-loaded] {
+  position: relative;
+  opacity: 1;
+  filter: none;
+  transition:
+    opacity var(--duration-slow) var(--ease-smooth),
+    filter var(--duration-slow) var(--ease-smooth);
+}
+
+.preview-gallery-media[data-loaded="false"] {
+  opacity: 0;
+  filter: blur(var(--blur-reveal));
+}
+
+.preview-gallery-media-placeholder {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  pointer-events: none;
+  transition: opacity var(--duration-slow) var(--ease-smooth);
+}
+
+.preview-gallery-media-placeholder[data-hidden="true"] {
+  opacity: 0;
+}
+
+.preview-gallery-media-status {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  box-shadow: var(--shadow-overlay);
+}
+
+.preview-gallery-media-status button {
+  min-height: 2.5rem;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.preview-gallery-media {
+  width: 100%;
+  max-height: min(42vh, 480px);
+  display: block;
+  object-fit: contain;
+  margin-inline: auto;
+}
+
+/* Full-size artwork cross-fades over its thumbnail. Reserve blur for the
+   smaller media on compact screens and the heading above. */
+@media (min-width: 700px) {
+  .preview-gallery-media[data-loaded] {
+    filter: none;
+    transition: opacity var(--duration-slow) var(--ease-smooth);
+  }
+}
+
+.preview-gallery-popup[data-wide="true"] .preview-gallery-media {
+  max-height: min(72vh, 780px);
+}
+
+.preview-gallery-popup[data-preview-media="video"] .preview-gallery-media {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* The frame, not the image, carries the landscape shape of the grid tile, so
+   the crop stays put while the popup width changes. */
+.preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
+  aspect-ratio: 16 / 9;
+  max-height: min(42vh, 480px);
+}
+
+.preview-gallery-popup[data-wide="true"][data-preview-crop="true"] .preview-gallery-media-frame {
+  max-height: none;
+}
+
+.preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media {
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  object-position: var(--preview-crop-position);
+  transform: scale(var(--preview-crop-scale));
+  transform-origin: left top;
+}
+
+.preview-gallery-content {
+  padding: clamp(0.85rem, 1.8vw, 1.25rem) 0 0;
+}
+
+.preview-gallery-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: clamp(0.8rem, 1.6vw, 1rem);
+}
+
+.preview-gallery-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.preview-gallery-rail {
+  position: absolute;
+  z-index: 1;
+  top: 128px;
+  left: calc(100% + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transform: translateY(-50%);
+}
+
+.preview-gallery-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.preview-gallery-title {
+  margin: 0;
+  color: #171717;
+  font-size: var(--text-md);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-wrap: balance;
+  filter: none;
+  transition: filter var(--pg-content-in-ms, var(--duration-quick)) var(--ease-smooth);
+}
+
+.preview-gallery-description {
+  margin: 0.5rem 0 0;
+  max-width: 46rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-wrap: pretty;
+}
+
+.preview-gallery-count {
+  flex: none;
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  background: #f4f4f4;
+  padding: 0 0.65rem;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.preview-gallery-details {
+  margin: 0;
+  padding: clamp(1rem, 2vw, 1.35rem) 0 0;
+}
+
+.preview-gallery-detail-row {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 0.34fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: baseline;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding: 1rem 0;
+}
+
+/* The first row sits right under the description, which already reads as a
+   break — a rule there just draws a bar across the top of the list. */
+.preview-gallery-detail-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.preview-gallery-detail-row:last-child {
+  padding-bottom: 0;
+}
+
+.preview-gallery-detail-row dt {
+  color: var(--muted-soft);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+}
+
+.preview-gallery-detail-row dd {
+  margin: 0;
+  color: #171717;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  text-align: right;
+  /* Role and Outcome are sentences, not labels -- keep their ragged edge even
+     instead of leaving one word alone on the last line. */
+  text-wrap: pretty;
+}
+
+.preview-gallery-people {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem 0.85rem;
+}
+
+/* Scoped past `.preview-gallery-detail-row a` below, which underlines every
+   anchor -- these read as chips like the hero's work-history pills instead:
+   no underline, a background that arrives on hover. */
+.preview-gallery-detail-row .preview-gallery-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* Pulled back out so the resting row lines up as if the chip had no padding. */
+  margin: -0.2rem -0.4rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-full);
+  color: #171717;
+  text-decoration: none;
+  transition: background-color var(--duration-quick) var(--ease-standard);
+}
+
+.preview-gallery-detail-row .preview-gallery-person:hover,
+.preview-gallery-detail-row .preview-gallery-person:focus-visible {
+  background: #f2f2f2;
+}
+
+.preview-gallery-person-avatar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  background: #ececec;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+}
+
+.preview-gallery-detail-row a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.16em;
+}
+
+.preview-gallery-nav {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgb(0 0 0 / 0.08);
+  background: rgb(255 255 255 / 0.92);
+  color: #171717;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.05),
+    0 12px 24px -14px rgb(0 0 0 / 0.36);
+  transition:
+    background-color var(--duration-quick) ease-out,
+    color var(--duration-quick) ease-out,
+    transform var(--duration-quick) ease-out,
+    box-shadow var(--duration-quick) ease-out;
+}
+
+.preview-gallery-nav:hover:not(:disabled),
+.preview-gallery-nav:focus-visible:not(:disabled) {
+  background: #ffffff;
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.06),
+    0 16px 30px -14px rgb(0 0 0 / 0.42);
+}
+
+.preview-gallery-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.preview-gallery-nav:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.preview-gallery-nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+@media (max-width: 639.98px) {
+
+  .preview-gallery-shell {
+    padding-inline:
+      max(1rem, env(safe-area-inset-left))
+      max(1rem, env(safe-area-inset-right));
+  }
+
+  .preview-gallery-popup {
+    width: 100%;
+    max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  }
+
+  .preview-gallery-card {
+    --preview-gallery-card-padding: 0.85rem;
+    --preview-gallery-media-radius: var(--radius-md);
+  }
+
+  .preview-gallery-media {
+    max-height: 32vh;
+  }
+
+  .preview-gallery-detail-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+    padding: 0.82rem 0;
+  }
+
+  .preview-gallery-detail-row dd {
+    text-align: left;
+  }
+
+  .preview-gallery-people {
+    justify-content: flex-start;
+  }
+
+  .preview-gallery-toolbar {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 699.98px), (hover: none), (pointer: coarse) {
+  .preview-gallery-shell,
+  .preview-gallery-shell[data-wide="true"] {
+    --preview-gallery-fixed-top: env(safe-area-inset-top);
+    padding: var(--preview-gallery-fixed-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: var(--canvas);
+  }
+
+  .preview-gallery-origin-wrap,
+  .preview-gallery-origin-wrap[data-wide="true"],
+  .preview-gallery-popup {
+    width: 100%;
+  }
+
+  .preview-gallery-popup,
+  .preview-gallery-card {
+    height: calc(100dvh - var(--preview-gallery-fixed-top) - env(safe-area-inset-bottom));
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .preview-gallery-card {
+    border: 0;
+    box-shadow: none;
+  }
+
+  .preview-gallery-rail {
+    display: none;
+  }
+
+  .preview-gallery-toolbar {
+    position: sticky;
+    top: calc(-1 * var(--preview-gallery-card-padding));
+    z-index: 1;
+    display: flex;
+    margin: calc(-1 * var(--preview-gallery-card-padding)) calc(-1 * var(--preview-gallery-card-padding)) 0;
+    padding: var(--preview-gallery-card-padding);
+    background: var(--canvas);
+  }
+
+  /* The compact gallery still shows the full composition even though the
+     feed tile now uses the tighter, centered crop requested for mobile. */
+  .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
+    aspect-ratio: auto;
+    max-height: none;
+  }
+
+  .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media {
+    height: auto;
+    max-height: 32vh;
+    object-fit: contain;
+    object-position: center;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-gallery-popup,
+  .preview-gallery-popup[data-starting-style],
+  .preview-gallery-popup[data-ending-style],
+  .preview-gallery-card,
+  .preview-gallery-popup .preview-gallery-card .preview-gallery-title,
+  .preview-gallery-media[data-loaded] {
+    filter: none;
+  }
+}
