@@ -441,7 +441,7 @@ const DURATIONS = [
   { value: "--duration-base · 200ms", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close. Absorbed the old 220ms entrances." },
   { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
   { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
-  { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes and the personal-photo stack fanning on hover or focus." },
+  { value: "--duration-slow · 360ms", use: "Feed and preview media resolving from --blur-reveal (4px) as they decode, and the personal-photo stack fanning on hover or focus." },
   { value: "360ms / 200ms", use: "Personal-photo carousel: --photo-open-duration aliases --duration-slow; --photo-close-duration aliases --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
   { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
   { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
@@ -1480,6 +1480,28 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
               </div>
 
+              <div className="ds-rule" data-ds-terms={terms("loading slow network 3g 2g save data offline retry thumbnail blur --blur-reveal 4px")}>
+                <strong>Loads and exits share one blur.</strong>
+                <p>
+                  <code>--blur-reveal: 4px</code> softens the initial profile, work cards, About entrances,
+                  media reveals, and project preview headings during entrances, switches, and exits.
+                  Full preview dialogs and cards use opacity and transform only; artwork at 700px and above
+                  cross-fades over its thumbnail. Blur stays on smaller surfaces. Loaded content clears its filter entirely. Media resolves over <code>--duration-slow</code> on the smooth curve;
+                  preview exits keep their shorter existing timing. Reduced motion removes the blur.
+                </p>
+                <p>
+                  Data Saver, 3G or slower connections, and offline mode keep feed video posters visible
+                  without requesting loops. Connection changes update this behavior live. Preview videos
+                  offer native playback controls on these connections and wait for an explicit play.
+                  Full-size images keep a responsive thumbnail underneath while decoding; loading feedback
+                  and a retry button cover slow or failed requests without blocking preview navigation.
+                  Without connection hints, the initial same-origin script transfer supplies a conservative fallback:
+                  an uncached script of at least 32 KB taking at least one second at less than 150 KB/s keeps
+                  videos on posters for that page visit. This reuses existing timing data, adds no speed-test
+                  requests, and ignores cache hits and CPU-dependent hydration time. Fast loads retain autoplay.
+                </p>
+              </div>
+
               <div
                 className="ds-rule"
                 data-ds-terms={terms("reduced motion animation-delay animation-duration both staggered override")}
@@ -1562,10 +1584,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>--row-height</code>: <code>clamp(340px, 92vw, 380px)</code> stacked on mobile, 320px base, and
                   420px from 900px up. Items flex by an inline <code>--row-span</code>.
                 </li>
-                <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish scale opacity translate")}>
+                <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish scale opacity translate initial load entrance blur 4px reduced motion")}>
                   <strong>Row height is asserted at exactly 420px</strong> in{" "}
-                  <code>tests/e2e/portfolio-polish.spec.ts</code>. Entrance animations use opacity and translate only —
-                  a scale would change the measured box and fail that test.
+                  <code>tests/e2e/portfolio-polish.spec.ts</code>. The initial profile and work-card entrances fade,
+                  rise, and resolve from 4px blur to sharp using their existing stagger and timing. The filter clears
+                  completely at the end; reduced motion skips the entrance. There is no scale, which would change
+                  the measured box and fail that test.
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway clamp(12rem, 30vh, 18rem) 100dvh z-index 1 display contents")}>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows

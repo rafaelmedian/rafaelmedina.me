@@ -46,6 +46,7 @@
   --duration-quick: 160ms; /* most hover and state transitions */
   --duration-base: 200ms; /* larger surface moves */
   --duration-slow: 360ms; /* scrims, captions, big reveals */
+  --blur-reveal: 4px; /* load, preview entrance, switch, and exit */
   /* Stacking. The global ladder; Tailwind's z-dock/z-chrome map onto the
      same tokens. Component-internal stacking (0-5, and the map attribution's
      Leaflet-clearing 500) stays raw because it lives inside an isolated or
@@ -791,11 +792,13 @@ img {
 @keyframes mosaic-intro-rise {
   from {
     opacity: 0;
+    filter: blur(var(--blur-reveal));
     transform: translateY(0.8rem);
   }
 
   to {
     opacity: 1;
+    filter: none;
     transform: translateY(0);
   }
 }
@@ -973,7 +976,7 @@ img {
   --work-intro-col-step: 32ms;
 }
 
-/* opacity and translateY only. A scale would change the measured box of
+/* Fade, blur-to-sharp, and translateY. A scale would change the measured box of
    `.mosaic-row`, whose height is asserted at exactly 420px in
    tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
    stays under the 1rem row gap, so a rising card never covers the one below. */
@@ -1091,11 +1094,13 @@ img {
 @keyframes mosaic-about-rise {
   from {
     opacity: 0;
+    filter: blur(var(--blur-reveal));
     transform: translateY(1.75rem);
   }
 
   to {
     opacity: 1;
+    filter: none;
     transform: translateY(0);
   }
 }
@@ -3051,8 +3056,8 @@ img {
   display: block;
   object-fit: cover;
   opacity: 0;
-  filter: blur(14px);
-  transition: opacity var(--duration-slow) ease-out, filter var(--duration-slow) ease-out;
+  filter: blur(var(--blur-reveal));
+  transition: opacity var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
   will-change: opacity, filter;
 }
 
@@ -3062,7 +3067,7 @@ img {
    slides over this grid). Release it. */
 .mosaic-row-media[data-loaded="true"] {
   opacity: 1;
-  filter: blur(0);
+  filter: none;
   will-change: auto;
 }
 
@@ -3836,7 +3841,8 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
 }
 
 .preview-gallery-popup[data-origin-motion] {
-  transition: opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out;
+  transition:
+    opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out;
 }
 
 .preview-gallery-popup[data-origin-motion][data-starting-style] {
@@ -3847,7 +3853,8 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
    outlast the wrapper's travel rather than merely match the content fade. */
 .preview-gallery-popup[data-origin-motion][data-ending-style] {
   opacity: 0;
-  transition: opacity var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
+  transition:
+    opacity var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
 }
 
 .preview-gallery-card {
@@ -3909,6 +3916,28 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   transform: translateY(1.4rem) scale(0.985);
 }
 
+/* Keep the entrance/exit blur on a small detail. Filtering the full popup
+   and card together adds two large offscreen surfaces during every flight. */
+.preview-gallery-title {
+  filter: none;
+  transition: filter var(--pg-content-in-ms, var(--duration-quick)) var(--ease-smooth);
+}
+
+.preview-gallery-popup[data-starting-style] .preview-gallery-title,
+.preview-gallery-popup[data-ending-style] .preview-gallery-title,
+.preview-gallery-card[class*="preview-gallery-card-switch-"] .preview-gallery-title {
+  filter: blur(var(--blur-reveal));
+}
+
+.preview-gallery-popup[data-ending-style] .preview-gallery-title {
+  transition-duration: var(--pg-content-out-ms, var(--duration-fast));
+  transition-timing-function: var(--ease-exit);
+}
+
+.preview-gallery-card[class*="preview-gallery-card-switch-"] .preview-gallery-title {
+  transition-duration: var(--pg-switch-ms, 190ms);
+}
+
 .preview-gallery-media-frame {
   position: relative;
   overflow: hidden;
@@ -3924,12 +3953,73 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   transform: translateZ(0);
 }
 
+/* Media keeps its intrinsic box while a cached tile remains underneath. */
+.preview-gallery-media[data-loaded] {
+  position: relative;
+  opacity: 1;
+  filter: none;
+  transition:
+    opacity var(--duration-slow) var(--ease-smooth),
+    filter var(--duration-slow) var(--ease-smooth);
+}
+
+.preview-gallery-media[data-loaded="false"] {
+  opacity: 0;
+  filter: blur(var(--blur-reveal));
+}
+
+.preview-gallery-media-placeholder {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  pointer-events: none;
+  transition: opacity var(--duration-slow) var(--ease-smooth);
+}
+
+.preview-gallery-media-placeholder[data-hidden="true"] {
+  opacity: 0;
+}
+
+.preview-gallery-media-status {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  box-shadow: var(--shadow-overlay);
+}
+
+.preview-gallery-media-status button {
+  min-height: 2.5rem;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .preview-gallery-media {
   width: 100%;
   max-height: min(42vh, 480px);
   display: block;
   object-fit: contain;
   margin-inline: auto;
+}
+
+/* Full-size artwork cross-fades over its thumbnail. Reserve blur for the
+   smaller media on compact screens and the heading above. */
+@media (min-width: 700px) {
+  .preview-gallery-media[data-loaded] {
+    filter: none;
+    transition: opacity var(--duration-slow) var(--ease-smooth);
+  }
 }
 
 .preview-gallery-popup[data-wide="true"] .preview-gallery-media {
@@ -4727,6 +4817,17 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
 
 @media (prefers-reduced-motion: reduce) {
   .writings-year-crumb, .writing-like, .writing-like svg { transition: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-gallery-popup,
+  .preview-gallery-popup[data-starting-style],
+  .preview-gallery-popup[data-ending-style],
+  .preview-gallery-card,
+  .preview-gallery-popup .preview-gallery-card .preview-gallery-title,
+  .preview-gallery-media[data-loaded] {
+    filter: none;
+  }
 }
 
 /* Static project pages and the 404 share the portfolio's tokens and controls. */
