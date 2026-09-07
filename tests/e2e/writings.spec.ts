@@ -10,7 +10,12 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     await folder.click()
     const dialog = page.getByRole("dialog")
     const original = (await dialog.boundingBox())!
-    expect(original.height).toBe(viewport.height - 48)
+    // Collapsed, the dialog hangs from the line a project preview opens on --
+    // 8vh, and 5vh from 1320px where the preview goes wide -- over a 1rem
+    // bottom gutter.
+    const top = viewport.height * (viewport.width >= 1320 ? 0.05 : 0.08)
+    expect(original.y).toBeCloseTo(top, 0)
+    expect(original.height).toBeCloseTo(viewport.height - top - 16, 0)
     await expect(dialog.getByRole("button", { name: "Expand modal" })).toBeInViewport()
     await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
     const reader = dialog.locator('[data-page-id="2"]')
@@ -35,6 +40,35 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     expect(await dialog.boundingBox()).toEqual(original)
   })
 }
+
+test("the header Notes link opens the folder on the project preview's line", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const card = page.locator(".mosaic-row-card").first()
+  await card.scrollIntoViewIfNeeded()
+  await card.click()
+  const preview = page.locator(".preview-gallery-popup")
+  await expect(preview).toBeVisible()
+  const previewTop = (await preview.boundingBox())!.y
+  await page.keyboard.press("Escape")
+  await expect(preview).toBeHidden()
+  await page.evaluate(() => window.scrollTo(0, 0))
+
+  const notes = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Notes", exact: true })
+  await notes.click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+  // The two modals share a top edge, so moving between them holds the header still.
+  expect((await dialog.boundingBox())!.y).toBeCloseTo(previewTop, 0)
+
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeHidden()
+  // Focus returns to the header link, not to the folder tile down in the mosaic.
+  await expect(notes).toBeFocused()
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+})
 
 test("the phone sheet drops expand and moves navigation onto the breadcrumb line", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })

@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
 import { ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Minimize2, X } from "lucide-react"
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from "react"
 
 
 import { writings, type WritingImage } from "../data/writings"
@@ -21,7 +21,9 @@ function NoteImage({ image }: { image: WritingImage }) {
   )
 }
 
-export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
+export type WritingsFolderHandle = { openFolder: () => void }
+
+export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: boolean) => void; ref?: Ref<WritingsFolderHandle> }) {
   const playOpen = useSound(openSound, { volume: 0.3 })
   const playNext = useSound(nextSound, { volume: 0.26 })
   const playBack = useSound(backSound, { volume: 0.26 })
@@ -70,6 +72,18 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
   useEffect(() => {
     onOpenChange?.(open)
   }, [open, onOpenChange])
+
+  // The Notes link in the page header opens this same folder, and a Base UI
+  // trigger only works inside its own root, so the open runs through a handle
+  // instead. It goes through here rather than a bare setState so an outside
+  // opener gets the tile's latch sound too.
+  useImperativeHandle(ref, () => ({
+    openFolder() {
+      if (open) return
+      playOpen()
+      setFolderOpen(true)
+    },
+  }), [open, playOpen])
 
   useEffect(() => {
     if (!open) return

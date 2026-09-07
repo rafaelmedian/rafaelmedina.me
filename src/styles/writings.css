@@ -75,15 +75,21 @@
   --modal-scale: 0.96;
   --modal-scale-close: 0.96;
   --modal-ease: var(--ease-smooth);
+  /* Hangs from the same line a project preview opens on rather than sitting
+     centred, so the two modals share a top edge and the header does not jump
+     when a visitor goes from one to the other. Mirrors
+     `--preview-gallery-fixed-top`, including its wide-desktop step below. */
+  --writings-top: max(8vh, env(safe-area-inset-top));
+  --writings-bottom: max(1rem, env(safe-area-inset-bottom));
   position: fixed;
-  top: 50%;
+  top: var(--writings-top);
   left: 50%;
-  translate: -50% -50%;
+  translate: -50% 0;
   z-index: var(--z-dialog);
   display: flex;
   flex-direction: column;
   width: min(52rem, calc(100vw - 10rem));
-  height: calc(100dvh - 3rem);
+  height: calc(100dvh - var(--writings-top) - var(--writings-bottom));
   padding: 0;
   overflow: visible;
   border-radius: var(--radius-lg);
@@ -93,18 +99,18 @@
   font-family: var(--font-ui);
 }
 .writings-dialog.t-modal {
-  transition-property: transform, opacity, width;
-  transition-duration: var(--modal-open-dur), var(--modal-open-dur), var(--writings-resize-dur);
+  transition-property: transform, opacity, width, height, top;
+  transition-duration: var(--modal-open-dur), var(--modal-open-dur), var(--writings-resize-dur), var(--writings-resize-dur), var(--writings-resize-dur);
   transition-timing-function: var(--modal-ease);
 }
 .writings-dialog.t-modal.is-closing {
-  transition-duration: var(--modal-close-dur), var(--modal-close-dur), var(--writings-resize-dur);
+  transition-duration: var(--modal-close-dur), var(--modal-close-dur), var(--writings-resize-dur), var(--writings-resize-dur), var(--writings-resize-dur);
 }
 /* Page the whole reader with the same mirrored poses as project previews.
    The incoming pose is installed without a transition while the note swaps. */
 .writings-dialog.t-modal.is-open[data-switch-phase]:not([data-switch-phase="idle"]) {
-  transition-duration: var(--writings-switch-duration), var(--writings-switch-duration), var(--writings-resize-dur);
-  transition-timing-function: var(--ease-standard), ease-out, var(--ease-smooth);
+  transition-duration: var(--writings-switch-duration), var(--writings-switch-duration), var(--writings-resize-dur), var(--writings-resize-dur), var(--writings-resize-dur);
+  transition-timing-function: var(--ease-standard), ease-out, var(--ease-smooth), var(--ease-smooth), var(--ease-smooth);
 }
 .writings-dialog.t-modal.is-open[data-switch-phase="out"][data-switch-direction="next"],
 .writings-dialog.t-modal.is-open[data-switch-phase="in"][data-switch-direction="prev"] {
@@ -177,8 +183,17 @@
 .writings-dialog[data-reading="false"] .writings-note-nav { visibility: hidden; }
 /* Expand is a desktop affordance; the phone sheet has nothing to grow into. */
 @media (min-width: 700px) {
-  .writings-dialog[data-expanded="true"] { width: calc(100vw - 3rem); }
+  /* Expanded is the one state that should take the whole viewport, so it
+     trades the shared top edge for the old 1.5rem margin on every side. */
+  .writings-dialog[data-expanded="true"] {
+    width: calc(100vw - 3rem);
+    --writings-top: max(1.5rem, env(safe-area-inset-top));
+    --writings-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
   .writings-dialog[data-expanded="true"] .writings-toolbar { padding-top: calc(1.5rem + env(safe-area-inset-top)); }
+}
+@media (min-width: 1320px) {
+  .writings-dialog { --writings-top: max(5vh, env(safe-area-inset-top)); }
 }
 /* Expanded there is no room beside the dialog, so the rails move inside it. */
 .writings-dialog[data-expanded="true"] .writings-navigation { --writings-nav-rail: calc(100% - 1.5rem - var(--preview-gallery-nav-size)); }
@@ -238,12 +253,15 @@
 
 .writings-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 5rem 1rem; text-align: center; color: var(--muted); }
 @media (max-width: 699.98px) {
+  /* A phone has no room to hold a top edge in reserve: the sheet keeps its
+     half-rem margins all round. */
   .writings-dialog {
     --writings-toolbar-top: calc(1.25rem + env(safe-area-inset-top));
     --writings-nav-gap: 0.45rem;
     --writings-nav-width: calc(var(--preview-gallery-nav-size) * 3 + var(--writings-nav-gap) * 2);
+    --writings-top: max(0.5rem, env(safe-area-inset-top));
+    --writings-bottom: max(0.5rem, env(safe-area-inset-bottom));
     width: calc(100vw - 1rem);
-    height: calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
   .writings-toolbar { padding: var(--writings-toolbar-top) 0 0.75rem; }
   .writings-breadcrumbs ol, .writings-year-crumb { gap: 0.25rem; }

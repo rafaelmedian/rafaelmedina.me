@@ -170,9 +170,9 @@ function getPreviewDescription(card: PortfolioCard) {
 }
 
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
-  const teammates = card.team ?? []
-  // Credit myself alongside anyone I worked with; solo shots keep the Team row hidden.
-  return teammates.length > 0 ? [collaborators.rafael, ...teammates] : []
+  // Credited on every project, with or without company: a shot with no names
+  // under it reads as unattributed rather than as solo work.
+  return [collaborators.rafael, ...(card.team ?? [])]
 }
 
 function getInitials(name: string) {
@@ -181,10 +181,6 @@ function getInitials(name: string) {
     .slice(0, 2)
     .map((part) => part[0] ?? "")
     .join("")
-}
-
-function getPreviewLink(card: PortfolioCard) {
-  return card.ctaHref && card.ctaHref !== "#" ? card.ctaHref : ""
 }
 
 export function PreviewGalleryDialog({
@@ -214,18 +210,7 @@ export function PreviewGalleryDialog({
   const activeCard = cards[safeIndex]
   const activeMediaSource = activeCard?.image ?? ""
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
-  const activeLink = activeCard ? getPreviewLink(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
-  const activeMetaRows = activeCard
-    ? [
-        // No "Project" row — the dialog title directly above already says it.
-        ["Product", activeCard.product ?? activeCard.category],
-        ["Industry", activeCard.industry ?? "Product Design"],
-        // What I owned and what changed, in that order -- scope before impact.
-        ["Role", activeCard.role],
-        ["Outcome", activeCard.outcome],
-      ]
-    : []
 
   const playOpen = useSound(openSound, { volume: 0.3 })
   const playNext = useSound(nextSound, { volume: 0.26 })
@@ -453,8 +438,8 @@ export function PreviewGalleryDialog({
 
   const activeMediaIsVideo = isVideoSource(activeMediaSource)
   const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
-  const mediaFrameStyle = activeCard.previewMediaPaddingBlock
-    ? ({ "--preview-gallery-media-padding-block": activeCard.previewMediaPaddingBlock } as CSSProperties)
+  const mediaFrameStyle = activeCard.previewMediaPadding
+    ? ({ "--preview-gallery-media-padding": activeCard.previewMediaPadding } as CSSProperties)
     : undefined
   const switchClassName =
     switchPhase === "idle" ? "" : ` preview-gallery-card-switch-${switchPhase}-${switchDirection}`
@@ -565,67 +550,41 @@ export function PreviewGalleryDialog({
                   </div>
 
                   <div className="preview-gallery-content">
-                    <div className="preview-gallery-heading">
-                      <div>
-                        <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
-                        <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
+                    <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                    <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
+                    {activeCollaborators.length > 0 ? (
+                      <div className="preview-gallery-team">
+                        <ul className="preview-gallery-people" aria-label="Collaborators">
+                          {activeCollaborators.map((person) => (
+                            <li key={person.href}>
+                              <a
+                                className="preview-gallery-person"
+                                href={person.href}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {person.photo ? (
+                                  <img
+                                    className="preview-gallery-person-avatar"
+                                    src={person.photo}
+                                    alt=""
+                                    width={22}
+                                    height={22}
+                                    loading="lazy"
+                                    decoding="async"
+                                  />
+                                ) : (
+                                  <span className="preview-gallery-person-avatar" aria-hidden="true">
+                                    {getInitials(person.name)}
+                                  </span>
+                                )}
+                                <span className="preview-gallery-person-name">{person.name}</span>
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    </div>
-
-                    <dl className="preview-gallery-details">
-                      {activeMetaRows.map(([label, value]) => (
-                        <div key={label} className="preview-gallery-detail-row">
-                          <dt>{label}</dt>
-                          <dd>{value}</dd>
-                        </div>
-                      ))}
-                      {activeCollaborators.length > 0 ? (
-                        <div className="preview-gallery-detail-row">
-                          <dt>Team</dt>
-                          <dd>
-                            <ul className="preview-gallery-people">
-                              {activeCollaborators.map((person) => (
-                                <li key={person.href}>
-                                  <a
-                                    className="preview-gallery-person"
-                                    href={person.href}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    {person.photo ? (
-                                      <img
-                                        className="preview-gallery-person-avatar"
-                                        src={person.photo}
-                                        alt=""
-                                        width={22}
-                                        height={22}
-                                        loading="lazy"
-                                        decoding="async"
-                                      />
-                                    ) : (
-                                      <span className="preview-gallery-person-avatar" aria-hidden="true">
-                                        {getInitials(person.name)}
-                                      </span>
-                                    )}
-                                    <span className="preview-gallery-person-name">{person.name}</span>
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
-                          </dd>
-                        </div>
-                      ) : null}
-                      {activeLink ? (
-                        <div className="preview-gallery-detail-row">
-                          <dt>Link</dt>
-                          <dd>
-                            <a href={activeLink} target="_blank" rel="noreferrer">
-                              {activeLink.replace(/^https?:\/\//, "")}
-                            </a>
-                          </dd>
-                        </div>
-                      ) : null}
-                    </dl>
+                    ) : null}
                   </div>
                 </div>
               </article>

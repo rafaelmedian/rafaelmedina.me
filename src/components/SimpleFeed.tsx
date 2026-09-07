@@ -14,7 +14,7 @@ import {
 import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
-import { WritingsFolder } from "./WritingsFolder"
+import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { QuoteCard } from "./QuoteCard"
@@ -441,9 +441,11 @@ const sectionLinks: { label: string; href: string }[] = [
 
 function SectionCorner({
   onSelect,
+  onNotes,
   resumeHref,
 }: {
   onSelect: (href: string) => void
+  onNotes: () => void
   resumeHref: string
 }) {
   const { isOpen, hoverProps } = useHoverCard()
@@ -517,6 +519,11 @@ function SectionCorner({
           {link.label}
         </a>
       ))}
+      {/* Notes has no section of its own to scroll to: it opens the same
+          folder the mosaic tile does, so this is a button, not a link. */}
+      <button type="button" className="mosaic-social-link" onClick={onNotes}>
+        Notes
+      </button>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
         <a
           href={resumeHref}
@@ -662,6 +669,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   )
   const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [writingsOpen, setWritingsOpen] = useState(false)
+  const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
   // Reduced motion suppresses animationend, so retire the one-shot intro
@@ -923,6 +931,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <h1 id="portfolio-title" className="sr-only" tabIndex={-1}>{profile.name} portfolio</h1>
       <SectionCorner
         onSelect={openAbout}
+        onNotes={() => writingsFolderRef.current?.openFolder()}
         resumeHref={links.resumePdf}
       />
       <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
@@ -1113,7 +1122,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           })}
                           {row.writings ? (
                             <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) } as CSSProperties}>
-                              <WritingsFolder onOpenChange={setWritingsOpen} />
+                              <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
                             </div>
                           ) : null}
                         </div>

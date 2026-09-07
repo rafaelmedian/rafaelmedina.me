@@ -442,12 +442,12 @@ const BREAKPOINTS = [
   { at: "≤ 479.98px", change: "Contact pills gain up to 1.25rem side padding and wrap when their container cannot accommodate them." },
   { at: "≤ 639.98px", change: "The hero uses 2rem of top padding plus the top safe area." },
   { at: "≤ 699.98px", change: "Local time and corner navigation hide; a centered floating control labeled with the current section opens a table of contents with 14px labels; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; work-card captions and their scrim are hidden, on any screen without hover." },
-  { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall." },
+  { at: "480–699.98px + fine hover", change: "Contact pills stay 34px tall." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
   {
     at: "≥ 1320px",
-    change: "Project previews open in the 1090px wide view with a 5vh top inset.",
+    change: "Project previews open in the 981px wide view with a 5vh top inset.",
   },
 ]
 
@@ -1134,7 +1134,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg previous next rail flank 44px 16px artwork middle 42vh 72vh 383px 780px 50%")}
+                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media inset half card padding previous next rail flank 44px 16px artwork middle 42vh 72vh 345px 684px 50%")}
               >
                 <strong>Nested corners are concentric, and they are derived — not a fifth step.</strong>
                 <p>
@@ -1143,11 +1143,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   and hard-coded: the LinkedIn card's media is <code>calc(var(--radius-md) - 5px)</code>, the preview dialog is{" "}
                   <code>calc(var(--radius-lg) + card-padding)</code> on desktop. That is how 11px, 11.5px, and 10px corners exist
                   without being scale steps — and why they stay correct when a padding changes.
+                  The artwork sits in a mat of <code>card-padding / 2</code> on all four sides, so the frame's grey and
+                  hairline surround the image instead of meeting it, and the image carries the third radius in the
+                  nest: <code>calc(var(--radius-lg) - mat)</code>.
                   On desktop the 44px previous and next controls flank the card, one <code>16px</code> clear of each
                   edge and level with the middle of the artwork — the card runs on into the title and details below the
-                  image, so its own centre would sit in the text. That offset is the card padding plus half the artwork
-                  the popup width gives the common preview ratio, under the same cap the media carries
-                  (<code>min(383px, 42vh)</code>, and <code>min(780px, 72vh)</code> in the wide view). It is fixed per
+                  image, so its own centre would sit in the text. That offset is the card padding and the mat plus half
+                  the artwork the popup width gives the common preview ratio, under the same cap the media carries
+                  (<code>min(345px, 42vh)</code>, and <code>min(684px, 72vh)</code> in the wide view). It is fixed per
                   layout rather than measured per preview, so a taller or shorter image never slides the pair out from
                   under the pointer, and it stops at half the popup so a card taller than the viewport still keeps
                   paging reachable without scrolling back up. The
@@ -1156,6 +1159,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
                   header at z-index 1.
+                  Below the artwork, the project title and a single description cover the product, contribution,
+                  and result. Left-aligned collaborator avatar links follow the description without a visible label,
+                  starting with mine on every project so a solo shot is credited rather than unattributed.
+                  The description uses <code>--text-md</code>, a 1.6 line height, the existing prose colour
+                  <code>#545454</code>, and a 46rem maximum measure. Credits use <code>--text-sm</code>
+                  with 1.5rem of space above them. The text column matches the notes reader: a centered 48rem
+                  maximum width with 1.5rem of padding on all four sides, and 1.25rem side padding below 700px.
+                  The dialog has no project-site link, metadata table, or row dividers.
                 </p>
               </div>
             </div>
@@ -1228,8 +1239,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 layout-affecting scale keeps it off the label.
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
                 with 8px corners and 14px type scaled to one third. Papers fan over 360ms with smooth easing.
-                The list and reader share one modal up to 52rem wide and the viewport height minus 3rem, with 1.5rem desktop viewport
-                vertical margins and room for the navigation rail, white, overlay elevation, and 24px corners. Selecting a note preserves the modal dimensions.
+                The list and reader share one modal up to 52rem wide that hangs from the line a project preview opens on — 8vh
+                from the top of the viewport, 5vh from 1320px — and runs to 1rem above the bottom, with room for the navigation
+                rail, white, overlay elevation, and 24px corners. Selecting a note preserves the modal dimensions.
                 The list contains only titles grouped by publication or archive year, newest first; eight writings are visible, with seven in 2026 and one in 2025.
                 Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s title rows.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
@@ -1247,9 +1259,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
                 Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
                 during the switch, and closing or returning to Notes cancels pending selection. Reduced motion switches instantly.
-                From 700px an expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, retaining 1.5rem desktop margins and 24px corners,
+                From 700px an expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, giving up the shared top edge for 1.5rem desktop margins on all four sides and 24px corners,
                 keeps the reading column centered with 1.5rem top padding plus the safe area, and brings the rail inside the right edge.
-                Modal width, column width, toolbar padding, and rail position transition together with --ease-smooth: 360ms to expand and 200ms to restore.
+                Modal width and height, column width, toolbar padding, and rail position transition together with --ease-smooth: 360ms to expand and 200ms to restore.
                 Rapid toggles reverse from the current position; reduced motion makes resizing immediate. Toggling preserves the selected note and scroll;
                 closing restores the default size. On mobile, the modal retains its 0.5rem margins and safe-area clearance and there is no expand control,
                 because the sheet already sits within half a rem of the viewport and has nothing to grow into.
@@ -1410,11 +1422,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </table>
               </div>
               <p className="ds-caption">
-                All three use a 2rem fine-pointer height and <code>--radius-full</code>; below 700px, touch inputs keep a
+                All three use a 2.125rem fine-pointer height and <code>--radius-full</code>; below 700px, touch inputs keep a
                 44px target. They share the same physical build: an outer shadow, a{" "}
                 <code>::before</code> specular highlight across the top, and a <code>::after</code> ring of inset
-                shadows for the bottom bevel. Labels sit at <code>top: -1px</code> because SF rides low in its em box at
-                13px. Shadow, not scale, carries the press.
+                shadows for the bottom bevel. Labels are trimmed with{" "}
+                <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
+                low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
+                carries the press.
               </p>
             </div>
 

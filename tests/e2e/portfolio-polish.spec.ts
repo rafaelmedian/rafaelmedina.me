@@ -522,8 +522,8 @@ test("matches the desktop contact-pill height at compact desktop widths", async 
   await page.goto("/")
 
   const message = page.getByRole("link", { name: "Message on LinkedIn" })
-  await expect(message).toHaveCSS("height", "32px")
-  await expect(message).toHaveCSS("min-height", "32px")
+  await expect(message).toHaveCSS("height", "34px")
+  await expect(message).toHaveCSS("min-height", "34px")
 })
 
 test("keeps comfortable contact targets on wide touch viewports", async ({ browser }) => {
@@ -3352,7 +3352,7 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   await expect(dialog).toHaveAttribute("data-wide", "true")
   await expect(dialog.getByRole("button", { name: /Expand preview|Exit wide view/ })).toHaveCount(0)
   const wideDialogBox = await dialog.boundingBox()
-  expect(wideDialogBox?.width).toBeCloseTo(1090, 0)
+  expect(wideDialogBox?.width).toBeCloseTo(981, 0)
   expect(wideDialogBox?.y).toBeCloseTo(50, 0)
 
   // The controls flank the card, so both edges have to clear the viewport --
@@ -3374,8 +3374,8 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   expect(tightNextBox!.x + tightNextBox!.width).toBeLessThanOrEqual(700)
 
   await page.setViewportSize({ width: 1280, height: 1000 })
-  // A project URL now reloads its standalone page. Enter from the feed to
-  // exercise the enhanced gallery at the second viewport as well.
+  // A reload would reopen the gallery without a card to grow out of. Enter from
+  // the feed to exercise the same anchored open at the second viewport.
   await page.goto("/")
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
@@ -3873,7 +3873,7 @@ test("describes the stakes and choices in a Protector booking", async ({ page })
   await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
 
   await expect(page.getByRole("dialog")).toContainText(
-    "Protector lets people book short-term personal security. I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
+    "Protector lets people book short-term personal security. As the sole product designer for the booking experience, I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
   )
 })
 
@@ -4105,57 +4105,54 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
   await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })
 
-test("states my role and the outcome on every project preview", async ({ page }) => {
+test("puts unlabelled credits below the description without a site link", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
-  const details = dialog.locator(".preview-gallery-detail-row")
+  const description = dialog.locator(".preview-gallery-description")
+  const team = dialog.getByRole("list", { name: "Collaborators" })
+  await expect(team.getByRole("link")).toHaveText(["Rafael Medina", "Simon Rico"])
+  await expect(description).toContainText("I mapped and designed")
+  await expect(description).toContainText("without losing their quote or inputs")
+  await expect(dialog.locator("dl")).toHaveCount(0)
+  const teamBox = await team.boundingBox()
+  const descriptionBox = await description.boundingBox()
+  expect(teamBox!.y).toBeGreaterThan(descriptionBox!.y + descriptionBox!.height)
+  await expect(dialog.getByText("Team", { exact: true })).toHaveCount(0)
+  await expect(dialog.getByRole("link", { name: "matcha.xyz", exact: true })).toHaveCount(0)
+  await expect(dialog.locator(".preview-gallery-project-link")).toHaveCount(0)
 
-  // Scope before impact, and both before the credits and the outbound link.
-  await expect(details.locator("dt")).toHaveText(["Product", "Industry", "Role", "Outcome", "Team", "Link"])
-
-  const rowValue = (label: string) => details.filter({ has: page.getByText(label, { exact: true }) }).locator("dd")
-  await expect(rowValue("Role")).toHaveText(
-    "I mapped the full flow and designed the wallet menu and its edge cases.",
-  )
-  await expect(rowValue("Outcome")).not.toBeEmpty()
-
-  // Every card in the gallery, not just the one that happens to open first.
+  // Paging must update the prose and credits, including solo projects, which
+  // carry my credit alone rather than none.
   const total = Number((await dialog.locator(".preview-gallery-count").innerText()).split("/")[1])
   for (let index = 0; index < total; index += 1) {
-    await expect(rowValue("Role")).not.toBeEmpty()
-    await expect(rowValue("Outcome")).not.toBeEmpty()
-    // Placeholders read as filled-in fields but say nothing about the work.
-    await expect(rowValue("Role")).not.toHaveText(/^Product [Dd]esign$/)
-    // Wide and compact each render a nav group; only one is on screen.
+    await expect(description).not.toBeEmpty()
+    await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined)|sole product designer/)
+    await expect(dialog.locator("dl")).toHaveCount(0)
+    if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
+      await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
+    }
     await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   }
 })
 
 const expectPreviewContributionFits = async (page: Page, viewportHeight: number) => {
   const dialog = page.getByRole("dialog")
-  const details = dialog.locator(".preview-gallery-detail-row")
-  await expect(details).toHaveCount(6)
+  const description = dialog.locator(".preview-gallery-description")
+  await expect(description).toBeVisible()
+  const overflow = await description.evaluate((element) => element.scrollWidth - element.clientWidth)
+  expect(overflow).toBeLessThanOrEqual(1)
 
-  // Only the two new rows: the Team row's chips intentionally hang past the
-  // column edge by their own negative margin.
-  const overflow = await details
-    .filter({ has: page.getByText(/^(Role|Outcome)$/) })
-    .evaluateAll((rows) => rows.map((row) => row.scrollWidth - row.clientWidth))
-  expect(overflow).toHaveLength(2)
-  expect(Math.max(...overflow)).toBeLessThanOrEqual(1)
-
-  // The primary controls stay on screen rather than being pushed off by the
-  // two extra rows.
+  // More readable prose must not push navigation out of reach.
   const nav = dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true })
   const navBox = await nav.boundingBox()
   expect(navBox).not.toBeNull()
   expect(navBox!.y + navBox!.height).toBeLessThanOrEqual(viewportHeight)
 }
 
-test("keeps the preview role and outcome inside the card on desktop", async ({ page }) => {
+test("keeps the preview description inside the card on desktop", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
@@ -4164,7 +4161,7 @@ test("keeps the preview role and outcome inside the card on desktop", async ({ p
   await expectPreviewContributionFits(page, 900)
 })
 
-test("keeps the preview role and outcome inside the card on mobile", async ({ browser }) => {
+test("keeps the preview description inside the card on mobile", async ({ browser }) => {
   const context = await browser.newContext({
     hasTouch: true,
     isMobile: true,
