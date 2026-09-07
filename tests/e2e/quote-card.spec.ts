@@ -181,7 +181,7 @@ test("opens the interactive profile popover on touch", async ({ browser }) => {
 test("stages the quote and Protector in their second-row column order", async ({ page }) => {
   await openHome(page)
   const quote = carousel(page).locator("xpath=ancestor::*[contains(@class, 'mosaic-row-item')][1]")
-  const protector = page.getByRole("button", { name: /Open Protector/ }).locator("xpath=ancestor::*[contains(@class, 'mosaic-row-item')][1]")
+  const protector = page.getByRole("link", { name: /Open Protector/ }).locator("xpath=ancestor::*[contains(@class, 'mosaic-row-item')][1]")
   const firstTile = page.locator(".mosaic-row-item").first()
   const [firstDelay, quoteDelay, protectorDelay] = await Promise.all(
     [firstTile, quote, protector].map((item) => item.evaluate((node) => Number.parseFloat(getComputedStyle(node).animationDelay))),

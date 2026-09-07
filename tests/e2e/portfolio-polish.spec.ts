@@ -1,4 +1,5 @@
 import { expect, type BrowserContext, type Page, test } from "@playwright/test"
+import { createElasticEdgePalette } from "../../src/lib/elasticEdgeGradient"
 
 const mobileViewport = { width: 390, height: 844 }
 const openStreetMapTileUrl = /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/
@@ -67,7 +68,7 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
       shadeCount: element.querySelectorAll(".elastic-scroll-edge-shade").length,
       shadeFilter: shade ? getComputedStyle(shade).filter : "missing",
       backgroundImage: shade ? getComputedStyle(shade).backgroundImage : "none",
-      palette: [1, 2, 3, 4, 5].map((index) =>
+      palette: [1, 2, 3, 4, 5, 6, 7].map((index) =>
         (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
       ),
       shadeOpacity: Number.parseFloat((element as HTMLElement).style.getPropertyValue("--elastic-edge-shade-opacity")),
@@ -88,7 +89,7 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
   expect(pulledState.shadeFilter).toBe("none")
   expect(pulledState.backgroundImage.match(/radial-gradient/g)).toHaveLength(7)
   expect(pulledState.palette.every(Boolean)).toBe(true)
-  expect(new Set(pulledState.palette).size).toBe(5)
+  expect(new Set(pulledState.palette).size).toBe(7)
   expect(pulledState.coreOpacity).toBeGreaterThan(pulledState.shadeOpacity)
   expect(pulledState.lightOpacity).toBeGreaterThan(0)
   expect(pulledState.lightOpacity).toBeLessThan(0.5)
@@ -97,12 +98,19 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
 
   const nextPalette = await edge.evaluate((element) => {
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    return [1, 2, 3, 4, 5].map((index) =>
+    return [1, 2, 3, 4, 5, 6, 7].map((index) =>
       (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
     )
   })
 
   expect(nextPalette).not.toEqual(pulledState.palette)
+})
+
+test("randomizes elastic-edge palettes across the full color spectrum", () => {
+  const centralHues = [0, 0.25, 0.5, 0.75, 0.999].map((random) =>
+    Number(createElasticEdgePalette(() => random)[3].match(/^hsl\((\d+)/)?.[1]),
+  )
+  expect(centralHues).toEqual([0, 90, 180, 270, 359])
 })
 
 test("changes the elastic-edge palette when the random source repeats", async ({ page }) => {
@@ -114,14 +122,13 @@ test("changes the elastic-edge palette when the random source repeats", async ({
 
   const palettes = await page.locator(".elastic-scroll-edge").evaluate((element) => {
     const readPalette = () =>
-      [1, 2, 3, 4, 5].map((index) =>
+      [1, 2, 3, 4, 5, 6, 7].map((index) =>
         (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
       )
 
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
     const first = readPalette()
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: -1 }))
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    window.dispatchEvent(new Event("elastic-edge:randomize"))
 
     return { first, second: readPalette() }
   })
@@ -159,69 +166,6 @@ test("coalesces a burst of elastic-edge input into one visual update per frame",
 
   expect(progress.beforeFrame).toBe("")
   expect(Number(progress.afterFrame)).toBeGreaterThan(0)
-})
-
-test("tosses a wink and three varied emoji once per bottom overscroll gesture", async ({ page }) => {
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-
-  const emojiLayer = page.locator(".elastic-scroll-edge-emojis")
-  const firstBurst = await emojiLayer.evaluate((element) => {
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    return [...element.querySelectorAll<HTMLElement>(".elastic-scroll-edge-emoji")].map((emoji) => emoji.textContent)
-  })
-
-  expect(firstBurst).toHaveLength(4)
-  expect(firstBurst).toContain("😉")
-  expect(new Set(firstBurst).size).toBe(4)
-  await expect(emojiLayer).toHaveCSS("pointer-events", "none")
-
-  await emojiLayer.evaluate((element) => {
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 80 }))
-    return element.querySelectorAll(".elastic-scroll-edge-emoji").length
-  })
-  await expect(emojiLayer.locator(".elastic-scroll-edge-emoji")).toHaveCount(4)
-  await expect(emojiLayer.locator(".elastic-scroll-edge-emoji")).toHaveCount(0, { timeout: 2_000 })
-})
-
-test("tosses each emoji on one animated layer with no horizontal drift", async ({ page }) => {
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-
-  // The burst used to nest a drift wrapper around each glyph for a parallax
-  // arc, which doubled the animated layers mid-interaction. Each emoji is now
-  // a single childless span that rises and falls in place.
-  const toss = await page.locator(".elastic-scroll-edge").evaluate(() => {
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    const element = document.querySelector<HTMLElement>(".elastic-scroll-edge-emoji")
-    if (!element) throw new Error("Emoji burst did not launch")
-    const animation = element.getAnimations()[0]
-    if (!animation) throw new Error("Emoji toss animation did not start")
-    animation.pause()
-
-    const sample = (time: number) => {
-      animation.currentTime = time
-      const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
-      return { x: matrix.m41, y: matrix.m42 }
-    }
-
-    const rising = sample(175)
-    const apex = sample(350)
-    const falling = sample(650)
-    return {
-      childCount: element.childElementCount,
-      animationCount: element.getAnimations().length,
-      horizontalTravel: Math.max(Math.abs(rising.x), Math.abs(apex.x), Math.abs(falling.x)),
-      roseToApex: apex.y < rising.y,
-      fellAfterApex: falling.y > apex.y,
-    }
-  })
-
-  expect(toss.childCount).toBe(0)
-  expect(toss.animationCount).toBe(1)
-  expect(toss.horizontalTravel).toBe(0)
-  expect(toss.roseToApex).toBe(true)
-  expect(toss.fellAfterApex).toBe(true)
 })
 
 test("previews the gradient while applying live height and shape settings", async ({ page }) => {
@@ -274,7 +218,7 @@ test("previews the gradient while applying live height and shape settings", asyn
   await expect(edge).toHaveCSS("opacity", "0")
 })
 
-test("releases the elastic scroll edge with one slow physical settle", async ({ page }) => {
+test("staggers low aurora curtains and resets them after the shortened fade", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
 
@@ -287,11 +231,26 @@ test("releases the elastic scroll edge with one slow physical settle", async ({ 
     }
   })
 
-  expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0s" })
+  expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0.12s" })
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
-  await expect(edge).toHaveCSS("transition-duration", "0.7s")
-  await expect(edge).toHaveCSS("transition-timing-function", "cubic-bezier(0.16, 1, 0.3, 1)")
+  await expect(edge).toHaveCSS("transition-duration", "1.26s")
+  await expect(edge).toHaveCSS("transition-timing-function", "ease-in-out")
+  const curtains = edge.locator(".elastic-scroll-edge-curtain")
+  await expect(curtains).toHaveCount(7)
+  const sections = await curtains.evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element)
+    return { delay: parseFloat(style.animationDelay), height: parseFloat(style.height) }
+  }))
+  expect(sections.map((section) => section.delay)).toEqual([0, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24])
+  expect(sections.every((section) => section.height >= 40 && section.height <= 56)).toBe(true)
+  const lingeringOpacity = await edge.evaluate(async (element) => {
+    await new Promise((resolve) => window.setTimeout(resolve, 700))
+    return Number.parseFloat(getComputedStyle(element).opacity)
+  })
+  expect(lingeringOpacity).toBeGreaterThan(0.2)
+  await expect(edge).toHaveCSS("opacity", "0")
+  await expect(curtains.first()).toHaveCSS("animation-name", "none")
 })
 
 test("continues the elastic scroll edge from its visible position when release is interrupted", async ({ page }) => {
@@ -314,6 +273,51 @@ test("continues the elastic scroll edge from its visible position when release i
   expect(interruption.opacityAfterInterruption).toBeGreaterThanOrEqual(interruption.opacityBeforeInterruption)
 })
 
+test("gives the page-end content a small upward nudge and settles without changing scroll position", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const content = page.locator(".mosaic-about-body")
+  const nudge = await content.evaluate(async (element) => {
+    const scrollBefore = window.scrollY
+    const topBefore = element.getBoundingClientRect().top
+    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+    await new Promise((resolve) => window.setTimeout(resolve, 80))
+    return {
+      travel: topBefore - element.getBoundingClientRect().top,
+      scrollBefore,
+      scrollAfter: window.scrollY,
+    }
+  })
+
+  expect(nudge.travel).toBeGreaterThan(1)
+  expect(nudge.travel).toBeLessThanOrEqual(8)
+  expect(nudge.scrollAfter).toBe(nudge.scrollBefore)
+  await expect(content).toHaveCSS("translate", "0px")
+  await expect(page.locator(".elastic-scroll-edge-emoji")).toHaveCount(0)
+})
+
+test("keeps the page-end content still above the bottom and inside nested scrollers", async ({ page }) => {
+  await page.goto("/")
+  const content = page.locator(".mosaic-about-body")
+  await page.evaluate(() => window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 })))
+  await expect(content).not.toHaveAttribute("data-edge-pulling", "true")
+
+  await page.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight)
+    const scroller = document.createElement("div")
+    scroller.style.cssText = "position:fixed;inset:0;width:100px;height:100px;overflow-y:auto"
+    const child = document.createElement("div")
+    child.style.height = "200px"
+    scroller.append(child)
+    document.body.append(scroller)
+    child.dispatchEvent(new WheelEvent("wheel", { deltaY: 600, bubbles: true }))
+    scroller.remove()
+  })
+  await expect(content).not.toHaveAttribute("data-edge-pulling", "true")
+  await expect(content).toHaveCSS("translate", "0px")
+})
+
 test("removes the elastic scroll edge when reduced motion is preferred", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
@@ -324,8 +328,7 @@ test("removes the elastic scroll edge when reduced motion is preferred", async (
 
   await expect(edge).toHaveCSS("display", "none")
   await expect(edge).toHaveAttribute("data-pulling", "false")
-  await expect(page.locator(".elastic-scroll-edge-emojis")).toHaveCSS("display", "none")
-  await expect(page.locator(".elastic-scroll-edge-emoji")).toHaveCount(0)
+  await expect(page.locator(".mosaic-about-body")).toHaveCSS("translate", "none")
 })
 
 test("defines the overlapping About surface with a top border and shadow", async ({ page }) => {
@@ -2323,17 +2326,17 @@ test("uses eight pixel mobile gutters and taller project cards", async ({ page }
 test("places the quote slider beside Protector instead of Dark mode", async ({ page }) => {
   await page.goto("/")
 
-  const protectorCard = page.getByRole("button", { name: /Open Protector/ })
+  const protectorCard = page.getByRole("link", { name: /Open Protector/ })
   const row = page.locator(".mosaic-row").filter({ has: protectorCard })
 
   await expect(row.locator(".mosaic-quote")).toHaveCount(1)
-  await expect(page.getByRole("button", { name: /Open Matcha dark mode/ })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: /Open Matcha dark mode/ })).toHaveCount(0)
 })
 
 test("restores the former three projects to the third row", async ({ page }) => {
   await page.goto("/")
 
-  const tokenCard = page.getByRole("button", { name: /Open Matcha token page/ })
+  const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
   const row = page.locator(".mosaic-row").filter({ has: tokenCard })
   const cards = row.locator(".mosaic-row-card")
 
@@ -2347,9 +2350,9 @@ test("keeps the restored third-row projects equal width", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/")
 
-  const tokenCard = page.getByRole("button", { name: /Open Matcha token page/ })
-  const tradePageCard = page.getByRole("button", { name: /Open Matcha trade page/ })
-  const tradeModuleCard = page.getByRole("button", { name: /Open Matcha trade module/ })
+  const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
+  const tradePageCard = page.getByRole("link", { name: /Open Matcha trade page/ })
+  const tradeModuleCard = page.getByRole("link", { name: /Open Matcha trade module/ })
   const row = page.locator(".mosaic-row").filter({ has: tokenCard })
   await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
 
@@ -2381,7 +2384,7 @@ test("caps each row at three projects and omits Mobile navigation", async ({ pag
   await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha on mobile/)
   await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha Pro/)
   await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha security audit/)
-  await expect(page.getByRole("button", { name: /Open Matcha mobile navigation/ })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: /Open Matcha mobile navigation/ })).toHaveCount(0)
   await expect(cards.nth(0).locator("img")).toHaveAttribute("src", /shot-small-14\.jpg$/)
   await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
   await expect(cards.nth(2).locator("video")).toHaveAttribute("poster", "/Projects/shot-small-20-poster.webp")
@@ -2439,7 +2442,7 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
     }
   })
 
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
@@ -2452,7 +2455,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
@@ -2516,7 +2519,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
   })
   const page = await context.newPage()
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).tap()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).tap()
 
   const card = page.locator(".preview-gallery-card")
   await card.evaluate((element) => {
@@ -2541,7 +2544,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
   })
   const page = await context.newPage()
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).tap()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).tap()
 
   const card = page.locator(".preview-gallery-card")
   await card.evaluate((element) => {
@@ -2582,7 +2585,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
 test("returns focus to the originating project after closing the gallery", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
-  const trigger = page.getByRole("button", { name: /Open Matcha multiwallet flow/ })
+  const trigger = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
   await trigger.focus()
   await trigger.press("Enter")
   // The gallery chunk is lazy: an Escape fired before it mounts closes
@@ -2609,7 +2612,7 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("button", { name: /Open Matcha token page preview/ })
+  const trigger = page.getByRole("link", { name: /Open Matcha token page preview/ })
   await trigger.hover()
   await failedPrefetch
   await page.unroute(galleryChunk)
@@ -2625,7 +2628,7 @@ test("keeps the site usable when the gallery chunk fails at click time", async (
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("button", { name: /Open Matcha token page preview/ })
+  const trigger = page.getByRole("link", { name: /Open Matcha token page preview/ })
   await trigger.click()
 
   await expect(page.getByRole("heading", { name: "Rafael Medina portfolio" })).toBeAttached()
@@ -2651,7 +2654,7 @@ test("acknowledges the first gallery tap while its chunk loads", async ({ page }
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("button", { name: /Open Matcha token page preview/ })
+  const trigger = page.getByRole("link", { name: /Open Matcha token page preview/ })
   await trigger.click()
   const pending = page.locator(".preview-gallery-pending")
   await expect(pending).toBeVisible()
@@ -2676,7 +2679,7 @@ test("keeps the gallery pending state visible without motion", async ({ page }) 
   })
   await page.goto("/")
 
-  await page.getByRole("button", { name: /Open Matcha token page preview/ }).click()
+  await page.getByRole("link", { name: /Open Matcha token page preview/ }).click()
   const pending = page.locator(".preview-gallery-pending")
   await expect(pending).toBeVisible()
   await expect(pending).toHaveCSS("animation-name", "none")
@@ -2993,7 +2996,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   const card = dialog.locator(".preview-gallery-card")
@@ -3037,7 +3040,7 @@ test("does not use dots to navigate between projects in the main feed", async ({
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
@@ -3050,7 +3053,7 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   await page.setViewportSize({ width: 1320, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveAttribute("data-wide", "true")
@@ -3064,8 +3067,10 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   expect(nextPreviewBox!.x + nextPreviewBox!.width).toBeLessThanOrEqual(1320)
 
   await page.setViewportSize({ width: 1280, height: 1000 })
-  await page.reload()
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  // A project URL now reloads its standalone page. Enter from the feed to
+  // exercise the enhanced gallery at the second viewport as well.
+  await page.goto("/")
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   await expect(dialog).not.toHaveAttribute("data-wide", "true")
   await expect(dialog.getByRole("button", { name: /Expand preview|Exit wide view/ })).toHaveCount(0)
@@ -3076,7 +3081,7 @@ test("fills the wide card width with cropped project artwork", async ({ page }) 
   await page.setViewportSize({ width: 1440, height: 545 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Protector booking preview/ }).click()
+  await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveAttribute("data-wide", "true")
@@ -3110,7 +3115,7 @@ test("keeps the expanded gallery scrollable without visible scrollbars", async (
   try {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto(baseURL ?? "/")
-    await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+    await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
     const dialog = page.getByRole("dialog")
     await expect(dialog).toHaveAttribute("data-wide", "true")
@@ -3415,7 +3420,7 @@ test("ramps the blur radius behind desktop project captions", async ({ page }) =
   await page.setViewportSize({ width: 2446, height: 1239 })
   await page.goto("/")
 
-  const card = page.getByRole("button", { name: /Open Matcha homepage preview 2 of/ })
+  const card = page.getByRole("link", { name: /Open Matcha homepage preview 2 of/ })
   const scrim = card.locator(".mosaic-row-card-scrim")
   await card.hover()
 
@@ -3458,7 +3463,7 @@ test("keeps wrapped desktop project captions readable over white artwork", async
   await page.setViewportSize({ width: 700, height: 1000 })
   await page.goto("/")
 
-  const card = page.getByRole("button", { name: /Open Matcha multiwallet flow preview 1 of/ })
+  const card = page.getByRole("link", { name: /Open Matcha multiwallet flow preview 1 of/ })
   const scrim = card.locator(".mosaic-row-card-scrim")
   const title = card.locator(".mosaic-row-card-title")
   await card.hover()
@@ -3512,7 +3517,7 @@ test("fills the mobile cards with the featured Matcha previews", async ({ page }
   await page.goto("/")
 
   for (const title of ["Matcha multiwallet flow", "Matcha homepage"]) {
-    const card = page.getByRole("button", { name: new RegExp(`Open ${title}`) })
+    const card = page.getByRole("link", { name: new RegExp(`Open ${title}`) })
     const media = card.locator(".mosaic-row-media")
     const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), media.boundingBox()])
 
@@ -3539,7 +3544,7 @@ test("crops and zooms the Protector artwork on mobile", async ({ page }) => {
 test("describes the stakes and choices in a Protector booking", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Protector booking preview/ }).click()
+  await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
 
   await expect(page.getByRole("dialog")).toContainText(
     "Protector lets people book short-term personal security. I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
@@ -3558,7 +3563,7 @@ test("renders intrinsic media dimensions and does not autoplay under reduced mot
   await expect(video).toHaveAttribute("poster", /\S+/)
   expect(await video.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
 
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   const previewVideo = page.getByRole("dialog").locator("video")
   expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
   expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(false)
@@ -3567,7 +3572,7 @@ test("renders intrinsic media dimensions and does not autoplay under reduced mot
 test("autoplays gallery clips without native playback controls", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   const previewVideo = page.getByRole("dialog").locator("video")
   expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(true)
@@ -3777,7 +3782,7 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
 test("states my role and the outcome on every project preview", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   const details = dialog.locator(".preview-gallery-detail-row")
@@ -3828,7 +3833,7 @@ test("keeps the preview role and outcome inside the card on desktop", async ({ p
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   await expectPreviewContributionFits(page, 900)
 })
@@ -3842,7 +3847,7 @@ test("keeps the preview role and outcome inside the card on mobile", async ({ br
   })
   const page = await context.newPage()
   await page.goto("/")
-  await page.getByRole("button", { name: /Open Matcha multiwallet flow/ }).tap()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).tap()
 
   await expectPreviewContributionFits(page, mobileViewport.height)
   await context.close()

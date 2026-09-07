@@ -2,6 +2,8 @@ import profilePhoto from "../assets/profile-photo.webp"
 
 export type PortfolioCard = {
   id: string
+  /** Stable public URL; changing a title must not break shared links. */
+  slug: string
   category: string
   title: string
   summary: string
@@ -10,6 +12,9 @@ export type PortfolioCard = {
   previewWidth?: number
   previewHeight?: number
   previewPoster?: string
+  /** Poster dimensions can differ from the media's display dimensions. */
+  previewPosterWidth?: number
+  previewPosterHeight?: number
   ctaHref: string
   /** Gallery "Product" row; falls back to `category`. */
   product?: string
@@ -181,6 +186,7 @@ const matchaMeta = {
 export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-9",
+    slug: "matcha-multiwallet-flow",
     category: "Preview",
     title: "Matcha multiwallet flow",
     summary: "",
@@ -193,12 +199,15 @@ export const portfolioCards: PortfolioCard[] = [
     previewWidth: 480,
     previewHeight: 360,
     previewPoster: "/Projects/shot-small-9-poster.webp",
+    previewPosterWidth: 640,
+    previewPosterHeight: 480,
     ...matchaMeta,
     team: [collaborators.simon],
     previewAspectRatio: 0.74,
   },
   {
     id: "preview-shot-22",
+    slug: "matcha-dark-mode",
     category: "Preview",
     title: "Matcha dark mode",
     summary: "",
@@ -215,6 +224,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-shot-16",
+    slug: "matcha-homepage",
     category: "Preview",
     title: "Matcha homepage",
     summary: "",
@@ -233,6 +243,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-protector",
+    slug: "protector-booking",
     category: "Preview",
     title: "Protector booking",
     summary: "",
@@ -253,6 +264,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-popparazi-v1",
+    slug: "popparazi-v1",
     category: "Preview",
     title: "Popparazi V1",
     summary: "",
@@ -273,6 +285,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-shot-21",
+    slug: "matcha-token-page",
     category: "Preview",
     title: "Matcha token page",
     summary: "",
@@ -290,6 +303,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-shot-1",
+    slug: "matcha-trade-page",
     category: "Preview",
     title: "Matcha trade page",
     summary: "",
@@ -306,6 +320,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-shot-19",
+    slug: "matcha-trade-module",
     category: "Preview",
     title: "Matcha trade module",
     summary: "",
@@ -322,6 +337,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-shot-14",
+    slug: "matcha-on-mobile",
     category: "Preview",
     title: "Matcha on mobile",
     summary: "",
@@ -338,6 +354,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-shot-23",
+    slug: "matcha-pro",
     category: "Preview",
     title: "Matcha Pro",
     summary: "",
@@ -354,6 +371,7 @@ export const portfolioCards: PortfolioCard[] = [
   },
   {
     id: "preview-shot-20",
+    slug: "matcha-security-audit",
     category: "Preview",
     title: "Matcha security audit",
     summary: "",

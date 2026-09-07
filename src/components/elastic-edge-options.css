@@ -1,0 +1,87 @@
+/* Four dev-only studies. Each uses the same palette, height and replay clock.
+   The static 128px grain tile is blended inside each colored section, so it
+   never textures the white page or the TOC. No animated shader is involved. */
+.elastic-scroll-edge[data-edge-variant] .elastic-scroll-edge-curtain {
+  isolation: isolate;
+  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+}
+
+.elastic-scroll-edge[data-edge-variant] .elastic-scroll-edge-curtain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../assets/aurora-grain.svg") repeat;
+  background-size: 128px 128px;
+  mix-blend-mode: soft-light;
+  opacity: var(--edge-noise, 0.22);
+  mask-image: radial-gradient(ellipse 52% 95% at 50% 112%, #000 10%, transparent 100%);
+}
+
+/* 1. Soft Curve: one generous concave fade, with color resting at the sides. */
+.elastic-scroll-edge[data-edge-variant="soft-curve"] {
+  mask-image: radial-gradient(ellipse 68% 180% at 50% -95%, transparent 55%, #000 95%);
+}
+
+.elastic-scroll-edge[data-edge-variant="soft-curve"] .elastic-scroll-edge-curtain {
+  background: radial-gradient(ellipse 76% 120% at 50% 125%,
+    var(--curtain-color), transparent 100%);
+}
+
+/* 2. Feathered Curtains: individually visible wisps with a softened crown. */
+.elastic-scroll-edge[data-edge-variant="curtains"] .elastic-scroll-edge-shade {
+  opacity: 0.55;
+}
+
+.elastic-scroll-edge[data-edge-variant="curtains"] .elastic-scroll-edge-curtain {
+  background:
+    radial-gradient(ellipse 18% 95% at 36% 112%,
+      var(--curtain-color), transparent 100%),
+    radial-gradient(ellipse 22% 80% at 64% 112%,
+      color-mix(in srgb, var(--curtain-color) 75%, transparent), transparent 100%),
+    radial-gradient(ellipse 56% 85% at 50% 125%,
+      var(--curtain-color), transparent 100%);
+}
+
+/* 3. Overlapping Arcs: shallow, wide bands, rather than tall looping ribbons. */
+.elastic-scroll-edge[data-edge-variant="arcs"] .elastic-scroll-edge-shade {
+  opacity: 0.4;
+}
+
+.elastic-scroll-edge[data-edge-variant="arcs"] .elastic-scroll-edge-curtain {
+  left: calc(var(--curtain-index) * 16.6667% - 24%);
+  width: 48%;
+  background: radial-gradient(ellipse 74% 145% at 50% 160%,
+    transparent 35%,
+    color-mix(in srgb, var(--curtain-color) 20%, transparent) 46%,
+    var(--curtain-color) 62%,
+    color-mix(in srgb, var(--curtain-color) 18%, transparent) 80%,
+    transparent 100%);
+}
+
+.elastic-scroll-edge[data-edge-variant="arcs"] .elastic-scroll-edge-curtain::after {
+  mask-image: radial-gradient(ellipse 74% 145% at 50% 160%,
+    transparent 35%, #000 62%, transparent 100%);
+}
+
+/* 4. Rolling Glow: broad overlapping hills with an asymmetric crest. */
+.elastic-scroll-edge[data-edge-variant="rolling"] .elastic-scroll-edge-shade {
+  opacity: 0.3;
+}
+
+.elastic-scroll-edge[data-edge-variant="rolling"] .elastic-scroll-edge-curtain {
+  left: calc(var(--curtain-index) * 16.6667% - 21%);
+  width: 42%;
+  background:
+    radial-gradient(ellipse 68% 110% at 30% 120%,
+      var(--curtain-color) 8%, transparent 100%),
+    radial-gradient(ellipse 65% 70% at 76% 125%,
+      color-mix(in srgb, var(--curtain-color) 60%, transparent), transparent 100%);
+}
+
+.elastic-scroll-edge[data-edge-variant="rolling"] .elastic-scroll-edge-curtain:nth-child(even) {
+  height: 65%;
+}
+
+.elastic-scroll-edge[data-edge-variant="rolling"] .elastic-scroll-edge-curtain::after {
+  mask-image: radial-gradient(ellipse 68% 110% at 30% 120%, #000 8%, transparent 100%);
+}

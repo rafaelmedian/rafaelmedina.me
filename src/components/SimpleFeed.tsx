@@ -22,9 +22,11 @@ import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { useHoverCard } from "../lib/hoverCard"
-import { isVideoSource } from "../lib/media"
+import { buildPreviewSrcSet, isVideoSource, previewSizes } from "../lib/media"
+import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
+import { projectPath } from "../lib/projectMetadata"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
@@ -170,11 +172,6 @@ const hasIntersectionObserver = () => typeof window !== "undefined" && "Intersec
 // what useSyncExternalStore is for.
 const hasIntersectionObserverOnServer = () => true
 
-type NetworkInformation = {
-  saveData?: boolean
-  effectiveType?: string
-}
-
 // Intersection with the viewport cannot say whether the pinned grid is
 // *occluded*, only whether it is on screen — and during the takeover it is
 // both. What can be measured is the About sheet against a zero-height line at
@@ -217,20 +214,6 @@ function subscribeToGalleryCovered(listener: () => void) {
 const getGalleryCovered = () => galleryCoveredValue
 const getGalleryCoveredOnServer = () => false
 
-// Data Saver and 2g are the cases where an autoplaying loop is a liability
-// rather than a flourish: the poster already carries the frame, and the videos
-// are the heaviest thing on the page by a wide margin.
-function prefersLightweightMedia() {
-  if (typeof navigator === "undefined") return false
-  const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection
-  if (!connection) return false
-  return (
-    Boolean(connection.saveData) ||
-    connection.effectiveType === "slow-2g" ||
-    connection.effectiveType === "2g"
-  )
-}
-
 // The gallery is the point of the mosaic, but its chunk is the heaviest thing
 // we ship after the media itself. Fetching it on intent -- a hover, or the
 // pointerdown that precedes a tap -- keeps it off the initial load without
@@ -262,7 +245,8 @@ function RowVideoMedia({
   )
   // Without a poster there is nothing to fall back to, so the video loads even
   // on a metered connection.
-  const holdForLightweightMedia = Boolean(poster) && prefersLightweightMedia()
+  const lightweightMedia = useLightweightMedia()
+  const holdForLightweightMedia = Boolean(poster) && lightweightMedia
   const [shouldLoad, setShouldLoad] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -270,7 +254,8 @@ function RowVideoMedia({
   // With no observer to flip the state, `src` would stay undefined for the whole
   // session and only the poster would ever show -- so fall back to loading up
   // front instead.
-  const loadNow = shouldLoad || (!supportsIntersectionObserver && !holdForLightweightMedia)
+  const loadNow = !holdForLightweightMedia && !prefersReducedMotion &&
+    (shouldLoad || !supportsIntersectionObserver)
   const visibleNow = isVisible || !supportsIntersectionObserver
 
   useEffect(() => {
@@ -297,6 +282,12 @@ function RowVideoMedia({
       visibilityObserver.disconnect()
     }
   }, [holdForLightweightMedia, pausePlayback, supportsIntersectionObserver])
+
+  useEffect(() => {
+    // Removing src alone can retain the current resource. Reset the element
+    // on a connection downgrade to abort the transfer and restore its poster.
+    if (!loadNow) videoRef.current?.load()
+  }, [loadNow])
 
   useEffect(() => {
     const video = videoRef.current
@@ -331,36 +322,6 @@ function RowVideoMedia({
       onLoadedData={() => setLoaded(true)}
     />
   )
-}
-
-// Each 1600x1200 shot-small source has `-480w`/`-960w` siblings generated next
-// to it. Grid tiles render at most ~446 CSS px (measured at 1440px and wider,
-// where the mosaic stops growing), so the full-size file is ~3.6x oversampled at
-// 1x and ~1.8x at 2x. The gallery dialog keeps loading the original.
-const previewVariantWidths = [480, 960]
-// The webp previews are one-offs, so their resized siblings are listed
-// explicitly instead of pattern-matched. Regenerate with
-// scripts/generate-preview-variants.mjs when one of these sources changes.
-const webpPreviewVariantSources = new Set(["/Projects/protector.webp", "/Projects/popparazi_v1.webp"])
-const hasPreviewVariants = (source: string) =>
-  /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)
-
-// Measured tile widths: 317px at 390vw, 228px at 768, 393px at 1280, 446px at
-// 1440 and up.
-const previewSizes = "(max-width: 520px) 82vw, (max-width: 1400px) 31vw, 446px"
-
-function buildPreviewSrcSet(source: string, intrinsicWidth?: number) {
-  if (!hasPreviewVariants(source)) return undefined
-
-  const extension = source.endsWith(".webp") ? ".webp" : ".jpg"
-  const stem = source.slice(0, -extension.length)
-  // Skip variants at or above the source width (popparazi is only 630px wide,
-  // so a -960w sibling would be an upscale that doesn't exist).
-  const candidates = previewVariantWidths
-    .filter((width) => !intrinsicWidth || width < intrinsicWidth)
-    .map((width) => `${stem}-${width}w${extension} ${width}w`)
-  if (intrinsicWidth) candidates.push(`${source} ${intrinsicWidth}w`)
-  return candidates.join(", ")
 }
 
 type RowImageMediaProps = {
@@ -507,9 +468,16 @@ function SectionCorner({
             ? event.deltaY * frame.clientHeight
             : event.deltaY
       const next = Math.min(Math.max(frame.scrollTop + pixels * 0.25, 0), travel)
-      // At either end, hand the gesture back so the page keeps scrolling
-      // instead of stalling under the pointer.
-      if (Math.abs(next - frame.scrollTop) < 0.5) return
+      // During the initial blur, Chromium can keep the wheel gesture latched
+      // to this scroller even after it reaches an edge. Forward that delta
+      // explicitly so the page responds while the entrance is still running.
+      if (Math.abs(next - frame.scrollTop) < 0.5) {
+        if (pixels !== 0) {
+          event.preventDefault()
+          window.scrollBy({ top: pixels, behavior: "instant" })
+        }
+        return
+      }
 
       event.preventDefault()
       frame.scrollTop = next
@@ -682,7 +650,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const { projectId, selectProject, clearProject } = useProjectUrl()
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [hasOpenedWorkPreview, setHasOpenedWorkPreview] = useState(false)
-  const previewCardNodesRef = useRef(new Map<number, HTMLButtonElement>())
+  const previewCardNodesRef = useRef(new Map<number, HTMLAnchorElement>())
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
@@ -1079,8 +1047,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                     : undefined
                                 }
                               >
-                                <button
-                                  type="button"
+                                <a
+                                  href={projectPath(item.card)}
                                   ref={(node) => {
                                     const nodes = previewCardNodesRef.current
                                     if (node) nodes.set(item.previewIndex, node)
@@ -1090,7 +1058,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                   onPointerEnter={prefetchPreviewGallery}
                                   onPointerDown={prefetchPreviewGallery}
                                   onFocus={prefetchPreviewGallery}
-                                  onClick={() => {
+                                  onClick={(event) => {
+                                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                                    event.preventDefault()
                                     openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
                                   }}
                                   aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
@@ -1116,7 +1086,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                   <span id={`${itemKey}-description`} className="sr-only">
                                     {item.card.detail}
                                   </span>
-                                </button>
+                                </a>
                               </div>
                             )
                           })}

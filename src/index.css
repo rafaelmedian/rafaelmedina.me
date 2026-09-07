@@ -46,12 +46,13 @@
   --duration-quick: 160ms; /* most hover and state transitions */
   --duration-base: 200ms; /* larger surface moves */
   --duration-slow: 360ms; /* scrims, captions, big reveals */
+  --blur-reveal: 4px; /* load, preview entrance, switch, and exit */
   /* Stacking. The global ladder; Tailwind's z-dock/z-chrome map onto the
      same tokens. Component-internal stacking (0-5, and the map attribution's
      Leaflet-clearing 500) stays raw because it lives inside an isolated or
      transformed context and never meets these tiers. */
   --z-dock: 10; /* main content wrapper */
-  --z-chrome: 20; /* bottom scroll edge and its emoji layer */
+  --z-chrome: 20; /* bottom scroll edge */
   --z-corner: 30; /* section corner, takeover close */
   --z-overlay: 40; /* hover cards, work-history, the local-time card */
   --z-social: 50; /* social corner, so its cards clear other overlays */
@@ -217,8 +218,8 @@ img {
   transform: translate3d(0, var(--elastic-edge-offset), 0) scaleY(var(--elastic-edge-scale));
   transform-origin: center bottom;
   transition-property: transform, opacity;
-  transition-duration: 700ms;
-  transition-timing-function: var(--ease-smooth);
+  transition-duration: var(--elastic-edge-fade-duration, 1260ms);
+  transition-timing-function: ease-in-out;
   will-change: transform, opacity;
 }
 
@@ -272,60 +273,53 @@ img {
   transform: translate3d(0, 0, 0) scaleY(1);
 }
 
-.elastic-scroll-edge[data-pulling="true"] {
-  transition-duration: 0ms;
-}
-
-.elastic-scroll-edge-emojis {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-chrome);
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* One animated span per emoji. The burst used to nest a linear-drift wrapper
-   around an eased glyph for a projectile arc, but that doubled the animated
-   compositor layers for a decoration that fires mid-interaction, exactly when
-   raster headroom is scarcest. The toss keeps the rise, fall, and tumble in a
-   single layer and drops the horizontal parallax. */
-.elastic-scroll-edge-emoji {
+/* Low, overlapping curtains retain the original page-edge height. Each
+   feathered section rises independently; no rotating bands or blur pass. */
+.elastic-scroll-edge-curtain {
   position: absolute;
-  bottom: -2rem;
-  display: block;
+  bottom: 0;
+  left: calc(var(--curtain-index) * 16.6667% - 16%);
+  width: 32%;
+  height: calc(100% * var(--curtain-height));
   opacity: 0;
-  font-size: var(--emoji-size);
-  line-height: 1;
-  transform-origin: center;
-  animation: elastic-edge-emoji-toss 700ms both;
-  animation-delay: var(--emoji-delay);
+  transform-origin: center bottom;
+  background:
+    radial-gradient(ellipse 16% 88% at 42% 100%,
+      color-mix(in srgb, var(--curtain-color) 64%, transparent), transparent 100%),
+    radial-gradient(ellipse 22% 76% at 65% 108%,
+      color-mix(in srgb, var(--curtain-color) 48%, transparent), transparent 100%),
+    radial-gradient(ellipse 52% 95% at 50% 112%,
+      var(--curtain-color), transparent 100%);
 }
 
-@keyframes elastic-edge-emoji-toss {
-  0% {
+.elastic-scroll-edge[data-glowing="true"] .elastic-scroll-edge-curtain,
+.elastic-scroll-edge[data-preview="true"] .elastic-scroll-edge-curtain {
+  animation: elastic-curtain-rise var(--elastic-edge-rise-duration, 700ms) var(--ease-smooth) both;
+  animation-delay: calc(var(--curtain-index) * var(--elastic-edge-stagger, 40ms));
+}
+
+@keyframes elastic-curtain-rise {
+  from {
     opacity: 0;
-    transform: translate3d(0, 2rem, 0) rotate(var(--emoji-start-rotation)) scale(0.78);
-    animation-timing-function: var(--ease-smooth);
+    transform: translate3d(0, var(--elastic-edge-rise, 8px), 0) scaleY(0.8);
   }
+  to {
+    opacity: var(--elastic-edge-section-opacity, 0.65);
+    transform: translate3d(0, 0, 0) scaleY(1);
+  }
+}
 
-  16% {
-    opacity: 1;
-  }
+.elastic-scroll-edge[data-pulling="true"],
+.mosaic-about-body[data-edge-pulling="true"] {
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-smooth);
+}
 
-  52% {
-    opacity: 1;
-    transform: translate3d(0, var(--emoji-rise), 0) rotate(0deg) scale(1);
-    animation-timing-function: ease-in;
-  }
-
-  82% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate3d(0, 3rem, 0) rotate(var(--emoji-end-rotation)) scale(0.9);
-  }
+/* Move the page-end content inside its surface so fixed navigation and
+   portalled dialogs retain their viewport coordinates. */
+.mosaic-about-body {
+  translate: 0 var(--elastic-content-offset, 0px);
+  transition: translate 700ms var(--ease-smooth);
 }
 
 /* ----------------------------------------------------------- shell & hero --- */
@@ -797,11 +791,13 @@ img {
 @keyframes mosaic-intro-rise {
   from {
     opacity: 0;
+    filter: blur(var(--blur-reveal));
     transform: translateY(0.8rem);
   }
 
   to {
     opacity: 1;
+    filter: none;
     transform: translateY(0);
   }
 }
@@ -979,7 +975,7 @@ img {
   --work-intro-col-step: 32ms;
 }
 
-/* opacity and translateY only. A scale would change the measured box of
+/* Fade, blur-to-sharp, and translateY. A scale would change the measured box of
    `.mosaic-row`, whose height is asserted at exactly 420px in
    tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
    stays under the 1rem row gap, so a rising card never covers the one below. */
@@ -1097,11 +1093,13 @@ img {
 @keyframes mosaic-about-rise {
   from {
     opacity: 0;
+    filter: blur(var(--blur-reveal));
     transform: translateY(1.75rem);
   }
 
   to {
     opacity: 1;
+    filter: none;
     transform: translateY(0);
   }
 }
@@ -3423,8 +3421,8 @@ img {
   display: block;
   object-fit: cover;
   opacity: 0;
-  filter: blur(14px);
-  transition: opacity var(--duration-slow) ease-out, filter var(--duration-slow) ease-out;
+  filter: blur(var(--blur-reveal));
+  transition: opacity var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
   will-change: opacity, filter;
 }
 
@@ -3434,7 +3432,7 @@ img {
    slides over this grid). Release it. */
 .mosaic-row-media[data-loaded="true"] {
   opacity: 1;
-  filter: blur(0);
+  filter: none;
   will-change: auto;
 }
 
@@ -4208,7 +4206,8 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
 }
 
 .preview-gallery-popup[data-origin-motion] {
-  transition: opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out;
+  transition:
+    opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out;
 }
 
 .preview-gallery-popup[data-origin-motion][data-starting-style] {
@@ -4219,7 +4218,8 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
    outlast the wrapper's travel rather than merely match the content fade. */
 .preview-gallery-popup[data-origin-motion][data-ending-style] {
   opacity: 0;
-  transition: opacity var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
+  transition:
+    opacity var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
 }
 
 .preview-gallery-card {
@@ -4281,6 +4281,28 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   transform: translateY(1.4rem) scale(0.985);
 }
 
+/* Keep the entrance/exit blur on a small detail. Filtering the full popup
+   and card together adds two large offscreen surfaces during every flight. */
+.preview-gallery-title {
+  filter: none;
+  transition: filter var(--pg-content-in-ms, var(--duration-quick)) var(--ease-smooth);
+}
+
+.preview-gallery-popup[data-starting-style] .preview-gallery-title,
+.preview-gallery-popup[data-ending-style] .preview-gallery-title,
+.preview-gallery-card[class*="preview-gallery-card-switch-"] .preview-gallery-title {
+  filter: blur(var(--blur-reveal));
+}
+
+.preview-gallery-popup[data-ending-style] .preview-gallery-title {
+  transition-duration: var(--pg-content-out-ms, var(--duration-fast));
+  transition-timing-function: var(--ease-exit);
+}
+
+.preview-gallery-card[class*="preview-gallery-card-switch-"] .preview-gallery-title {
+  transition-duration: var(--pg-switch-ms, 190ms);
+}
+
 .preview-gallery-media-frame {
   position: relative;
   overflow: hidden;
@@ -4296,12 +4318,73 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   transform: translateZ(0);
 }
 
+/* Media keeps its intrinsic box while a cached tile remains underneath. */
+.preview-gallery-media[data-loaded] {
+  position: relative;
+  opacity: 1;
+  filter: none;
+  transition:
+    opacity var(--duration-slow) var(--ease-smooth),
+    filter var(--duration-slow) var(--ease-smooth);
+}
+
+.preview-gallery-media[data-loaded="false"] {
+  opacity: 0;
+  filter: blur(var(--blur-reveal));
+}
+
+.preview-gallery-media-placeholder {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  pointer-events: none;
+  transition: opacity var(--duration-slow) var(--ease-smooth);
+}
+
+.preview-gallery-media-placeholder[data-hidden="true"] {
+  opacity: 0;
+}
+
+.preview-gallery-media-status {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  box-shadow: var(--shadow-overlay);
+}
+
+.preview-gallery-media-status button {
+  min-height: 2.5rem;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .preview-gallery-media {
   width: 100%;
   max-height: min(42vh, 480px);
   display: block;
   object-fit: contain;
   margin-inline: auto;
+}
+
+/* Full-size artwork cross-fades over its thumbnail. Reserve blur for the
+   smaller media on compact screens and the heading above. */
+@media (min-width: 700px) {
+  .preview-gallery-media[data-loaded] {
+    filter: none;
+    transition: opacity var(--duration-slow) var(--ease-smooth);
+  }
 }
 
 .preview-gallery-popup[data-wide="true"] .preview-gallery-media {
@@ -4813,13 +4896,94 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
     overflow: visible;
   }
 
-  .elastic-scroll-edge,
-  .elastic-scroll-edge-emojis {
+  .elastic-scroll-edge {
     display: none;
+  }
+
+  .mosaic-about-body {
+    translate: none;
   }
 
   .preview-gallery-pending {
     opacity: 1;
     animation: none;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-gallery-popup,
+  .preview-gallery-popup[data-starting-style],
+  .preview-gallery-popup[data-ending-style],
+  .preview-gallery-card,
+  .preview-gallery-popup .preview-gallery-card .preview-gallery-title,
+  .preview-gallery-media[data-loaded] {
+    filter: none;
+  }
+}
+
+/* Static project pages and the 404 share the portfolio's tokens and controls. */
+.standalone-page {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding: max(5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+  font-family: var(--font-ui);
+}
+
+.standalone-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  font-size: var(--text-sm);
+}
+
+.standalone-page a:not(.mosaic-contact-pill) {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.standalone-page a:not(.mosaic-contact-pill):hover {
+  color: var(--ink);
+}
+
+.standalone-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.standalone-description {
+  margin: 0.75rem 0 1.5rem;
+  color: var(--muted);
+  font-size: var(--text-md);
+  line-height: 1.5;
+}
+
+.standalone-media {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--mosaic-card-surface);
+}
+
+.standalone-media :is(img, video) {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.standalone-not-found {
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+}
+
+body:has(.standalone-not-found) {
+  background: var(--canvas);
 }

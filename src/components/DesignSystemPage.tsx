@@ -295,7 +295,7 @@ const TYPE_SCALE = [
     token: "--text-lg",
     sample: "Ten years prototyping in code.",
     spec: "1.125rem · 18px",
-    where: "About ledes and short quotes — the largest text on the site",
+    where: "About ledes, short quotes, and standalone-page headings — the largest text on the site",
     style: { fontSize: "var(--text-lg)", lineHeight: 1.5, letterSpacing: "-0.015rem", fontWeight: 600 },
   },
 ]
@@ -376,6 +376,12 @@ const ELEVATION = [
 
 const EASINGS = [
   {
+    name: "Aurora",
+    css: "ease-in-out",
+    duration: "1260ms",
+    use: "The page-end aurora fades symmetrically, keeping its colors visible through the middle of the release. Pull input and the staggered curtains use --ease-smooth.",
+  },
+  {
     name: "Standard — --ease-standard",
     css: "cubic-bezier(0.2, 0, 0, 1)",
     duration: "160–300ms",
@@ -385,7 +391,7 @@ const EASINGS = [
     name: "Smooth — --ease-smooth",
     css: "cubic-bezier(0.16, 1, 0.3, 1)",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the emoji toss, the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
@@ -437,10 +443,11 @@ const DURATIONS = [
   { value: "--duration-base · 200ms", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close. Absorbed the old 220ms entrances." },
   { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
   { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
-  { value: "--duration-slow · 360ms", use: "Media un-blurring as it decodes and the personal-photo stack fanning on hover or focus." },
+  { value: "--duration-slow · 360ms", use: "Feed and preview media resolving from --blur-reveal (4px) as they decode, and the personal-photo stack fanning on hover or focus." },
   { value: "360ms / 200ms", use: "Personal-photo carousel: --photo-open-duration aliases --duration-slow; --photo-close-duration aliases --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
   { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
-  { value: "700ms", use: "The bottom scroll edge, its emoji toss, and the avatar coin flip." },
+  { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
+  { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
 ]
 
 /* ------------------------------------------------------------------ layout */
@@ -463,7 +470,7 @@ const STACKING = [
   {
     z: "0–20",
     name: "--z-dock / --z-chrome",
-    note: "The page, main content wrapper (Tailwind's z-dock maps onto the token), and the bottom scroll edge.",
+    note: "The page and main content wrapper (Tailwind's z-dock maps onto the token). The bottom scroll edge sits inside main at --z-chrome, below the table of contents at --z-social.",
   },
   { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
@@ -826,18 +833,37 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Elastic page edge</p>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("elastic page edge overscroll 56px wash analogous emoji toss 700ms gravity")}
+                data-ds-terms={terms("elastic page edge overscroll aurora curtains random palette 56px 8px nudge 40ms stagger 700ms 1260ms DialKit")}
               >
-                <strong>A quiet, changing wash.</strong>
+                <strong>A soft aurora at the page edge.</strong>
                 <p>
-                  The 56px page-end curve blends five clean analogous shades, chosen again for each pull. Its deeper,
-                  more saturated centre sits beneath a translucent white highlight while broader pale layers recede
-                  toward the sides. The soft-edged ellipses blend without any filter pass, keeping the strip cheap to
-                  repaint while the gesture and 700ms release remain the effect's dominant motion. Each fresh gesture
-                  also tosses a wink and three non-repeating companions from below the viewport on staggered 700ms
-                  rises — each a single layer that eases upward, tumbles, and accelerates down under gravity. They
-                  remain decorative and pointer-free, clean up after landing, and disappear with the entire effect
-                  under reduced motion.
+                  The glow stays within the original 56px page-edge band. Seven overlapping curtains fade upward
+                  by 8px over 700ms using --ease-smooth, staggered by 40ms (240ms total). Their heights vary between
+                  76% and 100% of the band, with feathered vertical streaks and soft curved tops. Only transform and
+                  opacity animate, without filters or continuous loops. Each new glow chooses a random hue across
+                  the full 360-degree spectrum, with seven neighboring offsets from -54 to +54 degrees in 18-degree
+                  steps, saturation of 60–76%, and lightness of 74–84%. Repeated input during a glow keeps its palette
+                  and continues the existing rise. The wash follows input over 120ms, fades over 1260ms with
+                  ease-in-out, then resets the curtains. The content nudge stays capped at 8px and settles over 700ms.
+                  Colors remain behind the table of contents. Nested scrollers retain their behavior, and reduced
+                  motion disables the entire effect. Dev-only DialKit controls at <a href="/?tune=edge">/?tune=edge</a>
+                  adjust height, rise, stagger, rise duration, fade duration, and intensity, with replay and new-color
+                  actions. Those controls and their styles are excluded from production.
+                </p>
+                <p>
+                  The DialKit lab offers four studies: Soft Curve uses a broad concave fade; Feathered Curtains
+                  separates the vertical wisps; Overlapping Arcs blends shallow bands; Rolling Glow uses wider,
+                  asymmetric hills. All retain the same random palette when switching and replay automatically.
+                  The tuner defaults to Soft Curve, 65px height, 10px rise, 40ms stagger, 710ms rise duration,
+                  1148ms fade duration, and 0.91 intensity.
+                  A static 128px grayscale grain tile blends into each colored section with soft-light at 41%
+                  opacity by default, adjustable from 0–60%. Feathered masks keep it away from the white page
+                  and the table of contents. The softer curve takes inspiration from{' '}
+                  <a href="https://21st.dev/@ibelick/components/light-theme-tailwind-css-background-snippet" target="_blank" rel="noreferrer">Light Theme Background</a>;
+                  only the grain texture is inspired by{' '}
+                  <a href="https://21st.dev/@dhileepkumargm/components/aurora-shader" target="_blank" rel="noreferrer">Aurora Shader</a>.
+                  The studies and grain asset load only with the dev tuner; the standard effect stays available
+                  while the four options are compared.
                 </p>
               </div>
             </div>
@@ -1129,7 +1155,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop mobile pill rgb(20 20 20 / 0.82) --radius-full --text-xs 0.75rem 0.28rem 0.6rem")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1150,10 +1176,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   zero, and the eye reads that break as an edge. The two fade on separate clocks — the tint at the 160ms hover default alongside
                   the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
                   illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
-                  on hover and focus, one tile at a time. Below 700px and on coarse pointers, the four blur layers stay
-                  off while the tint and caption remain visible as a static, scroll-friendly label. The mobile tint
-                  occupies only 6rem instead of 46% of the card; the compact stop list holds 57% black through
-                  its bottom 40% to preserve caption contrast while leaving more artwork clear.
+                  on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden.
+                  The permanent caption is a compact pill with a <code>rgb(20 20 20 / 0.82)</code> background,
+                  <code> --radius-full</code> corners, and <code>--text-xs</code> type. It sits 0.75rem from the
+                  bottom with 0.28rem by 0.6rem padding, carrying its own contrast without a blur or tint band.
                 </p>
               </div>
             </div>
@@ -1449,6 +1475,28 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
               </div>
 
+              <div className="ds-rule" data-ds-terms={terms("loading slow network 3g 2g save data offline retry thumbnail blur --blur-reveal 4px")}>
+                <strong>Loads and exits share one blur.</strong>
+                <p>
+                  <code>--blur-reveal: 4px</code> softens the initial profile, work cards, About entrances,
+                  media reveals, and project preview headings during entrances, switches, and exits.
+                  Full preview dialogs and cards use opacity and transform only; artwork at 700px and above
+                  cross-fades over its thumbnail. Blur stays on smaller surfaces. Loaded content clears its filter entirely. Media resolves over <code>--duration-slow</code> on the smooth curve;
+                  preview exits keep their shorter existing timing. Reduced motion removes the blur.
+                </p>
+                <p>
+                  Data Saver, 3G or slower connections, and offline mode keep feed video posters visible
+                  without requesting loops. Connection changes update this behavior live. Preview videos
+                  offer native playback controls on these connections and wait for an explicit play.
+                  Full-size images keep a responsive thumbnail underneath while decoding; loading feedback
+                  and a retry button cover slow or failed requests without blocking preview navigation.
+                  Without connection hints, the initial same-origin script transfer supplies a conservative fallback:
+                  an uncached script of at least 32 KB taking at least one second at less than 150 KB/s keeps
+                  videos on posters for that page visit. This reuses existing timing data, adds no speed-test
+                  requests, and ignores cache hits and CPU-dependent hydration time. Fast loads retain autoplay.
+                </p>
+              </div>
+
               <div
                 className="ds-rule"
                 data-ds-terms={terms("reduced motion animation-delay animation-duration both staggered override")}
@@ -1481,6 +1529,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ----------------------------------------------------- layout -- */}
           <section id="layout" className="ds-section">
+            <div className="ds-rule" data-ds-terms={terms("standalone project pages 404 --text-lg --text-md --text-sm --muted --canvas --ink --radius-md 46rem 5rem 1.5rem 70vh")}>
+              <strong>Standalone pages reuse the same system.</strong>
+              <p>
+                Direct project pages and the 404 use a 46rem content width, 5rem vertical and 1.5rem horizontal
+                padding with safe-area minimums. Headings use --text-lg at 600; prose uses --text-md and --muted;
+                navigation uses --text-sm. Project media has --radius-md corners on --mosaic-card-surface and a
+                70vh height cap. The 404 uses --canvas, --ink, and the existing contact pill. Its production HTML
+                loads the same compiled stylesheet, so these values cannot drift into a separate palette.
+              </p>
+            </div>
             <div className="ds-section-heading">
               <h2>Layout</h2>
               <p>One shell, one mosaic, and a stacking order that the Tailwind scale only half describes.</p>
@@ -1521,10 +1579,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>--row-height</code>: <code>clamp(340px, 92vw, 380px)</code> stacked on mobile, 320px base, and
                   420px from 900px up. Items flex by an inline <code>--row-span</code>.
                 </li>
-                <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish scale opacity translate")}>
+                <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish scale opacity translate initial load entrance blur 4px reduced motion")}>
                   <strong>Row height is asserted at exactly 420px</strong> in{" "}
-                  <code>tests/e2e/portfolio-polish.spec.ts</code>. Entrance animations use opacity and translate only —
-                  a scale would change the measured box and fail that test.
+                  <code>tests/e2e/portfolio-polish.spec.ts</code>. The initial profile and work-card entrances fade,
+                  rise, and resolve from 4px blur to sharp using their existing stagger and timing. The filter clears
+                  completely at the end; reduced motion skips the entrance. There is no scale, which would change
+                  the measured box and fail that test.
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway clamp(12rem, 30vh, 18rem) 100dvh z-index 1 display contents")}>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
