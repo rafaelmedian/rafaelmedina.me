@@ -4072,21 +4072,24 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
   await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })
 
-test("puts team credits above a single project description", async ({ page }) => {
+test("puts unlabelled credits below the description without a site link", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
 
   const dialog = page.getByRole("dialog")
   const description = dialog.locator(".preview-gallery-description")
-  const team = dialog.getByRole("list", { name: "Team" })
+  const team = dialog.getByRole("list", { name: "Collaborators" })
   await expect(team.getByRole("link")).toHaveText(["Rafael Medina", "Simon Rico"])
   await expect(description).toContainText("I mapped and designed")
   await expect(description).toContainText("without losing their quote or inputs")
   await expect(dialog.locator("dl")).toHaveCount(0)
   const teamBox = await team.boundingBox()
-  const titleBox = await dialog.locator(".preview-gallery-title").boundingBox()
-  expect(teamBox!.y + teamBox!.height).toBeLessThan(titleBox!.y)
+  const descriptionBox = await description.boundingBox()
+  expect(teamBox!.y).toBeGreaterThan(descriptionBox!.y + descriptionBox!.height)
+  await expect(dialog.getByText("Team", { exact: true })).toHaveCount(0)
+  await expect(dialog.getByRole("link", { name: "matcha.xyz", exact: true })).toHaveCount(0)
+  await expect(dialog.locator(".preview-gallery-project-link")).toHaveCount(0)
 
   // Paging must update the prose and credits, including projects with no team.
   const total = Number((await dialog.locator(".preview-gallery-count").innerText()).split("/")[1])

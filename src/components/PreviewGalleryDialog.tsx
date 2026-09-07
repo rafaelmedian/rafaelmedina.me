@@ -183,10 +183,6 @@ function getInitials(name: string) {
     .join("")
 }
 
-function getPreviewLink(card: PortfolioCard) {
-  return card.ctaHref && card.ctaHref !== "#" ? card.ctaHref : ""
-}
-
 export function PreviewGalleryDialog({
   cards,
   open,
@@ -214,7 +210,6 @@ export function PreviewGalleryDialog({
   const activeCard = cards[safeIndex]
   const activeMediaSource = activeCard?.image ?? ""
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
-  const activeLink = activeCard ? getPreviewLink(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
 
   const playOpen = useSound(openSound, { volume: 0.3 })
@@ -555,10 +550,11 @@ export function PreviewGalleryDialog({
                   </div>
 
                   <div className="preview-gallery-content">
+                    <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                    <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
                     {activeCollaborators.length > 0 ? (
                       <div className="preview-gallery-team">
-                        <span className="preview-gallery-team-label">Team</span>
-                        <ul className="preview-gallery-people" aria-label="Team">
+                        <ul className="preview-gallery-people" aria-label="Collaborators">
                           {activeCollaborators.map((person) => (
                             <li key={person.href}>
                               <a
@@ -588,13 +584,6 @@ export function PreviewGalleryDialog({
                           ))}
                         </ul>
                       </div>
-                    ) : null}
-                    <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
-                    <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
-                    {activeLink ? (
-                      <a className="preview-gallery-project-link" href={activeLink} target="_blank" rel="noreferrer">
-                        {activeLink.replace(/^https?:\/\//, "")}
-                      </a>
                     ) : null}
                   </div>
                 </div>

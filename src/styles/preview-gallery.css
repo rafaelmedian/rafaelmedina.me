@@ -544,24 +544,9 @@
 }
 
 .preview-gallery-team {
-  display: grid;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
   font-size: var(--text-sm);
   line-height: 1.5;
-}
-
-.preview-gallery-team-label {
-  color: var(--muted);
-}
-
-.preview-gallery-project-link {
-  display: inline-block;
-  margin-top: 1rem;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  text-underline-offset: 0.16em;
 }
 
 .preview-gallery-people {
@@ -574,7 +559,7 @@
   gap: 0.5rem 1rem;
 }
 
-/* Team credits keep the existing avatar links, above the project prose. */
+/* Team credits keep the existing avatar links, below the project prose. */
 .preview-gallery-person {
   display: inline-flex;
   align-items: center;

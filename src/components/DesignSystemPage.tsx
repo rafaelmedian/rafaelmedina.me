@@ -1154,12 +1154,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
                   header at z-index 1.
-                  Below the artwork, team credits come first with left-aligned avatar links, followed by the
-                  project title and a single description covering the product, contribution, and result.
+                  Below the artwork, the project title and a single description cover the product, contribution,
+                  and result. Left-aligned collaborator avatar links follow the description without a visible label.
                   The description uses <code>--text-md</code>, a 1.6 line height, the existing prose colour
                   <code>#545454</code>, and a 46rem maximum measure. Credits use <code>--text-sm</code>
-                  with 1.5rem of space before the title. A plain project link closes the text; the dialog
-                  has no metadata table or row dividers.
+                  with 1.5rem of space above them. The dialog has no project-site link, metadata table, or row dividers.
                 </p>
               </div>
             </div>
