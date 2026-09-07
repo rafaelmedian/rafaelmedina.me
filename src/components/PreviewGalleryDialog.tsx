@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
+import { PreviewMedia } from "./PreviewMedia"
 import { backSound, nextSound, openSound } from "../lib/sounds"
 
 type PreviewGalleryDialogProps = {
@@ -557,35 +558,7 @@ export function PreviewGalleryDialog({
                   </div>
 
                   <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
-                    {activeMediaIsVideo ? (
-                      <video
-                        key={activeMediaSource}
-                        src={activeMediaSource}
-                        poster={activeCard.previewPoster}
-                        width={activeCard.previewWidth}
-                        height={activeCard.previewHeight}
-                        muted
-                        loop={!prefersReducedMotion}
-                        autoPlay={!prefersReducedMotion}
-                        playsInline
-                        preload={prefersReducedMotion ? "none" : "metadata"}
-                        aria-label={activeCard.title}
-                        className="preview-gallery-media"
-                      />
-                    ) : (
-                      <img
-                        key={activeMediaSource}
-                        src={activeMediaSource}
-                        // The dialog title right below already names this preview,
-                        // so a matching alt would just read the same words twice.
-                        alt=""
-                        width={activeCard.previewWidth}
-                        height={activeCard.previewHeight}
-                        className="preview-gallery-media"
-                        loading="eager"
-                        decoding="async"
-                      />
-                    )}
+                    <PreviewMedia key={activeMediaSource} card={activeCard} reducedMotion={prefersReducedMotion} />
                   </div>
 
                   <div className="preview-gallery-content">
