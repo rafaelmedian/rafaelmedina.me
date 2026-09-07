@@ -305,6 +305,36 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   await expect(curtains.first()).toHaveCSS("animation-name", "none")
 })
 
+test("a thumb\u2019s worth of overscroll fills the elastic edge the way a fling does", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  const edge = page.locator(".elastic-scroll-edge")
+  // A wheel fling keeps arriving after the page has stopped and easily spends
+  // thousands of pixels; a finger only spends what the rubber band gives it,
+  // which on a phone runs out around 150px. Sharing the wheel's conversion left
+  // that whole gesture painting four tenths of the glow.
+  const reached = await edge.evaluate(async (element) => {
+    const touch = (type: string, clientY: number) => document.dispatchEvent(new TouchEvent(type, {
+      bubbles: true,
+      touches: type === "touchend"
+        ? []
+        : [new Touch({ identifier: 1, target: document.body, clientX: 195, clientY })],
+    }))
+    let y = 600
+    touch("touchstart", y)
+    for (let travelled = 0; travelled < 140; travelled += 5) touch("touchmove", (y -= 5))
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    const scale = Number.parseFloat(element.style.getPropertyValue("--elastic-edge-scale"))
+    touch("touchend", y)
+    return (scale - 0.35) / 0.65
+  })
+
+  expect(reached).toBeGreaterThan(0.8)
+  expect(reached).toBeLessThanOrEqual(1)
+})
+
 test("continues the elastic scroll edge from its visible position when release is interrupted", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
@@ -1210,6 +1240,20 @@ test("mobile table of contents selects and tracks each section", async ({ page }
   await expect(trigger).toHaveAttribute("aria-current", "location")
 })
 
+test("lands on a section from the URL without drawing a ring around it", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+
+  for (const id of ["work", "about-panel", "about-panel-resume"]) {
+    await page.goto(`/#${id}`)
+    const section = page.locator(`#${id}`)
+    // The browser focuses the fragment target on load. Its default ring boxes
+    // the whole section, which reads as a selection rather than a landing.
+    await expect(section).toBeFocused()
+    await expect(section).toHaveCSS("outline-style", "none")
+  }
+})
+
 test("the TOC keeps its collapsed height while scrolling between sections", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
@@ -1734,7 +1778,10 @@ test("scrolls to and focuses the about section from the avatar button", async ({
   const about = page.locator("#about-panel")
   await expect(about).toBeInViewport()
   await expect(about).toBeFocused()
-  await expect(about).not.toHaveCSS("outline-style", "none")
+  // The section is a landing container, not a control: it takes focus so
+  // reading continues from there, and draws no ring. The browser's default one
+  // boxes the whole sheet, which reads as a selection.
+  await expect(about).toHaveCSS("outline-style", "none")
 })
 
 test("keeps every project row together inside the takeover stage", async ({ page }) => {
@@ -3681,32 +3728,18 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
-// On touch the caption is permanent, and a permanent full-width band landed on
-// whatever the screenshot had at its own bottom edge — and ran past letterboxed
-// artwork onto the card's grey, where white text had nothing to sit on. A pill
-// carries its own contrast over either, and costs no backdrop-filter.
-test("labels project cards with a self-contained pill on mobile", async ({ page }) => {
+// Without hover the caption would have to sit on every tile at once, over
+// artwork that already carries each project's own wordmark. Both it and the
+// band that made it legible are gone entirely, not merely faded — and the name
+// still reaches assistive tech through the link itself.
+test("hides project card names where there is no hover to reveal them", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const firstCaption = page.locator(".mosaic-row-card-title").first()
-  await expect(firstCaption).toBeVisible()
-  await expect(firstCaption).toHaveCSS("opacity", "1")
-  await expect(firstCaption).toHaveCSS("background-color", "rgba(20, 20, 20, 0.82)")
-  await expect(firstCaption).toHaveCSS("text-shadow", "none")
-
-  // The pill is narrower than the card, so it reads as a label rather than as a
-  // second title spanning the artwork.
-  const [captionBox, cardBox] = await Promise.all([
-    firstCaption.boundingBox(),
-    page.locator(".mosaic-row-card").first().boundingBox(),
-  ])
-  expect(captionBox).not.toBeNull()
-  expect(cardBox).not.toBeNull()
-  expect(captionBox!.width).toBeLessThan(cardBox!.width)
-
-  // The band it replaced is gone entirely, not merely faded.
-  await expect(page.locator(".mosaic-row-card-scrim").first()).toHaveCSS("display", "none")
+  const firstCard = page.locator(".mosaic-row-card").first()
+  await expect(firstCard.locator(".mosaic-row-card-title")).toHaveCSS("display", "none")
+  await expect(firstCard.locator(".mosaic-row-card-scrim")).toHaveCSS("display", "none")
+  await expect(firstCard).toHaveAttribute("aria-label", /^Open .+ preview 1 of/)
 })
 
 test("ramps the blur radius behind desktop project captions", async ({ page }) => {

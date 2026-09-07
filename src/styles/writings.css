@@ -181,6 +181,7 @@
 .writings-note-nav-prev { right: var(--writings-nav-rail); }
 .writings-note-nav-next { left: var(--writings-nav-rail); }
 .writings-dialog[data-reading="false"] .writings-note-nav { visibility: hidden; }
+/* Expand is a desktop affordance; the phone sheet has nothing to grow into. */
 @media (min-width: 700px) {
   /* Expanded is the one state that should take the whole viewport, so it
      trades the shared top edge for the old 1.5rem margin on every side. */
@@ -189,11 +190,11 @@
     --writings-top: max(1.5rem, env(safe-area-inset-top));
     --writings-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
+  .writings-dialog[data-expanded="true"] .writings-toolbar { padding-top: calc(1.5rem + env(safe-area-inset-top)); }
 }
 @media (min-width: 1320px) {
   .writings-dialog { --writings-top: max(5vh, env(safe-area-inset-top)); }
 }
-.writings-dialog[data-expanded="true"] .writings-toolbar { padding-top: calc(1.5rem + env(safe-area-inset-top)); }
 /* Expanded there is no room beside the dialog, so the rails move inside it. */
 .writings-dialog[data-expanded="true"] .writings-navigation { --writings-nav-rail: calc(100% - 1.5rem - var(--preview-gallery-nav-size)); }
 @media (min-width: 700px) {
@@ -255,21 +256,44 @@
   /* A phone has no room to hold a top edge in reserve: the sheet keeps its
      half-rem margins all round. */
   .writings-dialog {
-    width: calc(100vw - 1rem);
+    --writings-toolbar-top: calc(1.25rem + env(safe-area-inset-top));
+    --writings-nav-gap: 0.45rem;
+    --writings-nav-width: calc(var(--preview-gallery-nav-size) * 3 + var(--writings-nav-gap) * 2);
     --writings-top: max(0.5rem, env(safe-area-inset-top));
     --writings-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    width: calc(100vw - 1rem);
   }
-  .writings-toolbar { padding: calc(1.25rem + env(safe-area-inset-top)) 0 0.75rem; }
+  .writings-toolbar { padding: var(--writings-toolbar-top) 0 0.75rem; }
   .writings-breadcrumbs ol, .writings-year-crumb { gap: 0.25rem; }
-  .writings-toolbar-leading { padding-inline: 1.25rem; }
-  /* No room for side rails on a phone: the controls become a toolbar row
-     inside the bottom of the sheet. */
-  .writings-navigation { position: static; flex-shrink: 0; display: flex; justify-content: flex-end; gap: 0.45rem; padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom)); pointer-events: auto; transform: none; }
+  .writings-toolbar-leading { padding-inline: 1.25rem; padding-right: calc(1.25rem + 0.5rem + var(--writings-nav-width)); }
+  /* No room for side rails on a phone, so the controls ride the breadcrumb
+     line at the top right instead of a bar along the bottom, which hands that
+     row's height back to the article. There is no expand control here: the
+     sheet is already within half a rem of the viewport, so it had nothing to
+     grow into. */
+  .writings-navigation {
+    inset: var(--writings-toolbar-top) 1.25rem auto auto;
+    display: flex;
+    align-items: center;
+    gap: var(--writings-nav-gap);
+    height: var(--preview-gallery-nav-size);
+    pointer-events: auto;
+  }
   .writings-navigation > * { position: static; translate: none; }
-  .writings-dialog[data-reading="false"] .writings-navigation { visibility: visible; }
+  .writings-expand-nav { display: none; }
   .writings-mobile-close { display: grid; }
+  /* Years are four digits today, but "Undated" is a legal crumb: let the last
+     one shrink so a long label ellipses instead of running under the controls. */
+  .writings-breadcrumbs li:last-child { min-width: 0; flex-shrink: 1; }
+  .writings-year-crumb .writings-breadcrumb-button { display: block; min-width: 0; overflow: hidden; line-height: 44px; white-space: nowrap; text-overflow: ellipsis; }
   .writings-archive, .writing-reader { padding: 1.5rem 1.25rem calc(3rem + env(safe-area-inset-bottom)); }
   .writings-year + .writings-year { margin-top: 2rem; }
+}
+/* Below ~345px the breadcrumb and the control row want the same pixels, and the
+   crumb was the one spilling. It steps to the reading size the notes already
+   use rather than being truncated. */
+@media (max-width: 359.98px) {
+  .writings-toolbar-title, .writings-breadcrumb-button { font-size: var(--text-lg); }
 }
 
 .t-modal {
