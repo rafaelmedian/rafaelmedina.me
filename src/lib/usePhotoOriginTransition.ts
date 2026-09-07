@@ -29,7 +29,12 @@ type PhotoOrigin = {
 }
 
 export function measurePhotoOrigins(opener: HTMLElement): PhotoOrigin[] {
-  return Array.from(opener.querySelectorAll<HTMLElement>(".personal-photos-print")).map((element) => {
+  const prints = Array.from(opener.querySelectorAll<HTMLElement>(".personal-photos-print"))
+  // Closing measures prints that already wear the flat placeholder. Lift it for
+  // the read, so the return lands on the same card shadow it hands off to.
+  const away = prints.filter((print) => print.hasAttribute("data-photo-away"))
+  away.forEach((print) => print.removeAttribute("data-photo-away"))
+  const origins = prints.map((element) => {
     const rect = element.getBoundingClientRect()
     const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
     const angle = Math.atan2(matrix.b, matrix.a)
@@ -41,6 +46,8 @@ export function measurePhotoOrigins(opener: HTMLElement): PhotoOrigin[] {
       frame: readStyles(element, frameProperties), imageStyles: readStyles(image, imageProperties),
     }
   })
+  away.forEach((print) => print.setAttribute("data-photo-away", ""))
+  return origins
 }
 
 type Flight = { slide: HTMLElement; clone: HTMLElement; animations: Animation[] }
@@ -64,11 +71,11 @@ export function usePhotoOriginTransition(
   const sourceFades = useRef<Animation[]>([])
 
   useClientLayoutEffect(() => {
-    if (!strip || reducedMotion || !opener) return
-    const sources = measurePhotoOrigins(opener).map(({ element }) => ({ element, opacity: element.style.opacity }))
-    sources.forEach(({ element }) => { element.style.opacity = "0" })
+    if (!strip || !opener) return
+    const sources = measurePhotoOrigins(opener)
+    sources.forEach(({ element }) => { element.setAttribute("data-photo-away", "") })
     return () => {
-      sources.forEach(({ element, opacity }) => { element.style.opacity = opacity })
+      sources.forEach(({ element }) => { element.removeAttribute("data-photo-away") })
     }
   }, [strip, origins, reducedMotion, opener, open])
 
@@ -98,16 +105,24 @@ export function usePhotoOriginTransition(
     const returning = new Set<string | undefined>()
     flights.current = []
 
-    strip.querySelectorAll<HTMLElement>(".personal-photos-slide").forEach((slide) => {
+    const slides = Array.from(strip.querySelectorAll<HTMLElement>(".personal-photos-slide"))
+    const bounds = strip.getBoundingClientRect()
+    const sourceIndices = new Map(sources.map((source) => [source, slides.findIndex((slide) => slide.dataset.photoId === source.id)]))
+
+    slides.forEach((slide, index) => {
       const target = slide.getBoundingClientRect()
       const previous = previousFlights.find((flight) => flight.slide === slide)
       const matchingSource = sources.find((item) => item.id === slide.dataset.photoId)
-      if (!matchingSource) {
+      // Wide screens can expose more photos than the preview holds. Open those
+      // from the nearest retained print in the same beat, using their own image.
+      const source = matchingSource ?? (open && target.right > bounds.left && target.left < bounds.right
+        ? sources.reduce((nearest, candidate) => Math.abs(sourceIndices.get(candidate)! - index) < Math.abs(sourceIndices.get(nearest)! - index) ? candidate : nearest)
+        : undefined)
+      if (!source) {
         if (previous) removeFlight(previous)
         return
       }
       // Every retained print travels, even when its carousel endpoint is offscreen.
-      const source = matchingSource
       if (!target.width || !target.height || !source.width) {
         if (previous) removeFlight(previous)
         return
@@ -136,11 +151,13 @@ export function usePhotoOriginTransition(
           width: `${target.width}px`,
         })
         Object.assign(image.style, targetImage)
-        // Pin an already available bitmap for the entire flight. A full-size
-        // download finishing mid-flight cannot replace the image in one frame.
-        image.src = slideImage.complete && slideImage.naturalWidth
+        // Keep one bitmap for the entire flight. Extra photos use their own
+        // thumbnail, following the carousel's full-size/thumbnail naming pair.
+        const imageLoaded = slideImage.complete && slideImage.naturalWidth
+        image.src = imageLoaded
           ? slideImage.currentSrc
-          : matchingSource.image.currentSrc
+          : matchingSource?.image.currentSrc || slideImage.src.replace(/\.webp$/, "-thumb.webp")
+        image.decoding = "sync"
         image.removeAttribute("srcset")
         image.style.backgroundImage = "none"
         document.body.appendChild(clone)
@@ -159,15 +176,17 @@ export function usePhotoOriginTransition(
       const flight = { slide, clone, animations: [animation, imageAnimation, captionAnimation] }
       flights.current.push(flight)
       animation.onfinish = () => {
-        if (!open) source.element.style.removeProperty("opacity")
+        if (!open) source.element.removeAttribute("data-photo-away")
         removeFlight(flight)
         flights.current = flights.current.filter((item) => item !== flight)
       }
     })
 
     if (!open) {
-      sourceFades.current = sources.filter((source) => !returning.has(source.id)).map(({ element }) =>
-        element.animate([{ opacity: 0 }, { opacity: 1 }], timing))
+      sourceFades.current = sources.filter((source) => !returning.has(source.id)).map(({ element, image }) => {
+        element.removeAttribute("data-photo-away")
+        return image.animate([{ opacity: 0 }, { opacity: 1 }], timing)
+      })
     }
 
     let disposed = false
