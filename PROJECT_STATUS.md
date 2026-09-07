@@ -71,7 +71,10 @@ dark-filled contact pill in `ContactActionRow`, not a theme hook.
 
 ## Known follow-ups
 
-- Confirm `hey@rafaelmedina.me` receives mail (copy changed from the old `hello@` address).
+- Contact is now `hellorafaelmedina@gmail.com`, set in `siteLinks.email`. The
+  custom-domain addresses it replaces (`hey@` and the earlier `hello@`) were
+  never confirmed to receive mail; if one is ever revived, change
+  `siteLinks.email` and `scripts/build-resume.mjs`, then regenerate the PDF.
 - `tests/e2e/portfolio-polish.spec.ts:430` ("hides every work card at first
   paint") races the entrance animation and fails on a loaded machine — it failed
   3/3 on an untouched `main` checkout while other workspaces were building. It is

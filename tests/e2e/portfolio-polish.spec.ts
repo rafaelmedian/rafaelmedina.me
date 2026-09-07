@@ -1,6 +1,12 @@
 import { expect, type BrowserContext, type Page, test } from "@playwright/test"
 import { createElasticEdgePalette } from "../../src/lib/elasticEdgeGradient"
 
+// The site renders this from `siteLinks.email` and the résumé script repeats it;
+// spelling it out here is what makes a change in one of those three fail loudly
+// rather than let the PDF and the page drift apart. `src/data/portfolio` cannot
+// be imported directly -- it pulls in a .webp the test loader will not parse.
+const contactEmail = "hellorafaelmedina@gmail.com"
+
 const mobileViewport = { width: 390, height: 844 }
 const openStreetMapTileUrl = /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/
 const transparentMapTile = Buffer.from(
@@ -682,7 +688,7 @@ test("previews the copy reaction without copying on hover", async ({ page }) => 
   await copyButton.hover()
   await expect(reaction).toBeVisible()
   await expect(copyButton).toHaveText("Copy email")
-  await expect(copyButton).toHaveAttribute("title", "hey@rafaelmedina.me")
+  await expect(copyButton).toHaveAttribute("title", contactEmail)
   await expect(reaction.locator("source")).toHaveAttribute("srcset", "/reactions/copy-email-before-still.webp")
   await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 })
@@ -2791,11 +2797,11 @@ test("shows about and the work history summary together", async ({ page }) => {
   await expect(panel).toContainText("Incubeta")
   await expect(panel).toContainText("NOVA Community College")
   await expect(panel).toContainText("ITLA")
-  await expect(panel).not.toContainText("hellorafaelmedina@gmail.com")
+  // The résumé carries a phone number; the panel is public and does not.
   await expect(panel).not.toContainText("786 9580")
-  await expect(panel.getByRole("link", { name: "hey@rafaelmedina.me", exact: true })).toHaveAttribute(
+  await expect(panel.getByRole("link", { name: contactEmail, exact: true })).toHaveAttribute(
     "href",
-    "mailto:hey@rafaelmedina.me",
+    `mailto:${contactEmail}`,
   )
   await expect(panel.getByRole("link", { name: "Download résumé PDF" })).toHaveCount(0)
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
@@ -3953,7 +3959,9 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   expect(text).toContain("Co-founder")
   expect(text).toContain("2026 - Present")
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)
-  expect(text).toContain("hey@rafaelmedina.me")
-  // The old Figma export shipped a stale personal address; it must not come back.
-  expect(text).not.toContain("hellorafaelmedina@gmail.com")
+  // The old Figma export advertised an address the site had already moved off,
+  // so the PDF must carry the site's current one and no other: naming the stale
+  // address would only catch the drift that already happened.
+  const addresses = [...new Set(text.match(/[\w.+-]+@[\w.-]+\.\w{2,}/g) ?? [])]
+  expect(addresses).toEqual([contactEmail])
 })
