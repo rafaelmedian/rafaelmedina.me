@@ -482,13 +482,6 @@
   pointer-events: auto;
 }
 
-.preview-gallery-heading {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
 .preview-gallery-title {
   margin: 0;
   color: #171717;
@@ -700,10 +693,6 @@
 
   .preview-gallery-detail-row dd {
     text-align: left;
-  }
-
-  .preview-gallery-people {
-    justify-content: flex-start;
   }
 
   .preview-gallery-toolbar {
