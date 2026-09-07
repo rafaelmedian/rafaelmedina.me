@@ -54,6 +54,57 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
   expect(landing.distortion).toBeLessThan(0.001)
 })
 
+test("the returning photo travels straight to its print instead of arcing above it", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 })
+  await page.goto("/#about-panel")
+  await page.locator(".personal-photos-print").first().click()
+  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCSS("opacity", "1")
+  await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.closest(".personal-photos-flight")) {
+        animation.pause()
+        animation.currentTime = 0
+      }
+      return animation
+    }
+  })
+  await page.keyboard.press("Escape")
+  // The card centre is the whole point of the flight: sample it across the
+  // close and compare against the straight line between the two endpoints.
+  // Reading the interruption's start as a computed matrix froze the open card's
+  // half-height into the transform, so the photo rode up to 14px above the line
+  // and dropped the difference on the last frame.
+  const path = await page.locator(".personal-photos-flight").first().evaluate(async (flight) => {
+    const animations = flight.getAnimations({ subtree: true })
+    await Promise.all(animations.map((animation) => animation.ready))
+    const duration = Number(animations[0].effect!.getTiming().duration)
+    const centre = () => {
+      const rect = flight.getBoundingClientRect()
+      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
+    }
+    const sample = (progress: number) => {
+      animations.forEach((animation) => { animation.currentTime = duration * progress })
+      return centre()
+    }
+    const start = sample(0)
+    const end = sample(1)
+    const travel = Math.hypot(end.x - start.x, end.y - start.y)
+    // Easing decides how far along the line the card has got, so measure the
+    // distance off the line rather than against a position at that fraction.
+    const drift = [0.15, 0.3, 0.45, 0.6, 0.75, 0.9].map((progress) => {
+      const point = sample(progress)
+      return Math.abs((end.x - start.x) * (start.y - point.y) - (start.x - point.x) * (end.y - start.y)) / travel
+    })
+    return { drift, travel }
+  })
+  expect(path.travel).toBeGreaterThan(50)
+  // The tolerance only covers subpixel layout rounding.
+  expect(Math.max(...path.drift), JSON.stringify(path)).toBeLessThan(2)
+})
+
 test("the responsive stack retains the last group and reopens at the same position", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   for (const width of [2048, 900, 390]) {

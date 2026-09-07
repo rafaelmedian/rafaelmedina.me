@@ -17,6 +17,20 @@ function scalePixels(styles: Record<string, string>, scale: number) {
   ]))
 }
 
+// Both endpoints centre the flight on its own box with -50%, which resolves
+// against a box that shrinks all the way home. A computed matrix bakes that
+// half in at the size it was read, so interpolating from one carries the open
+// card's half-height through a card that is no longer that tall: the photo
+// arcs up and drops the last pixels onto the print. Recover the offsets and
+// hand the interruption back the same percentage form.
+function readFlightTransform(element: HTMLElement) {
+  const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
+  const x = matrix.e + element.offsetWidth / 2
+  const y = matrix.f + element.offsetHeight / 2
+  const angle = Math.atan2(matrix.b, matrix.a) * 180 / Math.PI
+  return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${angle}deg) scale(${Math.hypot(matrix.a, matrix.b)})`
+}
+
 type PhotoOrigin = {
   id: string | undefined
   element: HTMLElement
@@ -163,7 +177,7 @@ export function usePhotoOriginTransition(
         document.body.appendChild(clone)
       }
 
-      const currentFrame = readStyles(clone, [...frameProperties, "transform"])
+      const currentFrame = { ...readStyles(clone, frameProperties), transform: readFlightTransform(clone) }
       const currentImage = readStyles(image, imageProperties)
       const currentCaptionOpacity = getComputedStyle(caption).opacity
       previous?.animations.forEach((animation) => animation.cancel())
