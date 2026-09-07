@@ -253,8 +253,8 @@ const NON_TEXT = [
   {
     hex: "#e5352b",
     kind: "text",
-    name: "Hint & liked heart",
-    note: "The Handlee avatar hint and filled liked-note heart. Display-sized text and non-text icons use a 3:1 floor.",
+    name: "Hint",
+    note: "The Handlee avatar hint. Display-sized text and non-text icons use a 3:1 floor.",
   },
 ] satisfies ReadonlyArray<{ hex: string; kind: ContrastKind; name: string; note: string }>
 
@@ -1187,7 +1187,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years breadcrumbs reader images likes 200ms 160ms 360ms --mosaic-card-surface --radius-lg --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years breadcrumbs reader images 200ms 160ms 360ms --mosaic-card-surface --radius-lg --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder /></div>
               <p className="ds-caption">
@@ -1220,10 +1220,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 return animation and archive scroll. Rapid reversals retarget the same CSS transitions without timers.
                 Personal essays are text-only; project writings reuse existing portfolio illustrations as covers or within their sections.
                 The date sits above the title in month, day, year format; sample articles use illustrative dates.
-                The like pill sits below the title with a 32px visible height and a 44px hit area. It toggles
-                aria-pressed, a filled heart, and Like/Liked text, while an adjacent live region reports the saved shared count.
-                The button waits for the database save before confirming a change, prevents duplicate submissions, reports failures,
-                and refreshes the count every 15 seconds while visible and whenever the visitor returns to the page.
                 Titles use clamp(2rem, 3vw, 2.5rem), 600 weight, 1.2 line height and -0.025em tracking,
                 a scoped editorial exception to the four-step UI scale. Prose stays 18px on desktop and mobile,
                 with 1.7 line height, -0.005rem tracking, and a 60ch maximum paragraph measure aligned to the left edge.

@@ -3,7 +3,6 @@ import { useSound } from "@web-kits/audio/react"
 import { ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Minimize2, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
-import { NoteLikeButton } from "./NoteLikeButton"
 
 import { writings, type WritingImage } from "../data/writings"
 import { backSound, nextSound, openSound } from "../lib/sounds"
@@ -144,7 +143,6 @@ export function WritingsFolder({ onOpenChange }: { onOpenChange?: (open: boolean
                     ) : <span>{selected.archiveYear ? `Archive · ${selected.archiveYear}` : "Undated"}</span>}
                   </div>
                   <h2 ref={titleRef} tabIndex={-1} className="writings-page-title">{selected.title}</h2>
-                  <NoteLikeButton noteId={selected.id} />
                 </header>
                 {selected.cover ? <NoteImage image={selected.cover} /> : null}
                 <div className="writing-reader-prose">

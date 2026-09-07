@@ -53,8 +53,12 @@ See `PROJECT_STATUS.md` for the branch layout.
 
 The site stays on GitHub Pages. `workers/likes/` provides a separate Cloudflare
 Worker and D1 database for shared likes. `VITE_LIKES_API_URL` is the public Worker
-URL, not a secret. Without it, the like control is unavailable rather than
-pretending a browser-only like was saved.
+URL, not a secret.
+
+The reader does not currently show a like control. The Worker, its database, the
+client in `src/lib/noteLikes.ts`, and `NoteLikeButton` are all kept and still
+tested, so the control can be restored by mounting it in the reader again. Until
+then nothing on the site writes to the database.
 
 Each browser stores a random anonymous visitor ID. D1 stores one row per note and
 visitor, so retries and concurrent requests cannot add duplicate likes; an unlike
