@@ -23,7 +23,7 @@ import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { useHoverCard } from "../lib/hoverCard"
-import { buildPreviewSrcSet, isVideoSource, previewSizes } from "../lib/media"
+import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
@@ -331,12 +331,14 @@ type RowImageMediaProps = {
   width?: number
   height?: number
   eager: boolean
+  /** The tile's fraction of its row's total span; see `previewSizesForShare`. */
+  share?: number
 }
 
 // Owns its own loaded flag on purpose. Hoisting it into SimpleFeed meant every
 // one of the ~11 images re-rendered the entire mosaic when it decoded, which
 // re-ran the row/tile tree eleven times during load.
-function RowImageMedia({ source, label, width, height, eager }: RowImageMediaProps) {
+function RowImageMedia({ source, label, width, height, eager, share }: RowImageMediaProps) {
   const [loaded, setLoaded] = useState(false)
   const srcSet = buildPreviewSrcSet(source, width)
 
@@ -344,7 +346,7 @@ function RowImageMedia({ source, label, width, height, eager }: RowImageMediaPro
     <img
       src={source}
       srcSet={srcSet}
-      sizes={srcSet ? previewSizes : undefined}
+      sizes={srcSet ? previewSizesForShare(share) : undefined}
       alt={label}
       width={width}
       height={height}
@@ -681,14 +683,23 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
+      // Every tile in the row -- projects, the quote slider, the writings
+      // folder -- flexes against this total, so it is also what decides how much
+      // width a project's artwork has to cover. Feeds `previewSizesForShare`.
+      const rowSpan =
+        row.items.reduce((total, item) => total + (item.span ?? 1), 0) +
+        (row.quote ? row.quoteSpan ?? 1 : 0) +
+        (row.writings ? 1 : 0)
       const items = row.items.flatMap((item) => {
         const card = cards.find((candidate) => candidate.id === item.cardId)
         if (!card) return []
         const currentIndex = previewIndex++
+        const span = item.span ?? 1
         return [
           {
             card,
-            span: item.span ?? 1,
+            span,
+            share: span / rowSpan,
             width: item.width,
             fit: item.fit ?? defaultFitForCard(card),
             mediaMaxHeight: item.mediaMaxHeight,
@@ -696,7 +707,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, items }
+      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, writings: row.writings, items }
     })
   }, [cards])
 
@@ -738,6 +749,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     source = card.image,
     label = card.title,
     eager = false,
+    share?: number,
   ) => {
     if (isVideoSource(source)) {
       return (
@@ -763,6 +775,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         width={card.previewWidth}
         height={card.previewHeight}
         eager={eager}
+        share={share}
       />
     )
   }
@@ -1074,7 +1087,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                   aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
                                   aria-describedby={`${itemKey}-description`}
                                 >
-                                  {renderRowMedia(item.card, item.card.image, item.card.title, eagerRow)}
+                                  {renderRowMedia(item.card, item.card.image, item.card.title, eagerRow, item.share)}
                                   {/* The caption backdrop. Four nodes because
                                       each one carries a different blur radius
                                       and its own mask, and a pseudo-element
@@ -1098,7 +1111,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                               </div>
                             )
                           })}
-                          {row.id === "row-2" ? (
+                          {row.writings ? (
                             <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) } as CSSProperties}>
                               <WritingsFolder onOpenChange={setWritingsOpen} />
                             </div>

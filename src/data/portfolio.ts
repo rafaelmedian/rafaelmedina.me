@@ -75,6 +75,8 @@ export type HomeRow = {
   quote?: boolean
   /** Flex span for that quote slider, in the same units as `HomeRowItem.span`. */
   quoteSpan?: number
+  /** Close this row with the writings folder tile, at a 1-unit span. */
+  writings?: boolean
 }
 
 const homeTileRowHeight = "clamp(180px, 16vw, 260px)"
@@ -89,28 +91,75 @@ export const homeRows: HomeRow[] = [
       { cardId: "preview-popparazi-v1", span: 1, fit: "contain", mediaMaxHeight: "84%" },
     ],
   },
+  // The three newest projects are spread through the grid rather than parked in
+  // a block at the end, so the Matcha run is broken up on the way down.
+  //
+  // Where they can go is tighter than it looks. All three want a span-1 slot in
+  // a three-unit row (~509px against a 420px row): the dealership shot and the
+  // phone mockup are matted, so a wider slot only grows the mat, and the
+  // Rewards composite is cut to the tile's own ratio, so a slot with a
+  // different shape only mats it. The Matcha 4:3 shots have the same
+  // requirement from the other side -- at span 1 in a four-unit row `cover`
+  // eats a third of their width. That leaves three-unit rows as the home for
+  // most of the cards, so the three newest take one row each on the way down:
+  // Rewards and the phone mockup in row 2, the dealership hub in row 4. Row 1
+  // keeps its pair of clips: index.html preloads their posters, and the first
+  // is the LCP element.
+  //
+  // Pulling the phone mockup up into row 2 leaves row 5 all Matcha, which the
+  // spread above was meant to avoid. It is unavoidable once the mockup moves:
+  // rows 4 and 5 hold six slots and five Matcha shots between them, and the
+  // dealership hub can only break up one of the two.
   {
     id: "row-2",
     height: homeTileRowHeight,
+    // The writings tile is this row's third unit, so the two projects keep the
+    // ~509px slot the note above asks for.
+    writings: true,
+    // Both tiles are `contain` and both drop the mat that normally comes with
+    // it; see `.mosaic-row-card-preview-family-stories` and
+    // `.mosaic-row-card-preview-matcha-rewards` in work-grid.css.
+    //
+    // Rewards is `contain` against 1.16, which is what this slot measures at
+    // 1440px and wider, so on the wide layout the artwork fills the tile edge
+    // to edge and the crop the composition wants is the one it was built with.
+    // `cover` would have re-cut it at every breakpoint instead: the same slot
+    // swings from 0.65 at 900px to 1.16 at 1440, and at the portrait end that
+    // is a quarter of the frame off each side — enough to take "left" off the
+    // countdown headline.
+    items: [
+      { cardId: "preview-family-stories", span: 1, fit: "contain" },
+      { cardId: "preview-matcha-rewards", span: 1, fit: "contain" },
+    ],
+  },
+  {
+    id: "row-3",
+    height: homeTileRowHeight,
     quote: true,
-    // Widens the quote at Protector's expense; the writings tile keeps its
-    // 1-unit column since the row still totals 4.
+    // Widens the quote at Protector's expense. The span was tuned when the
+    // writings tile shared this row and it totalled 4; the tile now closes row
+    // 2, so this is a 3-unit row and both tiles sit wider than that tuning
+    // assumed -- the quote's blockquote is capped at 21rem, so its extra width
+    // lands in side padding.
     quoteSpan: 1.25,
     items: [
       { cardId: "preview-protector", span: 1.75 },
     ],
   },
   {
-    id: "row-3",
+    id: "row-4",
     height: homeTileRowHeight,
+    // `contain` is explicit here rather than inferred: the dealership shot's
+    // 1.6 ratio sits just past the threshold either way, and it is a browser
+    // frame, so `cover` would trim its chrome off the edge.
     items: [
       { cardId: "preview-shot-21", span: 1 },
       { cardId: "preview-shot-1", span: 1 },
-      { cardId: "preview-shot-19", span: 1 },
+      { cardId: "preview-dealership-lead-hub", span: 1, fit: "contain" },
     ],
   },
   {
-    id: "row-4",
+    id: "row-5",
     height: homeTileRowHeight,
     items: [
       { cardId: "preview-shot-14", span: 1 },
@@ -391,5 +440,76 @@ export const portfolioCards: PortfolioCard[] = [
     previewPoster: "/Projects/shot-small-20-poster.webp",
     ...matchaMeta,
     team: [collaborators.simon, collaborators.jakub],
+  },
+  {
+    id: "preview-dealership-lead-hub",
+    slug: "dealership-lead-hub",
+    category: "Preview",
+    title: "Dealership lead hub",
+    summary: "",
+    detail:
+      "A workspace for dealership staff to find sales and service opportunities inside their existing customer base. The hub pairs outcome counters for recent outreach and retention rates for signed and non-signed customers with a filtered customer list that can be sent to the dealer app in bulk.",
+    role: "I designed the hub layout, its overview metrics, and the filtering and bulk-send flow for leads.",
+    outcome:
+      "Staff can read how recent outreach landed and send a filtered batch of customers without leaving the page.",
+    image: "/Projects/dealership-lead-hub.webp",
+    previewWidth: 1600,
+    previewHeight: 1200,
+    ctaHref: "#",
+    product: "Dealer retention platform",
+    industry: "Automotive Retail",
+    previewAspectRatio: 4 / 3,
+  },
+  {
+    id: "preview-family-stories",
+    slug: "shared-family-stories",
+    category: "Preview",
+    title: "Shared family stories",
+    summary: "",
+    detail:
+      "A private space where a family keeps its memories together. Stories are grouped by the period they belong to, each one holding a strip of photos and clips, and opening a moment shows when it happened alongside the comments and likes it collected.",
+    role: "I designed the story feed, the moment detail view, and the commenting patterns.",
+    outcome:
+      "Families can browse their memories by period and keep each conversation attached to the moment it belongs to.",
+    image: "/Projects/shared-family-stories.webp",
+    previewWidth: 1600,
+    previewHeight: 1214,
+    ctaHref: "#",
+    product: "Family memory app",
+    industry: "Consumer Social",
+    previewAspectRatio: 1600 / 1214,
+  },
+  {
+    id: "preview-matcha-rewards",
+    slug: "matcha-rewards",
+    category: "Preview",
+    title: "Matcha Rewards",
+    summary: "",
+    detail:
+      "Campaign artwork for Matcha's weekly rewards program. The key visual sets the live leaderboard — wallets, cash prizes, trades, referrals, and points — on an angle behind the headline, and the same construction carries the weekly countdown posts as well as the link previews.",
+    role: "I designed the campaign key visual and the variants it ships in.",
+    outcome:
+      "The rewards program launched with one visual system shared by its social posts and link previews.",
+    // Both deliverables in one frame — the green link preview behind and to the
+    // left, the purple countdown post in front and to the right — composed as a
+    // single asset rather than two tiles so one campaign reads as one project.
+    //
+    // They overlap and each runs off its own edge instead of sitting side by
+    // side. Laid out whole as a diptych, two 1.9:1 banners force a ~3.2 frame,
+    // and a strip that wide gets matted down to a sliver in a tile close to
+    // square — the banners ended up too small to read as artwork. Overlapping
+    // them lets each render about as wide as the whole tile, and the crop is
+    // part of the composition rather than something the tile does: the frame is
+    // 1.16, the slot's own ratio on the wide layout, so `contain` fills it edge
+    // to edge there. The green banner's subtitle is cut by design — it is the
+    // layer behind, and the cut lands in the space before "cash" — while both
+    // headlines and the whole countdown post stay inside the frame. The wedges
+    // the two banners leave in the opposite corners are transparent, so the
+    // tile's own surface shows through them.
+    image: "/Projects/matcha-rewards.webp",
+    previewWidth: 1540,
+    previewHeight: 1325,
+    ...matchaMeta,
+    previewAspectRatio: 1540 / 1325,
   },
 ]

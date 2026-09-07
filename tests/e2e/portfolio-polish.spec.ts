@@ -1661,7 +1661,7 @@ test("keeps every project row together inside the takeover stage", async ({ page
   const stage = page.locator(".mosaic-takeover-stage")
   const rows = stage.locator(".mosaic-row")
 
-  await expect(rows).toHaveCount(4)
+  await expect(rows).toHaveCount(5)
 
   const gaps = await rows.evaluateAll((elements) =>
     elements.slice(1).map((element, index) => {
@@ -1670,7 +1670,7 @@ test("keeps every project row together inside the takeover stage", async ({ page
     }),
   )
 
-  expect(gaps).toEqual([16, 16, 16])
+  expect(gaps).toEqual([16, 16, 16, 16])
 })
 
 test("leaves a generous white runway after the final project row before the about takeover", async ({ page }) => {
@@ -2329,7 +2329,7 @@ test("shows every project immediately on mobile", async ({ page }) => {
   await page.goto("/")
 
   const rows = page.locator(".mosaic-row")
-  await expect(rows).toHaveCount(4)
+  await expect(rows).toHaveCount(5)
   await expect(rows.first()).toBeVisible()
   await expect(rows.nth(1)).toBeVisible()
   await expect(rows.last()).toBeVisible()
@@ -2384,7 +2384,30 @@ test("places the quote slider beside Protector instead of Dark mode", async ({ p
   await expect(page.getByRole("link", { name: /Open Matcha dark mode/ })).toHaveCount(0)
 })
 
-test("restores the former three projects to the third row", async ({ page }) => {
+// Protector is the one tile that owns most of its row, so it is the one the
+// flat three-up `sizes` used to under-declare: it asked for 446px, rendered at
+// ~790, and the crop scale magnified that again. The variant it loads has to
+// keep up with the slot, not with the three-up baseline.
+test("asks for a variant that matches Protector's wide slot", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/")
+
+  const media = page.locator(".mosaic-row-card-preview-protector img")
+  const { itemWidth, declared, chosen } = await media.evaluate((element) => {
+    const image = element as HTMLImageElement
+    const declaredWide = /(\d+)px$/.exec(image.sizes)
+    return {
+      itemWidth: element.closest(".mosaic-row-item")!.getBoundingClientRect().width,
+      declared: declaredWide ? Number(declaredWide[1]) : 0,
+      chosen: image.currentSrc,
+    }
+  })
+
+  expect(declared).toBeGreaterThanOrEqual(itemWidth * 0.9)
+  expect(chosen).toMatch(/protector-960w\.webp$/)
+})
+
+test("closes the token-page row with the dealership hub", async ({ page }) => {
   await page.goto("/")
 
   const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
@@ -2394,39 +2417,41 @@ test("restores the former three projects to the third row", async ({ page }) => 
   await expect(cards).toHaveCount(3)
   await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha token page/)
   await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha trade page/)
-  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha trade module/)
+  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Dealership lead hub/)
 })
 
-test("keeps the restored third-row projects equal width", async ({ page }) => {
+test("keeps the token-page row's projects equal width", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/")
 
   const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
   const tradePageCard = page.getByRole("link", { name: /Open Matcha trade page/ })
-  const tradeModuleCard = page.getByRole("link", { name: /Open Matcha trade module/ })
+  const dealershipCard = page.getByRole("link", { name: /Open Dealership lead hub/ })
   const row = page.locator(".mosaic-row").filter({ has: tokenCard })
   await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
 
-  const [tokenBox, tradePageBox, tradeModuleBox] = await Promise.all([
+  const [tokenBox, tradePageBox, dealershipBox] = await Promise.all([
     tokenCard.boundingBox(),
     tradePageCard.boundingBox(),
-    tradeModuleCard.boundingBox(),
+    dealershipCard.boundingBox(),
   ])
   expect(tokenBox).not.toBeNull()
   expect(tradePageBox).not.toBeNull()
-  expect(tradeModuleBox).not.toBeNull()
+  expect(dealershipBox).not.toBeNull()
   expect(tokenBox!.width).toBeCloseTo(tradePageBox!.width, 0)
-  expect(tradePageBox!.width).toBeCloseTo(tradeModuleBox!.width, 0)
+  expect(tradePageBox!.width).toBeCloseTo(dealershipBox!.width, 0)
 })
 
 test("caps each row at three projects and omits Mobile navigation", async ({ page }) => {
   await page.goto("/")
 
   const rows = page.locator(".mosaic-row")
-  const lastRow = rows.last()
-  const cards = lastRow.locator(".mosaic-row-card")
+  // Addressed by content, not by index: the newer projects are interleaved
+  // through the grid, so this row moves whenever they are rearranged.
+  const mobileCard = page.getByRole("link", { name: /Open Matcha on mobile/ })
+  const cards = rows.filter({ has: mobileCard }).locator(".mosaic-row-card")
 
-  await expect(rows).toHaveCount(4)
+  await expect(rows).toHaveCount(5)
   const rowCardCounts = await rows.evaluateAll((elements) =>
     elements.map((element) => element.querySelectorAll(".mosaic-row-card").length),
   )
@@ -2441,11 +2466,12 @@ test("caps each row at three projects and omits Mobile navigation", async ({ pag
   await expect(cards.nth(2).locator("video")).toHaveAttribute("poster", "/Projects/shot-small-20-poster.webp")
 })
 
-test("keeps the fourth-row projects equal width", async ({ page }) => {
+test("keeps the closing row's projects equal width", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/")
 
-  const cards = page.locator(".mosaic-row").last().locator(".mosaic-row-card")
+  const mobileCard = page.getByRole("link", { name: /Open Matcha on mobile/ })
+  const cards = page.locator(".mosaic-row").filter({ has: mobileCard }).locator(".mosaic-row-card")
   await expect(cards).toHaveCount(3)
   const widths = await cards.evaluateAll((elements) =>
     elements.map((element) => Math.round(element.getBoundingClientRect().width)),
@@ -2555,7 +2581,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  await expect(dialog.getByText("2 / 10", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("2 / 12", { exact: true })).toBeVisible()
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -2582,7 +2608,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 10")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 12")
   await context.close()
 })
 
@@ -2619,7 +2645,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 10")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 12")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -2629,7 +2655,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 10")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 12")
   await context.close()
 })
 
@@ -3073,7 +3099,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
 
   await next.click()
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 10")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 12")
 
   const changedDialogBox = await dialog.boundingBox()
   const changedRailBox = await rail.boundingBox()
@@ -3084,7 +3110,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 10")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 12")
 })
 
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
@@ -3806,9 +3832,9 @@ test("keeps the work-card entrance inside its delay budget", async ({ page }) =>
       ),
     ),
   )
-  // Last card starts at 520ms + 3 x 70ms + 2 x 32ms = 754ms. The ceiling is
+  // Last card starts at 520ms + 4 x 70ms + 2 x 32ms = 864ms. The ceiling is
   // deliberately loose -- it guards against a runaway intro, not the exact base.
-  expect(maxDelay).toBeLessThanOrEqual(0.85)
+  expect(maxDelay).toBeLessThanOrEqual(0.95)
 })
 
 test("does not show a motion toggle beside the section links", async ({ page }) => {
