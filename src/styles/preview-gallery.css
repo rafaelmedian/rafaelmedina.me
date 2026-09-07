@@ -407,7 +407,9 @@
 .preview-gallery-content {
   width: min(100%, 48rem);
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 0;
+  /* Even on all four sides against the card's own padding: with no bottom of
+     its own the credits sat closer to the edge than the prose does to a side. */
+  padding: 1.5rem;
 }
 
 .preview-gallery-toolbar {

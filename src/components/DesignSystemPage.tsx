@@ -1163,7 +1163,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   The description uses <code>--text-md</code>, a 1.6 line height, the existing prose colour
                   <code>#545454</code>, and a 46rem maximum measure. Credits use <code>--text-sm</code>
                   with 1.5rem of space above them. The text column matches the notes reader: a centered 48rem
-                  maximum width with 1.5rem top and side padding, and 1.25rem side padding below 700px.
+                  maximum width with 1.5rem of padding on all four sides, and 1.25rem side padding below 700px.
                   The dialog has no project-site link, metadata table, or row dividers.
                 </p>
               </div>
