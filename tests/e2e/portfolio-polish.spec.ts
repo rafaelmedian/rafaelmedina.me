@@ -520,10 +520,15 @@ test("keeps comfortable contact targets on wide touch viewports", async ({ brows
 test("optically centers the X mark in the Follow pill", async ({ page }) => {
   await page.goto("/")
 
-  const xIcon = page.getByRole("link", { name: "Follow on X" }).locator(".mosaic-contact-pill-icon-x")
-  const verticalOffset = await xIcon.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m42)
+  const followPill = page.getByRole("link", { name: "Follow on X" })
+  const [pillBox, iconBox] = await Promise.all([
+    followPill.boundingBox(),
+    followPill.locator(".mosaic-contact-pill-icon-x").boundingBox(),
+  ])
 
-  expect(verticalOffset).toBe(1)
+  expect(pillBox).not.toBeNull()
+  expect(iconBox).not.toBeNull()
+  expect(iconBox!.y + iconBox!.height / 2).toBeCloseTo(pillBox!.y + pillBox!.height / 2, 1)
 })
 
 test("wraps primary contact actions when their mobile container is too narrow", async ({ page }) => {
@@ -589,10 +594,19 @@ test("uses only the body and lead type steps throughout About", async ({ page })
     [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
   )
 
+  const sectionHeading = page.locator(".mosaic-about-section-heading")
+  const lede = page.locator("#about-section .mosaic-about-lede")
+
   expect(sizes).toEqual(["16px", "18px"])
-  await expect(page.locator(".mosaic-about-section-heading")).toHaveCSS("font-size", "16px")
-  await expect(page.locator(".mosaic-about-section-heading")).toHaveCSS("color", "rgb(84, 84, 84)")
-  await expect(page.locator("#about-section .mosaic-about-lede")).toHaveCSS("font-size", "18px")
+  await expect(sectionHeading).toHaveCSS("font-size", "16px")
+  await expect(lede).toHaveCSS("font-size", "18px")
+
+  // Work history stays on the body step, but it is a heading: same weight and
+  // ink as the lede, so it cannot be mistaken for the prose beneath it.
+  await expect(sectionHeading).toHaveCSS("font-weight", "600")
+  await expect(sectionHeading).toHaveCSS("color", "rgb(45, 45, 45)")
+  await expect(lede).toHaveCSS("font-weight", "600")
+  await expect(lede).toHaveCSS("color", "rgb(45, 45, 45)")
 
   const workHistorySizes = await page
     .locator("#about-panel-resume")

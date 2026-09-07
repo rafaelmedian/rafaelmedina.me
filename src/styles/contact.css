@@ -158,8 +158,6 @@
 
 .mosaic-contact-pill-default-label {
   position: relative;
-  /* SF sits low in its em box at this size; lift to the optical center. */
-  top: -1px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -178,8 +176,6 @@
 
 .mosaic-contact-pill-content {
   position: relative;
-  /* Matches the -1px optical lift on the default pill's label. */
-  top: -1px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -211,7 +207,6 @@
 .mosaic-contact-pill-icon-x {
   width: 0.875rem;
   height: 0.875rem;
-  transform: translateY(1px);
 }
 
 .mosaic-contact-pill-dark {

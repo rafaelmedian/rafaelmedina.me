@@ -227,8 +227,8 @@ const INK_ENTRIES = [
   { token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
   { hex: "#363636", token: "—", use: "Inline links on hover" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
-  { hex: "#545454", token: "—", use: "About-panel prose and the Work history heading" },
-  { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions" },
+  { hex: "#545454", token: "—", use: "About-panel prose and article prose" },
+  { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions, work-history chip labels at rest" },
   { hex: "#747474", token: "—", use: "Corner nav links and the local-time label" },
   { token: "--muted-soft", use: "Tertiary labels: definition terms and hobby notes" },
 ]
@@ -274,13 +274,13 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    where: "Pill labels, body copy, detail rows, hover-card text, desktop corner nav, mobile table-of-contents labels, wider project captions",
+    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
     token: "--text-md",
     sample: "Senior Product Designer",
-    where: "Hero name; About prose, longer quotes, labels, section headings, card titles, and metadata",
+    where: "About prose, longer quotes, labels, section headings, card titles, and metadata",
     style: { fontSize: "var(--text-md)", lineHeight: 1.5, letterSpacing: "-0.005rem", fontWeight: 600 },
   },
   {
@@ -453,7 +453,7 @@ const BREAKPOINTS = [
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
   {
     at: "≥ 1320px",
-    change: "The hero name settles at 16px; project previews open in the 1090px wide view with a 5vh top inset.",
+    change: "Project previews open in the 1090px wide view with a 5vh top inset.",
   },
 ]
 
@@ -1433,7 +1433,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
               </div>
               <p className="ds-caption">
-                Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.09)</code> hairline.
+                Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.07)</code> hairline, labelled in <code>--muted</code> so the hero name keeps the only dark ink in that block.
                 All chips fill to <code>#e9e9e9</code>{" "}
                 for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
                 under the cursor mean the same thing. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches

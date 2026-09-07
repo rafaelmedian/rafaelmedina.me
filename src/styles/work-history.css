@@ -64,10 +64,12 @@
   gap: 0.25rem;
   color: var(--muted);
   font-family: var(--font-ui);
-  font-size: var(--text-md);
+  /* One size for the whole hero -- see .mosaic-profile-meta h2. The chips take
+     `font: inherit`, so this line sets the copy and the chips together. */
+  font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.7;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
 }
 
 .mosaic-work-history-line {
@@ -88,11 +90,18 @@
   position: relative;
   /* White on the near-white page with a hairline, rather than a filled grey
      block: the pills read as a row of separate places instead of one grey mass,
-     and the border does the separating that the fill used to. */
-  border: 1px solid rgb(0 0 0 / 0.09);
+     and the border does the separating that the fill used to.
+     The label sits on --muted with the line it belongs to. It used to be
+     #2d2d2d -- the hero name's exact ink -- and a chip's border and white fill
+     made that ink read heavier inside the box than it does on the name, so a
+     row of company names outranked the one name the hero is about. The border
+     drops with it; at 0.09 the hairlines were the loudest edges in the hero.
+     Hover and the active state still go to #171717, so the chips get darker
+     than the name only while you are pointing at one. */
+  border: 1px solid rgb(0 0 0 / 0.07);
   border-radius: var(--radius-sm);
   background: var(--canvas);
-  color: #2d2d2d;
+  color: var(--muted);
   text-decoration: none;
   display: inline-flex;
   align-items: center;

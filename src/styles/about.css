@@ -123,11 +123,18 @@
   text-align: left;
 }
 
+/* Work history is a sibling of the About lede, not a paragraph. It kept the
+   prose weight and colour, which made it pixel-identical to the copy directly
+   under it -- an <h2> that only assistive technology could tell was a heading.
+   The scale's heading form of this step is what it takes instead: 600 at
+   #2d2d2d, the same weight and ink as the lede. The step itself stays at
+   --text-md, because the Work history section is deliberately one size
+   throughout. */
 .mosaic-about-section-heading {
   margin: 0;
-  color: #545454;
+  color: #2d2d2d;
   font-size: var(--text-md);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.6;
   letter-spacing: -0.005rem;
 }
