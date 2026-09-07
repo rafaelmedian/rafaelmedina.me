@@ -265,6 +265,17 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0.12s" })
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
+  // Hold the release fade as soon as it starts so the opacity below is sampled
+  // at a known point in it. Sleeping 700ms instead measured from whenever the
+  // assertions in between happened to finish, which on CI is late enough that
+  // the fade has already dropped past the threshold.
+  await edge.evaluate((element) => {
+    const fade = element
+      .getAnimations()
+      .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")
+    if (!fade) throw new Error("The release fade did not start")
+    fade.pause()
+  })
   await expect(edge).toHaveCSS("transition-duration", "1.26s")
   await expect(edge).toHaveCSS("transition-timing-function", "ease-in-out")
   const curtains = edge.locator(".elastic-scroll-edge-curtain")
@@ -278,15 +289,12 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   const lingeringOpacity = await edge.evaluate((element) => {
     const fade = element
       .getAnimations()
-      .find((animation) => animation instanceof CSSTransition && animation.transitionProperty === "opacity")
-    if (!fade) throw new Error("the released glow finished fading before it could be sampled")
-    // Sample 700ms along the fade's own timeline. Sleeping for 700ms here would
-    // also count the round trips above, and that overhead carried a loaded CI
-    // runner past the middle of the 1.26s curve.
+      .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")!
     fade.currentTime = 700
     return Number.parseFloat(getComputedStyle(element).opacity)
   })
   expect(lingeringOpacity).toBeGreaterThan(0.2)
+  await edge.evaluate((element) => element.getAnimations().forEach((animation) => animation.play()))
   await expect(edge).toHaveCSS("opacity", "0")
   await expect(curtains.first()).toHaveCSS("animation-name", "none")
 })
@@ -2366,13 +2374,14 @@ test("uses eight pixel mobile gutters and taller project cards", async ({ page }
   expect(cardBox!.height).toBeGreaterThanOrEqual(340)
 })
 
-test("keeps Dark mode beside Protector", async ({ page }) => {
+test("places the quote slider beside Protector instead of Dark mode", async ({ page }) => {
   await page.goto("/")
 
   const protectorCard = page.getByRole("link", { name: /Open Protector/ })
   const row = page.locator(".mosaic-row").filter({ has: protectorCard })
 
-  await expect(row.getByRole("link", { name: /Open Matcha dark mode/ })).toHaveCount(1)
+  await expect(row.locator(".mosaic-quote")).toHaveCount(1)
+  await expect(page.getByRole("link", { name: /Open Matcha dark mode/ })).toHaveCount(0)
 })
 
 test("restores the former three projects to the third row", async ({ page }) => {
@@ -2546,7 +2555,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  await expect(dialog.getByText("2 / 11", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("2 / 10", { exact: true })).toBeVisible()
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -2573,7 +2582,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 11")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 10")
   await context.close()
 })
 
@@ -2610,7 +2619,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 11")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 10")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -2620,7 +2629,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 11")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 10")
   await context.close()
 })
 
@@ -3064,7 +3073,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
 
   await next.click()
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 11")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 10")
 
   const changedDialogBox = await dialog.boundingBox()
   const changedRailBox = await rail.boundingBox()
@@ -3075,7 +3084,7 @@ test("keeps desktop gallery navigation fixed near the modal top", async ({ page 
   expect(changedRailBox!.y).toBeCloseTo(initialRailBox!.y, 0)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 11")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 10")
 })
 
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {

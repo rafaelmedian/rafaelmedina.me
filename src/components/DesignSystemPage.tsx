@@ -6,6 +6,9 @@ import { ContactActionRow } from "./ContactActionRow"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 import { PersonalPhotos } from "./PersonalPhotos"
 import { WritingsFolder } from "./WritingsFolder"
+import { QuoteCard } from "./QuoteCard"
+import { portfolioQuotes } from "../data/quotes"
+import { sampleQuotes } from "../data/quoteExamples"
 import { formatAvailability } from "../lib/availability"
 
 import { useDesignTokens } from "./useDesignTokens"
@@ -277,13 +280,13 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-md",
     sample: "Senior Product Designer",
-    where: "Hero name; About prose, labels, section headings, card titles, and metadata",
+    where: "Hero name; About prose, longer quotes, labels, section headings, card titles, and metadata",
     style: { fontSize: "var(--text-md)", lineHeight: 1.5, letterSpacing: "-0.005rem", fontWeight: 600 },
   },
   {
     token: "--text-lg",
     sample: "Ten years prototyping in code.",
-    where: "About ledes, standalone-page headings, writing entry titles, and article prose at every viewport. Editorial writing headings have a scoped 24–40px exception.",
+    where: "About ledes, short quotes, standalone-page headings, writing entry titles, and article prose at every viewport. Editorial writing headings have a scoped 24–40px exception.",
     style: { fontSize: "var(--text-lg)", lineHeight: 1.5, letterSpacing: "-0.015rem", fontWeight: 600 },
   },
 ]
@@ -310,7 +313,7 @@ const RADII_ENTRIES = [
   },
   {
     value: "--radius-lg",
-    use: "Work tiles, dialog media and bottom corners",
+    use: "Work tiles, quote cards, dialog media and bottom corners",
     css: "--radius-lg",
   },
   { value: "--radius-full", use: "Pills, dots, avatars, nav buttons, the skip link", css: "--radius-full" },
@@ -1270,6 +1273,58 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </p>
             </div>
 
+            <div className="ds-block" data-ds-terms={terms("quote blockquote attribution avatars --radius-lg --text-lg --text-md --text-sm 340px")}>
+              <p className="ds-subhead">Quote slider</p>
+              <p>
+                The slider replaces the dark-mode tile at the start of project row two and takes a 1.25-unit
+                column beside a 1.75-unit Protector, so the row still totals four units with the writings tile. Between 700px and 899px, that row grows to 340px to fit the quote;
+                from 900px it shares the usual 420px row height. The card uses the existing #f2f2f2 chip surface, an 8%
+                black hairline, and --radius-lg corners. Quotes up to 80 characters (including spaces)
+                use --text-lg (18px); longer quotes use --text-md (16px). Both use 1.5 line height with a
+                centered 21rem measure and balanced line breaks; attribution uses --text-sm and --muted. A shared grid reserves the longest
+                quote's height, author row, and attribution-note row using subgrid. Each 32px portrait and attribution fit their content and are centered
+                together, with text wrapping naturally when the available width runs out.
+                Confirmed authors' names are buttons with invisible 40px-tall hit targets. Hovering for
+                260ms, focusing, or tapping the button opens the full X profile popover above the name, centered on the button and portaled
+                beyond the carousel clip with viewport collision handling at --z-overlay. The preview
+                stays interactive by pointer and keyboard, closes on Escape, restores focus, and uses the shared hover-card motion tokens.
+                The author button has no padding or minimum layout height, keeping the name and caption on consecutive lines.
+                An invisible pseudo-element extends the hit target, while a 6px spread shadow paints
+                --mosaic-card-surface around the name on hover or keyboard focus without affecting spacing.
+                The background and shadow transition over --duration-quick with --ease-standard.
+                Previews show the full X display name, handle, available bio, Follow action, and following/follower counts.
+                Empty bios stay omitted. Missing portraits use an initial avatar. Unlinked authors remain plain text; offscreen slides are inert.
+                Click the card outside the identity to advance, select a dot, or drag horizontally in either direction.
+                The active and adjacent slides follow the pointer together without easing. A drag of 6% of the card width
+                (capped at 24px) selects the adjacent quote and wraps at either end; shorter drags snap
+                back over --duration-slow (360ms) with --ease-smooth. Movement under 6px remains a tap. Vertical touch gestures
+                scroll the page, and dragging never triggers an extra click. The surface uses grab and
+                grabbing cursors. The original dots-only navigation uses 6px dots with 4px gaps,
+                centered 18px above the bottom edge. Their buttons remain 10px wide and 40px tall;
+                the whole-card Advance quote button is the larger alternative target.
+                Dots use --muted-soft at 30% opacity, increasing to 75% when selected without changing size.
+                Dot focus rings sit inside the target so the card edge cannot clip them.
+                Quotes travel one card width left or right over --duration-slow with --ease-smooth, with no crossfade.
+                Selecting a distant dot first positions only the hidden destination beside the current quote;
+                incoming and outgoing quotes animate while other hidden slides reposition instantly.
+                Grabbing a settling slide catches it at its current position; drag limits apply to the new pointer displacement
+                so catching an early transition cannot jump. Reversing can return to the outgoing quote. The dots and card stay fixed. Reduced motion switches immediately.
+                Both side gutters soften moving content with four masked backdrop-blur layers, increasing
+                from 1px to 2px, 4px, and 8px toward the outer edge. A matching #f2f2f2 gradient fades the
+                blurred content into the background. The bands are 24px wide (16px between 700px and
+                899px), occupy only the gutters, and ignore pointer input. Resting text stays sharp;
+                the gray fade also works when backdrop filtering is unavailable.
+                There is no autoplay. Based Floyd's quote uses the supplied post wording and X handle,
+                with his X profile photo and no additional attribution note.
+                Michael Wong's quote uses his supplied wording and handle. Phil Liao's supplied wording
+                is shown with his Head of Engineering at 0x caption, without an additional attribution note.
+                The homepage also includes Simon Rico and Jakub Antalik, with role captions and no
+                additional attribution notes. This development-only specimen adds Amy’s sample
+                to exercise longer copy and distant selections. Portraits are optional.
+              </p>
+              <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} />
+            </div>
+
             <div className="ds-block" data-ds-terms={terms("personal photos stack polaroid carousel modal Handlee shadow radius slide")}>
               <p className="ds-subhead">Personal photos</p>
               <p>The square-cropped preview keeps four prints below 700px and five at 700px and above, overlapping by 35% of each print’s width. After browsing, it retains a group near the last visible photos, filling from preceding photos at the end of the carousel, and reopens at the saved scroll position. The count also updates when the viewport changes. Prints stay at most 28% of the trigger width and shrink to fit the five-print row. A few prints shift slightly sideways and vertically to loosen the stack. The row uses the shared About scroll entrance, with reduced motion leaving it static. Resting and hover angles alternate in both directions; hover or keyboard focus fans all prints together over --duration-slow (360ms), using --photo-motion-ease with no stagger. The return uses the same 360ms duration and easing, and the hand-drawn note shares the timing so the whole interaction settles together. The preview keeps only 0.5rem of bottom padding on larger screens and 1.5rem on mobile. Each print keeps the original --shadow-overlay card shadow plus a 6% hairline, and its 1:1 image crop sits slightly above center to keep faces in view. Clicking expands the retained prints from their measured positions, sizes, and angles in the source stack into the eleven-photo carousel over --photo-open-duration (360ms). Both directions use Apple Core Animation’s documented default timing curve, --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1), which builds speed before easing into place. The backdrop and captions share the flight timing with no delay. Closing returns them to the stack over --photo-close-duration (200ms); Escape restores focus to the row. Temporary, non-interactive copies travel outside the scroller so the flight is never clipped. Each copy keeps an already available image for the entire flight, uses uniform scale, and morphs its frame height, padding, corners, shadow, and image crop to match the real thumbnail before handoff. Photo IDs match each return to its own thumbnail, and the stack reuses the available full-size image after browsing. All retained prints participate in both directions, including those whose carousel positions are outside the viewport. Slides without a matching retained print use the dialog fade instead of duplicating another print’s flight. Scroll position is retained in slide units so reopening also adapts to a resized viewport. The flight controls final unmount so a shorter, interrupted backdrop fade cannot cut off the landing. JavaScript reads both ms and s duration units so production CSS minification preserves the timing. Browsing or resizing interrupts the flight immediately, and reduced motion opens and closes immediately. Portrait and landscape photos fill a consistent 3:4 crop; the square bridge photo remains fully visible within that frame. Captions use Handlee at --text-lg and images use a subtle inner radius of calc(var(--radius-sm) / 2) (4px). Horizontal gutters use clamp(1.25rem, 4vw, 5rem), keeping the first print close to the left edge even on wide screens. The strip reserves 6rem above and below the prints so their shadows finish fading inside the scroll container. Only the card-height row is draggable, including the gaps between prints and the side gutters. The shadow clearance is non-interactive, so gestures there do not scroll the carousel and clicking there dismisses it. Touch panning, wheel scrolling, and keyboard arrows browse the eleven photos with firm stops at both ends. Focusing the strip does not draw an outline around the carousel; the preview trigger keeps its keyboard focus ring. The first and last prints stop at the matching horizontal gutters, with no trailing empty area. Escape or clicking outside closes it.</p>
@@ -1612,7 +1667,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway clamp(12rem, 30vh, 18rem) 100dvh z-index 1 display contents")}>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
-                  remain in one sticky stage at their original sizes and 1rem gaps, followed by a responsive white
+                  remain in one sticky stage with 1rem gaps, including the quote tile in row two, followed by a responsive white
                   runway of <code>clamp(12rem, 30vh, 18rem)</code>.
                   The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
                   full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards.
