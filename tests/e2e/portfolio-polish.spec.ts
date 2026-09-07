@@ -3698,32 +3698,18 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
-// On touch the caption is permanent, and a permanent full-width band landed on
-// whatever the screenshot had at its own bottom edge — and ran past letterboxed
-// artwork onto the card's grey, where white text had nothing to sit on. A pill
-// carries its own contrast over either, and costs no backdrop-filter.
-test("labels project cards with a self-contained pill on mobile", async ({ page }) => {
+// Without hover the caption would have to sit on every tile at once, over
+// artwork that already carries each project's own wordmark. Both it and the
+// band that made it legible are gone entirely, not merely faded — and the name
+// still reaches assistive tech through the link itself.
+test("hides project card names where there is no hover to reveal them", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const firstCaption = page.locator(".mosaic-row-card-title").first()
-  await expect(firstCaption).toBeVisible()
-  await expect(firstCaption).toHaveCSS("opacity", "1")
-  await expect(firstCaption).toHaveCSS("background-color", "rgba(20, 20, 20, 0.82)")
-  await expect(firstCaption).toHaveCSS("text-shadow", "none")
-
-  // The pill is narrower than the card, so it reads as a label rather than as a
-  // second title spanning the artwork.
-  const [captionBox, cardBox] = await Promise.all([
-    firstCaption.boundingBox(),
-    page.locator(".mosaic-row-card").first().boundingBox(),
-  ])
-  expect(captionBox).not.toBeNull()
-  expect(cardBox).not.toBeNull()
-  expect(captionBox!.width).toBeLessThan(cardBox!.width)
-
-  // The band it replaced is gone entirely, not merely faded.
-  await expect(page.locator(".mosaic-row-card-scrim").first()).toHaveCSS("display", "none")
+  const firstCard = page.locator(".mosaic-row-card").first()
+  await expect(firstCard.locator(".mosaic-row-card-title")).toHaveCSS("display", "none")
+  await expect(firstCard.locator(".mosaic-row-card-scrim")).toHaveCSS("display", "none")
+  await expect(firstCard).toHaveAttribute("aria-label", /^Open .+ preview 1 of/)
 })
 
 test("ramps the blur radius behind desktop project captions", async ({ page }) => {

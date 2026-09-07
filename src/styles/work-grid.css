@@ -1294,32 +1294,17 @@
 
 @media (max-width: 699.98px), (hover: none), (pointer: coarse) {
 
-  /* Touch has no hover reveal, so the label is permanent -- and a permanent
-     full-width band is a different object from a band that appears under the
-     pointer. It landed on whatever the screenshot had at its own bottom edge
-     (on Popparazi, directly on the words "Featured pops of the day"), and on
-     letterboxed tiles it ran past the artwork onto the card's grey, where white
-     text has nothing to sit on.
+  /* Without hover there is nothing to reveal the caption on, so it would have
+     to sit on every tile at once -- and a permanent name on each one is a label
+     stacked over artwork that already carries the project's own wordmark and
+     interface. The tiles read as work rather than as a captioned catalogue, and
+     it costs a phone nothing to paint. The title stays in the link's
+     accessible name and in the prerendered description, so assistive tech and
+     crawlers still get it.
 
-     A pill carries its own contrast, so it is legible over any artwork and over
-     the letterbox alike, and it reads as a label rather than as a second title
-     competing with the interface underneath. It is also cheaper than what it
-     replaces: no backdrop-filter, so a scrolling phone never re-rasterises a
-     band per tile. */
-  .mosaic-row-card-title {
-    display: block;
-    width: max-content;
-    bottom: 0.75rem;
-    max-width: calc(100% - 1.5rem);
-    padding: 0.28rem 0.6rem;
-    border-radius: var(--radius-full);
-    background: rgb(20 20 20 / 0.82);
-    transform: translate(-50%, 0);
-    opacity: 1;
-    font-size: var(--text-xs);
-    text-shadow: none;
-  }
-
+     Dropping the caption takes the band with it: the scrim exists only to keep
+     white text legible, so on touch it was already a blur nobody read. */
+  .mosaic-row-card-title,
   .mosaic-row-card-scrim {
     display: none;
   }
