@@ -43,6 +43,45 @@ This repo used to keep source and built output on two unrelated branches, and
 edits made directly to the deployed files were silently lost on the next build.
 Do not reintroduce that pattern.
 
+## Commits and pull requests
+
+A PR is a sequence of commits, each one a change that stands on its own, and its
+body is the list of those changes. Both apply to every agent working here —
+Claude and Codex read this same file, and the format below is the shared one.
+
+### Commits
+
+Split the work as you go, one commit per coherent change: the refactor that
+makes room for the feature, the feature, the test that guards it, the
+regenerated asset. Do not finish the task and wrap it all in a single
+"Implement X". Each commit carries:
+
+- **A title** in the imperative present, under ~65 characters, naming the change
+  rather than the files — "Scale preview `sizes` to each tile's share of its
+  row", not "Update portfolio.ts".
+- **A description** saying what was wrong or missing and why this is the fix.
+  The measurement, threshold, or failure that motivated it belongs here, not in
+  the PR body alone. Wrap at 72 columns. A commit ships without a body only when
+  the title is genuinely the whole story.
+- **The `Co-Authored-By:` trailer** for the agent that wrote it.
+
+Keep each commit building and passing on its own where the change allows it, so
+a later `git bisect` lands somewhere useful.
+
+### Pull request body
+
+Open with a paragraph on what the PR changes and why. Then list the changes in
+the order they land, one entry per commit, each with a one- or two-sentence
+summary in plain language — enough that the list alone explains the PR without
+opening the diff. Close with what was verified: lint, build, the Playwright
+count, and anything checked by hand in a browser.
+
+The repo squash-merges and keeps the individual commit messages as the squashed
+body, so the commits written on a branch become the permanent record on `main`.
+That is what lets `git log` and `git blame` answer why a value is what it is;
+one "Implement X" commit erases that reasoning for good, and no PR description
+brings it back.
+
 ## Résumé
 
 `public/rafael-medina-resume.pdf` is generated, not exported by hand. It used to
