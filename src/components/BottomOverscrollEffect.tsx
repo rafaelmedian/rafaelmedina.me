@@ -14,6 +14,13 @@ const MAX_PULL = 72
 const MAX_CONTENT_TRAVEL = 8
 const MAX_OPACITY = 0.92
 const RELEASE_DELAY_MS = 90
+/* A fling keeps sending wheel deltas long after the page has stopped, so a
+ * trackpad spends thousands of pixels on the pull and only needs a light hand.
+ * A finger spends its own travel: the rubber band runs out around 150px, which
+ * at the wheel's gain reaches four tenths of the glow and reads as nothing
+ * happening. Touch buys the same band in the distance a thumb actually has. */
+const WHEEL_GAIN = 0.24
+const TOUCH_GAIN = 0.6
 
 /* ANIMATION STORYBOARD (defaults live in DEFAULT_ELASTIC_EDGE_SETTINGS)
  *   0ms  the low wash follows scroll pressure; first curtain starts rising
@@ -95,7 +102,7 @@ export function BottomOverscrollEffect() {
       releaseTimer = window.setTimeout(release, RELEASE_DELAY_MS)
     }
 
-    const pullBy = (distance: number, changePalette = true) => {
+    const pullBy = (distance: number, gain = WHEEL_GAIN, changePalette = true) => {
       if (reducedMotion.matches || distance <= 0) return
 
       if (edge.dataset.pulling !== "true") {
@@ -115,7 +122,7 @@ export function BottomOverscrollEffect() {
       // Resistance increases near the limit, like a short rubber sheet rather
       // than a progress bar that stops abruptly.
       const resistance = 1 - (pull / MAX_PULL) * 0.55
-      paint(pull + distance * 0.24 * resistance)
+      paint(pull + distance * gain * resistance)
       scheduleRelease()
     }
 
@@ -148,7 +155,7 @@ export function BottomOverscrollEffect() {
       lastTouchY = currentY
 
       if (distance > 0 && isAtDocumentBottom() && !isInsideScrollableRegion(event.target)) {
-        pullBy(distance)
+        pullBy(distance, TOUCH_GAIN)
       } else if (distance < 0) {
         release()
       }
@@ -181,7 +188,7 @@ export function BottomOverscrollEffect() {
       if (reducedMotion.matches) return
       edge.dataset.glowing = "false"
       void edge.offsetHeight
-      pullBy(MAX_PULL / 0.24, false)
+      pullBy(MAX_PULL / WHEEL_GAIN, WHEEL_GAIN, false)
     }
     const handleSettings = (event: Event) => {
       paintElasticEdgeSettings(edge, (event as CustomEvent<ElasticEdgeSettings>).detail)

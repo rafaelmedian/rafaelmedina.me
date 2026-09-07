@@ -441,7 +441,7 @@ const BREAKPOINTS = [
   { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; the wrapped X card centers on its trigger; location and availability stack without a separator." },
   { at: "≤ 479.98px", change: "Contact pills gain up to 1.25rem side padding and wrap when their container cannot accommodate them." },
   { at: "≤ 639.98px", change: "The hero uses 2rem of top padding plus the top safe area." },
-  { at: "≤ 699.98px", change: "Local time and corner navigation hide; a centered floating control labeled with the current section opens a table of contents with 14px labels; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; card captions stay visible over a static gradient without the desktop blur ramp." },
+  { at: "≤ 699.98px", change: "Local time and corner navigation hide; a centered floating control labeled with the current section opens a table of contents with 14px labels; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; work-card captions and their scrim are hidden, on any screen without hover." },
   { at: "480–699.98px + fine hover", change: "Contact pills stay 32px tall." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
   { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
@@ -850,7 +850,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Elastic page edge</p>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("elastic page edge overscroll aurora curtains random palette 56px 8px nudge 40ms stagger 700ms 1260ms DialKit")}
+                data-ds-terms={terms("elastic page edge overscroll aurora curtains random palette 56px 8px nudge 40ms stagger 700ms 1260ms touch gain DialKit")}
               >
                 <strong>A soft aurora at the page edge.</strong>
                 <p>
@@ -861,7 +861,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the full 360-degree spectrum, with seven neighboring offsets from -54 to +54 degrees in 18-degree
                   steps, saturation of 60–76%, and lightness of 74–84%. Repeated input during a glow keeps its palette
                   and continues the existing rise. The wash follows input over 120ms, fades over 1260ms with
-                  ease-in-out, then resets the curtains. The content nudge stays capped at 8px and settles over 700ms.
+                  ease-in-out, then resets the curtains. A fling keeps feeding the wheel long after the page has
+                  stopped, so pointer input converts at 0.24 of its delta; a finger only spends the travel it has,
+                  and touch converts at 0.6 so the band an overscroll drag can reach still fills. The content nudge stays capped at 8px and settles over 700ms.
                   Colors remain behind the table of contents. Nested scrollers retain their behavior, and reduced
                   motion disables the entire effect. Dev-only DialKit controls at <a href="/?tune=edge">/?tune=edge</a>
                   adjust height, rise, stagger, rise duration, fade duration, and intensity, with replay and new-color
@@ -1184,7 +1186,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop mobile pill rgb(20 20 20 / 0.82) --radius-full --text-xs 0.75rem 0.28rem 0.6rem")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop mobile touch no caption hidden aria-label")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1205,10 +1207,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   zero, and the eye reads that break as an edge. The two fade on separate clocks — the tint at the 160ms hover default alongside
                   the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
                   illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
-                  on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden.
-                  The permanent caption is a compact pill with a <code>rgb(20 20 20 / 0.82)</code> background,
-                  <code> --radius-full</code> corners, and <code>--text-xs</code> type. It sits 0.75rem from the
-                  bottom with 0.28rem by 0.6rem padding, carrying its own contrast without a blur or tint band.
+                  on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden
+                  and so is the caption: with no hover to reveal it, a name would have to sit on every tile at once,
+                  over artwork that already carries the project's own wordmark. The title still reaches assistive
+                  technology and crawlers through the link's accessible name and its prerendered description.
                 </p>
               </div>
             </div>
@@ -1245,12 +1247,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
                 Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
                 during the switch, and closing or returning to Notes cancels pending selection. Reduced motion switches instantly.
-                An expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, retaining 1.5rem desktop margins and 24px corners,
+                From 700px an expand toggle stays available on the right for both the archive and reader. Expanded mode nearly fills the viewport, retaining 1.5rem desktop margins and 24px corners,
                 keeps the reading column centered with 1.5rem top padding plus the safe area, and brings the rail inside the right edge.
                 Modal width, column width, toolbar padding, and rail position transition together with --ease-smooth: 360ms to expand and 200ms to restore.
                 Rapid toggles reverse from the current position; reduced motion makes resizing immediate. Toggling preserves the selected note and scroll;
-                closing restores the default size. On mobile, the modal retains its 0.5rem margins and safe-area clearance, and expand and navigation controls share the bottom bar.
-                The desktop header has no close icon; Escape and outside click dismiss it. On mobile, navigation and close sit in a bottom bar.
+                closing restores the default size. On mobile, the modal retains its 0.5rem margins and safe-area clearance and there is no expand control,
+                because the sheet already sits within half a rem of the viewport and has nothing to grow into.
+                The desktop header has no close icon; Escape and outside click dismiss it. On mobile, previous, next, and close ride the breadcrumb line at the
+                top right instead of a bottom bar, which returns that bar's 68px of height to the article. Below 360px the breadcrumb
+                steps from 1.5rem to --text-lg so it clears those controls, and a long year label ellipses rather than running under them.
                 List and reader occupy overlapping, independently scrolling layers with stable scrollbar gutters.
                 Forward navigation sends the list left and brings the reader from 48px right over 360ms; back reverses
                 that direction over 200ms. Opacity uses 200ms standard easing, transforms use smooth easing, and blur is zero.
@@ -1313,7 +1318,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 (capped at 24px) selects the adjacent quote and wraps at either end; shorter drags snap
                 back over --duration-slow (360ms) with --ease-smooth. Movement under 6px remains a tap. Vertical touch gestures
                 scroll the page, and dragging never triggers an extra click. The surface uses grab and
-                grabbing cursors. The original dots-only navigation uses 6px dots with 4px gaps,
+                grabbing cursors. The card button and the dots opt out of the global tap highlight:
+                the button covers the whole quote, so the highlight greyed the entire card on every
+                touch, and the slide and the filling dot already report the tap. The original dots-only navigation uses 6px dots with 4px gaps,
                 centered 18px above the bottom edge. Their buttons remain 10px wide and 40px tall;
                 the whole-card Advance quote button is the larger alternative target.
                 Dots use --muted-soft at 30% opacity, increasing to 75% when selected without changing size.
@@ -1341,7 +1348,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
             <div className="ds-block" data-ds-terms={terms("personal photos stack polaroid carousel modal Handlee shadow radius slide")}>
               <p className="ds-subhead">Personal photos</p>
-              <p>The square-cropped preview keeps four prints below 700px and five at 700px and above, overlapping by 35% of each print’s width. After browsing, it retains a group near the last visible photos, filling from preceding photos at the end of the carousel, so reopening any print lands back in that group. The count also updates when the viewport changes. Prints stay at most 28% of the trigger width and shrink to fit the five-print row. A few prints shift slightly sideways and vertically to loosen the stack. The row uses the shared About scroll entrance, with reduced motion leaving it static. Resting and hover angles alternate in both directions; hover or keyboard focus fans all prints together over --duration-slow (360ms), using --photo-motion-ease with no stagger. The return uses the same 360ms duration and easing, and the hand-drawn note shares the timing so the whole interaction settles together. The preview keeps only 0.5rem of bottom padding on larger screens and 1.5rem on mobile. Each print keeps the original --shadow-overlay card shadow plus a 6% hairline, and its 1:1 image crop sits slightly above center to keep faces in view. Clicking or tapping a print opens the carousel on that photo; keyboard activation has no target photo, so Enter and Space resume the saved scroll position instead. Opening expands the retained prints from their measured positions, sizes, and angles in the source stack into the eleven-photo carousel over --photo-open-duration (200ms). Both directions use Apple Core Animation’s documented default timing curve, --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1), which builds speed before easing into place. The backdrop and captions share the flight timing with no delay. While expanded, the source stack keeps flat, very light-gray (#f2f2f2) card silhouettes at the original sizes and tilts, with a 1px inset 6% black hairline and no gradient or shadow; only the thumbnail images hide. The hairline uses an inset outline to preserve the card dimensions during the flight. These placeholders also remain with reduced motion and restore their photos on return. Closing returns them to the stack over --photo-close-duration (200ms); Escape restores focus to the row. Temporary, non-interactive copies travel outside the scroller so the flight is never clipped. Each copy keeps an already available image for the entire flight, uses uniform scale, and morphs its frame height, padding, corners, shadow, and image crop to match the real thumbnail before handoff. Photo IDs match each return to its own thumbnail, and the stack reuses the available full-size image after browsing. All retained prints participate in both directions, including those whose carousel positions are outside the viewport. Small thumbnails warm as the preview approaches the viewport so extra photos are ready when opening. Additional slides visible on wide screens expand from the nearest retained print using their own image, starting and landing together with the stack without a stagger. Offscreen slides without a retained print do not fly. Scroll position is retained in slide units so reopening also adapts to a resized viewport. The flight controls final unmount so a shorter, interrupted backdrop fade cannot cut off the landing. JavaScript reads both ms and s duration units so production CSS minification preserves the timing. Browsing or resizing interrupts the flight immediately, and reduced motion opens and closes immediately. Portrait and landscape photos fill a consistent 3:4 crop; the square bridge photo remains fully visible within that frame. Captions use Handlee at --text-lg and images use a subtle inner radius of calc(var(--radius-sm) / 2) (4px). Horizontal gutters use clamp(1.25rem, 4vw, 5rem), keeping the first print close to the left edge even on wide screens. The strip reserves 6rem above and below the prints so their shadows finish fading inside the scroll container. With a fine pointer only the card-height row is draggable, including the gaps between prints and the side gutters; the shadow clearance is non-interactive, so wheel and drag gestures there do not scroll the carousel and clicking there dismisses it. Coarse pointers get the whole strip instead, because the clearance covers more than a third of a phone screen and a thumb cannot aim around it: swiping anywhere pans, and a tap that misses a card still dismisses. Touch panning, wheel scrolling, and keyboard arrows browse the eleven photos with firm stops at both ends. Focusing the strip does not draw an outline around the carousel; the preview trigger keeps its keyboard focus ring. The first and last prints stop at the matching horizontal gutters, with no trailing empty area. Escape or clicking outside closes it.</p>
+              <p>The square-cropped preview keeps four prints below 700px and five at 700px and above, overlapping by 35% of each print’s width. After browsing, it retains a group near the last visible photos, filling from preceding photos at the end of the carousel, so reopening any print lands back in that group. The count also updates when the viewport changes. Prints stay at most 28% of the trigger width and shrink to fit the five-print row. A few prints shift slightly sideways and vertically to loosen the stack. The row uses the shared About scroll entrance, with reduced motion leaving it static. Resting and hover angles alternate in both directions; hover or keyboard focus fans all prints together over --duration-slow (360ms), using --photo-motion-ease with no stagger. The return uses the same 360ms duration and easing, and the hand-drawn note shares the timing so the whole interaction settles together. The preview keeps only 0.5rem of bottom padding on larger screens and 1.5rem on mobile. Each print keeps the original --shadow-overlay card shadow plus a 6% hairline, and its 1:1 image crop sits slightly above center to keep faces in view. Clicking or tapping a print opens the carousel on that photo; keyboard activation has no target photo, so Enter and Space resume the saved scroll position instead. Opening expands the retained prints from their measured positions, sizes, and angles in the source stack into the eleven-photo carousel over --photo-open-duration (200ms). Both directions use Apple Core Animation’s documented default timing curve, --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1), which builds speed before easing into place. The backdrop and captions share the flight timing with no delay. While expanded, the source stack keeps flat, very light-gray (#f2f2f2) card silhouettes at the original sizes and tilts, with a 1px inset 6% black hairline and no gradient or shadow; only the thumbnail images hide. The hairline uses an inset outline to preserve the card dimensions during the flight. These placeholders also remain with reduced motion and restore their photos on return. Closing returns them to the stack over --photo-close-duration (200ms); Escape restores focus to the row. Each copy stays centered on itself as it resizes, so the return travels straight to its print instead of arcing above the stack and dropping the last pixels at the end. Temporary, non-interactive copies travel outside the scroller so the flight is never clipped. Each copy keeps an already available image for the entire flight, uses uniform scale, and morphs its frame height, padding, corners, shadow, and image crop to match the real thumbnail before handoff. Photo IDs match each return to its own thumbnail, and the stack reuses the available full-size image after browsing. All retained prints participate in both directions, including those whose carousel positions are outside the viewport. Small thumbnails warm as the preview approaches the viewport so extra photos are ready when opening. Additional slides visible on wide screens expand from the nearest retained print using their own image, starting and landing together with the stack without a stagger. Offscreen slides without a retained print do not fly. Scroll position is retained in slide units so reopening also adapts to a resized viewport. The flight controls final unmount so a shorter, interrupted backdrop fade cannot cut off the landing. JavaScript reads both ms and s duration units so production CSS minification preserves the timing. Browsing or resizing interrupts the flight immediately, and reduced motion opens and closes immediately. Portrait and landscape photos fill a consistent 3:4 crop; the square bridge photo remains fully visible within that frame. Captions use Handlee at --text-lg and images use a subtle inner radius of calc(var(--radius-sm) / 2) (4px). Horizontal gutters use clamp(1.25rem, 4vw, 5rem), keeping the first print close to the left edge even on wide screens. The strip reserves 6rem above and below the prints so their shadows finish fading inside the scroll container. With a fine pointer only the card-height row is draggable, including the gaps between prints and the side gutters; the shadow clearance is non-interactive, so wheel and drag gestures there do not scroll the carousel and clicking there dismisses it. Coarse pointers get the whole strip instead, because the clearance covers more than a third of a phone screen and a thumb cannot aim around it: swiping anywhere pans, and a tap that misses a card still dismisses. Touch panning, wheel scrolling, and keyboard arrows browse the eleven photos with firm stops at both ends. Focusing the strip does not draw an outline around the carousel; the preview trigger keeps its keyboard focus ring. The first and last prints stop at the matching horizontal gutters, with no trailing empty area. Escape or clicking outside closes it.</p>
               <PersonalPhotos />
             </div>
 
@@ -1866,6 +1873,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>2px solid var(--focus-ring)</code> at <code>2–3px</code> offset, applied by a{" "}
                 <code>:where()</code> base rule to every interactive element. <code>#2d2d2d</code> was chosen over a
                 grey because 1.4.11 wants 3:1 against the adjacent surface, which the greys cannot reach on near-white.
+              </li>
+              <li data-ds-terms={terms("tabindex -1 landing container hash #work skip link outline none focus ring")}>
+                <strong>Landing containers take focus without taking a ring.</strong> Sections that receive focus
+                rather than earn it — the <code>#work</code> article, the About sheet, <code>#main-content</code> —
+                are <code>tabindex="-1"</code> and get <code>outline: none</code> on <code>:focus</code>. Left to the
+                browser, loading <code>/#work</code> painted its default ring around the whole section, reading as a
+                selection. The focus still moves, so reading and tabbing continue from the section.
               </li>
               <li data-ds-terms={terms("target 24px 44px tap nav link map attribution chevron 34px ::before")}>
                 <strong>Targets meet 24px; primary touch controls reach 44px.</strong> Where the visible control is
