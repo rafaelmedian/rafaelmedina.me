@@ -3,6 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      // Opt in before the prerendered page can paint. Without JavaScript the
+      // document remains readable; shared links and history skip the ceremony.
+      if (location.pathname === "/" && !location.hash
+        && !new URLSearchParams(location.search).has("project")
+        && !new URLSearchParams(location.search).has("writing")
+        && !matchMedia("(prefers-reduced-motion: reduce)").matches
+        && performance.getEntriesByType("navigation")[0]?.type !== "back_forward") {
+        document.documentElement.dataset.avatarIntro = "pending";
+        // A missing bundle or stalled portrait must never strand the reader.
+        setTimeout(() => {
+          if (document.documentElement.dataset.avatarIntro === "pending") {
+            delete document.documentElement.dataset.avatarIntro;
+          }
+        }, 4000);
+      }
+    </script>
     <title>Rafael Medina — Product Designer</title>
     <meta name="application-name" content="Rafael Medina" />
     <meta name="author" content="Rafael Medina" />

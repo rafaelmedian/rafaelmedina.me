@@ -379,7 +379,7 @@ const EASINGS_ENTRIES = [
     name: "Smooth — --ease-smooth",
     css: "--ease-smooth",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, the short profile lift, the avatar coin flip, and the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the avatar coin flip, and the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
@@ -416,10 +416,10 @@ const EASINGS_ENTRIES = [
 const DURATIONS_ENTRIES = [
   { value: "--duration-fast", use: "Taps, small fades, popover-content swaps, and the shortest exit feedback." },
   { value: "--duration-quick", use: "Colour, opacity, and shadow on hover or focus, and hover-card or dialog exits. The default for a small state change." },
-  { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the work-history popover, the takeover close, and the initial profile lift. Also gallery and note paging." },
+  { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the work-history popover, and the takeover close. Also gallery and note paging." },
   { value: "240ms", use: "The live-time label roll only; hover-card and work-history entrances use --duration-base." },
   { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
-  { value: "--duration-slow", use: "Feed and preview media resolving from --blur-reveal as they decode, and the personal-photo stack fanning on hover or focus." },
+  { value: "--duration-slow", use: "The avatar-only hold and the following content fade, feed and preview media resolving from --blur-reveal as they decode, and the personal-photo stack fanning on hover or focus." },
   { value: "200ms", use: "Personal-photo carousel: --photo-open-duration and --photo-close-duration both alias --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
   { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
   { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
@@ -1630,14 +1630,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
               </div>
 
-              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load hero profile lift 200ms --duration-base no stagger work cards About visible sharp reduced motion")}>
-                <strong>Page content is readable from its first frame.</strong>
+              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load preload avatar portrait 52px stationary --duration-fast --duration-slow work cards reduced motion")}>
+                <strong>The avatar is visible before the homepage content.</strong>
                 <p>
-                  The hero moves as one group from <code>translateY(0.375rem)</code> to rest over
-                  <code> --duration-base</code>, with smooth easing and no fade, blur, or delay. Work cards
-                  paint immediately. About copy and the photo preview stay visible without scroll-triggered
-                  entrances. The sheet crossing supplies the section transition. Reduced motion removes the
-                  profile lift, and responsive changes to hero height and padding are immediate.
+                  A fresh homepage visit shows the actual 52px header portrait first, at its final size and
+                  position. It never moves, scales, or flips during the intro. Once decoded, the face
+                  remains alone for <code>--duration-slow</code> (360ms). Profile details then
+                  fade in over <code>--duration-slow</code>; work and navigation follow with a
+                  <code> --duration-fast</code> offset. There is no text blur or layout movement.
+                </p>
+                <p>
+                  Images prepare in the background; video playback waits for the reveal. Reduced motion,
+                  section and project links, and history restoration bypass the intro. Keyboard, pointer,
+                  scroll, or viewport changes end it immediately. A failed portrait reveals the page, and
+                  a four-second safeguard releases content if the bundle or image stalls. Without
+                  JavaScript, prerendered content remains readable.
                 </p>
               </div>
             </div>

@@ -496,6 +496,7 @@ test("keeps the wider copy-email action fixed when its label changes", async ({ 
 test("uses the same side padding for every contact action", async ({ page }) => {
   await page.setViewportSize({ width: 487, height: 1381 })
   await page.goto("/")
+  await expect(page.getByRole("group", { name: "Profile contact actions" })).toBeVisible()
 
   const sidePadding = await page
     .getByRole("group", { name: "Profile contact actions" })
@@ -646,6 +647,7 @@ test("uses only the body and lead type steps throughout About", async ({ page })
 test("gives mobile contact actions generous horizontal padding", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
+  await expect(page.getByRole("group", { name: "Profile contact actions" })).toBeVisible()
 
   const actions = page
     .getByRole("group", { name: "Profile contact actions" })
@@ -3907,30 +3909,6 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   expect(firstRow).not.toBeNull()
   // Rows are a flat 420px from the 900px breakpoint up (see .mosaic-row in index.css).
   expect(firstRow!.height).toBe(420)
-})
-
-// Pause in the stylesheet before first paint. Waiting until page.goto resolves
-// would miss short, non-filled entrances that finished during page loading.
-test("shows the hero and work cards without waiting for entrance animations", async ({ page }) => {
-  await page.route("**/*.css", async (route) => {
-    const response = await route.fetch()
-    await route.fulfill({
-      response,
-      body: `${await response.text()}
-        .mosaic-hero-profile, .mosaic-hero-profile > *, .mosaic-row-item {
-          animation-play-state: paused !important;
-        }`,
-    })
-  })
-  await page.goto("/")
-  const states = await page.locator(".mosaic-hero-profile, .mosaic-hero-profile > *, .mosaic-row-item").evaluateAll((elements) =>
-    elements.map((element) => {
-      const style = getComputedStyle(element)
-      return { opacity: style.opacity, filter: style.filter }
-    }),
-  )
-  expect(states.length).toBeGreaterThan(6)
-  for (const state of states) expect(state).toEqual({ opacity: "1", filter: "none" })
 })
 
 test("does not delay content behind an entrance under reduced motion", async ({ page }) => {

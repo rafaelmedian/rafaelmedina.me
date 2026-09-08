@@ -29,4 +29,15 @@
     opacity: 1;
     animation: none;
   }
+
+  html[data-avatar-intro="revealing"] :is(
+    .mosaic-profile-meta,
+    .mosaic-hero-profile > :not(.mosaic-profile-info),
+    .mosaic-work,
+    .mosaic-section-corner,
+    .mosaic-social-corner,
+    .mosaic-mobile-toc
+  ) {
+    animation: none;
+  }
 }

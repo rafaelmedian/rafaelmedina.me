@@ -26,6 +26,7 @@ import { useHoverCard } from "../lib/hoverCard"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { useAvatarIntro } from "../lib/useAvatarIntro"
 import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
 import { projectPath } from "../lib/projectMetadata"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -655,6 +656,7 @@ function SocialCorner({
 
 export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
+  const { avatarRef, pending: introPending } = useAvatarIntro()
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { projectId, selectProject, clearProject } = useProjectUrl()
@@ -763,7 +765,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introPending || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
         />
       )
     }
@@ -945,16 +947,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         <X aria-hidden="true" />
       </button>
       <header id="about" className="mosaic-hero">
-        <div className="mosaic-hero-profile mosaic-hero-profile-animated">
+        <div className="mosaic-hero-profile">
           <div className="mosaic-profile-info">
             <button
+              ref={avatarRef}
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
               aria-label={`Read about ${profile.name}`}
               onClick={() => scrollToSection("avatar")}
             >
               <div className="mosaic-avatar-coin-inner">
-                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
+                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" fetchPriority="high" decoding="async" />
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
               </div>
               <span className="mosaic-avatar-hint" aria-hidden="true">
