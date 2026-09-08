@@ -115,12 +115,12 @@ test("the responsive stack retains the last group and reopens at the same positi
     const strip = page.getByRole("region", { name: "Photo carousel" })
     await strip.focus()
     await page.keyboard.press("End")
-    await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
+    await expect.poll(() => strip.evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
     const previous = await strip.evaluate((element) => ({
-      position: element.scrollLeft,
+      position: element.scrollTop,
       ids: Array.from(element.querySelectorAll<HTMLElement>("figure")).filter((slide) => {
         const rect = slide.getBoundingClientRect(), bounds = element.getBoundingClientRect()
-        return rect.right > bounds.left && rect.left < bounds.right
+        return rect.bottom > bounds.top && rect.top < bounds.bottom
       }).map((slide) => slide.dataset.photoId),
     }))
     await page.keyboard.press("Escape")
@@ -130,7 +130,7 @@ test("the responsive stack retains the last group and reopens at the same positi
     expect(retained).toEqual(expect.arrayContaining(previous.ids))
     await trigger.focus()
     await page.keyboard.press("Enter")
-    await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeCloseTo(previous.position, 0)
+    await expect.poll(() => strip.evaluate((element) => element.scrollTop)).toBeCloseTo(previous.position, 0)
     await page.keyboard.press("Escape")
   }
 })
@@ -147,9 +147,9 @@ for (const width of [390, 900]) {
     const strip = page.getByRole("region", { name: "Photo carousel" })
     await strip.focus()
     await page.keyboard.press("End")
-    await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
+    await expect.poll(() => strip.evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
     const offscreenIds = await strip.locator("figure").evaluateAll((slides) => slides
-      .filter((slide) => slide.getBoundingClientRect().right <= 0)
+      .filter((slide) => slide.getBoundingClientRect().bottom <= 0)
       .map((slide) => (slide as HTMLElement).dataset.photoId))
     await page.evaluate(() => {
       const animate = Element.prototype.animate
@@ -195,45 +195,27 @@ for (const width of [390, 900]) {
   })
 }
 
-test("wide-screen photos open together from the stack with their own images", async ({ page }) => {
-  await page.setViewportSize({ width: 2560, height: 900 })
-  const extraThumbnail = page.waitForResponse((response) => response.url().endsWith("/personal/dumbo-thumb.webp"))
-  await page.goto("/#about-panel")
-  await page.getByRole("button", { name: "View personal photos" }).scrollIntoViewIfNeeded()
-  await (await extraThumbnail).finished()
-  await page.evaluate(() => {
-    const animate = Element.prototype.animate
-    Element.prototype.animate = function (...args) {
-      const animation = animate.apply(this, args)
-      if (this.closest(".personal-photos-flight")) {
-        animation.pause()
-        animation.currentTime = 0
-      }
-      return animation
+test("expanded photos form a centered vertical column on wide and narrow screens", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  for (const width of [2560, 1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto("/#about-panel")
+    await page.locator(".personal-photos-print").first().click()
+    const strip = page.getByRole("region", { name: "Photo carousel" })
+    const layout = await strip.evaluate((element) => ({
+      overflow: element.scrollWidth - element.clientWidth,
+      slides: Array.from(element.querySelectorAll("figure")).map((slide) => {
+        const rect = slide.getBoundingClientRect()
+        return { center: rect.left + rect.width / 2, top: rect.top, bottom: rect.bottom }
+      }),
+    }))
+    expect(layout.overflow).toBe(0)
+    for (let index = 0; index < layout.slides.length; index++) {
+      expect(layout.slides[index].center).toBeCloseTo(width / 2, 0)
+      if (index) expect(layout.slides[index].top).toBeGreaterThan(layout.slides[index - 1].bottom)
     }
-  })
-  await page.getByRole("button", { name: "View personal photos" }).click()
-  const previewIds = await page.locator(".personal-photos-print").evaluateAll((elements) =>
-    elements.map((element) => (element as HTMLElement).dataset.photoId))
-  const flights = await page.locator(".personal-photos-flight").evaluateAll((elements) => elements.map((element) => ({
-    id: (element as HTMLElement).dataset.photoId,
-    timing: element.getAnimations()[0].effect!.getTiming(),
-  })))
-  const visibleIds = await page.locator(".personal-photos-strip .personal-photos-slide").evaluateAll((slides) => slides
-    .filter((slide) => { const rect = slide.getBoundingClientRect(); return rect.right > 0 && rect.left < innerWidth })
-    .map((slide) => (slide as HTMLElement).dataset.photoId))
-  expect(visibleIds.length).toBeGreaterThan(previewIds.length)
-  expect(flights.map(({ id }) => id)).toEqual([...new Set([...previewIds, ...visibleIds])])
-  const extraFlights = page.locator(".personal-photos-flight").filter({ has: page.locator('img[src*="dumbo"]') })
-  await expect(extraFlights).toHaveCount(1)
-  const originError = await extraFlights.evaluate((flight) => {
-    const source = document.querySelector(".personal-photos-print:last-child")!
-    const actual = flight.getBoundingClientRect(), expected = source.getBoundingClientRect()
-    return Math.max(Math.abs(actual.x - expected.x), Math.abs(actual.y - expected.y), Math.abs(actual.width - expected.width), Math.abs(actual.height - expected.height))
-  })
-  expect(originError).toBeLessThan(1)
-  await expect(page.locator('.personal-photos-strip [data-photo-id="dumbo"]')).toHaveCSS("opacity", "0")
-  expect(flights.every(({ timing }) => timing.duration === 200 && timing.delay === 0)).toBe(true)
+    await page.keyboard.press("Escape")
+  }
 })
 
 test("photo gallery stops at both ends without empty trailing space", async ({ page }) => {
@@ -243,23 +225,25 @@ test("photo gallery stops at both ends without empty trailing space", async ({ p
     await page.goto("/#about-panel")
     await page.locator(".personal-photos-print").first().click()
     const strip = page.getByRole("region", { name: "Photo carousel" })
-    const position = () => strip.evaluate((element) => element.scrollLeft)
+    const position = () => strip.evaluate((element) => element.scrollTop)
     await expect.poll(position).toBe(0)
-    await page.keyboard.press("ArrowLeft")
+    await page.keyboard.press("ArrowUp")
     await strip.hover()
-    await page.mouse.wheel(-1500, 0)
+    await page.mouse.wheel(0, -1500)
     await expect.poll(position).toBe(0)
     await page.keyboard.press("End")
-    const rightGap = () => strip.evaluate((element) => {
+    const bottomGap = () => strip.evaluate((element) => {
       const last = element.querySelector(".personal-photos-slide:last-child")!.getBoundingClientRect()
-      return Math.abs(element.getBoundingClientRect().right - last.right - parseFloat(getComputedStyle(element).scrollPaddingInlineStart))
+      return Math.abs(element.getBoundingClientRect().bottom - last.bottom - parseFloat(getComputedStyle(element).scrollPaddingBlockStart))
     })
-    await expect.poll(rightGap).toBeLessThan(1)
+    await expect.poll(bottomGap).toBeLessThan(1)
     const endPosition = await position()
-    await page.keyboard.press("ArrowRight")
-    await page.mouse.wheel(1500, 0)
+    await page.keyboard.press("ArrowDown")
+    // Let the native wheel event finish before sending Home to the scroller.
+    await page.mouse.wheel(0, 1500)
+    await page.waitForTimeout(250)
     await expect.poll(position).toBe(endPosition)
-    await page.keyboard.press("ArrowLeft")
+    await page.keyboard.press("ArrowUp")
     await expect.poll(position).toBeLessThan(endPosition)
     await page.keyboard.press("Home")
     await expect.poll(position).toBe(0)
@@ -291,17 +275,17 @@ test("personal photos open, slide, drag, and return focus to the photo", async (
   const activeSlide = () => strip.evaluate((element) => {
     const slides = Array.from(element.querySelectorAll(".personal-photos-slide")) as HTMLElement[]
     return slides.reduce((nearest, slide, index) =>
-      Math.abs(slide.offsetLeft - slides[0].offsetLeft - element.scrollLeft) <
-      Math.abs(slides[nearest].offsetLeft - slides[0].offsetLeft - element.scrollLeft) ? index : nearest, 0)
+      Math.abs(slide.offsetTop - slides[0].offsetTop - element.scrollTop) <
+      Math.abs(slides[nearest].offsetTop - slides[0].offsetTop - element.scrollTop) ? index : nearest, 0)
   })
-  await page.keyboard.press("ArrowRight")
+  await page.keyboard.press("ArrowDown")
   await expect.poll(activeSlide).toBe(1)
   await page.keyboard.press("End")
-  await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
+  await expect.poll(() => strip.evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
   await page.keyboard.press("Home")
   await expect.poll(() => strip.evaluate((element) => {
     const first = element.querySelectorAll(".personal-photos-slide")[0] as HTMLElement
-    return Math.abs(first.getBoundingClientRect().left - parseFloat(getComputedStyle(element).scrollPaddingInlineStart))
+    return Math.abs(first.getBoundingClientRect().top - element.getBoundingClientRect().top - parseFloat(getComputedStyle(element).scrollPaddingBlockStart))
   })).toBeLessThan(1)
 
   const [bounds, imageBounds] = await Promise.all([
@@ -314,23 +298,23 @@ test("personal photos open, slide, drag, and return focus to the photo", async (
   const gap = await strip.evaluate((element) => {
     const first = element.querySelectorAll(".personal-photos-slide")[0].getBoundingClientRect()
     const second = element.querySelectorAll(".personal-photos-slide")[1].getBoundingClientRect()
-    return { x: (first.right + second.left) / 2, y: first.top + first.height / 2, step: second.left - first.left }
+    return { x: first.left + first.width / 2, y: (first.bottom + second.top) / 2, step: second.top - first.top }
   })
   await page.mouse.move(gap.x, gap.y)
   await page.mouse.down()
-  await page.mouse.move(gap.x - gap.step * 0.8, gap.y, { steps: 12 })
+  await page.mouse.move(gap.x, gap.y - gap.step * 0.8, { steps: 12 })
   await page.mouse.up()
   await expect.poll(activeSlide).toBe(1)
 
   await page.keyboard.press("Home")
   await expect.poll(() => strip.evaluate((element) => {
     const first = element.querySelectorAll(".personal-photos-slide")[0] as HTMLElement
-    return Math.abs(first.getBoundingClientRect().left - parseFloat(getComputedStyle(element).scrollPaddingInlineStart))
+    return Math.abs(first.getBoundingClientRect().top - element.getBoundingClientRect().top - parseFloat(getComputedStyle(element).scrollPaddingBlockStart))
   })).toBeLessThan(1)
 
-  await page.mouse.move(imageBounds.x + imageBounds.width * 0.9, imageBounds.y + imageBounds.height / 2)
+  await page.mouse.move(imageBounds.x + imageBounds.width / 2, imageBounds.y + imageBounds.height * 0.9)
   await page.mouse.down()
-  await page.mouse.move(imageBounds.x + imageBounds.width * 0.1, imageBounds.y + imageBounds.height / 2, { steps: 12 })
+  await page.mouse.move(imageBounds.x + imageBounds.width / 2, imageBounds.y + imageBounds.height * 0.1, { steps: 12 })
   await page.mouse.up()
   await expect.poll(activeSlide).toBe(1)
 
@@ -349,8 +333,8 @@ test("mobile photo strip scrolls and supports reduced motion", async ({ page }) 
   await expect(dialog).toBeVisible()
   const strip = dialog.getByRole("region", { name: "Photo carousel" })
   await page.keyboard.press("End")
-  await page.keyboard.press("ArrowRight")
-  await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
+  await page.keyboard.press("ArrowDown")
+  await expect.poll(() => strip.evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
   expect(await dialog.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThan(0.001)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.locator(".personal-photos-backdrop").click({ position: { x: 10, y: 10 } })
@@ -358,7 +342,7 @@ test("mobile photo strip scrolls and supports reduced motion", async ({ page }) 
   await trigger.focus()
   await page.keyboard.press("Enter")
   await expect(dialog).toBeVisible()
-  await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
+  await expect.poll(() => strip.evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
   await page.setViewportSize({ width: 844, height: 390 })
   const bounds = await dialog.boundingBox()
   expect(bounds?.y).toBeGreaterThanOrEqual(0)
@@ -410,39 +394,18 @@ test("photo preview scrolls in and fans to varied angles on hover", async ({ pag
   }))).toEqual([-10, 6, -4, -8, 8])
 })
 
-test("keeps the first gallery photo close to the left edge", async ({ page }) => {
-  for (const { width, expectedLeft } of [{ width: 2048, expectedLeft: 80 }, { width: 390, expectedLeft: 20 }]) {
-    await page.setViewportSize({ width, height: 900 })
-    await page.goto("/#about-panel")
-    await page.locator(".personal-photos-print").first().click()
-
-    const firstSlide = page.getByRole("group", { name: "1 of 11", exact: true })
-    await expect.poll(() => firstSlide.evaluate((element) => Math.round(element.getBoundingClientRect().left))).toBe(expectedLeft)
-    await page.keyboard.press("Escape")
-  }
-})
-
-test("keeps carousel shadows clear of the strip edges", async ({ page }) => {
-  await page.setViewportSize({ width: 2560, height: 1239 })
+test("vertical gallery keeps shadow clearance at both ends", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/#about-panel")
-  await page.getByRole("button", { name: "View personal photos" }).click()
-
-  const clearance = await page.locator(".personal-photos-strip").evaluate((strip) => {
-    const slide = strip.querySelector(".personal-photos-slide")
-    if (!slide) return null
-    const stripBounds = strip.getBoundingClientRect()
-    const slideBounds = slide.getBoundingClientRect()
-    return {
-      top: Math.round(slideBounds.top - stripBounds.top),
-      bottom: Math.round(stripBounds.bottom - slideBounds.bottom),
-    }
-  })
-
-  expect(clearance).toEqual({ top: 96, bottom: 96 })
+  await page.locator(".personal-photos-print").first().click()
+  const strip = page.getByRole("region", { name: "Photo carousel" })
+  expect(await strip.evaluate((element) => element.querySelector("figure")!.getBoundingClientRect().top - element.getBoundingClientRect().top)).toBe(96)
+  await page.keyboard.press("End")
+  await expect.poll(() => strip.evaluate((element) => element.getBoundingClientRect().bottom - element.querySelector("figure:last-child")!.getBoundingClientRect().bottom)).toBeCloseTo(96, 0)
 })
 
-
-test("shadow clearance ignores carousel gestures and dismisses on click", async ({ page }) => {
+test("space beside the column scrolls vertically and dismisses on click", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 })
@@ -450,21 +413,11 @@ test("shadow clearance ignores carousel gestures and dismisses on click", async 
     await page.locator(".personal-photos-print").first().click()
     const dialog = page.getByRole("dialog", { name: "Personal photos" })
     const strip = page.getByRole("region", { name: "Photo carousel" })
-    const card = await strip.locator("figure").first().boundingBox()
-    if (!card) throw new Error("photo card not visible")
-
-    for (const y of [card.y - 20, card.y + card.height + 20]) {
-      const x = card.x + card.width / 2
-      const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.className, { x, y })
-      expect(hit).toBe("personal-photos-backdrop")
-      await page.mouse.move(x, y)
-      await page.mouse.wheel(600, 0)
-      // Allow the native wheel event to reach its target before checking position.
-      await page.waitForTimeout(250)
-      expect(await strip.evaluate((element) => element.scrollLeft)).toBe(0)
-    }
-
-    await page.mouse.click(card.x + card.width / 2, card.y + card.height + 20)
+    await page.mouse.move(10, 450)
+    await page.mouse.wheel(0, 600)
+    await expect.poll(() => strip.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+    await expect(dialog).toBeVisible()
+    await page.mouse.click(10, 450)
     await expect(dialog).toBeHidden()
   }
 })
@@ -482,7 +435,7 @@ test("opening from a print starts the carousel on that photo", async ({ page }) 
     const landed = await strip.evaluate((element) => {
       const slides = Array.from(element.querySelectorAll<HTMLElement>(".personal-photos-slide"))
       const first = slides[0]
-      return slides.find((slide) => Math.abs(slide.offsetLeft - first.offsetLeft - element.scrollLeft) < 1)?.dataset.photoId
+      return slides.find((slide) => Math.abs(slide.offsetTop - first.offsetTop - element.scrollTop) < 1)?.dataset.photoId
     })
     expect(landed).toBe(id)
     await page.keyboard.press("Escape")
@@ -490,7 +443,7 @@ test("opening from a print starts the carousel on that photo", async ({ page }) 
   }
 })
 
-test("touch pans the carousel from the shadow clearance and still taps to dismiss", async ({ browser }) => {
+test("touch pans vertically beside the photo column and still taps to dismiss", async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 393, height: 659 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 })
   const page = await context.newPage()
   const cdp = await context.newCDPSession(page)
@@ -506,21 +459,22 @@ test("touch pans the carousel from the shadow clearance and still taps to dismis
 
   const card = await strip.locator("figure").first().boundingBox()
   if (!card) throw new Error("photo card not visible")
-  const x = card.x + card.width / 2
-  for (const y of [card.y - 40, card.y + card.height + 40]) {
-    const before = await strip.evaluate((element) => element.scrollLeft)
+  const x = card.x - 20
+  const y = 500
+  for (let gesture = 0; gesture < 2; gesture++) {
+    const before = await strip.evaluate((element) => element.scrollTop)
     // A raw touch sequence rather than a synthesized fling: the gesture
     // synthesizer never moved the scroller on the Linux runner.
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] })
     for (let step = 1; step <= 10; step += 1) {
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x - step * 20, y }] })
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - step * 20 }] })
     }
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
-    await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(before)
+    await expect.poll(() => strip.evaluate((element) => element.scrollTop)).toBeGreaterThan(before)
     await expect(dialog).toBeVisible()
   }
 
-  await page.touchscreen.tap(x, card.y - 40)
+  await page.touchscreen.tap(x, y)
   await expect(dialog).toBeHidden()
   await context.close()
 })
