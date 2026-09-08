@@ -656,7 +656,7 @@ function SocialCorner({
 
 export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
-  const { avatarRef, pending: introPending } = useAvatarIntro()
+  const { avatarRef, active: introActive } = useAvatarIntro()
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { projectId, selectProject, clearProject } = useProjectUrl()
@@ -765,7 +765,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introPending || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
         />
       )
     }

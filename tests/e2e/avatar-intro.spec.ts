@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
-  test(`keeps the header portrait still before revealing content at ${viewport.width}px`, async ({ page }) => {
+  test(`animates the stationary portrait before staggering content at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport)
     // Hold the actual asset so we can inspect the pre-reveal frame reliably.
     let releasePortrait!: () => void
@@ -11,37 +11,46 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await route.continue()
     })
     await page.goto("/", { waitUntil: "domcontentloaded" })
+    const html = page.locator("html")
     const portrait = page.locator(".mosaic-avatar-face-front")
-    await expect(portrait).toBeVisible()
-    const start = await portrait.boundingBox()
+    const avatar = page.locator(".mosaic-avatar-button")
+    const portraitAnimation = page.locator(".mosaic-avatar-coin-inner")
+    await expect(html).toHaveAttribute("data-avatar-intro", "pending")
+    await expect(portraitAnimation).toHaveCSS("opacity", "0")
+    const start = await avatar.boundingBox()
     expect(Math.abs(start!.x + start!.width / 2 - viewport.width / 2)).toBeLessThan(1)
     expect(start!.y).toBeLessThan(100)
     await expect(page.locator(".mosaic-profile-meta")).toBeHidden()
     await expect(page.locator("#work")).toBeHidden()
     releasePortrait()
 
-    // Every frame must keep the actual face at its final header geometry.
-    const frames = await page.evaluate(async () => {
-      const samples: { x: number; y: number; width: number; hidden: boolean }[] = []
-      const portrait = document.querySelector(".mosaic-avatar-face-front")!
-      while (document.documentElement.dataset.avatarIntro === "pending") {
-        const rect = portrait.getBoundingClientRect()
-        samples.push({
-          x: rect.x, y: rect.y, width: rect.width,
-          hidden: getComputedStyle(document.querySelector("#work")!).visibility === "hidden",
-        })
-        await new Promise(requestAnimationFrame)
+    await expect(html).toHaveAttribute("data-avatar-intro", "portrait")
+    await expect(portraitAnimation).toHaveCSS("animation-name", "avatar-intro-face")
+    await expect(page.locator("#work")).toBeHidden()
+
+    await expect(html).toHaveAttribute("data-avatar-intro", "revealing")
+    const end = await avatar.boundingBox()
+    expect(end).toEqual(start)
+
+    const delays = await page.locator([
+      ".mosaic-profile-meta",
+      ".mosaic-work-history",
+      ".mosaic-profile-location",
+      ".mosaic-profile-contact",
+      ".mosaic-section-corner",
+      ".mosaic-row:first-child",
+    ].join(",")).evaluateAll((elements) => elements.map((element) => {
+      const style = getComputedStyle(element)
+      return {
+        animationName: style.animationName,
+        delay: Number.parseFloat(style.animationDelay) * 1000,
       }
-      return samples
-    })
-    expect(frames.length).toBeGreaterThan(2)
-    expect(frames.every((sample) => sample.hidden)).toBe(true)
-    const end = await portrait.boundingBox()
-    for (const frame of [...frames, start!]) {
-      expect(frame.x).toBeCloseTo(end!.x, 1)
-      expect(frame.y).toBeCloseTo(end!.y, 1)
-      expect(frame.width).toBeCloseTo(end!.width, 1)
-    }
+    }))
+    expect(delays).toHaveLength(6)
+    expect(delays.map(({ animationName }) => animationName)).toEqual(Array(6).fill("avatar-intro-content"))
+    expect(delays.map(({ delay }) => delay).sort((a, b) => a - b)).toEqual([0, 60, 120, 180, 240, 300])
+
+    await expect(html).not.toHaveAttribute("data-avatar-intro")
     await expect(portrait).toBeVisible()
     await expect(page.locator("#work")).toHaveCSS("opacity", "1")
   })

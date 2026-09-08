@@ -14,7 +14,7 @@
         document.documentElement.dataset.avatarIntro = "pending";
         // A missing bundle or stalled portrait must never strand the reader.
         setTimeout(() => {
-          if (document.documentElement.dataset.avatarIntro === "pending") {
+          if (document.documentElement.dataset.avatarIntro) {
             delete document.documentElement.dataset.avatarIntro;
           }
         }, 4000);

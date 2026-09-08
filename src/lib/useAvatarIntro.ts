@@ -1,8 +1,8 @@
 import { useEffect, useRef, useSyncExternalStore } from "react"
 import { cssTimeToMilliseconds } from "./cssTime"
 
-const isPending = () => document.documentElement.dataset.avatarIntro === "pending"
-const serverPending = () => true
+const isActive = () => Boolean(document.documentElement.dataset.avatarIntro)
+const serverActive = () => true
 const subscribe = (onChange: () => void) => {
   const observer = new MutationObserver(onChange)
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-avatar-intro"] })
@@ -12,15 +12,15 @@ const subscribe = (onChange: () => void) => {
 /** Show the real header portrait first, then reveal the surrounding content. */
 export function useAvatarIntro() {
   const avatarRef = useRef<HTMLButtonElement>(null)
-  const pending = useSyncExternalStore(subscribe, isPending, serverPending)
+  const active = useSyncExternalStore(subscribe, isActive, serverActive)
 
   useEffect(() => {
     const avatar = avatarRef.current
     const portrait = avatar?.querySelector<HTMLImageElement>(".mosaic-avatar-face-front")
-    if (!isPending() || !portrait || !avatar) return
+    if (document.documentElement.dataset.avatarIntro !== "pending" || !portrait || !avatar) return
 
     let disposed = false
-    let holdTimer: number | undefined
+    let portraitTimer: number | undefined
     let revealTimer: number | undefined
     const root = document.documentElement
     const motion = matchMedia("(prefers-reduced-motion: reduce)")
@@ -32,16 +32,18 @@ export function useAvatarIntro() {
     const staggerDuration = cssTimeToMilliseconds(style.getPropertyValue("--duration-fast"))
     const revealDuration = cssTimeToMilliseconds(style.getPropertyValue("--duration-slow"))
     const finish = (reveal = false) => {
-      if (disposed || !isPending()) return
+      const phase = root.dataset.avatarIntro
+      if (disposed || !phase) return
       if (reveal) {
+        if (phase !== "pending" && phase !== "portrait") return
         root.dataset.avatarIntro = "revealing"
         revealTimer = window.setTimeout(() => {
           delete root.dataset.avatarIntro
-        }, revealDuration + staggerDuration)
+        }, revealDuration + staggerDuration * 4)
       } else {
         delete root.dataset.avatarIntro
       }
-      window.clearTimeout(holdTimer)
+      window.clearTimeout(portraitTimer)
     }
     // Changes of intent or geometry end the intro immediately. Never fight a
     // scroll, keyboard navigation, a resized viewport, or a motion preference.
@@ -53,16 +55,16 @@ export function useAvatarIntro() {
     window.addEventListener("pagehide", interrupt)
     motion.addEventListener("change", interrupt)
 
-    // Start the short hold only once the face is decoded. The image itself
-    // keeps its resting appearance and position throughout the intro.
+    // Animate the decoded face in place before the surrounding groups enter.
     void portrait.decode().then(() => {
-      if (disposed || !isPending()) return
-      holdTimer = window.setTimeout(() => finish(true), revealDuration)
+      if (disposed || root.dataset.avatarIntro !== "pending") return
+      root.dataset.avatarIntro = "portrait"
+      portraitTimer = window.setTimeout(() => finish(true), revealDuration)
     }).catch(() => finish())
 
     return () => {
       disposed = true
-      window.clearTimeout(holdTimer)
+      window.clearTimeout(portraitTimer)
       window.clearTimeout(revealTimer)
       window.removeEventListener("resize", interrupt)
       window.removeEventListener("scroll", interrupt)
@@ -73,5 +75,5 @@ export function useAvatarIntro() {
     }
   }, [])
 
-  return { avatarRef, pending }
+  return { avatarRef, active }
 }

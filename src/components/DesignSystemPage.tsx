@@ -419,7 +419,7 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the work-history popover, and the takeover close. Also gallery and note paging." },
   { value: "240ms", use: "The live-time label roll only; hover-card and work-history entrances use --duration-base." },
   { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
-  { value: "--duration-slow", use: "The avatar-only hold and the following content fade, feed and preview media resolving from --blur-reveal as they decode, and the personal-photo stack fanning on hover or focus." },
+  { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, and the personal-photo stack fanning on hover or focus." },
   { value: "200ms", use: "Personal-photo carousel: --photo-open-duration and --photo-close-duration both alias --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
   { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
   { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
@@ -1630,17 +1630,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
               </div>
 
-              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load preload avatar portrait 52px stationary --duration-fast --duration-slow work cards reduced motion")}>
-                <strong>The avatar is visible before the homepage content.</strong>
+              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load preload avatar portrait 52px stationary opacity blur 4px translate 12px 60ms stagger --duration-slow work cards reduced motion")}>
+                <strong>The avatar animates before the homepage content.</strong>
                 <p>
-                  A fresh homepage visit shows the actual 52px header portrait first, at its final size and
-                  position. It never moves, scales, or flips during the intro. Once decoded, the face
-                  remains alone for <code>--duration-slow</code> (360ms). Profile details then
-                  fade in over <code>--duration-slow</code>; work and navigation follow with a
-                  <code> --duration-fast</code> offset. There is no text blur or layout movement.
+                  A fresh homepage visit starts with the actual 52px header portrait at its final size and
+                  position. It never moves, scales, or flips. Once decoded, the face fades in and resolves
+                  from <code>--blur-reveal</code> (4px) over <code>--duration-slow</code> (360ms).
+                  Only after that finishes do the name, work history, location, contact actions, corner
+                  navigation, and project rows rise 12px and resolve from the same blur and duration, with
+                  60ms between groups. Layout stays fixed throughout.
                 </p>
                 <p>
-                  Images prepare in the background; video playback waits for the reveal. Reduced motion,
+                  Images prepare in the background; video playback waits until the stagger completes. Reduced motion,
                   section and project links, and history restoration bypass the intro. Keyboard, pointer,
                   scroll, or viewport changes end it immediately. A failed portrait reveals the page, and
                   a four-second safeguard releases content if the bundle or image stalls. Without

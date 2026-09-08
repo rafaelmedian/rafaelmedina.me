@@ -153,7 +153,7 @@ test("documents the computed resume-title weight", async ({ page }) => {
 
 test("documents component-specific motion curves that still ship", async ({ page }) => {
   await page.goto("/")
-  await expect(page.locator(".mosaic-profile-meta")).toBeVisible()
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
 
   const curves = await page.evaluate(() => {
     const firstBezier = (value: string) => value.match(/cubic-bezier\([^)]*\)/)?.[0] ?? ""
