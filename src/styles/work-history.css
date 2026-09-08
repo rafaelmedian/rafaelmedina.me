@@ -100,7 +100,7 @@
      made that ink read heavier inside the box than it does on the name, so a
      row of company names outranked the one name the hero is about. The border
      drops with it; at 0.09 the hairlines were the loudest edges in the hero.
-     Hover and the active state still go to #171717, so the chips get darker
+     Hover and the active state still go to --ink, so the chips get darker
      than the name only while you are pointing at one. */
   border: 1px solid rgb(0 0 0 / 0.07);
   border-radius: var(--radius-sm);
@@ -128,7 +128,7 @@
 .mosaic-work-history-chip.is-active {
   background: #e9e9e9;
   border-color: #e9e9e9;
-  color: #171717;
+  color: var(--ink);
 }
 
 
@@ -219,7 +219,7 @@
 }
 
 .mosaic-work-history-popover-name {
-  color: #171717;
+  color: var(--ink);
   font-size: var(--text-md);
   font-weight: 600;
   line-height: 1.5;
@@ -267,7 +267,7 @@
 
 .mosaic-work-history-popover-link:hover {
   background: #e9e9e9;
-  color: #171717;
+  color: var(--ink);
 }
 
 .mosaic-work-history-popover-logos {

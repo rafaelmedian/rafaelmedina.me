@@ -221,16 +221,13 @@ const SURFACES_ENTRIES = [
 ]
 
 const INK_ENTRIES = [
-  { token: "--body-color", use: "Body default and headings" },
-  { token: "--ink", use: "App wrapper text colour" },
-  { hex: "#171717", token: "—", use: "Text inside white cards and the preview dialog" },
+  { token: "--ink", use: "Primary text, headings, white cards, and the preview dialog. --body-color aliases this token." },
   { token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
   { hex: "#363636", token: "—", use: "Inline links on hover" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
   { hex: "#545454", token: "—", use: "About-panel prose and article prose" },
   { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions, work-history chip labels at rest" },
-  { hex: "#747474", token: "—", use: "Corner nav links and the local-time label" },
-  { token: "--muted-soft", use: "Tertiary labels: definition terms and hobby notes" },
+  { token: "--muted-soft", use: "Tertiary labels: corner nav, local time, definition terms, and hobby notes" },
 ]
 
 const NON_TEXT_ENTRIES = [
@@ -347,9 +344,9 @@ const ELEVATION = [
     use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content.",
   },
   {
-    name: "Resting control",
-    shadow: "0 1px 5px rgb(46 42 42 / 0.08)",
-    use: "Contact pills and the mobile reveal button. Controls go to 0 4px 12px on hover, back to 0 1px 4px when pressed.",
+    name: "Resting control — --shadow-control",
+    shadow: "var(--shadow-control)",
+    use: "Light contact pills and the writing-like button share --shadow-control, --shadow-control-hover, and --shadow-control-pressed. The dark email pill keeps its surface-specific shadow; the table of contents uses the overlay tier.",
   },
   {
     name: "Overlay — --shadow-overlay",
@@ -765,7 +762,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-section-heading">
               <h2>Colour</h2>
               <p>
-                Four surfaces, one ink ramp, and a short list of colours that are allowed to be colourful. Ratios are
+                Five surfaces, one ink ramp, and a short list of colours that are allowed to be colourful. Ratios are
                 computed live against {PAGE_BG} — the colour the app wrapper actually paints.
               </p>
             </div>
@@ -1397,10 +1394,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ds-terms={terms("email dark pill #171717 #000 white label 112px primary action")}>
+                    <tr data-ds-terms={terms("email dark pill --ink #000 white label 112px primary action")}>
                       <td>Email</td>
                       <td>
-                        <code>#171717 → #000</code> gradient, white label, 112px fixed
+                        <code>var(--ink) → #000</code> gradient, white label, 112px fixed
                       </td>
                       <td>The primary action. One per row.</td>
                     </tr>

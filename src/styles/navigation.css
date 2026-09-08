@@ -89,7 +89,7 @@
   justify-content: center;
   border-radius: var(--radius-sm);
   padding: 0 0.54rem;
-  color: #747474;
+  color: var(--muted-soft);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   font-weight: 400;

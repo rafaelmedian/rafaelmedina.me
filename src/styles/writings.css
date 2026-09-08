@@ -230,14 +230,14 @@
   font-size: var(--text-xs);
   font-weight: 500;
   line-height: 1;
-  box-shadow: 0 1px 5px rgb(46 42 42 / 0.08);
+  box-shadow: var(--shadow-control);
   transition: box-shadow var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-standard);
 }
 .writing-like::before { content: ""; position: absolute; inset: -6px 0; border-radius: inherit; }
 @media (hover: hover) {
-  .writing-like:hover { box-shadow: 0 4px 12px rgb(46 42 42 / 0.12); }
+  .writing-like:hover { box-shadow: var(--shadow-control-hover); }
 }
-.writing-like:active { transform: scale(0.96); box-shadow: 0 1px 4px rgb(46 42 42 / 0.08); }
+.writing-like:active { transform: scale(0.96); box-shadow: var(--shadow-control-pressed); }
 .writing-like svg { fill: transparent; transition: color var(--duration-quick) var(--ease-standard), fill var(--duration-quick) var(--ease-standard); }
 .writing-like[aria-pressed="true"] svg { color: #e5352b; fill: currentColor; }
 .writing-like span { min-width: 4ch; text-align: center; }

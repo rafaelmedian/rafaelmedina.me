@@ -182,7 +182,7 @@
   border: 1px solid rgb(0 0 0 / 0.08);
   background: #ffffff;
   padding: var(--preview-gallery-card-padding);
-  color: #171717;
+  color: var(--ink);
   outline: none;
   opacity: 1;
   /* Matches the axis of the switch poses below so the transition interpolates
@@ -484,7 +484,7 @@
 
 .preview-gallery-title {
   margin: 0;
-  color: #171717;
+  color: var(--ink);
   font-size: var(--text-md);
   font-weight: 500;
   line-height: 1.25;
@@ -552,7 +552,7 @@
 
 .preview-gallery-detail-row dd {
   margin: 0;
-  color: #171717;
+  color: var(--ink);
   font-size: var(--text-sm);
   line-height: 1.35;
   text-align: right;
@@ -586,7 +586,7 @@
   margin: -0.2rem -0.4rem;
   padding: 0.2rem 0.4rem;
   border-radius: var(--radius-full);
-  color: #171717;
+  color: var(--ink);
   text-decoration: none;
   transition: background-color var(--duration-quick) var(--ease-standard);
 }
@@ -626,7 +626,7 @@
   border-radius: var(--radius-full);
   border: 1px solid rgb(0 0 0 / 0.08);
   background: rgb(255 255 255 / 0.92);
-  color: #171717;
+  color: var(--ink);
   display: grid;
   place-items: center;
   cursor: pointer;

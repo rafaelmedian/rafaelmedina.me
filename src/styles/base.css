@@ -22,7 +22,7 @@
   /* The stack most interface text actually renders with: system-first, so SF
      on Apple hardware. Distinct from --font-fallback, which leads with Inter. */
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
-  --body-color: #111;
+  --body-color: var(--ink);
   --body-bg: #fdfdfc;
   --mosaic-card-surface: #ececee;
   /* Motion. Three curves cover the site: --ease-standard is the house curve
@@ -76,6 +76,11 @@
   --shadow-overlay:
     0 1px 2px rgb(16 16 20 / 0.06),
     0 12px 32px rgb(16 16 20 / 0.16);
+  /* Light controls share the same resting, hover, and pressed elevation.
+     The dark email pill keeps its own surface-specific shadow. */
+  --shadow-control: 0 1px 5px rgb(46 42 42 / 0.08);
+  --shadow-control-hover: 0 4px 12px rgb(46 42 42 / 0.12);
+  --shadow-control-pressed: 0 1px 4px rgb(46 42 42 / 0.08);
   /* UI type scale. Four steps cover interface text -- see
      /design-system. The ramp used to carry twelve distinct sizes, half of them
      sitting a fraction of a pixel from a neighbour (0.82 next to 0.8125, 0.9
