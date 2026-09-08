@@ -304,7 +304,7 @@
   transform: translateY(0) scale(1);
   pointer-events: auto;
   transition:
-    opacity var(--duration-quick) ease-out,
+    opacity var(--duration-base) var(--ease-smooth),
     transform var(--duration-base) var(--ease-smooth);
 }
 

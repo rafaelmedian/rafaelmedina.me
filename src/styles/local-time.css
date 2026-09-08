@@ -81,7 +81,7 @@
      the long expo-out settle arriving, the quick exit curve dismissing. */
   transition:
     transform var(--duration-base) var(--ease-smooth),
-    opacity var(--duration-quick) ease-out,
+    opacity var(--duration-base) var(--ease-smooth),
     visibility var(--duration-base) linear;
 }
 

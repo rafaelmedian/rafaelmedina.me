@@ -1,16 +1,15 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
 import { ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Minimize2, X } from "lucide-react"
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from "react"
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type Ref } from "react"
 
 
 import { writings, type WritingImage } from "../data/writings"
 import { backSound, nextSound, openSound } from "../lib/sounds"
 import { groupWritingsByYear, writingYear } from "../lib/writings"
 import { usePortfolioItemUrl } from "../lib/useProjectUrl"
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 
-// Match the project gallery’s sideways paging beat; CSS receives the same duration.
-const writingSwitchMs = 190
 
 function NoteImage({ image }: { image: WritingImage }) {
   return (
@@ -115,6 +114,9 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
       return
     }
 
+    const writingSwitchMs = cssTimeToMilliseconds(
+      getComputedStyle(readerRef.current ?? document.documentElement).getPropertyValue("--duration-base"),
+    )
     playSound()
     focusTitleOnRead.current = !pointerTarget
     switchWritingId.current = writingId
@@ -174,7 +176,6 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
       <Dialog.Portal>
         <Dialog.Backdrop className="writings-backdrop" />
         <Dialog.Popup data-switch-phase={switchPhase} data-switch-direction={switchDirection}
-          style={{ "--writings-switch-duration": `${writingSwitchMs}ms` } as CSSProperties}
           initialFocus={reading ? titleRef : notesRef} data-reading={reading} data-expanded={expanded}
           onKeyDown={(event) => {
             if (!reading || orderedWritings.length <= 1 || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return

@@ -70,6 +70,7 @@
 .writings-dialog {
   font-kerning: normal;
   --writings-resize-dur: var(--duration-base);
+  --writings-switch-duration: var(--duration-base);
   --modal-open-dur: var(--duration-base);
   --modal-close-dur: var(--duration-quick);
   --modal-scale: 0.96;

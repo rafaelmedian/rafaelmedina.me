@@ -1,6 +1,5 @@
-/* Handlee (SIL OFL 1.1), the handwriting face Figma ships. Used only for the
-   hover hint on the profile photo, so it loads lazily and falls back to a
-   system cursive. */
+/* Handlee (SIL OFL 1.1), the handwriting face for avatar and photo-stack
+   hints and personal-photo captions. Falls back to a system cursive. */
 @font-face {
   font-family: "Handlee";
   font-style: normal;
@@ -36,7 +35,7 @@
   /* Durations. Four steps; pick the nearest one instead of minting a new
      number. The 140/150/160/180ms spread this file used to carry was one
      perceptual step, so it all collapsed onto --duration-quick. Longer
-     one-off choreography (240ms popover settle, 700ms avatar flip) stays
+     one-off choreography (240ms live-time roll, 700ms avatar flip) stays
      component-scoped. */
   --duration-fast: 120ms; /* taps, small fades */
   --duration-quick: 160ms; /* most hover and state transitions */

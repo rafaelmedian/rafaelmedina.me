@@ -201,7 +201,7 @@ test("refreshes token values, specimens, and contrast when the stylesheet change
   await expect(availability.locator(".ds-ratio")).toContainText("7.39:1")
   await expect(page.locator("#typography .ds-type-row").filter({ hasText: "--text-md" })).toContainText("1.0625rem · 17px")
   await expect(page.locator("#space .ds-card").filter({ hasText: "--radius-md" })).toContainText("18px")
-  await expect(page.locator("#motion tr").filter({ hasText: "--duration-quick" })).toContainText("170ms")
+  await expect(page.locator("#motion tr").filter({ has: page.locator("td:first-child", { hasText: "--duration-quick" }) })).toContainText("170ms")
   await expect(page.locator("#motion .ds-motion-card").filter({ hasText: "--ease-standard" })).toContainText("cubic-bezier(0.1, 0.2, 0.3, 1)")
 
   await page.getByRole("searchbox").fill("#225588")

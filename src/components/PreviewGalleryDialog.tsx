@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { PreviewMedia } from "./PreviewMedia"
 import { backSound, nextSound, openSound } from "../lib/sounds"
 
@@ -21,7 +22,6 @@ type PreviewGalleryDialogProps = {
 type PreviewSwitchDirection = "prev" | "next"
 type PreviewSwitchPhase = "idle" | "out" | "in"
 
-const previewSwitchExitMs = 190
 const previewCloseResetMs = 260
 const largeDesktopPreviewQuery = "(min-width: 1320px)"
 
@@ -32,10 +32,9 @@ function shouldOpenPreviewWide() {
 }
 
 // Origin-aware open/close: the popup travels from (and back to) the card that
-// was clicked, so the modal reads as that card growing into place. Every
-// duration and curve it uses lives in this block, including the ones only the
-// stylesheet needs — those are handed to CSS as custom properties below, so the
-// JS and CSS halves of the animation cannot drift apart.
+// was clicked, so the modal reads as that card growing into place. Durations
+// alias the shared CSS scale; timers and flights read those computed values.
+// Only the origin-aware geometry keeps its component-specific entrance curve.
 
 // The open is deliberately not an expo-out. A quintic curve is 97% done in its
 // first third, which for a surface growing out of a card means the growth is
@@ -45,28 +44,16 @@ const openEasePoints = [0.32, 0.8, 0.32, 1] as const
 const closeEasePoints = [0.4, 0, 1, 1] as const
 const toCssEasing = (points: readonly number[]) => `cubic-bezier(${points.join(", ")})`
 
-const galleryMotion = {
-  openMs: 200,
-  closeMs: 150,
-  openEase: toCssEasing(openEasePoints),
-  closeEase: toCssEasing(closeEasePoints),
-  contentInMs: 140,
-  contentOutMs: 120,
-  backdropInMs: 180,
-  backdropOutMs: 150,
-  switchMs: previewSwitchExitMs,
-}
-
 const galleryMotionVars = {
-  "--pg-open-ms": `${galleryMotion.openMs}ms`,
-  "--pg-close-ms": `${galleryMotion.closeMs}ms`,
-  "--pg-open-ease": galleryMotion.openEase,
-  "--pg-close-ease": galleryMotion.closeEase,
-  "--pg-content-in-ms": `${galleryMotion.contentInMs}ms`,
-  "--pg-content-out-ms": `${galleryMotion.contentOutMs}ms`,
-  "--pg-backdrop-in-ms": `${galleryMotion.backdropInMs}ms`,
-  "--pg-backdrop-out-ms": `${galleryMotion.backdropOutMs}ms`,
-  "--pg-switch-ms": `${galleryMotion.switchMs}ms`,
+  "--pg-open-ms": "var(--duration-base)",
+  "--pg-close-ms": "var(--duration-quick)",
+  "--pg-open-ease": toCssEasing(openEasePoints),
+  "--pg-close-ease": toCssEasing(closeEasePoints),
+  "--pg-content-in-ms": "var(--duration-base)",
+  "--pg-content-out-ms": "var(--duration-quick)",
+  "--pg-backdrop-in-ms": "var(--duration-base)",
+  "--pg-backdrop-out-ms": "var(--duration-quick)",
+  "--pg-switch-ms": "var(--duration-base)",
 } as CSSProperties
 
 // Not a full flight from the card to the centre. Replaying the whole distance
@@ -307,7 +294,7 @@ export function PreviewGalleryDialog({
     const keyframes = buildOriginKeyframes(mode, offset)
 
     const options: KeyframeAnimationOptions = {
-      duration: mode === "open" ? galleryMotion.openMs : galleryMotion.closeMs,
+      duration: cssTimeToMilliseconds(getComputedStyle(wrap).getPropertyValue(mode === "open" ? "--pg-open-ms" : "--pg-close-ms")),
       // The curve is already baked into the keyframes.
       easing: "linear",
       fill: mode === "open" ? "none" : "forwards",
@@ -385,6 +372,9 @@ export function PreviewGalleryDialog({
         window.cancelAnimationFrame(switchFrameRef.current)
       }
 
+      const switchMs = cssTimeToMilliseconds(
+        getComputedStyle(popupRef.current ?? document.documentElement).getPropertyValue("--duration-base"),
+      )
       setSwitchDirection(nextDirection)
       setSwitchPhase("out")
 
@@ -399,7 +389,7 @@ export function PreviewGalleryDialog({
           })
         })
         switchTimeoutRef.current = null
-      }, previewSwitchExitMs)
+      }, switchMs)
     },
     [cards.length, onSelectedIndexChange, playBack, playNext, prefersReducedMotion, safeIndex, switchPhase],
   )

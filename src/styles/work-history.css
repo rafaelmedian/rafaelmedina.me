@@ -47,7 +47,7 @@
 /* ------------------------------------------------- work history & popover --- */
 
 .mosaic-work-history {
-  --mosaic-popover-enter-duration: 240ms;
+  --mosaic-popover-enter-duration: var(--duration-base);
   --mosaic-popover-exit-duration: var(--duration-quick);
   --mosaic-popover-enter-ease: var(--ease-smooth);
   /* The house exit curve, not the old cubic-bezier(0.55, 0, 1, 0.45): that one
@@ -135,7 +135,7 @@
 /* WORK-HISTORY CARD MOTION
  *
  *   0ms        card appears 6px above its resting position
- *   0-240ms    card settles top-to-bottom while opacity reaches 1
+ *   0-200ms    card settles top-to-bottom while opacity reaches 1
  *   0-160ms    exit reverses upward and fades on the same clock, then
  *              visibility switches off
  */
@@ -177,7 +177,7 @@
   pointer-events: auto;
   transition:
     transform var(--mosaic-popover-enter-duration) var(--mosaic-popover-enter-ease),
-    opacity var(--duration-quick) ease-out,
+    opacity var(--mosaic-popover-enter-duration) var(--mosaic-popover-enter-ease),
     visibility 0ms linear;
 }
 

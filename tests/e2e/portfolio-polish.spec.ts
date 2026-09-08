@@ -549,9 +549,9 @@ test("optically centers the X mark in the Follow pill", async ({ page }) => {
   await page.goto("/")
 
   const followPill = page.getByRole("link", { name: "Follow on X" })
-  const [pillBox, iconBox] = await Promise.all([
-    followPill.boundingBox(),
-    followPill.locator(".mosaic-contact-pill-icon-x").boundingBox(),
+  const [pillBox, iconBox] = await followPill.evaluate((pill) => [
+    pill.getBoundingClientRect().toJSON(),
+    pill.querySelector(".mosaic-contact-pill-icon-x")?.getBoundingClientRect().toJSON(),
   ])
 
   expect(pillBox).not.toBeNull()
@@ -2436,7 +2436,7 @@ test("shows every project immediately on mobile", async ({ page }) => {
 })
 
 test("loads each preview video only when it reaches the viewport", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
+  await page.setViewportSize({ width: 390, height: 780 })
   await page.goto("/")
 
   const videos = page.locator(".mosaic-row-card video.mosaic-row-media")
@@ -2444,7 +2444,7 @@ test("loads each preview video only when it reaches the viewport", async ({ page
   const offscreenVideo = videos.nth(1)
 
   await expect(visibleVideo).toHaveAttribute("src", "/Projects/shot-small-9.webm")
-  expect(await offscreenVideo.evaluate((video) => video.getBoundingClientRect().top)).toBeGreaterThanOrEqual(844)
+  expect(await offscreenVideo.evaluate((video) => video.getBoundingClientRect().top)).toBeGreaterThanOrEqual(780)
   await expect(offscreenVideo).not.toHaveAttribute("src", /\S+/)
   await expect(offscreenVideo).toHaveAttribute("preload", "none")
 
@@ -2606,6 +2606,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
   await page.setViewportSize({ width: 1024, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
+  // A shared-token change must retime both CSS fades and the JS flight.
+  await page.addStyleTag({ content: ":root { --duration-base: .32s; }" })
 
   // Hold Web Animations at their first frame so the short opening motion is
   // still inspectable after React mounts the dialog portal.
@@ -2623,7 +2625,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
   const cardInner = page.locator(".preview-gallery-card-inner")
-  expect(await originWrap.evaluate((element) => element.getAnimations().length)).toBe(1)
+  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([320])
+  await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.32s")
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 
@@ -3243,7 +3246,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   const card = dialog.locator(".preview-gallery-card")
   await expect(card).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
 
-  // The switch is stepped by a JS timer, so on a busy runner a whole 190ms leg
+  // The switch is stepped by a JS timer, so on a busy runner a whole 200ms leg
   // can pass without a paint. Reading frames races that; the poses do not.
   // Each phase change is observed as it lands, and the transform it is heading
   // for is read off the CSS transition's own keyframes -- the same value a
@@ -3409,7 +3412,7 @@ test("keeps the expanded gallery scrollable without visible scrollbars", async (
 test("travels one role-bearing work-history popover between company triggers without shifting the page", async ({ page }) => {
   await page.goto("/")
   const location = page.locator(".mosaic-profile-location")
-  await location.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  await page.locator(".mosaic-hero-profile").evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
   const initialLocationBox = await location.boundingBox()
   const popover = page.locator(".mosaic-work-history-popover")
   const onit = getPreviousCompanyLink(page, "Onit")
@@ -3450,7 +3453,7 @@ test("travels one role-bearing work-history popover between company triggers wit
         .map((duration) => Number.parseFloat(duration) * (duration.includes("ms") ? 0.001 : 1)),
     ),
   )
-  expect(longestPopoverTransition).toBeCloseTo(0.24, 2)
+  expect(longestPopoverTransition).toBeCloseTo(0.2, 2)
   await expect(popover).toHaveCSS("transition-property", "transform, opacity, visibility")
 
   const onitPopoverBox = await popover.boundingBox()
@@ -3906,22 +3909,26 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   expect(firstRow!.height).toBe(420)
 })
 
-// Freeze entrance animations at their first frame so a fast runner cannot
-// miss invisible or blurred content hidden behind a load sequence.
+// Pause in the stylesheet before first paint. Waiting until page.goto resolves
+// would miss short, non-filled entrances that finished during page loading.
 test("shows the hero and work cards without waiting for entrance animations", async ({ page }) => {
-  await page.goto("/")
-  const states = await page.locator(".mosaic-hero-profile, .mosaic-hero-profile > *, .mosaic-row-item").evaluateAll((elements) => {
-    for (const element of elements) {
-      for (const animation of element.getAnimations()) {
-        animation.pause()
-        animation.currentTime = 0
-      }
-    }
-    return elements.map((element) => {
-      const style = getComputedStyle(element)
-      return { opacity: style.opacity, filter: style.filter }
+  await page.route("**/*.css", async (route) => {
+    const response = await route.fetch()
+    await route.fulfill({
+      response,
+      body: `${await response.text()}
+        .mosaic-hero-profile, .mosaic-hero-profile > *, .mosaic-row-item {
+          animation-play-state: paused !important;
+        }`,
     })
   })
+  await page.goto("/")
+  const states = await page.locator(".mosaic-hero-profile, .mosaic-hero-profile > *, .mosaic-row-item").evaluateAll((elements) =>
+    elements.map((element) => {
+      const style = getComputedStyle(element)
+      return { opacity: style.opacity, filter: style.filter }
+    }),
+  )
   expect(states.length).toBeGreaterThan(6)
   for (const state of states) expect(state).toEqual({ opacity: "1", filter: "none" })
 })

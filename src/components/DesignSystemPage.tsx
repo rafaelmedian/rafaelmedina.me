@@ -415,10 +415,10 @@ const EASINGS_ENTRIES = [
 
 const DURATIONS_ENTRIES = [
   { value: "--duration-fast", use: "Taps, small fades, popover-content swaps, and the shortest exit feedback." },
-  { value: "--duration-quick", use: "Colour, opacity, and shadow on hover or focus, and every overlay exit. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
-  { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close, and the initial profile lift. Absorbed the old 220ms entrances." },
-  { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
-  { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
+  { value: "--duration-quick", use: "Colour, opacity, and shadow on hover or focus, and hover-card or dialog exits. The default for a small state change." },
+  { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the work-history popover, the takeover close, and the initial profile lift. Also gallery and note paging." },
+  { value: "240ms", use: "The live-time label roll only; hover-card and work-history entrances use --duration-base." },
+  { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
   { value: "--duration-slow", use: "Feed and preview media resolving from --blur-reveal as they decode, and the personal-photo stack fanning on hover or focus." },
   { value: "200ms", use: "Personal-photo carousel: --photo-open-duration and --photo-close-duration both alias --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
   { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
@@ -722,10 +722,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </div>
             <ul className="ds-list">
               <li data-ds-terms={terms("grey colour signal accent neutral ink saturated availability linkedin x brand")}>
-                <strong>Grey does the work; colour is a signal.</strong> The entire interface is built from ten steps of
-                neutral ink on four near-white surfaces. The only saturated colours on screen belong to a status (the
-                availability dot) or to somebody else's brand (LinkedIn, X). A new accent needs a reason beyond
-                decoration.
+                <strong>Grey does the work; colour is a signal.</strong> Use the <a href="#colour">shared neutral
+                palette</a>. Saturated colours stay scoped to availability, borrowed brands, handwritten hints,
+                and the elastic page edge.
               </li>
               <li data-ds-terms={terms("hover reveal relocate reflow work-history popover float overlay space")}>
                 <strong>Hover reveals; it never relocates.</strong> Cards, titles, and icons fade and settle in place.
@@ -733,9 +732,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 interaction would reflow the layout, float it or reserve the room instead.
               </li>
               <li data-ds-terms={terms("entrance exit curve opacity transform duration overlay")}>
-                <strong>Every entrance owns its exit.</strong> Overlays enter on the entrance curve and leave on the exit
-                curve, shorter. Opacity and transform share a duration so a card never finishes fading while it is still
-                moving.
+                <strong>Every entrance owns its exit.</strong> Use the <a href="#overlay-motion">shared hover-card
+                recipe</a> for floating previews. Keep geometry-driven exceptions with their component, including
+                the photo carousel’s symmetric flights.
               </li>
               <li data-ds-terms={terms("contrast floor aa ratio #757575 #2d2d2d focus ring wcag")}>
                 <strong>Contrast is a floor, not a preference.</strong> The ink ramp stops at <code>#757575</code>{" "}
@@ -935,8 +934,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   copy='"Handlee", "Bradley Hand", "Segoe Print", cursive'
                   note={
                     <>
-                      The only real webfont, preloaded and scoped to a single element: the handwritten hint beside the
-                      avatar. It ships one weight, so it fakes bold with a 0.45px text-stroke.
+                      The only real webfont, used for the avatar and photo-stack hints and the photo-carousel captions.
+                      It ships one weight; the avatar hint fakes bold with a 0.45px text-stroke.
                     </>
                   }
                 />
@@ -1187,6 +1186,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
+                id="project-caption-visibility"
                 data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop mobile touch no caption hidden aria-label")}
               >
                 <strong>
@@ -1244,8 +1244,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Previous/next controls reuse the project gallery’s 44px round buttons, border, shadow and press state.
                 Previous/next controls sit outside the desktop reader and cycle through notes in archive order, resetting scroll.
                 Switching notes pages the whole modal like project previews: next sends the current note 1.4rem left,
-                previous sends it right, fading to zero at scale(0.985) over 190ms. The new note arrives from the
-                opposite side over the same 190ms, using standard transform easing and ease-out opacity.
+                previous sends it right, fading to zero at scale(0.985) over 200ms. The new note arrives from the
+                opposite side over the same 200ms, using standard transform easing and ease-out opacity.
                 The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
                 Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
                 during the switch, and closing or returning to Notes cancels pending selection. Reduced motion switches instantly.
@@ -1569,26 +1569,27 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </div>
 
             <div className="ds-block">
-              <div className="ds-rule" data-ds-terms={terms("exit entrance 200ms 160ms opacity transform dropped frame")}>
-                <strong>Exits are shorter than entrances, and both are honest about it.</strong>
+              <div className="ds-rule" id="overlay-motion" data-ds-terms={terms("exit entrance 200ms 160ms opacity transform hover card popover")}>
+                <strong>Hover cards share one entrance and exit recipe.</strong>
                 <p>
-                  A hover card enters over 200ms on the smooth curve and leaves over 160ms on the exit curve. Opacity and
-                  transform share a duration within each direction — if they differ, the card finishes fading while it is
-                  still moving and reads as a dropped frame. Where an element unmounts on transition end, the exit has to
-                  outlast the fade, not merely match it.
+                  Social cards, map and résumé previews, and work-history popovers enter over
+                  <code> --duration-base</code> (200ms) on the smooth curve and leave over
+                  <code> --duration-quick</code> (160ms) on the exit curve. Opacity and transform finish together
+                  in each direction; visibility or unmounting must wait for the exit to complete.
+                  Personal-photo flights keep their documented symmetric timing.
                 </p>
               </div>
 
               <div
                 className="ds-rule"
-                data-ds-terms={terms("direction axis preview gallery paging arrows chevron swipe translateX 1.4rem 0.985 190ms")}
+                data-ds-terms={terms("direction axis preview gallery paging arrows chevron swipe translateX 1.4rem 0.985 --duration-base 200ms")}
               >
                 <strong>Motion moves along the axis its control points down.</strong>
                 <p>
                   The preview gallery pages sideways because that is what it offers to page with: a left and a right
                   chevron on the rail, and a horizontal swipe on touch. The outgoing card leaves{" "}
                   <code>1.4rem</code> in the direction of travel at <code>scale(0.985)</code> and the incoming one
-                  arrives from the opposite edge, both over the shared <code>190ms</code> switch, so the set reads as a
+                  arrives from the opposite edge, both over <code>--duration-base</code> (200ms), so the set reads as a
                   strip moving past rather than two unrelated fades. This used to translate on Y, which contradicted
                   both affordances. Reduced motion swaps the preview outright.
                 </p>
@@ -1888,9 +1889,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 is generated alongside the PDF and loads on demand; clicking the link opens the PDF in a new tab.
               </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>
-                <strong>Hover-only content has a non-hover fate.</strong> Every hover card is{" "}
-                <code>display: none</code> under <code>(hover: none)</code>; project cards keep their titles visible on touch over a compact 6rem tint. Their button labels
-                also expose each project title to assistive technology.
+                <strong>Hover-only content has a non-hover fate.</strong> Social-pill hover cards are hidden on
+                touch; quote-author profiles also support tapping. Project captions and scrims follow the
+                <a href="#project-caption-visibility"> caption visibility rule</a>: hidden below 700px or without
+                a fine hover pointer. Each project link still exposes its title to assistive technology.
               </li>
               <li data-ds-terms={terms("aria-live polite copy email announcement asynchronous")}>
                 <strong>Asynchronous results are announced.</strong> Copying the email writes to an{" "}

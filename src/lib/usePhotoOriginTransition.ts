@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 
+import { cssTimeToMilliseconds } from "./cssTime"
+
 const useClientLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 const frameProperties = ["height", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderRadius", "boxShadow"] as const
 const imageProperties = ["height", "borderRadius", "objectPosition"] as const
@@ -111,8 +113,7 @@ export function usePhotoOriginTransition(
     if (!sources.length) return
     const tokens = getComputedStyle(strip)
     const cssDuration = tokens.getPropertyValue(open ? "--photo-open-duration" : "--photo-close-duration").trim()
-    // Production CSS can minify 200ms to .2s; WAAPI always expects milliseconds.
-    const duration = parseFloat(cssDuration) * (cssDuration.endsWith("ms") ? 1 : 1000)
+    const duration = cssTimeToMilliseconds(cssDuration)
     const easing = tokens.getPropertyValue("--photo-motion-ease").trim()
     const timing: KeyframeAnimationOptions = { duration, easing, fill: "both" }
     const previousFlights = flights.current
