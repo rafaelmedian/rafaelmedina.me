@@ -127,9 +127,9 @@ export function usePhotoOriginTransition(
       const target = slide.getBoundingClientRect()
       const previous = previousFlights.find((flight) => flight.slide === slide)
       const matchingSource = sources.find((item) => item.id === slide.dataset.photoId)
-      // Wide screens can expose more photos than the preview holds. Open those
+      // Tall viewports can expose more photos than the preview holds. Open those
       // from the nearest retained print in the same beat, using their own image.
-      const source = matchingSource ?? (open && target.right > bounds.left && target.left < bounds.right
+      const source = matchingSource ?? (open && target.bottom > bounds.top && target.top < bounds.bottom
         ? sources.reduce((nearest, candidate) => Math.abs(sourceIndices.get(candidate)! - index) < Math.abs(sourceIndices.get(nearest)! - index) ? candidate : nearest)
         : undefined)
       if (!source) {
@@ -211,11 +211,11 @@ export function usePhotoOriginTransition(
       })
     }
 
-    const startingScrollLeft = strip.scrollLeft
+    const startingScrollTop = strip.scrollTop
     const interruptOnScroll = () => {
       // Restoring the saved position queues a scroll event before these flights
       // start. Only a subsequent position change should interrupt the motion.
-      if (Math.abs(strip.scrollLeft - startingScrollLeft) > 0.5) clear()
+      if (Math.abs(strip.scrollTop - startingScrollTop) > 0.5) clear()
     }
     strip.addEventListener("scroll", interruptOnScroll)
     strip.addEventListener("pointerdown", clear, { once: true })

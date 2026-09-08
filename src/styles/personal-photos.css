@@ -175,7 +175,7 @@
 .personal-photos-backdrop[data-ending-style] { opacity: 0; }
 
 .personal-photos-dialog {
-  /* Shadow clearance belongs to the backdrop; only the card row takes input. */
+  /* The column scrolls within the viewport while the source stack stays put. */
   pointer-events: none;
   --photo-width: min(76vw, 40dvh, 24rem);
   --photo-gutter: clamp(1.25rem, 4vw, 5rem);
@@ -185,7 +185,7 @@
   z-index: var(--z-dialog);
   width: 100%;
   max-height: calc(100dvh - 2rem);
-  overflow-y: auto;
+  overflow: hidden;
   translate: 0 -50%;
   outline: none;
   color: var(--canvas);
@@ -201,40 +201,34 @@
 .personal-photos-strip {
   --photo-gap: 2.5rem;
   position: relative;
-  pointer-events: none;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline-start: var(--photo-gutter);
-  /* The horizontal scroller also clips vertically, so the long print shadows
-     need enough room to finish fading before they reach its edges. */
-  padding: 6rem 0;
+  pointer-events: auto;
+  height: calc(100dvh - 2rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-snap-type: y proximity;
+  scroll-padding-block: 6rem;
+  /* Leave room for the print shadows at both ends of the column. */
+  padding: 6rem var(--photo-gutter);
   scrollbar-width: none;
   user-select: none;
   cursor: grab;
 }
 .personal-photos-track {
   display: flex;
+  flex-direction: column;
   gap: var(--photo-gap);
-  width: max-content;
-  min-width: 100%;
-  padding-inline: var(--photo-gutter);
+  width: var(--photo-width);
+  margin-inline: auto;
   pointer-events: auto;
 }
-/* A thumb lands wherever it lands, and the clearance is over a third of a phone
-   screen. Touch pans the whole strip instead; taps that miss a card still
-   dismiss, through the strip's own click handler. */
-@media (pointer: coarse) {
-  .personal-photos-strip { pointer-events: auto; }
-}
-
 .personal-photos-strip:active { cursor: grabbing; }
 .personal-photos-strip::-webkit-scrollbar { display: none; }
 /* The modal is the keyboard browsing context; don't frame the entire scroller. */
 .personal-photos-strip:focus { outline: none; }
 
 .personal-photos-slide {
-  flex: 0 0 var(--photo-width);
+  flex: 0 0 auto;
   width: var(--photo-width);
   margin: 0;
   padding: 1rem 1rem 0;

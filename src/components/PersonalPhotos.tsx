@@ -26,8 +26,8 @@ export function PersonalPhotosPreview({ onOpen, className = "", items, position 
   useEffect(() => {
     const element = previewRef.current
     if (!element) return
-    // Wide screens reveal photos beyond the stack. Warm their small bitmaps
-    // before opening so every flight can show its own photo from the first frame.
+    // Warm the small bitmaps before opening so every flight can show its own
+    // photo from the first frame.
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return
       photos.forEach((photo) => {
@@ -92,7 +92,7 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
   const popupRef = useRef<HTMLDivElement>(null)
   const dialogActions = useRef<Dialog.Root.Actions>(null)
   const finishPhotoClose = useCallback(() => dialogActions.current?.unmount(), [])
-  const dragRef = useRef<{ pointerId: number; startX: number; startScroll: number; dragged: boolean } | null>(null)
+  const dragRef = useRef<{ pointerId: number; startY: number; startScroll: number; dragged: boolean } | null>(null)
   const pressedClearance = useRef(false)
   const snapTimerRef = useRef(0)
   const registerStrip = useCallback((strip: HTMLDivElement | null) => {
@@ -100,8 +100,8 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
     setStripNode(strip)
     if (!strip) return
     const slides = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")
-    const step = slides[1].offsetLeft - slides[0].offsetLeft
-    strip.scrollLeft = initialPosition * step
+    const step = slides[1].offsetTop - slides[0].offsetTop
+    strip.scrollTop = initialPosition * step
   }, [initialPosition])
   const reducedMotion = usePrefersReducedMotion()
   usePhotoOriginTransition(stripNode, open, opener, origins, reducedMotion, finishPhotoClose)
@@ -112,7 +112,7 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
     const next = Math.max(0, Math.min(photos.length - 1, index))
     const slide = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[next]
     const first = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[0]
-    strip.scrollTo({ left: slide.offsetLeft - first.offsetLeft, behavior: reducedMotion ? "instant" : "smooth" })
+    strip.scrollTo({ top: slide.offsetTop - first.offsetTop, behavior: reducedMotion ? "instant" : "smooth" })
   }
 
   const nearestIndex = () => {
@@ -123,8 +123,8 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
     let distance = Infinity
     photos.forEach((_, index) => {
       const slide = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[index]
-      const target = Math.min(slide.offsetLeft - first.offsetLeft, strip.scrollWidth - strip.clientWidth)
-      const delta = Math.abs(target - strip.scrollLeft)
+      const target = Math.min(slide.offsetTop - first.offsetTop, strip.scrollHeight - strip.clientHeight)
+      const delta = Math.abs(target - strip.scrollTop)
       if (delta < distance) {
         nearest = index
         distance = delta
@@ -134,7 +134,7 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
   }
 
   // Mouse drag-to-scroll; touch already pans natively. Snap is suspended while
-  // dragging so scrollLeft writes aren't fought by mandatory snap, then restored
+  // dragging so scrollTop writes aren't fought by scroll snap, then restored
   // once the release scroll settles on the nearest slide.
 
   const onPointerDown = (event: ReactPointerEvent) => {
@@ -144,14 +144,14 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
     if (event.pointerType !== "mouse" || event.button !== 0) return
     const strip = stripRef.current
     if (!strip) return
-    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startScroll: strip.scrollLeft, dragged: false }
+    dragRef.current = { pointerId: event.pointerId, startY: event.clientY, startScroll: strip.scrollTop, dragged: false }
   }
 
   const onPointerMove = (event: ReactPointerEvent) => {
     const drag = dragRef.current
     const strip = stripRef.current
     if (!drag || !strip || event.pointerId !== drag.pointerId) return
-    const delta = event.clientX - drag.startX
+    const delta = event.clientY - drag.startY
     if (!drag.dragged) {
       if (Math.abs(delta) < 4) return
       drag.dragged = true
@@ -159,7 +159,7 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
       strip.setPointerCapture(drag.pointerId)
       strip.style.scrollSnapType = "none"
     }
-    strip.scrollLeft = drag.startScroll - delta
+    strip.scrollTop = drag.startScroll - delta
   }
 
   const onPointerEnd = (event: ReactPointerEvent) => {
@@ -175,18 +175,17 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
     }, reducedMotion ? 0 : 450)
   }
 
-  // Coarse pointers pan the whole strip, shadow clearance included, so the
-  // clearance has to take over the dismissal the backdrop used to give us. Only
-  // the strip's own padding counts; the card row keeps swallowing its clicks.
+  // The whole strip scrolls, including the space beside the column. A click
+  // in that space dismisses; the photos and gaps keep swallowing their clicks.
   const onStripClick = (event: ReactMouseEvent) => {
     if (pressedClearance.current && event.target === event.currentTarget) dialogActions.current?.close()
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.altKey || event.ctrlKey || event.metaKey) return
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return
+    if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return
     event.preventDefault()
-    moveTo(event.key === "Home" ? 0 : event.key === "End" ? photos.length - 1 : nearestIndex() + (event.key === "ArrowRight" ? 1 : -1))
+    moveTo(event.key === "Home" ? 0 : event.key === "End" ? photos.length - 1 : nearestIndex() + (event.key === "ArrowDown" ? 1 : -1))
   }
 
   const onOpenChange = (nextOpen: boolean, details: Dialog.Root.ChangeEventDetails) => {
@@ -194,10 +193,10 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
       const strip = stripRef.current
       if (strip) {
         const slides = Array.from(strip.querySelectorAll<HTMLElement>(".personal-photos-slide"))
-        const step = slides[1].offsetLeft - slides[0].offsetLeft
-        setResumePosition(strip.scrollLeft / step)
+        const step = slides[1].offsetTop - slides[0].offsetTop
+        setResumePosition(strip.scrollTop / step)
         const bounds = strip.getBoundingClientRect()
-        const firstVisible = slides.findIndex((slide) => slide.getBoundingClientRect().right > bounds.left)
+        const firstVisible = slides.findIndex((slide) => slide.getBoundingClientRect().bottom > bounds.top)
         setPreviewAnchor(Math.max(0, firstVisible))
         setPreviewImages(Object.fromEntries(slides.map((slide, index) => {
           const image = slide.querySelector("img")!
@@ -221,7 +220,7 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
         <Dialog.Backdrop className="personal-photos-backdrop" />
         <Dialog.Popup ref={popupRef} initialFocus={popupRef} finalFocus={() => opener} className="personal-photos-dialog" onKeyDown={onKeyDown}>
           <Dialog.Title className="sr-only">Personal photos</Dialog.Title>
-          <Dialog.Description className="sr-only">A few moments outside the portfolio. Scroll horizontally, swipe, drag, or use the left and right arrow keys to browse.</Dialog.Description>
+          <Dialog.Description className="sr-only">A few moments outside the portfolio. Scroll vertically, swipe, drag, or use the up and down arrow keys to browse.</Dialog.Description>
           <div
             ref={registerStrip}
             className="personal-photos-strip"
