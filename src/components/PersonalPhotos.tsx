@@ -41,7 +41,7 @@ export function PersonalPhotosPreview({ onOpen, className = "", items, position 
     return () => observer.disconnect()
   }, [])
   return (
-    <div ref={previewRef} className={`personal-photos ${className}`} data-about-fade="">
+    <div ref={previewRef} className={`personal-photos ${className}`}>
       <button type="button" className="personal-photos-trigger" aria-label="View personal photos" aria-haspopup="dialog" onClick={(event) => {
         // A pointer names a photo; a keyboard press doesn't, so Enter and Space
         // land on the button itself and resume where the last visit left off.

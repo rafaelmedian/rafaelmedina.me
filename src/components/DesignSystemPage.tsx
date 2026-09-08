@@ -379,19 +379,13 @@ const EASINGS_ENTRIES = [
     name: "Smooth — --ease-smooth",
     css: "--ease-smooth",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, the intro cascades, the avatar coin flip, the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, the short profile lift, the avatar coin flip, and the live-time roll. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
     css: "--ease-exit",
     duration: "120–160ms",
     use: "Hover cards, the local-time card, the takeover close, the preview gallery leaving, and the work-history popover (aliased as --mosaic-popover-exit-ease). Always shorter than the entrance it reverses.",
-  },
-  {
-    name: "Responsive resize",
-    css: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-    duration: "160ms",
-    use: "The hero's min-height and padding as the viewport crosses layout states. Inline, not a token — two uses.",
   },
   {
     name: "Gallery open",
@@ -415,19 +409,18 @@ const EASINGS_ENTRIES = [
     name: "Scroll linked",
     css: "linear",
     duration: "1 viewport of scroll",
-    use: "One View Timeline drives the whole About takeover: the pinned gallery scales, fades and racks out of focus to blur(8px), the seam's ambient cast deepens from 0.35 to full, and the scroll cue squeezes from a 22° chevron to a flat line before it fades.",
+    use: "One View Timeline drives the whole About takeover: the pinned gallery scales and fades while staying sharp, the seam's ambient cast deepens from 0.35 to full, and the scroll cue squeezes from a 22° chevron to a flat line before it fades.",
   },
 ]
 
 const DURATIONS_ENTRIES = [
   { value: "--duration-fast", use: "Taps, small fades, popover-content swaps, and the shortest exit feedback." },
   { value: "--duration-quick", use: "Colour, opacity, and shadow on hover or focus, and every overlay exit. The default for a state change. Absorbed the old 140/150/180ms one-offs." },
-  { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close. Absorbed the old 220ms entrances." },
+  { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the takeover close, and the initial profile lift. Absorbed the old 220ms entrances." },
   { value: "240ms", use: "The work-history popover settle, scoped as --mosaic-popover-enter-duration, and the live-time label roll." },
   { value: "120–260ms", use: "The preview gallery's own scale, handed to CSS as --pg-* custom properties so the JS and CSS halves cannot drift: 200/150ms shell, 180/150ms backdrop, 140/120ms content, 190ms switch, 260ms close reset." },
   { value: "--duration-slow", use: "Feed and preview media resolving from --blur-reveal as they decode, and the personal-photo stack fanning on hover or focus." },
   { value: "200ms", use: "Personal-photo carousel: --photo-open-duration and --photo-close-duration both alias --duration-base. Flights, captions, and backdrop share the timing in each direction, with no delay. Reduced motion removes the transitions and flights." },
-  { value: "380–480ms", use: "Entrance travel: hero then mosaic on first load, and each About copy block as it first scrolls in." },
   { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
   { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
 ]
@@ -751,7 +744,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </li>
               <li data-ds-terms={terms("prefers-reduced-motion reset motion accessibility opt out")}>
                 <strong>Nothing is required to move.</strong> A global{" "}
-                <code>prefers-reduced-motion</code> reset zeroes durations, and seven further blocks opt individual
+                <code>prefers-reduced-motion</code> reset clamps durations, and component rules opt individual
                 components out by hand where the reset alone would leave them stuck mid-animation.
               </li>
             </ul>
@@ -1357,7 +1350,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
             <div className="ds-block" data-ds-terms={terms("personal photos stack polaroid carousel modal Handlee shadow radius slide")}>
               <p className="ds-subhead">Personal photos</p>
-              <p>The square-cropped preview keeps four prints below 700px and five at 700px and above, overlapping by 35% of each print’s width. After browsing, it retains a group near the last visible photos, filling from preceding photos at the end of the carousel, so reopening any print lands back in that group. The count also updates when the viewport changes. Prints stay at most 28% of the trigger width and shrink to fit the five-print row. A few prints shift slightly sideways and vertically to loosen the stack. The row uses the shared About scroll entrance, with reduced motion leaving it static. Resting and hover angles alternate in both directions; hover or keyboard focus fans all prints together over --duration-slow (360ms), using --photo-motion-ease with no stagger. The return uses the same 360ms duration and easing, and the hand-drawn note shares the timing so the whole interaction settles together. The preview keeps only 0.5rem of bottom padding on larger screens and 1.5rem on mobile. Each print keeps the original --shadow-overlay card shadow plus a 6% hairline, and its 1:1 image crop sits slightly above center to keep faces in view. Clicking or tapping a print opens the carousel on that photo; keyboard activation has no target photo, so Enter and Space resume the saved scroll position instead. Opening expands the retained prints from their measured positions, sizes, and angles in the source stack into the eleven-photo carousel over --photo-open-duration (200ms). Both directions use Apple Core Animation’s documented default timing curve, --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1), which builds speed before easing into place. The backdrop and captions share the flight timing with no delay. While expanded, the source stack keeps flat, very light-gray (#f2f2f2) card silhouettes at the original sizes and tilts, with a 1px inset 6% black hairline and no gradient or shadow; only the thumbnail images hide. The hairline uses an inset outline to preserve the card dimensions during the flight. These placeholders also remain with reduced motion and restore their photos on return. Closing returns them to the stack over --photo-close-duration (200ms); Escape restores focus to the row. Each copy stays centered on itself as it resizes, so the return travels straight to its print instead of arcing above the stack and dropping the last pixels at the end. Temporary, non-interactive copies travel outside the scroller so the flight is never clipped. Each copy keeps an already available image for the entire flight, uses uniform scale, and morphs its frame height, padding, corners, shadow, and image crop to match the real thumbnail before handoff. Photo IDs match each return to its own thumbnail, and the stack reuses the available full-size image after browsing. All retained prints participate in both directions, including those whose carousel positions are outside the viewport. Small thumbnails warm as the preview approaches the viewport so extra photos are ready when opening. Additional slides visible on wide screens expand from the nearest retained print using their own image, starting and landing together with the stack without a stagger. Offscreen slides without a retained print do not fly. Scroll position is retained in slide units so reopening also adapts to a resized viewport. The flight controls final unmount so a shorter, interrupted backdrop fade cannot cut off the landing. JavaScript reads both ms and s duration units so production CSS minification preserves the timing. Browsing or resizing interrupts the flight immediately, and reduced motion opens and closes immediately. Portrait and landscape photos fill a consistent 3:4 crop; the square bridge photo remains fully visible within that frame. Captions use Handlee at --text-lg and images use a subtle inner radius of calc(var(--radius-sm) / 2) (4px). Horizontal gutters use clamp(1.25rem, 4vw, 5rem), keeping the first print close to the left edge even on wide screens. The strip reserves 6rem above and below the prints so their shadows finish fading inside the scroll container. With a fine pointer only the card-height row is draggable, including the gaps between prints and the side gutters; the shadow clearance is non-interactive, so wheel and drag gestures there do not scroll the carousel and clicking there dismisses it. Coarse pointers get the whole strip instead, because the clearance covers more than a third of a phone screen and a thumb cannot aim around it: swiping anywhere pans, and a tap that misses a card still dismisses. Touch panning, wheel scrolling, and keyboard arrows browse the eleven photos with firm stops at both ends. Focusing the strip does not draw an outline around the carousel; the preview trigger keeps its keyboard focus ring. The first and last prints stop at the matching horizontal gutters, with no trailing empty area. Escape or clicking outside closes it.</p>
+              <p>The square-cropped preview keeps four prints below 700px and five at 700px and above, overlapping by 35% of each print’s width. After browsing, it retains a group near the last visible photos, filling from preceding photos at the end of the carousel, so reopening any print lands back in that group. The count also updates when the viewport changes. Prints stay at most 28% of the trigger width and shrink to fit the five-print row. A few prints shift slightly sideways and vertically to loosen the stack. The row is visible immediately; hover and opening provide its motion. Resting and hover angles alternate in both directions; hover or keyboard focus fans all prints together over --duration-slow (360ms), using --photo-motion-ease with no stagger. The return uses the same 360ms duration and easing, and the hand-drawn note shares the timing so the whole interaction settles together. The preview keeps only 0.5rem of bottom padding on larger screens and 1.5rem on mobile. Each print keeps the original --shadow-overlay card shadow plus a 6% hairline, and its 1:1 image crop sits slightly above center to keep faces in view. Clicking or tapping a print opens the carousel on that photo; keyboard activation has no target photo, so Enter and Space resume the saved scroll position instead. Opening expands the retained prints from their measured positions, sizes, and angles in the source stack into the eleven-photo carousel over --photo-open-duration (200ms). Both directions use Apple Core Animation’s documented default timing curve, --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1), which builds speed before easing into place. The backdrop and captions share the flight timing with no delay. While expanded, the source stack keeps flat, very light-gray (#f2f2f2) card silhouettes at the original sizes and tilts, with a 1px inset 6% black hairline and no gradient or shadow; only the thumbnail images hide. The hairline uses an inset outline to preserve the card dimensions during the flight. These placeholders also remain with reduced motion and restore their photos on return. Closing returns them to the stack over --photo-close-duration (200ms); Escape restores focus to the row. Each copy stays centered on itself as it resizes, so the return travels straight to its print instead of arcing above the stack and dropping the last pixels at the end. Temporary, non-interactive copies travel outside the scroller so the flight is never clipped. Each copy keeps an already available image for the entire flight, uses uniform scale, and morphs its frame height, padding, corners, shadow, and image crop to match the real thumbnail before handoff. Photo IDs match each return to its own thumbnail, and the stack reuses the available full-size image after browsing. All retained prints participate in both directions, including those whose carousel positions are outside the viewport. Small thumbnails warm as the preview approaches the viewport so extra photos are ready when opening. Additional slides visible on wide screens expand from the nearest retained print using their own image, starting and landing together with the stack without a stagger. Offscreen slides without a retained print do not fly. Scroll position is retained in slide units so reopening also adapts to a resized viewport. The flight controls final unmount so a shorter, interrupted backdrop fade cannot cut off the landing. JavaScript reads both ms and s duration units so production CSS minification preserves the timing. Browsing or resizing interrupts the flight immediately, and reduced motion opens and closes immediately. Portrait and landscape photos fill a consistent 3:4 crop; the square bridge photo remains fully visible within that frame. Captions use Handlee at --text-lg and images use a subtle inner radius of calc(var(--radius-sm) / 2) (4px). Horizontal gutters use clamp(1.25rem, 4vw, 5rem), keeping the first print close to the left edge even on wide screens. The strip reserves 6rem above and below the prints so their shadows finish fading inside the scroll container. With a fine pointer only the card-height row is draggable, including the gaps between prints and the side gutters; the shadow clearance is non-interactive, so wheel and drag gestures there do not scroll the carousel and clicking there dismisses it. Coarse pointers get the whole strip instead, because the clearance covers more than a third of a phone screen and a thumb cannot aim around it: swiping anywhere pans, and a tap that misses a card still dismisses. Touch panning, wheel scrolling, and keyboard arrows browse the eleven photos with firm stops at both ends. Focusing the strip does not draw an outline around the carousel; the preview trigger keeps its keyboard focus ring. The first and last prints stop at the matching horizontal gutters, with no trailing empty area. Escape or clicking outside closes it.</p>
               <PersonalPhotos />
             </div>
 
@@ -1604,8 +1597,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div className="ds-rule" data-ds-terms={terms("loading slow network 3g 2g save data offline retry thumbnail blur --blur-reveal 4px")}>
                 <strong>Loads and exits share one blur.</strong>
                 <p>
-                  <code>--blur-reveal: 4px</code> softens the initial profile, work cards, About entrances,
-                  media reveals, and project preview headings during entrances, switches, and exits.
+                  <code>--blur-reveal: 4px</code> softens media reveals and project preview headings during
+                  entrances, switches, and exits. Profile and About text stay sharp and visible.
                   Full preview dialogs and cards use opacity and transform only; artwork at 700px and above
                   cross-fades over its thumbnail. Blur stays on smaller surfaces. Loaded content clears its filter entirely. Media resolves over <code>--duration-slow</code> on the smooth curve;
                   preview exits keep their shorter existing timing. Reduced motion removes the blur.
@@ -1636,18 +1629,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
               </div>
 
-              <div
-                className="ds-rule ds-rule-warn"
-                data-ds-terms={terms("first load cascade lcp --work-intro-base 520ms 1240ms row-step col-step")}
-              >
-                <strong>The first-load cascade is load-bearing, and it costs LCP.</strong>
+              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load hero profile lift 200ms --duration-base no stagger work cards About visible sharp reduced motion")}>
+                <strong>Page content is readable from its first frame.</strong>
                 <p>
-                  The hero staggers six children at 40ms intervals, then the mosaic starts at{" "}
-                  <code>--work-intro-base: 520ms</code> so the cards answer the hero instead of arriving with it. Fading
-                  the top row costs a fixed +1240ms of measured LCP — Chrome defers an opacity-animated element's recorded
-                  paint regardless of how brief the fade is. It has been measured three ways; shortening the fade does not
-                  buy it back. Keep <code>--work-intro-row-step</code> at or above twice{" "}
-                  <code>--work-intro-col-step</code>, or on mobile a card arrives before the one above it.
+                  The hero moves as one group from <code>translateY(0.375rem)</code> to rest over
+                  <code> --duration-base</code>, with smooth easing and no fade, blur, or delay. Work cards
+                  paint immediately. About copy and the photo preview stay visible without scroll-triggered
+                  entrances. The sheet crossing supplies the section transition. Reduced motion removes the
+                  profile lift, and responsive changes to hero height and padding are immediate.
                 </p>
               </div>
             </div>
@@ -1724,12 +1713,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   short of it in grey. Family Stories anchors to <code>center top</code>, since its phones already
                   trail off the bottom of their frame.
                 </li>
-                <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish scale opacity translate initial load entrance blur 4px reduced motion")}>
+                <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish initial load entrance")}>
                   <strong>Row height is asserted at exactly 420px</strong> in{" "}
-                  <code>tests/e2e/portfolio-polish.spec.ts</code>. The initial profile and work-card entrances fade,
-                  rise, and resolve from 4px blur to sharp using their existing stagger and timing. The filter clears
-                  completely at the end; reduced motion skips the entrance. There is no scale, which would change
-                  the measured box and fail that test.
+                  <code>tests/e2e/portfolio-polish.spec.ts</code>. Work cards have no load animation;
+                  see <a href="#page-entrances">page entrances</a> for the shared visibility rule.
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway clamp(12rem, 30vh, 18rem) 100dvh z-index 1 display contents")}>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
@@ -1744,14 +1731,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   continues in normal flow after the cover. Below 700px both wrappers collapse with{" "}
                   <code>display: contents</code>; the white sheet stays full-bleed but no pinning or overlap is applied.
                 </li>
-                <li data-ds-terms={terms("gallery retreat blur 8px focus rack opacity 0.78 scale 0.98 compositor filter")}>
-                  <strong>The gallery retreats out of focus, not just backwards.</strong> Across the same crossing the
-                  stage runs three properties together — <code>opacity</code> to 0.78, <code>scale</code> to 0.98, and{" "}
-                  <code>filter: blur()</code> to 8px — so the sheet reads as the focal plane rather than as a white
-                  rectangle sliding over a sharp one. The blur is back-loaded (0.8px at a third of the crossing, 3px at
-                  two thirds) because a linear ramp softens the gallery before the sheet has earned the attention. All
-                  three are compositor-animated properties, so the ramp re-runs a shader over the stage's texture
-                  instead of repainting the grid; a fourth animated property here would not be free.
+                <li data-ds-terms={terms("gallery retreat sharp opacity 0.78 scale 0.98 compositor no blur")}>
+                  <strong>The gallery stays sharp as it retreats.</strong> Across the sheet crossing, the stage
+                  fades to 0.78 opacity and scales to 0.98. These two properties establish depth without blurring
+                  the full project grid. About copy remains readable throughout, and reduced motion removes the retreat.
                 </li>
                 <li data-ds-terms={terms("seam hairline shadow ambient cast 120px 0.35 chevron 17px 22deg scroll cue 100dvw")}>
                   <strong>The seam is three layers, and two of them move.</strong> The overlay shadow only spills

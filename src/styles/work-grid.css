@@ -419,31 +419,17 @@
   display: contents;
 }
 
-/* The blur is deliberately back-loaded. A linear 0 -> 8px ramp reads as the
-   gallery going soft the instant the sheet appears, which fights the sheet for
-   attention; holding near-focus through the first third and spending most of
-   the radius in the last quarter matches how a lens racks focus — nothing, then
-   all at once. The stops are the curve, because the animation's own timing
-   function has to stay `linear` for the scroll to feel direct. */
+/* Scale and opacity are enough to place the gallery behind the About sheet.
+   Keep the artwork sharp throughout the crossing. */
 @keyframes mosaic-takeover-retreat {
   from {
     opacity: 1;
     transform: scale(1);
-    filter: blur(0px);
-  }
-
-  32% {
-    filter: blur(0.8px);
-  }
-
-  66% {
-    filter: blur(3px);
   }
 
   to {
     opacity: 0.78;
     transform: scale(0.98);
-    filter: blur(8px);
   }
 }
 
@@ -759,16 +745,8 @@
 }
 
 @media (min-width: 700px) and (prefers-reduced-motion: no-preference) {
-  /* View Timelines keep scroll-linked motion off the main thread. The complete
-     gallery retreats as one composited surface, preserving every card gap.
-
-     Opacity, transform and filter are the three properties Chrome can animate
-     on the compositor, so the blur re-runs a shader over the stage's existing
-     texture each frame rather than repainting the grid — the tiles are not
-     re-rastered at a new radius. It is still the most expensive thing in the
-     crossing: a full-viewport surface, and the videos inside it are only
-     paused once the sheet fully covers it. Keep the radius modest and do not
-     add a fourth animated property here. */
+  /* The gallery retreats as one surface using the same scroll timeline as
+     the sheet. Only opacity and transform animate; no full-stage blur. */
   .mosaic-takeover-stage {
     animation-name: mosaic-takeover-retreat;
     animation-duration: 1ms;
@@ -1263,17 +1241,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The global reset in reduced-motion.css clamps
-     animation-duration but not animation-delay, so a delayed `both`-filled
-     entrance still holds its from-state -- invisible -- for the whole delay
-     window. These selectors have to match or beat the specificity of the rules
-     that set the animation, or those win despite coming earlier -- a bare
-     `.mosaic-row-item` reset would not reach `.mosaic-work-intro
-     .mosaic-row-item`. */
-  .mosaic-work-intro .mosaic-row-item {
-    animation: none;
-  }
-
   .mosaic-row-card-title,
   .mosaic-row-card-scrim > span,
   .mosaic-row-card-scrim::after {

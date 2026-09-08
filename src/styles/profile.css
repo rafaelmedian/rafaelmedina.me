@@ -15,9 +15,6 @@
   display: grid;
   place-items: center;
   padding-block: clamp(1.6rem, 5vw, 3.2rem);
-  transition:
-    min-height var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1),
-    padding-block var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .mosaic-hero-profile {
@@ -27,51 +24,18 @@
   text-align: center;
 }
 
-/* The hero has to lead the work cards. The top mosaic row now starts transparent
-   despite the +1240ms LCP cost described under `.mosaic-work-intro`, so the two
-   cascades need to remain distinct: every hero item is in flight by var(--duration-base), the
-   first four have landed by 500ms, and the cards start lifting at 520ms before
-   the final hero item settles at ~580ms.
-   Keep the last delay plus the duration under `--work-intro-base` + 60ms. */
-.mosaic-hero-profile-animated > * {
-  animation: mosaic-intro-rise 380ms var(--ease-smooth) both;
-  will-change: opacity, transform;
+/* One short lift introduces the profile without hiding or blurring its text.
+   Work cards paint immediately and do not wait for this movement to finish. */
+.mosaic-hero-profile-animated {
+  animation: mosaic-profile-settle var(--duration-base) var(--ease-smooth);
 }
 
-.mosaic-hero-profile-animated > :nth-child(1) {
-  animation-delay: 0ms;
-}
-
-.mosaic-hero-profile-animated > :nth-child(2) {
-  animation-delay: 40ms;
-}
-
-.mosaic-hero-profile-animated > :nth-child(3) {
-  animation-delay: 80ms;
-}
-
-.mosaic-hero-profile-animated > :nth-child(4) {
-  animation-delay: var(--duration-fast);
-}
-
-.mosaic-hero-profile-animated > :nth-child(5) {
-  animation-delay: var(--duration-quick);
-}
-
-.mosaic-hero-profile-animated > :nth-child(6) {
-  animation-delay: var(--duration-base);
-}
-
-@keyframes mosaic-intro-rise {
+@keyframes mosaic-profile-settle {
   from {
-    opacity: 0;
-    filter: blur(var(--blur-reveal));
-    transform: translateY(0.8rem);
+    transform: translateY(0.375rem);
   }
 
   to {
-    opacity: 1;
-    filter: none;
     transform: translateY(0);
   }
 }
@@ -222,67 +186,6 @@
     transform: translateY(-50%) rotate(-3deg);
   }
 }
-
-/* First-load entrance for the work cards. It has to exist in the prerendered
-   HTML: CSS animations start at first paint, long before hydration, so the
-   class comes from `!hasCompletedWorkIntro` in SimpleFeed rather than from an
-   effect. Delays are data-driven from inline
-   `--work-intro-row` and
-   `--work-intro-col` rather than nth-child, so all twelve cards stagger; the
-   values continue through every row.
-   Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
-   700px the rows collapse into one flex column, and a smaller row step would
-   make a card arrive before the card above it.
-   The base is tuned against the hero cascade above, which now runs 0ms to var(--duration-base)
-   delays at 380ms each. Under the previous 40ms-to-350ms hero schedule, the old
-   320ms card base let work begin before the last two hero items, so both
-   cascades read as one undifferentiated wash. The 520ms base now puts the first
-   card after every hero item is in flight and the first four have landed, so
-   the mosaic answers the hero instead of arriving with it. The steps are
-   tightened to pay for the later start -- across five rows the last card still
-   begins under 900ms (520ms + 4 x 70ms + 2 x 32ms = 864ms). A sixth row would
-   push the tail past that; retune the row step rather than let it run. */
-/* ------------------------------------------------------- first-load intro --- */
-
-.mosaic-work-intro {
-  --work-intro-base: 520ms;
-  --work-intro-row-step: 70ms;
-  --work-intro-col-step: 32ms;
-}
-
-/* Fade, blur-to-sharp, and translateY. A scale would change the measured box of
-   `.mosaic-row`, whose height is asserted at exactly 420px in
-   tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
-   stays under the 1rem row gap, so a rising card never covers the one below. */
-.mosaic-work-intro .mosaic-row-item {
-  animation: mosaic-intro-rise 480ms var(--ease-smooth) both;
-  animation-delay: calc(
-    var(--work-intro-base) +
-    var(--work-intro-row, 0) * var(--work-intro-row-step) +
-    var(--work-intro-col, 0) * var(--work-intro-col-step)
-  );
-}
-
-/* The top row used to be exempted from the fade (a transform-only
-   `mosaic-intro-lift` keyframe, now deleted) to protect LCP. That exemption
-   left it fully opaque at first paint, so the cards were on screen before the
-   header existed -- the one thing this entrance must not do. Every row fades
-   now.
-   Know what it costs. The LCP element is the row-0 video poster
-   (Projects/shot-small-9-poster.webp). Measured at Fast 3G + 4x CPU, cold
-   context: 845ms with the top row transform-only, 2085ms once it fades.
-   The +1240ms is FIXED, not tunable. The same element wins LCP either way, and
-   the penalty does not scale with the animation: base 520ms + 540ms duration,
-   base 520ms + var(--duration-slow), and base 60ms + var(--duration-slow) (fade fully finished by 420ms) all
-   measured ~2085ms. Chrome defers an opacity-animated element's recorded paint
-   to a later repaint however brief the fade is. There is no timing that buys
-   the metric back -- the choice is binary, which is why the choreography above
-   is tuned purely for feel.
-   Perceptually the cards are on screen at ~1000ms (base + duration); the 2085ms
-   is the metric catching up afterwards. That is still inside the 2.5s "good"
-   threshold, but the headroom is thin -- re-measure before putting anything
-   else on the critical path, and do not try to win it back by shortening the
-   fade. That has been tried three ways and does nothing. */
 
 /* --------------------------------- profile meta, availability & live time --- */
 
@@ -488,9 +391,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* reduced-motion.css clamps durations but not delays. Remove the delayed
-     entrance too, so its filled from-state never hides the hero's content. */
-  .mosaic-hero-profile-animated > * {
+  .mosaic-hero-profile-animated {
     animation: none;
   }
 }

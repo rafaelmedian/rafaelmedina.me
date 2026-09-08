@@ -26,9 +26,7 @@ const getPreviousCompanyLink = (page: Page, name: string) =>
     .getByRole("group", { name: "Previous companies" })
     .getByRole("link", { name, exact: true })
 
-// The work cards cascade in on first load, so a card clicked straight after
-// `goto` can still be sitting at its pre-start offset -- and the gallery grows
-// out of that card's live rect. Settle the cascade before touching a card.
+// Wait for finite tile interactions before measuring a preview origin.
 // Safe from hanging: the gallery's View Timeline lives on the parent stage,
 // outside this subtree, while every animation inside `.mosaic-rows` finishes.
 const settleWorkCards = (page: Page) =>
@@ -2241,6 +2239,7 @@ test("retreats the complete project grid as one surface during takeover", async 
   })
   const card = stage.locator(".mosaic-row-card").first()
 
+  await expect(stage).toHaveCSS("filter", "none")
   expect(retreat.opacity).toBeLessThan(0.95)
   expect(retreat.transform).not.toBe("none")
   await expect(card).toHaveCSS("opacity", "1")
@@ -2306,75 +2305,37 @@ test("releases the about sheet into normal document scrolling after takeover", a
   expect(placement).toEqual({ position: "relative", distanceMoved: 80 })
 })
 
-test("raises each about copy block into view the first time it scrolls in", async ({ page }) => {
+test("keeps About copy readable before and after jumping down the sheet", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/")
 
-  // Below the fold the copy holds transparent. The prerendered markup ships
-  // the attribute empty, so nothing is hidden without JavaScript.
   const intro = page.locator(".mosaic-about-section-copy")
   const download = page.locator(".mosaic-about-resume-download")
-  await expect(intro).toHaveAttribute("data-about-fade", "pending")
-  await expect(download).toHaveAttribute("data-about-fade", "pending")
-
-  await page.locator("#about-panel").evaluate((element) => element.scrollIntoView({ block: "start" }))
-  await expect(intro).toHaveAttribute("data-about-fade", "in")
-  await expect(intro).toHaveCSS("opacity", "1")
-  // Deeper blocks wait for their own approach rather than following the intro.
-  await expect(download).toHaveAttribute("data-about-fade", "pending")
-
+  // Check before scrolling: offscreen content must not wait on an observer.
+  for (const block of [intro, download]) {
+    await expect(block).toHaveCSS("opacity", "1")
+    await expect(block).toHaveCSS("filter", "none")
+    await expect(block).toHaveCSS("animation-name", "none")
+  }
   await download.scrollIntoViewIfNeeded()
-  await expect(download).toHaveAttribute("data-about-fade", "in")
+  await expect(download).toBeInViewport()
   await expect(download).toHaveCSS("opacity", "1")
-
-  // The jump skipped every block between the intro and the download; none of
-  // them may be left transparent above the viewport.
-  await expect(page.locator('[data-about-fade="pending"]')).toHaveCount(0)
-
-  // Within the batch, on-screen blocks cascade top-down but the first starts
-  // immediately — a jump never lands on a blank page waiting its turn.
-  const visibleDelays = await page.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>('[data-about-fade="in"]')]
-      .filter((block) => {
-        const rect = block.getBoundingClientRect()
-        return rect.bottom > 0 && rect.top < window.innerHeight
-      })
-      .map((block) => block.style.getPropertyValue("--about-fade-delay")),
-  )
-  expect(visibleDelays).toContain("0ms")
-  expect(new Set(visibleDelays).size).toBeGreaterThan(1)
-})
-
-test("keeps the about copy visible without an entrance under reduced motion", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-
-  const intro = page.locator(".mosaic-about-section-copy")
-  await expect(intro).toHaveAttribute("data-about-fade", "")
+  await intro.scrollIntoViewIfNeeded()
+  await expect(intro).toBeInViewport()
   await expect(intro).toHaveCSS("opacity", "1")
 })
 
 test("keeps viewed about copy visible when reduced motion is disabled", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
-  await page.emulateMedia({ reducedMotion: "no-preference" })
-  await page.goto("/")
-
-  const intro = page.locator(".mosaic-about-section-copy")
-  await expect(intro).toHaveAttribute("data-about-fade", "pending")
-
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await expect(intro).toHaveCSS("opacity", "1")
-  await page.evaluate(() => new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-  }))
-
+  await page.goto("/")
+  const intro = page.locator(".mosaic-about-section-copy")
   await intro.scrollIntoViewIfNeeded()
-  await expect(intro).toBeInViewport()
-  await expect(intro).toHaveAttribute("data-about-fade", "pending")
-
+  await expect(intro).toHaveCSS("opacity", "1")
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await expect(intro).toHaveCSS("opacity", "1")
+  await expect(intro).toHaveCSS("animation-name", "none")
 })
 
 test("rests preview videos while the about sheet covers the grid", async ({ page }) => {
@@ -3945,102 +3906,42 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   expect(firstRow!.height).toBe(420)
 })
 
-// The first-load card cascade is CSS driven off a class and two custom
-// properties in the prerendered HTML, because animations start at first paint
-// long before hydration. Moving any of it into an effect breaks this test.
-test("ships the work-card intro in the prerendered markup", async ({ request }) => {
-  const html = await (await request.get("/")).text()
-  expect(html).toContain("mosaic-work-intro")
-  expect(html).toContain("--work-intro-row:2")
-  expect(html).toContain("--work-intro-col:2")
-})
-
-test("keeps the work-card entrance free of scale and horizontal travel", async ({ page }) => {
+// Freeze entrance animations at their first frame so a fast runner cannot
+// miss invisible or blurred content hidden behind a load sequence.
+test("shows the hero and work cards without waiting for entrance animations", async ({ page }) => {
   await page.goto("/")
-
-  // Read the keyframe source rather than a live animation: the mosaic row height
-  // is asserted at exactly 420px above, and only opacity plus translateY leave
-  // that measurement alone.
-  const keyframes = await page.evaluate(() => {
-    const wanted = ["mosaic-intro-rise"]
-    const found: Record<string, string[]> = {}
-    for (const sheet of [...document.styleSheets]) {
-      for (const rule of [...sheet.cssRules]) {
-        if (rule instanceof CSSKeyframesRule && wanted.includes(rule.name)) {
-          found[rule.name] = [...rule.cssRules].map((frame) => (frame as CSSKeyframeRule).style.transform)
-        }
+  const states = await page.locator(".mosaic-hero-profile, .mosaic-hero-profile > *, .mosaic-row-item").evaluateAll((elements) => {
+    for (const element of elements) {
+      for (const animation of element.getAnimations()) {
+        animation.pause()
+        animation.currentTime = 0
       }
     }
-    return found
+    return elements.map((element) => {
+      const style = getComputedStyle(element)
+      return { opacity: style.opacity, filter: style.filter }
+    })
   })
-
-  expect(Object.keys(keyframes)).toEqual(["mosaic-intro-rise"])
-  for (const transforms of Object.values(keyframes)) {
-    for (const transform of transforms) {
-      expect(transform === "" || /^translateY\([^)]+\)$/.test(transform)).toBe(true)
-    }
-  }
-})
-
-// No work card may be on screen before the header is. The top row was once
-// exempted from the fade to protect LCP, which made it opaque at first paint --
-// cards visible above a header that had not arrived yet. That exemption costs
-// +1240ms of LCP to undo and is deliberately not coming back; see index.css.
-test("hides every work card at first paint, including the top row", async ({ page }) => {
-  await page.goto("/")
-
-  const rows = await page.evaluate(() =>
-    [...document.querySelectorAll(".mosaic-row")].map((row) => ({
-      names: [
-        ...new Set(
-          [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).animationName),
-        ),
-      ],
-      // The from-state is what is on screen at first paint, since every card
-      // holds it through its delay via `both`.
-      opacities: [
-        ...new Set(
-          [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).opacity),
-        ),
-      ],
-    })),
-  )
-
-  expect(rows.length).toBeGreaterThan(1)
-  for (const row of rows) {
-    expect(row.names).toEqual(["mosaic-intro-rise"])
-    expect(row.opacities).toEqual(["0"])
-  }
+  expect(states.length).toBeGreaterThan(6)
+  for (const state of states) expect(state).toEqual({ opacity: "1", filter: "none" })
 })
 
 test("does not delay content behind an entrance under reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  // A one-shot read on purpose. The global reduced-motion reset zeroes
-  // animation-duration but not animation-delay, so a delayed `both`-filled
-  // entrance stays invisible for its whole delay -- and toHaveCSS would retry
-  // right past that window.
-  for (const selector of [".mosaic-row-item", ".mosaic-hero-profile-animated > *"]) {
-    const state = await page
-      .locator(selector)
-      .first()
-      .evaluate((element) => {
-        const style = getComputedStyle(element)
-        return { animationName: style.animationName, opacity: style.opacity }
-      })
-    expect(state.animationName).toBe("none")
-    expect(state.opacity).toBe("1")
+  for (const selector of [".mosaic-row-item", ".mosaic-hero-profile"]) {
+    const state = await page.locator(selector).first().evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { animationName: style.animationName, opacity: style.opacity }
+    })
+    expect(state).toEqual({ animationName: "none", opacity: "1" })
   }
 })
 
 test("does not replay the work-card intro when reduced motion is disabled later", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-
-  const rows = page.locator(".mosaic-rows")
-  await expect(rows).not.toHaveClass(/mosaic-work-intro/)
-
   await page.emulateMedia({ reducedMotion: "no-preference" })
   const states = await page.locator(".mosaic-row-item").evaluateAll((items) =>
     items.map((item) => {
@@ -4048,42 +3949,7 @@ test("does not replay the work-card intro when reduced motion is disabled later"
       return { animationName: style.animationName, opacity: style.opacity }
     }),
   )
-
   expect(states.every(({ animationName, opacity }) => animationName === "none" && opacity === "1")).toBe(true)
-})
-
-// The hero and the mosaic are two beats, not one. When the first card started
-// before the last hero item, the cascades overlapped and read as a single wash.
-test("starts the work-card intro after the hero cascade is fully in flight", async ({ page }) => {
-  await page.goto("/")
-
-  const { lastHeroDelay, firstCardDelay } = await page.evaluate(() => {
-    const delayOf = (element: Element) => parseFloat(getComputedStyle(element).animationDelay)
-    const hero = [...document.querySelectorAll(".mosaic-hero-profile-animated > *")]
-    const cards = [...document.querySelectorAll(".mosaic-row-item")]
-    return {
-      lastHeroDelay: Math.max(...hero.map(delayOf)),
-      firstCardDelay: Math.min(...cards.map(delayOf)),
-    }
-  })
-
-  expect(lastHeroDelay).toBeGreaterThan(0)
-  expect(firstCardDelay).toBeGreaterThan(lastHeroDelay)
-})
-
-test("keeps the work-card entrance inside its delay budget", async ({ page }) => {
-  await page.goto("/")
-
-  const maxDelay = await page.evaluate(() =>
-    Math.max(
-      ...[...document.querySelectorAll(".mosaic-row-item")].map((element) =>
-        parseFloat(getComputedStyle(element).animationDelay),
-      ),
-    ),
-  )
-  // Last card starts at 520ms + 4 x 70ms + 2 x 32ms = 864ms. The ceiling is
-  // deliberately loose -- it guards against a runaway intro, not the exact base.
-  expect(maxDelay).toBeLessThanOrEqual(0.95)
 })
 
 test("does not show a motion toggle beside the section links", async ({ page }) => {

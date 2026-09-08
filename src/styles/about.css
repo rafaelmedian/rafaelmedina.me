@@ -60,46 +60,6 @@
   text-align: left;
 }
 
-/* About copy rises in from below, released per block the first time it
-   scrolls into the sheet — the same family as the hero and mosaic entrances
-   but with more travel, so the text reads as arriving from the bottom edge.
-   The markup ships the attribute empty, so without JavaScript nothing is
-   ever hidden; the panel's observer holds only below-the-fold blocks
-   transparent. The entrance also gives the sheet's composited layer a beat
-   to rasterise fresh text tiles behind intent instead of as a late paint. */
-[data-about-fade="pending"] {
-  opacity: 0;
-}
-
-[data-about-fade="in"] {
-  animation: mosaic-about-rise 440ms var(--ease-smooth) both;
-  /* Set per batch by the panel's observer: blocks that arrive together
-     cascade top-down, so the sheet reads in order however far a gesture
-     jumps. `both` keeps a delayed block at the from-frame while it waits. */
-  animation-delay: var(--about-fade-delay, 0ms);
-}
-
-@keyframes mosaic-about-rise {
-  from {
-    opacity: 0;
-    filter: blur(var(--blur-reveal));
-    transform: translateY(1.75rem);
-  }
-
-  to {
-    opacity: 1;
-    filter: none;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-about-fade] {
-    opacity: 1;
-    animation: none;
-  }
-}
-
 .mosaic-about-work-history {
   position: relative;
   width: 100%;

@@ -36,7 +36,7 @@
   /* Durations. Four steps; pick the nearest one instead of minting a new
      number. The 140/150/160/180ms spread this file used to carry was one
      perceptual step, so it all collapsed onto --duration-quick. Longer
-     one-off choreography (240ms popover settle, 520ms work intro) stays
+     one-off choreography (240ms popover settle, 700ms avatar flip) stays
      component-scoped. */
   --duration-fast: 120ms; /* taps, small fades */
   --duration-quick: 160ms; /* most hover and state transitions */

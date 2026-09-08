@@ -156,12 +156,10 @@ test("documents component-specific motion curves that still ship", async ({ page
 
   const curves = await page.evaluate(() => {
     const firstBezier = (value: string) => value.match(/cubic-bezier\([^)]*\)/)?.[0] ?? ""
-    const hero = getComputedStyle(document.querySelector(".mosaic-hero") as Element)
     const avatar = getComputedStyle(document.querySelector(".mosaic-avatar-coin-inner") as Element)
     const workHistory = getComputedStyle(document.querySelector(".mosaic-work-history") as Element)
 
     return [
-      firstBezier(hero.transitionTimingFunction),
       firstBezier(avatar.transitionTimingFunction),
       firstBezier(workHistory.getPropertyValue("--mosaic-popover-exit-ease")),
     ]

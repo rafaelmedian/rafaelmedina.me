@@ -393,14 +393,14 @@ test("four or five photos stay in one overlapping row at each breakpoint", async
   await expect(trigger).toBeFocused()
 })
 
-test("photo preview scrolls in and fans to varied angles on hover", async ({ page }) => {
+test("photo preview stays visible and fans to varied angles on hover", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 500 })
   await page.goto("/#about-panel")
 
   const preview = page.locator(".personal-photos")
-  await expect(preview).toHaveAttribute("data-about-fade", "pending")
+  await expect(preview).toHaveCSS("opacity", "1")
   await preview.scrollIntoViewIfNeeded()
-  await expect(preview).toHaveAttribute("data-about-fade", "in")
+  await expect(preview).toHaveCSS("animation-name", "none")
 
   const prints = preview.locator(".personal-photos-print")
   await preview.getByRole("button", { name: "View personal photos" }).hover()

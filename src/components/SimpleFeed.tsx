@@ -667,17 +667,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [availabilityLabel, setAvailabilityLabel] = useState(() =>
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
-  const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [writingsOpen, setWritingsOpen] = useState(false)
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
-
-  // Reduced motion suppresses animationend, so retire the one-shot intro
-  // marker as soon as the preference reads true — and latch it, so a later
-  // preference change cannot start the intro mid-session.
-  if (prefersReducedMotion && !hasCompletedWorkIntro) {
-    setHasCompletedWorkIntro(true)
-  }
 
   const handleGalleryLoadError = useCallback(() => {
     trackEvent("work_preview_load_error", {})
@@ -1013,13 +1005,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <>
           <article id="work" className="mosaic-work" tabIndex={-1}>
               <h2 className="sr-only">Selected work</h2>
-              {/* No `prefersReducedMotion` here on purpose: it is false on the
-                  server and on the first client render, so a JS gate would flash
-                  before the effect syncs. Reduced motion is handled in CSS. */}
               <div className="mosaic-takeover-runway">
                 <div className="mosaic-takeover-stage">
                   <div
-                    className={`mosaic-rows${hasCompletedWorkIntro ? "" : " mosaic-work-intro"}`}
+                    className="mosaic-rows"
                     role="group"
                     aria-label="Selected work previews"
                     id="selected-work-previews"
@@ -1042,22 +1031,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                               style={
                                 {
                                   "--row-span": row.quoteSpan ?? 1,
-                                  "--work-intro-row": rowIndex,
-                                  "--work-intro-col": 0,
                                 } as CSSProperties
                               }
                             >
                               <QuoteCard quotes={portfolioQuotes} />
                             </div>
                           ) : null}
-                          {row.items.map((item, itemIndex) => {
+                          {row.items.map((item) => {
                             const itemKey = `${item.card.id}-${item.previewIndex}`
                             const itemStyle = {
                               "--row-span": item.span,
-                              // Feeds the first-load stagger in `.mosaic-work-intro`.
-                              // Inert without that class, so set unconditionally.
-                              "--work-intro-row": rowIndex,
-                              "--work-intro-col": itemIndex + (row.quote ? 1 : 0),
                               ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
                               ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
                             } as CSSProperties
@@ -1066,16 +1049,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 key={itemKey}
                                 className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
                                 style={itemStyle}
-                                onAnimationEnd={
-                                  rowIndex === rowsRender.length - 1 &&
-                                  itemIndex === row.items.length - 1
-                                    ? (event) => {
-                                        if (event.target === event.currentTarget) {
-                                          setHasCompletedWorkIntro(true)
-                                        }
-                                      }
-                                    : undefined
-                                }
                               >
                                 <a
                                   href={projectPath(item.card)}
@@ -1121,7 +1094,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                             )
                           })}
                           {row.writings ? (
-                            <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) } as CSSProperties}>
+                            <div className="mosaic-row-item">
                               <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
                             </div>
                           ) : null}
