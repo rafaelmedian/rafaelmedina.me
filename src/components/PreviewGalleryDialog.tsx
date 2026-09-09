@@ -335,6 +335,28 @@ export function PreviewGalleryDialog({
           ["INPUT", "TEXTAREA", "SELECT", "VIDEO", "AUDIO"].includes(target.tagName))
       if (typingOrScrubbing && event.key !== "Escape") return
 
+      // The stationary toolbar is outside the scrolling card, so native
+      // scrolling cannot reach the résumé from a focused paging/close button.
+      // Forward those keys without moving focus away from the controls.
+      const card = cardRef.current
+      if (isResumeSlide && card && target instanceof Element &&
+        target.closest(".preview-gallery-toolbar") && !event.altKey && !event.metaKey) {
+        const scrollSteps: Record<string, number> = {
+          ArrowDown: 40,
+          ArrowUp: -40,
+          PageDown: card.clientHeight * 0.9,
+          PageUp: -card.clientHeight * 0.9,
+          Home: -card.scrollHeight,
+          End: card.scrollHeight,
+        }
+        const step = scrollSteps[event.key]
+        if (step !== undefined) {
+          event.preventDefault()
+          card.scrollBy({ top: step, behavior: "instant" })
+          return
+        }
+      }
+
       // The résumé slide is a document taller than the card that holds it, so
       // there the vertical pair scrolls it and only the horizontal pair pages.
       // On a preview, where there is nothing to scroll, both pairs page.

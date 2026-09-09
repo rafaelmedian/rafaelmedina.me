@@ -3254,6 +3254,38 @@ test("scrolls the resume slide with the vertical keys and pages with the horizon
   await expect(page.getByRole("dialog")).not.toHaveAccessibleName("Protector booking")
 })
 
+test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/resume/")
+
+  const dialog = page.getByRole("dialog")
+  const card = dialog.locator(".preview-gallery-card")
+  const next = dialog.getByRole("button", { name: "Next preview", exact: true })
+  await next.focus()
+
+  for (const key of ["ArrowDown", "PageDown", "End", "ArrowUp", "PageUp", "Home"]) {
+    const upwards = ["ArrowUp", "PageUp", "Home"].includes(key)
+    const before = await card.evaluate((element, up) => {
+      element.scrollTop = up ? element.scrollHeight : 0
+      return element.scrollTop
+    }, upwards)
+    await page.keyboard.press(key)
+    if (upwards) {
+      await expect.poll(() => card.evaluate((element) => element.scrollTop)).toBeLessThan(before)
+    } else {
+      await expect.poll(() => card.evaluate((element) => element.scrollTop)).toBeGreaterThan(before)
+    }
+    await expect(next).toBeFocused()
+    await expect(page).toHaveURL(/\/resume\/$/)
+  }
+
+  await page.keyboard.press("Enter")
+  await expect(page).toHaveURL(/\/work\/protector-booking\/$/)
+  await page.keyboard.press("ArrowLeft")
+  await expect(page).toHaveURL(/\/resume\/$/)
+})
+
 test("presents complete work history, education, and the resume PDF in the reader", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
