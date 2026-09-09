@@ -344,3 +344,87 @@
   }
 
 }
+
+/* --------------------------------------------------- about sheet services --- */
+
+/* The closing block, set as a sibling of the work history stack: same column
+   width, same entry grid, same reading step. What changes is the left column
+   -- an engagement shape where the résumé carries dates -- so a reader who has
+   just scanned the history recognises the shape and reads only the right-hand
+   side. */
+.mosaic-about-services {
+  position: relative;
+  width: 100%;
+  margin-block-start: 2.5rem;
+  padding-block: 0 clamp(2rem, 6vw, 5rem);
+  scroll-margin-top: clamp(1rem, 4vw, 3rem);
+  text-align: left;
+}
+
+@media (min-width: 700px) {
+  .mosaic-about-services {
+    margin-block-start: 5rem;
+  }
+}
+
+.mosaic-about-services:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.mosaic-about-services-copy {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+  text-align: left;
+}
+
+.mosaic-about-services-list {
+  margin-top: 1.5rem;
+  gap: 3rem;
+}
+
+/* The dates column's ink and step, under its own name: this column holds how
+   long an engagement runs, not when one happened. */
+.mosaic-about-body .mosaic-about-service-shape {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--muted-soft);
+  white-space: nowrap;
+}
+
+.mosaic-about-body .mosaic-about-service-price {
+  margin-top: 0.5rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
+  color: #2d2d2d;
+}
+
+.mosaic-about-body .mosaic-about-services-pricing {
+  margin-top: 2.5rem;
+}
+
+/* The booking trigger has to be a button -- it opens a dialog -- but it ends a
+   sentence, so it is set as one of that sentence's links and inherits the
+   run's type rather than the browser's control defaults. */
+.mosaic-about-booking-link {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 479.98px) {
+  .mosaic-about-services-list {
+    gap: 3rem;
+  }
+
+  .mosaic-about-body .mosaic-about-service-shape {
+    white-space: normal;
+  }
+}

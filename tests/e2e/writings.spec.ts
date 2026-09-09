@@ -76,6 +76,80 @@ test("the header Notes link opens the folder on the project preview's line", asy
   expect(await page.evaluate(() => window.scrollY)).toBe(0)
 })
 
+test("the notes sheet flies out of the control that opened it and back into it", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+
+  // Hold Web Animations at their first frame: the flight is 200ms out and 160ms
+  // back, and both would be over before an assertion could read them.
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    const flights: Animation[] = []
+    Object.assign(window, { flights })
+    Element.prototype.animate = function (this: Element, ...args: Parameters<Element["animate"]>) {
+      const animation = animate.apply(this, args)
+      animation.pause()
+      flights.push(animation)
+      return animation
+    }
+  })
+
+  // The flight's endpoints, then out of the way: finishing it hands the sheet
+  // back to the stylesheet, so whatever is measured next is its resting box.
+  const flight = () => page.evaluate(() => {
+    const { flights } = window as unknown as { flights: Animation[] }
+    const animation = flights[flights.length - 1]
+    const frames = animation.effect!.getKeyframes()
+    const pose = (transform: unknown) => {
+      const [, x, y, scale] = String(transform)
+        .match(/translate3d\((-?[\d.]+)px, (-?[\d.]+)px, 0px\) scale\(([\d.]+)\)/)!
+      return { x: Number(x), y: Number(y), scale: Number(scale) }
+    }
+    animation.finish()
+    return {
+      duration: animation.effect!.getTiming().duration,
+      from: pose(frames[0].transform),
+      to: pose(frames[frames.length - 1].transform),
+    }
+  })
+
+  const folder = page.getByRole("button", { name: "Open writings folder" })
+  await folder.scrollIntoViewIfNeeded()
+  const tile = (await folder.boundingBox())!
+  await folder.click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+  const open = await flight()
+  const sheet = (await dialog.boundingBox())!
+  // The sheet's own pose is flat while the flight owns it: a running transition
+  // outranks an animation, so any scale left in CSS would overwrite the travel.
+  await expect(dialog).toHaveCSS("transform", "none")
+
+  const bearing = {
+    x: tile.x + tile.width / 2 - (sheet.x + sheet.width / 2),
+    y: tile.y + tile.height / 2 - (sheet.y + sheet.height / 2),
+  }
+  expect(open.duration).toBe(200)
+  // Direction, not distance: the travel is capped, so a tile anywhere on screen
+  // only says which way the sheet came from.
+  expect(open.from.x * bearing.x + open.from.y * bearing.y).toBeGreaterThan(0)
+  expect(Math.hypot(open.from.x, open.from.y)).toBeCloseTo(44, 0)
+  expect(open.from.scale).toBeLessThan(1)
+  expect(open.to).toEqual({ x: 0, y: 0, scale: 1 })
+
+  await page.keyboard.press("Escape")
+  const close = await flight()
+  expect(close.duration).toBe(160)
+  expect(close.from).toEqual({ x: 0, y: 0, scale: 1 })
+  // The close is the open run backwards, as a project preview's is: the sheet
+  // leaves on the bearing it arrived on rather than shrinking where it stands.
+  expect(close.to.x).toBeCloseTo(open.from.x, 1)
+  expect(close.to.y).toBeCloseTo(open.from.y, 1)
+  expect(close.to.scale).toBe(open.from.scale)
+  await expect(dialog).toBeHidden()
+})
+
 test("the phone sheet moves navigation onto the title line", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.emulateMedia({ reducedMotion: "reduce" })

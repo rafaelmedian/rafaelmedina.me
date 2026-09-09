@@ -113,7 +113,10 @@ for (const [key, sign, nextTitle] of [
     expect(poses.some(pose => pose.phase === "in" && pose.title === nextTitle && pose.x * sign < -5 && pose.opacity < 0.8)).toBe(true)
     await expect(dialog.getByRole("heading", { name: nextTitle, exact: true })).toBeFocused()
     await expect(dialog).toHaveCSS("opacity", "1")
-    await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+    // Back at rest the sheet carries no pose of its own: its open and close
+    // travel is a Web Animations flight, so the switch hands transform back
+    // flat rather than to an identity matrix.
+    await expect(dialog).toHaveCSS("transform", "none")
   })
 }
 
