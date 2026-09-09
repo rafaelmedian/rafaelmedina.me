@@ -236,11 +236,11 @@ export const writings: Writing[] = [
     id: "room-to-figure-it-out",
     title: "Room to figure it out",
     publishedAt: "2026-05-21",
-    acknowledgements: "Expanded from a draft about family, distance, and independence. It is written from my own experience and the conversations behind it, not as a description of anyone else's family.",
+    acknowledgements: "Written from my own experience and conversations about family, distance, and independence.",
     // Source: supplied draft screenshot, 01.19.00; reflection on family and independence.
     paragraphs: [
-      "I've been thinking about when people get their first real opportunity to figure things out on their own. In a draft, I compared the expectation of leaving home for college or work in the US with the stronger expectation of staying close to family in parts of Latin America and the Caribbean.",
-      "That's a broad comparison, and there are plenty of lives it doesn't describe. Still, the question underneath it interests me: how much room do we give someone to practice independence while they still have support?",
+      "I've been thinking about when people get their first real opportunity to figure things out on their own. Leaving home for college or work can make that transition feel expected. When staying close to family is the expectation, becoming independent can mean learning to make your own choices around people who are used to making them with you.",
+      "Neither arrangement tells you how much freedom someone actually has. What interests me is how a family makes room for that freedom: how much can someone decide for themselves while they still have support, and what happens when the people helping would have chosen differently?",
       "Moving out is one way to get that room. It isn't the only one, and an address doesn't tell you how much responsibility a person carries. What I keep coming back to is the experience of making a decision and being the person who has to deal with what follows.",
     ],
     annotations: [
@@ -252,7 +252,7 @@ export const writings: Writing[] = [
         paragraphs: [
           "A lot of independence is very ordinary. Organizing your time. Working out how to get somewhere. Making an appointment you would rather avoid. Deciding how to spend money when there isn't enough for every option. These aren't dramatic milestones, but they give you repeated chances to use your own judgment.",
           "If someone else always steps in before a decision becomes uncomfortable, you can miss that practice. The help may be generous and well intentioned. It can still leave you less prepared for the moment when nobody is available to take over.",
-          "This is the tension I was trying to get at in the draft. A family can offer a lot of care while making it difficult for a young person to try something unfamiliar. The wish to protect someone can extend beyond protecting them from harm and into protecting them from ordinary uncertainty.",
+          "A family can offer a lot of care while making it difficult for a young person to try something unfamiliar. The wish to protect someone can extend beyond protecting them from harm and into protecting them from ordinary uncertainty. When every unfamiliar choice gets settled for you, it's harder to learn which problems you can handle yourself and when you need to ask for help.",
         ],
       },
       {
