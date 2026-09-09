@@ -92,6 +92,20 @@
     "token rewards";
 }
 
+/* The team quotes are a band across the grid rather than a column inside a
+   project row, the way the personal-photo fan is. The card centres its own
+   340px of quote, face, and dots in whatever width it gets, so the extra width
+   reads as margin instead of a stretched sentence. The row takes its height
+   from the card. */
+.mosaic-group-aside {
+  grid-template-columns: minmax(0, 1fr);
+  /* The same floor the photo band carries, so the grid's two full-width bands
+     read as a pair rather than as one band and one stray strip. Narrow desktop
+     widths wrap the quote onto more lines, and the row grows with it. */
+  grid-template-rows: minmax(clamp(260px, 21.39cqw, 320px), auto);
+  grid-template-areas: "quote2";
+}
+
 .mosaic-group-closing {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-areas: "mobile trade pro";
@@ -1262,7 +1276,9 @@
       calc(var(--compact-tile) * 0.25)
       var(--compact-tile)
       calc(var(--compact-tile) * 1.25)
-      var(--compact-tile);
+      minmax(340px, auto)
+      var(--compact-tile)
+      calc(var(--compact-tile) * 0.75);
     grid-template-areas:
       "wallet homepage"
       "writings popparazi"
@@ -1273,8 +1289,10 @@
       "security family"
       "dealership family"
       "dealership token"
-      "rewards mobile"
-      "trade pro";
+      "rewards rewards"
+      "quote2 quote2"
+      "mobile trade"
+      "pro pro";
     padding-inline: 1rem;
   }
 

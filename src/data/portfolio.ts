@@ -78,16 +78,19 @@ type HomeTilePlacement = {
   compactWide?: boolean
 }
 
+/** Which set of quotes a quote tile cycles through. */
+export type QuoteSource = "internet" | "team"
+
 export type HomeTile = HomeTilePlacement & (
   | { kind: "project"; cardId: string; fit: "cover" | "contain"; mediaMaxHeight?: string }
-  | { kind: "quote" }
+  | { kind: "quote"; source: QuoteSource }
   | { kind: "writings" }
   | { kind: "resume" }
   | { kind: "photos" }
 )
 
 export type HomeGroup = {
-  layout: "opening" | "portraits" | "offset" | "closing"
+  layout: "opening" | "portraits" | "aside" | "offset" | "closing"
   columns: 2 | 3
   items: HomeTile[]
 }
@@ -112,7 +115,7 @@ export const homeGroups: HomeGroup[] = [
       { kind: "project", area: "popparazi", cardId: "preview-popparazi-v1", share: 3 / 12, fit: "contain", mediaMaxHeight: "84%" },
       { kind: "resume", area: "resume", share: 3 / 12, compactWide: true },
       { kind: "project", area: "protector", cardId: "preview-protector", share: 5 / 12, fit: "cover", compactWide: true },
-      { kind: "quote", area: "quote", share: 4 / 12, compactWide: true },
+      { kind: "quote", area: "quote", source: "internet", share: 4 / 12, compactWide: true },
       { kind: "project", area: "security", cardId: "preview-shot-20", share: 4 / 12, fit: "contain" },
       // The photos used to sit inside About, below the hobbies. They read
       // better as a tile in the grid, and this group is where there was room
@@ -138,6 +141,22 @@ export const homeGroups: HomeGroup[] = [
       { kind: "project", area: "dealership", cardId: "preview-dealership-lead-hub", share: 7 / 12, fit: "contain" },
       { kind: "project", area: "token", cardId: "preview-shot-21", share: 5 / 12, fit: "contain" },
       { kind: "project", area: "rewards", cardId: "preview-matcha-rewards", share: 7 / 12, fit: "contain" },
+    ],
+  },
+  // The second quote card is a band of its own rather than a fifth tile in a
+  // project row: the card needs its full 340px to hold a quote, a face, and the
+  // dots, and every row that could have spared a column would have had to
+  // re-cut artwork to give it one. A band costs no project its shape.
+  //
+  // Between the offset and closing groups, not after them. The takeover pins
+  // the last screenful while About slides up over it, so the closing row of
+  // projects is already half-covered by the sheet -- a quote parked there would
+  // never be read.
+  {
+    layout: "aside",
+    columns: 3,
+    items: [
+      { kind: "quote", area: "quote2", source: "team", share: 1, compactWide: true },
     ],
   },
   {

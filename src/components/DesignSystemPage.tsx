@@ -1448,6 +1448,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The homepage also includes Simon Rico and Jakub Antalik, with role captions and no
                 additional attribution notes. This development-only specimen adds Amy’s sample
                 to exercise longer copy and distant selections. Portraits are optional.
+                A second card of the same component runs the team quotes -- Jhon Onit, Cristina
+                Pieretti, Josh Frank, Dan, and Rob Adams -- as a full-width band between the offset
+                and closing project groups, the way the personal-photo fan is a band inside the
+                portraits group. It carries the floor the photo band does, so the grid&rsquo;s two bands
+                match. It sits above the closing row rather than after it because the takeover pins
+                the last screenful while About slides over it. Those quotes arrived as Slack messages
+                and a testimonial card, so they carry no X handle: the name is plain text with no
+                profile preview, and Cristina&rsquo;s has no portrait at all.
               </p>
               <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} />
             </div>

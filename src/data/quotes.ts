@@ -92,3 +92,51 @@ export const portfolioQuotes: PortfolioQuote[] = [
     photo: collaborators.jakub.photo,
   },
 ]
+
+// The second card in the grid: praise from the teams and clients the work was
+// made with, rather than from the timeline. These arrived as Slack messages and
+// a testimonial card, so they carry no X handle and no profile preview -- the
+// name renders as plain text and the credit is the room the praise came from.
+export const teamQuotes: PortfolioQuote[] = [
+  {
+    id: "jhon",
+    text: "Our team could never have done what you did.",
+    emphasis: "I miss working with you guys.",
+    attribution: "Jhon Onit",
+    caption: "VP Product and co-founder at Onit",
+    attributionNote: "You make new product development rewarding and a lot of fun.",
+    photo: "/quotes/jhon-onit.jpg",
+  },
+  {
+    id: "cristina",
+    text: "One of the proudest days of my career to have presented this prototype to the Managing Directors,",
+    emphasis: "especially Rafael for making the prototype pop.",
+    attribution: "Cristina Pieretti",
+    caption: "VP at Moody’s",
+    attributionNote: "Relayed to the sprint team the morning after her stakeholder review.",
+  },
+  {
+    id: "josh",
+    text: "Masterclass in user test facilitation.",
+    emphasis: "That prototype 😍",
+    attribution: "Josh Frank",
+    caption: "Moody’s prototype sprint",
+    photo: "/quotes/josh-frank.jpg",
+  },
+  {
+    id: "dan",
+    text: "Saw the prototype you pulled together!",
+    emphasis: "That thing looks 🔥",
+    attribution: "Dan",
+    caption: "Prototype review",
+    photo: "/quotes/dan.jpg",
+  },
+  {
+    id: "rob",
+    text: "You handled the questions very well —",
+    emphasis: "the value of your build was crystal clear.",
+    attribution: "Rob Adams",
+    caption: "Client workshop",
+    photo: "/quotes/rob-adams.jpg",
+  },
+]

@@ -1,6 +1,9 @@
 import { expect, type Locator, type Page, test } from "@playwright/test"
 
-const carousel = (page: Page) => page.getByRole("group", { name: "Quotes" })
+// The grid carries two quote cards. These cover the one in the portraits group;
+// the team quotes below the projects are the same component on another set.
+const carousel = (page: Page) => page.locator(".mosaic-tile-quote").getByRole("group", { name: "Quotes" })
+const teamCarousel = (page: Page) => page.locator(".mosaic-tile-quote2").getByRole("group", { name: "Quotes" })
 const active = (page: Page) => carousel(page).locator('.mosaic-quote-slide[data-active="true"]')
 
 async function openHome(page: Page, width = 1440) {
@@ -33,6 +36,28 @@ test("publishes five quotes including restored Simon and Jakub quotes with carou
   await expect(carousel(page).getByRole("button", { name: "Advance quote" })).toBeAttached()
   await carousel(page).getByRole("button", { name: /Show quote from Phil Liao/ }).click()
   await expect(active(page)).toContainText("Phil Liao")
+})
+
+test("carries the team quotes as a band between the project groups", async ({ page }) => {
+  await openHome(page)
+  const card = teamCarousel(page)
+  const slide = card.locator('.mosaic-quote-slide[data-active="true"]')
+  await expect(card.locator(".mosaic-quote-slide")).toHaveCount(5)
+  await expect(slide).toContainText("Jhon Onit")
+  await expect(slide).toContainText("VP Product and co-founder at Onit")
+  await card.getByRole("button", { name: "Show quote from Rob Adams" }).click()
+  await expect(slide).toContainText("Rob Adams")
+  // Named on the card but never linked: these came from Slack, not from X.
+  await expect(card.getByRole("button", { name: /on X$/ })).toHaveCount(0)
+  // The closing row of projects is the screenful the takeover pins behind
+  // About, so the band has to sit above it to be read at all.
+  const bounds = await page.evaluate(() => {
+    const band = document.querySelector(".mosaic-tile-quote2")!.getBoundingClientRect()
+    const closing = document.querySelector(".mosaic-tile-mobile")!.getBoundingClientRect()
+    return { bandBottom: band.bottom, closingTop: closing.top, bandWidth: band.width, rowsWidth: document.querySelector(".mosaic-group-closing")!.getBoundingClientRect().width }
+  })
+  expect(bounds.closingTop).toBeGreaterThanOrEqual(bounds.bandBottom - 1)
+  expect(bounds.bandWidth).toBeCloseTo(bounds.rowsWidth, 0)
 })
 
 test("exposes 10 by 40 dot targets with 4px gaps and selected emphasis", async ({ page }) => {

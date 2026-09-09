@@ -8,7 +8,7 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
-    await expect(tiles).toHaveCount(16)
+    await expect(tiles).toHaveCount(17)
     await expect(page.locator("a.mosaic-row-card")).toHaveCount(12)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect()
@@ -34,13 +34,19 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       const quote = boxes[6]
       expect(protector.width).toBeCloseTo(boxes[1].x + boxes[1].width - boxes[0].x, 0)
       expect(quote.width).toBeCloseTo(protector.width, 0)
-      // The personal-photo band spans both compact columns with them.
+      // The personal-photo band and the team quotes span both compact columns.
       expect(boxes[8].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[13].width).toBeCloseTo(protector.width, 0)
     } else {
       // The personal-photo band spans the portraits group on its own line.
       expect(boxes[8].x).toBeCloseTo(boxes[3].x, 0)
       expect(boxes[8].x + boxes[8].width).toBeCloseTo(boxes[7].x + boxes[7].width, 0)
       expect(boxes[8].y).toBeGreaterThan(boxes[7].y + boxes[7].height - 1)
+      // The team quotes are a band of their own between the project groups.
+      expect(boxes[13].x).toBeCloseTo(boxes[8].x, 0)
+      expect(boxes[13].width).toBeCloseTo(boxes[8].width, 0)
+      expect(boxes[13].y).toBeGreaterThan(boxes[12].y + boxes[12].height - 1)
+      expect(boxes[14].y).toBeGreaterThan(boxes[13].y + boxes[13].height - 1)
       // The long middle cards bridge the smaller stack alongside them.
       expect(boxes[5].height).toBeGreaterThan(boxes[6].height + 100)
       expect(boxes[5].y + boxes[5].height).toBeCloseTo(boxes[7].y + boxes[7].height, 0)
