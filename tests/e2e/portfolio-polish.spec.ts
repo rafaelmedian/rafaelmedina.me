@@ -855,7 +855,7 @@ test("copies the About sheet's address from a press in the prose", async ({ cont
   // this asserts on would simply never appear.
   await page.bringToFront()
   await page.goto("/")
-  await pausePageClock(page)
+  await settleAvatarIntro(page)
 
   const address = page.locator("#about-section .mosaic-about-email")
   const reaction = page.locator(".reaction-card-media img")
@@ -868,6 +868,15 @@ test("copies the About sheet's address from a press in the prose", async ({ cont
   await expect(address).toHaveAccessibleDescription("Click to copy")
 
   await address.scrollIntoViewIfNeeded()
+  // A delayed observer can start the parent's 28px rise after hover has
+  // positioned the pointer. Wait for that entrance before freezing time or
+  // the link can move away and cancel the tooltip's intent timer.
+  const intro = page.locator(".mosaic-about-section-copy")
+  await expect(intro).toHaveAttribute("data-about-fade", "in")
+  await intro.evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  )
+  await pausePageClock(page)
   await address.hover()
   // The paused clock also holds the tooltip's 160ms intent delay.
   await page.clock.fastForward(200)
