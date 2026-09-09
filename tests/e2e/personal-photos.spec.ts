@@ -466,7 +466,13 @@ test("closing from the first row is immediate; a scrolled sheet rewinds there fi
   const bottom = await sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight)
   await expect.poll(() => sheet(page).evaluate((element) => element.scrollTop)).toBeLessThan(bottom - 50)
   expect(await flights.count()).toBe(0)
-  expect(new Set(await slots())).toEqual(new Set(["on none 1", "off none 1"]))
+  // Undimmed and at full strength, wherever the glide has reached. Which
+  // slides are on screen is deliberately not part of the claim: the masonry is
+  // twice the sheet's height, so around a fifth of the way through the rewind
+  // there is a band where every slide touches the sheet's box at once, and
+  // asking for an off-screen one is a race against a 360ms scroll nothing
+  // synchronises with.
+  expect(new Set((await slots()).map((slot) => slot.replace(/^(on|off) /, "")))).toEqual(new Set(["none 1"]))
   await expect(flights).not.toHaveCount(0)
   expect(new Set(await slots())).toEqual(new Set(["on none 0", "off none 1"]))
   expect(Date.now() - t0).toBeGreaterThanOrEqual(300)
