@@ -19,9 +19,9 @@ export const services: Service[] = [
   },
   {
     shape: "Monthly",
-    title: "Fractional design partner",
+    title: "Fractional to full-time design partner",
     description:
-      "A standing engagement for a team without an in-house designer — new surfaces, design review, and a system your engineers can keep building on after I step back.",
+      "A standing engagement for a team without an in-house designer — a few days a week, or full time when the roadmap needs it: new surfaces, design review, and a system your engineers can keep building on after I step back.",
   },
   {
     shape: "1 – 2 weeks",
