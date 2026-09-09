@@ -48,7 +48,12 @@
   width: min(1040px, 100%);
   height: min(640px, 100%);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  /* One row, not two: the header that used to own the `auto` track is gone, and
+     the sr-only title and description that replaced it are position: absolute,
+     so they are not grid items. Left as `auto minmax(0, 1fr)` the frame landed
+     in the auto track and sized to the iframe's default 150px, leaving the rest
+     of the popup empty below the calendar. */
+  grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
   cursor: auto;
   background: var(--canvas);
@@ -69,58 +74,18 @@
   transition-duration: var(--duration-quick);
 }
 
-.booking-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem 1.25rem 1rem 1.75rem;
-}
-
-.booking-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 0;
-}
-
-.booking-title {
-  margin: 0;
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: var(--text-md);
-  font-weight: 500;
-  line-height: 1.25;
-}
-
-.booking-subtitle {
-  margin: 0;
-  color: var(--muted);
-  font-family: var(--font-ui);
-  font-size: var(--text-sm);
-  line-height: 1.4;
-}
-
-.booking-actions {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
+/* The last resort inside the loading line, once the frame has had its six
+   seconds and shown nothing. It used to sit in a header above the calendar. */
 .booking-external {
-  color: var(--muted);
-  font-family: var(--font-ui);
-  font-size: var(--text-sm);
-  text-decoration: none;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
   transition: color var(--duration-quick) var(--ease-standard);
 }
 
 .booking-external:hover,
 .booking-external:focus-visible {
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 0.25em;
+  color: var(--focus-ring);
 }
 
 .booking-frame {
@@ -148,9 +113,13 @@
   margin: 0;
   display: grid;
   place-items: center;
+  padding-inline: 1.5rem;
   color: var(--muted);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
+  line-height: 1.5;
+  text-align: center;
+  text-wrap: balance;
 }
 
 @media (max-width: 639.98px) {
@@ -166,10 +135,6 @@
   .booking-popup {
     height: 100%;
     border-radius: var(--radius-md);
-  }
-
-  .booking-header {
-    padding: 1rem 1rem 0.75rem 1.25rem;
   }
 }
 

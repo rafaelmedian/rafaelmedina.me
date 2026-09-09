@@ -1587,6 +1587,58 @@ test("hints at booking on hover and opens the calendar only on click", async ({ 
 // Touch and keyboard have no hover to rest in, so the same line is a plain
 // button for them. Focus alone must not open it: tabbing past the hero would
 // otherwise trap the visitor in a calendar they never asked for.
+// The dialog is the calendar and nothing else: no header, no close button, no
+// second title over a page that already has one. What a header was carrying that
+// still matters — the dialog's name, and the way out — had to go somewhere else.
+test("frames the calendar without chrome and still says what it is", async ({ page }) => {
+  await page.route("https://cal.com/**", (route) =>
+    route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" }),
+  )
+  await page.goto("/")
+  await settleAvatarIntro(page)
+  await page.locator(".mosaic-booking-pill").click()
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator(".booking-header")).toHaveCount(0)
+  await expect(dialog.getByRole("button", { name: "Close booking calendar" })).toHaveCount(0)
+
+  // Named and described for screen readers even with nothing drawn.
+  await expect(dialog).toHaveAccessibleName("Book a call")
+  await expect(dialog).toHaveAccessibleDescription(/^Available in \w+ · 30 minutes, on Cal\.com$/)
+  // And neither is painted: sr-only text is in the accessibility tree and out of
+  // the layout, so the title's box collapses to nothing over the calendar.
+  const titleBox = await dialog.getByText("Book a call", { exact: true }).boundingBox()
+  expect(titleBox!.width).toBeLessThanOrEqual(1)
+  expect(titleBox!.height).toBeLessThanOrEqual(1)
+
+  // Escape is not the only way out, which matters on a phone with no Escape key.
+  await page.mouse.click(5, 5)
+  await expect(dialog).toBeHidden()
+})
+
+// A blocked third-party frame never fires onError, so the only signal that the
+// calendar is not coming is that it has not come. The link the header used to
+// hold from the start now waits for that moment.
+test("offers cal.com directly when the embedded calendar never loads", async ({ page }) => {
+  // Never resolves: the frame stays blank exactly the way a blocked one does.
+  await page.route("https://cal.com/**", () => {})
+  await page.clock.install()
+  await page.goto("/")
+  await settleAvatarIntro(page)
+  await page.locator(".mosaic-booking-pill").click()
+
+  const status = page.getByRole("dialog").locator(".booking-loading")
+  await expect(status).toHaveText("Loading calendar…")
+  await expect(status.getByRole("link")).toHaveCount(0)
+
+  await page.clock.fastForward(6_000)
+  await expect(status).toContainText("The calendar didn\u2019t load.")
+  const escape = status.getByRole("link", { name: "Open it on cal.com" })
+  await expect(escape).toHaveAttribute("href", "https://cal.com/rafaelmedian/30min")
+  await expect(escape).toHaveAttribute("target", "_blank")
+})
+
 test("opens the booking calendar from a press, and never from focus alone", async ({ page }) => {
   await page.route("https://cal.com/**", (route) =>
     route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" }),
