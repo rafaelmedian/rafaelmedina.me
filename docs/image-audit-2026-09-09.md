@@ -2,7 +2,7 @@
 
 The main opportunity is responsive delivery in the personal-photo sheet. The
 homepage already uses a small WebP portrait and responsive project previews.
-No image assets were changed by this audit.
+The initial audit changed no assets. The follow-up below records the implemented optimizations.
 
 ## Scope and measurements
 
@@ -48,3 +48,34 @@ This was a file/metadata and browser-request audit, not a visual comparison of
 re-encoded candidates. Savings from responsive variants have not been measured
 because none were generated. Do not bulk recompress illustrations, résumé
 previews, or screenshots without checking text and fine-line quality.
+
+## Implemented follow-up
+
+Generated and wired 400/800 px WebP photo variants, preserving originals as the
+largest `srcSet` candidate. The sheet's `sizes` matches its columns and print
+padding. Opening/returning photos retain eager loading; later photos use native
+lazy loading. Chromium's lazy-load distance still fetched all eleven in these
+viewports, so the measured savings below come from source selection, not from
+claiming fewer downloads.
+
+| Photo-sheet images at 2× density | Before | After | Reduction |
+| --- | ---: | ---: | ---: |
+| 390 px viewport | 1,540,900 bytes | 250,744 bytes | 83.7% |
+| 1440 px viewport | 1,540,900 bytes | 696,436 bytes | 54.8% |
+
+The email confirmation is now 61,004 bytes (61.7% smaller), with the same
+400 × 262 dimensions and approximately two-second loop, resampled to 10 fps.
+Matched frames and the mobile photo sheet were visually checked. Email and
+booking reactions still mount only on tooltip intent; they now use stills on
+Data Saver, 3G, offline, or the existing slow-start fallback. LinkedIn receives
+its video source only when open with motion enabled on a suitable connection.
+Reduced-motion still selection is preserved.
+
+The generator is `scripts/optimize-personal-media.mjs`; regeneration instructions
+and the original reaction source location are in `AGENTS.md`. All 22 photo
+variants reproduced byte-for-byte. Unreferenced cleanup candidates remain
+untouched, as they do not contribute to the observed page payload.
+
+Validation after implementation: lint, production build, 308 end-to-end tests,
+and 11 design-system tests passed. A pre-existing About hit-testing race was
+reproduced on the pre-change build and fixed by waiting for portrait reveal.

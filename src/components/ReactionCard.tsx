@@ -1,3 +1,5 @@
+import { useLightweightMedia } from "../lib/useLightweightMedia"
+
 export type Reaction = {
   /** The animated clip: any .gif/.webp/.webm-free image in `public/`. */
   src: string
@@ -19,11 +21,12 @@ export type Reaction = {
  * resumed mid-loop would report a fresh press as an old one.
  */
 export function ReactionCard({ reaction }: { reaction: Reaction }) {
+  const lightweight = useLightweightMedia()
   return (
     <picture className="reaction-card-media">
       <source media="(prefers-reduced-motion: reduce)" srcSet={reaction.still} />
       <img
-        src={reaction.src}
+        src={lightweight ? reaction.still : reaction.src}
         alt=""
         width={reaction.width}
         height={reaction.height}

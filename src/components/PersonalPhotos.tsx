@@ -10,6 +10,8 @@ import { personalPhotoItems as photos } from "../data/personalPhotos"
 type OpenPhoto = (opener: HTMLElement) => void
 type PreviewPhoto = { photo: typeof photos[number]; src: string }
 const initialPreview = photos.slice(0, 5).map((photo) => ({ photo, src: `/images/personal/${photo.name}-thumb.webp` }))
+// Match the sheet gutters, column gaps, and each print's inner padding.
+const sheetPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2 - 1rem), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3 - 2rem)"
 
 function subscribePreviewWidth(callback: () => void) {
   window.addEventListener("resize", callback)
@@ -240,6 +242,9 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
                     >
                       <img
                         src={`/images/personal/${photo.name}.webp`}
+                        srcSet={`/images/personal/${photo.name}-400w.webp 400w, /images/personal/${photo.name}-800w.webp 800w, /images/personal/${photo.name}.webp ${photo.width}w`}
+                        sizes={sheetPhotoSizes}
+                        loading={index < previewCount ? "eager" : "lazy"}
                         alt={photo.alt}
                         width={photo.width}
                         height={photo.height}

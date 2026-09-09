@@ -84,10 +84,12 @@ theme hook.
 ## Images
 
 The [2026-09-09 image audit](docs/image-audit-2026-09-09.md) inventories 125 public
-images totaling 5.32 MB and checks mobile/desktop requests. The main opportunity
-is the personal-photo sheet: it fetches 1.54 MB of full-size photos even on a
-phone. Responsive variants are recommended; no images were changed. The report
-also identifies an oversized live reaction and unreferenced cleanup candidates.
+images totaling 5.32 MB and checks mobile/desktop requests. Its follow-up implements responsive photo variants: the sheet now fetches
+251 KB on mobile and 696 KB on desktop at 2× density, down from 1.54 MB. The
+email confirmation is down from 159 KB to 61 KB; slow/data-saving connections
+use reaction stills. The report retains unreferenced cleanup candidates.
+The media follow-up passes lint, build, 308 end-to-end tests, and 11
+design-system tests.
 
 ## Remaining follow-ups
 

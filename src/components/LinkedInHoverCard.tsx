@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react"
 import type { HoverMedia } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { useLightweightMedia } from "../lib/useLightweightMedia"
 
 type LinkedInHoverCardProps = {
   media: HoverMedia
@@ -16,18 +17,20 @@ type LinkedInHoverCardProps = {
 export function LinkedInHoverCard({ media, isOpen }: LinkedInHoverCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const prefersReducedMotion = usePrefersReducedMotion()
+  const lightweight = useLightweightMedia()
+  const playClip = isOpen && !prefersReducedMotion && !lightweight
 
   // The clip only runs while the card is up, so a hover the user never opens
   // costs nothing and a closed card isn't animating off screen.
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
-    if (isOpen && !prefersReducedMotion) {
+    if (playClip) {
       void video.play().catch(() => undefined)
     } else {
       video.pause()
     }
-  }, [isOpen, prefersReducedMotion])
+  }, [playClip])
 
   return (
     <span
@@ -38,7 +41,7 @@ export function LinkedInHoverCard({ media, isOpen }: LinkedInHoverCardProps) {
       {isVideoSource(media.src) ? (
         <video
           ref={videoRef}
-          src={media.src}
+          src={playClip ? media.src : undefined}
           poster={media.poster}
           width={media.width}
           height={media.height}
