@@ -441,12 +441,20 @@ function formatPuntaCanaLocalTime(date = new Date()) {
   return puntaCanaTimeFormatter.format(date).replace(/\s?([AP])M(?=\s|$)/, (_, meridiem: string) => `${meridiem.toLowerCase()}m`)
 }
 
-function openPreview(card: PortfolioCard, previewIndex: number, setSelectedWorkPreviewIndex: (value: number) => void) {
+function openPreview(
+  card: PortfolioCard,
+  previewIndex: number,
+  setSelectedWorkPreviewIndex: (value: number) => void,
+  // The grid is not the only surface that opens a preview any more: the résumé
+  // reader hands a project back to the feed too, and those opens have to be
+  // told apart rather than going unrecorded.
+  placement: "grid" | "resume_reader" = "grid",
+) {
   trackEvent("work_preview_open", {
     preview_id: card.id,
     preview_title: card.title,
     preview_index: previewIndex + 1,
-    preview_placement: "grid",
+    preview_placement: placement,
   })
   setSelectedWorkPreviewIndex(previewIndex)
 }
@@ -1109,7 +1117,18 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                         >
                           {row.resume ? (
                             <div className="mosaic-row-item">
-                              <ResumeTile href={links.resumePdf} onOpenChange={setResumeOpen} />
+                              <ResumeTile
+                                href={links.resumePdf}
+                                onOpenChange={setResumeOpen}
+                                onSelectProject={(id) => {
+                                  // Only the cards laid out on the grid have a
+                                  // preview to grow out of.
+                                  const index = flatWorkCards.findIndex((card) => card.id === id)
+                                  if (index < 0) return false
+                                  openPreview(flatWorkCards[index], index, setSelectedWorkPreviewIndex, "resume_reader")
+                                  return true
+                                }}
+                              />
                             </div>
                           ) : null}
                           {row.quote ? (
