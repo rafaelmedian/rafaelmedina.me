@@ -58,6 +58,12 @@
   display: grid;
   gap: 1.05rem;
   text-align: left;
+  /* The entrance animation already makes this a stacking context, which traps
+     the local-time card's --z-overlay inside the column. Without a z-index of
+     its own the column then paints in document order -- behind the photo stack
+     that follows it -- and the map opened under the polaroids. */
+  position: relative;
+  z-index: 1;
 }
 
 /* About copy rises in from below, released per block the first time it
@@ -126,10 +132,9 @@
 /* Work history is a sibling of the About lede, not a paragraph. It kept the
    prose weight and colour, which made it pixel-identical to the copy directly
    under it -- an <h2> that only assistive technology could tell was a heading.
-   The scale's heading form of this step is what it takes instead: 600 at
-   #2d2d2d, the same weight and ink as the lede. The step itself stays at
-   --text-md, because the Work history section is deliberately one size
-   throughout. */
+   The scale's heading form of this step is what it takes instead: --text-md
+   at 600 and #2d2d2d, one step above the entries beneath it and identical to
+   the About lede, the sheet's other section heading. */
 .mosaic-about-section-heading {
   margin: 0;
   color: #2d2d2d;
@@ -139,22 +144,28 @@
   letter-spacing: -0.005rem;
 }
 
+/* About is set the same way as the Work history section under it, which is
+   set the same way as a note: the --text-sm reading step on 1.5, under a
+   --text-md heading. One reading scale across the whole sheet. */
 .mosaic-about-body p {
   margin: 0;
   font-family: var(--font-ui);
-  font-size: var(--text-md);
-  line-height: 1.7;
-  letter-spacing: -0.005rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
   color: #545454;
   text-wrap: pretty;
 }
 
+/* "About me" and "Work history" are the sheet's two section headings and now
+   look like it: the same step, weight and ink, so neither reads as ranking
+   above the other. */
 .mosaic-about-body .mosaic-about-lede {
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-md);
   font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: -0.015rem;
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
   color: #2d2d2d;
 }
 
@@ -172,14 +183,14 @@
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  font-size: var(--text-md);
-  line-height: 1.6;
-  letter-spacing: -0.005rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
   color: #2d2d2d;
 }
 
 .mosaic-about-hobby-emoji {
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1;
 }
 
@@ -209,8 +220,17 @@
   padding-top: 1.25rem;
 }
 
+/* Work history is the one part of About that reads like the notes: a stack of
+   dated entries rather than a paragraph. It now takes the reader's scale --
+   the --text-sm step on 1.5, under the same --text-md title -- so the two
+   long-form surfaces on the site are set the same way. The ink assignments
+   stay as they were: unlike a note, an entry has a title above its copy, and
+   collapsing them onto one colour would flatten that. */
 .mosaic-about-body .mosaic-about-resume-download {
   margin-top: 4rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
 }
 
 .mosaic-about-resume {
@@ -252,23 +272,23 @@
 
 .mosaic-about-body .mosaic-about-resume-title {
   margin: 0;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.5;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
   color: #2d2d2d;
   text-wrap: balance;
 }
 
 .mosaic-about-body .mosaic-about-resume-location {
   margin-top: 0.1rem;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--muted);
 }
 
 .mosaic-about-body .mosaic-about-resume-dates {
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--muted-soft);
   white-space: nowrap;
@@ -276,9 +296,9 @@
 
 .mosaic-about-body .mosaic-about-resume-description {
   margin-top: 0.75rem;
-  font-size: var(--text-md);
-  line-height: 1.6;
-  letter-spacing: -0.005rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -296,9 +316,9 @@
 }
 
 .mosaic-about-body .mosaic-about-resume-heading {
-  font-size: var(--text-md);
-  line-height: 1.6;
-  letter-spacing: -0.005rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
   color: var(--muted-soft);
 }
 
@@ -329,4 +349,217 @@
     align-items: center;
   }
 
+}
+
+/* --------------------------------------------------- about sheet services --- */
+
+/* The closing block, set as a sibling of the work history stack: same column
+   width, same entry grid, same reading step. What changes is the left column
+   -- an engagement shape where the résumé carries dates -- so a reader who has
+   just scanned the history recognises the shape and reads only the right-hand
+   side. */
+.mosaic-about-services {
+  position: relative;
+  width: 100%;
+  margin-block-start: 2.5rem;
+  padding-block: 0 clamp(2rem, 6vw, 5rem);
+  scroll-margin-top: clamp(1rem, 4vw, 3rem);
+  text-align: left;
+}
+
+@media (min-width: 700px) {
+  .mosaic-about-services {
+    margin-block-start: 5rem;
+  }
+}
+
+.mosaic-about-services:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.mosaic-about-services-copy {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+  text-align: left;
+}
+
+.mosaic-about-services-list {
+  margin-top: 1.5rem;
+  gap: 3rem;
+}
+
+/* The dates column's ink and step, under its own name: this column holds how
+   long an engagement runs, not when one happened. */
+.mosaic-about-body .mosaic-about-service-shape {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--muted-soft);
+  white-space: nowrap;
+}
+
+.mosaic-about-body .mosaic-about-service-price {
+  margin-top: 0.5rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
+  color: #2d2d2d;
+}
+
+.mosaic-about-body .mosaic-about-services-pricing {
+  margin-top: 2.5rem;
+}
+
+/* The booking trigger has to be a button -- it opens a dialog -- but it ends a
+   sentence, so it is set as one of that sentence's links and inherits the
+   run's type rather than the browser's control defaults. */
+.mosaic-about-booking-link {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 479.98px) {
+  .mosaic-about-services-list {
+    gap: 3rem;
+  }
+
+  .mosaic-about-body .mosaic-about-service-shape {
+    white-space: normal;
+  }
+}
+
+/* --------------------------------------------- about sheet worked-with --- */
+
+/* A logo wall between the About lede and the dated work history: the same
+   companies the résumé spells out, read as marks first. It sits in the
+   sheet's 36rem column rather than breaking out of it, so it lines up with
+   the copy above and the entries below instead of reading as a banner. */
+.mosaic-about-companies {
+  position: relative;
+  width: 100%;
+  margin-block-start: 2.5rem;
+  text-align: left;
+}
+
+@media (min-width: 700px) {
+  .mosaic-about-companies {
+    margin-block-start: 5rem;
+  }
+}
+
+.mosaic-about-companies-copy {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+  text-align: left;
+}
+
+/* Three fixed columns, not auto-fit: nine companies fill three rows exactly,
+   and a fractional track keeps every lockup on the same left edge as the one
+   above it. Rows are aligned to their start so the one two-line name
+   ("Protector and Patrol") grows its row without dragging its neighbours'
+   marks down with it. The heading clears the wall by the 1.5rem the Work
+   history heading clears its own list, so the sheet's two stacked sections
+   open the same way. */
+.mosaic-about-logo-grid {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.5rem 1.25rem;
+}
+
+/* No chip, no fill, no hairline: nine bordered boxes turn a quiet wall into
+   a table, and the sheet already spends its only hard edges on the rules
+   between résumé entries. The lockups are held apart by whitespace, and the
+   one thing that moves on hover is the ink -- the same --muted-to---ink
+   travel the hero's company chips make. */
+.mosaic-about-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+/* One value for hover and focus, as on the hero chips: a name under the
+   cursor and a name under the keyboard mean the same thing. */
+.mosaic-about-logo-link:hover,
+.mosaic-about-logo-link:focus-visible {
+  color: var(--ink);
+}
+
+/* Marks sit 0.25rem off their label -- the scale's icon-to-label step.
+   Protector and Patrol ship two of them under one name and take the same
+   step between the pair: overlapped, their two chevrons fused into a single
+   unreadable glyph. */
+.mosaic-about-logo-marks {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Every mark is squared off to the same box and contained inside it, so a
+   tall logo and a wide one carry the same optical weight down the column.
+   The marks stay in brand colour -- borrowed artwork, like the vendor
+   palettes, not a colour this site owns. */
+.mosaic-about-logo-mark {
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: contain;
+  object-position: center;
+}
+
+.mosaic-about-logo-name {
+  min-width: 0;
+  text-wrap: pretty;
+}
+
+@media (max-width: 699.98px) {
+  .mosaic-about-logo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* Two columns leave an odd list one lockup short of a full row. The last
+     one takes the whole row, which is also what keeps the longest name off a
+     second line, and the selector reads the parity off the list, so adding a
+     tenth company puts it back in its column without anyone remembering this
+     rule exists. */
+  .mosaic-about-logo-cell:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  /* The lockup keeps its printed height and grows its target underneath, the
+     same way the hero chips and the corner nav links reach 40px on touch
+     without printing a taller box. */
+  .mosaic-about-logo-link {
+    position: relative;
+  }
+
+  .mosaic-about-logo-link::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    transform: translateY(-50%);
+  }
 }

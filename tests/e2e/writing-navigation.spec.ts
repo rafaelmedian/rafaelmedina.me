@@ -32,7 +32,7 @@ test("a shared writing opens after hydration and refresh and closes locally", as
   await expect(title).toBeVisible()
   await page.reload()
   await expect(title).toBeVisible()
-  await page.getByRole("button", { name: "Notes", exact: true }).click()
+  await page.getByRole("button", { name: "Go back to Notes", exact: true }).click()
   await expect(page).toHaveURL(/\?ref=shared$/)
   await expect(page.getByRole("button", { name: "Designing Matcha", exact: true })).toBeFocused()
   await page.keyboard.press("Escape")
@@ -48,7 +48,7 @@ test("returning to notes clears the writing URL and closing consumes its history
   const dialog = page.getByRole("dialog")
   const entry = dialog.getByRole("button", { name: "Designing Matcha", exact: true })
   await entry.click()
-  await dialog.getByRole("button", { name: "Notes", exact: true }).click()
+  await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
   await expect(page).toHaveURL(/\?ref=portfolio$/)
   await expect(entry).toBeFocused()
   await entry.click()
@@ -113,7 +113,10 @@ for (const [key, sign, nextTitle] of [
     expect(poses.some(pose => pose.phase === "in" && pose.title === nextTitle && pose.x * sign < -5 && pose.opacity < 0.8)).toBe(true)
     await expect(dialog.getByRole("heading", { name: nextTitle, exact: true })).toBeFocused()
     await expect(dialog).toHaveCSS("opacity", "1")
-    await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+    // Back at rest the sheet carries no pose of its own: its open and close
+    // travel is a Web Animations flight, so the switch hands transform back
+    // flat rather than to an identity matrix.
+    await expect(dialog).toHaveCSS("transform", "none")
   })
 }
 

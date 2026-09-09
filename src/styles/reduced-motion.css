@@ -29,4 +29,23 @@
     opacity: 1;
     animation: none;
   }
+
+  html[data-avatar-intro="revealing"] :is(
+    .mosaic-profile-meta,
+    .mosaic-work-history,
+    .mosaic-profile-location,
+    .mosaic-profile-contact,
+    .mosaic-section-corner,
+    .mosaic-social-corner,
+    .mosaic-mobile-toc,
+    .mosaic-row
+  ) {
+    animation: none;
+  }
+
+  html[data-avatar-intro="portrait"] .mosaic-avatar-coin-inner {
+    animation: none;
+    opacity: 1;
+    filter: none;
+  }
 }

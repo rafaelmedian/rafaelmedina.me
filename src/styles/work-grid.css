@@ -75,7 +75,7 @@
   overflow: hidden;
   border: 1px solid rgb(0 0 0 / 0.08);
   border-radius: var(--radius-lg);
-  background: #f2f2f2;
+  background: #fff;
   color: #2d2d2d;
 }
 
@@ -335,10 +335,10 @@
   inset: 0;
   background: linear-gradient(
     var(--quote-edge-direction),
-    #f2f2f2,
-    rgb(242 242 242 / 0.95) 12%,
-    rgb(242 242 242 / 0.6) 45%,
-    rgb(242 242 242 / 0) 100%
+    #fff,
+    rgb(255 255 255 / 0.95) 12%,
+    rgb(255 255 255 / 0.6) 45%,
+    rgb(255 255 255 / 0) 100%
   );
 }
 
@@ -351,6 +351,10 @@
   cursor: grab;
   touch-action: pan-y pinch-zoom;
   user-select: none;
+  /* This button covers the whole card, so the global tap highlight painted the
+     entire quote grey on every tap and every swipe. The slide itself is the
+     feedback. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mosaic-quote[data-dragging="true"] .mosaic-quote-next {
@@ -375,6 +379,9 @@
   border-radius: var(--radius-full);
   background: transparent;
   cursor: pointer;
+  /* The tap target is four times the dot it draws; the dot filling in says
+     enough without a grey slab around it. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mosaic-quote-dot:focus-visible {
@@ -1015,17 +1022,73 @@
   opacity: 1;
 }
 
+/* One ring, like every other control. This used to stack four -- the card's own
+   border darkened to --focus-ring, a 1px and a 6px shadow, and the outline --
+   which around a tile this size read as a black frame drawn over the artwork
+   rather than a focused element. */
 .mosaic-row-card:focus-visible {
-  border-color: var(--focus-ring);
   background: #e9e9e9;
-  box-shadow:
-    0 0 0 1px rgb(45 45 45 / 0.5),
-    0 0 0 6px rgb(45 45 45 / 0.14);
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--focus-ring-soft);
   outline-offset: 3px;
 }
 
+/* Skeleton. Until a tile's artwork decodes the card is a flat --mosaic-card-surface
+   rectangle, which on a slow connection reads as a layout bug rather than as
+   work in progress. This is the same surface with a soft sheen across it,
+   breathing, so an empty tile says "loading" without a spinner.
+
+   It fades on --duration-slow with --ease-smooth to match the media reveal it
+   sits under, so the two cross rather than one snapping away mid-fade. The
+   breathe rides `filter` instead of `opacity` for exactly that reason: the fade
+   owns `opacity`, and an animation on the same property would override it and
+   leave the skeleton to disappear in one frame the moment `data-pending` flips.
+   Both are composited, and the gradient rasterises once -- an animated
+   background-position would repaint every tile every frame during the one
+   moment the browser is already busy decoding eleven images. */
+.mosaic-row-card::before {
+  --card-skeleton-base: #e4e4e6;
+  --card-skeleton-sheen: #f3f3f5;
+
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    var(--card-skeleton-base) 0%,
+    var(--card-skeleton-sheen) 42%,
+    var(--card-skeleton-base) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-slow) var(--ease-smooth);
+}
+
+/* `alternate` plays --ease-standard forwards then backwards, so the breathe
+   eases out of each end instead of turning around on a straight line. 800ms
+   each way: slow enough not to read as a flicker behind a tile that decodes
+   quickly. */
+.mosaic-row-card:has(.mosaic-row-media[data-pending="true"])::before {
+  opacity: 1;
+  animation: mosaic-card-skeleton 800ms var(--ease-standard) infinite alternate;
+}
+
+@keyframes mosaic-card-skeleton {
+  from {
+    filter: opacity(1);
+  }
+
+  to {
+    filter: opacity(0.5);
+  }
+}
+
 .mosaic-row-media {
+  /* Positioned only so it paints over the skeleton behind it; in-flow content
+     otherwise draws below a z-index: 0 pseudo-element regardless of tree order. */
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: 100%;
   display: block;
@@ -1256,17 +1319,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The global reset in reduced-motion.css clamps
-     animation-duration but not animation-delay, so a delayed `both`-filled
-     entrance still holds its from-state -- invisible -- for the whole delay
-     window. These selectors have to match or beat the specificity of the rules
-     that set the animation, or those win despite coming earlier -- a bare
-     `.mosaic-row-item` reset would not reach `.mosaic-work-intro
-     .mosaic-row-item`. */
-  .mosaic-work-intro .mosaic-row-item {
-    animation: none;
-  }
-
+  /* The work cards no longer carry a first-load entrance of their own -- the
+     rows enter with the homepage stagger, which reduced-motion.css turns off
+     beside the rest of it. */
   .mosaic-row-card-title,
   .mosaic-row-card-scrim > span,
   .mosaic-row-card-scrim::after {
@@ -1287,32 +1342,17 @@
 
 @media (max-width: 699.98px), (hover: none), (pointer: coarse) {
 
-  /* Touch has no hover reveal, so the label is permanent -- and a permanent
-     full-width band is a different object from a band that appears under the
-     pointer. It landed on whatever the screenshot had at its own bottom edge
-     (on Popparazi, directly on the words "Featured pops of the day"), and on
-     letterboxed tiles it ran past the artwork onto the card's grey, where white
-     text has nothing to sit on.
+  /* Without hover there is nothing to reveal the caption on, so it would have
+     to sit on every tile at once -- and a permanent name on each one is a label
+     stacked over artwork that already carries the project's own wordmark and
+     interface. The tiles read as work rather than as a captioned catalogue, and
+     it costs a phone nothing to paint. The title stays in the link's
+     accessible name and in the prerendered description, so assistive tech and
+     crawlers still get it.
 
-     A pill carries its own contrast, so it is legible over any artwork and over
-     the letterbox alike, and it reads as a label rather than as a second title
-     competing with the interface underneath. It is also cheaper than what it
-     replaces: no backdrop-filter, so a scrolling phone never re-rasterises a
-     band per tile. */
-  .mosaic-row-card-title {
-    display: block;
-    width: max-content;
-    bottom: 0.75rem;
-    max-width: calc(100% - 1.5rem);
-    padding: 0.28rem 0.6rem;
-    border-radius: var(--radius-full);
-    background: rgb(20 20 20 / 0.82);
-    transform: translate(-50%, 0);
-    opacity: 1;
-    font-size: var(--text-xs);
-    text-shadow: none;
-  }
-
+     Dropping the caption takes the band with it: the scrim exists only to keep
+     white text legible, so on touch it was already a blur nobody read. */
+  .mosaic-row-card-title,
   .mosaic-row-card-scrim {
     display: none;
   }

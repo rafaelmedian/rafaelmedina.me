@@ -1,5 +1,15 @@
 /* ------------------------------------------------------- local time & map --- */
 
+/* The clock reads as one more line of the About prose and only shows its
+   chrome when pointed at, the same deal the address makes in the corner. */
+.mosaic-about-local-time {
+  margin: 0 0 1.25rem;
+  /* The trigger carries 0.54rem of its own side padding for the hover
+     highlight; cancelling it here keeps the label on the column's edge with
+     the paragraphs above it. */
+  margin-left: -0.54rem;
+}
+
 .mosaic-local-time-anchor {
   min-height: 2.5rem;
   align-items: center;
@@ -12,7 +22,7 @@
   gap: 0.25rem;
   padding: 0 0.54rem;
   border-radius: var(--radius-md);
-  color: #747474;
+  color: var(--muted-soft);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   font-weight: 400;
@@ -35,19 +45,19 @@
 .mosaic-resume-card {
   position: absolute;
   top: calc(100% + 0.125rem);
-  right: 0;
+  left: 0;
   z-index: var(--z-overlay);
   display: block;
   width: min(22.5rem, calc(100vw - 2rem));
   padding: 0.375rem;
   border-radius: var(--radius-md);
   background: #ffffff;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
-  color: #171717;
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  color: var(--ink);
   font-family: var(--font-ui);
   text-align: left;
   transform: translateY(-0.25rem) scale(0.97);
-  transform-origin: top right;
+  transform-origin: top left;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -81,14 +91,8 @@
      the long expo-out settle arriving, the quick exit curve dismissing. */
   transition:
     transform var(--duration-base) var(--ease-smooth),
-    opacity var(--duration-quick) ease-out,
+    opacity var(--duration-base) var(--ease-smooth),
     visibility var(--duration-base) linear;
-}
-
-.mosaic-resume-card {
-  right: auto;
-  left: 0;
-  transform-origin: top left;
 }
 
 /* A window onto the top of the page rather than the whole of it. A full 17:22
@@ -127,6 +131,27 @@
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* The hero's copy of the card. That line is centred, so the card centres under
+   the place name rather than hanging off its left edge, and it opens upward:
+   the contact pills are the next row down, and 13rem of map dropped over them
+   would cover the only thing in the hero worth pressing. Upward means the
+   settle arrives from below and the hover bridge moves to the bottom edge --
+   otherwise the strip that keeps the card up while the pointer travels to it
+   would be sitting on the wrong side of the gap. */
+.mosaic-profile-location-card {
+  top: auto;
+  bottom: calc(100% + 0.625rem);
+  left: 50%;
+  translate: -50% 0;
+  transform: translateY(0.25rem) scale(0.97);
+  transform-origin: bottom center;
+}
+
+.mosaic-profile-location-card::before {
+  top: auto;
+  bottom: -0.75rem;
 }
 
 .mosaic-local-time-map {
@@ -260,6 +285,21 @@
     position: static;
   }
 
+  /* The location line wraps down here and the place name stops being anywhere
+     near the middle of it, so a card centred on the name hangs off the side of
+     the screen. Handing the anchoring to the paragraph -- which is still the
+     full, centred width of the hero -- centres the card on the page instead,
+     which is the nearest honest place for it. */
+  .mosaic-profile-location {
+    position: relative;
+  }
+
+  /* Two classes: .mosaic-hover-anchor's `position: relative` is declared in a
+     later sheet, and a media query buys no specificity. */
+  .mosaic-profile-location .mosaic-profile-location-anchor {
+    position: static;
+  }
+
   .mosaic-resume-card {
     left: 50%;
     translate: -50% 0;
@@ -269,13 +309,6 @@
 }
 
 @media (max-width: 639.98px) {
-
-  .mosaic-local-time-card {
-    right: auto;
-    left: 50%;
-    translate: -50% 0;
-    transform-origin: top center;
-  }
 
   .mosaic-social-time {
     padding: 0 0.34rem;

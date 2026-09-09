@@ -29,7 +29,7 @@ export type PortfolioCard = {
   /** Teammates on this work; Rafael is credited automatically alongside them. */
   team?: Collaborator[]
   previewAspectRatio?: number
-  previewMediaPaddingBlock?: string
+  previewMediaPadding?: string
   /** The grid tile crops this shot; the gallery repeats the same crop. */
   previewCropped?: boolean
 }
@@ -56,6 +56,8 @@ export type SiteLinks = {
   linkedin: string
   email: string
   resumePdf: string
+  /** Cal.com event type, opened as a calendar in the availability dialog. */
+  booking: string
 }
 
 export type HomeRowItem = {
@@ -180,7 +182,10 @@ export const siteLinks: SiteLinks = {
   x: "https://x.com/rafaelmedian",
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
-  email: "hellorafaelmedina@gmail.com",
+  email: "hey@rafaelmedina.me",
+  // The event type rather than the profile: /rafaelmedian alone opens a list of
+  // meeting lengths, and the dialog is meant to land on the calendar itself.
+  booking: "https://cal.com/rafaelmedian/30min",
   // Self-hosted so the link survives Drive permission changes and skips the
   // Drive viewer interstitial.
   resumePdf: "/rafael-medina-resume.pdf",
@@ -245,7 +250,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha multiwallet flow",
     summary: "",
     detail:
-      "The multiwallet menu brings connected wallets and network details into one place. I covered wallet selection, adding another wallet, loading, empty, and error states.",
+      "I mapped and designed Matcha’s multiwallet flow, bringing connected wallets and network details into one menu for the decentralized trading platform. I covered wallet selection, adding a wallet, and loading, empty, and error states, so people can switch wallets during a trade without losing their quote or inputs.",
     role: "I mapped the full flow and designed the wallet menu and its edge cases.",
     outcome:
       "People can change wallets during a trade and keep their current quote and inputs.",
@@ -266,7 +271,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha dark mode",
     summary: "",
     detail:
-      "I designed Matcha's dark mode as part of the product system. The work covered semantic color tokens, elevation, component states, charts, and high-density trading screens.",
+      "I led the dark theme for Matcha, the decentralized trading platform by 0x. I defined semantic color and elevation tokens across component states, charts, and dense trading screens, giving the product one consistent dark theme across its main surfaces.",
     role: "I led the theme work and defined the color and elevation tokens.",
     outcome:
       "The product now uses one consistent dark theme across its main surfaces.",
@@ -283,7 +288,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha homepage",
     summary: "",
     detail:
-      "I redesigned the homepage around the ways people start using Matcha. They can search for a token, browse the market, or connect a wallet from the first screen.",
+      "I redesigned the homepage for Matcha, the decentralized trading platform by 0x, around the ways people begin a visit. I led the page structure and content hierarchy, giving new and returning users direct paths to search for a token, browse the market, connect a wallet, and start trading.",
     role: "I led the page structure, content hierarchy, and paths into discovery and trading.",
     outcome:
       "New and returning users have direct routes into the part of Matcha they need.",
@@ -302,7 +307,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Protector booking",
     summary: "",
     detail:
-      "Protector lets people book short-term personal security. I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
+      "Protector lets people book short-term personal security. As the sole product designer for the booking experience, I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation. Each part of the service can be selected and confirmed in one guided flow.",
     role: "I was the sole product designer for the booking experience.",
     outcome:
       "Each part of the service is selected and confirmed in one guided booking flow.",
@@ -323,7 +328,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Popparazi V1",
     summary: "",
     detail:
-      "This was an early version of Popparazi's discovery feed. I explored friend suggestions, featured photos, content density, and the visual style for the first release.",
+      "I designed an early discovery feed for Popparazi, a social photo app. The work brought together friend suggestions, featured photos, and recommendation patterns, while exploring content density and the visual style for V1. It established the structure and interactions for the team’s early product iterations.",
     role: "I designed the V1 feed and recommendation patterns.",
     outcome:
       "The work established the structure and interaction style used for the team's early product iterations.",
@@ -335,7 +340,7 @@ export const portfolioCards: PortfolioCard[] = [
     industry: "Consumer Social",
     team: [collaborators.nick],
     previewAspectRatio: 0.46,
-    previewMediaPaddingBlock: "clamp(0.7rem, 1.6vw, 1.4rem)",
+    previewMediaPadding: "clamp(0.7rem, 1.6vw, 1.4rem)",
   },
   {
     id: "preview-shot-21",
@@ -344,7 +349,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha token page",
     summary: "",
     detail:
-      "I designed a token page that combines market data, charting, trade controls, and order history. The layout prioritizes the information people check before placing a trade.",
+      "I led the page structure and interactions for token research and trading on Matcha, the decentralized trading platform by 0x. The page brings market data, charts, trade controls, and order history together, so people can review a token and start a trade without changing views.",
     role: "I led the page structure and interactions for token research and trading.",
     outcome:
       "People can review a token and start a trade from the same page.",
@@ -362,7 +367,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha trade page",
     summary: "",
     detail:
-      "This is Matcha's main trading workspace. It brings the live quote, chart, balances, open orders, and trade history into a single layout.",
+      "I defined the information hierarchy and interactions for Matcha’s main trading workspace. It brings the live quote, chart, balances, open orders, and trade history into one layout, so people can place a decentralized trade and follow its activity from the same page.",
     role: "I defined the information hierarchy and interactions for the page.",
     outcome:
       "People can place a trade and follow its activity from one workspace.",
@@ -379,7 +384,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha trade module",
     summary: "",
     detail:
-      "I designed the trade module's amount entry, token selection, route, network cost, review, and confirmation states. Each step shows the details required to approve a swap.",
+      "I designed the trade module for Matcha, the decentralized trading platform by 0x, from amount entry and token selection through review and confirmation. I owned the quote, fee, route, and transaction states, making the cost, route, and received amount visible before someone signs a swap.",
     role: "I owned the module's quote, fee, route, and transaction states.",
     outcome:
       "The cost, route, and received amount are visible before a transaction is signed.",
@@ -396,7 +401,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha on mobile",
     summary: "",
     detail:
-      "I adapted Matcha's token details, trade form, review, and confirmation screens for mobile browsers. The work included layout, touch targets, and the order of information at narrow widths.",
+      "I led the mobile trade journey for Matcha, the decentralized trading platform by 0x. I adapted token details, the trade form, review, and confirmation for phone screens, including the layout, touch targets, and order of information, so people can research and trade from a mobile browser.",
     role: "I led the mobile design for the full trade journey.",
     outcome:
       "The main research and trading flow is available on phone-sized screens.",
@@ -413,7 +418,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha Pro",
     summary: "",
     detail:
-      "Matcha Pro is a workspace for active traders. It combines live charts, token signals, transactions, and order management in a denser layout.",
+      "I led the product structure and interaction design for Matcha Pro, a decentralized trading workspace for active traders. Live charts, token signals, transactions, and order management come together in a denser layout, giving advanced tools a dedicated home alongside Matcha’s standard swap experience.",
     role: "I led the product structure and interaction design.",
     outcome:
       "Advanced trading tools live in a dedicated workspace, separate from the standard swap experience.",
@@ -430,7 +435,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha security audit",
     summary: "",
     detail:
-      "I added GoPlus token checks to Matcha, including source code, tax, minting, and honeypot signals. I also designed loading, pending, warning, and result states.",
+      "I designed the GoPlus token-check integration for Matcha, the decentralized trading platform by 0x. The work covers source code, tax, minting, and honeypot signals, along with loading, pending, warning, and result states, so people can review common token warnings while preparing a swap.",
     role: "I designed the integration and how the audit results are presented.",
     outcome:
       "People can review common token warnings while preparing a swap.",
@@ -448,7 +453,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Dealership lead hub",
     summary: "",
     detail:
-      "A workspace for dealership staff to find sales and service opportunities inside their existing customer base. The hub pairs outcome counters for recent outreach and retention rates for signed and non-signed customers with a filtered customer list that can be sent to the dealer app in bulk.",
+      "I designed a lead hub for a dealership retention platform, helping staff find sales and service opportunities in their existing customer base. I owned the layout, outreach metrics, retention comparisons, filters, and bulk-send flow, so staff can see how outreach performed and send a filtered batch of customers to the dealer app without leaving the page.",
     role: "I designed the hub layout, its overview metrics, and the filtering and bulk-send flow for leads.",
     outcome:
       "Staff can read how recent outreach landed and send a filtered batch of customers without leaving the page.",
@@ -467,7 +472,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Shared family stories",
     summary: "",
     detail:
-      "A private space where a family keeps its memories together. Stories are grouped by the period they belong to, each one holding a strip of photos and clips, and opening a moment shows when it happened alongside the comments and likes it collected.",
+      "I designed the story feed, moment detail view, and commenting patterns for a private family memory app. Stories group photos and clips by period, with dates, comments, and likes attached to each moment, so families can browse their memories and keep the conversation with the story it belongs to.",
     role: "I designed the story feed, the moment detail view, and the commenting patterns.",
     outcome:
       "Families can browse their memories by period and keep each conversation attached to the moment it belongs to.",
@@ -486,7 +491,7 @@ export const portfolioCards: PortfolioCard[] = [
     title: "Matcha Rewards",
     summary: "",
     detail:
-      "Campaign artwork for Matcha's weekly rewards program. The key visual sets the live leaderboard — wallets, cash prizes, trades, referrals, and points — on an angle behind the headline, and the same construction carries the weekly countdown posts as well as the link previews.",
+      "I designed the campaign artwork and variants for Matcha’s weekly rewards program on its decentralized trading platform. The key visual puts the leaderboard, cash prizes, trades, referrals, and points behind the headline, giving the launch, weekly countdown posts, and link previews one shared visual system.",
     role: "I designed the campaign key visual and the variants it ships in.",
     outcome:
       "The rewards program launched with one visual system shared by its social posts and link previews.",

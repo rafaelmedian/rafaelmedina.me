@@ -20,7 +20,7 @@
   -webkit-backdrop-filter: blur(10px) saturate(0.92);
   /* Opacity only. Ramping `backdrop-filter` re-blurs the whole viewport every
      frame, which is not worth it — a longer fade already takes off the snap. */
-  transition: opacity var(--pg-backdrop-in-ms, var(--duration-quick)) ease-out;
+  transition: opacity var(--pg-backdrop-in-ms, var(--duration-base)) ease-out;
 }
 
 /* Suspense owns this lightweight first-tap response. It paints quickly while
@@ -55,10 +55,19 @@
 .preview-gallery-shell {
   --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
   --preview-gallery-gutter: clamp(1rem, 3vw, 2.5rem);
-  /* Lives here rather than on the card because the rail, which is a sibling of
-     the card, measures its own offset from the artwork inside it. The compact
-     override below still sets it on the card itself. */
-  --preview-gallery-card-padding: clamp(1rem, 1.7vw, 1.4rem);
+  /* The artwork bleeds to the card's sides now, so the card's width *is* the
+     artwork's: any width the common 4:3 preview cannot fill comes back as a
+     grey band down each edge, with the image's own edges floating inside the
+     card. So the width is derived from the height the media is capped at rather
+     than authored -- roughly the old padding narrower, which is exactly the room
+     the artwork used to be inset by. Taller-than-4:3 previews still letterbox;
+     nothing short of a per-preview width could avoid that. */
+  --preview-gallery-media-cap: min(42vh, 432px);
+  --preview-gallery-width: min(490px, calc(var(--preview-gallery-media-cap) * 4 / 3));
+  /* The card and the popup that traces it share one value so the two outlines
+     cannot drift. Authored rather than derived: the artwork band inside is
+     square, so there is no inner corner left to be concentric with. */
+  --preview-gallery-card-radius: calc(var(--radius-lg) + 0.75rem);
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog);
@@ -78,6 +87,8 @@
 
 .preview-gallery-shell[data-wide="true"] {
   --preview-gallery-fixed-top: max(5vh, env(safe-area-inset-top));
+  --preview-gallery-media-cap: min(72vh, 684px);
+  --preview-gallery-width: min(981px, calc(var(--preview-gallery-media-cap) * 4 / 3));
 }
 
 .preview-gallery-shell[data-origin-animating] {
@@ -90,38 +101,29 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: min(544px, 100%);
+  width: min(var(--preview-gallery-width), 100%);
   min-height: 0;
   transform-origin: center center;
 }
 
-.preview-gallery-origin-wrap[data-wide="true"] {
-  width: min(1090px, 100%);
-}
-
 .preview-gallery-popup {
   /* The card inside carries the real surface; this box only has to trace the
-     same outline. Both are the concentric rule applied to --radius-lg, so the
-     popup follows the card's padding instead of the hand-tuned clamp that used
-     to sit here and drift from it. */
-  --pg-outer-radius: calc(var(--radius-lg) + clamp(1rem, 1.7vw, 1.4rem));
+     same outline, so it reads the shared radius rather than restating it. */
   position: relative;
-  width: min(544px, 100%);
+  width: min(var(--preview-gallery-width), 100%);
   max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
   outline: none;
   overscroll-behavior: contain;
-  border-radius: var(--pg-outer-radius) var(--pg-outer-radius) var(--radius-lg) var(--radius-lg);
+  border-radius:
+    var(--preview-gallery-card-radius) var(--preview-gallery-card-radius)
+    var(--radius-lg) var(--radius-lg);
   cursor: default;
   opacity: 1;
   transform: translateY(0) scale(1);
   transform-origin: center center;
   transition:
-    opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out,
+    opacity var(--pg-content-in-ms, var(--duration-base)) ease-out,
     transform var(--pg-open-ms, var(--duration-base)) var(--pg-open-ease, cubic-bezier(0.32, 0.8, 0.32, 1));
-}
-
-.preview-gallery-popup[data-wide="true"] {
-  width: 100%;
 }
 
 /* Fallback for when there is no card to travel from (it scrolled off-screen, or
@@ -134,7 +136,7 @@
 
 .preview-gallery-popup[data-ending-style] {
   transition:
-    opacity var(--pg-content-out-ms, var(--duration-fast)) ease-in,
+    opacity var(--pg-content-out-ms, var(--duration-quick)) ease-in,
     transform var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
 }
 
@@ -153,7 +155,7 @@
 
 .preview-gallery-popup[data-origin-motion] {
   transition:
-    opacity var(--pg-content-in-ms, var(--duration-quick)) ease-out;
+    opacity var(--pg-content-in-ms, var(--duration-base)) ease-out;
 }
 
 .preview-gallery-popup[data-origin-motion][data-starting-style] {
@@ -169,17 +171,20 @@
 }
 
 .preview-gallery-card {
-  --preview-gallery-media-radius: var(--radius-lg);
-  --preview-gallery-card-radius: calc(var(--preview-gallery-media-radius) + var(--preview-gallery-card-padding));
+  /* The artwork bleeds back out over this, so it is the text's inset from the
+     card edge rather than the card's from the artwork. */
+  --preview-gallery-card-padding: clamp(2rem, 3.4vw, 2.8rem);
   max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-radius: var(--preview-gallery-card-radius) var(--preview-gallery-card-radius) var(--radius-lg) var(--radius-lg);
+  border-radius:
+    var(--preview-gallery-card-radius) var(--preview-gallery-card-radius)
+    var(--radius-lg) var(--radius-lg);
   border: 1px solid rgb(0 0 0 / 0.08);
   background: #ffffff;
   padding: var(--preview-gallery-card-padding);
-  color: #171717;
+  color: var(--ink);
   outline: none;
   opacity: 1;
   /* Matches the axis of the switch poses below so the transition interpolates
@@ -188,8 +193,8 @@
   /* This transition belongs to the between-previews switch below, which is
      stepped by a JS timer — hence the shared duration. */
   transition:
-    opacity var(--pg-switch-ms, 190ms) ease-out,
-    transform var(--pg-switch-ms, 190ms) var(--ease-standard);
+    opacity var(--pg-switch-ms, var(--duration-base)) ease-out,
+    transform var(--pg-switch-ms, var(--duration-base)) var(--ease-standard);
   box-shadow:
     0 1px 1px rgb(0 0 0 / 0.04),
     0 18px 44px -18px rgb(0 0 0 / 0.28),
@@ -252,21 +257,44 @@
 }
 
 .preview-gallery-popup[data-ending-style] .preview-gallery-title {
-  transition-duration: var(--pg-content-out-ms, var(--duration-fast));
+  transition-duration: var(--pg-content-out-ms, var(--duration-quick));
   transition-timing-function: var(--ease-exit);
 }
 
 .preview-gallery-card[class*="preview-gallery-card-switch-"] .preview-gallery-title {
-  transition-duration: var(--pg-switch-ms, 190ms);
+  transition-duration: var(--pg-switch-ms, var(--duration-base));
 }
 
+/* The artwork runs to the card's top and sides: the band of white around it
+   made the preview a picture pinned to a page, where the card should read as
+   the preview itself with its story printed underneath. The negative margins
+   are the card's padding handed back, so the text below keeps the measure and
+   inset it already had rather than following the artwork out.
+
+   The frame's grey still fills whatever a contained image leaves over, and the
+   hairline it used to carry is gone: on three sides it now runs along the
+   card's own border, and the fourth is where the artwork meets white. Previews
+   that need real breathing room still ask for it by name, on every side rather
+   than only above and below: a wider band overhead than beside reads as a
+   mistake. */
 .preview-gallery-media-frame {
+  --pg-mat: var(--preview-gallery-media-padding, 0px);
   position: relative;
+  /* The mat is a border, not padding: `overflow` clips at the padding box, so
+     this puts the clip on the artwork's own edge rather than the frame's, and a
+     cropped preview's scaled artwork can no longer paint across the mat.
+     Clipping the frame itself instead would take its grey with it. */
   overflow: hidden;
-  border-radius: var(--preview-gallery-media-radius);
+  margin:
+    calc(-1 * var(--preview-gallery-card-padding))
+    calc(-1 * var(--preview-gallery-card-padding))
+    0;
+  border: var(--pg-mat) solid #f0f0f1;
+  /* Square all round. The card's clip rounds the top two corners already, and
+     the bottom pair used to curve into open white — a second outline inside the
+     card's own. The band now stops on a straight line across the full width. */
+  border-radius: 0;
   background: #f0f0f1;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
-  padding-block: var(--preview-gallery-media-padding-block, 0);
 }
 
 .preview-gallery-popup[data-preview-media="video"] .preview-gallery-media-frame {
@@ -290,6 +318,8 @@
   filter: blur(var(--blur-reveal));
 }
 
+/* Absolute positioning resolves against the frame's padding box, which the mat
+   being a border makes the artwork's box. */
 .preview-gallery-media-placeholder {
   position: absolute;
   inset: 0;
@@ -329,7 +359,7 @@
 
 .preview-gallery-media {
   width: 100%;
-  max-height: min(42vh, 480px);
+  max-height: var(--preview-gallery-media-cap);
   display: block;
   object-fit: contain;
   margin-inline: auto;
@@ -342,10 +372,6 @@
     filter: none;
     transition: opacity var(--duration-slow) var(--ease-smooth);
   }
-}
-
-.preview-gallery-popup[data-wide="true"] .preview-gallery-media {
-  max-height: min(72vh, 780px);
 }
 
 .preview-gallery-popup[data-preview-media="video"] .preview-gallery-media {
@@ -368,7 +394,7 @@
    the crop stays put while the popup width changes. */
 .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
   aspect-ratio: 16 / 9;
-  max-height: min(42vh, 480px);
+  max-height: var(--preview-gallery-media-cap);
 }
 
 .preview-gallery-popup[data-wide="true"][data-preview-crop="true"] .preview-gallery-media-frame {
@@ -385,7 +411,13 @@
 }
 
 .preview-gallery-content {
-  padding: clamp(0.85rem, 1.8vw, 1.25rem) 0 0;
+  width: min(100%, 48rem);
+  margin: 0 auto;
+  /* Even on the sides and bottom against the card's own padding: with no bottom
+     of its own the credits sat closer to the edge than the prose does to a side.
+     The top carries extra so the title reads as its own block rather than a
+     caption hanging off the artwork. */
+  padding: 4rem 1.5rem 1.5rem;
 }
 
 .preview-gallery-toolbar {
@@ -427,13 +459,12 @@
    between them gives the pointer back to the card underneath. */
 .preview-gallery-rail {
   --preview-gallery-rail-inset: calc(-1 * var(--preview-gallery-rail-clearance));
-  /* The card's padding plus half the artwork under it. The artwork is the
-     shorter of what the popup width gives the common preview ratio -- 383px at
-     544px wide -- and the cap the media carries, so this follows it down as the
-     window shortens instead of drifting toward the text. */
-  --preview-gallery-rail-anchor: calc(
-    var(--preview-gallery-card-padding) + min(383px, 42vh) / 2
-  );
+  /* Half the artwork, measured from the card's top: the artwork bleeds to both,
+     so there is no longer any padding above it to add. It is the shorter of what
+     the popup width gives the common preview ratio -- 367px tall at 4:3, where
+     the authored 490px binds -- and the cap the media carries, so this follows
+     it down as the window shortens instead of drifting toward the text. */
+  --preview-gallery-rail-anchor: calc(min(367px, var(--preview-gallery-media-cap)) / 2);
   position: absolute;
   z-index: 1;
   top: min(var(--preview-gallery-rail-anchor), 50%);
@@ -445,44 +476,35 @@
   pointer-events: none;
 }
 
-/* Same derivation at the 1090px popup, where the artwork is 780px tall and its
-   cap is the one on `.preview-gallery-media` below. */
+/* Same derivation in the wide layout, where the width is the cap's 4:3 width
+   whenever it is under the authored 981px, so the cap is the artwork's height. */
 .preview-gallery-popup[data-wide="true"] .preview-gallery-rail {
-  --preview-gallery-rail-anchor: calc(
-    var(--preview-gallery-card-padding) + min(780px, 72vh) / 2
-  );
+  --preview-gallery-rail-anchor: calc(min(736px, var(--preview-gallery-media-cap)) / 2);
 }
 
 .preview-gallery-rail .preview-gallery-nav {
   pointer-events: auto;
 }
 
-.preview-gallery-heading {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
 .preview-gallery-title {
   margin: 0;
-  color: #171717;
+  color: var(--ink);
   font-size: var(--text-md);
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: 0;
   text-wrap: balance;
   filter: none;
-  transition: filter var(--pg-content-in-ms, var(--duration-quick)) var(--ease-smooth);
+  transition: filter var(--pg-content-in-ms, var(--duration-base)) var(--ease-smooth);
 }
 
 .preview-gallery-description {
   margin: 0.5rem 0 0;
   max-width: 46rem;
-  color: var(--muted);
-  font-size: var(--text-sm);
+  color: #545454;
+  font-size: var(--text-md);
   font-weight: 400;
-  line-height: 1.45;
+  line-height: 1.6;
   letter-spacing: 0;
   text-wrap: pretty;
 }
@@ -534,7 +556,7 @@
 
 .preview-gallery-detail-row dd {
   margin: 0;
-  color: #171717;
+  color: var(--ink);
   font-size: var(--text-sm);
   line-height: 1.35;
   text-align: right;
@@ -543,20 +565,24 @@
   text-wrap: pretty;
 }
 
+.preview-gallery-team {
+  margin-top: 1.5rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
 .preview-gallery-people {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.35rem 0.85rem;
+  justify-content: flex-start;
+  gap: 0.5rem 1rem;
 }
 
-/* Scoped past `.preview-gallery-detail-row a` below, which underlines every
-   anchor -- these read as chips like the hero's work-history pills instead:
-   no underline, a background that arrives on hover. */
-.preview-gallery-detail-row .preview-gallery-person {
+/* Team credits keep the existing avatar links, below the project prose. */
+.preview-gallery-person {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -564,13 +590,13 @@
   margin: -0.2rem -0.4rem;
   padding: 0.2rem 0.4rem;
   border-radius: var(--radius-full);
-  color: #171717;
+  color: var(--ink);
   text-decoration: none;
   transition: background-color var(--duration-quick) var(--ease-standard);
 }
 
-.preview-gallery-detail-row .preview-gallery-person:hover,
-.preview-gallery-detail-row .preview-gallery-person:focus-visible {
+.preview-gallery-person:hover,
+.preview-gallery-person:focus-visible {
   background: #f2f2f2;
 }
 
@@ -604,13 +630,13 @@
   border-radius: var(--radius-full);
   border: 1px solid rgb(0 0 0 / 0.08);
   background: rgb(255 255 255 / 0.92);
-  color: #171717;
+  color: var(--ink);
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow:
-    0 1px 1px rgb(0 0 0 / 0.05),
-    0 12px 24px -14px rgb(0 0 0 / 0.36);
+  /* The floating-chrome recipe, same as the close and the table of contents.
+     The edge is a real border here because the writings rail darkens it. */
+  box-shadow: var(--shadow-overlay);
   transition:
     background-color var(--duration-quick) ease-out,
     color var(--duration-quick) ease-out,
@@ -621,9 +647,7 @@
 .preview-gallery-nav:hover:not(:disabled),
 .preview-gallery-nav:focus-visible:not(:disabled) {
   background: #ffffff;
-  box-shadow:
-    0 1px 1px rgb(0 0 0 / 0.06),
-    0 16px 30px -14px rgb(0 0 0 / 0.42);
+  box-shadow: var(--shadow-overlay-hover);
 }
 
 .preview-gallery-nav:disabled {
@@ -640,6 +664,13 @@
   height: 1.25rem;
 }
 
+/* Optical centring. A chevron's bounding box is centred in the pill, but the
+   eye reads the open side as the shape's weight, so a geometrically centred
+   arrow looks like it has drifted away from where it points. A 1px nudge
+   toward the apex settles it; the X needs none, being symmetrical. */
+.preview-gallery-nav-icon-prev { translate: -1px 0; }
+.preview-gallery-nav-icon-next { translate: 1px 0; }
+
 @media (max-width: 639.98px) {
 
   .preview-gallery-shell {
@@ -654,8 +685,7 @@
   }
 
   .preview-gallery-card {
-    --preview-gallery-card-padding: 0.85rem;
-    --preview-gallery-media-radius: var(--radius-md);
+    --preview-gallery-card-padding: 1.7rem;
   }
 
   .preview-gallery-media {
@@ -670,10 +700,6 @@
 
   .preview-gallery-detail-row dd {
     text-align: left;
-  }
-
-  .preview-gallery-people {
-    justify-content: flex-start;
   }
 
   .preview-gallery-toolbar {
@@ -709,6 +735,11 @@
 
   .preview-gallery-rail {
     display: none;
+  }
+
+  /* The toolbar holds the top edge here, so the artwork bleeds sideways only. */
+  .preview-gallery-media-frame {
+    margin-top: 0;
   }
 
   .preview-gallery-toolbar {
@@ -757,5 +788,11 @@
   .preview-gallery-popup .preview-gallery-card .preview-gallery-title,
   .preview-gallery-media[data-loaded] {
     filter: none;
+  }
+}
+
+@media (max-width: 699.98px) {
+  .preview-gallery-content {
+    padding-inline: 1.25rem;
   }
 }

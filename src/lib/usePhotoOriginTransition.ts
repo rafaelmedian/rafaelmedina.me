@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 
+import { cssTimeToMilliseconds } from "./cssTime"
+
 const useClientLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 const frameProperties = ["height", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderRadius", "boxShadow"] as const
 const imageProperties = ["height", "borderRadius", "objectPosition"] as const
@@ -15,6 +17,20 @@ function scalePixels(styles: Record<string, string>, scale: number) {
   return Object.fromEntries(Object.entries(styles).map(([property, value]) => [
     property, value.replace(/(-?[\d.]+)px/g, (_, number) => `${Number(number) * scale}px`),
   ]))
+}
+
+// Both endpoints centre the flight on its own box with -50%, which resolves
+// against a box that shrinks all the way home. A computed matrix bakes that
+// half in at the size it was read, so interpolating from one carries the open
+// card's half-height through a card that is no longer that tall: the photo
+// arcs up and drops the last pixels onto the print. Recover the offsets and
+// hand the interruption back the same percentage form.
+function readFlightTransform(element: HTMLElement) {
+  const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
+  const x = matrix.e + element.offsetWidth / 2
+  const y = matrix.f + element.offsetHeight / 2
+  const angle = Math.atan2(matrix.b, matrix.a) * 180 / Math.PI
+  return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${angle}deg) scale(${Math.hypot(matrix.a, matrix.b)})`
 }
 
 type PhotoOrigin = {
@@ -97,8 +113,7 @@ export function usePhotoOriginTransition(
     if (!sources.length) return
     const tokens = getComputedStyle(strip)
     const cssDuration = tokens.getPropertyValue(open ? "--photo-open-duration" : "--photo-close-duration").trim()
-    // Production CSS can minify 200ms to .2s; WAAPI always expects milliseconds.
-    const duration = parseFloat(cssDuration) * (cssDuration.endsWith("ms") ? 1 : 1000)
+    const duration = cssTimeToMilliseconds(cssDuration)
     const easing = tokens.getPropertyValue("--photo-motion-ease").trim()
     const timing: KeyframeAnimationOptions = { duration, easing, fill: "both" }
     const previousFlights = flights.current
@@ -163,7 +178,7 @@ export function usePhotoOriginTransition(
         document.body.appendChild(clone)
       }
 
-      const currentFrame = readStyles(clone, [...frameProperties, "transform"])
+      const currentFrame = { ...readStyles(clone, frameProperties), transform: readFlightTransform(clone) }
       const currentImage = readStyles(image, imageProperties)
       const currentCaptionOpacity = getComputedStyle(caption).opacity
       previous?.animations.forEach((animation) => animation.cancel())

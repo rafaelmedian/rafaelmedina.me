@@ -72,6 +72,20 @@ test("a bookmarked project opens after hydration and refresh and closes locally"
   expect(errors).toEqual([])
 })
 
+test("a shared project path opens over the gallery and closes into it", async ({ page }) => {
+  const errors: string[] = []
+  page.on("pageerror", error => errors.push(error.message))
+  await page.goto("/work/popparazi-v1/?ref=shared")
+  await expect(page.getByRole("dialog")).toHaveAccessibleName("Popparazi V1")
+  await expect(page.getByRole("button", { name: "Next preview", exact: true })).toBeVisible()
+
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog")).toBeHidden()
+  await expect(page).toHaveURL(/\/\?ref=shared$/)
+  await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 test("an unknown project URL keeps the portfolio usable", async ({ page }) => {
   await page.goto("/?project=missing")
   await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeVisible()

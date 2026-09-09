@@ -1,0 +1,151 @@
+/* --------------------------------------------------- booking dialog --- */
+
+/* The Cal.com calendar, opened from the hero's availability line. Clicking that
+   line is the trigger, so the surface has to arrive without ceremony: one fade
+   and a short lift, no origin flight. Chrome around the iframe stays minimal —
+   the calendar inside brings its own dense layout and a framed panel would
+   double every edge. */
+
+.booking-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog-backdrop);
+  background: rgb(18 18 18 / 0.42);
+  cursor: pointer;
+  backdrop-filter: blur(10px) saturate(0.92);
+  -webkit-backdrop-filter: blur(10px) saturate(0.92);
+  transition: opacity var(--duration-base) ease-out;
+}
+
+.booking-backdrop[data-starting-style],
+.booking-backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.booking-backdrop[data-ending-style] {
+  transition-duration: var(--duration-quick);
+}
+
+.booking-shell {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: grid;
+  place-items: center;
+  padding:
+    max(2.5rem, env(safe-area-inset-top))
+    max(1.25rem, env(safe-area-inset-right))
+    max(2.5rem, env(safe-area-inset-bottom))
+    max(1.25rem, env(safe-area-inset-left));
+  cursor: pointer;
+}
+
+.booking-popup {
+  position: relative;
+  /* Sized to the Cal.com month view rather than to the viewport: the embed
+     centres its own layout, so a taller surface only adds empty bands above
+     and below the calendar. */
+  width: min(1040px, 100%);
+  height: min(640px, 100%);
+  display: grid;
+  /* One row, not two: the header that used to own the `auto` track is gone, and
+     the sr-only title and description that replaced it are position: absolute,
+     so they are not grid items. Left as `auto minmax(0, 1fr)` the frame landed
+     in the auto track and sized to the iframe's default 150px, leaving the rest
+     of the popup empty below the calendar. */
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+  cursor: auto;
+  background: var(--canvas);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-smooth);
+}
+
+.booking-popup[data-starting-style],
+.booking-popup[data-ending-style] {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+
+.booking-popup[data-ending-style] {
+  transition-duration: var(--duration-quick);
+}
+
+/* The last resort inside the loading line, once the frame has had its six
+   seconds and shown nothing. It used to sit in a header above the calendar. */
+.booking-external {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+.booking-external:hover,
+.booking-external:focus-visible {
+  color: var(--focus-ring);
+}
+
+.booking-frame {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  background: var(--body-bg);
+}
+
+.booking-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  transition: opacity var(--duration-slow) ease-out;
+}
+
+.booking-frame[data-ready="true"] .booking-iframe {
+  opacity: 1;
+}
+
+.booking-loading {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding-inline: 1.5rem;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  text-align: center;
+  text-wrap: balance;
+}
+
+@media (max-width: 639.98px) {
+
+  .booking-shell {
+    padding:
+      max(1rem, env(safe-area-inset-top))
+      max(0.75rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom))
+      max(0.75rem, env(safe-area-inset-left));
+  }
+
+  .booking-popup {
+    height: 100%;
+    border-radius: var(--radius-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .booking-popup[data-starting-style],
+  .booking-popup[data-ending-style] {
+    transform: none;
+  }
+}
+
+/* The pill's hint used to be this file's own one-line text popup. It is a
+   reaction card now, shared with the address -- see .reaction-card in
+   profile.css. The live calendar is still only loaded after a press. */

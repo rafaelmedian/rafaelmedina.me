@@ -10,7 +10,7 @@
 
 .personal-photos-trigger {
   position: relative;
-  width: min(27rem, calc(100% - 7.5rem));
+  width: min(21rem, calc(100% - 7.5rem));
   border: 0;
   padding: 0;
   background: transparent;
@@ -41,7 +41,7 @@
   padding: 0.25rem 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   background: var(--canvas);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
   transform: translate(var(--print-offset-x), var(--print-offset-y)) rotate(var(--print-tilt));
   transition: transform var(--duration-slow) var(--photo-motion-ease);
 }
@@ -76,28 +76,39 @@
 .personal-photos-hint {
   position: absolute;
   top: 50%;
-  left: calc(100% + 1rem);
+  left: calc(100% + 1.75rem);
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  /* The note is an aside, not a label on the stack: it wants air on both sides
+     of its arrow so the mark reads as pointing at the prints rather than
+     touching them. */
+  gap: 0.625rem;
   width: max-content;
-  max-width: 6.5rem;
-  color: #e5352b;
+  max-width: 8rem;
+  color: var(--muted);
   opacity: 0;
   pointer-events: none;
   transform: translateY(-50%) translateX(-0.5rem) rotate(-3deg);
   transition:
     opacity var(--duration-slow) var(--photo-motion-ease),
     transform var(--duration-slow) var(--photo-motion-ease);
-  font-family: "Handlee", "Bradley Hand", "Segoe Print", cursive;
-  font-size: var(--text-md);
+  /* Reenie Beanie, not the site's Handlee: see the @font-face note in base.css.
+     The hand itself carries the note, so there is no text-stroke to thicken
+     here -- that is what flattened the old one into lettering.
+
+     The multiplier is a metric correction, not a fifth step on the type scale.
+     Reenie Beanie draws its lowercase at 0.41em against Handlee's 0.49 and the
+     0.68 of most text faces, so set at --text-lg it would read two thirds the
+     optical size of everything around it. 1.4 puts its x-height back at 10.3px,
+     which is where the note sits next to the prints. */
+  font-family: "Reenie Beanie", "Bradley Hand", "Segoe Print", cursive;
+  font-size: calc(var(--text-lg) * 1.4);
   font-weight: 400;
   line-height: 1.2;
   text-align: left;
-  -webkit-text-stroke: 0.45px currentColor;
 }
 
-.personal-photos-hint svg { flex-shrink: 0; width: 2.25rem; height: 1.25rem; overflow: visible; }
+.personal-photos-hint svg { flex-shrink: 0; width: 2.5rem; height: 1.25rem; overflow: visible; }
 
 .personal-photos-trigger:focus-visible .personal-photos-hint {
   opacity: 1;
@@ -141,7 +152,7 @@
   .personal-photos { padding-bottom: 1.5rem; }
   .personal-photos-trigger { width: 100%; }
   .personal-photos-hint {
-    top: calc(100% + 1.5rem);
+    top: calc(100% + 1.75rem);
     left: auto;
     right: 0;
     max-width: none;

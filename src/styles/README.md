@@ -6,15 +6,18 @@ and the global reduced-motion policy last.
 
 - `base.css`: fonts, shared tokens, element defaults, and keyboard focus.
 - `page-edge.css`: the bottom overscroll effect.
-- `profile.css`: page shell, hero, avatar, first-load intro, and profile metadata.
+- `profile.css`: page shell, hero, avatar, first-load intro, and profile metadata
+  (including the location line's copy-to-clipboard address).
 - `navigation.css`: corner links, takeover close button, and mobile contents.
 - `local-time.css`: local time, map, and résumé preview.
 - `about.css`: About content and résumé layout.
 - `work-history.css`: work-history popovers and inline company links.
-- `contact.css`: contact pills, copy reaction, and social hover cards.
+- `contact.css`: contact pills, the booking pill, and social hover cards.
 - `work-grid.css`: project rows, captions, media, and About takeover choreography.
 - `personal-photos.css`: photo stack and carousel dialog.
 - `preview-gallery.css`: project preview dialog.
+- `booking.css`: the hint tooltip shared by the booking pill and the address,
+  the booking dialog, and the Cal.com frame.
 - `writings.css`: writings folder tile, reader dialog, and its transitions.
 - `standalone.css`: prerendered project pages and the 404.
 - `reduced-motion.css`: the shared duration clamp and final visibility resets.
