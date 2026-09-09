@@ -6,11 +6,14 @@ import type { SiteLinks } from "../data/portfolio"
 import { services } from "../data/services"
 import { trackEvent } from "../lib/analytics"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { CompanyLogoGrid } from "./CompanyLogoGrid"
 import { InlineBookingLink } from "./InlineBookingLink"
+import { LocalTimeCard } from "./LocalTimeCard"
 import { PersonalPhotos } from "./PersonalPhotos"
 
 type AboutPanelProps = {
   links: SiteLinks
+  localTimeLabel: string
 }
 
 const hobbies = [
@@ -72,7 +75,7 @@ function ResumeCompany({ job }: { job: CvExperience }) {
   return <span>{job.company}</span>
 }
 
-export function AboutPanel({ links }: AboutPanelProps) {
+export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
   const prefersReducedMotion = usePrefersReducedMotion()
 
@@ -189,7 +192,12 @@ export function AboutPanel({ links }: AboutPanelProps) {
                 ))}
               </ul>
 
-              {/* The address is spelled out here as persistent text; the hero
+              {/* Where I am, in the section that is already about who I am.
+                  The hero says the two cities; this says which one it is
+                  tonight, and the map behind it says the rest. */}
+              <LocalTimeCard timeLabel={localTimeLabel} reducedMotion={prefersReducedMotion} />
+
+              {/* The address is spelled out here as persistent text; the corner
                   copy action also exposes it in a pointer tooltip. */}
               <p className="mosaic-about-closing">
                 Building something? Email me at{" "}
@@ -211,6 +219,29 @@ export function AboutPanel({ links }: AboutPanelProps) {
             </div>
 
             <PersonalPhotos />
+          </section>
+
+          {/* The résumé below spells out what each engagement was; this reads
+              the same list as marks, so a visitor skimming for a name they
+              recognise finds it before the dated entries start. It is not a
+              table-of-contents stop -- it introduces the work history rather
+              than standing beside it. */}
+          <section
+            className="mosaic-about-section mosaic-about-companies"
+            aria-labelledby="about-companies-heading"
+          >
+            <div className="mosaic-about-companies-copy">
+              <h2
+                id="about-companies-heading"
+                className="mosaic-about-section-heading"
+                data-about-fade=""
+              >
+                Worked with
+              </h2>
+              <div data-about-fade="">
+                <CompanyLogoGrid />
+              </div>
+            </div>
           </section>
 
           <section
