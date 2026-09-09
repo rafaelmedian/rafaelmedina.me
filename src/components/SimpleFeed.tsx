@@ -885,7 +885,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
   return (
     <section className="mosaic-shell">
-      <h1 id="portfolio-title" className="sr-only" tabIndex={-1}>{profile.name} portfolio</h1>
       <SectionCorner
         onSelect={openAbout}
         onNotes={(opener) => writingsFolderRef.current?.openFolder(opener)}
@@ -942,7 +941,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               </span>
             </button>
             <div className="mosaic-profile-meta">
-              <h2>{profile.name}</h2>
+              <h1 id="portfolio-title" tabIndex={-1}>{profile.name}</h1>
               <p className="mosaic-profile-subtitle">{profile.title}</p>
             </div>
           </div>

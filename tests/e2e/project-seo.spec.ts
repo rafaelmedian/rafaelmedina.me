@@ -61,6 +61,13 @@ test("the resume page ships its own metadata and the whole history without JavaS
   // list of its own inside them.
   await expect(page.getByRole("list", { name: "Work history" }).locator(":scope > li")).toHaveCount(6)
   await expect(page.getByRole("list", { name: "Education" }).getByRole("listitem")).toHaveCount(2)
+  // The page's own h1 is "Work history", so the entries under it are h2 and
+  // the schools h3: the same component sits under an h2 in the About sheet,
+  // where it renders one level down.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Work history")
+  await expect(page.getByRole("heading", { level: 2, name: "Senior Product Designer at 0x Project" })).toBeVisible()
+  await expect(page.getByRole("heading", { level: 2, name: "Education" })).toBeVisible()
+  await expect(page.getByRole("heading", { level: 3 })).toHaveCount(2)
   await expect(page.getByRole("link", { name: "View resume PDF" })).toHaveAttribute("href", "/rafael-medina-resume.pdf")
   await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")
 
@@ -105,7 +112,7 @@ test("homepage project links support a new tab and an inline preview", async ({ 
   await expect(page).toHaveURL(/\/work\/matcha-multiwallet-flow\/$/)
   await expect(page).toHaveTitle("Matcha multiwallet flow — Rafael Medina")
   await page.keyboard.press("Escape")
-  await expect(page).toHaveTitle("Rafael Medina — Product Designer")
+  await expect(page).toHaveTitle("Rafael Medina — Senior Product Designer")
   expect(errors).toEqual([])
 })
 

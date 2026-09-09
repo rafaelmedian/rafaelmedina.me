@@ -18,7 +18,7 @@ test("project URLs follow selection and browser Back and Forward", async ({ page
   await page.goBack()
   await expect(page.getByRole("dialog")).toBeHidden()
   await expect(page).toHaveURL(/\?ref=portfolio$/)
-  await expect(page).toHaveTitle("Rafael Medina — Product Designer")
+  await expect(page).toHaveTitle("Rafael Medina — Senior Product Designer")
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/")
   await expect(trigger).toBeFocused()
   await page.goForward()

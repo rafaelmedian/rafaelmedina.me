@@ -277,7 +277,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
    leads because it is the darkest ink and the only 600 in the block, the work
    history and location sit on --muted, and the nav sits lighter still. Tracking
    follows the size per /design-system -- 14px takes -0.00563rem. */
-.mosaic-profile-meta h2 {
+.mosaic-profile-meta h1 {
   margin: 0;
   font-family: var(--font-ui);
   font-style: normal;

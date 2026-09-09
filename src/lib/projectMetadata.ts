@@ -41,7 +41,7 @@ type PageDescription = {
 }
 
 const homePage: PageDescription = {
-  title: "Rafael Medina — Product Designer",
+  title: "Rafael Medina — Senior Product Designer",
   description: "Senior product designer across web3, fintech, and consumer products. Ten years prototyping in code and shipping real interfaces. Available for work.",
   path: "/",
   image: "/og-image.png",

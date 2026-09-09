@@ -91,7 +91,11 @@ jobs:
           VITE_LIKES_API_URL: http://127.0.0.1:8787
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Playwright downloads its own Chromium. The runner's unrelated
+          # Chrome apt source can fail with a repository hash mismatch.
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources
+          npx playwright install --with-deps chromium
 
       - name: Run e2e tests
         run: npx playwright test --shard=${{ matrix.shard }}
@@ -119,7 +123,11 @@ jobs:
       - run: npm ci
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Playwright downloads its own Chromium. The runner's unrelated
+          # Chrome apt source can fail with a repository hash mismatch.
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources
+          npx playwright install --with-deps chromium
 
       # `/design-system` is dev-only, so this suite needs its own Vite dev
       # server rather than either shard's production preview server.
