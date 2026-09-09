@@ -1262,7 +1262,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask handlee code block markdown syntax highlighting monospace acknowledgements 200ms 160ms 360ms --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements 200ms 160ms 360ms --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder /></div>
               <p className="ds-caption">
@@ -1338,6 +1338,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 and no interjections between paragraphs.
                 Notes are ordinary text in the reading order: a gutter note reads after its paragraph, and it is never
                 announced as a separate landmark or the only place a point is made.
+                The archive leaves the same two gutters empty, and draws into them instead: the things a note gets
+                written with rather than icons — a sheet with its corner turned down, a sharpened pencil and its
+                shavings, a cup on its saucer. They come from the same Rough.js pass and ship as 88px PNG masks beside
+                the brackets, on --muted at 0.55 so they read as pencil the list can look past. Drawn as vector
+                outlines they had one even stroke at every edge and read as traced; adding detail to the path did not
+                fix that, and retracing them did. One is pinned every third row counted across the whole list rather
+                than per year, alternating rails so no two face each other, on three lifts and three tilts between
+                -5 and 7 degrees. The three objects cycle, so the archive passes ten notes before one repeats. They
+                are decorative and hidden from assistive technology, absolutely positioned so they never enter the
+                content height the sheet measures, and they leave with the gutters below 1000px.
                 An article can print a fenced sample: monospace from the system stack at --text-xs on
                 --mosaic-card-surface, --radius-md with the same 5% inset hairline the reader's figures take, over a
                 --text-xs grey caption. There is one such sample and it is Markdown, so the highlighter is thirty lines

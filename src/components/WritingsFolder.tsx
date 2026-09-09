@@ -82,50 +82,30 @@ function MarginNote({ annotation }: { annotation: WritingAnnotation }) {
 }
 
 // The archive leaves the same two gutters empty that the reader hangs its
-// marginalia in. Drawings go into them down the list, in the same pencil the
+// marginalia in. Objects go into them down the list, in the same pencil the
 // handwriting is set in, so the column of titles has something beside it
-// rather than a bare page each side. Objects a note gets written with, not
-// icons: the sheet, the pencil, the cup it was written over. Every edge is a
-// curve a degree or two off true -- a straight line and a right angle are what
-// make a drawing read as traced rather than drawn.
-const archiveDrawings = [
-  <>
-    <path d="M28.6 19.4C29.2 33.2 28.9 46.9 28 60.6 27.8 65 27.6 69.6 28 74.4 41.6 73.4 55.2 72.7 68.8 71.6 69.4 57 69.8 42.4 70.6 27.8 67 24.5 63.6 21 60.4 17.2 49.6 17.3 39.1 18 28.6 19.4Z" />
-    <path d="M60.4 17.2C60.9 21.5 61 24.6 61.4 28.2 64.4 28.1 67.4 28 70.6 27.8" />
-    <path d="M35.8 35.2C41 34.3 46.4 33.9 51.8 33.9 54.8 33.9 57.8 34 60.8 34.4" />
-    <path d="M36 44C41.4 43.1 46.9 42.7 52.4 42.8 55 42.8 57.6 42.9 60.2 43.2" />
-    <path d="M36.2 52.8C40.8 52 45.4 51.7 50 51.7 52 51.7 54 51.8 56 52" />
-    <path d="M36.4 61.6C40.2 60.9 44 60.6 47.8 60.6 49.6 60.6 51.4 60.7 53.2 60.9" />
-  </>,
-  <>
-    <path d="M24.2 60.2C28.4 55.6 32.6 50.6 36.6 47 42 42.2 47.4 38.4 58 21.2" />
-    <path d="M32.6 67.4C36.6 62.8 40 58.8 43.2 55 48.8 48.4 55.4 41.6 66.4 28.4" />
-    <path d="M24.2 60.2C22.4 64.4 20.6 69.2 19.2 74.2 23.8 72.2 28.4 70 32.6 67.4" />
-    <path d="M28.4 55.8C31.4 58.4 34.2 61 37.2 63.4" />
-    <path d="M52.8 27.4C55.6 29.8 58.4 32.2 61.2 34.6" />
-    <path d="M58 21.2C60.2 18.4 63.8 17.8 65.9 19.5 68.2 21.4 68.6 26.1 66.4 28.4" />
-  </>,
-  <>
-    <path d="M28.8 41.4C38.8 40.6 48.8 40.7 58.8 41.6 59.6 51.2 58.2 59.8 54.4 64.8 51.6 68.4 46 69.4 41.6 67.9 37.2 66.4 34.4 62.2 32.7 55.9 31.3 50.6 29.5 45.9 28.8 41.4Z" />
-    <path d="M28.8 41.4C33.6 39.6 38.9 38.8 44 38.9 49.2 39 54.3 39.9 58.8 41.6" />
-    <path d="M58.9 46.6C63.6 45 67.6 46.9 67.8 51.2 68 55.6 64.4 58.8 58.4 58.9" />
-    <path d="M38.4 32.6C41.6 29.6 38.4 26.4 40.3 22.8 41.2 21.2 42.5 20.4 43.6 20" />
-    <path d="M48.4 33.2C51.6 30.2 48.4 27 50.3 23.4 50.9 22.4 51.6 21.7 52.2 21.3" />
-  </>,
-]
+// rather than a bare page each side. The things a note gets written with, not
+// icons: the sheet, the pencil, the cup it was written over.
+//
+// Pictures of pencil rather than shapes, for the same reason the brackets are.
+// Drawn as vector outlines these were one clean stroke of even weight at every
+// edge, which is the one thing a pencil never gives you, and no amount of
+// detail in the path fixed it. They go through the Rough.js pass the marks do
+// in scripts/build-writing-marks.mjs and ship as PNGs from
+// public/writings/marks, black on transparent and used as masks, so they still
+// take their colour from the list beside them.
+const ARCHIVE_DRAWINGS = ["sheet", "pencil", "cup"]
 
 // One drawing every few rows rather than one per year: a year with seven notes
 // under it would otherwise carry a single mark at the top and leave the rest of
-// the gutter bare. Sides alternate so no two are drawn against each other.
+// the gutter bare. Sides alternate so no two are drawn against each other, and
+// the three objects cycle, so the list has to pass ten notes before one repeats.
 function ArchiveDrawing({ index }: { index: number }) {
   const place = index % 2 ? "right" : "left"
+  const object = ARCHIVE_DRAWINGS[index % ARCHIVE_DRAWINGS.length]
   return (
-    <span className="writings-drawing" data-place={place} data-lift={index % 3} aria-hidden="true">
-      <svg viewBox="0 0 88 88" width="88" height="88" fill="none" stroke="currentColor"
-        strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
-        {archiveDrawings[index % archiveDrawings.length]}
-      </svg>
-    </span>
+    <span className="writings-drawing" data-place={place} data-lift={index % 3} aria-hidden="true"
+      style={{ "--writings-drawing-mark": `url("/writings/marks/drawing-${object}.png")` } as CSSProperties} />
   )
 }
 

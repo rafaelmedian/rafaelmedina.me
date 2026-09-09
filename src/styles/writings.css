@@ -312,14 +312,26 @@
 .writings-drawing { display: none; }
 @media (min-width: 1000px) {
   .writings-year li { position: relative; }
+  /* A picture of pencil used as a mask, the way the reader's brackets are, so
+     one asset per object serves any ink. The box is square because the drawing
+     is: the mask is sized to it rather than to the file, and a PNG has no
+     intrinsic ratio to fall back on the way the outgoing <svg> did. */
   .writings-drawing {
     position: absolute;
     top: calc(-0.5rem + var(--writings-drawing-lift, 0rem));
     display: block;
     width: 5.5rem;
-    color: var(--muted);
+    aspect-ratio: 1;
     opacity: 0.55;
     pointer-events: none;
+    -webkit-mask: var(--writings-drawing-mark) center / 100% 100% no-repeat;
+    mask: var(--writings-drawing-mark) center / 100% 100% no-repeat;
+  }
+  /* The ink goes on only where the mask can cut it out, as with the brackets:
+     a browser that ignores mask-image would otherwise fill each gutter with a
+     solid grey square. */
+  @supports (mask-image: url("/writings/marks/drawing-sheet.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet.png")) {
+    .writings-drawing { background-color: var(--muted); }
   }
   /* Each sits on a slightly different rail and tilt, the way the margin notes
      do, so a run of them reads as drawn into the page rather than as a column
@@ -329,7 +341,6 @@
   .writings-drawing[data-place="left"] { right: calc(100% + 0.75rem); rotate: -5deg; }
   .writings-drawing[data-place="right"] { left: calc(100% + 0.75rem); rotate: 4deg; }
   .writings-drawing[data-place="right"][data-lift="2"] { rotate: 7deg; }
-  .writings-drawing svg { display: block; width: 100%; height: auto; }
 }
 /* A year sits above the notes it belongs to rather than in a gutter beside
    them, so the full measure goes to the titles. The rows keep their -0.5rem
