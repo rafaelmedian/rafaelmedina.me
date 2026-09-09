@@ -105,7 +105,7 @@ test("homepage project links support a new tab and an inline preview", async ({ 
   await expect(page).toHaveURL(/\/work\/matcha-multiwallet-flow\/$/)
   await expect(page).toHaveTitle("Matcha multiwallet flow — Rafael Medina")
   await page.keyboard.press("Escape")
-  await expect(page).toHaveTitle("Rafael Medina — Product Designer")
+  await expect(page).toHaveTitle("Rafael Medina — Senior Product Designer")
   expect(errors).toEqual([])
 })
 
