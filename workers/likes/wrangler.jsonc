@@ -9,7 +9,7 @@
   "d1_databases": [{
     "binding": "DB",
     "database_name": "rafaelmedina-note-likes",
-    "database_id": "local-note-likes",
+    "database_id": "3fb0c0c8-b14a-447f-a122-58cf2bab0ff4",
     "migrations_dir": "migrations"
   }]
 }
