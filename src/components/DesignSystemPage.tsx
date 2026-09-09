@@ -1857,7 +1857,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
               <div
                 className="ds-rule"
-                data-ds-terms={terms("direction axis preview gallery paging arrows chevron swipe translateX 1.4rem 0.985 --duration-base 200ms")}
+                data-ds-terms={terms("direction axis preview gallery paging arrows chevron swipe translateX 1.4rem 0.985 --duration-base 200ms overscroll behavior none contain bounce rubber band white sliver")}
               >
                 <strong>Motion moves along the axis its control points down.</strong>
                 <p>
@@ -1867,6 +1867,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   arrives from the opposite edge, both over <code>--duration-base</code> (200ms), so the set reads as a
                   strip moving past rather than two unrelated fades. This used to translate on Y, which contradicted
                   both affordances. Reduced motion swaps the preview outright.
+                </p>
+                <p>
+                  Along the axis it does not page on, the card does not move at all: its overscroll is{" "}
+                  <code>none</code> rather than <code>contain</code>, which keeps the scroll off the page behind it
+                  the way <code>contain</code> did and also takes away the bounce. The artwork runs to the card's top
+                  edge, so a bounce peeled it off and showed a white sliver of the card behind it &mdash; a gap where
+                  the preview should be sealed to its own edge.
                 </p>
               </div>
 
