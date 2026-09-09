@@ -106,15 +106,24 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
   expect(pulledState.lightOpacity).toBeLessThan(0.5)
   await expect(edge).toHaveAttribute("data-pulling", "false")
   await expect(edge).toHaveCSS("opacity", "0")
-
-  const nextPalette = await edge.evaluate((element) => {
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    return [1, 2, 3, 4, 5, 6, 7].map((index) =>
-      (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
+  // pullBy only repaints while the glow has finished releasing, and handleWheel
+  // drops the event outright unless the page is still resting at the bottom. A
+  // wheel that lands on a closed gate is swallowed silently and leaves the old
+  // palette in place -- which is how this read used to flake on CI, where the
+  // page settles later than it does locally. Retry the pull instead of assuming
+  // one event takes; a palette that genuinely never refreshes still fails here,
+  // on the timeout.
+  await expect(edge).toHaveAttribute("data-glowing", "false")
+  await expect
+    .poll(() =>
+      edge.evaluate((element) => {
+        window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+        return [1, 2, 3, 4, 5, 6, 7].map((index) =>
+          (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
+        )
+      }),
     )
-  })
-
-  expect(nextPalette).not.toEqual(pulledState.palette)
+    .not.toEqual(pulledState.palette)
 })
 
 test("randomizes elastic-edge palettes across the full color spectrum", () => {
