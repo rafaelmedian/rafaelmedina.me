@@ -355,6 +355,37 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   box-shadow: 0 0 0 4px rgb(52 162 106 / 0.18);
 }
 
+/* The availability line is the booking trigger, so it is a button — but it is
+   still one clause of the hero's location sentence, and a button that announced
+   itself as one at rest would put a second control beside the contact pills.
+   It reads as text until the pointer is on it, and only then takes the
+   underline and the darker ink a link would have carried all along. */
+.mosaic-availability-trigger {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+/* The underline sits on the label rather than the button so it stops at the
+   text and never runs under the availability dot. */
+.mosaic-availability-trigger:hover .mosaic-availability-label,
+.mosaic-availability-trigger:focus-visible .mosaic-availability-label {
+  text-decoration: underline;
+  text-decoration-color: var(--muted-soft);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+.mosaic-availability-trigger:hover,
+.mosaic-availability-trigger:focus-visible {
+  color: var(--ink);
+}
+
 .mosaic-profile-contact .mosaic-profile-actions {
   margin-top: 1.1rem;
 }

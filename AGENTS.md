@@ -97,6 +97,25 @@ Keep it in step with `src/data/cv.ts` (work history, dates, education) and
 reads the shipped PDF and fails when those disagree. The script refuses to write a
 second page.
 
+## Generated artwork
+
+`public/writings/marks/` holds the notes reader's pencil marks: the bracket that
+holds a passage beside a margin note, and the stroke under an interjection. Like
+the résumé, they are generated rather than drawn by hand. Edit
+`scripts/build-writing-marks.mjs`, run `node scripts/build-writing-marks.mjs`,
+and commit the regenerated PNGs.
+
+They were bezier paths written inline in the component first, and they read as
+vector geometry — one clean stroke of even weight, the same curve every time,
+which is the one thing a pencil never does. The script draws them with Rough.js,
+which retraces every line with randomised bowing, and rasterises them through the
+Playwright that is already a devDependency, so no drawing library reaches the
+browser. Each file's seed is hashed from its own name, so a rerun reproduces the
+same artwork instead of churning the diff.
+
+The PNGs are black on transparent and are used as CSS masks, so the reader still
+colours them with `currentColor` and one asset serves any ink.
+
 ## Planning Mode Rules
 
 - In planning mode, any task related to design, animation/motion, or user flows must include an ASCII plan.

@@ -372,8 +372,13 @@ export function PreviewGalleryDialog({
         window.cancelAnimationFrame(switchFrameRef.current)
       }
 
+      // The exact property the card's transition reads, not the token behind
+      // it: this timer steps that transition, so the two cannot resolve
+      // differently. `--pg-switch-ms` only lives on the shell, so the fallback
+      // mirrors the one the stylesheet already carries.
+      const switchStyles = getComputedStyle(popupRef.current ?? document.documentElement)
       const switchMs = cssTimeToMilliseconds(
-        getComputedStyle(popupRef.current ?? document.documentElement).getPropertyValue("--duration-base"),
+        switchStyles.getPropertyValue("--pg-switch-ms") || switchStyles.getPropertyValue("--duration-base"),
       )
       setSwitchDirection(nextDirection)
       setSwitchPhase("out")
@@ -515,7 +520,7 @@ export function PreviewGalleryDialog({
                         onClick={() => moveBy(-1)}
                         disabled={cards.length <= 1}
                       >
-                        <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                        <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
                       </button>
 
                       <button
@@ -526,7 +531,7 @@ export function PreviewGalleryDialog({
                         onClick={() => moveBy(1)}
                         disabled={cards.length <= 1}
                       >
-                        <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                        <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                       </button>
 
                       <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
@@ -588,7 +593,7 @@ export function PreviewGalleryDialog({
                   onClick={() => moveBy(-1)}
                   disabled={cards.length <= 1}
                 >
-                  <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
                 </button>
 
                 <button
@@ -599,7 +604,7 @@ export function PreviewGalleryDialog({
                   onClick={() => moveBy(1)}
                   disabled={cards.length <= 1}
                 >
-                  <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                 </button>
               </div>
             </Dialog.Popup>

@@ -42,7 +42,7 @@
   padding: 0.375rem;
   border-radius: var(--radius-md);
   background: #ffffff;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
   color: var(--ink);
   font-family: var(--font-ui);
   text-align: left;

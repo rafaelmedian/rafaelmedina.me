@@ -60,6 +60,46 @@
   text-align: left;
 }
 
+/* About copy rises in from below, released per block the first time it
+   scrolls into the sheet — the same family as the hero and mosaic entrances
+   but with more travel, so the text reads as arriving from the bottom edge.
+   The markup ships the attribute empty, so without JavaScript nothing is
+   ever hidden; the panel's observer holds only below-the-fold blocks
+   transparent. The entrance also gives the sheet's composited layer a beat
+   to rasterise fresh text tiles behind intent instead of as a late paint. */
+[data-about-fade="pending"] {
+  opacity: 0;
+}
+
+[data-about-fade="in"] {
+  animation: mosaic-about-rise 440ms var(--ease-smooth) both;
+  /* Set per batch by the panel's observer: blocks that arrive together
+     cascade top-down, so the sheet reads in order however far a gesture
+     jumps. `both` keeps a delayed block at the from-frame while it waits. */
+  animation-delay: var(--about-fade-delay, 0ms);
+}
+
+@keyframes mosaic-about-rise {
+  from {
+    opacity: 0;
+    filter: blur(var(--blur-reveal));
+    transform: translateY(1.75rem);
+  }
+
+  to {
+    opacity: 1;
+    filter: none;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-about-fade] {
+    opacity: 1;
+    animation: none;
+  }
+}
+
 .mosaic-about-work-history {
   position: relative;
   width: 100%;
@@ -86,10 +126,9 @@
 /* Work history is a sibling of the About lede, not a paragraph. It kept the
    prose weight and colour, which made it pixel-identical to the copy directly
    under it -- an <h2> that only assistive technology could tell was a heading.
-   The scale's heading form of this step is what it takes instead: 600 at
-   #2d2d2d, the same weight and ink as the lede. The step itself stays at
-   --text-md, because the Work history section is deliberately one size
-   throughout. */
+   The scale's heading form of this step is what it takes instead: --text-md
+   at 600 and #2d2d2d, one step above the entries beneath it and identical to
+   the About lede, the sheet's other section heading. */
 .mosaic-about-section-heading {
   margin: 0;
   color: #2d2d2d;
@@ -99,22 +138,28 @@
   letter-spacing: -0.005rem;
 }
 
+/* About is set the same way as the Work history section under it, which is
+   set the same way as a note: the --text-sm reading step on 1.5, under a
+   --text-md heading. One reading scale across the whole sheet. */
 .mosaic-about-body p {
   margin: 0;
   font-family: var(--font-ui);
-  font-size: var(--text-md);
-  line-height: 1.7;
-  letter-spacing: -0.005rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
   color: #545454;
   text-wrap: pretty;
 }
 
+/* "About me" and "Work history" are the sheet's two section headings and now
+   look like it: the same step, weight and ink, so neither reads as ranking
+   above the other. */
 .mosaic-about-body .mosaic-about-lede {
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-md);
   font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: -0.015rem;
+  line-height: 1.6;
+  letter-spacing: -0.005rem;
   color: #2d2d2d;
 }
 
@@ -132,14 +177,14 @@
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  font-size: var(--text-md);
-  line-height: 1.6;
-  letter-spacing: -0.005rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
   color: #2d2d2d;
 }
 
 .mosaic-about-hobby-emoji {
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1;
 }
 
@@ -169,8 +214,17 @@
   padding-top: 1.25rem;
 }
 
+/* Work history is the one part of About that reads like the notes: a stack of
+   dated entries rather than a paragraph. It now takes the reader's scale --
+   the --text-sm step on 1.5, under the same --text-md title -- so the two
+   long-form surfaces on the site are set the same way. The ink assignments
+   stay as they were: unlike a note, an entry has a title above its copy, and
+   collapsing them onto one colour would flatten that. */
 .mosaic-about-body .mosaic-about-resume-download {
   margin-top: 4rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
 }
 
 .mosaic-about-resume {
@@ -212,23 +266,23 @@
 
 .mosaic-about-body .mosaic-about-resume-title {
   margin: 0;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.5;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
   color: #2d2d2d;
   text-wrap: balance;
 }
 
 .mosaic-about-body .mosaic-about-resume-location {
   margin-top: 0.1rem;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--muted);
 }
 
 .mosaic-about-body .mosaic-about-resume-dates {
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--muted-soft);
   white-space: nowrap;
@@ -236,9 +290,9 @@
 
 .mosaic-about-body .mosaic-about-resume-description {
   margin-top: 0.75rem;
-  font-size: var(--text-md);
-  line-height: 1.6;
-  letter-spacing: -0.005rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -256,9 +310,9 @@
 }
 
 .mosaic-about-body .mosaic-about-resume-heading {
-  font-size: var(--text-md);
-  line-height: 1.6;
-  letter-spacing: -0.005rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
   color: var(--muted-soft);
 }
 

@@ -14,6 +14,7 @@ import {
 import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
+import { AvailabilityBooking } from "./AvailabilityBooking"
 import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
@@ -225,6 +226,34 @@ function prefetchPreviewGallery() {
   void loadPreviewGallery().catch(() => undefined)
 }
 
+// The card paints the poster long before `loadeddata`, and on reduced motion or
+// a metered connection the loop never loads at all -- so a video tile's skeleton
+// has to clear on the poster's own decode rather than the video's. The element's
+// poster request and this one resolve to the same resource, so it costs no bytes.
+function usePosterReady(poster: string | undefined) {
+  const [ready, setReady] = useState(!poster)
+
+  useEffect(() => {
+    if (!poster) return
+
+    // Listeners go on before `src`, so a poster already in the cache still
+    // arrives through `load` rather than needing a synchronous `complete` check.
+    const image = new Image()
+    const finish = () => setReady(true)
+    image.addEventListener("load", finish)
+    // A poster that fails is not going to paint, so stop waiting on it rather
+    // than leaving the tile under a skeleton for the rest of the session.
+    image.addEventListener("error", finish)
+    image.src = poster
+    return () => {
+      image.removeEventListener("load", finish)
+      image.removeEventListener("error", finish)
+    }
+  }, [poster])
+
+  return ready
+}
+
 function RowVideoMedia({
   source,
   poster,
@@ -252,6 +281,7 @@ function RowVideoMedia({
   const [shouldLoad, setShouldLoad] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const posterReady = usePosterReady(poster)
 
   // With no observer to flip the state, `src` would stay undefined for the whole
   // session and only the poster would ever show -- so fall back to loading up
@@ -321,6 +351,7 @@ function RowVideoMedia({
       aria-label={label}
       className="mosaic-row-media"
       data-loaded={poster || loaded ? "true" : "false"}
+      data-pending={(poster ? posterReady : loaded) ? "false" : "true"}
       onLoadedData={() => setLoaded(true)}
     />
   )
@@ -341,7 +372,36 @@ type RowImageMediaProps = {
 // re-ran the row/tile tree eleven times during load.
 function RowImageMedia({ source, label, width, height, eager, share }: RowImageMediaProps) {
   const [loaded, setLoaded] = useState(false)
+  const [approached, setApproached] = useState(false)
+  const imageRef = useRef<HTMLImageElement | null>(null)
+  const supportsIntersectionObserver = useSyncExternalStore(
+    subscribeToNothing,
+    hasIntersectionObserver,
+    hasIntersectionObserverOnServer,
+  )
   const srcSet = buildPreviewSrcSet(source, width)
+  // A lazy tile ten screens down has no request in flight, so a skeleton there
+  // would promise an arrival that is not underway -- and its breathe would run
+  // for the session on a card nobody is looking at. Arm it on approach instead,
+  // roughly when `loading="lazy"` starts fetching. Eager tiles are already
+  // loading at mount, and without an observer to arm them the rest never would.
+  const armed = eager || approached || !supportsIntersectionObserver
+
+  useEffect(() => {
+    const image = imageRef.current
+    if (armed || !image) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return
+        setApproached(true)
+        observer.disconnect()
+      },
+      { rootMargin: "300px" },
+    )
+    observer.observe(image)
+    return () => observer.disconnect()
+  }, [armed])
 
   return (
     <img
@@ -356,10 +416,12 @@ function RowImageMedia({ source, label, width, height, eager, share }: RowImageM
       fetchPriority={eager ? "high" : "auto"}
       className="mosaic-row-media"
       data-loaded={loaded ? "true" : "false"}
+      data-pending={armed && !loaded ? "true" : "false"}
       onLoad={(event) => {
         if (event.currentTarget.naturalWidth > 0) setLoaded(true)
       }}
       ref={(el) => {
+        imageRef.current = el
         // A cached image can finish before React attaches onLoad.
         if (el && el.complete && el.naturalWidth > 0) setLoaded(true)
       }}
@@ -987,10 +1049,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           <p className="mosaic-profile-location">
             <span className="mosaic-profile-location-place">Punta Cana & NYC</span>
             <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
-            <span className="mosaic-profile-availability">
-              {availabilityLabel}
-              <span className="mosaic-availability-dot" aria-hidden="true" />
-            </span>
+            <AvailabilityBooking label={availabilityLabel} bookingUrl={links.booking} />
           </p>
           <div className="mosaic-profile-contact">
             <ContactActionRow

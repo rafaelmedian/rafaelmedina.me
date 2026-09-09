@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 const paletteTokens = new Set([
   "--canvas", "--body-bg", "--mosaic-card-surface", "--body-color", "--ink",
-  "--focus-ring", "--muted", "--muted-soft", "--accent",
+  "--focus-ring", "--focus-ring-soft", "--muted", "--muted-soft", "--accent",
 ])
 
 // Dev-reference only: read the same root custom properties the site consumes.

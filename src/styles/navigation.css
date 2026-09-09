@@ -42,7 +42,7 @@
     background: var(--canvas);
     color: var(--ink);
     cursor: pointer;
-    box-shadow: var(--shadow-overlay);
+    box-shadow: var(--shadow-ring), var(--shadow-overlay);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -63,9 +63,7 @@
 
   .mosaic-takeover-close:hover,
   .mosaic-takeover-close:focus-visible {
-    box-shadow:
-      0 1px 2px rgb(16 16 20 / 0.08),
-      0 16px 36px rgb(16 16 20 / 0.2);
+    box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
   }
 
   .mosaic-takeover-close:active {
@@ -190,7 +188,7 @@
   border-radius: var(--radius-lg);
   background: rgb(255 255 255 / 0.92);
   color: var(--ink);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05), var(--shadow-overlay);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   font-family: var(--font-ui);
