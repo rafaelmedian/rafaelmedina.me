@@ -244,7 +244,7 @@ const NON_TEXT_ENTRIES = [
     token: "--accent",
     kind: "non-text",
     name: "Copied",
-    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. A graphic only; the confirmation itself is spoken in the tooltip and read out to screen readers.",
+    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. The same address set in the About sheet's prose has no icon slot to light, so it takes the green under itself instead: the link's underline, for the same window. A graphic only, in both places; the confirmation itself is spoken in the tooltip and read out to screen readers.",
   },
   {
     token: "--focus-ring-soft",
@@ -1666,10 +1666,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 the state change and puts the green on the surface it is graded against. Its hint is not type at all: a
                 200px <code>--canvas</code> card carrying a clip, one while the offer stands and another once the copy
                 lands, keyed on the state so the animation replays from the top rather than resuming mid-loop. The
-                booking pill wears the same card — both are &ldquo;hover this and something happens next&rdquo;, so
-                they keep one shape between them. Neither carries a word: both are <code>aria-hidden</code>, and the
-                text they replaced lives where a screen reader already looks — the button's own description, plus the
-                live region that announces a copy. Clips are trimmed to the few seconds a hover lasts and transcoded
+                booking pill wears the same card, and so does the address closing the About sheet's introduction —
+                all three are &ldquo;hover this and something happens next&rdquo;, so they keep one shape between
+                them. In that prose the address stays a <code>mailto:</code> link, for the crawler and the context
+                menu and any browser without a clipboard, but a plain press copies it instead; a word inside a
+                sentence has nowhere to draw a check, so the card is held open through the confirmation window —
+                which is also how a tap is answered on a phone that never hovers — and the underline beneath the
+                address takes <code>--accent</code> for the same 1.6s. The Services block at the foot of the sheet
+                keeps the plain draft: that line is the invitation, and both things it offers — the mail and the
+                calendar — should be the things it does. None of the cards carries a word: all are
+                <code>aria-hidden</code>, and the text they replaced lives where a screen reader already looks — the
+                trigger's own description, plus the live region that announces a copy. Clips are trimmed to the few seconds a hover lasts and transcoded
                 to animated webp at roughly 2x their displayed width, with a still beside each for{" "}
                 <code>prefers-reduced-motion</code>. The clause that took the address's place in the
                 location line is the site's own commit calendar: the last commit date is read out of this
@@ -2055,20 +2062,22 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
-                <li data-ds-terms={terms("about reading surface 36rem services pricing stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
+                <li data-ds-terms={terms("about reading surface 36rem process how i work services pricing faq common questions stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
                   <strong>About is one continuous reading surface.</strong> The introduction, the worked-with wall,
-                  and Services share one left-aligned 36rem reading axis in normal document flow. The introduction
+                  How I work, and Services share one left-aligned 36rem reading axis in normal document flow. The introduction
                   starts with a fluid <code>clamp(5rem, 10vw, 8.75rem)</code> (80–140px) inset from the sheet&rsquo;s
                   top: 5rem on mobile, growing to 8.75rem on wide desktops. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users.
-                  The wall of marks follows on the same 2.5rem/5rem break Services takes, so the three blocks below
+                  The wall of marks follows on the same 2.5rem/5rem break How I work and Services take, so the four blocks below
                   the photo row are separated identically and none reads as belonging to its neighbour.
                   Work history and Education are not repeated here: the résumé tile in the portraits group opens them as a
                   gallery slide, so the sheet reads as an introduction and closes on what can be bought.
-                  Services closes it on the same 5rem/8.75rem gap and a two-column entry grid, with an engagement
-                  shape where the résumé carries dates; it publishes no rate card, and ends on the email address and a
+                  How I work and Services both reuse the résumé&rsquo;s two-column entry grid, changing only the left
+                  column: a step number where Services carries an engagement shape and the résumé carries dates.
+                  Services publishes no rate card. It ends on a nested block of common questions — hairline-separated
+                  résumé entries, nothing collapsed — and then on the email address and a
                   booking link into the same Cal.com dialog the hero&rsquo;s availability line opens.
                   There is no tab state or hidden panel; <code>#about-panel-services</code> anchors directly to the
-                  visible Services section.
+                  visible Services section and covers the questions inside it.
                 </li>
               </ul>
             </div>

@@ -647,9 +647,10 @@ test("sets the whole About sheet on the reading step under one heading step", as
   // it -- the same pairing the notes reader uses.
   expect(sizes).toEqual(["14px", "16px"])
 
-  // The lede, "Worked with" and "Services" are the sheet's section headings
-  // and are set identically, so none reads as ranking above another.
-  await expect(sectionHeading).toHaveCount(2)
+  // The lede, "Worked with", "How I work", "Services" and the questions that
+  // close it are the sheet's section headings and are set identically, so none
+  // reads as ranking above another.
+  await expect(sectionHeading).toHaveCount(4)
   for (const heading of [...(await sectionHeading.all()), lede]) {
     await expect(heading).toHaveCSS("font-size", "16px")
     await expect(heading).toHaveCSS("font-weight", "600")
@@ -678,7 +679,7 @@ test("sets the whole About sheet on the reading step under one heading step", as
   // would otherwise fall back to the browser's control font.
   const servicesSizes = await page
     .locator("#about-panel-services")
-    .locator("h2, h3, p, li, a, button")
+    .locator("h2, h3, h4, p, li, a, button")
     .evaluateAll((elements) =>
       [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
     )
@@ -789,7 +790,11 @@ test("copies the corner address on click and reacts to it in the tooltip", async
   await email.click()
   // The tooltip is the confirmation surface, so the press must not close it.
   await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-success.webp")
-  await expect(page.getByRole("status")).toHaveText(`${contactEmail} copied to clipboard`)
+  // Scoped to the corner: the same announcement is made by each address on the
+  // page, and the About sheet carries two of them.
+  await expect(page.locator(".mosaic-social-corner").getByRole("status")).toHaveText(
+    `${contactEmail} copied to clipboard`,
+  )
   await expect(
     page.evaluate(() => navigator.clipboard.readText()),
   ).resolves.toBe(contactEmail)
@@ -797,6 +802,78 @@ test("copies the corner address on click and reacts to it in the tooltip", async
   // And it goes back to the invitation, so the next hover reads as an offer.
   await page.clock.fastForward(1_600)
   await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-before.webp")
+})
+
+test("copies the About sheet's address from a press in the prose", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-write", "clipboard-read"])
+  // writeText rejects outright on an unfocused document, and the component's
+  // answer to that is the mailto: fallback rather than a copy -- so the flag
+  // this asserts on would simply never appear.
+  await page.bringToFront()
+  await page.goto("/")
+  await pausePageClock(page)
+
+  const address = page.locator("#about-section .mosaic-about-email")
+  const reaction = page.locator(".reaction-card-media img")
+
+  // It stays a link, so the crawler, the context menu, and a browser with no
+  // clipboard all still get the address; the plain press is the only one this
+  // component takes.
+  await expect(address).toHaveAttribute("href", `mailto:${contactEmail}`)
+  await expect(address).toHaveAccessibleName(contactEmail)
+  await expect(address).toHaveAccessibleDescription("Click to copy")
+
+  await address.scrollIntoViewIfNeeded()
+  await address.hover()
+  // The paused clock also holds the tooltip's 160ms intent delay.
+  await page.clock.fastForward(200)
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-before.webp")
+
+  await address.click()
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-success.webp")
+  await expect(address).toHaveAttribute("data-copied", "true")
+  await expect(
+    page.locator("#about-section").getByRole("status"),
+  ).toHaveText(`${contactEmail} copied to clipboard`)
+  await expect(
+    page.evaluate(() => navigator.clipboard.readText()),
+  ).resolves.toBe(contactEmail)
+
+  // And it goes back to being an offer, underline and card together.
+  await page.clock.fastForward(1_600)
+  await expect(address).not.toHaveAttribute("data-copied", "true")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-before.webp")
+})
+
+test("answers a tap on the About address with the card a pointer gets", async ({ browser }) => {
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, viewport: mobileViewport })
+  await context.grantPermissions(["clipboard-write", "clipboard-read"])
+  const page = await context.newPage()
+  await page.goto("/")
+  await page.bringToFront()
+
+  const address = page.locator("#about-section .mosaic-about-email")
+  const card = page.locator(".reaction-card")
+  // The address ships in the prerendered markup as a plain mailto: link, so a
+  // tap that lands before hydration opens a mail draft rather than copying.
+  await settleAvatarIntro(page)
+  await address.scrollIntoViewIfNeeded()
+
+  // A phone never hovers, so the hint is not on screen until the copy puts it
+  // there -- and it is the only confirmation an inline word can carry.
+  await expect(card).toHaveCount(0)
+  await address.tap()
+  await expect(page.locator(".reaction-card-media img")).toHaveAttribute(
+    "src",
+    "/reactions/copy-email-success.webp",
+  )
+  await expect(
+    page.evaluate(() => navigator.clipboard.readText()),
+  ).resolves.toBe(contactEmail)
+
+  // And it leaves with the confirmation instead of sitting on the sentence.
+  await expect(card).toHaveCount(0)
+  await context.close()
 })
 
 test("copies the corner address again on every repeat click", async ({ context, page }) => {
@@ -2793,22 +2870,22 @@ test("raises each about copy block into view the first time it scrolls in", asyn
   // Below the fold the copy holds transparent. The prerendered markup ships
   // the attribute empty, so nothing is hidden without JavaScript.
   const intro = page.locator(".mosaic-about-section-copy")
-  const pricing = page.locator(".mosaic-about-services-pricing")
+  const questions = page.locator(".mosaic-about-faq .mosaic-about-section-heading")
   await expect(intro).toHaveAttribute("data-about-fade", "pending")
-  await expect(pricing).toHaveAttribute("data-about-fade", "pending")
+  await expect(questions).toHaveAttribute("data-about-fade", "pending")
 
   await page.locator("#about-panel").evaluate((element) => element.scrollIntoView({ block: "start" }))
   await expect(intro).toHaveAttribute("data-about-fade", "in")
   await expect(intro).toHaveCSS("opacity", "1")
   // Deeper blocks wait for their own approach rather than following the intro.
-  await expect(pricing).toHaveAttribute("data-about-fade", "pending")
+  await expect(questions).toHaveAttribute("data-about-fade", "pending")
 
-  await pricing.scrollIntoViewIfNeeded()
-  await expect(pricing).toHaveAttribute("data-about-fade", "in")
-  await expect(pricing).toHaveCSS("opacity", "1")
+  await questions.scrollIntoViewIfNeeded()
+  await expect(questions).toHaveAttribute("data-about-fade", "in")
+  await expect(questions).toHaveCSS("opacity", "1")
 
-  // Services closes the sheet below its pricing line, so run to the end of
-  // the page before claiming nothing is left waiting.
+  // Services closes the sheet below its questions, so run to the end of the
+  // page before claiming nothing is left waiting.
   const closing = page.locator("#about-panel-services .mosaic-about-closing")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await expect(closing).toHaveAttribute("data-about-fade", "in")
@@ -3583,12 +3660,17 @@ test("shows the about introduction without restating the résumé", async ({ pag
   // The résumé carries a phone number; the panel is public and does not.
   await expect(panel).not.toContainText("786 9580")
   // The address is spelled out twice on purpose: once closing the introduction
-  // and once closing the Services block at the foot of the sheet.
+  // and once closing the Services block at the foot of the sheet. Both are
+  // mailto: links; only the introduction's takes the press for a copy.
   const emailLinks = panel.getByRole("link", { name: contactEmail, exact: true })
   await expect(emailLinks).toHaveCount(2)
   for (const link of await emailLinks.all()) {
     await expect(link).toHaveAttribute("href", `mailto:${contactEmail}`)
   }
+  await expect(panel.locator(".mosaic-about-email")).toHaveCount(1)
+  await expect(
+    page.locator("#about-panel-services .mosaic-about-closing .mosaic-about-link").first(),
+  ).not.toHaveClass(/mosaic-about-email/)
   await expect(panel.getByRole("link", { name: "Download résumé PDF" })).toHaveCount(0)
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "href",
@@ -3655,18 +3737,21 @@ test("gives the Chainlink work a fuller description", async ({ page }) => {
   ])
 })
 
-test("keeps one compact gap between the About closing line, companies, and services", async ({ page }) => {
-  // The closing line, the worked-with wall and Services are three blocks in a
-  // row, and they are separated by the same break so none of them reads as
-  // belonging to its neighbour.
+test("keeps one compact gap between the About closing line, companies, process, and services", async ({ page }) => {
+  // The closing line, the worked-with wall, How I work and Services are four
+  // blocks in a row, and they are separated by the same break so none of them
+  // reads as belonging to its neighbour.
   for (const { width, expectedGap } of [{ width: 1440, expectedGap: 80 }, { width: 390, expectedGap: 40 }]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto("/#about-panel")
 
     const gaps = await page.evaluate(() => {
-      const blocks = [".mosaic-about-closing", ".mosaic-about-companies", "#about-panel-services"].map((selector) =>
-        document.querySelector(selector),
-      )
+      const blocks = [
+        ".mosaic-about-closing",
+        ".mosaic-about-companies",
+        ".mosaic-about-process",
+        "#about-panel-services",
+      ].map((selector) => document.querySelector(selector))
       if (blocks.some((block) => !block)) return [Number.POSITIVE_INFINITY]
       return blocks
         .slice(1)
@@ -3675,7 +3760,7 @@ test("keeps one compact gap between the About closing line, companies, and servi
         )
     })
 
-    expect(gaps).toEqual([expectedGap, expectedGap])
+    expect(gaps).toEqual([expectedGap, expectedGap, expectedGap])
   }
 })
 

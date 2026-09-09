@@ -15,18 +15,18 @@ export const services: Service[] = [
     shape: "0 → 1",
     title: "End-to-end product design",
     description:
-      "Discovery, research, UX and UI through to shipped screens. The shape of the Matcha rebuild and BoldVoice: one designer owning the problem from the first interview to what ships.",
+      "One designer owning the problem from the first user interview to the shipped screen: discovery, research, UX and UI, and the coded prototypes your engineers build against. The shape of the Matcha rebuild and of BoldVoice.",
   },
   {
     shape: "Monthly",
-    title: "Fractional design partner",
+    title: "Fractional to full-time design partner",
     description:
-      "A standing engagement for a team without an in-house designer — new surfaces, design review, and a system your engineers can keep building on after I step back.",
+      "A standing seat on a team with no in-house designer, a few days a week or full time when the roadmap needs it. New surfaces as they come up, review on what your engineers are already building, and a design system that keeps its shape between the two.",
   },
   {
     shape: "1 – 2 weeks",
     title: "Design sprint and UX audit",
     description:
-      "A fixed engagement: user research, a teardown of the product you have today, and a direction you can start building against at the end of it.",
+      "Fixed scope, fixed date. I talk to your users, take apart the product you have today, and come back with a ranked list of what it is costing you and a direction for each one.",
   },
 ]
