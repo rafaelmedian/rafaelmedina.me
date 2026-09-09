@@ -47,7 +47,7 @@ const homePage: PageDescription = {
   image: "/og-image.png",
   imageWidth: 1200,
   imageHeight: 630,
-  imageAlt: "Portrait of Rafael Medina centered on a plain off-white background.",
+  imageAlt: "The rafaelmedina.me homepage: Rafael Medina's portrait and intro above the first row of work tiles.",
 }
 
 // The social image is the same sheet the hero's Resume link previews, at its
