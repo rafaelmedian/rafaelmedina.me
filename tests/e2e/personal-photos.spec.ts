@@ -196,6 +196,60 @@ test("the fan leans along an arc and opens the whole hand at once", async ({ pag
 const sheet = (page: Page) => page.getByRole("region", { name: "Photo sheet" })
 const dialog = (page: Page) => page.getByRole("dialog", { name: "Personal photos" })
 
+/** Watch a close from inside the page: how long after the Escape keydown the
+    first flight appears, and where the sheet was scrolled every frame until it
+    did. Everything here is the page's own work, and the claims below are a
+    handful of frames wide, so reading them across the protocol spends most of
+    the budget on an `expect` poll interval and a round trip rather than on the
+    close — this test has failed CI at 155ms and at 480ms against a 150ms
+    budget for a handoff that never left one frame, and its "no print has moved
+    yet" check races the 360ms rewind the same way. Sampling stops at the first
+    flight, so every reading is from before the deal by construction. Arm it
+    before the keypress; read it once the flights are up. */
+async function armFlightClock(page: Page) {
+  await page.evaluate(() => {
+    Object.assign(window, {
+      flightClock: new Promise<{ delay: number; scrolls: number[]; looks: string[]; scrollAtFlight: number }>((resolve) => {
+        const sheet = document.querySelector<HTMLElement>(".personal-photos-sheet")!
+        const scrolls: number[] = []
+        const looks = new Set<string>()
+        let pressed = 0
+        let frame = 0
+        const sample = () => {
+          scrolls.push(sheet.scrollTop)
+          for (const slide of sheet.querySelectorAll<HTMLElement>(".personal-photos-slide")) {
+            const style = getComputedStyle(slide)
+            looks.add(`${style.filter} ${style.opacity}`)
+          }
+          frame = requestAnimationFrame(sample)
+        }
+        // Capture, so the stamp beats the app's own Escape handler. It comes
+        // off on the first Escape rather than the first key, so a test that
+        // presses anything else on the way to the close still times the close.
+        const stamp = (event: KeyboardEvent) => {
+          if (event.key !== "Escape") return
+          removeEventListener("keydown", stamp, { capture: true })
+          pressed = performance.now()
+          sample()
+        }
+        addEventListener("keydown", stamp, { capture: true })
+        const observer = new MutationObserver(() => {
+          if (!document.querySelector(".personal-photos-flight")) return
+          observer.disconnect()
+          cancelAnimationFrame(frame)
+          resolve({ delay: performance.now() - pressed, scrolls, looks: [...looks], scrollAtFlight: sheet.scrollTop })
+        })
+        observer.observe(document.body, { childList: true, subtree: true })
+      }),
+    })
+  })
+}
+
+/** Resolves once the flights are up; awaiting it before that hangs the test. */
+const flightClock = (page: Page) => page.evaluate(() => (window as unknown as {
+  flightClock: Promise<{ delay: number; scrolls: number[]; looks: string[]; scrollAtFlight: number }>
+}).flightClock)
+
 /** Pause every flight at its first frame so the deal can be inspected. */
 async function holdFlights(page: Page) {
   await page.evaluate(() => {
@@ -446,10 +500,10 @@ test("closing from the first row is immediate; a scrolled sheet rewinds there fi
   await expect(dialog(page)).toBeVisible()
   await expect(flights).toHaveCount(0)
   await holdFlights(page)
-  let t0 = Date.now()
+  await armFlightClock(page)
   await page.keyboard.press("Escape")
   await expect(flights).not.toHaveCount(0)
-  expect(Date.now() - t0).toBeLessThan(150)
+  expect((await flightClock(page)).delay).toBeLessThan(150)
   expect(new Set(await slots())).toEqual(new Set(["on none 0", "off none 1"]))
   expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(await visibleSlides(page))
   await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
@@ -467,22 +521,24 @@ test("closing from the first row is immediate; a scrolled sheet rewinds there fi
   await page.keyboard.press("End")
   await expect.poll(() => sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
   await holdFlights(page)
-  t0 = Date.now()
+  await armFlightClock(page)
   await page.keyboard.press("Escape")
-  // The rewind is under way before any print moves.
   const bottom = await sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight)
-  await expect.poll(() => sheet(page).evaluate((element) => element.scrollTop)).toBeLessThan(bottom - 50)
-  expect(await flights.count()).toBe(0)
-  // Undimmed and at full strength, wherever the glide has reached. Which
-  // slides are on screen is deliberately not part of the claim: the masonry is
-  // twice the sheet's height, so around a fifth of the way through the rewind
-  // there is a band where every slide touches the sheet's box at once, and
-  // asking for an off-screen one is a race against a 360ms scroll nothing
-  // synchronises with.
-  expect(new Set((await slots()).map((slot) => slot.replace(/^(on|off) /, "")))).toEqual(new Set(["none 1"]))
   await expect(flights).not.toHaveCount(0)
   expect(new Set(await slots())).toEqual(new Set(["on none 0", "off none 1"]))
-  expect(Date.now() - t0).toBeGreaterThanOrEqual(300)
+  // The rewind is under way before any print moves, and it glides: the sheet
+  // is read every frame from the keypress until the first flight exists, so it
+  // is caught between the bottom and the top on the way rather than jumping,
+  // and the deal waits for it to land. Undimmed and at full strength in every
+  // one of those frames, too. Which slides are on screen is deliberately not
+  // part of that claim: the masonry is twice the sheet's height, so around a
+  // fifth of the way through the rewind there is a band where every slide
+  // touches the sheet's box at once.
+  const rewind = await flightClock(page)
+  expect(rewind.delay).toBeGreaterThanOrEqual(300)
+  expect(rewind.scrolls.some((top) => top > 0 && top < bottom - 50)).toBe(true)
+  expect(rewind.looks).toEqual(["none 1"])
+  expect(rewind.scrollAtFlight).toBe(0)
   expect(await sheet(page).evaluate((element) => element.scrollTop)).toBe(0)
   expect(retained).toEqual(expect.arrayContaining(await visibleRetained(page)))
   expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(await visibleSlides(page))

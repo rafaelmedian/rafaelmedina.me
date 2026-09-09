@@ -29,6 +29,30 @@ test("project pages ship distinct metadata and readable content without JavaScri
   await context.close()
 })
 
+// The résumé is a gallery item like a project, so it has a page of its own for
+// the same reasons: a shared link has to answer for itself in HTML.
+test("the resume page ships its own metadata and the whole history without JavaScript", async ({ browser, request, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
+  const page = await context.newPage()
+
+  await page.goto("/resume/")
+  await expect(page).toHaveTitle("Résumé — Rafael Medina")
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/resume/")
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", "https://rafaelmedina.me/resume/")
+  const image = await page.locator('meta[property="og:image"]').getAttribute("content")
+  expect(image).toBe("https://rafaelmedina.me/rafael-medina-resume-preview.png")
+  expect((await request.get(new URL(image!).pathname)).ok()).toBe(true)
+
+  await expect(page.getByRole("list", { name: "Work history" }).getByRole("listitem")).toHaveCount(6)
+  await expect(page.getByRole("list", { name: "Education" }).getByRole("listitem")).toHaveCount(2)
+  await expect(page.getByRole("link", { name: "View resume PDF" })).toHaveAttribute("href", "/rafael-medina-resume.pdf")
+  await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")
+
+  const sitemap = await (await request.get("/sitemap.xml")).text()
+  expect(sitemap).toContain("https://rafaelmedina.me/resume/")
+  await context.close()
+})
+
 test("project pages hydrate into the gallery after reload and index navigation", async ({ page }) => {
   const errors: string[] = []
   page.on("pageerror", error => errors.push(error.message))

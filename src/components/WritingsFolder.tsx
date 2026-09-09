@@ -7,7 +7,7 @@ import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, u
 import { writings, type Writing, type WritingAnnotation, type WritingCode, type WritingImage } from "../data/writings"
 import { backSound, nextSound, openSound } from "../lib/sounds"
 import { groupWritingsByYear } from "../lib/writings"
-import { usePortfolioItemUrl } from "../lib/useProjectUrl"
+import { usePortfolioItemUrl } from "../lib/portfolioUrl"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useOriginTravel, visibleOriginRect } from "../lib/originMotion"
 import { cssTimeToMilliseconds } from "../lib/cssTime"

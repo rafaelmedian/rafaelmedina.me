@@ -1,9 +1,26 @@
-/* Company-led entries in the modal; About keeps its compact date column. */
+/* Company-led entries in the reader; About keeps its compact date column. The
+   reader is the gallery's résumé slide and the prerendered /resume/ page, and
+   the rules below are shared by both -- only the surface around them differs. */
 /* The PDF link closes the reader rather than heading it, so it sits under
    education with the gap the entries keep between each other. */
-.resume-dialog-content .resume-dialog-download {
+.preview-gallery-resume-body .mosaic-about-resume-download,
+.standalone-resume-body .mosaic-about-resume-download {
   margin-top: 3rem;
   margin-bottom: 0;
+}
+
+/* Icon and label on one line, whichever surface the link sits on. */
+.preview-gallery-resume-body .mosaic-about-resume-download a,
+.standalone-resume-body .mosaic-about-resume-download a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Education's label sits a step heavier than the entries it introduces. */
+.preview-gallery-resume-body .mosaic-about-resume-heading,
+.standalone-resume-body .mosaic-about-resume-heading {
+  font-weight: 600;
 }
 
 .resume-experience-list {

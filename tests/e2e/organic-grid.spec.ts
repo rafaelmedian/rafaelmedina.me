@@ -9,7 +9,9 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
     await expect(tiles).toHaveCount(17)
-    await expect(page.locator("a.mosaic-row-card")).toHaveCount(12)
+    // Twelve projects and the résumé: its reader has a page of its own now, so
+    // its tile is a link on the grid like theirs.
+    await expect(page.locator("a.mosaic-row-card")).toHaveCount(13)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect()
       return { x, y, width, height }
@@ -85,7 +87,7 @@ test("reserves the mosaic layout before scripts or media load", async ({ browser
   await page.route(/\.(webp|jpg|png|webm)(\?.*)?$/, route => route.abort())
   await page.goto("/")
   const cards = page.locator("a.mosaic-row-card")
-  await expect(cards).toHaveCount(12)
+  await expect(cards).toHaveCount(13)
   const first = await cards.nth(0).boundingBox()
   const second = await cards.nth(1).boundingBox()
   expect(first!.height).toBeGreaterThan(100)

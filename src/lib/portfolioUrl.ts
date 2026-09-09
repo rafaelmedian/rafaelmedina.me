@@ -1,17 +1,25 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { portfolioCards } from "../data/portfolio"
-import { projectAtPath, projectPath, updatePageMetadata } from "./projectMetadata"
+import {
+  isResumePath,
+  projectAtPath,
+  projectPath,
+  resumeItemId,
+  resumePath,
+  updatePageMetadata,
+} from "./projectMetadata"
 
 const portfolioUrlEvent = "portfolio-item-url"
 const portfolioEntryKey = "__rafaelMedinaPortfolioEntry"
 
-type PortfolioItem = "project" | "writing"
+type PortfolioItem = "gallery" | "writing"
 type PortfolioEntry = "about" | PortfolioItem
 let pendingPortfolioClose: PortfolioEntry | null = null
 let queuedSelection: { entry: PortfolioItem; id: string } | null = null
 
-// Projects have prerendered pages of their own, so they own the path. Writings
-// open over the feed with no static destination and stay a query parameter.
+// Every gallery item -- each project and the résumé -- has a prerendered page of
+// its own, so it owns the path. Writings open over the feed with no static
+// destination and stay a query parameter.
 type ItemLocation = {
   read: () => string | null
   set: (url: URL, id: string) => void
@@ -19,10 +27,17 @@ type ItemLocation = {
 }
 
 const itemLocations: Record<PortfolioItem, ItemLocation> = {
-  project: {
-    read: () =>
-      projectAtPath(window.location.pathname)?.id ?? new URLSearchParams(window.location.search).get("project"),
+  gallery: {
+    read: () => {
+      if (isResumePath(window.location.pathname)) return resumeItemId
+      return projectAtPath(window.location.pathname)?.id ?? new URLSearchParams(window.location.search).get("project")
+    },
     set: (url, id) => {
+      if (id === resumeItemId) {
+        url.pathname = resumePath
+        url.searchParams.delete("project")
+        return
+      }
       const card = portfolioCards.find(card => card.id === id)
       if (!card) return
       url.pathname = projectPath(card)
@@ -30,7 +45,7 @@ const itemLocations: Record<PortfolioItem, ItemLocation> = {
     },
     clear: url => {
       url.searchParams.delete("project")
-      if (projectAtPath(url.pathname)) url.pathname = "/"
+      if (projectAtPath(url.pathname) || isResumePath(url.pathname)) url.pathname = "/"
     },
   },
   writing: {
@@ -137,13 +152,17 @@ export function usePortfolioItemUrl(entry: PortfolioItem) {
   return { itemId, selectItem, clearItem }
 }
 
-export function useProjectUrl() {
-  const { itemId: projectId, selectItem: selectProject, clearItem: clearProject } = usePortfolioItemUrl("project")
+export function useGalleryUrl() {
+  const { itemId, selectItem, clearItem } = usePortfolioItemUrl("gallery")
 
   // Keep an enhanced gallery visit's head in step with its static destination.
   useEffect(() => {
-    updatePageMetadata(portfolioCards.find(card => card.id === projectId))
-  }, [projectId])
+    if (itemId === resumeItemId) {
+      updatePageMetadata(resumeItemId)
+      return
+    }
+    updatePageMetadata(portfolioCards.find(card => card.id === itemId))
+  }, [itemId])
 
-  return { projectId, selectProject, clearProject }
+  return { itemId, selectItem, clearItem }
 }
