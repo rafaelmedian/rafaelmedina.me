@@ -8,6 +8,8 @@ export type CvExperience = {
   /** Primary company link and decorative logo tooltip. */
   href?: string
   logoUrls?: string[]
+  /** Selected portfolio examples shown in the illustrated resume reader. */
+  projectIds?: string[]
 }
 
 export type CvExperienceClient = {
@@ -40,6 +42,7 @@ export const cvExperience: CvExperience[] = [
     role: "Senior Product Designer",
     href: "https://0x.org/",
     logoUrls: ["/logos/0x.png", "/logos/matcha.svg"],
+    projectIds: ["preview-shot-16", "preview-shot-21"],
     highlight: "Redesigned Matcha.xyz from scratch and introduced monetization flows that generated sustainable revenue.",
   },
   {

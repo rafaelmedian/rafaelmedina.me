@@ -1,6 +1,7 @@
 import { Fragment } from "react"
 
 import { cvEducation, cvExperience, type CvExperience } from "../data/cv"
+import { portfolioCards } from "../data/portfolio"
 
 function ResumeCompanyLink({ company, href }: { company: string; href: string }) {
   return (
@@ -44,13 +45,60 @@ function ResumeCompany({ job }: { job: CvExperience }) {
   return <span>{job.company}</span>
 }
 
-export function ResumeContent({ revealOnScroll = false }: { revealOnScroll?: boolean }) {
+function IllustratedExperience({ job }: { job: CvExperience }) {
+  const logos = job.logoUrls ?? job.clients?.map((client) => client.logoUrl) ?? []
+  const projects = (job.projectIds ?? []).flatMap((id) => {
+    const project = portfolioCards.find((card) => card.id === id)
+    return project ? [project] : []
+  })
+
+  return (
+    <li className="resume-experience">
+      {logos.length > 0 ? (
+        <div className="resume-experience-logos" aria-hidden="true">
+          {logos.map((src) => <img key={src} src={src} alt="" width={40} height={40} loading="lazy" />)}
+        </div>
+      ) : null}
+      <div className="resume-experience-details">
+        <div className="resume-experience-heading">
+          <h3 className="resume-experience-company" aria-label={`${job.role} at ${getCompanyLabel(job)}`}>
+            <ResumeCompany job={job} />{job.company === "0x Project" ? " / Matcha" : null}
+          </h3>
+          <p className="resume-experience-dates">{job.dates}</p>
+        </div>
+        <p className="resume-experience-role">{job.role}</p>
+        <p className="resume-experience-location">{job.location}</p>
+        <p className="resume-experience-description">{job.highlight}</p>
+        {projects.length > 0 ? (
+          <div className="resume-experience-projects" aria-label={`${job.company} project screenshots`}>
+            {projects.map((project) => (
+              <a key={project.id} href={`/work/${project.slug}/`} target="_blank" rel="noreferrer" className="resume-project">
+                <img
+                  src={project.previewPoster ?? project.image}
+                  alt={`${project.title} interface`}
+                  width={project.previewPosterWidth ?? project.previewWidth}
+                  height={project.previewPosterHeight ?? project.previewHeight}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </li>
+  )
+}
+
+export function ResumeContent({ revealOnScroll = false, illustrated = false }: { revealOnScroll?: boolean; illustrated?: boolean }) {
   const fadeProps = revealOnScroll ? { "data-about-fade": "" } : {}
 
   return (
     <>
-      <ol className="mosaic-about-resume mosaic-about-work-list" aria-label="Work history">
-        {cvExperience.map((job) => (
+      <ol className={`mosaic-about-resume mosaic-about-work-list${illustrated ? " resume-experience-list" : ""}`} aria-label="Work history">
+        {cvExperience.map((job) => illustrated ? (
+          <IllustratedExperience key={`${job.company}-${job.dates}`} job={job} />
+        ) : (
           <li
             key={`${job.company}-${job.dates}`}
             className="mosaic-about-resume-entry mosaic-about-work-entry"

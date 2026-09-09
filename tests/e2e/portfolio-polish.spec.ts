@@ -2630,7 +2630,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   const education = dialog.getByRole("list", { name: "Education" })
 
   await expect(workHistory.getByRole("listitem")).toHaveCount(6)
-  await expect(workHistory.getByRole("listitem").first()).toContainText("Co-founder at Stealth fintech")
+  await expect(workHistory.getByRole("heading", { name: "Co-founder at Stealth fintech" })).toBeVisible()
   await expect(workHistory.getByRole("listitem").first()).toContainText("2026 - Present")
   await expect(workHistory.getByRole("listitem").last()).toContainText("Incubeta (Google)")
   await expect(education.getByRole("listitem")).toHaveCount(2)

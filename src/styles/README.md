@@ -13,7 +13,8 @@ and the global reduced-motion policy last.
 - `work-history.css`: work-history popovers and inline company links.
 - `contact.css`: contact pills, copy reaction, and social hover cards.
 - `work-grid.css`: project rows, captions, media, and About takeover choreography.
-- `resume-tile.css`: folded-paper résumé tile, modal reader, and responsive interaction.
+- `resume-tile.css`: folded-paper résumé tile artwork, reader modal, and responsive interaction.
+- `resume-content.css`: company logos, work history entries, and selected project screenshots in the reader.
 - `personal-photos.css`: photo stack and carousel dialog.
 - `preview-gallery.css`: project preview dialog.
 - `booking.css`: the availability calendar-preview tooltip, booking dialog, and Cal.com frame.

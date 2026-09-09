@@ -1,0 +1,104 @@
+/* Company-led entries in the modal; About keeps its compact date column. */
+.resume-experience-list {
+  margin-top: 0;
+  gap: 3rem;
+}
+
+.resume-experience {
+  min-width: 0;
+}
+
+.resume-experience-logos {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.resume-experience-logos img {
+  width: auto;
+  max-width: 5rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.resume-experience-details { min-width: 0; }
+
+.resume-experience-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
+}
+
+.resume-experience-company {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.resume-experience-company .mosaic-company-inline-link { font-weight: inherit; }
+
+.mosaic-about-body .resume-experience-dates {
+  color: var(--muted-soft);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mosaic-about-body .resume-experience-role {
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+.mosaic-about-body .resume-experience-location {
+  margin-top: 0.125rem;
+  color: var(--muted-soft);
+  font-size: var(--text-xs);
+}
+
+.mosaic-about-body .resume-experience-description {
+  margin-top: 1rem;
+  color: var(--muted);
+}
+
+.resume-experience-projects {
+  display: flex;
+  margin-top: 1.5rem;
+  padding: 0.5rem 0.5rem 0.75rem;
+}
+
+.resume-project {
+  position: relative;
+  display: block;
+  flex: 0 0 7rem;
+  padding: 0.25rem 0.25rem 0.75rem;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  transform: rotate(-7deg);
+}
+
+.resume-project + .resume-project {
+  margin-left: -1rem;
+  transform: translateY(0.25rem) rotate(2deg);
+}
+
+.resume-project:focus-visible { z-index: 1; }
+
+.resume-project img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border-radius: calc(var(--radius-sm) - 0.25rem);
+  background: var(--mosaic-card-surface);
+  outline: 1px solid rgb(0 0 0 / 0.1);
+  outline-offset: -1px;
+}
