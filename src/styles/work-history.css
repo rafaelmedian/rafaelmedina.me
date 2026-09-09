@@ -220,10 +220,10 @@
 
 .mosaic-work-history-popover-name {
   color: var(--ink);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.5;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
 }
 
 .mosaic-work-history-popover-role {
@@ -242,9 +242,9 @@
 .mosaic-work-history-popover-description {
   margin: 0;
   color: var(--muted);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.5;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
   text-wrap: pretty;
 }
 
