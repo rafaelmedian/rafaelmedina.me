@@ -1189,6 +1189,9 @@ test("opens the Punta Cana map from the hero's location line", async ({ page }) 
   const card = page.locator(".mosaic-profile-location-card")
   await expect(card).toHaveAttribute("data-state", "closed")
 
+  // A hover during the stagger's delay can open the card before its anchor
+  // rises out from under the pointer and closes it again.
+  await settleAvatarIntro(page)
   await place.hover()
   await expect(card).toHaveAttribute("data-state", "open")
   await expect(card.getByText("Dominican Republic", { exact: true })).toBeVisible()
