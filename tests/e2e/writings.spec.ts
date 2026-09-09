@@ -9,6 +9,11 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     const folder = page.getByRole("button", { name: "Open writings folder" })
     await folder.click()
     const dialog = page.getByRole("dialog")
+    const waitForSettledDialog = () => expect.poll(() => dialog.evaluate((element) => {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
+      return Math.abs(matrix.a - 1) < 0.001 && Math.abs(matrix.d - 1) < 0.001
+    })).toBe(true)
+    await waitForSettledDialog()
     const original = (await dialog.boundingBox())!
     // The dialog hangs from the line a project preview opens on -- 8vh, and
     // 5vh from 1320px where the preview goes wide -- over a 1rem bottom gutter.
@@ -43,6 +48,7 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     await page.keyboard.press("Escape")
     await expect(dialog).not.toBeVisible()
     await folder.click()
+    await waitForSettledDialog()
     expect(await dialog.boundingBox()).toEqual(original)
   })
 }
