@@ -1448,9 +1448,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The homepage also includes Simon Rico and Jakub Antalik, with role captions and no
                 additional attribution notes. This development-only specimen adds Amy’s sample
                 to exercise longer copy and distant selections. Portraits are optional.
-                A second card of the same component runs the nine team quotes -- Jhon Onit, Cristina
-                Pieretti, Josh Frank, Dan, jen, and Rob Adams, some of them twice and kept apart in
-                the order -- as a full-width band between the offset and closing project groups, the
+                A second card of the same component runs the nine team quotes -- John Gilman,
+                Cristina Pieretti, Josh Frank, Dan Matiaudes, Jen Schnidman, and Rob Adams, some of
+                them twice and kept apart in the order -- as a full-width band between the offset
+                and closing project groups, the
                 way the personal-photo fan is a band inside the portraits group. It carries the floor
                 the photo band does, so the grid&rsquo;s two bands match. It sits above the closing row
                 rather than after it because the takeover pins the last screenful while About slides

@@ -43,9 +43,9 @@ test("carries the team quotes as a band between the project groups", async ({ pa
   const card = teamCarousel(page)
   const slide = card.locator('.mosaic-quote-slide[data-active="true"]')
   await expect(card.locator(".mosaic-quote-slide")).toHaveCount(9)
-  await expect(slide).toContainText("Jhon Onit")
+  await expect(slide).toContainText("John Gilman")
   await expect(slide).toContainText("VP Product and co-founder at Onit")
-  await card.getByRole("button", { name: "Show quote from jen" }).click()
+  await card.getByRole("button", { name: "Show quote from Jen Schnidman" }).click()
   await expect(slide).toContainText("You did a great job!")
   // Named on the card but never linked: these came from Slack, not from X.
   await expect(card.getByRole("button", { name: /on X$/ })).toHaveCount(0)
