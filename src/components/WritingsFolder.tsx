@@ -1,3 +1,4 @@
+import { beginDialogIntent, subscribeDialogIntent } from "../lib/dialogIntent"
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react"
 import { writingPreviews } from "../data/writingPreviews"
 import { createModuleLoader, useDeferredModule } from "../lib/deferredModule"
@@ -12,19 +13,25 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
   const Reader = module?.WritingsReader
   const triggerRef = useRef<HTMLButtonElement>(null)
   const readerRef = useRef<ReaderHandle>(null)
-  const [request, setRequest] = useState<{ opener: HTMLElement | null } | null>(null)
-  const { itemId: writingId, clearItem } = usePortfolioItemUrl("writing")
+  const [request, setRequest] = useState<{ opener: HTMLElement | null; isCurrent: () => boolean } | null>(null)
+  const { itemId: writingId, clearItem, discardItem } = usePortfolioItemUrl("writing")
 
   const openFolder = (opener?: HTMLElement | null) => {
-    setRequest({ opener: opener ?? triggerRef.current })
+    setRequest({ opener: opener ?? triggerRef.current, isCurrent: beginDialogIntent("writing") })
     if (!Reader) void load()
   }
   useImperativeHandle(ref, () => ({ openFolder, preload: warm }))
   useEffect(() => {
+    if (Reader || !writingId) return
+    return subscribeDialogIntent(destination => {
+      if (destination !== "writing") discardItem()
+    })
+  }, [Reader, writingId, discardItem])
+  useEffect(() => {
     if (writingId && !Reader) void load()
   }, [writingId, Reader, load])
   useEffect(() => {
-    if (!Reader || !request) return
+    if (!Reader || !request || !request.isCurrent()) return
     readerRef.current?.openFolder(request.opener)
   }, [Reader, request])
   useEffect(() => {

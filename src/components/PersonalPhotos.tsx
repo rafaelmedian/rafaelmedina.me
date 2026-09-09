@@ -1,3 +1,4 @@
+import { beginDialogIntent } from "../lib/dialogIntent"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 import { createModuleLoader, useDeferredModule } from "../lib/deferredModule"
@@ -12,16 +13,16 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
   const { module, status, load, warm } = useDeferredModule(loadSheet)
   const Sheet = module?.PersonalPhotosSheet
   const sheetRef = useRef<PersonalPhotosSheetHandle>(null)
-  const [request, setRequest] = useState<{ opener: HTMLElement } | null>(null)
+  const [request, setRequest] = useState<{ opener: HTMLElement; isCurrent: () => boolean } | null>(null)
   const [previewImages, setPreviewImages] = useState<Record<string, string>>({})
   const count = usePreviewCount()
   const preview = photos.slice(0, count).map(photo => ({ photo, src: previewImages[photo.id] ?? `/images/personal/${photo.name}-thumb.webp` }))
   const openPhoto: OpenPhoto = opener => {
-    setRequest({ opener })
+    setRequest({ opener, isCurrent: beginDialogIntent("photos") })
     if (!Sheet) void load()
   }
   useEffect(() => {
-    if (!Sheet || !request) return
+    if (!Sheet || !request || !request.isCurrent()) return
     sheetRef.current?.openPhoto(request.opener)
   }, [Sheet, request])
   useEffect(() => {

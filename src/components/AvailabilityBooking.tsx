@@ -1,3 +1,4 @@
+import { beginDialogIntent } from "../lib/dialogIntent"
 import { Tooltip } from "@base-ui/react/tooltip"
 import { lazy, Suspense, useId, useRef, useState } from "react"
 
@@ -45,6 +46,7 @@ export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingPr
           aria-haspopup="dialog"
           aria-expanded={isOpen}
           onClick={() => {
+            beginDialogIntent("booking")
             setHasOpened(true)
             setIsOpen(true)
             trackEvent("booking_open", { booking_open_trigger: "press" })
