@@ -3,11 +3,110 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+
+# Only the newest revision of a PR is useful. Cancelling older revisions keeps
+# them from occupying runners while the author is already waiting on new work.
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
-  verify:
+  changes:
+    name: Classify changes
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.classify.outputs.runtime }}
+    steps:
+      - id: classify
+        name: Check whether the site can change
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            })
+            const rootDocs = new Set([
+              "AGENTS.md",
+              "CLAUDE.md",
+              "PROJECT_STATUS.md",
+              "README.md",
+              "vercel-design-guidelines.md",
+            ])
+            const documentationOnly = files.every(({ filename }) =>
+              filename.startsWith("docs/") || rootDocs.has(filename)
+            )
+            core.setOutput("runtime", String(!documentationOnly))
+
+  static:
+    name: Static checks
+    needs: changes
+    if: needs.changes.outputs.runtime == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run likes:check
+
+  e2e:
+    name: E2E (shard ${{ matrix.shard }})
+    needs: changes
+    if: needs.changes.outputs.runtime == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: 1/2
+            artifact: 1
+          - shard: 2/2
+            artifact: 2
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Vite inlines this at build time, so the e2e build — not the preview
+      # server — is where the local worker URL has to be set.
+      - run: npm run build
+        env:
+          VITE_LIKES_API_URL: http://127.0.0.1:8787
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: npx playwright test --shard=${{ matrix.shard }}
+
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces-e2e-${{ matrix.artifact }}
+          path: test-results/
+          retention-days: 7
+
+  design_system:
+    name: Design-system tests
+    needs: changes
+    if: needs.changes.outputs.runtime == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -19,39 +118,44 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run lint
-
-      - run: npm run likes:check
-
-      # Vite inlines this at build time, so the e2e build — not the preview
-      # server — is where the local worker URL has to be set.
-      - run: npm run build
-        env:
-          VITE_LIKES_API_URL: http://127.0.0.1:8787
-
-      - name: Install Playwright browsers
+      - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      # `npm run test:e2e` would rebuild; dist/ is already there from the step
-      # above, and Playwright's preview server serves it as-is.
-      - name: Run e2e tests
-        run: npx playwright test
-
-      # `/design-system` is dev-only, so this suite needs its own vite dev
-      # server and cannot share the preview above. Run it even when e2e fails
-      # so one CI round reports every failure instead of one at a time.
+      # `/design-system` is dev-only, so this suite needs its own Vite dev
+      # server rather than either shard's production preview server.
       - name: Run design-system tests
-        if: ${{ !cancelled() }}
         run: npm run test:design-system
 
-      # The `line` reporter writes no playwright-report/; failure traces land
-      # in the two suites' output dirs, which is what is actually worth
-      # downloading. Both are listed because each run wipes only its own.
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-traces
-          path: |
-            test-results/
-            test-results-design-system/
+          name: playwright-traces-design-system
+          path: test-results-design-system/
           retention-days: 7
+
+  # Keep the repository's existing required `verify` check stable while the
+  # work behind it runs in parallel. It also gives docs-only PRs a real success
+  # result instead of leaving a path-filtered required check pending forever.
+  verify:
+    needs: [changes, static, e2e, design_system]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every applicable check
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          RUNTIME: ${{ needs.changes.outputs.runtime }}
+          STATIC_RESULT: ${{ needs.static.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          DESIGN_SYSTEM_RESULT: ${{ needs.design_system.result }}
+        run: |
+          test "$CHANGES_RESULT" = "success"
+
+          if [ "$RUNTIME" != "true" ]; then
+            echo "Documentation-only change; runtime checks are not needed."
+            exit 0
+          fi
+
+          test "$STATIC_RESULT" = "success"
+          test "$E2E_RESULT" = "success"
+          test "$DESIGN_SYSTEM_RESULT" = "success"
