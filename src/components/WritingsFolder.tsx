@@ -8,6 +8,8 @@ import { writings, type Writing, type WritingAnnotation, type WritingCode, type 
 import { backSound, nextSound, openSound } from "../lib/sounds"
 import { groupWritingsByYear } from "../lib/writings"
 import { usePortfolioItemUrl } from "../lib/useProjectUrl"
+import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { useOriginTravel, visibleOriginRect } from "../lib/originMotion"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 
 
@@ -224,12 +226,15 @@ function NoteImage({ image }: { image: WritingImage }) {
   )
 }
 
-export type WritingsFolderHandle = { openFolder: () => void }
+// The opener is passed in so the sheet flies out of the control that was
+// actually used: the header's Notes button is nowhere near the mosaic tile.
+export type WritingsFolderHandle = { openFolder: (opener?: HTMLElement | null) => void }
 
 export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: boolean) => void; ref?: Ref<WritingsFolderHandle> }) {
   const playOpen = useSound(openSound, { volume: 0.3 })
   const playNext = useSound(nextSound, { volume: 0.26 })
   const playBack = useSound(backSound, { volume: 0.26 })
+  const prefersReducedMotion = usePrefersReducedMotion()
   const { itemId: writingId, selectItem: selectWriting, clearItem: clearWriting } = usePortfolioItemUrl("writing")
   const [folderOpen, setFolderOpen] = useState(false)
   const [switchPhase, setSwitchPhase] = useState<"idle" | "out" | "in" | "settle">("idle")
@@ -263,6 +268,10 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
   // nodes actually attach rather than when the dialog is asked to open.
   const [pagesEl, setPagesEl] = useState<HTMLDivElement | null>(null)
   const [toolbarEl, setToolbarEl] = useState<HTMLElement | null>(null)
+  const [popupEl, setPopupEl] = useState<HTMLDivElement | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  // Whatever opened the sheet, when it was not the tile itself.
+  const openerRef = useRef<HTMLElement | null>(null)
   // Held off for a frame after the sheet opens so its first height lands
   // without a transition -- see the .writings-pages rule.
   const [sized, setSized] = useState(false)
@@ -291,8 +300,9 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
   // instead. It goes through here rather than a bare setState so an outside
   // opener gets the tile's latch sound too.
   useImperativeHandle(ref, () => ({
-    openFolder() {
+    openFolder(opener) {
       if (open) return
+      openerRef.current = opener ?? null
       playOpen()
       setFolderOpen(true)
     },
@@ -325,7 +335,7 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
     if (!(content instanceof HTMLElement) || !pagesEl || !toolbarEl) return
 
     // offsetHeight, not a bounding rect: the sheet is measured while it is
-    // still scaling in from 0.96, and a rect would hand back the animated
+    // still flying in from its opener, and a rect would hand back the animated
     // size rather than the laid-out one.
     const measure = () => {
       pagesEl.style.setProperty("--writings-page-height", `${content.offsetHeight}px`)
@@ -343,6 +353,28 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
       window.removeEventListener("resize", measure)
     }
   }, [open, reading, selectedId, pagesEl, toolbarEl])
+
+  // The sheet grows out of the control that opened it and shrinks back into it,
+  // the way a project preview grows out of its card: same geometry, same two
+  // curves, so moving between the two modals is one motion vocabulary rather
+  // than a travelling surface and a surface that only scales in place. The
+  // anchor is read live at both ends, so a sheet opened from the tile and
+  // closed after scrolling it away falls back to the plain lift.
+  const { run: runOriginTravel } = useOriginTravel({
+    node: popupEl,
+    getOriginRect: () => visibleOriginRect(openerRef.current ?? triggerRef.current),
+    enabled: !prefersReducedMotion,
+    openDurationProperty: "--modal-open-dur",
+    closeDurationProperty: "--modal-close-dur",
+  })
+
+  // Declared after the height above so both ends of the flight measure the
+  // sheet at the size it rests at, and keyed off `open` rather than the dialog's
+  // own callback, which history can close this sheet without going through. The
+  // popup stays mounted through its exit, so it is still there to fly home.
+  useIsomorphicLayoutEffect(() => {
+    if (popupEl) runOriginTravel(open ? "open" : "close")
+  }, [open, popupEl, runOriginTravel])
 
   function readWriting(id: string, playSound = playOpen, focusTitle = true) {
     cancelSwitch()
@@ -401,6 +433,9 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
     <Dialog.Root open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) cancelSwitch()
+        // Only the tile can open the sheet through here, so it is the anchor
+        // again until the next outside opener names itself.
+        if (nextOpen) openerRef.current = null
         if (nextOpen && !open) playOpen()
         setFolderOpen(nextOpen)
         if (!nextOpen && writingId !== null) clearWriting()
@@ -408,7 +443,7 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
       onOpenChangeComplete={(nextOpen) => {
         if (!nextOpen) setSelectedId(null)
       }}>
-      <Dialog.Trigger className="writings-tile" aria-label="Open writings folder">
+      <Dialog.Trigger className="writings-tile" aria-label="Open writings folder" ref={triggerRef}>
         <span className="writings-folder" aria-hidden="true">
           <img className="writings-folder-back" src="/writings/folder-back.png" alt="" width={237} height={200} loading="lazy" />
           {writings.slice(0, 3).map((writing) => (
@@ -425,8 +460,9 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="writings-backdrop" />
-        <Dialog.Popup data-switch-phase={switchPhase} data-switch-direction={switchDirection}
+        <Dialog.Popup data-switch-phase={switchPhase} data-switch-direction={switchDirection} ref={setPopupEl}
           initialFocus={reading ? titleRef : notesRef} data-reading={reading} data-scrolled={scrolled} data-sized={sized}
+          data-origin-motion={prefersReducedMotion ? undefined : "true"}
           onKeyDown={(event) => {
             if (!reading || orderedWritings.length <= 1 || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
             if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return

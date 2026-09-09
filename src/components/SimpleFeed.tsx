@@ -24,6 +24,7 @@ import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { useHoverCard } from "../lib/hoverCard"
+import { visibleOriginRect } from "../lib/originMotion"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
@@ -508,12 +509,23 @@ function SectionCorner({
   resumeHref,
 }: {
   onSelect: (href: string) => void
-  onNotes: () => void
+  onNotes: (opener: HTMLElement) => void
   resumeHref: string
 }) {
   const { isOpen, hoverProps } = useHoverCard()
   const [previewLoaded, setPreviewLoaded] = useState(false)
-  const previewFrameRef = useRef<HTMLAnchorElement>(null)
+  // The frame is only mounted once the card first opens, a commit after any
+  // effect here last ran, so the wheel listener below has to key off the node
+  // arriving. It used to key off the preview image instead, which left the
+  // frame scrolling natively -- at full delta, and chaining the overflow into
+  // the page -- for as long as the image took to load. The ref is for the
+  // reset, which only ever writes to whatever node is current.
+  const [previewFrame, setPreviewFrame] = useState<HTMLAnchorElement | null>(null)
+  const previewFrameRef = useRef<HTMLAnchorElement | null>(null)
+  const attachPreviewFrame = useCallback((node: HTMLAnchorElement | null) => {
+    previewFrameRef.current = node
+    setPreviewFrame(node)
+  }, [])
 
   // The frame shows the top ~160px of a ~450px page, so an ordinary wheel
   // gesture would cover the whole travel in one flick and the middle of the
@@ -521,7 +533,7 @@ function SectionCorner({
   // into a slow pan. React registers its wheel listener passively, so this has
   // to be wired by hand to be allowed to preventDefault.
   useEffect(() => {
-    const frame = previewFrameRef.current
+    const frame = previewFrame
     if (!frame) return
 
     const handleWheel = (event: WheelEvent) => {
@@ -553,7 +565,7 @@ function SectionCorner({
 
     frame.addEventListener("wheel", handleWheel, { passive: false })
     return () => frame.removeEventListener("wheel", handleWheel)
-  }, [previewLoaded])
+  }, [previewFrame])
 
   // The card is mounted for the rest of the session once it has loaded, so a
   // reopen would otherwise resume wherever the last hover left off.
@@ -583,8 +595,10 @@ function SectionCorner({
         </a>
       ))}
       {/* Notes has no section of its own to scroll to: it opens the same
-          folder the mosaic tile does, so this is a button, not a link. */}
-      <button type="button" className="mosaic-social-link" onClick={onNotes}>
+          folder the mosaic tile does, so this is a button, not a link. It hands
+          itself over as the opener, so the sheet flies out of this corner
+          rather than out of a tile that may be pages down. */}
+      <button type="button" className="mosaic-social-link" onClick={(event) => onNotes(event.currentTarget)}>
         Notes
       </button>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
@@ -617,7 +631,7 @@ function SectionCorner({
         >
           {isOpen || previewLoaded ? (
             <a
-              ref={previewFrameRef}
+              ref={attachPreviewFrame}
               href={resumeHref}
               target="_blank"
               rel="noreferrer"
@@ -795,18 +809,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
   // The gallery grows out of (and shrinks back into) the card it represents, so
   // it needs that card's live geometry at open and close time.
-  const getPreviewOriginRect = useCallback((index: number) => {
-    const node = previewCardNodesRef.current.get(index)
-    if (!node) return null
-
-    const rect = node.getBoundingClientRect()
-    if (rect.width <= 0 || rect.height <= 0) return null
-
-    // A card scrolled out of view would send the gallery flying off-screen, so
-    // only anchor to cards the viewer can actually see.
-    const onScreen = rect.bottom > 0 && rect.top < window.innerHeight
-    return onScreen ? rect : null
-  }, [])
+  const getPreviewOriginRect = useCallback(
+    (index: number) => visibleOriginRect(previewCardNodesRef.current.get(index)),
+    [],
+  )
 
   const renderRowMedia = (
     card: PortfolioCard,
@@ -987,7 +993,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <h1 id="portfolio-title" className="sr-only" tabIndex={-1}>{profile.name} portfolio</h1>
       <SectionCorner
         onSelect={openAbout}
-        onNotes={() => writingsFolderRef.current?.openFolder()}
+        onNotes={(opener) => writingsFolderRef.current?.openFolder(opener)}
         resumeHref={links.resumePdf}
       />
       <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />

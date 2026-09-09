@@ -394,10 +394,10 @@ const EASINGS_ENTRIES = [
     use: "Hover cards, the local-time card, the takeover close, the preview gallery leaving, and the work-history popover (aliased as --mosaic-popover-exit-ease). Always shorter than the entrance it reverses.",
   },
   {
-    name: "Gallery open",
+    name: "Origin open",
     css: "cubic-bezier(0.32, 0.8, 0.32, 1)",
     duration: "200ms",
-    use: "The preview gallery's origin-aware, whole-surface expansion and its fallback lift.",
+    use: "The origin-aware, whole-surface expansion the project preview and the notes sheet both open with, and its fallback lift. Both leave on --ease-exit.",
   },
   {
     name: "Photo carousel — --photo-motion-ease",
@@ -1262,7 +1262,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements 200ms 160ms 360ms --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements origin flight bearing 200ms 160ms 360ms --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder /></div>
               <p className="ds-caption">
@@ -1378,8 +1378,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 More articles is separated from the article by a 1px black divider at 8% opacity, with 48px above the line and 24px below.
                 Rows have 12px vertical padding, year headings sit 4px above their entries, and groups are separated by 48px on desktop or 32px on mobile.
                 Reader headers have a 24px bottom margin. Desktop side padding is 24px; mobile side padding is 20px.
-                Open takes 200ms and close 160ms at scale 0.96 with smooth easing. Reduced motion removes transitions
-                and the paper fan. Control hit areas are at least 44px; the dialog traps focus, closes on Escape or outside click,
+                Open takes 200ms and close 160ms, origin-aware like a project preview: the sheet grows out of whatever
+                opened it — the mosaic tile, or the header's Notes button — from scale 0.92 along a bearing capped at
+                44px, on cubic-bezier(0.32, 0.8, 0.32, 1), and leaves on that same bearing with --ease-exit, so it
+                shrinks back into the control it came from rather than in place. Travel and scale are one Web
+                Animations flight on the sheet, measured at its resting size at both ends; the fade stays in CSS on
+                smooth easing. With nothing on screen to fly from — a bookmarked note, or a tile scrolled away — it
+                falls back to a 20px lift at scale 0.96. Reduced motion removes transitions and the paper fan. Control hit areas are at least 44px; the dialog traps focus, closes on Escape or outside click,
                 and returns focus to the folder. Notes receives focus on open; opening an article focuses its heading,
                 and returning through the back button restores focus to the selected row. Reduced motion disables the panel and back-button transitions.
               </p>
