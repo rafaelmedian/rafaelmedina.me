@@ -1,9 +1,17 @@
 import type { D1Database } from "@cloudflare/workers-types"
-import { maxNoteLikesPerVisitor } from "../../src/data/likeLimits"
+import { maxLikesPerVisitor } from "../../src/data/likeLimits"
+import { projectIds } from "../../src/data/projectIds"
 import { writingIds } from "../../src/data/writingIds"
 
 type Env = { DB: D1Database; ALLOWED_ORIGINS: string }
-const noteIds = new Set<string>(writingIds)
+
+/* Notes and projects are counted in tables of their own, so one collection's
+   read never scans the other's rows. Table and column names come from this map
+   and never from the request, which is why they can be interpolated below. */
+const collections = {
+  notes: { table: "note_likes", column: "note_id", ids: new Set<string>(writingIds) },
+  projects: { table: "project_likes", column: "project_id", ids: new Set<string>(projectIds) },
+}
 const visitorPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export default {
@@ -21,17 +29,20 @@ export default {
     if (path === "/health" && request.method === "GET") return json({ ok: true })
     if (!allowed) return json({ error: "Origin not allowed" }, 403)
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers })
-    const match = /^\/notes\/([a-z0-9-]+)\/likes$/.exec(path)
-    if (!match || !noteIds.has(match[1])) return json({ error: "Note not found" }, 404)
+    const match = /^\/(notes|projects)\/([a-z0-9-]+)\/likes$/.exec(path)
+    if (!match) return json({ error: "Item not found" }, 404)
+    const [, collectionName, itemId] = match
+    // The pattern above only admits the two names, so this lookup always hits.
+    const { table, column, ids } = collections[collectionName as keyof typeof collections]
+    if (!ids.has(itemId)) return json({ error: "Item not found" }, 404)
     if (!["GET", "PUT"].includes(request.method)) return json({ error: "Method not allowed" }, 405)
     const visitorId = request.headers.get("X-Visitor-ID") ?? ""
     if (!visitorPattern.test(visitorId)) return json({ error: "Invalid visitor" }, 400)
-    const noteId = match[1]
     const summary = env.DB.prepare(`
       SELECT COALESCE(SUM(count), 0) AS count,
-             COALESCE((SELECT count FROM note_likes WHERE note_id = ?1 AND visitor_id = ?2), 0) AS visitorLikes
-      FROM note_likes WHERE note_id = ?1
-    `).bind(noteId, visitorId)
+             COALESCE((SELECT count FROM ${table} WHERE ${column} = ?1 AND visitor_id = ?2), 0) AS visitorLikes
+      FROM ${table} WHERE ${column} = ?1
+    `).bind(itemId, visitorId)
     try {
       let row: { count: number; visitorLikes: number } | null
       if (request.method === "PUT") {
@@ -56,20 +67,20 @@ export default {
         let mutation
         if ("increment" in data) {
           if (!Number.isSafeInteger(data.increment) || (data.increment as number) < 1
-            || (data.increment as number) > maxNoteLikesPerVisitor) {
-            return json({ error: `Expected increment between 1 and ${maxNoteLikesPerVisitor}` }, 400)
+            || (data.increment as number) > maxLikesPerVisitor) {
+            return json({ error: `Expected increment between 1 and ${maxLikesPerVisitor}` }, 400)
           }
           // Clamp atomically even when simultaneous tabs submit increments.
           mutation = env.DB.prepare(`
-            INSERT INTO note_likes (note_id, visitor_id, count) VALUES (?1, ?2, MIN(?3, ?4))
-            ON CONFLICT(note_id, visitor_id) DO UPDATE SET count = MIN(count + ?3, ?4)
-          `).bind(noteId, visitorId, data.increment, maxNoteLikesPerVisitor)
+            INSERT INTO ${table} (${column}, visitor_id, count) VALUES (?1, ?2, MIN(?3, ?4))
+            ON CONFLICT(${column}, visitor_id) DO UPDATE SET count = MIN(count + ?3, ?4)
+          `).bind(itemId, visitorId, data.increment, maxLikesPerVisitor)
         } else if ("liked" in data && typeof data.liked === "boolean") {
           // The Worker deploys before the site; already-open tabs keep this
           // toggle contract. Repeated true writes preserve any accumulated taps.
           mutation = data.liked
-            ? env.DB.prepare("INSERT OR IGNORE INTO note_likes (note_id, visitor_id) VALUES (?, ?)").bind(noteId, visitorId)
-            : env.DB.prepare("DELETE FROM note_likes WHERE note_id = ? AND visitor_id = ?").bind(noteId, visitorId)
+            ? env.DB.prepare(`INSERT OR IGNORE INTO ${table} (${column}, visitor_id) VALUES (?, ?)`).bind(itemId, visitorId)
+            : env.DB.prepare(`DELETE FROM ${table} WHERE ${column} = ? AND visitor_id = ?`).bind(itemId, visitorId)
         } else {
           return json({ error: "Expected increment or liked boolean" }, 400)
         }
