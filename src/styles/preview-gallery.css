@@ -799,9 +799,15 @@
     max-height: none;
   }
 
+  /* Taller than the 32vh every other preview settles at, because this is the
+     only portrait composition in the set: contained inside the shared cap it
+     gave a quarter of the card's width back as grey and the six phones came
+     out too small to read as screens. The extra height is the zoom -- the
+     artwork is still never cropped here -- and the card has the room, its
+     prose starting below the fold either way. */
   .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media {
     height: auto;
-    max-height: 32vh;
+    max-height: 40vh;
     object-fit: contain;
     object-position: center;
     transform: none;
