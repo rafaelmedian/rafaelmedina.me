@@ -2098,6 +2098,10 @@ test("matches the resume preview to the local-time map and opens on the top of t
 
 test("pans the resume preview slowly under the wheel and hands the page back at the end", async ({ page }) => {
   await page.goto("/")
+  // This test reads window.scrollY, so the hover has to wait out the reveal:
+  // hovering an element the intro is still moving makes Playwright scroll it
+  // into view first, and the page lands 20-40px down before a wheel is sent.
+  await settleAvatarIntro(page)
   await page.locator(".mosaic-resume-anchor").hover()
 
   const frame = page.locator(".mosaic-resume-card-frame")
@@ -2135,6 +2139,9 @@ test("damps the resume preview from the first gesture, before its image arrives"
     await route.continue()
   })
   await page.goto("/")
+  // Same guard as the pan test above, and for the same reason: this one also
+  // ends on window.scrollY, which an unsettled hover moves before the wheel.
+  await settleAvatarIntro(page)
   await page.locator(".mosaic-resume-anchor").hover()
 
   const frame = page.locator(".mosaic-resume-card-frame")
