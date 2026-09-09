@@ -108,7 +108,13 @@
 
 .preview-gallery-popup {
   /* The card inside carries the real surface; this box only has to trace the
-     same outline, so it reads the shared radius rather than restating it. */
+     same outline, so it reads the shared radius rather than restating it.
+
+     The card's inset is declared here rather than on the card because the
+     compact toolbar is the card's sibling and lines its controls up on the
+     same figure. The artwork bleeds back out over it, so it is the text's
+     inset from the card edge rather than the card's from the artwork. */
+  --preview-gallery-card-padding: clamp(2rem, 3.4vw, 2.8rem);
   position: relative;
   width: min(var(--preview-gallery-width), 100%);
   max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
@@ -171,9 +177,6 @@
 }
 
 .preview-gallery-card {
-  /* The artwork bleeds back out over this, so it is the text's inset from the
-     card edge rather than the card's from the artwork. */
-  --preview-gallery-card-padding: clamp(2rem, 3.4vw, 2.8rem);
   max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
   overflow-x: hidden;
   overflow-y: auto;
@@ -737,12 +740,9 @@
   }
 
   .preview-gallery-popup {
+    --preview-gallery-card-padding: 1.7rem;
     width: 100%;
     max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
-  }
-
-  .preview-gallery-card {
-    --preview-gallery-card-padding: 1.7rem;
   }
 
   .preview-gallery-media {
@@ -778,15 +778,26 @@
     width: 100%;
   }
 
-  .preview-gallery-popup,
-  .preview-gallery-card {
+  /* A column of two: the toolbar takes the height it needs and the card, which
+     is the scrolling surface, takes the rest. It used to be one box with the
+     toolbar sticky inside it, which is what put the controls on the card's
+     transform. */
+  .preview-gallery-popup {
     height: calc(100dvh - var(--preview-gallery-fixed-top) - env(safe-area-inset-bottom));
     max-height: none;
+    display: flex;
+    flex-direction: column;
     border-radius: 0;
+    background: var(--canvas);
   }
 
   .preview-gallery-card {
+    height: auto;
+    max-height: none;
+    flex: 1;
+    min-height: 0;
     border: 0;
+    border-radius: 0;
     box-shadow: none;
   }
 
@@ -794,19 +805,27 @@
     display: none;
   }
 
-  /* The toolbar holds the top edge here, so the artwork bleeds sideways only. */
-  .preview-gallery-media-frame {
-    margin-top: 0;
-  }
-
   .preview-gallery-toolbar {
-    position: sticky;
-    top: calc(-1 * var(--preview-gallery-card-padding));
-    z-index: 1;
+    flex: none;
     display: flex;
-    margin: calc(-1 * var(--preview-gallery-card-padding)) calc(-1 * var(--preview-gallery-card-padding)) 0;
     padding: var(--preview-gallery-card-padding);
     background: var(--canvas);
+  }
+
+  /* The count is the toolbar's third item on paper and its label in practice:
+     the chevrons hold one end of the bar and the close the other, and a pill
+     between them only crowded the corner the close now has to itself. It is
+     kept for a screen reader, where "5 / 13" is the one place the position in
+     the set is not already legible from the artwork. */
+  .preview-gallery-count {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   /* The compact gallery still shows the full composition even though the
@@ -816,9 +835,15 @@
     max-height: none;
   }
 
+  /* Taller than the 32vh every other preview settles at, because this is the
+     only portrait composition in the set: contained inside the shared cap it
+     gave a quarter of the card's width back as grey and the six phones came
+     out too small to read as screens. The extra height is the zoom -- the
+     artwork is still never cropped here -- and the card has the room, its
+     prose starting below the fold either way. */
   .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media {
     height: auto;
-    max-height: 32vh;
+    max-height: 40vh;
     object-fit: contain;
     object-position: center;
     transform: none;
@@ -853,3 +878,4 @@
     padding-inline: 1.25rem;
   }
 }
+

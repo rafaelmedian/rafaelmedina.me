@@ -335,6 +335,28 @@ export function PreviewGalleryDialog({
           ["INPUT", "TEXTAREA", "SELECT", "VIDEO", "AUDIO"].includes(target.tagName))
       if (typingOrScrubbing && event.key !== "Escape") return
 
+      // The stationary toolbar is outside the scrolling card, so native
+      // scrolling cannot reach the résumé from a focused paging/close button.
+      // Forward those keys without moving focus away from the controls.
+      const card = cardRef.current
+      if (isResumeSlide && card && target instanceof Element &&
+        target.closest(".preview-gallery-toolbar") && !event.altKey && !event.metaKey) {
+        const scrollSteps: Record<string, number> = {
+          ArrowDown: 40,
+          ArrowUp: -40,
+          PageDown: card.clientHeight * 0.9,
+          PageUp: -card.clientHeight * 0.9,
+          Home: -card.scrollHeight,
+          End: card.scrollHeight,
+        }
+        const step = scrollSteps[event.key]
+        if (step !== undefined) {
+          event.preventDefault()
+          card.scrollBy({ top: step, behavior: "instant" })
+          return
+        }
+      }
+
       // The résumé slide is a document taller than the card that holds it, so
       // there the vertical pair scrolls it and only the horizontal pair pages.
       // On a preview, where there is nothing to scroll, both pairs page.
@@ -405,6 +427,53 @@ export function PreviewGalleryDialog({
               // No aria-label here: it would override the aria-labelledby Base UI
               // wires to <Dialog.Title> below, and the title is the better name.
             >
+              {/* The compact layout's toolbar is a sibling of the card rather
+                  than its first child: the card carries the paging transition,
+                  and a control that slid and faded under the finger that
+                  pressed it read as the button leaving rather than the slide.
+                  Outside the animated surface the counter turns over in place
+                  while the artwork and prose page behind it. */}
+              <div className="preview-gallery-toolbar">
+                <span className="preview-gallery-count">
+                  {safeIndex + 1} / {items.length}
+                </span>
+
+                <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
+                  <button
+                    type="button"
+                    className="preview-gallery-nav preview-gallery-nav-prev"
+                    aria-label="Previous preview"
+                    aria-keyshortcuts={prevKeyshortcuts}
+                    onClick={() => moveBy(-1)}
+                    disabled={items.length <= 1}
+                  >
+                    <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="preview-gallery-nav preview-gallery-nav-next"
+                    aria-label="Next preview"
+                    aria-keyshortcuts={nextKeyshortcuts}
+                    onClick={() => moveBy(1)}
+                    disabled={items.length <= 1}
+                  >
+                    <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
+                  </button>
+                </div>
+
+                {/* Outside the paging group, and the only thing on its side of
+                    the bar: leaving is not a third step through the set, and
+                    stacked with the chevrons in one corner it was the one
+                    control a thumb reaching for "next" could hit by mistake. */}
+                <Dialog.Close
+                  className="preview-gallery-nav preview-gallery-close"
+                  aria-label={activeItem.kind === "resume" ? "Close résumé" : "Close preview"}
+                >
+                  <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                </Dialog.Close>
+              </div>
+
               {/* Swipe is handled on the whole card, not just the media: on
                   phones the media is capped at 32vh, so the text below it is
                   most of the surface a thumb actually lands on. */}
@@ -440,43 +509,6 @@ export function PreviewGalleryDialog({
                 }}
               >
                 <div className="preview-gallery-card-inner">
-                  <div className="preview-gallery-toolbar">
-                    <span className="preview-gallery-count">
-                      {safeIndex + 1} / {items.length}
-                    </span>
-
-                    <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
-                      <button
-                        type="button"
-                        className="preview-gallery-nav preview-gallery-nav-prev"
-                        aria-label="Previous preview"
-                        aria-keyshortcuts={prevKeyshortcuts}
-                        onClick={() => moveBy(-1)}
-                        disabled={items.length <= 1}
-                      >
-                        <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
-                      </button>
-
-                      <button
-                        type="button"
-                        className="preview-gallery-nav preview-gallery-nav-next"
-                        aria-label="Next preview"
-                        aria-keyshortcuts={nextKeyshortcuts}
-                        onClick={() => moveBy(1)}
-                        disabled={items.length <= 1}
-                      >
-                        <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
-                      </button>
-
-                      <Dialog.Close
-                        className="preview-gallery-nav preview-gallery-close"
-                        aria-label={activeItem.kind === "resume" ? "Close résumé" : "Close preview"}
-                      >
-                        <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-                      </Dialog.Close>
-                    </div>
-                  </div>
-
                   {activeCard ? (
                     <>
                       <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
