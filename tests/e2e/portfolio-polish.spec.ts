@@ -5,7 +5,7 @@ import { createElasticEdgePalette } from "../../src/lib/elasticEdgeGradient"
 // spelling it out here is what makes a change in one of those three fail loudly
 // rather than let the PDF and the page drift apart. `src/data/portfolio` cannot
 // be imported directly -- it pulls in a .webp the test loader will not parse.
-const contactEmail = "hellorafaelmedina@gmail.com"
+const contactEmail = "hey@rafaelmedina.me"
 
 const mobileViewport = { width: 390, height: 844 }
 const openStreetMapTileUrl = /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/

@@ -28,7 +28,7 @@ const previewPath = join(rootDir, "public", "rafael-medina-resume-preview.png")
 const profile = {
   name: "Rafael Medina",
   title: "Senior Product Designer",
-  email: "hellorafaelmedina@gmail.com",
+  email: "hey@rafaelmedina.me",
   phone: "+1 (829) 786 9580",
   location: "NYC / Santo Domingo",
 }

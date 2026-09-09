@@ -182,7 +182,7 @@ export const siteLinks: SiteLinks = {
   x: "https://x.com/rafaelmedian",
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
-  email: "hellorafaelmedina@gmail.com",
+  email: "hey@rafaelmedina.me",
   // The event type rather than the profile: /rafaelmedian alone opens a list of
   // meeting lengths, and the dialog is meant to land on the calendar itself.
   booking: "https://cal.com/rafaelmedian/30min",
