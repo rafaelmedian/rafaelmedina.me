@@ -9,7 +9,7 @@ const monthNameFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 })
 
-export function getAvailabilityMonth(date = new Date()) {
+function getAvailabilityMonth(date = new Date()) {
   const parts = currentMonthFormatter.formatToParts(date)
   const year = Number(parts.find((part) => part.type === "year")!.value)
   const month = Number(parts.find((part) => part.type === "month")!.value)

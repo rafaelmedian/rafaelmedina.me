@@ -8,10 +8,12 @@ import { trackEvent } from "../lib/analytics"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { CompanyLogoGrid } from "./CompanyLogoGrid"
 import { InlineBookingLink } from "./InlineBookingLink"
+import { LocalTimeCard } from "./LocalTimeCard"
 import { PersonalPhotos } from "./PersonalPhotos"
 
 type AboutPanelProps = {
   links: SiteLinks
+  localTimeLabel: string
 }
 
 const hobbies = [
@@ -73,7 +75,7 @@ function ResumeCompany({ job }: { job: CvExperience }) {
   return <span>{job.company}</span>
 }
 
-export function AboutPanel({ links }: AboutPanelProps) {
+export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
   const prefersReducedMotion = usePrefersReducedMotion()
 
@@ -190,7 +192,12 @@ export function AboutPanel({ links }: AboutPanelProps) {
                 ))}
               </ul>
 
-              {/* The address is spelled out here as persistent text; the hero
+              {/* Where I am, in the section that is already about who I am.
+                  The hero says the two cities; this says which one it is
+                  tonight, and the map behind it says the rest. */}
+              <LocalTimeCard timeLabel={localTimeLabel} reducedMotion={prefersReducedMotion} />
+
+              {/* The address is spelled out here as persistent text; the corner
                   copy action also exposes it in a pointer tooltip. */}
               <p className="mosaic-about-closing">
                 Building something? Email me at{" "}
