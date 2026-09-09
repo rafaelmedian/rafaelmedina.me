@@ -4,6 +4,7 @@ import type { SiteLinks } from "../data/portfolio"
 import { services } from "../data/services"
 import { trackEvent } from "../lib/analytics"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { CompanyLogoGrid } from "./CompanyLogoGrid"
 import { InlineBookingLink } from "./InlineBookingLink"
 import { PersonalPhotos } from "./PersonalPhotos"
 
@@ -159,6 +160,29 @@ export function AboutPanel({ links }: AboutPanelProps) {
             </div>
 
             <PersonalPhotos />
+          </section>
+
+          {/* The dated entries this used to introduce now live in the résumé
+              reader, so the marks stand on their own: they are the fastest
+              answer to "who has he worked with", and a visitor who wants the
+              engagement behind a name they recognise opens the résumé for it.
+              Not a table-of-contents stop. */}
+          <section
+            className="mosaic-about-section mosaic-about-companies"
+            aria-labelledby="about-companies-heading"
+          >
+            <div className="mosaic-about-companies-copy">
+              <h2
+                id="about-companies-heading"
+                className="mosaic-about-section-heading"
+                data-about-fade=""
+              >
+                Worked with
+              </h2>
+              <div data-about-fade="">
+                <CompanyLogoGrid />
+              </div>
+            </div>
           </section>
 
           {/* The sheet spends everything above this on what I have already

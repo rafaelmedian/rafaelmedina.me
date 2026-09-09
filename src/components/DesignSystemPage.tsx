@@ -278,7 +278,7 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, and entry rows, and every line of the About sheet below its three section headings",
+    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
@@ -324,15 +324,15 @@ const RADII_ENTRIES = [
 ]
 
 const SPACE = [
-  { value: "0.25rem", use: "Icon-to-label, chip rows" },
+  { value: "0.25rem", use: "Icon-to-label, chip rows, and the worked-with wall's mark-to-label step" },
   { value: "0.375rem", use: "Inside pills and stat groups" },
   { value: "0.5rem", use: "Hobby lists, X card internals" },
   { value: "0.625rem", use: "The contact action row" },
   { value: "0.75rem", use: "Work-history description offset and compact floating offsets" },
   { value: "1.25rem", use: "Maximum mobile contact-pill side padding" },
   { value: "1.5rem", use: "Takeover close offset from the right viewport edge" },
-  { value: "2.5rem", use: "Takeover close offset from the top viewport edge and mobile whitespace before Services" },
-  { value: "5rem", use: "Minimum About inset and desktop whitespace before Services" },
+  { value: "2.5rem", use: "Takeover close offset from the top viewport edge and the mobile whitespace before the worked-with wall and Services" },
+  { value: "5rem", use: "Minimum About inset and the desktop whitespace before the worked-with wall and Services" },
   { value: "6rem", use: "Vertical clearance around the personal-photo carousel shadows" },
   { value: "8.75rem", use: "Maximum About inset" },
   { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
@@ -1624,7 +1624,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.07)</code> hairline, labelled in <code>--muted</code> so the hero name keeps the only dark ink in that block.
                 All chips fill to <code>#e9e9e9</code>{" "}
                 for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
-                under the cursor mean the same thing. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
+                under the cursor mean the same thing. The About sheet's worked-with wall borrows only that ink travel:
+                it is bare lockups on whitespace, with no fill and no hairline, because nine bordered boxes in a grid
+                read as a table rather than a quiet list. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
                 40px while the visible label stays 2rem. The takeover close is a 51.2px white raised control with the
                 overlay shadow over <code>--shadow-ring</code> and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
                 its viewport crossing. The availability line is a button, not text: it reads as the rest of the hero
@@ -1990,10 +1992,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
                 <li data-ds-terms={terms("about reading surface 36rem services pricing stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
-                  <strong>About is one continuous reading surface.</strong> The introduction and Services share one
-                  left-aligned 36rem reading axis in normal document flow. The introduction starts with a
-                  fluid <code>clamp(5rem, 10vw, 8.75rem)</code> (80–140px) inset from the sheet&rsquo;s top: 5rem on
-                  mobile, growing to 8.75rem on wide desktops. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users.
+                  <strong>About is one continuous reading surface.</strong> The introduction, the worked-with wall,
+                  and Services share one left-aligned 36rem reading axis in normal document flow. The introduction
+                  starts with a fluid <code>clamp(5rem, 10vw, 8.75rem)</code> (80–140px) inset from the sheet&rsquo;s
+                  top: 5rem on mobile, growing to 8.75rem on wide desktops. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users.
+                  The wall of marks follows on the same 2.5rem/5rem break Services takes, so the three blocks below
+                  the photo row are separated identically and none reads as belonging to its neighbour.
                   Work history and Education are not repeated here: the résumé tile in the quote row opens them as a
                   reader, so the sheet reads as an introduction and closes on what can be bought.
                   Services closes it on the same 5rem/8.75rem gap and a two-column entry grid, with an engagement
