@@ -4635,59 +4635,94 @@ test("ramps the blur radius behind desktop project captions", async ({ page }) =
   expect(tint).toContain("linear-gradient")
 })
 
-test("keeps desktop project captions readable over white artwork", async ({ page }) => {
+// The band is the caption's ground, and which way it has to move depends on the
+// tile. Most tiles letterbox their artwork against the pale card surface, so the
+// band washes toward that surface and the label is ink -- what it has to survive
+// there is dark artwork under the label, because the pale tint is the thing
+// doing the lifting. The four tiles whose artwork runs dark to the bottom edge
+// keep the black band and the white label, where the worst case is the opposite.
+// Both alphas are read off the eased stop list at the caption's own top edge
+// rather than assumed to fall in a straight line.
+test("keeps desktop project captions readable over the artwork underneath", async ({ page }) => {
   await page.setViewportSize({ width: 700, height: 1000 })
   await page.goto("/")
 
-  const card = page.getByRole("link", { name: /Open Matcha multiwallet flow preview 1 of/ })
-  const scrim = card.locator(".mosaic-row-card-scrim")
-  const title = card.locator(".mosaic-row-card-title")
-  await title.evaluate((element) => { (element as HTMLElement).style.maxWidth = "110px" })
-  await card.hover()
-  await title.evaluate(async (element) => {
-    await Promise.all(element.getAnimations().map((animation) => animation.finished))
-  })
+  const captionGround = async (name: RegExp) => {
+    const card = page.getByRole("link", { name })
+    const title = card.locator(".mosaic-row-card-title")
+    await title.evaluate((element) => { (element as HTMLElement).style.maxWidth = "110px" })
+    await card.hover()
+    await title.evaluate(async (element) => {
+      await Promise.all(element.getAnimations().map((animation) => animation.finished))
+    })
+    await expect(title).toBeVisible()
 
-  await expect(title).toBeVisible()
-  expect(
-    await title.evaluate(
-      (element) => element.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(element).lineHeight),
-    ),
-  ).toBeGreaterThan(1.5)
+    return card.evaluate((element) => {
+      const scrim = element.querySelector(".mosaic-row-card-scrim")
+      const label = element.querySelector(".mosaic-row-card-title")
 
-  const contrastOverWhite = await scrim.evaluate((element) => {
-    const background = getComputedStyle(element, "::after").backgroundImage
-    // The tint is an eased ramp, so its alpha at the caption has to be read off
-    // the stop list rather than assumed to fall in a straight line.
-    const stops = Array.from(background.matchAll(/rgba\(0, 0, 0, ([\d.]+)\) ([\d.]+)%/g), (stop) => ({
-      alpha: Number(stop[1]),
-      at: Number(stop[2]) / 100,
-    }))
-    const title = element.nextElementSibling
+      if (!(scrim instanceof HTMLElement) || !(label instanceof HTMLElement)) return null
 
-    if (stops.length < 2 || !(title instanceof HTMLElement)) return Number.NaN
+      const stops = Array.from(
+        getComputedStyle(scrim, "::after").backgroundImage.matchAll(
+          /rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\) ([\d.]+)%/g,
+        ),
+        (stop) => ({
+          alpha: stop[4] === undefined ? 1 : Number(stop[4]),
+          at: Number(stop[5]) / 100,
+        }),
+      )
 
-    const scrimBox = element.getBoundingClientRect()
-    const titleBox = title.getBoundingClientRect()
-    const titleFromBottom = scrimBox.bottom - titleBox.top
-    const titleProgress = titleFromBottom / scrimBox.height
-    const upper = stops.find((stop) => stop.at >= titleProgress) ?? stops[stops.length - 1]
-    const lower = [...stops].reverse().find((stop) => stop.at <= titleProgress) ?? stops[0]
-    const span = upper.at - lower.at
-    const tintAlpha =
-      span === 0
-        ? lower.alpha
-        : lower.alpha + ((titleProgress - lower.at) / span) * (upper.alpha - lower.alpha)
-    const compositedChannel = 1 - tintAlpha
-    const luminance =
-      compositedChannel <= 0.04045
-        ? compositedChannel / 12.92
-        : ((compositedChannel + 0.055) / 1.055) ** 2.4
+      if (stops.length < 2) return null
 
-    return 1.05 / (luminance + 0.05)
-  })
+      const scrimBox = scrim.getBoundingClientRect()
+      const labelBox = label.getBoundingClientRect()
+      const labelProgress = (scrimBox.bottom - labelBox.top) / scrimBox.height
+      const upper = stops.find((stop) => stop.at >= labelProgress) ?? stops[stops.length - 1]
+      const lower = [...stops].reverse().find((stop) => stop.at <= labelProgress) ?? stops[0]
+      const span = upper.at - lower.at
+      const tintChannels = getComputedStyle(element).getPropertyValue("--card-caption-tint")
 
-  expect(contrastOverWhite).toBeGreaterThanOrEqual(4.5)
+      return {
+        tint: tintChannels.split(/\s+/).map(Number),
+        alpha:
+          span === 0
+            ? lower.alpha
+            : lower.alpha + ((labelProgress - lower.at) / span) * (upper.alpha - lower.alpha),
+        ink: getComputedStyle(label).color,
+        lines: labelBox.height / Number.parseFloat(getComputedStyle(label).lineHeight),
+      }
+    })
+  }
+
+  const luminance = ([red, green, blue]: number[]) => {
+    const [r, g, b] = [red, green, blue].map((channel) => {
+      const ratio = channel / 255
+      return ratio <= 0.04045 ? ratio / 12.92 : ((ratio + 0.055) / 1.055) ** 2.4
+    })
+
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+
+  const contrast = (first: number[], second: number[]) => {
+    const [lighter, darker] = [luminance(first), luminance(second)].sort((one, two) => two - one)
+    return (lighter + 0.05) / (darker + 0.05)
+  }
+
+  // A short slot with a label long enough to wrap: the two-line case is the one
+  // whose top edge reaches highest into the band, where the tint is thinnest.
+  const pale = await captionGround(/Open Matcha multiwallet flow preview 1 of/)
+  expect(pale).not.toBeNull()
+  expect(pale!.lines).toBeGreaterThan(1.5)
+
+  const paleGround = pale!.tint.map((channel) => channel * pale!.alpha)
+  expect(contrast(paleGround, [20, 20, 20])).toBeGreaterThanOrEqual(4.5)
+
+  const dark = await captionGround(/Open Matcha token page preview/)
+  expect(dark).not.toBeNull()
+
+  const darkGround = dark!.tint.map((channel) => channel * dark!.alpha + 255 * (1 - dark!.alpha))
+  expect(contrast(darkGround, [255, 255, 255])).toBeGreaterThanOrEqual(4.5)
 })
 
 test("contains the featured Matcha previews inside their mobile cards", async ({ page }) => {
