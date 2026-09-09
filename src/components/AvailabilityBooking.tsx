@@ -25,8 +25,8 @@ export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingPr
           ref={triggerRef}
           delay={260}
           closeDelay={120}
-          className="mosaic-profile-availability mosaic-availability-trigger"
-          aria-label={`${label} — book a call`}
+          className="mosaic-contact-pill mosaic-contact-pill-dark mosaic-booking-pill"
+          aria-label={`Book a call — ${label}`}
           aria-describedby={isOpen ? undefined : hintId}
           aria-haspopup="dialog"
           aria-expanded={isOpen}
@@ -36,13 +36,15 @@ export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingPr
             trackEvent("booking_open", { booking_open_trigger: "press" })
           }}
         >
-          <span className="mosaic-availability-label">{label}</span>
-          <span className="mosaic-availability-dot" aria-hidden="true" />
+          <span className="mosaic-contact-pill-content">
+            <span className="mosaic-availability-dot" aria-hidden="true" />
+            <span className="mosaic-contact-pill-dark-label">Book a call</span>
+          </span>
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Positioner side="bottom" align="center" sideOffset={12} collisionPadding={16} className="booking-hint-positioner">
             <Tooltip.Popup className="booking-hint" role="tooltip" id={hintId}>
-              Click to book a time in my calendar
+              {label} · 30 minutes in my calendar
             </Tooltip.Popup>
           </Tooltip.Positioner>
         </Tooltip.Portal>

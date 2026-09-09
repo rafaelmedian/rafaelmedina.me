@@ -14,9 +14,9 @@ import {
 import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
-import { AvailabilityBooking } from "./AvailabilityBooking"
 import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
+import { ProfileEmailCopy } from "./ProfileEmailCopy"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { QuoteCard } from "./QuoteCard"
 import { portfolioQuotes } from "../data/quotes"
@@ -1049,12 +1049,12 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           <p className="mosaic-profile-location">
             <span className="mosaic-profile-location-place">Punta Cana & NYC</span>
             <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
-            <AvailabilityBooking label={availabilityLabel} bookingUrl={links.booking} />
+            <ProfileEmailCopy email={links.email} />
           </p>
           <div className="mosaic-profile-contact">
             <ContactActionRow
-              email={links.email}
-              contactHref={`mailto:${links.email}`}
+              availabilityLabel={availabilityLabel}
+              bookingUrl={links.booking}
               linkedinHref={links.linkedin}
               xHref={links.x}
               xProfile={xProfilePreview}

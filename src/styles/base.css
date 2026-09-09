@@ -69,7 +69,6 @@
   --z-social: 50; /* social corner, so its cards clear other overlays */
   --z-dialog-backdrop: 60; /* preview-gallery backdrop and pending veil */
   --z-dialog: 70; /* the preview-gallery shell itself */
-  --z-reaction: 100; /* copy-email reaction over the dialog trigger */
   --z-skip-link: 120; /* above everything, always */
   --canvas: #ffffff;
   --ink: #141414;

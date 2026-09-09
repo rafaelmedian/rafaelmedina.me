@@ -315,7 +315,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 }
 
 .mosaic-profile-location-place,
-.mosaic-profile-availability {
+.mosaic-profile-email {
   white-space: nowrap;
 }
 
@@ -325,65 +325,71 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   align-items: center;
 }
 
-.mosaic-profile-availability {
+/* The address is the location line's second clause, so it reads as text until
+   the pointer is on it and only then takes the underline and darker ink a link
+   would have carried all along. The copy icon is the affordance that says the
+   click does something other than open a mail client. */
+.mosaic-profile-email {
+  appearance: none;
   margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.375rem;
   font-family: var(--font-ui);
   font-size: inherit;
   font-weight: 400;
   letter-spacing: -0.005rem;
-  color: var(--muted);
-}
-
-/* The dot used to be opacity 0 until the line was hovered, which meant the only
-   chromatic pixel in the site's own chrome was invisible at rest -- and it sits
-   next to the one fact a visitor is scanning for. It is on now; hover only
-   widens the halo. */
-.mosaic-availability-dot {
-  width: 0.375rem;
-  height: 0.375rem;
-  border-radius: var(--radius-full);
-  background: var(--accent);
-  box-shadow: 0 0 0 2px rgb(52 162 106 / 0.16);
-  transform: translateY(1px);
-  transition: box-shadow var(--duration-quick) var(--ease-standard);
-}
-
-.mosaic-profile-availability:hover .mosaic-availability-dot {
-  box-shadow: 0 0 0 4px rgb(52 162 106 / 0.18);
-}
-
-/* The availability line is the booking trigger, so it is a button — but it is
-   still one clause of the hero's location sentence, and a button that announced
-   itself as one at rest would put a second control beside the contact pills.
-   It reads as text until the pointer is on it, and only then takes the
-   underline and the darker ink a link would have carried all along. */
-.mosaic-availability-trigger {
-  appearance: none;
-  padding: 0;
-  border: 0;
-  background: none;
   line-height: inherit;
   text-align: inherit;
+  color: var(--muted);
   cursor: pointer;
   transition: color var(--duration-quick) var(--ease-standard);
 }
 
+.mosaic-profile-email:hover,
+.mosaic-profile-email:focus-visible {
+  color: var(--ink);
+}
+
 /* The underline sits on the label rather than the button so it stops at the
-   text and never runs under the availability dot. */
-.mosaic-availability-trigger:hover .mosaic-availability-label,
-.mosaic-availability-trigger:focus-visible .mosaic-availability-label {
+   address and never runs under the icon. */
+.mosaic-profile-email:hover .mosaic-profile-email-label,
+.mosaic-profile-email:focus-visible .mosaic-profile-email-label {
   text-decoration: underline;
   text-decoration-color: var(--muted-soft);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.25em;
 }
 
-.mosaic-availability-trigger:hover,
-.mosaic-availability-trigger:focus-visible {
+/* The icon holds its slot at rest instead of appearing on hover: the row is one
+   line of centred text, and a glyph that arrives late would shift the address
+   sideways under the pointer that is about to click it. */
+.mosaic-profile-email-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--muted-soft);
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-profile-email-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.mosaic-profile-email:hover .mosaic-profile-email-icon,
+.mosaic-profile-email:focus-visible .mosaic-profile-email-icon {
   color: var(--ink);
+}
+
+.mosaic-profile-email[data-copied="true"] .mosaic-profile-email-icon {
+  color: var(--accent);
 }
 
 .mosaic-profile-contact .mosaic-profile-actions {
