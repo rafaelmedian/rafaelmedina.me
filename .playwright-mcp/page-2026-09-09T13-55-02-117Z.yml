@@ -1,0 +1,538 @@
+- generic [ref=e1]:
+  - generic [ref=e6]:
+    - link [aria-hidden] [ref=e7] [cursor=pointer]:
+      - /url: "#main-content"
+      - text: Skip to content
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - heading [level=1] [aria-hidden] [ref=e10]: Rafael Medina portfolio
+        - navigation [aria-hidden] [ref=e11]:
+          - link [ref=e12] [cursor=pointer]:
+            - /url: "#about-panel"
+            - text: About
+          - button [ref=e13] [cursor=pointer]: Notes
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /rafael-medina-resume.pdf
+            - text: Resume
+        - generic [ref=e20]:
+          - button [aria-hidden] [ref=e21] [cursor=pointer]:
+            - generic [ref=e26]: hey@rafaelmedina.me
+          - generic [aria-hidden] [ref=e27]: Click to copy
+          - status [ref=e28]
+        - generic [ref=e30]:
+          - generic [aria-hidden] [ref=e31]:
+            - button [ref=e32] [cursor=pointer]:
+              - generic [aria-hidden]:
+                - generic: read about me
+            - generic [ref=e34]:
+              - heading [level=2] [ref=e35]: Rafael Medina
+              - paragraph [ref=e36]: Product Designer, Freelance
+          - group [aria-hidden] [ref=e37]:
+            - generic [ref=e38]:
+              - generic [ref=e39]: Recently at
+              - link [ref=e40] [cursor=pointer]:
+                - /url: https://matcha.xyz
+                - text: 0x.org and Matcha.xyz
+              - generic [ref=e41]: previously worked with and at
+            - group [ref=e42]:
+              - link [ref=e43] [cursor=pointer]:
+                - /url: https://boldvoice.com
+                - text: BoldVoice
+              - link [ref=e44] [cursor=pointer]:
+                - /url: https://www.moodys.com
+                - text: Moody's
+              - link [ref=e45] [cursor=pointer]:
+                - /url: https://chain.link
+                - text: Chainlink
+              - link [ref=e46] [cursor=pointer]:
+                - /url: https://www.twilio.com
+                - text: Twilio
+              - link [ref=e47] [cursor=pointer]:
+                - /url: https://www.onit.com
+                - text: Onit
+              - link [ref=e48] [cursor=pointer]:
+                - /url: https://www.google.com
+                - text: Google
+              - link [ref=e49] [cursor=pointer]:
+                - /url: https://protector.so/
+                - text: Protector and Patrol
+            - generic [ref=e50]:
+              - generic [ref=e51]: Product designer. Shaping trading experiences for one of the clearest DEX products in crypto.
+              - generic [ref=e52]: Product designer. Sole designer on an accent-training app used by more than 50K people.
+              - generic [ref=e53]: Frontend dev and designer. Designed financial product workflows for data-dense, decision-heavy tools.
+              - generic [ref=e54]: Product designer. Contributed to Web3 infrastructure interfaces with a focus on clarity and trust.
+              - generic [ref=e55]: Product designer. Rethought developer tools and communication platform experiences.
+              - generic [ref=e56]: Frontend dev and designer. Helped make legal operations software easier to navigate and understand.
+              - generic [ref=e57]: Design collab. Worked alongside product teams on focused interface explorations.
+              - generic [ref=e58]: Design collab. Shaped protection-focused mobile product experiences and interface explorations.
+          - generic [ref=e59]:
+            - generic [aria-hidden] [ref=e60]:
+              - generic [ref=e61]: Punta Cana & NYC
+              - generic [ref=e62]: Based in Punta Cana, Dominican Republic
+            - generic [aria-hidden] [ref=e63]: ·
+            - link [aria-hidden] [ref=e64] [cursor=pointer]:
+              - /url: https://github.com/rafaelmedian
+              - generic [ref=e65]:
+                - text: Last updated
+                - time [ref=e66]: Sep 9
+          - group [ref=e68]:
+            - button [ref=e69] [cursor=pointer]:
+              - generic [ref=e70]: Book a call
+            - generic [ref=e72]: Available in October · 30 minutes in my calendar
+            - link [ref=e74] [cursor=pointer]:
+              - /url: https://www.linkedin.com/in/rafaelmedian
+              - generic [ref=e75]: Message
+            - generic [ref=e77]:
+              - link [ref=e78] [cursor=pointer]:
+                - /url: https://x.com/rafaelmedian
+                - generic [ref=e79]: Follow
+              - generic:
+                - generic:
+                  - link:
+                    - /url: https://x.com/rafaelmedian
+                    - generic: Rafael Medina on X
+                  - link:
+                    - /url: https://x.com/intent/follow?screen_name=rafaelmedian
+                    - text: Follow
+                - link:
+                  - /url: https://x.com/rafaelmedian
+                  - generic: Rafael Medina
+                  - generic: "@rafaelmedian"
+                - paragraph:
+                  - text: Designer - Prev at
+                  - link:
+                    - /url: https://x.com/0xproject
+                    - text: "@0xproject"
+                  - text: /
+                  - link:
+                    - /url: https://x.com/matchaxyz
+                    - text: "@matchaxyz"
+                - paragraph:
+                  - generic:
+                    - strong: 2,566
+                    - text: Following
+                  - generic:
+                    - strong: "713"
+                    - text: Followers
+        - article [ref=e81]:
+          - heading [level=2] [aria-hidden] [ref=e82]: Selected work
+          - generic [ref=e83]:
+            - group "Selected work previews" [ref=e85]:
+              - generic [aria-hidden] [ref=e86]:
+                - link [ref=e88] [cursor=pointer]:
+                  - /url: /work/matcha-multiwallet-flow/
+                  - generic [aria-hidden]: Matcha multiwallet flow
+                  - generic [ref=e90]: I mapped and designed Matcha’s multiwallet flow, bringing connected wallets and network details into one menu for the decentralized trading platform. I covered wallet selection, adding a wallet, and loading, empty, and error states, so people can switch wallets during a trade without losing their quote or inputs.
+                - link [ref=e92] [cursor=pointer]:
+                  - /url: /work/matcha-homepage/
+                  - generic [aria-hidden]: Matcha homepage
+                  - generic [ref=e94]: I redesigned the homepage for Matcha, the decentralized trading platform by 0x, around the ways people begin a visit. I led the page structure and content hierarchy, giving new and returning users direct paths to search for a token, browse the market, connect a wallet, and start trading.
+                - button [expanded] [ref=e96] [cursor=pointer]:
+                  - generic [aria-hidden] [ref=e97]:
+                    - generic [ref=e99]:
+                      - strong [ref=e100]: My project context is moving into Markdown
+                      - generic [ref=e101]:
+                        - text: I've found myself creating more Markdown files lately. Things I would have put in Linear, or kept beside a design system in Figma, are ending up in files called
+                        - code [ref=e102]: PROJECT_STATUS.md
+                        - text: and
+                        - code [ref=e103]: DESIGN_QA.md
+                        - text: . It wasn't a big decision to change my workflow. I just kept needing somewhere to put information that both I and an agent could use.
+                      - generic [ref=e104]: A task needs a little history. A design decision needs a reason. A bug needs an explanation of what should have happened. When those details are scattered across tools, I become the person carrying them between places. The files started as a way to do less of that.
+                      - generic [ref=e105]: What interests me is how ordinary the solution is. A heading, a few sentences, a list of things that still need attention. Enough context to pick up the work without reconstructing the whole conversation first.
+                    - generic [ref=e107]:
+                      - strong [ref=e108]: AI design needs more control
+                      - generic [ref=e109]: Claude-only web design is wild when you already have a Figma design in front of you. There is very little mystery about what you want. You can see the layout, the spacing, the way the pieces belong together. Getting the code to arrive at that same place can still take a surprising amount of back and forth.
+                      - generic [ref=e110]: "I described it on X as three stretches: the first 60% flies, the next 30% takes ages of saying 'no, not like that,' and the final 10% feels like god mode. Those numbers describe the feeling, not a benchmark. The strange part is how quickly the experience swings from impressive to frustrating and back again."
+                      - generic [ref=e111]: Once the structure is right, changes can feel almost instant. Before that, even a small request can turn into another round of explaining the layout. That middle stretch is where I keep getting stuck.
+                    - generic [ref=e113]:
+                      - strong [ref=e114]: Building it yourself still costs something
+                      - generic [ref=e115]: "Whenever someone says you can just build a tool yourself now, I have two reactions. The first is excitement, because more of those ideas are becoming possible. The second is a small accounting question: what are we including in the cost?"
+                      - generic [ref=e116]: In a draft reply, I listed tokens, time, and running costs. It was a fairly ordinary objection to a very exciting possibility. Being able to make the thing doesn't settle whether I want to be responsible for it.
+                      - generic [ref=e117]: I think the decision will keep moving. Something that is too expensive or frustrating to build today might become a reasonable afternoon project later. Something that looks cheap in a demo might become a surprisingly demanding part of your week.
+                  - generic [ref=e118]: Writings & notes
+              - generic [ref=e119]:
+                - link [ref=e121] [cursor=pointer]:
+                  - /url: /work/popparazi-v1/
+                  - generic [aria-hidden]: Popparazi V1
+                  - generic [ref=e123]: I designed an early discovery feed for Popparazi, a social photo app. The work brought together friend suggestions, featured photos, and recommendation patterns, while exploring content density and the visual style for V1. It established the structure and interactions for the team’s early product iterations.
+                - link [ref=e125] [cursor=pointer]:
+                  - /url: /resume/
+                  - generic [ref=e129]:
+                    - generic [ref=e130]: CV
+                    - generic [ref=e131]:
+                      - generic [ref=e132]:
+                        - strong [ref=e133]: Stealth fintech
+                        - generic [ref=e134]: 2026 - Present
+                      - paragraph [ref=e135]: Building a mobile wallet for colmados, the corner stores of the Dominican Republic.
+                    - generic [ref=e136]:
+                      - generic [ref=e137]:
+                        - strong [ref=e138]: 0x / Matcha
+                        - generic [ref=e139]: 2021 - 2026
+                      - paragraph [ref=e140]: Redesigned Matcha.xyz from scratch.
+                - link [ref=e151] [cursor=pointer]:
+                  - /url: /work/protector-booking/
+                  - generic [aria-hidden]: Protector booking
+                  - generic [ref=e153]: Protector lets people book short-term personal security. As the sole product designer for the booking experience, I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation. Each part of the service can be selected and confirmed in one guided flow.
+                - group "Quotes" [ref=e155]:
+                  - button [aria-hidden] [ref=e156]
+                  - generic [aria-hidden]:
+                    - figure:
+                      - blockquote:
+                        - paragraph:
+                          - text: “i fkin love
+                          - strong: what you did with this bro
+                          - text: ”
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button [ref=e157] [cursor=pointer]: Michael Wong
+                            - generic: michaelwong.eth
+                    - figure [aria-hidden]:
+                      - blockquote:
+                        - paragraph:
+                          - text: “matcha has
+                          - strong: dope product designers
+                          - text: ”
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button [ref=e158] [cursor=pointer]: BASED FLOYD VIII
+                            - generic: "@basedfloyd888"
+                    - figure [aria-hidden]:
+                      - blockquote:
+                        - paragraph:
+                          - text: “One of the most
+                          - strong: onchain-literate people at the org.
+                          - text: ”
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button [ref=e159] [cursor=pointer]: Phil Liao
+                            - generic: Head of Engineering at 0x
+                    - figure [aria-hidden]:
+                      - blockquote:
+                        - paragraph:
+                          - text: “Help me setup matcha
+                          - strong: in my computer
+                          - text: ”
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button [ref=e160] [cursor=pointer]: Simon Rico
+                            - generic: Principal Designer at 0x
+                    - figure [aria-hidden]:
+                      - blockquote:
+                        - paragraph:
+                          - text: “Wait, you made these?
+                          - strong: I thought an agency was doing the marketing posts!
+                          - text: ”
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button [ref=e161] [cursor=pointer]: Jakub Antalik
+                            - generic: Lead Designer
+                  - group [aria-hidden] [ref=e162]:
+                    - button [pressed] [ref=e163] [cursor=pointer]
+                    - button [ref=e165] [cursor=pointer]
+                    - button [ref=e167] [cursor=pointer]
+                    - button [ref=e169] [cursor=pointer]
+                    - button [ref=e171] [cursor=pointer]
+                  - paragraph [ref=e173]: "1 of 5. Michael Wong. michaelwong.eth: i fkin love what you did with this bro."
+                - link [ref=e175] [cursor=pointer]:
+                  - /url: /work/matcha-security-audit/
+                  - generic [aria-hidden]: Matcha security audit
+                  - generic [ref=e177]: I designed the GoPlus token-check integration for Matcha, the decentralized trading platform by 0x. The work covers source code, tax, minting, and honeypot signals, along with loading, pending, warning, and result states, so people can review common token warnings while preparing a swap.
+                - button [ref=e180] [cursor=pointer]:
+                  - generic [ref=e187]: Personal life
+              - generic [aria-hidden] [ref=e188]:
+                - link [ref=e190] [cursor=pointer]:
+                  - /url: /work/shared-family-stories/
+                  - generic [aria-hidden]: Shared family stories
+                  - generic [ref=e192]: I designed the story feed, moment detail view, and commenting patterns for a private family memory app. Stories group photos and clips by period, with dates, comments, and likes attached to each moment, so families can browse their memories and keep the conversation with the story it belongs to.
+                - link [ref=e194] [cursor=pointer]:
+                  - /url: /work/dealership-lead-hub/
+                  - generic [aria-hidden]: Dealership lead hub
+                  - generic [ref=e196]: I designed a lead hub for a dealership retention platform, helping staff find sales and service opportunities in their existing customer base. I owned the layout, outreach metrics, retention comparisons, filters, and bulk-send flow, so staff can see how outreach performed and send a filtered batch of customers to the dealer app without leaving the page.
+                - link [ref=e198] [cursor=pointer]:
+                  - /url: /work/matcha-token-page/
+                  - generic [aria-hidden]: Matcha token page
+                  - generic [ref=e199]: I led the page structure and interactions for token research and trading on Matcha, the decentralized trading platform by 0x. The page brings market data, charts, trade controls, and order history together, so people can review a token and start a trade without changing views.
+                - link [ref=e201] [cursor=pointer]:
+                  - /url: /work/matcha-rewards/
+                  - generic [aria-hidden]: Matcha Rewards
+                  - generic [ref=e205]: I designed the campaign artwork and variants for Matcha’s weekly rewards program on its decentralized trading platform. The key visual puts the leaderboard, cash prizes, trades, referrals, and points behind the headline, giving the launch, weekly countdown posts, and link previews one shared visual system.
+              - generic [aria-hidden] [ref=e206]:
+                - link [ref=e208] [cursor=pointer]:
+                  - /url: /work/matcha-on-mobile/
+                  - generic [aria-hidden]: Matcha on mobile
+                  - generic [ref=e209]: I led the mobile trade journey for Matcha, the decentralized trading platform by 0x. I adapted token details, the trade form, review, and confirmation for phone screens, including the layout, touch targets, and order of information, so people can research and trade from a mobile browser.
+                - link [ref=e211] [cursor=pointer]:
+                  - /url: /work/matcha-trade-page/
+                  - generic [aria-hidden]: Matcha trade page
+                  - generic [ref=e212]: I defined the information hierarchy and interactions for Matcha’s main trading workspace. It brings the live quote, chart, balances, open orders, and trade history into one layout, so people can place a decentralized trade and follow its activity from the same page.
+                - link [ref=e214] [cursor=pointer]:
+                  - /url: /work/matcha-pro/
+                  - generic [aria-hidden]: Matcha Pro
+                  - generic [ref=e215]: I led the product structure and interaction design for Matcha Pro, a decentralized trading workspace for active traders. Live charts, token signals, transactions, and order management come together in a denser layout, giving advanced tools a dedicated home alongside Matcha’s standard swap experience.
+            - button [aria-hidden] [ref=e216] [cursor=pointer]
+        - article "About Rafael Medina" [ref=e220]:
+          - heading [level=2] [aria-hidden] [ref=e221]: About Rafael Medina
+          - generic [ref=e223]:
+            - region [ref=e224]:
+              - generic [ref=e225]:
+                - heading [level=2] [aria-hidden] [ref=e226]: About me
+                - paragraph [aria-hidden] [ref=e227]: I design the complicated parts of products people prefer not to think about. I figure out what to build, test it with real people, and prototype in code because working interactions answer questions faster than static mockups.
+                - paragraph [aria-hidden] [ref=e228]: When I’m not working, I’m probably kickboxing, swimming, riding a bike, or being humbled by salsa and jiu jitsu.
+                - list [aria-hidden] [ref=e229]:
+                  - listitem [ref=e230]:
+                    - generic [aria-hidden] [ref=e231]: 🥊
+                    - text: Kickboxing
+                  - listitem [ref=e232]:
+                    - generic [aria-hidden] [ref=e233]: 🚵
+                    - text: Mountain biking
+                  - listitem [ref=e234]:
+                    - generic [aria-hidden] [ref=e235]: 🏊
+                    - text: Lap swimming
+                  - listitem [ref=e236]:
+                    - generic [aria-hidden] [ref=e237]: 🥾
+                    - text: Hiking
+                  - listitem [ref=e238]:
+                    - generic [aria-hidden] [ref=e239]: 💃
+                    - text: Salsa
+                    - generic [ref=e240]: (learning)
+                  - listitem [ref=e241]:
+                    - generic [aria-hidden] [ref=e242]: 🥋
+                    - text: Jiu jitsu
+                    - generic [ref=e243]: (learning)
+                - generic [ref=e245]:
+                  - generic [ref=e246]:
+                    - text: "Local time:"
+                    - generic [ref=e247]: 9:55am AST
+                  - generic [ref=e250]: Punta Cana, Dominican Republic
+                - paragraph [ref=e251]:
+                  - text: Building something? Email me at
+                  - link [aria-hidden] [ref=e252] [cursor=pointer]:
+                    - /url: mailto:hey@rafaelmedina.me
+                    - text: hey@rafaelmedina.me
+                  - generic [aria-hidden] [ref=e253]: Click to copy
+                  - status [ref=e254]
+                  - text: .
+            - region [aria-hidden] [ref=e255]:
+              - generic [ref=e256]:
+                - heading [level=2] [ref=e257]: Worked with
+                - list [ref=e259]:
+                  - listitem [ref=e260]:
+                    - link [ref=e261] [cursor=pointer]:
+                      - /url: https://0x.org
+                      - generic [ref=e263]: 0x.org
+                  - listitem [ref=e264]:
+                    - link [ref=e265] [cursor=pointer]:
+                      - /url: https://matcha.xyz
+                      - generic [ref=e267]: Matcha.xyz
+                  - listitem [ref=e268]:
+                    - link [ref=e269] [cursor=pointer]:
+                      - /url: https://boldvoice.com
+                      - generic [ref=e271]: BoldVoice
+                  - listitem [ref=e272]:
+                    - link [ref=e273] [cursor=pointer]:
+                      - /url: https://www.moodys.com
+                      - generic [ref=e275]: Moody's
+                  - listitem [ref=e276]:
+                    - link [ref=e277] [cursor=pointer]:
+                      - /url: https://chain.link
+                      - generic [ref=e279]: Chainlink
+                  - listitem [ref=e280]:
+                    - link [ref=e281] [cursor=pointer]:
+                      - /url: https://www.twilio.com
+                      - generic [ref=e283]: Twilio
+                  - listitem [ref=e284]:
+                    - link [ref=e285] [cursor=pointer]:
+                      - /url: https://www.onit.com
+                      - generic [ref=e287]: Onit
+                  - listitem [ref=e288]:
+                    - link [ref=e289] [cursor=pointer]:
+                      - /url: https://www.google.com
+                      - generic [ref=e291]: Google
+                  - listitem [ref=e292]:
+                    - link [ref=e293] [cursor=pointer]:
+                      - /url: https://protector.so/
+                      - generic [ref=e295]: Protector and Patrol
+            - region [aria-hidden] [ref=e296]:
+              - generic [ref=e297]:
+                - heading [level=2] [ref=e298]: How I work
+                - paragraph [ref=e299]: "Most engagements run the same five beats. What changes is how long each one takes: a two-week audit compresses them into ten days, a year of product work loops through them a dozen times."
+                - list [ref=e300]:
+                  - listitem [ref=e301]:
+                    - paragraph [ref=e302]: "01"
+                    - generic [ref=e303]:
+                      - heading [level=3] [ref=e304]: Kickoff
+                      - paragraph [ref=e305]: "One conversation about the business before anything about the interface: what the product has to do, who it is losing today, and what has to be true in six months for this to have been worth it. I leave with the goal we are designing against and the constraints I have to design inside."
+                  - listitem [ref=e306]:
+                    - paragraph [ref=e307]: "02"
+                    - generic [ref=e308]:
+                      - heading [level=3] [ref=e309]: Research
+                      - paragraph [ref=e310]: "I talk to the people who actually use the thing, and read what the product already knows: support threads, session recordings, the last three attempts at this. It is usually a week, and it is the cheapest week in the project, because most of what it produces is a list of things not to build."
+                  - listitem [ref=e311]:
+                    - paragraph [ref=e312]: "03"
+                    - generic [ref=e313]:
+                      - heading [level=3] [ref=e314]: Directions
+                      - paragraph [ref=e315]: You see work inside the first two weeks and it is deliberately unfinished. Two or three directions that disagree with each other, so the decision is about which problem we are solving rather than which shade of blue. Polish is cheap once the direction is right and expensive before.
+                  - listitem [ref=e316]:
+                    - paragraph [ref=e317]: "04"
+                    - generic [ref=e318]:
+                      - heading [level=3] [ref=e319]: Prototype
+                      - paragraph [ref=e320]: "Once a direction holds I build it: real components, real data, real states. A working interaction settles questions a static mockup can only argue about, which is how the empty state, the error and the timing get designed instead of discovered in QA."
+                  - listitem [ref=e321]:
+                    - paragraph [ref=e322]: "05"
+                    - generic [ref=e323]:
+                      - heading [level=3] [ref=e324]: Ship
+                      - paragraph [ref=e325]: I stay through implementation, reviewing builds, fixing what only shows up on a real device, and leaving your engineers components and rules they can keep building on. The engagement ends when the work is in production, not when the file is tidy.
+                - paragraph [ref=e326]: That is a default, not a template. Reviews happen when there is something worth reviewing rather than because it is Thursday, and I would rather show you something rough on Tuesday than something finished next month.
+            - region [ref=e327]:
+              - generic [ref=e328]:
+                - heading [level=2] [aria-hidden] [ref=e329]: Services
+                - paragraph [aria-hidden] [ref=e330]: I take on a small number of client projects alongside my own product work. Three shapes, chosen by how much of the problem is still open when we start.
+                - list [aria-hidden] [ref=e331]:
+                  - listitem [ref=e332]:
+                    - paragraph [ref=e333]: 0 → 1
+                    - generic [ref=e334]:
+                      - heading [level=3] [ref=e335]: End-to-end product design
+                      - paragraph [ref=e336]: "One designer owning the problem from the first user interview to the shipped screen: discovery, research, UX and UI, and the coded prototypes your engineers build against. The shape of the Matcha rebuild and of BoldVoice."
+                  - listitem [ref=e337]:
+                    - paragraph [ref=e338]: Monthly
+                    - generic [ref=e339]:
+                      - heading [level=3] [ref=e340]: Fractional to full-time design partner
+                      - paragraph [ref=e341]: A standing seat on a team with no in-house designer, a few days a week or full time when the roadmap needs it. New surfaces as they come up, review on what your engineers are already building, and a design system that keeps its shape between the two.
+                  - listitem [ref=e342]:
+                    - paragraph [ref=e343]: 1 – 2 weeks
+                    - generic [ref=e344]:
+                      - heading [level=3] [ref=e345]: Design sprint and UX audit
+                      - paragraph [ref=e346]: Fixed scope, fixed date. I talk to your users, take apart the product you have today, and come back with a ranked list of what it is costing you and a direction for each one.
+                - generic [aria-hidden] [ref=e347]:
+                  - heading [level=3] [ref=e348]: Common questions
+                  - list [ref=e349]:
+                    - listitem [ref=e350]:
+                      - heading [level=4] [ref=e351]: What does it cost?
+                      - paragraph [ref=e352]: Every engagement is priced to its scope, so there is no rate card here. Tell me what you are building and roughly when you need it, and I will come back with a number and a timeline. Fixed-scope work is quoted as a single figure, and the standing partnership is billed monthly.
+                    - listitem [ref=e353]:
+                      - heading [level=4] [ref=e354]: How long does it take?
+                      - paragraph [ref=e355]: A sprint or audit runs one to two weeks and ends on a date we agree before it starts. End-to-end product work is measured in months, and how many depends on how much is still open at kickoff. You get that number in the proposal, not in a conversation after we have started.
+                    - listitem [ref=e356]:
+                      - heading [level=4] [ref=e357]: Do you write code as well?
+                      - paragraph [ref=e358]: "Yes. I studied computer science and shipped front-end full time for years before I moved into design: React, TypeScript, the CSS and the motion. What is different now is a swarm of agents behind a tight end-to-end suite, which is what lets one person carry the work from the first sketch to production. This site is mine end to end. Your backend is not, and I work next to the engineers who own it."
+                    - listitem [ref=e359]:
+                      - heading [level=4] [ref=e360]: What do you need from me?
+                      - paragraph [ref=e361]: "One person who can make decisions, access to the people who use the product, and about an hour a week. You do not need a spec written first: working out what to build is most of what you would be hiring me for."
+                    - listitem [ref=e362]:
+                      - heading [level=4] [ref=e363]: How do we work day to day?
+                      - paragraph [ref=e364]: A shared Slack or Telegram channel, and reviews when there is something worth reviewing instead of a standing meeting. I am on Atlantic time in Punta Cana, which covers the US East Coast almost exactly and most of the European afternoon.
+                - paragraph [ref=e365]:
+                  - text: Email me at
+                  - link [aria-hidden] [ref=e366] [cursor=pointer]:
+                    - /url: mailto:hey@rafaelmedina.me
+                    - text: hey@rafaelmedina.me
+                  - generic [aria-hidden] [ref=e367]: Click to copy
+                  - status [ref=e368]
+                  - text: ", or"
+                  - button [aria-hidden] [ref=e369] [cursor=pointer]: book a 30-minute call
+                  - text: .
+  - button [ref=e371] [cursor=pointer]:
+    - generic:
+      - generic:
+        - button
+      - generic:
+        - button [disabled]
+      - generic:
+        - button [disabled]
+      - button [disabled]
+      - generic:
+        - button [disabled]
+      - generic:
+        - button
+      - generic:
+        - button
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic: /agentation
+            - generic: v2.3.3
+            - button
+          - generic:
+            - generic:
+              - generic: Output Detail
+              - button:
+                - generic: Standard
+            - generic: React Components
+            - generic: Hide Until Restart
+          - generic:
+            - generic: Marker Color
+            - generic:
+              - button
+              - button
+              - button
+              - button
+              - button
+              - button
+              - button
+          - generic:
+            - generic: Clear on copy/send
+            - generic: Block page interactions
+          - generic:
+            - button:
+              - generic: Manage MCP & Webhooks
+        - generic:
+          - button:
+            - generic: Manage MCP & Webhooks
+          - generic:
+            - generic: MCP Connection
+            - paragraph:
+              - text: MCP connection allows agents to receive and act on annotations.
+              - link:
+                - /url: https://agentation.dev/mcp
+                - text: Learn more
+          - generic:
+            - generic:
+              - generic: Webhooks
+              - generic: Auto-Send
+            - paragraph: The webhook URL will receive live annotation changes and annotation data.
+            - textbox:
+              - /placeholder: Webhook URL
+  - dialog [ref=e379]:
+    - banner [ref=e380]:
+      - generic [ref=e381]:
+        - button [aria-hidden]
+        - heading "Notes" [active] [level=2] [ref=e382]
+    - paragraph [ref=e383]: Choose a note, grouped by year.
+    - generic [ref=e387]:
+      - region "2026" [ref=e388]:
+        - heading "2026" [level=3] [ref=e389]
+        - list [ref=e390]:
+          - listitem [ref=e391]:
+            - button "My project context is moving into Markdown" [ref=e392] [cursor=pointer]:
+              - time [aria-hidden] [ref=e394]: 07/09
+          - listitem [ref=e395]:
+            - button "AI design needs more control" [ref=e396] [cursor=pointer]:
+              - time [aria-hidden] [ref=e398]: 29/07
+          - listitem [ref=e399]:
+            - button "Building it yourself still costs something" [ref=e400] [cursor=pointer]:
+              - time [aria-hidden] [ref=e402]: 16/06
+          - listitem [ref=e403]:
+            - button "Room to figure it out" [ref=e404] [cursor=pointer]:
+              - time [aria-hidden] [ref=e406]: 21/05
+          - listitem [ref=e407]:
+            - button "A song we all know" [ref=e408] [cursor=pointer]:
+              - time [aria-hidden] [ref=e410]: 08/04
+          - listitem [ref=e411]:
+            - button "Designing Matcha" [ref=e412] [cursor=pointer]:
+              - time [aria-hidden] [ref=e414]: 02/03
+          - listitem [ref=e415]:
+            - button "Designing for active traders" [ref=e416] [cursor=pointer]:
+              - time [aria-hidden] [ref=e418]: 10/02
+      - region "2025" [ref=e419]:
+        - heading "2025" [level=3] [ref=e420]
+        - list [ref=e421]:
+          - listitem [ref=e422]:
+            - button "From quote to confirmation" [ref=e423] [cursor=pointer]:
+              - time [aria-hidden] [ref=e425]: 12/11
+    - group "Note navigation"
