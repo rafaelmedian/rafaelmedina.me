@@ -122,7 +122,7 @@ export const teamQuotes: PortfolioQuote[] = [
     text: "Masterclass in user test facilitation.",
     emphasis: "That prototype 😍",
     attribution: "Josh Frank",
-    caption: "Moody’s prototype sprint",
+    caption: "Product Strategist at DEPT",
     photo: "/quotes/josh-frank.jpg",
   },
   {
