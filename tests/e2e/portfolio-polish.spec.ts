@@ -4598,6 +4598,34 @@ test("clips the Protector artwork to its full-width card on mobile", async ({ pa
   expect(mediaBox!.y + mediaBox!.height).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height)
 })
 
+test("zooms the family stories preview past its empty corner", async ({ page }) => {
+  await page.setViewportSize({ width: 1320, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("link", { name: /Open Shared family stories/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const media = dialog.locator(".preview-gallery-media:not(.preview-gallery-media-placeholder)")
+  const frame = dialog.locator(".preview-gallery-media-frame")
+  const [frameBox, mediaBox] = await Promise.all([frame.boundingBox(), media.boundingBox()])
+
+  await expect(media).toHaveCSS("object-fit", "cover")
+  expect(frameBox).not.toBeNull()
+  expect(mediaBox).not.toBeNull()
+
+  // The export's two devices are tilted, so the artwork carries an empty wedge
+  // above and to the left of the front phone. The frame has to run past it on
+  // both axes or the card opens on a corner of the mat's grey.
+  expect(mediaBox!.x).toBeLessThanOrEqual(frameBox!.x - frameBox!.width * 0.1)
+  expect(mediaBox!.y).toBeLessThanOrEqual(frameBox!.y - frameBox!.height * 0.1)
+
+  // What it must not do is take the composition off the bottom edge it is built
+  // on: the zoom is pinned there, and only grazes the right.
+  expect(mediaBox!.y + mediaBox!.height).toBeCloseTo(frameBox!.y + frameBox!.height, 0)
+  expect(mediaBox!.x + mediaBox!.width).toBeGreaterThanOrEqual(frameBox!.x + frameBox!.width)
+  expect(mediaBox!.x + mediaBox!.width).toBeLessThan(frameBox!.x + frameBox!.width * 1.03)
+})
+
 test("describes the stakes and choices in a Protector booking", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
