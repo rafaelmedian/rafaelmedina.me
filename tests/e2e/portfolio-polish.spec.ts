@@ -1736,6 +1736,33 @@ test("pans the resume preview slowly under the wheel and hands the page back at 
   expect(travel).toBeGreaterThan(0)
 })
 
+test("damps the resume preview from the first gesture, before its image arrives", async ({ page }) => {
+  // The frame is a real scroller, so until the damping listener is attached a
+  // wheel runs it to the bottom at full delta and chains the rest into the
+  // page. Hold the image back to open that window on purpose: the listener has
+  // to be waiting on the frame, not on the picture inside it.
+  await page.route("**/rafael-medina-resume-preview.png", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 4000))
+    await route.continue()
+  })
+  await page.goto("/")
+  await page.locator(".mosaic-resume-anchor").hover()
+
+  const frame = page.locator(".mosaic-resume-card-frame")
+  const box = await frame.boundingBox()
+  expect(box).not.toBeNull()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+
+  await page.mouse.wheel(0, 300)
+  await page.waitForTimeout(150)
+  const panned = await frame.evaluate((element) => element.scrollTop)
+  const travel = await frame.evaluate((element) => element.scrollHeight - element.clientHeight)
+  // A quarter of the gesture, not the whole scroller.
+  expect(panned).toBeGreaterThan(0)
+  expect(panned).toBeLessThan(travel)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+})
+
 test("opens the resume from the preview without moving focus into the hidden card", async ({ context, page }) => {
   await page.goto("/")
   await page.locator(".mosaic-resume-anchor").hover()

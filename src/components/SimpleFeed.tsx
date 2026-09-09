@@ -514,7 +514,18 @@ function SectionCorner({
 }) {
   const { isOpen, hoverProps } = useHoverCard()
   const [previewLoaded, setPreviewLoaded] = useState(false)
-  const previewFrameRef = useRef<HTMLAnchorElement>(null)
+  // The frame is only mounted once the card first opens, a commit after any
+  // effect here last ran, so the wheel listener below has to key off the node
+  // arriving. It used to key off the preview image instead, which left the
+  // frame scrolling natively -- at full delta, and chaining the overflow into
+  // the page -- for as long as the image took to load. The ref is for the
+  // reset, which only ever writes to whatever node is current.
+  const [previewFrame, setPreviewFrame] = useState<HTMLAnchorElement | null>(null)
+  const previewFrameRef = useRef<HTMLAnchorElement | null>(null)
+  const attachPreviewFrame = useCallback((node: HTMLAnchorElement | null) => {
+    previewFrameRef.current = node
+    setPreviewFrame(node)
+  }, [])
 
   // The frame shows the top ~160px of a ~450px page, so an ordinary wheel
   // gesture would cover the whole travel in one flick and the middle of the
@@ -522,7 +533,7 @@ function SectionCorner({
   // into a slow pan. React registers its wheel listener passively, so this has
   // to be wired by hand to be allowed to preventDefault.
   useEffect(() => {
-    const frame = previewFrameRef.current
+    const frame = previewFrame
     if (!frame) return
 
     const handleWheel = (event: WheelEvent) => {
@@ -554,7 +565,7 @@ function SectionCorner({
 
     frame.addEventListener("wheel", handleWheel, { passive: false })
     return () => frame.removeEventListener("wheel", handleWheel)
-  }, [previewLoaded])
+  }, [previewFrame])
 
   // The card is mounted for the rest of the session once it has loaded, so a
   // reopen would otherwise resume wherever the last hover left off.
@@ -620,7 +631,7 @@ function SectionCorner({
         >
           {isOpen || previewLoaded ? (
             <a
-              ref={previewFrameRef}
+              ref={attachPreviewFrame}
               href={resumeHref}
               target="_blank"
               rel="noreferrer"
