@@ -169,14 +169,30 @@ test("the fan leans along an arc and opens the whole hand at once", async ({ pag
     return Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.left))
   })
 
+  // How far down its own transform carries each print. Read from the matrix
+  // rather than from the rect, because a print's rect also grows taller as it
+  // leans further over and that alone would swallow the drop.
+  const readDrops = (elements: Element[]) => elements.map((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).f)
+  const restDrops = await prints.evaluateAll(readDrops)
+
   // The tile answers as one thing: whichever print the pointer lands on, every
-  // print swings out to its fanned angle together. Reading at the same scroll
-  // position throughout; hover() would otherwise scroll first.
+  // print swings out to its fanned angle together. Each lands off the even arc
+  // by its own fixed wobble, so the open hand reads as dealt rather than
+  // stepped. Reading at the same scroll position throughout; hover() would
+  // otherwise scroll first.
   await prints.nth(1).scrollIntoViewIfNeeded()
   await prints.nth(1).hover({ position: { x: 4, y: 4 } })
-  await expect.poll(() => prints.evaluateAll(readAngles)).toEqual([-16, -8, 0, 8, 16])
+  const open = [-18, -7, 1, 7, 17]
+  await expect.poll(() => prints.evaluateAll(readAngles)).toEqual(open)
 
-  // The middle print stays put, so the hand opens outwards rather than sliding.
+  // The hand also settles down the arc it sits on — every print lower than it
+  // was, the flat middle included, so the whole fan eases rather than only its
+  // ends swinging out. The angles above have already settled, so the drops
+  // have too: they are the same transform.
+  const openDrops = await prints.evaluateAll(readDrops)
+  openDrops.forEach((drop, index) => expect(drop).toBeGreaterThan(restDrops[index]))
+
+  // The hand opens outwards rather than sliding.
   const openWidth = await preview.locator(".personal-photos-stack").evaluate((element) => {
     const boxes = Array.from(element.querySelectorAll(".personal-photos-print")).map((print) => print.getBoundingClientRect())
     return Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.left))
@@ -186,7 +202,7 @@ test("the fan leans along an arc and opens the whole hand at once", async ({ pag
   // Pointing at a different print asks for nothing new: the hand is already
   // open and holds its shape, so nothing changes hands under the pointer.
   await prints.nth(3).hover({ position: { x: 4, y: 4 } })
-  await expect.poll(() => prints.evaluateAll(readAngles)).toEqual([-16, -8, 0, 8, 16])
+  await expect.poll(() => prints.evaluateAll(readAngles)).toEqual(open)
 
   // The pile keeps its order at rest and open alike: the middle print is the
   // front of the fan and every print behind it steps back.

@@ -1405,7 +1405,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </p>
             </div>
 
-            <div className="ds-block" data-ds-terms={terms("quote blockquote attribution avatars portraits group 3fr 5fr 4fr protector security compact wide span two columns --radius-lg --radius-md --text-lg --text-md --text-sm 340px 660px")}>
+            <div className="ds-block" data-ds-terms={terms("quote blockquote attribution avatars portraits group 3fr 5fr 4fr protector security compact wide span two columns swipe drag axis tap 6px 10px --radius-lg --radius-md --text-lg --text-md --text-sm 340px 660px")}>
               <p className="ds-subhead">Quote slider</p>
               <p>
                 On desktop the slider occupies the upper-right area of the 3:5:4 portraits group, above Security
@@ -1417,21 +1417,29 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 quote's height, author row, and attribution-note row using subgrid. Each 40px portrait and attribution fit their content and are centered
                 together, with text wrapping naturally when the available width runs out. Portraits
                 carry a 12% black hairline inside the crop so pale photos keep an edge on the card.
-                Confirmed authors' names are buttons with invisible 40px-tall hit targets. Hovering for
+                Confirmed authors' names are buttons. Hovering for
                 260ms, focusing, or tapping the button opens the full X profile popover above the name, centered on the button and portaled
                 beyond the carousel clip with viewport collision handling at --z-overlay. The preview
                 stays interactive by pointer and keyboard, closes on Escape, restores focus, and uses the shared hover-card motion tokens.
-                The author button has no padding or minimum layout height, keeping the name and caption on consecutive lines.
-                An invisible pseudo-element extends the hit target, while a 6px spread shadow paints
-                --mosaic-card-surface around the name on hover or keyboard focus without affecting spacing.
-                The background and shadow transition over --duration-quick with --ease-standard.
+                The name takes the hero's inline treatment: no underline, and a --mosaic-card-surface fill on
+                --radius-sm over its own line box on hover or keyboard focus, with 6px of side padding cancelled by an
+                equal negative margin — so the fill grows around the name while the name stays on the caption's
+                left edge and on the line above it. The background transitions over --duration-quick with --ease-standard.
+                A pointer that hovers gets exactly that box; only coarse pointers, which open the preview by tapping
+                rather than hovering, add an invisible 40px-tall pseudo-element behind the name.
                 Previews show the full X display name, handle, available bio, Follow action, and following/follower counts.
                 Empty bios stay omitted. Missing portraits use an initial avatar. Unlinked authors remain plain text; offscreen slides are inert.
                 Click the card outside the identity to advance, select a dot, or drag horizontally in either direction.
-                The active and adjacent slides follow the pointer together without easing. A drag of 6% of the card width
-                (capped at 24px) selects the adjacent quote and wraps at either end; shorter drags snap
-                back over --duration-slow (360ms) with --ease-smooth. Movement under 6px remains a tap. Vertical touch gestures
-                scroll the page, and dragging never triggers an extra click. The surface uses grab and
+                The active and adjacent slides follow the pointer together without easing. Six pixels both start the
+                drag and commit it: past that the card follows the pointer, and letting go selects the adjacent quote
+                and wraps at either end, so no swipe the card has already answered is ignored. A drag carried out and
+                brought back to where it started snaps back over --duration-slow (360ms) with --ease-smooth.
+                The axis is settled at those same six pixels, where the roll of the hand that opens a real swipe still
+                measures as tall as the sideways intent behind it: the gesture goes to the page only when it is at least
+                half again as tall as it is wide, so a short swipe that begins with a wobble still changes the quote.
+                A press that stays within 10px of where it went down remains a tap however it wandered, and advances one
+                quote; anything travelling further has been answered as a drag and triggers no extra click. Vertical
+                touch gestures scroll the page. The surface uses grab and
                 grabbing cursors. The card button and the dots opt out of the global tap highlight:
                 the button covers the whole quote, so the highlight greyed the entire card on every
                 touch, and the slide and the filling dot already report the tap. The original dots-only navigation uses 6px dots with 4px gaps,
@@ -1466,8 +1474,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 over it. Those quotes arrived as Slack messages and a testimonial card, so they carry
                 no X handle: the name is plain text with no profile preview. Every one of them
                 carries a portrait.
-                A drag commits at 16px or 4% of the card, whichever is smaller, rather than at a
-                quarter of it, and a quote let go of under the pointer settles over
+                A quote let go of under the pointer settles over
                 <code>--duration-base</code> where one chosen from a dot keeps <code>--duration-slow</code>.
               </p>
               <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} />

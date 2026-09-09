@@ -3238,43 +3238,37 @@ test("gives the resume slide the reader's own measure", async ({ page }) => {
 // The résumé slide is a document, not a picture. It is taller than the card that
 // holds it, so the vertical arrows have to scroll it rather than page off it,
 // and the keys only reach it because opening focuses the surface that scrolls.
-test("scrolls the resume slide with the vertical keys and pages with the horizontal pair", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/resume/")
+// Give every key a fresh scroller. Resetting scrollTop between native keyboard
+// scrolls can race Chrome's unfinished glide; two frames at zero do not prove
+// the previous animation has ended, and CI lost the End scroll after PageDown.
+for (const key of ["ArrowDown", "PageDown", "End"]) {
+  test(`scrolls the resume slide with ${key} and pages with the horizontal pair`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/resume/")
 
-  const card = page.getByRole("dialog").locator(".preview-gallery-card")
-  await expect(card).toBeFocused()
-  expect(await card.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
+    const card = page.getByRole("dialog").locator(".preview-gallery-card")
+    await expect(card).toBeFocused()
+    expect(await card.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
 
-  for (const key of ["ArrowDown", "PageDown", "End"]) {
-    // Chrome animates keyboard scrolling, so the key before this one can still
-    // be gliding. Rewinding the card under a live glide and pressing again
-    // loses the new scroll outright -- the browser finishes the animation it
-    // already had and the fresh key buys nothing -- which is why this failed on
-    // `End`, the one key that always follows another. Holding the top across
-    // two frames is only true once the previous glide has stopped.
-    await expect.poll(() => card.evaluate((element) => new Promise<number>((resolve) => {
-      element.scrollTop = 0
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve(element.scrollTop)))
-    }))).toBe(0)
+    await expect.poll(() => card.evaluate((element) => element.scrollTop)).toBe(0)
     await page.keyboard.press(key)
     await expect.poll(() => card.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
     await expect(page).toHaveURL(/\/resume\/$/)
-  }
 
-  // The rail advertises only the pair that still pages here.
-  const rail = page.locator(".preview-gallery-rail")
-  await expect(rail.locator(".preview-gallery-nav-prev")).toHaveAttribute("aria-keyshortcuts", "ArrowLeft")
-  await expect(rail.locator(".preview-gallery-nav-next")).toHaveAttribute("aria-keyshortcuts", "ArrowRight")
+    // The rail advertises only the pair that still pages here.
+    const rail = page.locator(".preview-gallery-rail")
+    await expect(rail.locator(".preview-gallery-nav-prev")).toHaveAttribute("aria-keyshortcuts", "ArrowLeft")
+    await expect(rail.locator(".preview-gallery-nav-next")).toHaveAttribute("aria-keyshortcuts", "ArrowRight")
 
-  await page.keyboard.press("ArrowRight")
-  await expect(page).toHaveURL(/\/work\/protector-booking\/$/)
-  // A preview has nothing to scroll, so both pairs page there.
-  await expect(rail.locator(".preview-gallery-nav-prev")).toHaveAttribute("aria-keyshortcuts", "ArrowUp ArrowLeft")
-  await page.keyboard.press("ArrowDown")
-  await expect(page.getByRole("dialog")).not.toHaveAccessibleName("Protector booking")
-})
+    await page.keyboard.press("ArrowRight")
+    await expect(page).toHaveURL(/\/work\/protector-booking\/$/)
+    // A preview has nothing to scroll, so both pairs page there.
+    await expect(rail.locator(".preview-gallery-nav-prev")).toHaveAttribute("aria-keyshortcuts", "ArrowUp ArrowLeft")
+    await page.keyboard.press("ArrowDown")
+    await expect(page.getByRole("dialog")).not.toHaveAccessibleName("Protector booking")
+  })
+}
 
 test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
   await page.setViewportSize(mobileViewport)

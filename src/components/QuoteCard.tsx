@@ -10,6 +10,16 @@ import type { PortfolioQuote } from "../data/quotes"
 // swipe feel ignored.
 const SWIPE_DISTANCE = 6
 
+// A finger almost never starts a swipe flat, and the axis is chosen six pixels
+// in, where a little roll of the hand still outweighs the sideways intent. Give
+// the gesture to the page only when it is clearly vertical, so a short swipe
+// that begins with a wobble still moves the quote.
+const VERTICAL_INTENT = 1.5
+
+// How far a press may wander and still be a tap. Under it the card was pressed,
+// not swiped, and the click advances the quote as it would from a still finger.
+const TAP_DISTANCE = 10
+
 function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean }) {
   const [open, setOpen] = useState(false)
   const skipNextFocusOpen = useRef(false)
@@ -101,6 +111,7 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     x: number
     y: number
     offset: number
+    travelled: number
     axis: "x" | "y" | null
   } | null>(null)
   const suppressClick = useRef(false)
@@ -166,6 +177,7 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
       x: event.clientX,
       y: event.clientY,
       offset,
+      travelled: 0,
       axis: null,
     }
     // Catch an in-flight slide at its rendered position so reversing a drag
@@ -180,10 +192,10 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     if (!start || start.pointerId !== event.pointerId) return
     const dx = event.clientX - start.x
     const dy = event.clientY - start.y
+    start.travelled = Math.max(start.travelled, Math.hypot(dx, dy))
     if (!start.axis) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_DISTANCE) return
-      start.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y"
-      suppressClick.current = true
+      start.axis = Math.abs(dy) > Math.abs(dx) * VERTICAL_INTENT ? "y" : "x"
     }
     if (start.axis !== "x") return
     const limit = event.currentTarget.clientWidth * 0.65
@@ -195,7 +207,11 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     const start = gesture.current
     if (!start || start.pointerId !== event.pointerId) return
     gesture.current = null
-    if (cancelled) suppressClick.current = true
+    const travelled = Math.max(start.travelled, Math.hypot(event.clientX - start.x, event.clientY - start.y))
+    // A press that stayed inside the tap radius is a tap whose finger rolled,
+    // so leave its click alone. Anything that travelled further was answered as
+    // a drag here, whether it changed the quote, was cancelled, or came back.
+    suppressClick.current = cancelled || travelled > TAP_DISTANCE
     if (!cancelled && start.axis === "x") {
       const dx = start.offset + event.clientX - start.x
       // A quote is a card, not a page: the same slip of the hand that made this
@@ -203,6 +219,9 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
       // came back to where it started snaps back.
       if (Math.abs(dx) >= SWIPE_DISTANCE) {
         const travel = dx < 0 ? 1 : -1
+        // The release fires a click too; a swipe this short would otherwise
+        // stay inside the tap radius and advance the quote a second time.
+        suppressClick.current = true
         // Reversing a caught transition returns to the quote still beside it,
         // including when that transition began with a distant dot selection.
         if (Math.abs(start.offset) > 1 && previousIndex !== activeIndex && travel === -direction) {
