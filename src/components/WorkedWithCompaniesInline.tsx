@@ -105,7 +105,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
           logoUrls: recentCompanies.flatMap((company) => company.logoUrls),
         }
       : undefined
-    const previousCompanyOrder = ["moodys", "chainlink", "twilio", "onit", "google", "patrol"]
+    const previousCompanyOrder = ["boldvoice", "moodys", "chainlink", "twilio", "onit", "google", "patrol"]
     const previousCompanies = previousCompanyOrder.flatMap((companyId) => {
       const company = workedWithCompanies.find((candidate) => candidate.id === companyId)
       return company ? [company] : []
