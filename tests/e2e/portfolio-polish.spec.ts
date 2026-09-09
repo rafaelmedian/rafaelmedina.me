@@ -3096,7 +3096,16 @@ test("scrolls the resume slide with the vertical keys and pages with the horizon
   expect(await card.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
 
   for (const key of ["ArrowDown", "PageDown", "End"]) {
-    await card.evaluate((element) => { element.scrollTop = 0 })
+    // Chrome animates keyboard scrolling, so the key before this one can still
+    // be gliding. Rewinding the card under a live glide and pressing again
+    // loses the new scroll outright -- the browser finishes the animation it
+    // already had and the fresh key buys nothing -- which is why this failed on
+    // `End`, the one key that always follows another. Holding the top across
+    // two frames is only true once the previous glide has stopped.
+    await expect.poll(() => card.evaluate((element) => new Promise<number>((resolve) => {
+      element.scrollTop = 0
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve(element.scrollTop)))
+    }))).toBe(0)
     await page.keyboard.press(key)
     await expect.poll(() => card.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
     await expect(page).toHaveURL(/\/resume\/$/)
@@ -4584,14 +4593,26 @@ test("puts unlabelled credits below the description without a site link", async 
   await expect(dialog.locator(".preview-gallery-project-link")).toHaveCount(0)
 
   // Paging must update the prose and credits, including solo projects, which
-  // carry my credit alone rather than none.
-  const total = Number((await dialog.locator(".preview-gallery-count").innerText()).split("/")[1])
-  for (let index = 0; index < total; index += 1) {
-    await expect(description).not.toBeEmpty()
-    await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined)|sole product designer/)
-    await expect(dialog.locator("dl")).toHaveCount(0)
-    if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
-      await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
+  // carry my credit alone rather than none. The counter is the gate: it turns
+  // over with the card's content, so waiting for it means these read the slide
+  // that arrived rather than the one still leaving -- which this walk used to
+  // do, and which is the only reason it ever passed over the résumé.
+  const counter = dialog.locator(".preview-gallery-count")
+  const [first, total] = (await counter.innerText()).split("/").map((part) => Number(part.trim()))
+  for (let step = 0; step < total; step += 1) {
+    await expect(counter).toHaveText(`${((first - 1 + step) % total) + 1} / ${total}`)
+    if (page.url().endsWith("/resume/")) {
+      // The résumé rides in the same sequence as a reader rather than a
+      // preview, so it carries no prose and no credits and the claims below
+      // are not about it.
+      await expect(description).toHaveCount(0)
+    } else {
+      await expect(description).not.toBeEmpty()
+      await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined)|sole product designer/)
+      await expect(dialog.locator("dl")).toHaveCount(0)
+      if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
+        await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
+      }
     }
     await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   }
