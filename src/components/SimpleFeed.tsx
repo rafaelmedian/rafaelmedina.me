@@ -733,6 +733,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [writingsOpen, setWritingsOpen] = useState(false)
+  const [resumeOpen, setResumeOpen] = useState(false)
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
@@ -839,7 +840,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen || resumeOpen}
         />
       )
     }
@@ -1101,7 +1102,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                         >
                           {row.resume ? (
                             <div className="mosaic-row-item">
-                              <ResumeTile href={links.resumePdf} />
+                              <ResumeTile href={links.resumePdf} onOpenChange={setResumeOpen} />
                             </div>
                           ) : null}
                           {row.quote ? (

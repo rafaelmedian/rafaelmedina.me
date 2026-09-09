@@ -4,13 +4,15 @@
   isolation: isolate;
   display: grid;
   place-items: center;
+  padding: 0;
   color: var(--ink);
   font-family: var(--font-ui);
   text-decoration: none;
+  cursor: pointer;
 }
 
 /* A compact reconstruction of the folded résumé sheet from the original
-   portfolio grid. The words are decorative -- the link owns the accessible
+   portfolio grid. The words are decorative -- the button owns the accessible
    name -- but come from cv.ts so the little page cannot advertise an old job. */
 .resume-tile-sheet {
   position: relative;
@@ -105,5 +107,55 @@
   .resume-tile:focus-visible .resume-tile-sheet {
     transform: none;
     transition: none;
+  }
+}
+
+/* -------------------------------------------------------- résumé reader --- */
+
+/* The reader wears the writings sheet rather than inventing another modal:
+   same top edge, canvas, toolbar divider, focus treatment, and open/close
+   motion. It only narrows the maximum sheet because a résumé has no marginalia
+   to occupy the notes reader's wide gutters. */
+.writings-dialog.resume-dialog {
+  --writings-sheet: min(46rem, calc(100vw - 10rem));
+}
+
+.resume-dialog-toolbar-leading {
+  justify-content: space-between;
+}
+
+.resume-dialog-close {
+  flex: 0 0 auto;
+}
+
+.resume-dialog-scroll {
+  width: 100%;
+  max-height: calc(var(--writings-room) - 5.25rem);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
+.resume-dialog-content {
+  width: min(100%, var(--writings-column));
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+  text-align: left;
+}
+
+.resume-dialog-download a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+@media (max-width: 699.98px) {
+  .resume-dialog-toolbar-leading {
+    padding-right: 1.25rem;
+  }
+
+  .resume-dialog-content {
+    padding: 1.5rem 1.25rem calc(3rem + env(safe-area-inset-bottom));
   }
 }

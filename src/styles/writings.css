@@ -1,7 +1,7 @@
 /* --------------------------------------------------------- writings folder --- */
 /* The feed tile, its dialog, and the .t-modal / .t-page-slide transition
-   primitives the dialog is built from. Only WritingsFolder uses those two
-   today; they stay here until a second component needs them. */
+   primitives the dialog is built from. The résumé reader now shares t-modal;
+   the writings reader remains the only page-slide consumer. */
 
 .writings-tile {
   position: relative;
