@@ -394,7 +394,6 @@
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  min-width: 64px;
   height: 32px;
   padding: 0 0.75rem;
   border: 1px solid #dedee0;
@@ -412,9 +411,17 @@
   .writing-like:hover { box-shadow: var(--shadow-control-hover); }
 }
 .writing-like:active { transform: scale(0.96); box-shadow: var(--shadow-control-pressed); }
-.writing-like svg { fill: transparent; transition: color var(--duration-quick) var(--ease-standard), fill var(--duration-quick) var(--ease-standard); }
-.writing-like[aria-pressed="true"] svg { color: #e5352b; fill: currentColor; }
-.writing-like span { min-width: 4ch; text-align: center; }
+.writing-like-heart { display: inline-flex; }
+.writing-like svg { fill: #b6b6ba; color: #b6b6ba; transition: color var(--duration-quick) var(--ease-standard), fill var(--duration-quick) var(--ease-standard); }
+.writing-like[data-liked] svg { color: #e5352b; fill: currentColor; }
+/* Width rides the digit count (set inline in ch), so the pill hugs a lone
+   digit and grows smoothly as the number gains places. */
+.writing-like-count { font-variant-numeric: tabular-nums; font-weight: 600; text-align: left; transition: color var(--duration-quick) var(--ease-standard), width var(--duration-quick) var(--ease-standard); }
+.writing-like[data-liked] .writing-like-count { color: #e5352b; }
+/* Particles fly past the pill's edge, so the layer only positions them. */
+.writing-like-burst { position: absolute; inset: 0; pointer-events: none; }
+.writing-like-particle { position: absolute; border-radius: var(--radius-full); background: #e5352b; }
+.writing-like-particle[data-soft] { filter: blur(2px); opacity: 0.6; }
 /* Darker than the 18px prose it replaces: a smaller face needs the contrast
    back, so reading copy sits on the heading ink rather than the body grey.
    The column is the measure now, so paragraphs no longer carry their own. */
