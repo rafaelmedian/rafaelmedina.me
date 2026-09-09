@@ -103,3 +103,41 @@ test("loads enough pixels for Protector's tall crop at the desktop breakpoint", 
   })
   expect(sourceWidth).toBeGreaterThanOrEqual(paintedWidth)
 })
+
+test("separates Rewards artwork and extends Matcha product backgrounds", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const rewardsCard = page.getByRole("link", { name: /Open Matcha Rewards/ })
+  const rewardsMedia = rewardsCard.locator("img")
+  await rewardsCard.scrollIntoViewIfNeeded()
+  await expect(rewardsMedia).toHaveCount(2)
+  await expect(rewardsMedia.nth(0)).toHaveAttribute("src", /matcha-rewards-link-preview\.webp$/)
+  await expect(rewardsMedia.nth(1)).toHaveAttribute("src", /matcha-rewards-countdown\.webp$/)
+
+  const rewardsBox = await rewardsCard.boundingBox()
+  expect(rewardsBox).not.toBeNull()
+  for (const media of await rewardsMedia.all()) {
+    const box = await media.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.x).toBeGreaterThanOrEqual(rewardsBox!.x - 1)
+    expect(box!.y).toBeGreaterThanOrEqual(rewardsBox!.y - 1)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(rewardsBox!.x + rewardsBox!.width + 1)
+    expect(box!.y + box!.height).toBeLessThanOrEqual(rewardsBox!.y + rewardsBox!.height + 1)
+  }
+
+  for (const name of [/Open Matcha token page/, /Open Matcha Pro/]) {
+    const card = page.getByRole("link", { name })
+    await expect(card).toHaveCSS("padding", "0px")
+    expect(await card.evaluate(element => getComputedStyle(element).backgroundImage)).not.toBe("none")
+
+    const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), card.locator("img").boundingBox()])
+    expect(cardBox).not.toBeNull()
+    expect(mediaBox).not.toBeNull()
+    expect(mediaBox!.x).toBeGreaterThanOrEqual(cardBox!.x - 1)
+    expect(mediaBox!.y).toBeGreaterThanOrEqual(cardBox!.y - 1)
+    expect(mediaBox!.x + mediaBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1)
+    expect(mediaBox!.y + mediaBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height + 1)
+  }
+})
