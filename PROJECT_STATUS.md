@@ -51,8 +51,13 @@ commits carried it. A branch that was one "Implement X" commit leaves `git log` 
 ## Shared likes
 
 The notes reader mounts `NoteLikeButton` when `VITE_LIKES_API_URL` is set and a
-note is open. Without a configured URL, it remains hidden. Browser coverage now
-checks persistence, unlikes, failed saves, and idle reading without polling;
+note is open. Without a configured URL, it remains hidden. Every tap counts up to a
+per-visitor cap (`src/data/likeLimits.ts`), batched into one write per pause in
+the tapping. Browser coverage now checks optimistic spam counting, persistence,
+the cap, failed saves, and idle reading without polling. Queued taps flush on
+page hide and note exit; writes use keepalive so navigation does not abort
+saves. Regression coverage includes reloads before the debounce, overlapping
+saves on departure, and the previous client's API contract;
 `tests/e2e/shared-likes.spec.ts` separately exercises the local D1 API.
 
 The original 2026-09-09 reachability audit found no other unreachable TypeScript

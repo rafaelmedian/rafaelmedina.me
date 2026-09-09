@@ -1281,6 +1281,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Each row carries its title and, on the right, the day and month it was published as tabular --muted figures; the year heading above
                 supplies the year, and a note kept only as an archive year leaves that column empty. The date is hidden from assistive technology so a row
                 is still named by its title alone; the reader's own header carries the full date.
+                The like control below the date is a 32px pill with a 44px hit area, --text-xs type, and the shared control shadows.
+                Its 14px heart starts filled #b6b6ba; the heart and tabular, weight-600 count turn #e5352b after a tap.
+                The pill hugs the count, whose width follows its digit count in ch over --duration-quick with --ease-standard.
+                Each tap adds a like up to 16 per visitor, with a 360ms heart pop to scale(1.35) on cubic-bezier(0.34, 1.56, 0.64, 1)
+                and twelve red particles travelling 18–48px over 450–750ms on cubic-bezier(0.12, 0.84, 0.32, 1).
+                Three particles are softened with a 2px blur; all use --radius-full.
+                At the cap, another tap shakes the pill up to 4px over 320ms with ease-out.
+                These component-specific motion exceptions stop under reduced motion; the count remains a polite live status.
                 Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s rows.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
                 The top bar carries one title, Notes, with no year crumb, search, document count, author byline, or subtitle.

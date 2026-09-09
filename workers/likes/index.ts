@@ -1,4 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types"
+import { maxNoteLikesPerVisitor } from "../../src/data/likeLimits"
 import { writingIds } from "../../src/data/writingIds"
 
 type Env = { DB: D1Database; ALLOWED_ORIGINS: string }
@@ -27,12 +28,12 @@ export default {
     if (!visitorPattern.test(visitorId)) return json({ error: "Invalid visitor" }, 400)
     const noteId = match[1]
     const summary = env.DB.prepare(`
-      SELECT COUNT(*) AS count,
-             COALESCE(MAX(visitor_id = ?), 0) AS liked
-      FROM note_likes WHERE note_id = ?
-    `).bind(visitorId, noteId)
+      SELECT COALESCE(SUM(count), 0) AS count,
+             COALESCE((SELECT count FROM note_likes WHERE note_id = ?1 AND visitor_id = ?2), 0) AS visitorLikes
+      FROM note_likes WHERE note_id = ?1
+    `).bind(noteId, visitorId)
     try {
-      let row: { count: number; liked: number } | null
+      let row: { count: number; visitorLikes: number } | null
       if (request.method === "PUT") {
         if (!request.headers.get("Content-Type")?.startsWith("application/json")) return json({ error: "Expected JSON" }, 415)
         // Read at most a small JSON body before parsing it.
@@ -51,18 +52,34 @@ export default {
         body += decoder.decode()
         let data: unknown
         try { data = JSON.parse(body) } catch { return json({ error: "Invalid JSON" }, 400) }
-        if (!data || typeof data !== "object" || !("liked" in data) || typeof data.liked !== "boolean") return json({ error: "Expected liked boolean" }, 400)
-        const mutation = data.liked
-          ? env.DB.prepare("INSERT OR IGNORE INTO note_likes (note_id, visitor_id) VALUES (?, ?)")
-          : env.DB.prepare("DELETE FROM note_likes WHERE note_id = ? AND visitor_id = ?")
-        // The unique key makes retries safe; the transaction returns the saved total.
-        const results = await env.DB.batch([mutation.bind(noteId, visitorId), summary])
-        row = results[1].results[0] as { count: number; liked: number }
+        if (!data || typeof data !== "object") return json({ error: "Expected like payload" }, 400)
+        let mutation
+        if ("increment" in data) {
+          if (!Number.isSafeInteger(data.increment) || (data.increment as number) < 1
+            || (data.increment as number) > maxNoteLikesPerVisitor) {
+            return json({ error: `Expected increment between 1 and ${maxNoteLikesPerVisitor}` }, 400)
+          }
+          // Clamp atomically even when simultaneous tabs submit increments.
+          mutation = env.DB.prepare(`
+            INSERT INTO note_likes (note_id, visitor_id, count) VALUES (?1, ?2, MIN(?3, ?4))
+            ON CONFLICT(note_id, visitor_id) DO UPDATE SET count = MIN(count + ?3, ?4)
+          `).bind(noteId, visitorId, data.increment, maxNoteLikesPerVisitor)
+        } else if ("liked" in data && typeof data.liked === "boolean") {
+          // The Worker deploys before the site; already-open tabs keep this
+          // toggle contract. Repeated true writes preserve any accumulated taps.
+          mutation = data.liked
+            ? env.DB.prepare("INSERT OR IGNORE INTO note_likes (note_id, visitor_id) VALUES (?, ?)").bind(noteId, visitorId)
+            : env.DB.prepare("DELETE FROM note_likes WHERE note_id = ? AND visitor_id = ?").bind(noteId, visitorId)
+        } else {
+          return json({ error: "Expected increment or liked boolean" }, 400)
+        }
+        const results = await env.DB.batch([mutation, summary])
+        row = results[1].results[0] as { count: number; visitorLikes: number }
       } else {
-        row = await summary.first<{ count: number; liked: number }>()
+        row = await summary.first<{ count: number; visitorLikes: number }>()
       }
       if (!row) throw new Error("Missing likes summary")
-      return json({ count: row.count, liked: Boolean(row.liked) })
+      return json({ count: row.count, visitorLikes: row.visitorLikes, liked: row.visitorLikes > 0 })
     } catch {
       return json({ error: "Likes are temporarily unavailable" }, 503)
     }

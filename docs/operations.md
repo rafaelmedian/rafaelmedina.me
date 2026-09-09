@@ -68,7 +68,7 @@ VITE_LIKES_API_URL=http://127.0.0.1:8787 npm run dev
 
 The local database persists under `.wrangler/` and is gitignored. Shared-like
 tests use the actual local D1 database, including independent browser sessions,
-retries, unlikes, and failed saves.
+batched increments, the per-visitor cap, and failed saves.
 
 ## Shared likes, publicly
 
@@ -131,11 +131,17 @@ VID=$(uuidgen | tr 'A-Z' 'a-z')
 curl -s "$W/health"
 curl -s -X PUT "$W/notes/a-song-we-all-know/likes" \
   -H "Origin: https://rafaelmedina.me" -H "Content-Type: application/json" \
-  -H "X-Visitor-ID: $VID" -d '{"liked":true}'
+  -H "X-Visitor-ID: $VID" -d '{"increment":1}'
 ```
 
-Undo a test like by repeating the `PUT` with `{"liked":false}` and the same
-visitor ID. A `403` means the `Origin` is not in `ALLOWED_ORIGINS`; a `404` means
+Every like counts: a `PUT` adds `increment` (1 to the cap in
+`src/data/likeLimits.ts`) to that visitor's tally for the note, clamped at the
+cap. The API also retains the previous `{liked: true/false}` toggle contract
+and the response's `liked` boolean because the Worker deploys before the site
+and existing tabs may still run the previous client. A legacy `true` is
+idempotent and preserves an existing tally; `false` removes that visitor's
+whole tally. The current reader only sends increments. A
+`403` means the `Origin` is not in `ALLOWED_ORIGINS`; a `404` means
 the note ID is not in `src/data/writingIds.ts`.
 
 Never delete the D1 database when redeploying: it holds the shared counts. For
