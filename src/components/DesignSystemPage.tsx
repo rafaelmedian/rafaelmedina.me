@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, ty
 import { Check, Copy, Search, X } from "lucide-react"
 
 import { linkedinHoverMedia, xProfilePreview, type SiteLinks } from "../data/portfolio"
+import { SiteLastUpdated } from "./SiteLastUpdated"
 import { ContactActionRow } from "./ContactActionRow"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 import { PersonalPhotos } from "./PersonalPhotos"
@@ -228,7 +229,7 @@ const INK_ENTRIES = [
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
   { hex: "#545454", token: "—", use: "About-panel prose and article prose" },
   { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions, work-history chip labels at rest" },
-  { token: "--muted-soft", use: "Tertiary labels: corner nav, local time, definition terms, and hobby notes" },
+  { token: "--muted-soft", use: "Tertiary labels: corner nav, the About sheet's local time, definition terms, and hobby notes" },
 ]
 
 const NON_TEXT_ENTRIES = [
@@ -242,8 +243,8 @@ const NON_TEXT_ENTRIES = [
   {
     token: "--accent",
     kind: "non-text",
-    name: "Available",
-    note: "--accent, on the availability dot and visible at rest. A graphic only; the availability label uses --muted gray text.",
+    name: "Copied",
+    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. A graphic only; the confirmation itself is spoken in the tooltip and read out to screen readers.",
   },
   {
     token: "--focus-ring-soft",
@@ -264,6 +265,11 @@ const BRAND = [
   { hex: "#0f1419", name: "X ink", note: "Follow button fill and the card's name and bio." },
   { hex: "#1d9bf0", name: "X mention", note: "The @mention link inside the X hover card only." },
   { hex: "#536471", name: "X muted", note: "Handle and stat labels inside the X hover card only." },
+  {
+    hex: "#40c463",
+    name: "GitHub graph",
+    note: "The contribution grid inside the last-updated card, on GitHub's own five-step ramp — #ebedf0, #9be9a8, #40c463, #30a14e, #216e39. Borrowed whole, like the vendor blues: a contribution graph drawn in this site's greys reads as somebody else's graph.",
+  },
 ]
 
 /* -------------------------------------------------------------- typography */
@@ -407,12 +413,6 @@ const EASINGS_ENTRIES = [
     use: "Apple Core Animation’s documented default timing curve, scoped to the personal-photo hover fan, hint, flights, captions, and backdrop. Movement builds before easing into place; opening and closing share a quick 200ms beat and captions move with the prints without delay.",
   },
   {
-    name: "Overshoot",
-    css: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-    duration: "220ms",
-    use: "The copy-email reaction (220ms, and the only 220ms left in the file). The only curve in the system that overshoots — the reaction needs a shape to travel past its mark and settle, so keep new work off it unless it does too.",
-  },
-  {
     name: "Scroll linked",
     css: "linear",
     duration: "1 viewport of scroll",
@@ -436,7 +436,7 @@ const DURATIONS_ENTRIES = [
 /* ------------------------------------------------------------------ layout */
 
 const BREAKPOINTS = [
-  { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; the wrapped X card centers on its trigger; location and availability stack without a separator." },
+  { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; the wrapped X card centers on its trigger; location and address stack without a separator." },
   { at: "≤ 479.98px", change: "Contact pills gain up to 1.25rem side padding and wrap when their container cannot accommodate them." },
   { at: "≤ 639.98px", change: "The hero uses 2rem of top padding plus the top safe area." },
   { at: "≤ 699.98px", change: "Local time and corner navigation hide; a centered floating control labeled with the current section opens a table of contents with 14px labels; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; work-card captions and their scrim are hidden, on any screen without hover." },
@@ -473,7 +473,6 @@ const STACKING_ENTRIES = [
     note: "Hover cards, the local-time card, and the work-history block. The popover inside that block stacks locally (z 4 within its isolated container), so only the container carries the tier.",
   },
   { z: "--z-dialog-backdrop / --z-dialog", name: "--z-dialog-backdrop / --z-dialog", note: "The preview gallery and personal-photo backdrops, then their dialog shells." },
-  { z: "--z-reaction", name: "--z-reaction", note: "The copy-email reaction has to clear the dialog trigger it sits under." },
   { z: "--z-skip-link", name: "--z-skip-link", note: "Above everything, always." },
   {
     z: "500 (scoped)",
@@ -729,9 +728,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p>Five habits the existing code already keeps. They are descriptive first and prescriptive second.</p>
             </div>
             <ul className="ds-list">
-              <li data-ds-terms={terms("grey colour signal accent neutral ink saturated availability linkedin x brand")}>
+              <li data-ds-terms={terms("grey colour signal accent neutral ink saturated confirmation linkedin x brand")}>
                 <strong>Grey does the work; colour is a signal.</strong> Use the <a href="#colour">shared neutral
-                palette</a>. Saturated colours stay scoped to availability, borrowed brands, the avatar hint,
+                palette</a>. Saturated colours stay scoped to confirmations, borrowed brands, the avatar hint,
                 and the elastic page edge.
               </li>
               <li data-ds-terms={terms("hover reveal relocate reflow work-history popover float overlay space")}>
@@ -1525,11 +1524,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Contact pills</p>
               <div
                 className="ds-specimen ds-specimen-canvas ds-specimen-center"
-                data-ds-terms={terms("contact pill copy email linkedin x follow button specular bevel")}
+                data-ds-terms={terms("contact pill book a call booking linkedin x follow button specular bevel")}
               >
                 <ContactActionRow
-                  email={links.email}
-                  contactHref={`mailto:${links.email}`}
+                  availabilityLabel={formatAvailability()}
+                  bookingUrl={links.booking}
                   linkedinHref={links.linkedin}
                   xHref={links.x}
                   xProfile={xProfilePreview}
@@ -1546,10 +1545,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ds-terms={terms("email dark pill --ink #000 white label 112px primary action")}>
-                      <td>Email</td>
+                    <tr data-ds-terms={terms("book a call booking dark pill --ink #000 white label 103px primary action")}>
+                      <td>Book a call</td>
                       <td>
-                        <code>var(--ink) → #000</code> gradient, white label, 112px fixed
+                        <code>var(--ink) → #000</code> gradient, white label, 103px min
                       </td>
                       <td>The primary action. One per row.</td>
                     </tr>
@@ -1565,7 +1564,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                       <td>
                         <code>#f4f4f4 → #fff</code> gradient, dark label and mark, 80px min
                       </td>
-                      <td>Tertiary. The light treatment keeps email as the primary action.</td>
+                      <td>Tertiary. The light treatment keeps booking as the primary action.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1585,7 +1584,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Chips &amp; controls</p>
               <div
                 className="ds-specimen ds-specimen-canvas"
-                data-ds-terms={terms("chip nav link local time count pill takeover close availability dot booking book a call #f2f2f2 #e9e9e9")}
+                data-ds-terms={terms("chip nav link local time count pill takeover close booking book a call copy email address last updated commit calendar github hover card #f2f2f2 #e9e9e9")}
               >
                 <button type="button" className="mosaic-work-history-chip">
                   Chip · rest
@@ -1612,13 +1611,20 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </button>
                 <button
                   type="button"
-                  className="mosaic-profile-availability mosaic-availability-trigger"
-                  style={{ margin: 0 }}
+                  className="mosaic-contact-pill mosaic-contact-pill-dark mosaic-booking-pill"
                   aria-haspopup="dialog"
                 >
-                  <span className="mosaic-availability-dot" style={{ opacity: 1 }} aria-hidden="true" />
-                  <span className="mosaic-availability-label">{formatAvailability()}</span>
+                  <span className="mosaic-contact-pill-content">
+                    <span className="mosaic-contact-pill-dark-label">Book a call</span>
+                  </span>
                 </button>
+                <button type="button" className="mosaic-profile-email">
+                  <span className="mosaic-profile-email-icon" aria-hidden="true">
+                    <Copy strokeWidth={2} />
+                  </span>
+                  <span className="mosaic-profile-email-label">{links.email}</span>
+                </button>
+                <SiteLastUpdated />
               </div>
               <p className="ds-caption">
                 Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.07)</code> hairline, labelled in <code>--muted</code> so the hero name keeps the only dark ink in that block.
@@ -1629,13 +1635,51 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 read as a table rather than a quiet list. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
                 40px while the visible label stays 2rem. The takeover close is a 51.2px white raised control with the
                 overlay shadow over <code>--shadow-ring</code> and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
-                its viewport crossing. The availability line is a button, not text: it reads as the rest of the hero
-                sentence at rest and only takes <code>--ink</code> and a <code>--muted-soft</code> underline on hover
-                or focus, where a 260ms intent delay reveals a non-interactive month preview. Clicking or pressing
-                Enter opens the Cal.com booking dialog. The preview uses the overlay shadow, ring,
-                <code>--radius-md</code>, and existing small type tokens; it enters over
-                <code>--duration-base</code> with a 4px lift and 0.98 scale, and exits over
-                <code>--duration-fast</code>. Dates are illustrative, not live availability.
+                its viewport crossing. Booking is the dark pill and the contact row's primary action; it carries its
+                label alone, the green status dot that used to ride inside it having been the hero's only chromatic
+                pixel for a month the hint already names. A 260ms intent delay reveals that one-line hint with the
+                live availability month, and a press opens the Cal.com dialog — which wears no chrome of its own: no header, no
+                close button, nothing but the calendar, because that page already has a title and a month of its own
+                and a second set above it was the same thing twice. Escape and a press outside close it; the dialog's
+                name and description are still there as <code>sr-only</code> text, and the &ldquo;open it on
+                cal.com&rdquo; escape hatch waits inside the loading line for the six seconds it takes to know a
+                third-party frame has been blocked rather than sitting in a header from the start. The address is the page's top-right corner, opposite the section
+                links, where the local time used to be — a clock is ambient and an address is what a visitor came
+                for, so only one of them earns that spot, and the clock moved into the About sheet. Below 700px the
+                corner is not drawn at all and the address falls back into the hero's location line; it is one
+                control either way, shown at whichever end still has room. It is a button, not text: it reads as
+                plain corner copy at rest and fills in on hover or focus as the same{" "}
+                <code>#e9e9e9</code> <code>--radius-sm</code> card the company chips wear, with the label at{" "}
+                <code>--ink</code>. Its copy icon leads the address, invisible at rest but holding its 0.875rem slot, the card's side
+                padding is cancelled by an equal negative margin, and its <code>1.7em</code> box is the line's own
+                line height, so neither the fill nor the icon can shift the centred line under the pointer. The icon turns to <code>--accent</code> as a check for 1.6s after a
+                copy, and stays lit for that window whether or not the pointer is still on the button; the card
+                empties to <code>--canvas</code> behind the chips' own hairline for the same window, which both marks
+                the state change and puts the green on the surface it is graded against. Its hint is not type at all: a
+                200px <code>--canvas</code> card carrying a clip, one while the offer stands and another once the copy
+                lands, keyed on the state so the animation replays from the top rather than resuming mid-loop. The
+                booking pill wears the same card — both are &ldquo;hover this and something happens next&rdquo;, so
+                they keep one shape between them. Neither carries a word: both are <code>aria-hidden</code>, and the
+                text they replaced lives where a screen reader already looks — the button's own description, plus the
+                live region that announces a copy. Clips are trimmed to the few seconds a hover lasts and transcoded
+                to animated webp at roughly 2x their displayed width, with a still beside each for{" "}
+                <code>prefers-reduced-motion</code>. The clause that took the address's place in the
+                location line is the site's own commit calendar: the last commit date is read out of this
+                repository's git log at build time rather than fetched, so there is no request and no failure state,
+                and its hint is GitHub's hovercard, near enough: the
+                avatar and handle the trigger links to, then six months of 8px cells on GitHub's own five-step green
+                ramp. The greens are borrowed whole for the same reason the LinkedIn pill keeps{" "}
+                <code>#0a66c2</code> — a contribution graph in this site's greys reads as a different product's
+                graph. The bands are quartiles of the days that had any work rather than fractions of the busiest
+                one, so a normal week stays legible beside an exceptional one. The grid sizes the card: columns at
+                8px on 2px gutters, and everything else fits under it. It is one labelled image to a screen reader,
+                with the count spelled out below it in GitHub's word — contributions, which counts reviews and pull
+                requests, not just commits.
+                All three hints use the overlay shadow, ring, and{" "}
+                <code>--radius-md</code>; they enter over <code>--duration-base</code> with a 4px lift and 0.98 scale,
+                and exit over <code>--duration-fast</code>. The card sits above the address for the same reason the
+                text hint did — the contact pills are the row below, and at this size covering them would hide the
+                next thing worth pressing.
               </p>
             </div>
 
@@ -1879,7 +1923,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <strong>Floating table of contents</strong> appears after 96px of scrolling at every screen size,
                   centered 0.75rem above the bottom safe area. It fades in over 160ms with standard easing
                   and rises 0.375rem over 200ms with smooth easing. Returning to the first 96px hides and closes it;
-                  while hidden it is inert and excluded from assistive technology. Reduced motion removes the transition. From 700px up, the top section navigation and local time remain visible alongside it. Its numbered label follows the visible section: 01 Work, 02 About, or 03 Services.
+                  while hidden it is inert and excluded from assistive technology. Reduced motion removes the transition. From 700px up, the top section navigation and the corner address remain visible alongside it. Its numbered label follows the visible section: 01 Work, 02 About, or 03 Services.
                   That change carries a direction: the outgoing label leaves the chip over 120ms on the exit
                   curve, travelling 0.25rem and resolving into <code>--blur-reveal</code> (4px), while the new one
                   arrives from the opposite edge over 160ms with standard easing. Scrolling further down the page

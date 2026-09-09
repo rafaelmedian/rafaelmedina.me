@@ -69,7 +69,6 @@
   --z-social: 50; /* social corner, so its cards clear other overlays */
   --z-dialog-backdrop: 60; /* preview-gallery backdrop and pending veil */
   --z-dialog: 70; /* the preview-gallery shell itself */
-  --z-reaction: 100; /* copy-email reaction over the dialog trigger */
   --z-skip-link: 120; /* above everything, always */
   --canvas: #ffffff;
   --ink: #141414;
@@ -86,8 +85,10 @@
      same ink reads as a black frame rather than a selection. This grey still
      clears 1.4.11 at 3.4:1 on --body-bg. */
   --focus-ring-soft: #8a8a8a;
-  /* The availability dot's accent is 3.0:1 on --body-bg for a non-text
-     graphic. The availability label uses the neutral --muted text colour. */
+  /* Worn by the hero address's copy-confirmation check, which is why that check
+     sits on a white card rather than the grey hover fill: 3.2:1 as a non-text
+     graphic on --canvas, 2.7:1 on #e9e9e9. It is the site's only chromatic value
+     outside the brand colours, and it shows for the 1.6s after a copy. */
   --accent: #34a26a;
   --elastic-edge-height: 56px;
   /* The floating-surface elevation. Hover cards, popovers, the takeover
