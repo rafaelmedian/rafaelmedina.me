@@ -6,7 +6,6 @@ export type PortfolioQuote = {
   emphasis: string
   attribution: string
   caption: string
-  attributionNote?: string
   photo?: string
   /** Confirmed X username, without @. Omit for unidentified sample authors. */
   xHandle?: string
@@ -90,5 +89,86 @@ export const portfolioQuotes: PortfolioQuote[] = [
     attribution: collaborators.jakub.name,
     caption: "Lead Designer",
     photo: collaborators.jakub.photo,
+  },
+]
+
+// The second card in the grid: praise from the teams and clients the work was
+// made with, rather than from the timeline -- both the summing-up afterwards and
+// the reactions from inside the work. These arrived as Slack messages and a
+// testimonial card, so they carry no X handle and no profile preview: the name
+// renders as plain text and the credit is the room the praise came from. A voice
+// that speaks twice is kept apart in the order rather than dropped.
+export const teamQuotes: PortfolioQuote[] = [
+  {
+    id: "jhon",
+    text: "Our team could never have done what you did.",
+    emphasis: "I miss working with you guys.",
+    attribution: "John Gilman",
+    caption: "VP Product and co-founder at Onit",
+    photo: "/quotes/john-gilman.jpg",
+  },
+  {
+    id: "cristina",
+    text: "One of the proudest days of my career to have presented this prototype to the Managing Directors,",
+    emphasis: "especially Rafael for making the prototype pop.",
+    attribution: "Cristina Pieretti",
+    caption: "Managing Director at Moody’s",
+    photo: "/quotes/cristina-pieretti.jpg",
+  },
+  {
+    id: "josh",
+    text: "Masterclass in user test facilitation.",
+    emphasis: "That prototype 😍",
+    attribution: "Josh Frank",
+    caption: "Product Strategist at DEPT",
+    photo: "/quotes/josh-frank.jpg",
+  },
+  {
+    id: "dan",
+    text: "Saw the prototype you pulled together!",
+    emphasis: "That thing looks 🔥",
+    attribution: "Dan Matiaudes",
+    caption: "Director of Design at DEPT",
+    photo: "/quotes/dan.jpg",
+  },
+  {
+    id: "jen",
+    text: "WOOOOOOO GO RAFAEL GO!",
+    emphasis: "You did a great job!",
+    attribution: "Jen Schnidman",
+    caption: "Senior Product Strategist at DEPT",
+    photo: "/quotes/jen.jpg",
+  },
+  {
+    id: "rob",
+    text: "You handled the questions very well —",
+    emphasis: "the value of your build was crystal clear.",
+    attribution: "Rob Adams",
+    caption: "Principal Designer at DEPT",
+    photo: "/quotes/rob-adams.jpg",
+  },
+  {
+    id: "cristina-toc",
+    text: "The new treatment for Table of Contents is",
+    emphasis: "AMAZING, I love it.",
+    attribution: "Cristina Pieretti",
+    caption: "Managing Director at Moody’s",
+    photo: "/quotes/cristina-pieretti.jpg",
+  },
+  {
+    id: "jhon-happen",
+    text: "I know I’ve said this before, but",
+    emphasis: "you guys made this happen.",
+    attribution: "John Gilman",
+    caption: "VP Product and co-founder at Onit",
+    photo: "/quotes/john-gilman.jpg",
+  },
+  {
+    id: "rob-workshop",
+    text: "Awesome job! Looks really good",
+    emphasis: "and seems like a fun project.",
+    attribution: "Rob Adams",
+    caption: "Principal Designer at DEPT",
+    photo: "/quotes/rob-adams.jpg",
   },
 ]

@@ -295,10 +295,10 @@
   inset-inline: 0;
   bottom: 0;
 }
-/* Coming home, a photo with no print of its own borrows the nearest one to
-   aim at, so it has to pass under the card that is landing there rather than
-   over it: one tier down puts every borrower behind the pile and still well
-   clear of the backdrop. */
+/* A photo with no print of its own borrows the nearest one to come out of and
+   to aim at, so it has to pass under the card that owns that frame rather than
+   over it, leaving and arriving alike: one tier down puts every borrower
+   behind the pile and still well clear of the backdrop. */
 .personal-photos-flight[data-photo-trailing] { z-index: calc(var(--z-dialog) - 1); }
 
 @media (max-width: 699.98px) {

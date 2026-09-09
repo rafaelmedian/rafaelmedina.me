@@ -2401,7 +2401,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
   const stage = page.locator(".mosaic-takeover-stage")
   const groups = stage.locator(".mosaic-group")
 
-  await expect(groups).toHaveCount(4)
+  await expect(groups).toHaveCount(5)
 
   const gaps = await groups.evaluateAll((elements) =>
     elements.slice(1).map((element, index) => {
@@ -2410,7 +2410,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
     }),
   )
 
-  expect(gaps).toEqual([16, 16, 16])
+  expect(gaps).toEqual([16, 16, 16, 16])
 })
 
 test("leaves a generous white runway after the final project group before the about takeover", async ({ page }) => {

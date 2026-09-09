@@ -92,6 +92,18 @@
     "token rewards";
 }
 
+/* A band across the grid, like the personal-photo fan. A third of the row,
+   centred, was tried first: at the width the card actually wants it leaves two
+   empty columns, and a lone card floating in a row of nothing reads as a hole
+   in the grid rather than as a pull quote. Full width, the card centres its own
+   quote, face, and dots and the extra width is margin -- the same bargain the
+   photo band makes. It carries that band's floor so the two match. */
+.mosaic-group-aside {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(clamp(260px, 21.39cqw, 320px), auto);
+  grid-template-areas: "quote2";
+}
+
 .mosaic-group-closing {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-areas: "mobile trade pro";
@@ -156,10 +168,7 @@
 
 .mosaic-quote-credit {
   display: grid;
-  grid-row: 2 / span 2;
-  grid-template-rows: subgrid;
   justify-items: center;
-  align-items: start;
   width: 100%;
   min-width: 0;
 }
@@ -168,16 +177,6 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.mosaic-quote-note {
-  width: 100%;
-  margin: 0.5rem 0 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  line-height: 1.4;
-  text-align: center;
-  text-wrap: balance;
 }
 
 /* The linked name sits above the next-quote surface; the rest of the slide
@@ -304,7 +303,7 @@
   pointer-events: none;
   position: relative;
   display: grid;
-  grid-template-rows: 1fr auto auto;
+  grid-template-rows: 1fr auto;
   flex: none;
   /* The edge treatment occupies the card gutters, so resting copy stays sharp. */
   width: calc(100% + var(--quote-inline-padding) * 2);
@@ -313,7 +312,7 @@
 }
 
 .mosaic-quote-slide {
-  grid-area: 1 / 1 / 4 / 2;
+  grid-area: 1 / 1 / 3 / 2;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: subgrid;
@@ -324,6 +323,12 @@
   padding-inline: var(--quote-inline-padding);
   transform: translateX(calc(var(--quote-position, 0) * 100% + var(--quote-drag-x, 0px)));
   transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+/* A quote let go of under the pointer lands quickly; a quote chosen from a dot
+   across the card keeps the longer move, because it has further to say it. */
+.mosaic-quote[data-settle="quick"] .mosaic-quote-slide {
+  transition-duration: var(--duration-base);
 }
 
 .mosaic-quote[data-dragging="true"] .mosaic-quote-slide,
@@ -1295,7 +1300,9 @@
       calc(var(--compact-tile) * 0.25)
       var(--compact-tile)
       calc(var(--compact-tile) * 1.25)
-      var(--compact-tile);
+      minmax(340px, auto)
+      var(--compact-tile)
+      calc(var(--compact-tile) * 0.75);
     grid-template-areas:
       "wallet homepage"
       "writings popparazi"
@@ -1306,8 +1313,10 @@
       "security family"
       "dealership family"
       "dealership token"
-      "rewards mobile"
-      "trade pro";
+      "rewards rewards"
+      "quote2 quote2"
+      "mobile trade"
+      "pro pro";
     padding-inline: 1rem;
   }
 

@@ -327,8 +327,9 @@ test("opening from any print starts the sheet at its first row", async ({ page }
   }
 })
 
-/** The photos whose slot is on screen. Opening, only the ones with a print of
-    their own leave the fan; closing, every one of them goes back to it. */
+/** The photos whose slot is on screen. Every one of them leaves the fan and
+    every one of them goes back to it; only the ones with a print of their own
+    have a frame to morph between. */
 const onScreen = (page: Page, match: string) => sheet(page).evaluate((element, selector) =>
   Array.from(element.querySelectorAll<HTMLElement>(selector)).filter((slide) => {
     const rect = slide.getBoundingClientRect(), bounds = element.getBoundingClientRect()
@@ -347,13 +348,19 @@ test("every print leaves for the middle of the screen in one beat and comes home
   await prints.first().click()
   const flights = page.locator(".personal-photos-flight")
   // The sheet deals its columns round-robin, so all five prints have a slot on
-  // screen to fly to and every one of them flies. The other slots have no
-  // frame to come from; they rise in with the sheet.
+  // screen to fly to and every one of them flies. The whole screenful comes
+  // with them: a photo with no print of its own borrows the print nearest it
+  // and swells out from under the pile, exactly as it tucks back under it on
+  // the way home, rather than rising in with the sheet.
   const flying = await visibleRetained(page)
+  const dealt = await visibleSlides(page)
   expect(flying.length).toBe(retained.length)
   expect(retained).toEqual(expect.arrayContaining(flying))
-  await expect(flights).toHaveCount(flying.length)
-  expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(flying)
+  expect(dealt.length).toBeGreaterThan(flying.length)
+  await expect(flights).toHaveCount(dealt.length)
+  expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(dealt)
+  expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).hasAttribute("data-photo-trailing"))))
+    .toEqual(dealt.map((id) => !flying.includes(id)))
 
   // The sheet is centred on the page, so the hand lands on the middle of the
   // screen together rather than being thrown out to one edge -- which is what

@@ -23,8 +23,8 @@ import { MobileTableOfContents } from "./MobileTableOfContents"
 import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
 import { ResumeTile } from "./ResumeTile"
-import { portfolioQuotes } from "../data/quotes"
-import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
+import { portfolioQuotes, teamQuotes, type PortfolioQuote } from "../data/quotes"
+import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type QuoteSource, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { useHoverCard } from "../lib/hoverCard"
@@ -423,6 +423,13 @@ function openPreview(
     preview_placement: "grid",
   })
   setSelectedWorkPreviewIndex(previewIndex)
+}
+
+// The grid carries two quote cards: the timeline's reaction to the shipped work,
+// and the praise from the teams it was built with.
+const quotesBySource: Record<QuoteSource, PortfolioQuote[]> = {
+  internet: portfolioQuotes,
+  team: teamQuotes,
 }
 
 const sectionLinks: { label: string; href: string }[] = [
@@ -1013,7 +1020,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           )
                           if (item.kind === "quote") return (
                             <div key={item.area} className={`${itemClass} mosaic-row-quote`} style={itemStyle}>
-                              <QuoteCard quotes={portfolioQuotes} />
+                              <QuoteCard quotes={quotesBySource[item.source]} />
                             </div>
                           )
                           if (item.kind === "writings") return (
