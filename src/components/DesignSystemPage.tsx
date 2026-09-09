@@ -1504,9 +1504,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 the grid&rsquo;s tiles, so arrowing across the gallery reaches it in the place the grid keeps it, and
                 arrowing off it lands on its neighbours. It therefore takes the gallery&rsquo;s card, backdrop, origin
                 flight, paging transition, side rail, and compact-layout toolbar, and the tile is a link to
-                <code>/resume/</code>: a modified click opens that prerendered page instead. The slide restores the
-                reader&rsquo;s 46rem sheet and 34rem reading measure, because the card is otherwise sized from the
-                artwork a 4:3 preview needs. It is also the one slide the vertical arrows do not page: the sheet is
+                <code>/resume/</code>: a modified click opens that prerendered page instead. It takes the card&rsquo;s
+                width too, so paging on to a project does not resize the sheet; prose gets its measure from the
+                34rem reading column centred inside. It is also the one slide the vertical arrows do not page: the sheet is
                 taller than the card that holds it, so up and down scroll it there and only left and right page,
                 which the rail&rsquo;s <code>aria-keyshortcuts</code> narrow to match. Opening focuses the card
                 rather than the popup on every slide, because the card is the surface that scrolls.

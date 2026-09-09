@@ -3222,17 +3222,22 @@ test("opens a shared resume link straight into the gallery", async ({ page }) =>
   await expect(dialog.getByRole("list", { name: "Work history" })).toBeVisible()
 })
 
-// The reader used to be a modal of its own, half a page wider than the gallery
-// card. Prose keeps that measure as a slide: the card is otherwise sized from
-// the artwork a 4:3 preview needs.
-test("gives the resume slide the reader's own measure", async ({ page }) => {
+// The reader used to be a modal of its own, narrower than the gallery card. As a
+// slide it takes the card's width like every other slide, so paging on to a
+// project does not resize the sheet under the reader. Measured with offsetWidth
+// rather than the box, because the paging transition scales the card.
+test("gives the resume slide the same width as a project slide", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/resume/")
 
-  const card = page.getByRole("dialog").locator(".preview-gallery-card")
-  const width = (await card.boundingBox())!.width
-  expect(Math.round(width)).toBe(736)
+  const dialog = page.getByRole("dialog")
+  const card = dialog.locator(".preview-gallery-card")
+  const resumeWidth = await card.evaluate((element: HTMLElement) => element.offsetWidth)
+
+  await page.keyboard.press("ArrowRight")
+  await expect(dialog).toHaveAccessibleName("Protector booking")
+  await expect.poll(() => card.evaluate((element: HTMLElement) => element.offsetWidth)).toBe(resumeWidth)
 })
 
 // The résumé slide is a document, not a picture. It is taller than the card that
