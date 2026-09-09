@@ -638,10 +638,11 @@ test("sets the whole About sheet on the reading step under one heading step", as
   // it -- the same pairing the notes reader uses.
   expect(sizes).toEqual(["14px", "16px"])
 
-  // "About me", "Work history" and "Services" are the sheet's three section
-  // headings and are set identically, so none reads as ranking above another.
-  await expect(sectionHeading).toHaveCount(2)
-  for (const heading of [sectionHeading.first(), sectionHeading.last(), lede]) {
+  // "About me", "Worked with", "Work history" and "Services" are the sheet's
+  // four section headings and are set identically, so none reads as ranking
+  // above another.
+  await expect(sectionHeading).toHaveCount(3)
+  for (const heading of [...(await sectionHeading.all()), lede]) {
     await expect(heading).toHaveCSS("font-size", "16px")
     await expect(heading).toHaveCSS("font-weight", "600")
     await expect(heading).toHaveCSS("color", "rgb(45, 45, 45)")
@@ -3230,19 +3231,27 @@ test("formats education with dates beside its details and extra section spacing"
 
 
 
-test("keeps a compact gap between the photo row and work history", async ({ page }) => {
+test("keeps one compact gap between every block below the photo row", async ({ page }) => {
+  // The photo row, the worked-with wall and the work history are three
+  // sections in a row, and they are separated by the same break so none of
+  // them reads as belonging to its neighbour.
   for (const { width, expectedGap } of [{ width: 1440, expectedGap: 80 }, { width: 390, expectedGap: 40 }]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto("/#about-panel")
 
-    const gap = await page.evaluate(() => {
-      const closing = document.querySelector(".personal-photos")
-      const photos = document.querySelector("#about-panel-resume")
-      if (!closing || !photos) return Number.POSITIVE_INFINITY
-      return Math.round(photos.getBoundingClientRect().top - closing.getBoundingClientRect().bottom)
+    const gaps = await page.evaluate(() => {
+      const blocks = [".personal-photos", ".mosaic-about-companies", "#about-panel-resume"].map((selector) =>
+        document.querySelector(selector),
+      )
+      if (blocks.some((block) => !block)) return [Number.POSITIVE_INFINITY]
+      return blocks
+        .slice(1)
+        .map((block, index) =>
+          Math.round(block!.getBoundingClientRect().top - blocks[index]!.getBoundingClientRect().bottom),
+        )
     })
 
-    expect(gap).toBe(expectedGap)
+    expect(gaps).toEqual([expectedGap, expectedGap])
   }
 })
 
@@ -3670,14 +3679,17 @@ test("travels one role-bearing work-history popover between company triggers wit
   expect((await popover.boundingBox())!.x).not.toBe(onitPopoverBox!.x)
   expect((await location.boundingBox())!.y).toBeCloseTo(initialLocationBox!.y, 0)
 
-  await page.getByRole("link", { name: "0x.org and Matcha.xyz", exact: true }).hover()
+  await page
+    .locator(".mosaic-work-history")
+    .getByRole("link", { name: "0x.org and Matcha.xyz", exact: true })
+    .hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("0x.org and Matcha.xyz")
 
-  await page.getByRole("link", { name: "Google", exact: true }).hover()
+  await getPreviousCompanyLink(page, "Google").hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Google")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
 
-  await page.getByRole("link", { name: "Protector and Patrol", exact: true }).hover()
+  await getPreviousCompanyLink(page, "Protector and Patrol").hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Protector and Patrol")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
 })
@@ -3749,7 +3761,7 @@ test("opens the work-history popover from the keyboard and links each chip to it
 
   await expect(onit).toHaveAttribute("href", "https://www.onit.com")
   await expect(onit).toHaveAttribute("target", "_blank")
-  await expect(page.getByRole("link", { name: "Google", exact: true })).toHaveAttribute("href", "https://www.google.com")
+  await expect(getPreviousCompanyLink(page, "Google")).toHaveAttribute("href", "https://www.google.com")
 
   // Pointer users already saw the panel on hover, so the click travels.
   await stubCompanySite(context)
