@@ -1,115 +1,80 @@
-# rafaelmedina.me
+# rafaelmedina.me 👋
 
-Personal portfolio of Rafael Medina — a single-page Vite + React + TypeScript app deployed to GitHub Pages at [rafaelmedina.me](https://rafaelmedina.me/).
+Hey, I’m Rafael Medina, a product designer based in Punta Cana.
+**This is my personal site and the repo behind it.** Selected work, writing,
+a little life outside the screen, and plenty of things to hover over.
 
-## Development
+Think of it as a desk you can poke around. Projects sit beside a folder of notes,
+a folded résumé, and a stack of photos.
 
-```sh
-npm install
-npm run dev      # local dev server
-npm run lint     # eslint
-npm run build    # type-check + production build into dist/
-npm run preview  # serve the production build locally
-```
+**[Visit the site](https://rafaelmedina.me/)**
 
-Copy `.env.example` to `.env` for optional analytics configuration
-(`VITE_GA_MEASUREMENT_ID`). The Punta Cana location card loads a minimal
-OpenStreetMap tile view on demand and keeps a bundled map screenshot as its fallback.
+## 🪄 Things to explore
 
-Google Analytics only loads when `VITE_GA_MEASUREMENT_ID` is set at build time. In
-CI it comes from the `VITE_GA_MEASUREMENT_ID` repo variable; leave it unset locally
-and nothing is tracked in dev.
+- **The work mosaic.** Artwork and video previews open into a gallery.
+  Each project has its own shareable link.
+- **The folded résumé.** It lives inside the gallery. Arrow keys take you from
+  a project into my résumé and out the other side. There’s a PDF too.
+- **Notes and photos.** A writing folder with pencil marks and margin notes.
+  A photo stack with a little life between the project cards.
+- **About and contact.** My background, services, and ways to reach me.
+  Tiny reaction clips give the contact controls some personality.
 
-## Structure
+## 🛠 How it’s built
 
-- `src/data/portfolio.ts` — all site copy, links, and work-preview card data.
-- `src/components/SimpleFeed.tsx` — the homepage (profile hero + work mosaic).
-- `src/components/StyleguidePage.tsx` — dev-only styleguide at `/styleguide`.
-- `public/Projects/` — work preview images and videos.
+**React 19, TypeScript, Vite, and Tailwind CSS 4.** CSS handles component styling
+and animation. Base UI provides interface primitives. Lucide supplies the icons.
 
-## Testing
+The build generates HTML for the homepage, projects, and résumé. Those pages
+work without JavaScript. Once React starts, project and résumé links open in
+the interactive gallery.
 
-```sh
-npm run test:e2e   # Playwright; builds and serves the site itself
-```
+GitHub Pages hosts the site. GitHub Actions runs lint, build, Worker type-checks,
+and Playwright tests. Merging to `main` deploys it. Built output is never edited
+or committed.
 
-## Deployment
+## 🧠 Details worth a closer look
 
-`main` is the only branch that ships. Merging into it triggers
-`.github/workflows/deploy.yml`, which runs `npm run build` and publishes `dist/`
-to GitHub Pages. Nothing is copied by hand.
+- **The pencil has a build script.** Rough.js draws the writing marks.
+  Playwright turns them into PNGs, and CSS masks colour them. Stable random
+  seeds keep the same wobble on every rebuild.
+- **Even the résumé gets a test.** Chromium generates the PDF.
+  A Playwright test checks its content against the site. The generator refuses
+  to write a second page.
+- **The memes have a performance budget.** GIFs become small animated WebPs.
+  Still images take their place for reduced motion.
+- **The design system is a page.** `/design-system` shows the real components,
+  colours, type, and motion. It’s dev-only, so it adds no production weight.
 
-```
-PR ──► CI (lint · build · e2e) ──► merge to main ──► Deploy ──► rafaelmedina.me
-```
+## 🚧 Still on my list
 
-**Never edit built output.** Everything the site serves is generated from `src/`
-and `public/`. The custom domain ships as `public/CNAME`, and the deploy fails
-loudly if it ever goes missing.
+The site is live. As of **September 9, 2026**, these are the remaining follow-ups:
 
-Branches are split into a series of commits, one per coherent change, and the PR
-body lists them. `AGENTS.md` holds that convention in full; it is the single set of
-instructions every agent on this repo reads.
+- [ ] **Connect shared note likes.** The button, client, and Cloudflare Worker
+  exist. Mount the button, provision D1, deploy the Worker, and configure its URL.
+- [ ] **Review six archived pieces of writing.** Decide which ones to publish
+  from [the archive](docs/archive/writings.md).
+- [ ] **Test the contact inbox.** Confirm `hey@rafaelmedina.me` receives mail.
+  Keep the site and résumé in sync if the address changes.
 
-See `PROJECT_STATUS.md` for the branch layout.
+## 💻 Run locally
 
-## Shared note likes
-
-The site stays on GitHub Pages. `workers/likes/` provides a separate Cloudflare
-Worker and D1 database for shared likes. `VITE_LIKES_API_URL` is the public Worker
-URL, not a secret.
-
-The reader does not currently show a like control. The Worker, its database, the
-client in `src/lib/noteLikes.ts`, and `NoteLikeButton` are all kept and still
-tested, so the control can be restored by mounting it in the reader again. Until
-then nothing on the site writes to the database.
-
-Each browser stores a random anonymous visitor ID. D1 stores one row per note and
-visitor, so retries and concurrent requests cannot add duplicate likes; an unlike
-only removes that visitor's row. Counts refresh when a note opens, every 15 seconds
-while visible, and on returning to the page. Old browser-only likes are not imported
-as public engagement. This is one like per browser, not verified person: clearing
-storage or using another browser creates another identity. No names or email
-addresses are collected. This is not a bot-proof voting system.
-
-For local development, run:
+Use **Node 22**, matching CI:
 
 ```sh
-npm run likes:migrate:local
-npm run likes:dev
+npm ci
+npm run dev
 ```
 
-In a separate terminal, start the site with the local API:
+Open `http://localhost:5173`. Visit `/design-system` for the visual reference.
 
 ```sh
-VITE_LIKES_API_URL=http://127.0.0.1:8787 npm run dev
+npm run lint       # Check TypeScript/JavaScript and CSS style
+npm run build      # Type-check, build, and prerender
+npm run preview    # Serve the production build
+npm run test:e2e   # Build and run Playwright tests
 ```
 
-The local database persists under `.wrangler/` and is gitignored. Playwright starts
-the local Worker and connects the test build automatically. Shared-like tests use
-the actual local D1 database, including independent browser sessions, retries,
-unlikes, and failed saves.
-
-To activate shared likes publicly:
-
-1. Sign in with `npx wrangler login`.
-2. Create the database with `npx wrangler d1 create rafaelmedina-note-likes --config workers/likes/wrangler.jsonc`.
-3. Replace `local-note-likes` in `workers/likes/wrangler.jsonc` with the returned
-   database ID. The ID is configuration, not a credential.
-4. Run `npm run likes:migrate:remote`, then `npm run likes:deploy`.
-5. Set the GitHub repository variable `VITE_LIKES_API_URL` to the deployed Worker
-   URL. Merge the site changes through a PR to `main` to build with that URL.
-   Set the same URL in `.env` if local development should use the public database.
-
-Never delete the D1 database when redeploying: it holds the shared counts. Deploy
-Worker changes with `npm run likes:deploy`; site builds do not deploy the Worker.
-When adding notes, add their stable IDs to `src/data/writingIds.ts` and redeploy
-the Worker so its allowlist recognizes them. The article data's `WritingId` type
-checks that notes use registered IDs. Changing an ID starts a separate count.
-
-## Writing selection
-
-The public articles and notes live in `src/data/writings.ts`. Pieces held for
-later are preserved in [the writing archive](docs/archive/writings.md), with
-their original content, IDs, and image references. The archive is not shipped
-with the site. Keep archived IDs registered to preserve saved likes.
+The [runbook](docs/operations.md) covers test setup, environment variables,
+asset generation, and likes deployment. [AGENTS.md](AGENTS.md) holds the repo’s
+working conventions.
