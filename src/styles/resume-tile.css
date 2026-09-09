@@ -120,14 +120,6 @@
   --writings-sheet: min(46rem, calc(100vw - 10rem));
 }
 
-.resume-dialog-toolbar-leading {
-  justify-content: space-between;
-}
-
-.resume-dialog-close {
-  flex: 0 0 auto;
-}
-
 .resume-dialog-scroll {
   width: 100%;
   max-height: calc(var(--writings-room) - 5.25rem);
@@ -150,8 +142,12 @@
   gap: 0.25rem;
 }
 
+.resume-dialog-content .mosaic-about-resume-heading {
+  font-weight: 600;
+}
+
 @media (max-width: 699.98px) {
-  .resume-dialog-toolbar-leading {
+  .resume-dialog .resume-dialog-toolbar-leading {
     padding-right: 1.25rem;
   }
 

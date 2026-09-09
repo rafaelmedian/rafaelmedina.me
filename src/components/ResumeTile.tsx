@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { ArrowUpRight, X } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { useRef, useState } from "react"
 
 import { cvExperience } from "../data/cv"
@@ -56,10 +56,7 @@ export function ResumeTile({ href, onOpenChange }: { href: string; onOpenChange?
         >
           <header className="writings-toolbar resume-dialog-toolbar">
             <div className="writings-toolbar-leading resume-dialog-toolbar-leading">
-              <Dialog.Title ref={titleRef} tabIndex={-1} className="writings-toolbar-title">Résumé</Dialog.Title>
-              <Dialog.Close className="preview-gallery-nav resume-dialog-close" aria-label="Close résumé">
-                <X className="preview-gallery-nav-icon" aria-hidden="true" />
-              </Dialog.Close>
+              <Dialog.Title ref={titleRef} tabIndex={-1} className="writings-toolbar-title">Work history</Dialog.Title>
             </div>
           </header>
           <Dialog.Description className="sr-only">
@@ -67,7 +64,6 @@ export function ResumeTile({ href, onOpenChange }: { href: string; onOpenChange?
           </Dialog.Description>
           <div className="resume-dialog-scroll" onScroll={(event) => setScrolled(event.currentTarget.scrollTop > 0)}>
             <article className="resume-dialog-content mosaic-about-body">
-              <h2 className="mosaic-about-section-heading">Work history</h2>
               <ResumeContent />
               <p className="mosaic-about-resume-download resume-dialog-download">
                 <a
@@ -83,7 +79,7 @@ export function ResumeTile({ href, onOpenChange }: { href: string; onOpenChange?
                     })
                   }}
                 >
-                  View résumé PDF <ArrowUpRight size={16} aria-hidden="true" />
+                  View resume PDF <ArrowUpRight size={16} aria-hidden="true" />
                 </a>
               </p>
             </article>

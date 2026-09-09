@@ -1463,8 +1463,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>--shadow-overlay-hover</code>; reduced motion removes the lift. The reader reuses the Notes
                 backdrop, top edge, canvas, 34rem reading measure, toolbar divider, modal motion, focus return, and
                 mobile half-rem viewport margin. Its sheet caps at 46rem because the résumé has no marginalia. Work
-                history and Education use the same live <code>cv.ts</code> content as About, and the final action opens
-                the canonical PDF in a new tab.
+                history and Education use the same live <code>cv.ts</code> content as About. The toolbar is titled
+                “Work history” with no repeated body heading or close button; Education uses weight 600. The final
+                “View resume PDF” action opens the canonical PDF in a new tab.
               </p>
               <div className="ds-resume-tile-specimen mosaic-row-item">
                 <ResumeTile href={links.resumePdf} />
@@ -2066,7 +2067,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 the viewport height, and is available from the desktop corner navigation. The mobile Work history entry scrolls to the on-page experience section; the PDF link lives below that section. Its decorative image
                 is generated alongside the PDF and loads on demand; clicking the link opens the PDF in a new tab.
                 Separately, the folded résumé work tile is a button that opens the modal reader, traps focus, closes
-                on Escape or its close control, returns focus to the tile, and keeps the PDF as its final link.
+                on Escape or a backdrop press, returns focus to the tile, and keeps the PDF as its final link.
               </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>
                 <strong>Hover-only content has a non-hover fate.</strong> Social-pill hover cards are hidden on

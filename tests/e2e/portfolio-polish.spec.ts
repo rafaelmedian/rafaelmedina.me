@@ -2614,7 +2614,7 @@ test("opens the resume reader from the folded tile and returns focus on close", 
   await expect(resume.locator(".resume-tile-copy")).toContainText("2026 - Present")
 
   await resume.click()
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Work history" })
   await expect(dialog).toBeVisible()
   await page.keyboard.press("Escape")
   await expect(dialog).toBeHidden()
@@ -2625,7 +2625,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   await page.goto("/")
   await page.getByRole("button", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Work history" })
   const workHistory = dialog.getByRole("list", { name: "Work history" })
   const education = dialog.getByRole("list", { name: "Education" })
 
@@ -2636,7 +2636,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   await expect(education.getByRole("listitem")).toHaveCount(2)
   await expect(education.getByRole("listitem").first()).toContainText("Computer Science")
 
-  const pdf = dialog.getByRole("link", { name: "View résumé PDF" })
+  const pdf = dialog.getByRole("link", { name: "View resume PDF" })
   await expect(pdf).toHaveAttribute("href", "/rafael-medina-resume.pdf")
   await expect(pdf).toHaveAttribute("target", "_blank")
 })
