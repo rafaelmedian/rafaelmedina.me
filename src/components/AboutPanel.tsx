@@ -1,11 +1,14 @@
 import { useEffect, useRef } from "react"
 
+import { faq } from "../data/faq"
 import type { SiteLinks } from "../data/portfolio"
+import { processSteps } from "../data/process"
 import { services } from "../data/services"
 import { trackEvent } from "../lib/analytics"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { CompanyLogoGrid } from "./CompanyLogoGrid"
 import { InlineBookingLink } from "./InlineBookingLink"
+import { InlineEmailCopy } from "./InlineEmailCopy"
 import { LocalTimeCard } from "./LocalTimeCard"
 
 type AboutPanelProps = {
@@ -144,23 +147,19 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
                   tonight, and the map behind it says the rest. */}
               <LocalTimeCard timeLabel={localTimeLabel} reducedMotion={prefersReducedMotion} />
 
-              {/* The address is spelled out here as persistent text; the corner
-                  copy action also exposes it in a pointer tooltip. */}
+              {/* The address is spelled out here as persistent text, and it
+                  copies on a press the way the corner chip does -- the same
+                  clipboard, the same reaction card -- rather than opening a
+                  mail client the visitor may not have. The Services block at
+                  the foot of the sheet keeps the draft: this one is the
+                  address as a fact, that one is the invitation. */}
               <p className="mosaic-about-closing">
                 Building something? Email me at{" "}
-                <a
-                  href={`mailto:${links.email}`}
-                  className="mosaic-about-link"
-                  onClick={() => {
-                    trackEvent("social_link_click", {
-                      social_label: "Email",
-                      social_href: `mailto:${links.email}`,
-                      social_placement: "about_panel",
-                    })
-                  }}
-                >
-                  {links.email}
-                </a>
+                <InlineEmailCopy
+                  email={links.email}
+                  placement="about_panel"
+                  className="mosaic-about-link mosaic-about-email"
+                />
                 .
               </p>
             </div>
@@ -189,6 +188,53 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
             </div>
           </section>
 
+          {/* Between the marks and the price list: the marks say who has
+              bought this, Services says what there is to buy, and this says
+              what the weeks in between actually look like. It reads as a
+              default rather than a promise -- the closing line says so -- so
+              a short audit and a year-long partnership can both point at it. */}
+          <section
+            className="mosaic-about-section mosaic-about-process"
+            aria-labelledby="about-process-heading"
+          >
+            <div className="mosaic-about-process-copy">
+              <h2
+                id="about-process-heading"
+                className="mosaic-about-section-heading"
+                data-about-fade=""
+              >
+                How I work
+              </h2>
+              <p data-about-fade="">
+                Most engagements run the same five beats. What changes is how long each one takes: a
+                two-week audit compresses them into ten days, a year of product work loops through
+                them a dozen times.
+              </p>
+
+              <ol className="mosaic-about-resume mosaic-about-process-list">
+                {processSteps.map((step) => (
+                  <li
+                    key={step.step}
+                    className="mosaic-about-resume-entry mosaic-about-work-entry"
+                    data-about-fade=""
+                  >
+                    <p className="mosaic-about-process-step">{step.step}</p>
+                    <div className="mosaic-about-resume-details">
+                      <h3 className="mosaic-about-resume-title">{step.title}</h3>
+                      <p className="mosaic-about-resume-description">{step.description}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              <p className="mosaic-about-process-closing" data-about-fade="">
+                That is a default, not a template. Reviews happen when there is something worth
+                reviewing rather than because it is Thursday, and I would rather show you something
+                rough on Tuesday than something finished next month.
+              </p>
+            </div>
+          </section>
+
           {/* The sheet spends everything above this on what I have already
               done. This is the one block that says what can be bought and how
               to start it, so it closes the page rather than sitting between
@@ -209,7 +255,7 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
               </h2>
               <p data-about-fade="">
                 I take on a small number of client projects alongside my own product work. Three
-                shapes, depending on how much of the problem is still open.
+                shapes, chosen by how much of the problem is still open when we start.
               </p>
 
               <ul className="mosaic-about-resume mosaic-about-services-list">
@@ -231,16 +277,37 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
                 ))}
               </ul>
 
-              {/* Every shape prints a figure now, so this paragraph is what
-                  keeps the three of them from reading as a rate card: they are
-                  the floor, and the quote still follows the scope. */}
-              <p className="mosaic-about-services-pricing" data-about-fade="">
-                Those are starting points rather than fixed rates — what an engagement costs follows
-                its scope. Tell me what you are building and roughly when you need it, and I will
-                come back with a number and a timeline.
-              </p>
+              {/* The questions that used to be answered one enquiry at a time,
+                  cost first -- the published figures are starting points and
+                  the answer explains how the scope determines the quote.
+                  Nested inside Services rather than
+                  standing as its own section: every answer is about an
+                  engagement, and the table of contents already stops here. */}
+              <div className="mosaic-about-faq">
+                <h3 className="mosaic-about-section-heading" data-about-fade="">
+                  Common questions
+                </h3>
+                {/* Nothing is collapsed. Five short answers are cheaper to
+                    read than to open, and a disclosure would hide the one
+                    answer -- cost -- that most people came down here for. */}
+                <ul className="mosaic-about-resume mosaic-about-faq-list">
+                  {faq.map((entry) => (
+                    <li key={entry.question} className="mosaic-about-resume-entry" data-about-fade="">
+                      <h4 className="mosaic-about-resume-title">{entry.question}</h4>
+                      <p className="mosaic-about-resume-description">{entry.answer}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
               <p className="mosaic-about-closing" data-about-fade="">
+                {/* The address that closes the introduction copies on a press;
+                    this one hands the visitor a draft. The block is the one
+                    place on the sheet that asks for the engagement, and the
+                    two things to do about that should be the two things this
+                    sentence does -- start the mail, or open the calendar --
+                    rather than one of them quietly putting a string on the
+                    clipboard. The address is still spelled out either way. */}
                 Email me at{" "}
                 <a
                   href={`mailto:${links.email}`}

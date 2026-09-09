@@ -244,7 +244,7 @@ const NON_TEXT_ENTRIES = [
     token: "--accent",
     kind: "non-text",
     name: "Copied",
-    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. A graphic only; the confirmation itself is spoken in the tooltip and read out to screen readers.",
+    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. The same address set in the About sheet's prose has no icon slot to light, so it takes the green under itself instead: the link's underline, for the same window. A graphic only, in both places; the confirmation itself is spoken in the tooltip and read out to screen readers.",
   },
   {
     token: "--focus-ring-soft",
@@ -1497,11 +1497,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Company names, dates, locations, and descriptions reuse the shared résumé styles in
                 <code>about.css</code>: <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
                 Four selected Matcha screenshots sit below the description as loose photo prints. They are sized by
-                height — <code>clamp(3.5rem, 15vw, 5.5rem)</code>, so the row shrinks to fit a phone — and each
+                image height — <code>clamp(2.8rem, 12vw, 4.4rem)</code>, so the row shrinks to fit a phone — and each
                 width follows its own 4:3 crop, which is what keeps the pile on the sheet&rsquo;s measure at every
                 size. They lap over each other by 35% of that height, at -7, 2, -2, and
-                -5 degree tilts. Unlike the gallery&rsquo;s prints these carry no mat: the image is the whole print,
-                on <code>--radius-sm</code> corners with <code>--shadow-ring</code> and
+                -5 degree tilts. Each print carries a 0.25rem white mat in <code>--canvas</code>, with
+                <code>--radius-sm</code> outer corners and an inner image radius of
+                <code>calc(var(--radius-sm) - 0.25rem)</code>. The mat carries <code>--shadow-ring</code> and
                 <code>--shadow-control-hover</code>. A hovered or focused print raises above the one lapping over it,
                 so it is readable and clickable; with a fine pointer, hover also lifts it 0.25rem and straightens it
                 to 0 degrees over <code>--duration-quick</code>, which reduced motion removes.
@@ -1665,10 +1666,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 the state change and puts the green on the surface it is graded against. Its hint is not type at all: a
                 200px <code>--canvas</code> card carrying a clip, one while the offer stands and another once the copy
                 lands, keyed on the state so the animation replays from the top rather than resuming mid-loop. The
-                booking pill wears the same card — both are &ldquo;hover this and something happens next&rdquo;, so
-                they keep one shape between them. Neither carries a word: both are <code>aria-hidden</code>, and the
-                text they replaced lives where a screen reader already looks — the button's own description, plus the
-                live region that announces a copy. Clips are trimmed to the few seconds a hover lasts and transcoded
+                booking pill wears the same card, and so does the address closing the About sheet's introduction —
+                all three are &ldquo;hover this and something happens next&rdquo;, so they keep one shape between
+                them. In that prose the address stays a <code>mailto:</code> link, for the crawler and the context
+                menu and any browser without a clipboard, but a plain press copies it instead; a word inside a
+                sentence has nowhere to draw a check, so the card is held open through the confirmation window —
+                which is also how a tap is answered on a phone that never hovers — and the underline beneath the
+                address takes <code>--accent</code> for the same 1.6s. The Services block at the foot of the sheet
+                keeps the plain draft: that line is the invitation, and both things it offers — the mail and the
+                calendar — should be the things it does. None of the cards carries a word: all are
+                <code>aria-hidden</code>, and the text they replaced lives where a screen reader already looks — the
+                trigger's own description, plus the live region that announces a copy. Clips are trimmed to the few seconds a hover lasts and transcoded
                 to animated webp at roughly 2x their displayed width, with a still beside each for{" "}
                 <code>prefers-reduced-motion</code>. The clause that took the address's place in the
                 location line is the site's own commit calendar: the last commit date is read out of this
@@ -1957,7 +1965,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
                 </li>
-                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 320px 420px 536px 660px 600px 900px personal photos band compact two columns display contents protector quote span both 10px tablet 32px total inset 16px mobile gap 8px outer radius 16px 24px contain letterbox zero mat family stories rewards wallet homepage security token pro dark gradient background pair center bottom minmax(0, 1fr)")}>
+                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 320px 420px 536px 660px 600px 900px personal photos band compact two columns display contents protector quote span both 10px tablet 32px total inset 16px mobile gap 8px outer radius 16px 24px contain letterbox zero mat family stories rewards wallet homepage security token pro trade mobile flat backdrop rgb(63 62 68) rgb(231 231 233) background pair center bottom minmax(0, 1fr)")}>
                   <strong>The mosaic is four named groups.</strong> At 900px and above, Opening is a 3:6:3 row
                   and Closing is three equal columns; each is <code>clamp(260px, 28.075cqw, 420px)</code> tall.
                   Portraits uses 3:5:4 columns and two internal rows within
@@ -1973,14 +1981,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 16px radius;
                   desktop tiles use 24px. Contained artwork letterboxes inside the card: the card's grid
                   gets one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
-                  height to resolve against, and the inset drops to <code>0.375rem</code>. Seven compositions remove the
-                  pale mat entirely: Family Stories, Matcha Rewards, Matcha Token, Matcha Pro, Wallet, Homepage, and
+                  height to resolve against, and the inset drops to <code>0.375rem</code>. Nine compositions remove the
+                  pale mat entirely: Family Stories, Matcha Rewards, Matcha Token, Matcha Pro, Matcha trade page,
+                  Matcha on mobile, Wallet, Homepage, and
                   Security. Family Stories anchors to <code>center bottom</code> so its devices meet the lower edge.
                   Rewards positions its two complete banners independently — diagonal on desktop and stacked below
-                  900px — so their rounded ends remain inside the card at every slot ratio. Token and Pro keep their
-                  4:3 exports contained while the card continues the artwork&rsquo;s sampled dark vertical gradient from
-                  <code>rgb(74 66 87)</code> through <code>rgb(63 62 68)</code> to <code>rgb(38 38 46)</code>, making
-                  the whole surface read as one background without cropping product chrome. Wallet, Homepage, and
+                  900px — so their rounded ends remain inside the card at every slot ratio. Token, Pro, the trade page,
+                  and Matcha on mobile keep their 4:3 exports contained while the card is painted the flat colour the
+                  export already holds at its own edges — <code>rgb(63 62 68)</code> for the two dark workspaces,
+                  <code>rgb(231 231 233)</code> for the two light ones — so the letterbox reads as the artwork&rsquo;s
+                  backdrop continuing rather than a rectangle drawn inside the card, and no product chrome is cropped
+                  at a differently shaped slot. Pro sits on the bottom edge, the one edge where its flat value matches
+                  the export&rsquo;s own; the other three centre. Wallet, Homepage, and
                   Security rely on the framing already present in their files; Security is the third clip with zero
                   extra mat.
                 </li>
@@ -2054,21 +2066,23 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
-                <li data-ds-terms={terms("about reading surface 36rem services pricing stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
+                <li data-ds-terms={terms("about reading surface 36rem process how i work services pricing faq common questions stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
                   <strong>About is one continuous reading surface.</strong> The introduction, the worked-with wall,
-                  and Services share one left-aligned 36rem reading axis in normal document flow. The introduction
+                  How I work, and Services share one left-aligned 36rem reading axis in normal document flow. The introduction
                   starts with a fluid <code>clamp(5rem, 10vw, 8.75rem)</code> (80–140px) inset from the sheet&rsquo;s
                   top: 5rem on mobile, growing to 8.75rem on wide desktops. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users.
-                  The wall of marks follows on the same 2.5rem/5rem break Services takes, so the three blocks below
+                  The wall of marks follows on the same 2.5rem/5rem break How I work and Services take, so the four blocks below
                   the photo row are separated identically and none reads as belonging to its neighbour.
                   Work history and Education are not repeated here: the résumé tile in the portraits group opens them as a
                   gallery slide, so the sheet reads as an introduction and closes on what can be bought.
-                  Services closes it on the same 5rem/8.75rem gap and a two-column entry grid, with an engagement
-                  shape where the résumé carries dates; each shape publishes a starting figure rather than a rate
-                  card, and it ends on the email address and a
+                  How I work and Services both reuse the résumé&rsquo;s two-column entry grid, changing only the left
+                  column: a step number where Services carries an engagement shape and the résumé carries dates.
+                  Each service publishes a starting figure, with the scope caveat in the cost answer below.
+                  Services ends on a nested block of common questions — hairline-separated
+                  résumé entries, nothing collapsed — and then on the email address and a
                   booking link into the same Cal.com dialog the hero&rsquo;s availability line opens.
                   There is no tab state or hidden panel; <code>#about-panel-services</code> anchors directly to the
-                  visible Services section.
+                  visible Services section and covers the questions inside it.
                 </li>
               </ul>
             </div>

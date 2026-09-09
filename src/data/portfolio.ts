@@ -486,13 +486,13 @@ export const portfolioCards: PortfolioCard[] = [
       {
         source: "/Projects/matcha-rewards-link-preview.webp",
         label: "Matcha Rewards link preview",
-        width: 770,
+        width: 805,
         height: 480,
       },
       {
         source: "/Projects/matcha-rewards-countdown.webp",
         label: "Matcha Rewards countdown post",
-        width: 770,
+        width: 805,
         height: 480,
       },
     ],

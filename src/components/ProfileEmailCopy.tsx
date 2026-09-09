@@ -1,24 +1,10 @@
 import { Tooltip } from "@base-ui/react/tooltip"
 import { Check, Copy } from "lucide-react"
-import { useEffect, useId, useRef, useState } from "react"
+import { useId } from "react"
 
-import { ReactionCard, type Reaction } from "./ReactionCard"
-
-// Patrick's drumroll while the offer stands, the Predator handshake once the
-// address is on the clipboard.
-const INVITATION: Reaction = {
-  src: "/reactions/copy-email-before.webp",
-  still: "/reactions/copy-email-before-still.webp",
-  width: 480,
-  height: 371,
-}
-
-const CONFIRMATION: Reaction = {
-  src: "/reactions/copy-email-success.webp",
-  still: "/reactions/copy-email-success-still.webp",
-  width: 400,
-  height: 262,
-}
+import { useEmailCopy } from "../lib/useEmailCopy"
+import { EMAIL_COPY_CONFIRMATION, EMAIL_COPY_INVITATION } from "./emailCopyReactions"
+import { ReactionCard } from "./ReactionCard"
 
 type ProfileEmailCopyProps = {
   email: string
@@ -28,26 +14,7 @@ type ProfileEmailCopyProps = {
 
 export function ProfileEmailCopy({ email, side = "top" }: ProfileEmailCopyProps) {
   const hintId = useId()
-  const [isCopied, setIsCopied] = useState(false)
-  const resetTimeoutRef = useRef<number | undefined>(undefined)
-
-  useEffect(() => () => window.clearTimeout(resetTimeoutRef.current), [])
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(email)
-    } catch {
-      // No clipboard permission (or no clipboard at all): fall back to the
-      // thing the address was for.
-      window.location.href = `mailto:${email}`
-      return
-    }
-    setIsCopied(true)
-    // Restart the window on every copy so a second click always gets its own
-    // full confirmation instead of inheriting the tail of the first one.
-    window.clearTimeout(resetTimeoutRef.current)
-    resetTimeoutRef.current = window.setTimeout(() => setIsCopied(false), 1600)
-  }
+  const { isCopied, copy } = useEmailCopy(email)
 
   return (
     <>
@@ -63,7 +30,7 @@ export function ProfileEmailCopy({ email, side = "top" }: ProfileEmailCopyProps)
           data-copied={isCopied ? "true" : undefined}
           aria-label={`Copy email address ${email}`}
           aria-describedby={hintId}
-          onClick={handleCopy}
+          onClick={() => void copy()}
         >
           <span className="mosaic-profile-email-icon" aria-hidden="true">
             {isCopied ? <Check strokeWidth={2.25} /> : <Copy strokeWidth={2} />}
@@ -82,7 +49,7 @@ export function ProfileEmailCopy({ email, side = "top" }: ProfileEmailCopyProps)
             <Tooltip.Popup className="reaction-card" data-copied={isCopied ? "true" : undefined} aria-hidden="true">
               <ReactionCard
                 key={isCopied ? "success" : "invitation"}
-                reaction={isCopied ? CONFIRMATION : INVITATION}
+                reaction={isCopied ? EMAIL_COPY_CONFIRMATION : EMAIL_COPY_INVITATION}
               />
             </Tooltip.Popup>
           </Tooltip.Positioner>

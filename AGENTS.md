@@ -150,9 +150,10 @@ ffmpeg -ss 1 -i source.gif -vf "scale=400:-2:flags=lanczos" -frames:v 1 \
 
 Roughly 2x the card's 200px display width, trimmed to the part that carries the
 joke, and a still beside each one for `prefers-reduced-motion`. Keep them under
-about 100KB. Swapping a clip is a single `Reaction` constant in the component —
-`ProfileEmailCopy.tsx` or `AvailabilityBooking.tsx` — and the card takes its
-shape from the `width`/`height` you give it.
+about 100KB. Swapping a clip is a single `Reaction` constant —
+`emailCopyReactions.ts` for the address, worn by both the corner chip and the
+About sheet's prose link, or `AvailabilityBooking.tsx` for the booking pill —
+and the card takes its shape from the `width`/`height` you give it.
 
 ## Generated artwork
 

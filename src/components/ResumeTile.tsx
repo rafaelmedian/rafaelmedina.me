@@ -9,6 +9,14 @@ function previewCompany(company: string) {
   return company === "0x Project" ? "0x / Matcha" : company;
 }
 
+/* The tile is the sheet seen from across the room, so an entry gets its lead
+   point and nothing else: at a few millimetres of type per role, a second line
+   is a wall nobody stops to read, and it pushes the roles below off the page.
+   The reader shows the pair. */
+function previewHighlight(highlight: string | [string, string]) {
+  return Array.isArray(highlight) ? highlight[0] : highlight;
+}
+
 /* The corner is drawn in a 77x80 box that sits on the sheet's lower-right
    corner, in the units of the 237x280 Figma "Paper" sheet. CUT_OUTLINE is the
    sliced corner from the comp's sheet outline: the underside shows through it.
@@ -78,7 +86,7 @@ export function ResumeTile({
                   <strong>{previewCompany(job.company)}</strong>
                   <span>{job.dates}</span>
                 </span>
-                <p>{job.highlight}</p>
+                <p>{previewHighlight(job.highlight)}</p>
               </span>
             ))}
           </span>
@@ -102,19 +110,46 @@ export function ResumeTile({
                 <stop stopColor="#000000" stopOpacity="0.18" />
                 <stop offset="1" stopColor="#000000" stopOpacity="0" />
               </linearGradient>
+              {/* The curl's lift. One drop shadow at this size collapses into
+                  a gray outline tracing the curl, which reads as dirt on the
+                  page rather than a corner off it, so the lift is three passes
+                  on the same silhouette: a near-opaque contact edge, a mid
+                  penumbra, and a wide ambient wash, each faint enough that the
+                  sum stays under the single shadow's old density. They are
+                  built from SourceAlpha and merged under SourceGraphic -- three
+                  stacked feDropShadows would each re-emit the curl and darken
+                  the ones below. Filter percentages are of the curl's own box,
+                  so 100% around it clears even the widest blur, and sRGB keeps
+                  the falloff matched to the CSS shadows on the sheet. */}
               <filter
                 id={liftId}
-                x="-30%"
-                y="-30%"
-                width="160%"
-                height="160%"
+                x="-100%"
+                y="-100%"
+                width="300%"
+                height="300%"
+                colorInterpolationFilters="sRGB"
               >
-                <feDropShadow
-                  dx="-1.2"
-                  dy="-1.2"
-                  stdDeviation="1.2"
-                  floodOpacity="0.1"
-                />
+                <feGaussianBlur in="SourceAlpha" stdDeviation="0.4" />
+                <feOffset dx="-0.4" dy="-0.4" />
+                <feComponentTransfer result="contact">
+                  <feFuncA type="linear" slope="0.09" />
+                </feComponentTransfer>
+                <feGaussianBlur in="SourceAlpha" stdDeviation="1.8" />
+                <feOffset dx="-1.4" dy="-1.4" />
+                <feComponentTransfer result="penumbra">
+                  <feFuncA type="linear" slope="0.06" />
+                </feComponentTransfer>
+                <feGaussianBlur in="SourceAlpha" stdDeviation="4.5" />
+                <feOffset dx="-3" dy="-3" />
+                <feComponentTransfer result="ambient">
+                  <feFuncA type="linear" slope="0.04" />
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode in="ambient" />
+                  <feMergeNode in="penumbra" />
+                  <feMergeNode in="contact" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
               </filter>
               <radialGradient
                 id={shadeId}

@@ -632,9 +632,10 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   }
 }
 
-/* Hover cards that are a clip rather than a line of type. Two wearers -- the
-   address's copy button and the booking pill -- and one recipe between them,
-   because both are "hover this and something happens next". It is the 200px
+/* Hover cards that are a clip rather than a line of type. Three wearers -- the
+   address's copy button, the same address set in the About sheet's prose, and
+   the booking pill -- and one recipe between them, because all three are
+   "hover this and something happens next". It is the 200px
    white card the copy-email reaction always was, but it enters on the booking
    hint's motion -- --duration-base, a 4px lift, 0.98 -- rather than the
    overshoot curve it used to own, which was the only one of its kind here. */

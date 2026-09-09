@@ -138,7 +138,10 @@ test("separates Rewards artwork and extends Matcha product backgrounds", async (
   for (const name of [/Open Matcha token page/, /Open Matcha Pro/]) {
     const card = page.getByRole("link", { name })
     await expect(card).toHaveCSS("padding", "0px")
-    expect(await card.evaluate(element => getComputedStyle(element).backgroundImage)).not.toBe("none")
+    // One flat colour, matching the value the repainted exports hold around
+    // their windows -- a ramp of any kind would only meet the image at one row.
+    await expect(card).toHaveCSS("background-image", "none")
+    await expect(card).toHaveCSS("background-color", "rgb(63, 62, 68)")
 
     const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), card.locator("img").boundingBox()])
     expect(cardBox).not.toBeNull()
@@ -148,4 +151,36 @@ test("separates Rewards artwork and extends Matcha product backgrounds", async (
     expect(mediaBox!.x + mediaBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1)
     expect(mediaBox!.y + mediaBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height + 1)
   }
+
+  // The other two closing tiles are the same fix on the light side: both
+  // exports sit on a flat rgb(231 231 233) that is five levels off the pale
+  // card surface, close enough to blend at a glance and wrong enough to draw a
+  // rectangle inside the card once seen.
+  for (const name of [/Open Matcha trade page/, /Open Matcha on mobile/]) {
+    const card = page.getByRole("link", { name })
+    await card.scrollIntoViewIfNeeded()
+    await expect(card).toHaveCSS("padding", "0px")
+    await expect(card).toHaveCSS("background-image", "none")
+    await expect(card).toHaveCSS("background-color", "rgb(231, 231, 233)")
+
+    const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), card.locator("img").boundingBox()])
+    expect(cardBox).not.toBeNull()
+    expect(mediaBox).not.toBeNull()
+    // Contained, not cropped to fill: the closing slots are wider than 4:3, and
+    // covering them would cut the tab row off the trade module.
+    expect(mediaBox!.width).toBeGreaterThanOrEqual(cardBox!.width - 2)
+    expect(mediaBox!.height).toBeLessThanOrEqual(cardBox!.height + 1)
+  }
+
+  // Matcha Pro is wider than its slot, so it sits on the card's bottom edge and
+  // spends the leftover height above the image, where the flat card colour is
+  // the export's own backdrop rather than the dark workspace inside it.
+  const proCard = page.getByRole("link", { name: /Open Matcha Pro/ })
+  const [proCardBox, proMediaBox] = await Promise.all([
+    proCard.boundingBox(),
+    proCard.locator("img").boundingBox(),
+  ])
+  expect(proMediaBox!.y + proMediaBox!.height).toBeGreaterThan(
+    proCardBox!.y + proCardBox!.height - 2,
+  )
 })

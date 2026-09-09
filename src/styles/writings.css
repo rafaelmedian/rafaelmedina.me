@@ -332,12 +332,22 @@
      is: the mask is sized to it rather than to the file, and a PNG has no
      intrinsic ratio to fall back on the way the outgoing <svg> did. */
   .writings-drawing {
+    /* The gutter a mark hangs in is the one the reader's margin notes are sized
+       to, so a drawing never reaches further out than a note does and never
+       pushes a sideways scrollbar under the list. Marks are drawn under that
+       width, and the pull spends the slack that leaves: 0 tucks one against the
+       titles, 1 stands it off at the gutter's outer limit. The slack closes as
+       the sheet narrows, so at 1000px they all come back in to the rail rather
+       than the widest one hanging off the page. */
+    --writings-drawing-slack: max(0rem, var(--writing-note-width) - var(--writings-drawing-size) - 0.75rem);
+    --writings-drawing-rail: calc(0.75rem + var(--writings-drawing-pull) * var(--writings-drawing-slack));
     position: absolute;
-    top: calc(-0.5rem + var(--writings-drawing-lift, 0rem));
+    top: var(--writings-drawing-drop);
     display: block;
-    width: 5.5rem;
+    width: var(--writings-drawing-size);
     aspect-ratio: 1;
     opacity: 0.55;
+    rotate: var(--writings-drawing-tilt);
     pointer-events: none;
     -webkit-mask: var(--writings-drawing-mark) center / 100% 100% no-repeat;
     mask: var(--writings-drawing-mark) center / 100% 100% no-repeat;
@@ -348,14 +358,13 @@
   @supports (mask-image: url("/writings/marks/drawing-sheet.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet.png")) {
     .writings-drawing { background-color: var(--muted); }
   }
-  /* Each sits on a slightly different rail and tilt, the way the margin notes
-     do, so a run of them reads as drawn into the page rather than as a column
-     of marks set beside it. The gap clears the rows' -0.5rem hover bleed. */
-  .writings-drawing[data-lift="1"] { --writings-drawing-lift: 0.75rem; }
-  .writings-drawing[data-lift="2"] { --writings-drawing-lift: 0.25rem; }
-  .writings-drawing[data-place="left"] { right: calc(100% + 0.75rem); rotate: -5deg; }
-  .writings-drawing[data-place="right"] { left: calc(100% + 0.75rem); rotate: 4deg; }
-  .writings-drawing[data-place="right"][data-lift="2"] { rotate: 7deg; }
+  /* Size, rail, drop, and tilt all arrive per mark from the component, hashed
+     off the note it hangs beside, the way the margin notes' do: a run of them
+     reads as drawn into the page at different moments rather than as a column
+     of marks ruled beside it. The 0.75rem the rail starts at clears the rows'
+     -0.5rem hover bleed. */
+  .writings-drawing[data-place="left"] { right: calc(100% + var(--writings-drawing-rail)); }
+  .writings-drawing[data-place="right"] { left: calc(100% + var(--writings-drawing-rail)); }
 }
 /* A year sits above the notes it belongs to rather than in a gutter beside
    them, so the full measure goes to the titles. The rows keep their -0.5rem

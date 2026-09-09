@@ -192,6 +192,16 @@
   text-decoration-color: #2d2d2d;
 }
 
+/* The address in the prose copies rather than opening a mail client, and the
+   reaction card beside it says so. The line under the address takes the
+   corner chip's confirmation ink for the same moment, so the answer is also on
+   the thing that was pressed -- a copy can come from the keyboard, or outlast
+   the pointer that started it. Ordered after the hover rule, which it ties on
+   specificity. */
+.mosaic-about-email[data-copied="true"] {
+  text-decoration-color: var(--accent);
+}
+
 .mosaic-about-closing {
   border-top: 1px solid rgb(0 0 0 / 0.08);
   padding-top: 1.25rem;
@@ -384,8 +394,30 @@
   color: #2d2d2d;
 }
 
-.mosaic-about-body .mosaic-about-services-pricing {
-  margin-top: 2.5rem;
+/* The questions sit inside Services, so they are separated from the shapes
+   above by the gap Services itself takes from the block above it -- enough
+   that the two stacks do not read as one list, not so much that the questions
+   look like a section the table of contents forgot. */
+.mosaic-about-faq {
+  margin-top: 3rem;
+  display: grid;
+  gap: 0;
+}
+
+/* Hairline-separated rows, the same entry the résumé uses: a question in the
+   title's ink over an answer in the description's, with the rule between them
+   doing the work a disclosure arrow would otherwise do. Nothing here is
+   collapsed -- five short answers are cheaper to read than to open. */
+.mosaic-about-faq-list {
+  margin-top: 1.25rem;
+}
+
+/* The closing line carries the same hairline the questions do, so without
+   this it lands on the list's own rhythm and reads as a sixth question. The
+   extra air is what tells a reader the answers are over and this is the way
+   out. */
+.mosaic-about-faq + .mosaic-about-closing {
+  margin-top: 1.5rem;
 }
 
 /* The booking trigger has to be a button -- it opens a dialog -- but it ends a
@@ -539,4 +571,51 @@
     height: 40px;
     transform: translateY(-50%);
   }
+}
+
+/* ---------------------------------------------------- about sheet process --- */
+
+/* What the weeks between the marks and the price list look like, set as a
+   third sibling of those two stacks: same 36rem column, same two-column entry
+   grid, same reading step. The left column carries the step's number -- the
+   same 01/02/03 the table of contents numbers the page with -- where Services
+   carries a shape and the résumé carries dates. */
+.mosaic-about-process {
+  position: relative;
+  width: 100%;
+  margin-block-start: 2.5rem;
+  text-align: left;
+}
+
+@media (min-width: 700px) {
+  .mosaic-about-process {
+    margin-block-start: 5rem;
+  }
+}
+
+.mosaic-about-process-copy {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+  text-align: left;
+}
+
+/* The steps run closer together than the engagement shapes below them: a
+   shape is a thing you choose between, a step is one beat of a sequence, and
+   3rem of air between beats reads as five separate offers. */
+.mosaic-about-process-list {
+  margin-top: 1.5rem;
+  gap: 2rem;
+}
+
+.mosaic-about-body .mosaic-about-process-step {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--muted-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.mosaic-about-body .mosaic-about-process-closing {
+  margin-top: 2rem;
 }
