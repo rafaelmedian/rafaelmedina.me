@@ -74,10 +74,11 @@ test("commits a drag well short of a card width, and lands it quickly", async ({
   expect(Number.parseFloat(dragDuration)).toBeLessThan(Number.parseFloat(dotDuration))
 })
 
-test("exposes 10 by 40 dot targets with 4px gaps and selected emphasis", async ({ page }) => {
+test("exposes accessible dot targets with selected emphasis", async ({ page }) => {
   await openHome(page)
   for (const dot of await carousel(page).locator(".mosaic-quote-dot").all()) {
-    await expect(dot).toHaveCSS("width", "10px")
+    const box = await dot.boundingBox()
+    expect(box!.width).toBeGreaterThanOrEqual(24)
     await expect(dot).toHaveCSS("height", "40px")
   }
   const markers = carousel(page).locator(".mosaic-quote-dot span")
@@ -87,7 +88,7 @@ test("exposes 10 by 40 dot targets with 4px gaps and selected emphasis", async (
     const second = nodes[1]?.getBoundingClientRect()
     return first && second ? second.left - first.right : -1
   })
-  expect(markerGap).toBeCloseTo(4, 0)
+  expect(markerGap).toBeGreaterThanOrEqual(18)
   await expect(carousel(page).locator('.mosaic-quote-dot[aria-pressed="true"] span')).toHaveCSS("opacity", "0.75")
   await expect(carousel(page).locator('.mosaic-quote-dot[aria-pressed="false"] span').first()).toHaveCSS("opacity", "0.3")
 })
