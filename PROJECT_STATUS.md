@@ -106,21 +106,26 @@ design-system tests.
 
 ## Likes activation
 
-The control and browser tests are restored. One-time Cloudflare Free setup is
-still required: replace the placeholder D1 ID `local-note-likes`, deploy the
-service, and configure the GitHub variable and secrets listed in `README.md`.
-The main deployment then applies migrations and deploys the Worker before the
-site, so publishing notes does not require a separate manual deployment.
-No remote Cloudflare resources or credentials were configured in this workspace.
+Live as of 2026-09-09. The D1 database exists, its ID is committed in
+`workers/likes/wrangler.jsonc`, the migration is applied remotely, and the Worker
+is deployed at `https://rafaelmedina-note-likes.rafaelmedina.workers.dev`. The
+`VITE_LIKES_API_URL` repository variable and the `CLOUDFLARE_API_TOKEN` /
+`CLOUDFLARE_ACCOUNT_ID` secrets are set, so the `main` deployment applies pending
+migrations and deploys the Worker before publishing the site.
 
-Follow-up verification: lint, Worker type-check, production build, and all
-**304 Playwright tests** passed after restoring the control. The earlier audit
-results above remain a historical record of the pre-likes state. The configured
-client bundle is now 517.39 kB minified (168.87 kB gzip); the existing warning
-remains. A production build without the API URL also passed a browser check: the note
-opens with no like control or likes requests. Wrangler dry-run bundling and
-deployment YAML/shell validation passed. Remote deployment still requires the
-account setup above.
+Verified directly against the deployed service on 2026-09-09: `/health` returned
+`{"ok":true}`; a like round-trip on `a-song-we-all-know` went 0 → 1 → 0 across
+`GET`, `PUT true`, `GET`, `PUT false`; a disallowed `Origin` returned 403 and an
+unregistered note ID returned 404. The test like was removed afterwards. That
+exercises the API, not the site's own build — the reader's use of it is covered by
+the Playwright suite, and by the first production deploy that ships with the
+variable set.
+
+Earlier verification of the client: lint, Worker type-check, production build, and
+all **304 Playwright tests** passed after restoring the control. The configured
+client bundle is 517.39 kB minified (168.87 kB gzip); the existing bundle-size
+warning remains. A production build without the API URL also passed a browser
+check — the note opens with no like control and no likes requests.
 
 ## Closed or maintenance-only items
 
