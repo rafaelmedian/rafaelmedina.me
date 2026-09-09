@@ -857,10 +857,10 @@ test("swaps the address reaction for a still under reduced motion", async ({ pag
   await email.hover()
   await page.clock.fastForward(200)
   await expect(reaction).toBeVisible()
-  await expect(currentFrame()).resolves.toContain("/reactions/copy-email-before-still.webp")
+  await expect.poll(currentFrame).toContain("/reactions/copy-email-before-still.webp")
 
   await email.click()
-  await expect(currentFrame()).resolves.toContain("/reactions/copy-email-success-still.webp")
+  await expect.poll(currentFrame).toContain("/reactions/copy-email-success-still.webp")
 })
 
 test("reveals the address icon on hover without moving the line", async ({ page }) => {
@@ -2440,12 +2440,10 @@ test("returns to the top of the page from the takeover close", async ({ page }) 
   await scrollSeamTo(page, 0.71)
   await page.getByRole("button", { name: "Close about" }).click()
 
-  const restored = await page.evaluate(() => ({
+  await expect.poll(() => page.evaluate(() => ({
     scrollY: Math.round(window.scrollY),
     focusedId: document.activeElement?.id,
-  }))
-
-  expect(restored).toEqual({
+  }))).toEqual({
     scrollY: 0,
     focusedId: "portfolio-title",
   })
