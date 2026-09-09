@@ -48,18 +48,16 @@ one squash per PR, and the reasoning inside it survives only as far as the branc
 commits carried it. A branch that was one "Implement X" commit leaves `git log` and
 `git blame` with nothing to say.
 
-## Retained inactive code
+## Shared likes
 
-`src/components/NoteLikeButton.tsx` and `src/lib/noteLikes.ts` are intentionally
-retained but unreachable from the app entry points: the notes reader has no like
-control. A static import traversal from `src/main.tsx` and
-`src/entry-server.tsx`, including dev-only dynamic imports, found no other
-unreachable TypeScript modules or stylesheets (declarations and assets excluded).
-This is module reachability, not an audit of every export or CSS selector.
+The notes reader mounts `NoteLikeButton` when `VITE_LIKES_API_URL` is set and a
+note is open. Without a configured URL, it remains hidden. Browser coverage now
+checks persistence, unlikes, failed saves, and idle reading without polling;
+`tests/e2e/shared-likes.spec.ts` separately exercises the local D1 API.
 
-The likes Worker is still exercised by `tests/e2e/shared-likes.spec.ts`. Those
-tests call the API directly; they do not cover the unmounted button or client.
-Restoring likes is deferred feature work, not an unfinished public control.
+The original 2026-09-09 reachability audit found no other unreachable TypeScript
+modules or stylesheets (declarations and assets excluded). That was module
+reachability, not an audit of every export or CSS selector.
 
 The infinite-canvas experience described in older versions of this file was
 replaced by the `SimpleFeed` mosaic; its components (`InfiniteCanvasBoard`,
@@ -85,16 +83,11 @@ theme hook.
 
 ## Images
 
-Previously completed image optimizations (not a claim that every current asset
-has been audited):
-
-- `favicon-512.png` — 404 kB -> 288 kB, losslessly (`oxipng -o max --strip safe`,
-  verified pixel-identical). It must stay PNG: `index.html` declares
-  `type="image/png"` and `site.webmanifest` lists it as an icon.
-- `profile-header.png` -> `profile-header.jpg` — 1,051 kB -> 144 kB. It is a
-  photograph whose only reference is the JSON-LD `image` field, so PNG was the
-  wrong format. If you replace it, keep it JPEG and keep the reference in
-  `index.html` in sync.
+The [2026-09-09 image audit](docs/image-audit-2026-09-09.md) inventories 125 public
+images totaling 5.32 MB and checks mobile/desktop requests. The main opportunity
+is the personal-photo sheet: it fetches 1.54 MB of full-size photos even on a
+phone. Responsive variants are recommended; no images were changed. The report
+also identifies an oversized live reaction and unreferenced cleanup candidates.
 
 ## Remaining follow-ups
 
@@ -109,14 +102,23 @@ has been audited):
   threshold. The build passes. Profile the bundle before choosing what to
   lazy-load; the warning alone does not establish a user-visible slowdown.
 
-## Deferred feature work
+## Likes activation
 
-- **Shared likes**, only if the feature is restored: mount `NoteLikeButton` in
-  the reader, restore browser coverage of the button/client, and complete or
-  verify the production setup in `README.md`. The checked-in Worker config
-  still uses the placeholder D1 ID `local-note-likes`. The audit tested the
-  local service and did not inspect remote Cloudflare resources or repository
-  variables.
+The control and browser tests are restored. One-time Cloudflare Free setup is
+still required: replace the placeholder D1 ID `local-note-likes`, deploy the
+service, and configure the GitHub variable and secrets listed in `README.md`.
+The main deployment then applies migrations and deploys the Worker before the
+site, so publishing notes does not require a separate manual deployment.
+No remote Cloudflare resources or credentials were configured in this workspace.
+
+Follow-up verification: lint, Worker type-check, production build, and all
+**304 Playwright tests** passed after restoring the control. The earlier audit
+results above remain a historical record of the pre-likes state. The configured
+client bundle is now 517.39 kB minified (168.87 kB gzip); the existing warning
+remains. A production build without the API URL also passed a browser check: the note
+opens with no like control or likes requests. Wrangler dry-run bundling and
+deployment YAML/shell validation passed. Remote deployment still requires the
+account setup above.
 
 ## Closed or maintenance-only items
 
