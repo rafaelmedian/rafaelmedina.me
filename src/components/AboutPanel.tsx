@@ -278,10 +278,9 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
               </ul>
 
               {/* The questions that used to be answered one enquiry at a time,
-                  cost first -- there is no rate card, because a number invented
-                  for the page would be wrong the first time anyone held me to
-                  it, and `Service.price` renders one per row the day there is
-                  something real to publish. Nested inside Services rather than
+                  cost first -- the published figures are starting points and
+                  the answer explains how the scope determines the quote.
+                  Nested inside Services rather than
                   standing as its own section: every answer is about an
                   engagement, and the table of contents already stops here. */}
               <div className="mosaic-about-faq">

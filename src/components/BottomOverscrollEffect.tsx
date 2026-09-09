@@ -58,6 +58,7 @@ export function BottomOverscrollEffect() {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     let pull = 0
+    let paintedOpacity = 0
     let lastTouchY: number | null = null
     let paintFrame: number | undefined
     let releaseTimer: number | undefined
@@ -73,7 +74,8 @@ export function BottomOverscrollEffect() {
         paintFrame = undefined
         const progress = pull / MAX_PULL
 
-        edge.style.setProperty("--elastic-edge-opacity", String(progress * MAX_OPACITY))
+        paintedOpacity = progress * MAX_OPACITY
+        edge.style.setProperty("--elastic-edge-opacity", String(paintedOpacity))
         edge.style.setProperty("--elastic-edge-offset", `${(1 - progress) * 44}px`)
         edge.style.setProperty("--elastic-edge-scale", String(0.35 + progress * 0.65))
         content?.style.setProperty("--elastic-content-offset", `${-progress * MAX_CONTENT_TRAVEL}px`)
@@ -87,7 +89,11 @@ export function BottomOverscrollEffect() {
 
       edge.dataset.pulling = "false"
       if (content) content.dataset.edgePulling = "false"
-      const glowWasPainted = Number.parseFloat(window.getComputedStyle(edge).opacity) > 0
+      // Ask what the pull committed, not what the screen currently shows. A
+      // sampled opacity reads 0 for the frame between the paint writing the
+      // custom property and the transition it starts advancing, so reading it
+      // here mistook a glow that had just begun for one that never painted.
+      const glowWasPainted = paintedOpacity > 0
       // Let the release transition take over from the exact point reached by
       // the gesture, including when intent reverses mid-pull.
       void edge.offsetHeight

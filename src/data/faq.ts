@@ -5,12 +5,12 @@ export type FaqEntry = {
 
 /** The questions that arrive in the first reply to an enquiry, answered where
     the engagement shapes are rather than in an email nobody else reads. Kept
-    to what is actually true today: no rate card, no invented turnaround. */
+    to the published starting figures and the scope agreed for each project. */
 export const faq: FaqEntry[] = [
   {
     question: "What does it cost?",
     answer:
-      "Every engagement is priced to its scope, so there is no rate card here. Tell me what you are building and roughly when you need it, and I will come back with a number and a timeline. Fixed-scope work is quoted as a single figure, and the standing partnership is billed monthly.",
+      "The figures above are starting points rather than fixed rates. Every engagement is priced to its scope. Tell me what you are building and roughly when you need it, and I will come back with a number and a timeline. Fixed-scope work is quoted as a single figure, and the standing partnership is billed monthly.",
   },
   {
     question: "How long does it take?",

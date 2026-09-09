@@ -2077,7 +2077,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   gallery slide, so the sheet reads as an introduction and closes on what can be bought.
                   How I work and Services both reuse the résumé&rsquo;s two-column entry grid, changing only the left
                   column: a step number where Services carries an engagement shape and the résumé carries dates.
-                  Services publishes no rate card. It ends on a nested block of common questions — hairline-separated
+                  Each service publishes a starting figure, with the scope caveat in the cost answer below.
+                  Services ends on a nested block of common questions — hairline-separated
                   résumé entries, nothing collapsed — and then on the email address and a
                   booking link into the same Cal.com dialog the hero&rsquo;s availability line opens.
                   There is no tab state or hidden panel; <code>#about-panel-services</code> anchors directly to the
