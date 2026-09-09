@@ -1175,9 +1175,12 @@
 
 /* These compositions already supply their own framing. Family Stories keeps
    its devices on the bottom edge; Rewards supplies two independent banners;
-   Token and Pro extend their own backdrop across the card below. */
+   Token, Pro, Trade, and Mobile extend their own backdrop across the card
+   below. */
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-1,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-14,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
@@ -1197,18 +1200,43 @@
   object-position: center bottom;
 }
 
-/* These two 4:3 exports carry the same dark vertical backdrop around their UI.
-   Continue that backdrop across the card instead of framing the export in the
-   generic pale tile surface. The image remains contained, so neither the token
-   workspace nor Matcha Pro loses product chrome at a differently shaped slot. */
+/* These two 4:3 exports carry the same dark backdrop around their UI. Continue
+   that backdrop across the card instead of framing the export in the generic
+   pale tile surface. The image remains contained, so neither the token
+   workspace nor Matcha Pro loses product chrome at a differently shaped slot.
+
+   One flat colour, not a ramp: the exports themselves were repainted to hold
+   rgb(63 62 68) all the way around their windows (they used to carry a vertical
+   gradient of their own), so whichever edge a slot letterboxes against, the
+   card meets the same value the image already has there. */
 .mosaic-row-card-preview-shot-21,
 .mosaic-row-card-preview-shot-23 {
-  background: linear-gradient(
-    to bottom,
-    rgb(74 66 87) 0%,
-    rgb(63 62 68) 50%,
-    rgb(38 38 46) 100%
-  );
+  background: rgb(63 62 68);
+}
+
+/* Matcha Pro is wider than its slot, so a centred export leaves a band under it
+   whose colour cannot match the export's own bottom edge -- the rails there are
+   lighter than the workspace between them. Sitting it on the bottom edge spends
+   the whole leftover height above the image instead, where a single flat colour
+   does match, and the workspace reads as continuing past the card. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23 {
+  place-items: end center;
+}
+
+/* The other two closing tiles are the same situation in the light half of the
+   set: both 4:3 exports sit on a flat rgb(231 231 233) that runs to all four
+   edges of the file, five levels off --mosaic-card-surface. Contained inside
+   the pale mat that was close enough to read as one surface at a glance and
+   wrong enough to read as a rectangle drawn inside the card once you looked.
+   Painting the card the export's own value removes the inner edge, so the
+   letterbox above and below the artwork is the artwork's backdrop continuing.
+
+   Not cover: the closing slots are wider than 4:3, and filling them would cut
+   the tab row off the trade module and the top and bottom off all three
+   phones. */
+.mosaic-row-card-preview-shot-1,
+.mosaic-row-card-preview-shot-14 {
+  background: rgb(231 231 233);
 }
 
 /* Rewards owns two complete campaign deliverables. Positioning them as two
@@ -1222,9 +1250,14 @@
   display: block;
 }
 
+/* Both exports carry their drop shadow in the file, on a canvas padded far
+   enough for it to fade out on every side. The banner itself is 88% of that
+   canvas, so these boxes run wider than the artwork and their insets are pulled
+   in to compensate -- the banners land where they always have, and the shadow
+   no longer meets a hard edge at the file boundary. */
 .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media {
   position: absolute;
-  width: 68%;
+  width: 71%;
   max-width: none;
   height: auto;
   max-height: none;
@@ -1233,11 +1266,11 @@
 
 .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:first-child {
   top: 3%;
-  left: 2%;
+  left: 1.7%;
 }
 
 .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:last-child {
-  right: 2%;
+  right: 1.8%;
   bottom: 3%;
 }
 
@@ -1303,6 +1336,8 @@
 
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-1,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-14,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
