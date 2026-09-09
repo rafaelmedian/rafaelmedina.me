@@ -100,29 +100,6 @@
   }
 }
 
-.mosaic-about-work-history {
-  position: relative;
-  width: 100%;
-  margin-block-start: 2.5rem;
-  padding-block: 0 clamp(2rem, 6vw, 5rem);
-  scroll-margin-top: clamp(1rem, 4vw, 3rem);
-  text-align: left;
-}
-
-@media (min-width: 700px) {
-  .mosaic-about-work-history {
-    margin-block-start: 5rem;
-  }
-}
-
-.mosaic-about-work-history-copy {
-  width: min(100%, 36rem);
-  margin-inline: auto;
-  display: grid;
-  gap: 1rem;
-  text-align: left;
-}
-
 /* Work history is a sibling of the About lede, not a paragraph. It kept the
    prose weight and colour, which made it pixel-identical to the copy directly
    under it -- an <h2> that only assistive technology could tell was a heading.

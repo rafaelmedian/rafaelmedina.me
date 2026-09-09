@@ -4,8 +4,7 @@ import { ChevronUp, X } from "lucide-react"
 const SECTIONS = [
   { id: "work", number: "01", label: "Work", href: "#work" },
   { id: "about", number: "02", label: "About", href: "#about-panel" },
-  { id: "history", number: "03", label: "Work history", href: "#about-panel-resume" },
-  { id: "services", number: "04", label: "Services", href: "#about-panel-services" },
+  { id: "services", number: "03", label: "Services", href: "#about-panel-services" },
 ] as const
 
 type SectionId = (typeof SECTIONS)[number]["id"]
@@ -21,12 +20,10 @@ const readDuration = (element: Element, property: string, fallback: number) => {
 export function MobileTableOfContents({
   onWork,
   onAbout,
-  onWorkHistory,
   onServices,
 }: {
   onWork: () => void
   onAbout: () => void
-  onWorkHistory: () => void
   onServices: () => void
 }) {
   const panelId = useId()
@@ -44,7 +41,6 @@ export function MobileTableOfContents({
   const actions: Record<SectionId, () => void> = {
     work: onWork,
     about: onAbout,
-    history: onWorkHistory,
     services: onServices,
   }
 
@@ -103,9 +99,8 @@ export function MobileTableOfContents({
 
   useEffect(() => {
     const about = document.getElementById("about-panel")
-    const history = document.getElementById("about-panel-resume")
     const servicesSection = document.getElementById("about-panel-services")
-    if (!about || !history || !servicesSection) return
+    if (!about || !servicesSection) return
 
     // Follow the visible section, including manual scrolling and history
     // navigation. A section becomes current at the upper third of the screen.
@@ -116,19 +111,16 @@ export function MobileTableOfContents({
       observer = new IntersectionObserver(() => {
         const detectionLine = height * 0.31
         const servicesBounds = servicesSection.getBoundingClientRect()
-        const historyBounds = history.getBoundingClientRect()
         const aboutBounds = about.getBoundingClientRect()
         // Tested last section first: services sits inside the About sheet and
-        // after the work history, so all three are still on screen together at
-        // the bottom of the page and the deepest match is the current one.
+        // closes it, so both are still on screen together at the bottom of the
+        // page and the deepest match is the current one.
         setActiveSection(
           servicesBounds.top <= detectionLine && servicesBounds.bottom > 0 ? "services"
-            : historyBounds.top <= detectionLine && historyBounds.bottom > 0 ? "history"
             : aboutBounds.top <= detectionLine && aboutBounds.bottom > 0 ? "about" : "work",
         )
       }, { rootMargin: `-${height * 0.3}px 0px -${height * 0.69}px 0px` })
       observer.observe(about)
-      observer.observe(history)
       observer.observe(servicesSection)
     }
     observeSection()
@@ -174,7 +166,12 @@ export function MobileTableOfContents({
       data-swap={leaving?.direction}
       inert={!isVisible}
       aria-hidden={!isVisible}
-      style={compactWidth ? { "--toc-compact-width": `${compactWidth}px` } as CSSProperties : undefined}
+      style={{
+        ...(compactWidth ? { "--toc-compact-width": `${compactWidth}px` } : {}),
+        // Sized from SECTIONS itself, so adding or removing a section can no
+        // longer leave the open card reserving a row that nothing renders.
+        "--toc-slot-count": SECTIONS.length,
+      } as CSSProperties}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false)
       }}

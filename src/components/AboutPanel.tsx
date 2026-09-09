@@ -6,7 +6,6 @@ import { trackEvent } from "../lib/analytics"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { InlineBookingLink } from "./InlineBookingLink"
 import { PersonalPhotos } from "./PersonalPhotos"
-import { ResumeContent } from "./ResumeContent"
 
 type AboutPanelProps = {
   links: SiteLinks
@@ -160,46 +159,6 @@ export function AboutPanel({ links }: AboutPanelProps) {
             </div>
 
             <PersonalPhotos />
-          </section>
-
-          <section
-            id="about-panel-resume"
-            tabIndex={-1}
-            className="mosaic-about-section mosaic-about-work-history"
-            aria-labelledby="about-work-history-heading"
-          >
-            <div className="mosaic-about-work-history-copy">
-              <h2
-                id="about-work-history-heading"
-                className="mosaic-about-section-heading"
-                data-about-fade=""
-              >
-                Work history
-              </h2>
-              <ResumeContent revealOnScroll />
-
-              {/* Same term and behavior as the corner "Resume" link: one
-                  artifact, one verb. The browser's PDF viewer keeps its own
-                  download button for people who want the file. */}
-              <p className="mosaic-about-resume-download" data-about-fade="">
-                <a
-                  href={links.resumePdf}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mosaic-about-link"
-                  onClick={() => {
-                    trackEvent("social_link_click", {
-                      social_label: "View Resume",
-                      social_href: links.resumePdf,
-                      social_placement: "about_panel",
-                    })
-                  }}
-                >
-                  View resume (PDF)
-                </a>
-              </p>
-            </div>
-
           </section>
 
           {/* The sheet spends everything above this on what I have already
