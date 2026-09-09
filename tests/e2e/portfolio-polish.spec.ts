@@ -1522,6 +1522,10 @@ test("uses a compact availability dot", async ({ page }) => {
 // line a visitor is scanning for. It rests visible now; hover widens the halo.
 test("keeps the availability dot visible at rest and widens its halo on hover", async ({ page }) => {
   await page.goto("/")
+  // The reveal's animation-delay window reads as two stable frames, so an
+  // unsettled hover can land on the line's pre-rise position and slide out
+  // from under the pointer 12px later -- leaving :hover never applied.
+  await settleAvatarIntro(page)
 
   const availability = page.locator(".mosaic-profile-availability")
   const dot = availability.locator(".mosaic-availability-dot")
@@ -1557,6 +1561,8 @@ test("previews the calendar on hover and opens booking only on click", async ({ 
     return route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" })
   })
   await page.goto("/")
+  // Same guard as the halo test: hover only after the reveal has settled.
+  await settleAvatarIntro(page)
   const trigger = page.locator(".mosaic-availability-trigger")
   await trigger.hover()
   const tooltip = page.getByRole("tooltip")
