@@ -7,6 +7,7 @@ import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 import { PersonalPhotos } from "./PersonalPhotos"
 import { WritingsFolder } from "./WritingsFolder"
 import { QuoteCard } from "./QuoteCard"
+import { ResumeTile } from "./ResumeTile"
 import { portfolioQuotes } from "../data/quotes"
 import { sampleQuotes } from "../data/quoteExamples"
 import { formatAvailability } from "../lib/availability"
@@ -1395,8 +1396,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-block" data-ds-terms={terms("quote blockquote attribution avatars --radius-lg --text-lg --text-md --text-sm 340px")}>
               <p className="ds-subhead">Quote slider</p>
               <p>
-                The slider replaces the dark-mode tile at the start of project row two and takes a 1.25-unit
-                column beside a 1.75-unit Protector, so the row still totals four units with the writings tile. Between 700px and 899px, that row grows to 340px to fit the quote;
+                The slider sits in the quote row and takes a 1.25-unit
+                column beside a one-unit résumé tile and 1.75-unit Protector, so the row totals four units. Between 700px and 899px, that row grows to 340px to fit the quote;
                 from 900px it shares the usual 420px row height. The card uses the existing #f2f2f2 chip surface, an 8%
                 black hairline, and --radius-lg corners (--radius-md between 700px and 899px, with the rest of the row). Quotes up to 80 characters (including spaces)
                 use --text-lg (18px); longer quotes use --text-md (16px). Both use 1.5 line height with a
@@ -1445,6 +1446,25 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 to exercise longer copy and distant selections. Portraits are optional.
               </p>
               <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} />
+            </div>
+
+            <div className="ds-block" data-ds-terms={terms("resume résumé folded paper tile cv pdf --mosaic-card-surface --radius-lg --radius-md --shadow-overlay --shadow-overlay-hover --text-xs 200ms 160ms")}>
+              <p className="ds-subhead">Résumé tile</p>
+              <p>
+                The first unit of the quote row links to the same PDF as the corner navigation. Its outer surface is
+                the standard work tile: <code>--mosaic-card-surface</code>, an 8% hairline, and
+                <code>--radius-lg</code> corners (<code>--radius-md</code> on the compact desktop row). Inside it, a
+                white sheet uses <code>--radius-md</code>, <code>--shadow-ring</code>, and
+                <code>--shadow-overlay</code>; a small vector fold turns up its lower-right corner. The miniature
+                entries come from the first two roles in <code>cv.ts</code> and are hidden from assistive technology,
+                because the link&rsquo;s accessible name describes the destination. Their 8&ndash;12px illustrative scale
+                is the only exception to the UI type ramp. On hover or focus, the sheet rises 4px over
+                <code>--duration-base</code> with <code>--ease-smooth</code> and takes
+                <code>--shadow-overlay-hover</code>; reduced motion removes the lift.
+              </p>
+              <div className="ds-resume-tile-specimen mosaic-row-item">
+                <ResumeTile href={links.resumePdf} />
+              </div>
             </div>
 
             <div className="ds-block" data-ds-terms={terms("personal photos stack polaroid carousel modal Handlee Reenie Beanie handwriting note arrow shadow radius slide")}>
@@ -1594,11 +1614,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </div>
                 <div
                   className="ds-specimen ds-specimen-block"
-                  data-ds-terms={terms("tile #ececee work card 24px radius rgb(0 0 0 / 0.08)")}
+                  data-ds-terms={terms("tile #ececee work card resume résumé 24px radius rgb(0 0 0 / 0.08)")}
                 >
                   <strong className="ds-specimen-title">Tile — #ececee</strong>
                   <p className="ds-specimen-note">
-                    Work cards only. They use a 24px radius — 16px between 700px and 899px, where the row is 180px tall —{" "}
+                    Work cards and the résumé tile use a 24px radius — 16px between 700px and 899px, where standard rows are 180px tall and the quote row is 340px —{" "}
                     <code>1px solid rgb(0 0 0 / 0.08)</code>, and no shadow —
                     they sit in the page rather than above it. About uses the full-bleed white canvas surface.
                   </p>

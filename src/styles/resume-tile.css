@@ -1,0 +1,109 @@
+/* ---------------------------------------------------------- résumé tile --- */
+
+.resume-tile {
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  text-decoration: none;
+}
+
+/* A compact reconstruction of the folded résumé sheet from the original
+   portfolio grid. The words are decorative -- the link owns the accessible
+   name -- but come from cv.ts so the little page cannot advertise an old job. */
+.resume-tile-sheet {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: min(68%, 16rem);
+  max-height: 82%;
+  aspect-ratio: 0.84;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  transition:
+    transform var(--duration-base) var(--ease-smooth),
+    box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+.resume-tile-copy {
+  position: absolute;
+  inset: 13% 15% 8%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25em;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: clamp(0.5rem, 0.75vw, var(--text-xs));
+  line-height: 1.35;
+  -webkit-mask-image: linear-gradient(#000 72%, transparent 98%);
+  mask-image: linear-gradient(#000 72%, transparent 98%);
+}
+
+.resume-tile-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.resume-tile-entry strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.resume-tile-entry > span {
+  color: var(--muted);
+}
+
+.resume-tile-entry p {
+  margin: 0.65em 0 0;
+}
+
+.resume-tile-fold {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34%;
+  height: auto;
+  filter: drop-shadow(-0.25rem -0.25rem 0.45rem rgb(20 20 20 / 0.08));
+}
+
+.resume-tile-fold-shadow {
+  fill: #d4d4d6;
+}
+
+.resume-tile-fold-page {
+  fill: #f7f7f7;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .resume-tile:hover .resume-tile-sheet {
+    transform: translateY(-0.25rem);
+    box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
+  }
+}
+
+.resume-tile:focus-visible .resume-tile-sheet {
+  transform: translateY(-0.25rem);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
+}
+
+@media (max-width: 699.98px) {
+  .resume-tile-sheet {
+    width: min(68%, 17rem);
+  }
+
+  .resume-tile-copy {
+    font-size: var(--text-xs);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resume-tile-sheet,
+  .resume-tile:hover .resume-tile-sheet,
+  .resume-tile:focus-visible .resume-tile-sheet {
+    transform: none;
+    transition: none;
+  }
+}

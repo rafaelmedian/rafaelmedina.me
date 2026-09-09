@@ -19,6 +19,7 @@ import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { QuoteCard } from "./QuoteCard"
+import { ResumeTile } from "./ResumeTile"
 import { portfolioQuotes } from "../data/quotes"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
@@ -747,12 +748,14 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
-      // Every tile in the row -- projects, the quote slider, the writings
-      // folder -- flexes against this total, so it is also what decides how much
-      // width a project's artwork has to cover. Feeds `previewSizesForShare`.
+      // Every tile in the row -- projects, the quote slider, the résumé and the
+      // writings folder -- flexes against this total, so it is also what decides
+      // how much width a project's artwork has to cover. Feeds
+      // `previewSizesForShare`.
       const rowSpan =
         row.items.reduce((total, item) => total + (item.span ?? 1), 0) +
         (row.quote ? row.quoteSpan ?? 1 : 0) +
+        (row.resume ? 1 : 0) +
         (row.writings ? 1 : 0)
       const items = row.items.flatMap((item) => {
         const card = cards.find((candidate) => candidate.id === item.cardId)
@@ -771,7 +774,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, writings: row.writings, items }
+      return {
+        id: row.id,
+        height: row.height,
+        gap: row.gap,
+        quote: row.quote,
+        quoteSpan: row.quoteSpan,
+        resume: row.resume,
+        writings: row.writings,
+        items,
+      }
     })
   }, [cards])
 
@@ -1087,6 +1099,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           className={`mosaic-row${row.quote ? " mosaic-row-with-quote" : ""}`}
                           style={rowStyle}
                         >
+                          {row.resume ? (
+                            <div className="mosaic-row-item">
+                              <ResumeTile href={links.resumePdf} />
+                            </div>
+                          ) : null}
                           {row.quote ? (
                             <div
                               className="mosaic-row-item mosaic-row-quote"
