@@ -98,22 +98,82 @@ function MarginNote({ annotation }: { annotation: WritingAnnotation }) {
 // take their colour from the list beside them.
 const ARCHIVE_DRAWINGS = ["sheet", "pencil", "cup"]
 
-// One drawing every few rows rather than one per year: a year with seven notes
-// under it would otherwise carry a single mark at the top and leave the rest of
-// the gutter bare. Sides alternate so no two are drawn against each other, and
-// the three objects cycle, so the list has to pass ten notes before one repeats.
-function ArchiveDrawing({ index }: { index: number }) {
-  const place = index % 2 ? "right" : "left"
-  const object = ARCHIVE_DRAWINGS[index % ARCHIVE_DRAWINGS.length]
-  return (
-    <span className="writings-drawing" data-place={place} data-lift={index % 3} aria-hidden="true"
-      style={{ "--writings-drawing-mark": `url("/writings/marks/drawing-${object}.png")` } as CSSProperties} />
-  )
+// Rows a drawing is pinned to, counted across the whole list rather than within
+// a year, so the spacing holds when a year has one note in it. One every few
+// rows rather than one per year: a year with seven notes under it would
+// otherwise carry a single mark at the top and leave the rest of the gutter
+// bare. The gaps cycle rather than repeat, so a long list never settles into a
+// mark every third row, and four of them run against three objects, so a list
+// has to pass forty-five rows before an object comes back to the gap it had.
+const DRAWING_GAPS = [4, 3, 5, 3]
+
+// What a drawing varies by, hashed off the note it hangs beside the way the
+// reader's margin notes are. Every mark used to be one size on one rail with
+// its tilt following the side it sat on, which drew a second ruled column down
+// each gutter under the first.
+//
+// The pull is the part that unrules them: it spends whatever room is left
+// between the mark and the gutter's outer limit, so a mark tucked against the
+// titles and one standing well off them are the same rule at two settings, and
+// neither can reach past the sheet however wide it gets. The scales are five
+// and six long, and a note draws from all four with one hash of its own id, so
+// two marks agreeing on one of them still differ on the rest.
+const DRAWING_SIZES = ["4rem", "5.5rem", "4.5rem", "5rem", "4.75rem"]
+const DRAWING_PULLS = ["0", "0.5", "0.15", "0.8", "0.3"]
+const DRAWING_DROPS = ["-0.75rem", "1.5rem", "0.25rem", "2.75rem", "0.75rem", "2rem"]
+const DRAWING_TILTS = ["-11deg", "-5deg", "-2deg", "4deg", "8deg", "12deg"]
+
+type DrawingPlacement = {
+  row: number
+  object: string
+  place: "left" | "right"
+  size: string
+  pull: string
+  drop: string
+  tilt: string
 }
 
-// Rows a drawing is pinned to, counted across the whole list rather than within
-// a year, so the spacing holds when a year has one note in it.
-const DRAWING_EVERY = 3
+// Which rows carry a mark and how each one sits. The side comes off the note's
+// own id rather than off the count, so a run of them doesn't zigzag; three down
+// one gutter would leave the other bare, so the third turns back, as does the
+// second of a list short enough to carry two. Neighbours that do share a side
+// never share a pull, which is what keeps a pair on one side from lining up
+// into the column the alternating arrangement drew.
+function archiveDrawings(rows: readonly Writing[]) {
+  const drawings: DrawingPlacement[] = []
+  for (let row = 0; row < rows.length; row += DRAWING_GAPS[(drawings.length - 1) % DRAWING_GAPS.length]) {
+    const hash = noteHash(rows[row].id)
+    const previous = drawings.at(-1)
+    let place: "left" | "right" = hash % 2 ? "right" : "left"
+    if (previous?.place === place && drawings.at(-2)?.place === place) place = place === "left" ? "right" : "left"
+    let pull = pickFrom(DRAWING_PULLS, hash, 1)
+    if (previous?.place === place && previous.pull === pull) pull = DRAWING_PULLS[(DRAWING_PULLS.indexOf(pull) + 2) % DRAWING_PULLS.length]
+    drawings.push({
+      row,
+      object: ARCHIVE_DRAWINGS[drawings.length % ARCHIVE_DRAWINGS.length],
+      place,
+      pull,
+      size: pickFrom(DRAWING_SIZES, hash, 2),
+      drop: pickFrom(DRAWING_DROPS, hash, 3),
+      tilt: pickFrom(DRAWING_TILTS, hash, 4),
+    })
+  }
+  const last = drawings.at(-1)
+  if (last && drawings.every((drawing) => drawing.place === drawings[0].place)) last.place = last.place === "left" ? "right" : "left"
+  return new Map(drawings.map((drawing) => [drawing.row, drawing]))
+}
+
+function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
+  return (
+    <span className="writings-drawing" data-place={drawing.place} aria-hidden="true" style={{
+      "--writings-drawing-mark": `url("/writings/marks/drawing-${drawing.object}.png")`,
+      "--writings-drawing-size": drawing.size,
+      "--writings-drawing-pull": drawing.pull,
+      "--writings-drawing-drop": drawing.drop,
+      "--writings-drawing-tilt": drawing.tilt,
+    } as CSSProperties} />
+  )
+}
 
 // The one code sample in the reader, and it is Markdown, which the article it
 // sits in is about. That is narrow enough to tokenise here rather than pull in
@@ -279,6 +339,7 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
   const entryRefs = useRef(new Map<string, HTMLButtonElement>())
   const groups = groupWritingsByYear(writings)
   const orderedWritings = groups.flatMap(({ entries }) => entries)
+  const drawings = archiveDrawings(orderedWritings)
   const moreWritings = orderedWritings.filter((writing) => writing.id !== selectedId).slice(0, 3)
 
   useEffect(() => {
@@ -536,10 +597,10 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
                     <section className="writings-year" key={year} aria-label={year}>
                       <h3>{year}</h3>
                       <ul>{entries.map((writing) => {
-                        const row = orderedWritings.indexOf(writing)
+                        const drawing = drawings.get(orderedWritings.indexOf(writing))
                         return (
                         <li key={writing.id}>
-                          {row % DRAWING_EVERY === 0 ? <ArchiveDrawing index={row / DRAWING_EVERY} /> : null}
+                          {drawing ? <ArchiveDrawing drawing={drawing} /> : null}
                           <WritingEntry writing={writing} onClick={() => readWriting(writing.id)}
                             ref={(node) => { if (node) entryRefs.current.set(writing.id, node); else entryRefs.current.delete(writing.id) }} />
                         </li>
