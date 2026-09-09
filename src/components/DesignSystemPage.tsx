@@ -1426,9 +1426,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 scroll the page, and dragging never triggers an extra click. The surface uses grab and
                 grabbing cursors. The card button and the dots opt out of the global tap highlight:
                 the button covers the whole quote, so the highlight greyed the entire card on every
-                touch, and the slide and the filling dot already report the tap. The dots-only navigation uses 6px dots with 18px gaps,
-                centered 18px above the bottom edge. Their buttons are 24px wide and 40px tall,
-                meeting the minimum target size independently of the whole-card Advance quote button.
+                touch, and the slide and the filling dot already report the tap. The original dots-only navigation uses 6px dots with 4px gaps,
+                centered 18px above the bottom edge. Their buttons remain 10px wide and 40px tall;
+                the whole-card Advance quote button is the larger alternative target.
                 Dots use --muted-soft at 30% opacity, increasing to 75% when selected without changing size.
                 Dot focus rings sit inside the target so the card edge cannot clip them.
                 Quotes travel one card width left or right over --duration-slow with --ease-smooth, with no crossfade.

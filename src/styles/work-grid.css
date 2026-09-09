@@ -428,16 +428,15 @@
 .mosaic-quote-dot {
   display: grid;
   place-items: center;
-  width: 24px;
+  width: 10px;
   height: 40px;
-  flex-shrink: 0;
   padding: 0;
   border: 0;
   border-radius: var(--radius-full);
   background: transparent;
   cursor: pointer;
-  /* Each dot owns a non-overlapping 24px-wide target. The visible marker
-     stays small; selection does not need a grey slab behind it. */
+  /* The tap target is four times the dot it draws; the dot filling in says
+     enough without a grey slab around it. */
   -webkit-tap-highlight-color: transparent;
 }
 
