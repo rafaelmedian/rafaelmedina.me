@@ -8,8 +8,8 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
-    await expect(tiles).toHaveCount(14)
-    await expect(page.locator(".mosaic-row-card")).toHaveCount(12)
+    await expect(tiles).toHaveCount(15)
+    await expect(page.locator("a.mosaic-row-card")).toHaveCount(12)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect()
       return { x, y, width, height }
@@ -30,16 +30,16 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(boxes[0].y).toBeCloseTo(boxes[1].y, 0)
       expect(boxes[0].height).toBeCloseTo(boxes[0].width, 0)
       expect(boxes[1].x).toBeGreaterThan(boxes[0].x + boxes[0].width)
-      const protector = boxes[4]
-      const quote = boxes[5]
+      const protector = boxes[5]
+      const quote = boxes[6]
       expect(protector.width).toBeCloseTo(boxes[1].x + boxes[1].width - boxes[0].x, 0)
       expect(quote.width).toBeCloseTo(protector.width, 0)
     } else {
       // The long middle cards bridge the smaller stack alongside them.
-      expect(boxes[4].height).toBeGreaterThan(boxes[5].height + 100)
-      expect(boxes[4].y + boxes[4].height).toBeCloseTo(boxes[6].y + boxes[6].height, 0)
-      expect(boxes[7].y + boxes[7].height).toBeGreaterThan(boxes[8].y + boxes[8].height + 30)
-      expect(boxes[9].y + boxes[9].height).toBeCloseTo(boxes[10].y + boxes[10].height, 0)
+      expect(boxes[5].height).toBeGreaterThan(boxes[6].height + 100)
+      expect(boxes[5].y + boxes[5].height).toBeCloseTo(boxes[7].y + boxes[7].height, 0)
+      expect(boxes[8].y + boxes[8].height).toBeGreaterThan(boxes[9].y + boxes[9].height + 30)
+      expect(boxes[10].y + boxes[10].height).toBeCloseTo(boxes[11].y + boxes[11].height, 0)
     }
   })
 }
@@ -72,7 +72,7 @@ test("reserves the mosaic layout before scripts or media load", async ({ browser
   const page = await context.newPage()
   await page.route(/\.(webp|jpg|png|webm)(\?.*)?$/, route => route.abort())
   await page.goto("/")
-  const cards = page.locator(".mosaic-row-card")
+  const cards = page.locator("a.mosaic-row-card")
   await expect(cards).toHaveCount(12)
   const first = await cards.nth(0).boundingBox()
   const second = await cards.nth(1).boundingBox()

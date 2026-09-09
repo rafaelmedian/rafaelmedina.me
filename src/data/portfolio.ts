@@ -82,6 +82,7 @@ export type HomeTile = HomeTilePlacement & (
   | { kind: "project"; cardId: string; fit: "cover" | "contain"; mediaMaxHeight?: string }
   | { kind: "quote" }
   | { kind: "writings" }
+  | { kind: "resume" }
 )
 
 export type HomeGroup = {
@@ -108,6 +109,7 @@ export const homeGroups: HomeGroup[] = [
     columns: 3,
     items: [
       { kind: "project", area: "popparazi", cardId: "preview-popparazi-v1", share: 3 / 12, fit: "contain", mediaMaxHeight: "84%" },
+      { kind: "resume", area: "resume", share: 3 / 12, compactWide: true },
       { kind: "project", area: "protector", cardId: "preview-protector", share: 5 / 12, fit: "cover", compactWide: true },
       { kind: "quote", area: "quote", share: 4 / 12, compactWide: true },
       { kind: "project", area: "security", cardId: "preview-shot-20", share: 4 / 12, fit: "contain" },

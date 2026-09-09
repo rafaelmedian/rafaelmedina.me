@@ -21,6 +21,7 @@ import { ProfileLocation } from "./ProfileLocation"
 import { SiteLastUpdated } from "./SiteLastUpdated"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { QuoteCard } from "./QuoteCard"
+import { ResumeTile } from "./ResumeTile"
 import { portfolioQuotes } from "../data/quotes"
 import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
@@ -408,12 +409,20 @@ function formatPuntaCanaLocalTime(date = new Date()) {
   return puntaCanaTimeFormatter.format(date).replace(/\s?([AP])M(?=\s|$)/, (_, meridiem: string) => `${meridiem.toLowerCase()}m`)
 }
 
-function openPreview(card: PortfolioCard, previewIndex: number, setSelectedWorkPreviewIndex: (value: number) => void) {
+function openPreview(
+  card: PortfolioCard,
+  previewIndex: number,
+  setSelectedWorkPreviewIndex: (value: number) => void,
+  // The grid is not the only surface that opens a preview any more: the résumé
+  // reader hands a project back to the feed too, and those opens have to be
+  // told apart rather than going unrecorded.
+  placement: "grid" | "resume_reader" = "grid",
+) {
   trackEvent("work_preview_open", {
     preview_id: card.id,
     preview_title: card.title,
     preview_index: previewIndex + 1,
-    preview_placement: "grid",
+    preview_placement: placement,
   })
   setSelectedWorkPreviewIndex(previewIndex)
 }
@@ -618,6 +627,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [writingsOpen, setWritingsOpen] = useState(false)
+  const [resumeOpen, setResumeOpen] = useState(false)
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
@@ -689,7 +699,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen || resumeOpen}
         />
       )
     }
@@ -811,7 +821,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     if (window.location.hash !== hash) {
       // Section links share one visit instead of adding a history entry for
       // every jump within the same page.
-      if (["#work", "#about-panel", "#about-panel-resume", "#about-panel-services"].includes(window.location.hash)) {
+      if (["#work", "#about-panel", "#about-panel-services"].includes(window.location.hash)) {
         window.history.replaceState(window.history.state, "", hash)
       } else {
         pushPortfolioUrl(hash, "about")
@@ -856,7 +866,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <MobileTableOfContents
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
-        onWorkHistory={() => scrollToSection("toc_work_history", "about-panel-resume")}
         onServices={() => scrollToSection("toc_services", "about-panel-services")}
       />
       <button
@@ -964,6 +973,20 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                             ...(item.kind === "project" && item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
                           } as CSSProperties
                           const itemClass = `mosaic-row-item mosaic-tile-${item.area}`
+                          if (item.kind === "resume") return (
+                            <div key={item.area} className={itemClass} style={itemStyle}>
+                              <ResumeTile
+                                href={links.resumePdf}
+                                onOpenChange={setResumeOpen}
+                                onSelectProject={(id) => {
+                                  const index = flatWorkCards.findIndex(card => card.id === id)
+                                  if (index < 0) return false
+                                  openPreview(flatWorkCards[index], index, setSelectedWorkPreviewIndex, "resume_reader")
+                                  return true
+                                }}
+                              />
+                            </div>
+                          )
                           if (item.kind === "quote") return (
                             <div key={item.area} className={`${itemClass} mosaic-row-quote`} style={itemStyle}>
                               <QuoteCard quotes={portfolioQuotes} />
