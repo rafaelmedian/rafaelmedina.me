@@ -2598,22 +2598,47 @@ test("places the quote slider beside Protector instead of Dark mode", async ({ p
   await expect(page.getByRole("link", { name: /Open Matcha dark mode/ })).toHaveCount(0)
 })
 
-test("restores the folded resume tile at the start of the quote row", async ({ page }) => {
+test("opens the resume reader from the folded tile and returns focus on close", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
 
   const protectorCard = page.getByRole("link", { name: /Open Protector/ })
   const row = page.locator(".mosaic-row").filter({ has: protectorCard })
-  const resume = row.getByRole("link", { name: "Open Rafael Medina's resume PDF" })
+  const resume = row.getByRole("button", { name: "Open résumé" })
 
   await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
   await expect(row.locator(".mosaic-row-item").first().locator(".resume-tile")).toHaveCount(1)
-  await expect(resume).toHaveAttribute("href", "/rafael-medina-resume.pdf")
-  await expect(resume).toHaveAttribute("target", "_blank")
   await expect(resume.locator(".resume-tile-sheet")).toHaveCSS("background-color", "rgb(255, 255, 255)")
   await expect(resume.locator(".resume-tile-fold")).toHaveCount(1)
   await expect(resume.locator(".resume-tile-copy")).toContainText("Stealth fintech")
   await expect(resume.locator(".resume-tile-copy")).toContainText("2026 - Present")
+
+  await resume.click()
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  await expect(dialog).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeHidden()
+  await expect(resume).toBeFocused()
+})
+
+test("presents complete work history, education, and the resume PDF in the reader", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { name: "Open résumé" }).click()
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const workHistory = dialog.getByRole("list", { name: "Work history" })
+  const education = dialog.getByRole("list", { name: "Education" })
+
+  await expect(workHistory.getByRole("listitem")).toHaveCount(6)
+  await expect(workHistory.getByRole("listitem").first()).toContainText("Co-founder at Stealth fintech")
+  await expect(workHistory.getByRole("listitem").first()).toContainText("2026 - Present")
+  await expect(workHistory.getByRole("listitem").last()).toContainText("Incubeta (Google)")
+  await expect(education.getByRole("listitem")).toHaveCount(2)
+  await expect(education.getByRole("listitem").first()).toContainText("Computer Science")
+
+  const pdf = dialog.getByRole("link", { name: "View résumé PDF" })
+  await expect(pdf).toHaveAttribute("href", "/rafael-medina-resume.pdf")
+  await expect(pdf).toHaveAttribute("target", "_blank")
 })
 
 // Protector is the one tile that owns most of its row, so it is the one the
