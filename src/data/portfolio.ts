@@ -77,6 +77,8 @@ export type HomeRow = {
   quote?: boolean
   /** Flex span for that quote slider, in the same units as `HomeRowItem.span`. */
   quoteSpan?: number
+  /** Open the résumé from a one-unit folded-paper tile at the start of this row. */
+  resume?: boolean
   /** Close this row with the writings folder tile, at a 1-unit span. */
   writings?: boolean
 }
@@ -137,12 +139,13 @@ export const homeRows: HomeRow[] = [
   {
     id: "row-3",
     height: homeTileRowHeight,
+    // Restores the four-unit composition this row was designed around: the
+    // folded résumé sheet sits beside the quote and the wider Protector art.
+    resume: true,
     quote: true,
-    // Widens the quote at Protector's expense. The span was tuned when the
-    // writings tile shared this row and it totalled 4; the tile now closes row
-    // 2, so this is a 3-unit row and both tiles sit wider than that tuning
-    // assumed -- the quote's blockquote is capped at 21rem, so its extra width
-    // lands in side padding.
+    // Widens the quote at Protector's expense without changing the four-unit
+    // total; the quote's blockquote is capped at 21rem, so any extra width lands
+    // in side padding rather than stretching the reading measure.
     quoteSpan: 1.25,
     items: [
       { cardId: "preview-protector", span: 1.75 },

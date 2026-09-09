@@ -8,6 +8,8 @@ export type CvExperience = {
   /** Primary company link and decorative logo tooltip. */
   href?: string
   logoUrls?: string[]
+  /** Selected portfolio examples shown in the illustrated resume reader. */
+  projectIds?: string[]
 }
 
 export type CvExperienceClient = {
@@ -31,7 +33,7 @@ export const cvExperience: CvExperience[] = [
     dates: "2026 - Present",
     role: "Co-founder",
     highlight:
-      "Building a mobile wallet for colmados, helping neighborhood store owners in the Dominican Republic manage payments and day-to-day finances from their phones.",
+      "Building a mobile wallet for colmados, the corner stores of the Dominican Republic. Owners manage payments and day-to-day finances from their phones.",
   },
   {
     company: "0x Project",
@@ -40,7 +42,11 @@ export const cvExperience: CvExperience[] = [
     role: "Senior Product Designer",
     href: "https://0x.org/",
     logoUrls: ["/logos/0x.png", "/logos/matcha.svg"],
-    highlight: "Redesigned Matcha.xyz from scratch and introduced monetization flows that generated sustainable revenue.",
+    // Every print here has to be a card the home grid lays out -- the reader
+    // hands the click back to the feed, and a card with no tile has no preview
+    // to open. `preview-shot-19` and `preview-shot-22` are off the grid.
+    projectIds: ["preview-shot-16", "preview-shot-21", "preview-shot-1", "preview-shot-14"],
+    highlight: "Redesigned Matcha.xyz from scratch. Then introduced the monetization flows that generated sustainable revenue.",
   },
   {
     company: "BoldVoice",
@@ -50,7 +56,7 @@ export const cvExperience: CvExperience[] = [
     href: "https://boldvoice.com/",
     logoUrls: ["/logos/boldvoice.png"],
     highlight:
-      "Sole designer for an accent-training mobile app with more than 50K users, partnering directly with one developer to ship growth experiments.",
+      "Sole designer for an accent-training app with more than 50K users, pairing with one developer to ship growth experiments.",
   },
   {
     company: "Moody's",
@@ -59,7 +65,7 @@ export const cvExperience: CvExperience[] = [
     role: "Product Designer (Contract)",
     href: "https://www.moodys.com/",
     logoUrls: ["/logos/moodys.png"],
-    highlight: "Redesigned financial-analysis tools for institutional analysts, improving data discovery and workflow efficiency.",
+    highlight: "Redesigned financial-analysis tools for institutional analysts, making data easier to find and workflows faster.",
   },
   {
     company: "TM",
@@ -72,7 +78,7 @@ export const cvExperience: CvExperience[] = [
     dates: "2018 - 2020",
     role: "Product Designer & Frontend Developer",
     highlight:
-      "Chainlink: collaborated on internal product tools and the brand system, helping make a complex blockchain oracle network clearer and more consistent as the company scaled.",
+      "Collaborated with Chainlink on internal product tools and its brand system as the company scaled. The work made a complex oracle network read clearer and more consistent.",
   },
   {
     company: "Incubeta (Google)",
@@ -81,7 +87,7 @@ export const cvExperience: CvExperience[] = [
     role: "Product Designer & Developer (Contract)",
     href: "https://www.google.com/",
     logoUrls: ["/logos/Google_logo.svg"],
-    highlight: "Designed Google Edu Directory, connecting schools globally with certified Google trainers.",
+    highlight: "Designed Google Edu Directory, connecting schools around the world with certified Google trainers.",
   },
 ]
 

@@ -148,10 +148,9 @@
 .mosaic-mobile-toc {
   --toc-row-height: 48px;
   --toc-inset: 8px;
-  /* One term per entry in `SECTIONS` in MobileTableOfContents. That array also
-     drives each row's `--toc-slot`, so a section added there without a bump
-     here moves the rows correctly but leaves the open card at the old height. */
-  --toc-slot-count: 4;
+  /* Fallback only: MobileTableOfContents sets this from `SECTIONS.length` on
+     the root, so the open card's height always matches the rows it renders. */
+  --toc-slot-count: 3;
   --toc-swap-duration: var(--duration-quick);
   position: fixed;
   z-index: var(--z-social);

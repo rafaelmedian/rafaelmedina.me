@@ -21,6 +21,7 @@ import { ProfileLocation } from "./ProfileLocation"
 import { SiteLastUpdated } from "./SiteLastUpdated"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { QuoteCard } from "./QuoteCard"
+import { ResumeTile } from "./ResumeTile"
 import { portfolioQuotes } from "../data/quotes"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
@@ -415,12 +416,20 @@ function formatPuntaCanaLocalTime(date = new Date()) {
   return puntaCanaTimeFormatter.format(date).replace(/\s?([AP])M(?=\s|$)/, (_, meridiem: string) => `${meridiem.toLowerCase()}m`)
 }
 
-function openPreview(card: PortfolioCard, previewIndex: number, setSelectedWorkPreviewIndex: (value: number) => void) {
+function openPreview(
+  card: PortfolioCard,
+  previewIndex: number,
+  setSelectedWorkPreviewIndex: (value: number) => void,
+  // The grid is not the only surface that opens a preview any more: the résumé
+  // reader hands a project back to the feed too, and those opens have to be
+  // told apart rather than going unrecorded.
+  placement: "grid" | "resume_reader" = "grid",
+) {
   trackEvent("work_preview_open", {
     preview_id: card.id,
     preview_title: card.title,
     preview_index: previewIndex + 1,
-    preview_placement: "grid",
+    preview_placement: placement,
   })
   setSelectedWorkPreviewIndex(previewIndex)
 }
@@ -624,6 +633,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [writingsOpen, setWritingsOpen] = useState(false)
+  const [resumeOpen, setResumeOpen] = useState(false)
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
@@ -639,12 +649,14 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
-      // Every tile in the row -- projects, the quote slider, the writings
-      // folder -- flexes against this total, so it is also what decides how much
-      // width a project's artwork has to cover. Feeds `previewSizesForShare`.
+      // Every tile in the row -- projects, the quote slider, the résumé and the
+      // writings folder -- flexes against this total, so it is also what decides
+      // how much width a project's artwork has to cover. Feeds
+      // `previewSizesForShare`.
       const rowSpan =
         row.items.reduce((total, item) => total + (item.span ?? 1), 0) +
         (row.quote ? row.quoteSpan ?? 1 : 0) +
+        (row.resume ? 1 : 0) +
         (row.writings ? 1 : 0)
       const items = row.items.flatMap((item) => {
         const card = cards.find((candidate) => candidate.id === item.cardId)
@@ -663,7 +675,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, writings: row.writings, items }
+      return {
+        id: row.id,
+        height: row.height,
+        gap: row.gap,
+        quote: row.quote,
+        quoteSpan: row.quoteSpan,
+        resume: row.resume,
+        writings: row.writings,
+        items,
+      }
     })
   }, [cards])
 
@@ -711,7 +732,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen || resumeOpen}
         />
       )
     }
@@ -833,7 +854,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     if (window.location.hash !== hash) {
       // Section links share one visit instead of adding a history entry for
       // every jump within the same page.
-      if (["#work", "#about-panel", "#about-panel-resume", "#about-panel-services"].includes(window.location.hash)) {
+      if (["#work", "#about-panel", "#about-panel-services"].includes(window.location.hash)) {
         window.history.replaceState(window.history.state, "", hash)
       } else {
         pushPortfolioUrl(hash, "about")
@@ -878,7 +899,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <MobileTableOfContents
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
-        onWorkHistory={() => scrollToSection("toc_work_history", "about-panel-resume")}
         onServices={() => scrollToSection("toc_services", "about-panel-services")}
       />
       <button
@@ -989,6 +1009,22 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           className={`mosaic-row${row.quote ? " mosaic-row-with-quote" : ""}`}
                           style={rowStyle}
                         >
+                          {row.resume ? (
+                            <div className="mosaic-row-item">
+                              <ResumeTile
+                                href={links.resumePdf}
+                                onOpenChange={setResumeOpen}
+                                onSelectProject={(id) => {
+                                  // Only the cards laid out on the grid have a
+                                  // preview to grow out of.
+                                  const index = flatWorkCards.findIndex((card) => card.id === id)
+                                  if (index < 0) return false
+                                  openPreview(flatWorkCards[index], index, setSelectedWorkPreviewIndex, "resume_reader")
+                                  return true
+                                }}
+                              />
+                            </div>
+                          ) : null}
                           {row.quote ? (
                             <div
                               className="mosaic-row-item mosaic-row-quote"

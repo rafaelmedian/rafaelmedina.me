@@ -911,6 +911,12 @@
   display: block;
 }
 
+.ds-resume-tile-specimen {
+  width: min(100%, 22.5rem);
+  height: 20rem;
+  margin-top: 1rem;
+}
+
 /* The action row carries the hero's top margin, which reads as dead space once
    the row is lifted out of the hero and into a specimen box. */
 .ds-specimen .mosaic-profile-actions {
