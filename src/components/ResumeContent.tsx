@@ -56,19 +56,23 @@ function IllustratedExperience({ job }: { job: CvExperience }) {
     <li className="resume-experience">
       {logos.length > 0 ? (
         <div className="resume-experience-logos" aria-hidden="true">
-          {logos.map((src) => <img key={src} src={src} alt="" width={40} height={40} loading="lazy" />)}
+          {logos.map((src) => (
+            <span className="resume-experience-logo" key={src}>
+              <img src={src} alt="" width={18} height={18} loading="lazy" />
+            </span>
+          ))}
         </div>
       ) : null}
       <div className="resume-experience-details">
         <div className="resume-experience-heading">
-          <h3 className="resume-experience-company" aria-label={`${job.role} at ${getCompanyLabel(job)}`}>
+          <h3 className="mosaic-about-resume-title resume-experience-company" aria-label={`${job.role} at ${getCompanyLabel(job)}`}>
             <ResumeCompany job={job} />{job.company === "0x Project" ? " / Matcha" : null}
           </h3>
-          <p className="resume-experience-dates">{job.dates}</p>
+          <p className="mosaic-about-resume-dates">{job.dates}</p>
         </div>
         <p className="resume-experience-role">{job.role}</p>
-        <p className="resume-experience-location">{job.location}</p>
-        <p className="resume-experience-description">{job.highlight}</p>
+        <p className="mosaic-about-resume-location">{job.location}</p>
+        <p className="mosaic-about-resume-description">{job.highlight}</p>
         {projects.length > 0 ? (
           <div className="resume-experience-projects" aria-label={`${job.company} project screenshots`}>
             {projects.map((project) => (

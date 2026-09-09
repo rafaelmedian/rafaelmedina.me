@@ -1467,15 +1467,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 “Work history” with no repeated body heading or close button; Education uses weight 600. The final
                 “View resume PDF” action opens the canonical PDF in a new tab.
               </p>
-              <div className="ds-resume-tile-specimen mosaic-row-item">
-                <ResumeTile href={links.resumePdf} />
-              </div>
-            </div>
-
               <p>
-                In the reader, company logos sit in a horizontal row above each title, at 2rem high and up to
-                5rem wide. Company names use <code>--text-md</code> at weight 600; dates and locations use
-                <code>--text-xs</code>. Selected project screenshots sit below the description as 7rem-wide
+                In the reader, company logos sit above each title in 2rem circular white badges with 0.45rem
+                padding and a half-rem gap, restoring the earlier company-link treatment with
+                <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
+                Company names, dates, locations, and descriptions reuse About&rsquo;s résumé styles:
+                <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
+                Selected project screenshots sit below the description as 7rem-wide
                 photo prints, overlapping by 1rem with the personal gallery&rsquo;s -7 and 2 degree tilts.
                 They reuse its white mat, <code>--radius-sm</code>, and shared ring and overlay shadows;
                 the full 4:3 screenshots have concentric 4px corners and a 10% black inset hairline.
@@ -1488,6 +1486,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             </div>
 
             <div className="ds-block">
+              <div className="ds-resume-tile-specimen mosaic-row-item">
+                <ResumeTile href={links.resumePdf} />
+              </div>
+            </div>
+
               <p className="ds-subhead">Hero hierarchy</p>
               <p>
                 Name and role lead directly into the company list.
