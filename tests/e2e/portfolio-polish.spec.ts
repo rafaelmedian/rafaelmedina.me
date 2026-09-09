@@ -3399,7 +3399,7 @@ test("asks for a variant that matches Protector's wide slot", async ({ page }) =
   })
 
   expect(declared).toBeGreaterThanOrEqual(itemWidth * 0.9)
-  expect(chosen).toMatch(/protector-960w\.webp$/)
+  expect(chosen).toMatch(/protector-800w\.webp$/)
 })
 
 test("keeps the staggered projects in the offset group", async ({ page }) => {
@@ -4274,12 +4274,15 @@ test("keeps the expanded gallery scrollable without visible scrollbars", async (
     const card = dialog.locator(".preview-gallery-card")
     await expect.poll(() => card.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
 
-    const scrollbarGutter = await card.evaluate((element) => ({
-      horizontal: element.offsetHeight - element.clientHeight,
-      vertical: element.offsetWidth - element.clientWidth,
-    }))
+    const scrollbarGutter = await card.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return {
+        horizontal: element.offsetHeight - element.clientHeight - parseFloat(style.borderTopWidth) - parseFloat(style.borderBottomWidth),
+        vertical: element.offsetWidth - element.clientWidth - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth),
+      }
+    })
 
-    expect(scrollbarGutter).toEqual({ horizontal: 2, vertical: 2 })
+    expect(scrollbarGutter).toEqual({ horizontal: 0, vertical: 0 })
 
     await card.hover()
     await page.mouse.wheel(0, 240)

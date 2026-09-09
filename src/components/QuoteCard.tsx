@@ -3,6 +3,13 @@ import { Popover } from "@base-ui/react/popover"
 import { XProfileHoverCard } from "./XProfileHoverCard"
 import type { PortfolioQuote } from "../data/quotes"
 
+// The distance that tells a swipe apart from a click that wandered. It is the
+// only gate the gesture has: past it the drag takes an axis, and a horizontal
+// one carries to the neighbouring quote however short it is. Asking for more
+// travel after the card has already followed the pointer is what makes a small
+// swipe feel ignored.
+const SWIPE_DISTANCE = 6
+
 function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean }) {
   const [open, setOpen] = useState(false)
   const skipNextFocusOpen = useRef(false)
@@ -174,7 +181,7 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     const dx = event.clientX - start.x
     const dy = event.clientY - start.y
     if (!start.axis) {
-      if (Math.max(Math.abs(dx), Math.abs(dy)) < 6) return
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_DISTANCE) return
       start.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y"
       suppressClick.current = true
     }
@@ -191,12 +198,10 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     if (cancelled) suppressClick.current = true
     if (!cancelled && start.axis === "x") {
       const dx = start.offset + event.clientX - start.x
-      // A quote is a card, not a page. Asking for a quarter of the card before
-      // it changes is what makes a swipe feel like it was ignored, so the
-      // gesture commits as soon as it is more than a slip of the hand -- while
-      // staying above the few pixels a click can wander through the surface.
-      const threshold = Math.min(16, event.currentTarget.clientWidth * 0.04)
-      if (Math.abs(dx) >= threshold) {
+      // A quote is a card, not a page: the same slip of the hand that made this
+      // a drag rather than a click is enough to carry it. Only a gesture that
+      // came back to where it started snaps back.
+      if (Math.abs(dx) >= SWIPE_DISTANCE) {
         const travel = dx < 0 ? 1 : -1
         // Reversing a caught transition returns to the quote still beside it,
         // including when that transition began with a distant dot selection.

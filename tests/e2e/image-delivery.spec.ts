@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test"
+import sharp from "sharp"
+import path from "node:path"
 
 for (const width of [390, 1440]) {
   test(`photo sheet chooses responsive sources at ${width}px`, async ({ browser }) => {
@@ -49,3 +51,32 @@ test("LinkedIn does not download its clip on a slow connection", async ({ page }
   await expect(page.locator(".mosaic-linkedin-card video")).toHaveJSProperty("paused", true)
   expect(videos).toEqual([])
 })
+
+// Catch regressions where a contained image requests its entire tile's width,
+// or a missing intermediate variant doubles the pixels sent to the browser.
+for (const width of [390, 1440]) {
+  for (const deviceScaleFactor of [1, 2]) {
+    test(`sizes contained previews at ${width}px and ${deviceScaleFactor}x density`, async ({ browser }) => {
+      const page = await browser.newPage({ viewport: { width, height: 1000 }, deviceScaleFactor, reducedMotion: "reduce" })
+      await page.goto("/")
+      // Pre-optimization artwork widths: smaller downloads must not shrink the layout.
+      const fixtures = width === 390
+        ? [["Popparazi V1", 84], ["Shared family stories", 177], ["Dealership lead hub", 165]] as const
+        : [["Popparazi V1", 130], ["Shared family stories", 565], ["Dealership lead hub", 383]] as const
+      for (const [name, originalWidth] of fixtures) {
+        const image = page.getByAltText(name, { exact: true }).and(page.locator("img.mosaic-row-media"))
+        await image.scrollIntoViewIfNeeded()
+        await expect(image).toHaveAttribute("data-loaded", "true")
+        const rendered = await image.evaluate((node) => {
+          const img = node as HTMLImageElement
+          return { source: new URL(img.currentSrc).pathname, width: img.getBoundingClientRect().width, dpr: devicePixelRatio }
+        })
+        const metadata = await sharp(path.join(process.cwd(), "public", decodeURI(rendered.source))).metadata()
+        expect(rendered.width).toBeCloseTo(originalWidth, -1)
+        expect(metadata.width!, `${name}: resource width versus rendered artwork`).toBeLessThanOrEqual(rendered.width * rendered.dpr * 1.5)
+        expect(metadata.width!).toBeGreaterThanOrEqual(rendered.width * rendered.dpr * 0.9)
+      }
+      await page.close()
+    })
+  }
+}

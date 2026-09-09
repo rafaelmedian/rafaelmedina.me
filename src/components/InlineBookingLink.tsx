@@ -1,3 +1,4 @@
+import { beginDialogIntent } from "../lib/dialogIntent"
 import { lazy, Suspense, useRef, useState, type ReactNode } from "react"
 
 import { trackEvent } from "../lib/analytics"
@@ -33,6 +34,7 @@ export function InlineBookingLink({ bookingUrl, placement, className, children }
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={() => {
+          beginDialogIntent("booking")
           setHasOpened(true)
           setIsOpen(true)
           trackEvent("booking_open", { booking_open_trigger: placement })

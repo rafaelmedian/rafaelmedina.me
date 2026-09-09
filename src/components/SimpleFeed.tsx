@@ -386,6 +386,9 @@ function RowImageMedia({ source, label, width, height, eager, sizes }: RowImageM
       src={source}
       srcSet={srcSet}
       sizes={srcSet ? sizes : undefined}
+      // Auto sizing implies size containment. Preserve each original canvas
+      // instead of the browser's 300 by 150px intrinsic placeholder.
+      style={sizes.startsWith("auto,") && width && height ? { containIntrinsicSize: `${width}px ${height}px` } : undefined}
       alt={label}
       width={width}
       height={height}
@@ -439,10 +442,12 @@ const sectionLinks: { label: string; href: string }[] = [
 function SectionCorner({
   onSelect,
   onNotes,
+  onNotesIntent,
   resumeHref,
 }: {
   onSelect: (href: string) => void
   onNotes: (opener: HTMLElement) => void
+  onNotesIntent: () => void
   resumeHref: string
 }) {
   const { isOpen, hoverProps } = useHoverCard()
@@ -531,7 +536,7 @@ function SectionCorner({
           folder the mosaic tile does, so this is a button, not a link. It hands
           itself over as the opener, so the sheet flies out of this corner
           rather than out of a tile that may be pages down. */}
-      <button type="button" className="mosaic-social-link" onClick={(event) => onNotes(event.currentTarget)}>
+      <button type="button" className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent} onClick={(event) => onNotes(event.currentTarget)}>
         Notes
       </button>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
@@ -740,7 +745,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         width={width}
         height={height}
         eager={eager}
-        sizes={sizes}
+        // Lazy, uncropped images can use their actual laid-out width, including
+        // containment and paired banners. Keep the formula as a browser fallback;
+        // cropped artwork needs its explicit zoom-aware size.
+        sizes={eager || card.previewCropped ? sizes : `auto, ${sizes}`}
       />
     )
   }
@@ -888,6 +896,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <SectionCorner
         onSelect={openAbout}
         onNotes={(opener) => writingsFolderRef.current?.openFolder(opener)}
+        onNotesIntent={() => writingsFolderRef.current?.preload()}
         resumeHref={links.resumePdf}
       />
       <SocialCorner email={links.email} />

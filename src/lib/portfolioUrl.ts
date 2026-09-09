@@ -1,3 +1,4 @@
+import { beginDialogIntent } from "./dialogIntent"
 import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { portfolioCards } from "../data/portfolio"
 import {
@@ -68,6 +69,7 @@ function stateForPortfolioEntry(entry: PortfolioEntry) {
 }
 
 export function pushPortfolioUrl(url: string | URL, entry: PortfolioEntry) {
+  beginDialogIntent(entry)
   window.history.pushState(stateForPortfolioEntry(entry), "", url)
 }
 
@@ -126,6 +128,7 @@ export function usePortfolioItemUrl(entry: PortfolioItem) {
   const itemId = useSyncExternalStore(subscribe, getItemId, getServerItemId)
 
   const selectItem = useCallback((id: string, replaceCurrent: boolean) => {
+    beginDialogIntent(entry)
     if (pendingPortfolioClose === entry) {
       queuedSelection = { entry, id }
       return
@@ -149,7 +152,16 @@ export function usePortfolioItemUrl(entry: PortfolioItem) {
     window.dispatchEvent(new Event(portfolioUrlEvent))
   }, [entry, location])
 
-  return { itemId, selectItem, clearItem }
+  // A newer dialog supersedes a pending deep link without traversing history
+  // underneath that newer selection.
+  const discardItem = useCallback(() => {
+    const url = new URL(window.location.href)
+    location.clear(url)
+    window.history.replaceState(window.history.state, "", url)
+    window.dispatchEvent(new Event(portfolioUrlEvent))
+  }, [location])
+
+  return { itemId, selectItem, clearItem, discardItem }
 }
 
 export function useGalleryUrl() {

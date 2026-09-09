@@ -1,13 +1,14 @@
-// Resized siblings for the webp preview tiles, mirroring the -480w/-960w jpg
-// variants the shot-small previews already ship. SimpleFeed's
-// `webpPreviewVariantSources` set must list every source handled here.
+// Responsive siblings for the project previews. Keep widths and WebP sources
+// in step with src/lib/media.ts. Always encode from originals.
 import ffmpegPath from "ffmpeg-static"
+import sharp from "sharp"
+import { readdir } from "node:fs/promises"
 import { spawn } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import path from "node:path"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
-const variantWidths = [480, 960]
+const variantWidths = [96, 160, 240, 320, 480, 640, 800, 960]
 
 // [source, intrinsic width] — widths at or above the intrinsic width are skipped.
 const sources = [
@@ -50,6 +51,18 @@ for (const [source, intrinsicWidth] of sources) {
     if (width >= intrinsicWidth) continue
     const output = `${stem}-${width}w.webp`
     await resize(input, output, width)
+    console.log(`wrote ${path.relative(root, output)}`)
+  }
+}
+
+// Retain the existing 480/960 JPEG exports; fill the gaps from their originals.
+for (const name of await readdir(path.join(root, "public/Projects"))) {
+  if (!/_shot-small-\d+\.jpg$/.test(name)) continue
+  const input = path.join(root, "public/Projects", name)
+  for (const width of variantWidths.filter(width => width !== 480 && width !== 960)) {
+    const output = input.replace(/\.jpg$/, `-${width}w.jpg`)
+    await sharp(input).resize({ width, withoutEnlargement: true })
+      .jpeg({ quality: 82, mozjpeg: true }).toFile(output)
     console.log(`wrote ${path.relative(root, output)}`)
   }
 }
