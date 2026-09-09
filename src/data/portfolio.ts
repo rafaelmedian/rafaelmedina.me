@@ -83,6 +83,7 @@ export type HomeTile = HomeTilePlacement & (
   | { kind: "quote" }
   | { kind: "writings" }
   | { kind: "resume" }
+  | { kind: "photos" }
 )
 
 export type HomeGroup = {
@@ -113,6 +114,20 @@ export const homeGroups: HomeGroup[] = [
       { kind: "project", area: "protector", cardId: "preview-protector", share: 5 / 12, fit: "cover", compactWide: true },
       { kind: "quote", area: "quote", share: 4 / 12, compactWide: true },
       { kind: "project", area: "security", cardId: "preview-shot-20", share: 4 / 12, fit: "contain" },
+      // The photos used to sit inside About, below the hobbies. They read
+      // better as a tile in the grid, and this group is where there was room
+      // for one: a third band under the quote and Security, so the personal
+      // half of the page -- the résumé, the quote, the photos -- stays together
+      // and the four project slots above keep the shapes their artwork was cut
+      // for. The band is the group's full width because the fan is a fixed
+      // 27rem centred in whatever tile it gets, so extra width becomes margin
+      // rather than a banner of prints.
+      //
+      // Not a group of its own at the end of the grid, which is where they
+      // landed first: the takeover pins the last screenful while About slides
+      // up over it, so a trailing band is behind the About sheet from roughly
+      // halfway down the page and never reads on its own.
+      { kind: "photos", area: "photos", share: 1, compactWide: true },
     ],
   },
   {

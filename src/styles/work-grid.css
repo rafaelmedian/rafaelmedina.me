@@ -63,13 +63,23 @@
   grid-template-areas: "wallet homepage writings";
 }
 
+/* The personal-photo fan is a third band under the quote and Security rather
+   than a fifth column beside them: it is five overlapping prints and a label,
+   so it wants a wide, short box, while the four project slots above are cut to
+   the shapes their own artwork needs. The band carries its own height and the
+   group adds it on, so the projects keep exactly the free space -- and so the
+   3:2 split of it -- that they had before the band existed. Its 260px floor is
+   the fan, its label, and the clearance the outer prints' corners lean into. */
 .mosaic-group-portraits {
-  height: clamp(536px, 44.118cqw, 660px);
+  --portraits-projects: clamp(536px, 44.118cqw, 660px);
+  --portraits-photos: clamp(260px, 21.39cqw, 320px);
+  height: calc(var(--portraits-projects) + var(--row-gap) + var(--portraits-photos));
   grid-template-columns: minmax(0, 3fr) minmax(0, 5fr) minmax(0, 4fr);
-  grid-template-rows: minmax(340px, 3fr) minmax(180px, 2fr);
+  grid-template-rows: minmax(340px, 3fr) minmax(180px, 2fr) var(--portraits-photos);
   grid-template-areas:
     "popparazi protector quote"
-    "resume protector security";
+    "resume protector security"
+    "photos photos photos";
 }
 
 .mosaic-group-offset {
@@ -1247,6 +1257,7 @@
       auto
       auto
       minmax(340px, auto)
+      minmax(260px, auto)
       var(--compact-tile)
       calc(var(--compact-tile) * 0.25)
       var(--compact-tile)
@@ -1258,6 +1269,7 @@
       "resume resume"
       "protector protector"
       "quote quote"
+      "photos photos"
       "security family"
       "dealership family"
       "dealership token"

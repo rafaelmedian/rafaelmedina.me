@@ -3012,7 +3012,8 @@ test("opens the resume reader from the folded tile and returns focus on close", 
   const row = page.locator(".mosaic-group").filter({ has: protectorCard })
   const resume = row.getByRole("button", { name: "Open résumé" })
 
-  await expect(row.locator(".mosaic-row-item")).toHaveCount(5)
+  await expect(row.locator(".mosaic-row-item")).toHaveCount(6)
+  await expect(row.getByRole("button", { name: "Personal life", exact: true })).toBeVisible()
   await expect(row.locator(".mosaic-tile-resume .resume-tile")).toHaveCount(1)
   await expect(resume.locator(".resume-tile-sheet")).toHaveCSS("background-color", "rgb(255, 255, 255)")
   await expect(resume.locator(".resume-tile-fold")).toHaveCount(1)
@@ -3503,7 +3504,9 @@ test("shows the about introduction without restating the résumé", async ({ pag
     "_blank",
   )
 
-  await expect(panel.getByRole("button", { name: "View personal photos" })).toBeVisible()
+  // The photos are a work-grid tile now, not the closing block of About.
+  await expect(panel.getByRole("button", { name: "Personal life", exact: true })).toHaveCount(0)
+  await expect(page.locator("#work").getByRole("button", { name: "Personal life", exact: true })).toBeVisible()
   await expect(panel.getByRole("button", { name: /Briefcase sticker/ })).toHaveCount(0)
 })
 
@@ -3554,8 +3557,8 @@ test("gives the Chainlink work a fuller description", async ({ page }) => {
   )
 })
 
-test("keeps one compact gap between every block below the photo row", async ({ page }) => {
-  // The photo row, the worked-with wall and Services are three sections in a
+test("keeps one compact gap between the About closing line, companies, and services", async ({ page }) => {
+  // The closing line, the worked-with wall and Services are three blocks in a
   // row, and they are separated by the same break so none of them reads as
   // belonging to its neighbour.
   for (const { width, expectedGap } of [{ width: 1440, expectedGap: 80 }, { width: 390, expectedGap: 40 }]) {
@@ -3563,7 +3566,7 @@ test("keeps one compact gap between every block below the photo row", async ({ p
     await page.goto("/#about-panel")
 
     const gaps = await page.evaluate(() => {
-      const blocks = [".personal-photos", ".mosaic-about-companies", "#about-panel-services"].map((selector) =>
+      const blocks = [".mosaic-about-closing", ".mosaic-about-companies", "#about-panel-services"].map((selector) =>
         document.querySelector(selector),
       )
       if (blocks.some((block) => !block)) return [Number.POSITIVE_INFINITY]

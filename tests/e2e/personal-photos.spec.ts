@@ -1,8 +1,15 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
+
+
+/** The grid now appears with the shared avatar intro. */
+async function openHome(page: Page) {
+  await page.goto("/")
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
+}
 
 test("returning photos match the thumbnail crop and frame before the handoff", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/#about-panel")
+  await openHome(page)
   await page.locator(".personal-photos-print").first().click()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCSS("opacity", "1")
@@ -36,7 +43,12 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
       duration: flight.getAnimations()[0].effect!.getTiming().duration,
       actual: flight.getBoundingClientRect().toJSON(), expected: source.getBoundingClientRect().toJSON(),
       frame: delta(flight, source), image: delta(image, sourceImage),
-      crop: getComputedStyle(image).objectPosition, sourceCrop: getComputedStyle(sourceImage).objectPosition,
+      // The sheet shows the whole photo and the print shows a square of it, so
+      // the crop has to match on both counts: the same fit as well as the same
+      // centre. A flight that fits differently squashes the picture on the way
+      // down and snaps to the print's crop as it hands off.
+      crop: `${getComputedStyle(image).objectFit} ${getComputedStyle(image).objectPosition}`,
+      sourceCrop: `${getComputedStyle(sourceImage).objectFit} ${getComputedStyle(sourceImage).objectPosition}`,
       // The print wears the flat placeholder while away; the landing frame must
       // still carry the card shadow it hands off to.
       shadowAlpha: Math.max(...(getComputedStyle(flight).boxShadow.match(/rgba?\([^)]+\)/g) ?? []).map((color) => {
@@ -50,13 +62,14 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
   expect(landing.frame, JSON.stringify(landing)).toBeLessThan(1)
   expect(landing.image).toBeLessThan(1)
   expect(landing.crop).toBe(landing.sourceCrop)
+  expect(landing.crop).toContain("cover")
   expect(landing.shadowAlpha).toBeGreaterThan(0)
   expect(landing.distortion).toBeLessThan(0.001)
 })
 
 test("the returning photo travels straight to its print instead of arcing above it", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 })
-  await page.goto("/#about-panel")
+  await openHome(page)
   await page.locator(".personal-photos-print").first().click()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCSS("opacity", "1")
   await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
@@ -105,271 +118,11 @@ test("the returning photo travels straight to its print instead of arcing above 
   expect(Math.max(...path.drift), JSON.stringify(path)).toBeLessThan(2)
 })
 
-test("the responsive stack retains the last group and reopens at the same position", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  for (const width of [2048, 900, 390]) {
-    await page.setViewportSize({ width, height: 900 })
-    await page.goto("/#about-panel")
-    const trigger = page.getByRole("button", { name: "View personal photos" })
-    await trigger.click()
-    const strip = page.getByRole("region", { name: "Photo carousel" })
-    await strip.focus()
-    await page.keyboard.press("End")
-    await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
-    const previous = await strip.evaluate((element) => ({
-      position: element.scrollLeft,
-      ids: Array.from(element.querySelectorAll<HTMLElement>("figure")).filter((slide) => {
-        const rect = slide.getBoundingClientRect(), bounds = element.getBoundingClientRect()
-        return rect.right > bounds.left && rect.left < bounds.right
-      }).map((slide) => slide.dataset.photoId),
-    }))
-    await page.keyboard.press("Escape")
-    await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeHidden()
-    const retained = await trigger.locator(".personal-photos-print").evaluateAll((prints) => prints.map((print) => (print as HTMLElement).dataset.photoId))
-    expect(retained).toHaveLength(width >= 700 ? 5 : 4)
-    expect(retained).toEqual(expect.arrayContaining(previous.ids))
-    await trigger.focus()
-    await page.keyboard.press("Enter")
-    await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeCloseTo(previous.position, 0)
-    await page.keyboard.press("Escape")
-  }
-})
-
-for (const width of [390, 900]) {
-  test(`offscreen members return and expand with the saved group at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 })
-    await page.goto("/#about-panel")
-    const trigger = page.getByRole("button", { name: "View personal photos" })
-    const dialog = page.getByRole("dialog", { name: "Personal photos" })
-    const flights = page.locator(".personal-photos-flight")
-    await trigger.click()
-    await expect(flights).toHaveCount(0)
-    const strip = page.getByRole("region", { name: "Photo carousel" })
-    await strip.focus()
-    await page.keyboard.press("End")
-    await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
-    const offscreenIds = await strip.locator("figure").evaluateAll((slides) => slides
-      .filter((slide) => slide.getBoundingClientRect().right <= 0)
-      .map((slide) => (slide as HTMLElement).dataset.photoId))
-    await page.evaluate(() => {
-      const animate = Element.prototype.animate
-      Element.prototype.animate = function (...args) {
-        const animation = animate.apply(this, args)
-        if (this.closest(".personal-photos-flight")) {
-          animation.pause()
-          animation.currentTime = 0
-        }
-        return animation
-      }
-    })
-    await page.keyboard.press("Escape")
-    const retained = await trigger.locator(".personal-photos-print").evaluateAll((prints) => prints.map((print) => (print as HTMLElement).dataset.photoId))
-    expect(retained.some((id) => offscreenIds.includes(id))).toBe(true)
-    await expect(flights).toHaveCount(retained.length)
-    expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(retained)
-    const landings = await flights.evaluateAll(async (elements) => {
-      await Promise.all(elements.flatMap((element) => element.getAnimations({ subtree: true }).map((animation) => animation.ready)))
-      return elements.map((element) => {
-        const animations = element.getAnimations({ subtree: true })
-        animations.forEach((animation) => { animation.currentTime = Number(animation.effect!.getTiming().duration) - 0.1 })
-        const source = document.querySelector(`.personal-photos-print[data-photo-id="${(element as HTMLElement).dataset.photoId}"]`)!
-        const actual = element.getBoundingClientRect(), expected = source.getBoundingClientRect()
-        return {
-          duration: animations[0].effect!.getTiming().duration,
-          error: Math.max(Math.abs(actual.x - expected.x), Math.abs(actual.y - expected.y), Math.abs(actual.width - expected.width), Math.abs(actual.height - expected.height)),
-        }
-      })
-    })
-    expect(landings.every(({ duration, error }) => duration === 200 && error < 1)).toBe(true)
-    await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
-    await expect(dialog).toBeHidden()
-    await trigger.focus()
-    await page.keyboard.press("Enter")
-    await expect(flights).toHaveCount(retained.length)
-    const expanding = await flights.evaluateAll((elements) => elements.map((element) => ({
-      id: (element as HTMLElement).dataset.photoId,
-      timing: element.getAnimations()[0].effect!.getTiming(),
-    })))
-    expect(expanding.map(({ id }) => id)).toEqual(retained)
-    expect(expanding.every(({ timing }) => timing.duration === 200 && timing.delay === 0)).toBe(true)
-  })
-}
-
-test("wide-screen photos open together from the stack with their own images", async ({ page }) => {
-  await page.setViewportSize({ width: 2560, height: 900 })
-  const extraThumbnail = page.waitForResponse((response) => response.url().endsWith("/personal/dumbo-thumb.webp"))
-  await page.goto("/#about-panel")
-  await page.getByRole("button", { name: "View personal photos" }).scrollIntoViewIfNeeded()
-  await (await extraThumbnail).finished()
-  await page.evaluate(() => {
-    const animate = Element.prototype.animate
-    Element.prototype.animate = function (...args) {
-      const animation = animate.apply(this, args)
-      if (this.closest(".personal-photos-flight")) {
-        animation.pause()
-        animation.currentTime = 0
-      }
-      return animation
-    }
-  })
-  await page.getByRole("button", { name: "View personal photos" }).click()
-  const previewIds = await page.locator(".personal-photos-print").evaluateAll((elements) =>
-    elements.map((element) => (element as HTMLElement).dataset.photoId))
-  const flights = await page.locator(".personal-photos-flight").evaluateAll((elements) => elements.map((element) => ({
-    id: (element as HTMLElement).dataset.photoId,
-    timing: element.getAnimations()[0].effect!.getTiming(),
-  })))
-  const visibleIds = await page.locator(".personal-photos-strip .personal-photos-slide").evaluateAll((slides) => slides
-    .filter((slide) => { const rect = slide.getBoundingClientRect(); return rect.right > 0 && rect.left < innerWidth })
-    .map((slide) => (slide as HTMLElement).dataset.photoId))
-  expect(visibleIds.length).toBeGreaterThan(previewIds.length)
-  expect(flights.map(({ id }) => id)).toEqual([...new Set([...previewIds, ...visibleIds])])
-  const extraFlights = page.locator(".personal-photos-flight").filter({ has: page.locator('img[src*="dumbo"]') })
-  await expect(extraFlights).toHaveCount(1)
-  const originError = await extraFlights.evaluate((flight) => {
-    const source = document.querySelector(".personal-photos-print:last-child")!
-    const actual = flight.getBoundingClientRect(), expected = source.getBoundingClientRect()
-    return Math.max(Math.abs(actual.x - expected.x), Math.abs(actual.y - expected.y), Math.abs(actual.width - expected.width), Math.abs(actual.height - expected.height))
-  })
-  expect(originError).toBeLessThan(1)
-  await expect(page.locator('.personal-photos-strip [data-photo-id="dumbo"]')).toHaveCSS("opacity", "0")
-  expect(flights.every(({ timing }) => timing.duration === 200 && timing.delay === 0)).toBe(true)
-})
-
-test("photo gallery stops at both ends without empty trailing space", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  for (const width of [2048, 390]) {
-    await page.setViewportSize({ width, height: 1000 })
-    await page.goto("/#about-panel")
-    await page.locator(".personal-photos-print").first().click()
-    const strip = page.getByRole("region", { name: "Photo carousel" })
-    const position = () => strip.evaluate((element) => element.scrollLeft)
-    await expect.poll(position).toBe(0)
-    await page.keyboard.press("ArrowLeft")
-    await strip.hover()
-    await page.mouse.wheel(-1500, 0)
-    await expect.poll(position).toBe(0)
-    await page.keyboard.press("End")
-    const rightGap = () => strip.evaluate((element) => {
-      const last = element.querySelector(".personal-photos-slide:last-child")!.getBoundingClientRect()
-      return Math.abs(element.getBoundingClientRect().right - last.right - parseFloat(getComputedStyle(element).scrollPaddingInlineStart))
-    })
-    await expect.poll(rightGap).toBeLessThan(1)
-    const endPosition = await position()
-    await page.keyboard.press("ArrowRight")
-    await page.mouse.wheel(1500, 0)
-    await expect.poll(position).toBe(endPosition)
-    await page.keyboard.press("ArrowLeft")
-    await expect.poll(position).toBeLessThan(endPosition)
-    await page.keyboard.press("Home")
-    await expect.poll(position).toBe(0)
-    await page.keyboard.press("Escape")
-  }
-})
-
-test("personal photos open, slide, drag, and return focus to the photo", async ({ page }) => {
-  await page.goto("/#about-panel")
-  const trigger = page.getByRole("button", { name: "View personal photos" })
-  await page.locator(".personal-photos-print").first().click()
-  const dialog = page.getByRole("dialog", { name: "Personal photos" })
-  await expect(dialog).toBeVisible()
-  await expect(dialog.getByRole("img")).toHaveCount(11)
-  const portraitPhotos = dialog.locator('figure:not([aria-hidden]) img[data-orientation="portrait"]')
-  const landscapePhotos = dialog.locator('figure:not([aria-hidden]) img[data-orientation="landscape"]')
-  const squarePhotos = dialog.locator('figure:not([aria-hidden]) img[data-orientation="square"]')
-  await expect(portraitPhotos).toHaveCount(6)
-  await expect(landscapePhotos).toHaveCount(4)
-  await expect(squarePhotos).toHaveCount(1)
-  await expect(portraitPhotos.first()).toHaveCSS("object-fit", "cover")
-  await expect(portraitPhotos.first()).toHaveCSS("background-size", "cover")
-  await expect(landscapePhotos.first()).toHaveCSS("object-fit", "cover")
-  await expect(landscapePhotos.first()).toHaveCSS("background-size", "cover")
-  await expect(squarePhotos.first()).toHaveCSS("object-fit", "contain")
-  await expect(dialog.getByText("example")).toHaveCount(0)
-  await expect(dialog.getByRole("button", { name: /Close photos|Previous photo|Next photo/ })).toHaveCount(0)
-  const strip = dialog.getByRole("region", { name: "Photo carousel" })
-  const activeSlide = () => strip.evaluate((element) => {
-    const slides = Array.from(element.querySelectorAll(".personal-photos-slide")) as HTMLElement[]
-    return slides.reduce((nearest, slide, index) =>
-      Math.abs(slide.offsetLeft - slides[0].offsetLeft - element.scrollLeft) <
-      Math.abs(slides[nearest].offsetLeft - slides[0].offsetLeft - element.scrollLeft) ? index : nearest, 0)
-  })
-  await page.keyboard.press("ArrowRight")
-  await expect.poll(activeSlide).toBe(1)
-  await page.keyboard.press("End")
-  await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
-  await page.keyboard.press("Home")
-  await expect.poll(() => strip.evaluate((element) => {
-    const first = element.querySelectorAll(".personal-photos-slide")[0] as HTMLElement
-    return Math.abs(first.getBoundingClientRect().left - parseFloat(getComputedStyle(element).scrollPaddingInlineStart))
-  })).toBeLessThan(1)
-
-  const [bounds, imageBounds] = await Promise.all([
-    strip.boundingBox(),
-    dialog.getByRole("img").first().boundingBox(),
-  ])
-  if (!bounds || !imageBounds) throw new Error("photo strip not visible")
-  await expect(dialog.getByRole("img").first()).toHaveCSS("cursor", "grab")
-
-  const gap = await strip.evaluate((element) => {
-    const first = element.querySelectorAll(".personal-photos-slide")[0].getBoundingClientRect()
-    const second = element.querySelectorAll(".personal-photos-slide")[1].getBoundingClientRect()
-    return { x: (first.right + second.left) / 2, y: first.top + first.height / 2, step: second.left - first.left }
-  })
-  await page.mouse.move(gap.x, gap.y)
-  await page.mouse.down()
-  await page.mouse.move(gap.x - gap.step * 0.8, gap.y, { steps: 12 })
-  await page.mouse.up()
-  await expect.poll(activeSlide).toBe(1)
-
-  await page.keyboard.press("Home")
-  await expect.poll(() => strip.evaluate((element) => {
-    const first = element.querySelectorAll(".personal-photos-slide")[0] as HTMLElement
-    return Math.abs(first.getBoundingClientRect().left - parseFloat(getComputedStyle(element).scrollPaddingInlineStart))
-  })).toBeLessThan(1)
-
-  await page.mouse.move(imageBounds.x + imageBounds.width * 0.9, imageBounds.y + imageBounds.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(imageBounds.x + imageBounds.width * 0.1, imageBounds.y + imageBounds.height / 2, { steps: 12 })
-  await page.mouse.up()
-  await expect.poll(activeSlide).toBe(1)
-
-  await page.keyboard.press("Escape")
-  await expect(dialog).toBeHidden()
-  await expect(trigger).toBeFocused()
-})
-
-test("mobile photo strip scrolls and supports reduced motion", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/#about-panel")
-  const trigger = page.getByRole("button", { name: "View personal photos" })
-  await trigger.click()
-  const dialog = page.getByRole("dialog", { name: "Personal photos" })
-  await expect(dialog).toBeVisible()
-  const strip = dialog.getByRole("region", { name: "Photo carousel" })
-  await page.keyboard.press("End")
-  await page.keyboard.press("ArrowRight")
-  await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
-  expect(await dialog.evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThan(0.001)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  await page.locator(".personal-photos-backdrop").click({ position: { x: 10, y: 10 } })
-  await expect(dialog).toBeHidden()
-  await trigger.focus()
-  await page.keyboard.press("Enter")
-  await expect(dialog).toBeVisible()
-  await expect.poll(() => strip.evaluate((element) => element.scrollWidth - element.clientWidth - element.scrollLeft)).toBeLessThan(1)
-  await page.setViewportSize({ width: 844, height: 390 })
-  const bounds = await dialog.boundingBox()
-  expect(bounds?.y).toBeGreaterThanOrEqual(0)
-  expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(390)
-})
-
 test("four or five photos stay in one overlapping row at each breakpoint", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/#about-panel")
+  await openHome(page)
   await expect(page.locator(".mosaic-about-photo")).toHaveCount(0)
-  const trigger = page.getByRole("button", { name: "View personal photos" })
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   const prints = page.locator(".personal-photos-print")
   for (const width of [1440, 900, 390, 320]) {
     await page.setViewportSize({ width, height: 900 })
@@ -382,7 +135,7 @@ test("four or five photos stay in one overlapping row at each breakpoint", async
     })))
     for (let index = 1; index < layout.length; index++) {
       expect(layout[index].top).toBe(layout[0].top)
-      expect((layout[index].left - layout[index - 1].left) / layout[index - 1].width).toBeCloseTo(0.65, 1)
+      expect((layout[index].left - layout[index - 1].left) / layout[index - 1].width).toBeCloseTo(0.5, 1)
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   }
@@ -393,137 +146,431 @@ test("four or five photos stay in one overlapping row at each breakpoint", async
   await expect(trigger).toBeFocused()
 })
 
-test("photo preview scrolls in and fans to varied angles on hover", async ({ page }) => {
-  // Short enough that the print row starts below the fold of the About panel:
-  // only blocks that begin offscreen are held pending for the scroll entrance.
-  await page.setViewportSize({ width: 1440, height: 420 })
-  await page.goto("/#about-panel")
-
-  const preview = page.locator(".personal-photos")
-  await expect(preview.evaluate((element) => element.getBoundingClientRect().top > innerHeight)).resolves.toBe(true)
-  await expect(preview).toHaveAttribute("data-about-fade", "pending")
-  await preview.scrollIntoViewIfNeeded()
-  await expect(preview).toHaveAttribute("data-about-fade", "in")
-
-  const prints = preview.locator(".personal-photos-print")
-  await preview.getByRole("button", { name: "View personal photos" }).hover()
-  await expect.poll(() => prints.evaluateAll((elements) => elements.map((element) => {
+function readAngles(elements: Element[]) {
+  return elements.map((element) => {
     const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
     return Math.round(Math.atan2(matrix.b, matrix.a) * 180 / Math.PI)
-  }))).toEqual([-10, 6, -4, -8, 8])
-})
+  })
+}
 
-test("keeps the first gallery photo close to the left edge", async ({ page }) => {
-  for (const { width, expectedLeft } of [{ width: 2048, expectedLeft: 80 }, { width: 390, expectedLeft: 20 }]) {
-    await page.setViewportSize({ width, height: 900 })
-    await page.goto("/#about-panel")
-    await page.locator(".personal-photos-print").first().click()
+test("the fan leans along an arc and opens the whole hand at once", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 500 })
+  await openHome(page)
 
-    const firstSlide = page.getByRole("group", { name: "1 of 11", exact: true })
-    await expect.poll(() => firstSlide.evaluate((element) => Math.round(element.getBoundingClientRect().left))).toBe(expectedLeft)
-    await page.keyboard.press("Escape")
-  }
-})
+  const preview = page.locator(".personal-photos")
+  await preview.scrollIntoViewIfNeeded()
 
-test("keeps carousel shadows clear of the strip edges", async ({ page }) => {
-  await page.setViewportSize({ width: 2560, height: 1239 })
-  await page.goto("/#about-panel")
-  await page.getByRole("button", { name: "View personal photos" }).click()
-
-  const clearance = await page.locator(".personal-photos-strip").evaluate((strip) => {
-    const slide = strip.querySelector(".personal-photos-slide")
-    if (!slide) return null
-    const stripBounds = strip.getBoundingClientRect()
-    const slideBounds = slide.getBoundingClientRect()
-    return {
-      top: Math.round(slideBounds.top - stripBounds.top),
-      bottom: Math.round(stripBounds.bottom - slideBounds.bottom),
-    }
+  const prints = preview.locator(".personal-photos-print")
+  // A straight lean from one end of the row to the other, flat in the middle.
+  const rest = [-10, -5, 0, 5, 10]
+  expect(await prints.evaluateAll(readAngles)).toEqual(rest)
+  const restWidth = await preview.locator(".personal-photos-stack").evaluate((element) => {
+    const boxes = Array.from(element.querySelectorAll(".personal-photos-print")).map((print) => print.getBoundingClientRect())
+    return Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.left))
   })
 
-  expect(clearance).toEqual({ top: 96, bottom: 96 })
+  // The tile answers as one thing: whichever print the pointer lands on, every
+  // print swings out to its fanned angle together. Reading at the same scroll
+  // position throughout; hover() would otherwise scroll first.
+  await prints.nth(1).scrollIntoViewIfNeeded()
+  await prints.nth(1).hover({ position: { x: 4, y: 4 } })
+  await expect.poll(() => prints.evaluateAll(readAngles)).toEqual([-16, -8, 0, 8, 16])
+
+  // The middle print stays put, so the hand opens outwards rather than sliding.
+  const openWidth = await preview.locator(".personal-photos-stack").evaluate((element) => {
+    const boxes = Array.from(element.querySelectorAll(".personal-photos-print")).map((print) => print.getBoundingClientRect())
+    return Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.left))
+  })
+  expect(openWidth).toBeGreaterThan(restWidth)
+
+  // Pointing at a different print asks for nothing new: the hand is already
+  // open and holds its shape, so nothing changes hands under the pointer.
+  await prints.nth(3).hover({ position: { x: 4, y: 4 } })
+  await expect.poll(() => prints.evaluateAll(readAngles)).toEqual([-16, -8, 0, 8, 16])
+
+  // The pile keeps its order at rest and open alike: the middle print is the
+  // front of the fan and every print behind it steps back.
+  expect(await prints.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).zIndex))).toEqual(["1", "3", "5", "3", "1"])
 })
 
+const sheet = (page: Page) => page.getByRole("region", { name: "Photo sheet" })
+const dialog = (page: Page) => page.getByRole("dialog", { name: "Personal photos" })
 
-test("shadow clearance ignores carousel gestures and dismisses on click", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  for (const width of [1440, 390]) {
-    await page.setViewportSize({ width, height: 900 })
-    await page.goto("/#about-panel")
-    await page.locator(".personal-photos-print").first().click()
-    const dialog = page.getByRole("dialog", { name: "Personal photos" })
-    const strip = page.getByRole("region", { name: "Photo carousel" })
-    const card = await strip.locator("figure").first().boundingBox()
-    if (!card) throw new Error("photo card not visible")
-
-    for (const y of [card.y - 20, card.y + card.height + 20]) {
-      const x = card.x + card.width / 2
-      const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.className, { x, y })
-      expect(hit).toBe("personal-photos-backdrop")
-      await page.mouse.move(x, y)
-      await page.mouse.wheel(600, 0)
-      // Allow the native wheel event to reach its target before checking position.
-      await page.waitForTimeout(250)
-      expect(await strip.evaluate((element) => element.scrollLeft)).toBe(0)
+/** Pause every flight at its first frame so the deal can be inspected. */
+async function holdFlights(page: Page) {
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.closest(".personal-photos-flight")) {
+        animation.pause()
+        animation.currentTime = 0
+      }
+      return animation
     }
+  })
+}
 
-    await page.mouse.click(card.x + card.width / 2, card.y + card.height + 20)
-    await expect(dialog).toBeHidden()
+test("the sheet lays every print out in columns at its own aspect ratio", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  for (const width of [2560, 1440, 900, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    await openHome(page)
+    await page.locator(".personal-photos-print").first().click()
+    await expect(dialog(page)).toBeVisible()
+    const layout = await sheet(page).evaluate((element) => {
+      const slides = Array.from(element.querySelectorAll<HTMLElement>(".personal-photos-slide"))
+      const masonry = element.querySelector(".personal-photos-masonry")!.getBoundingClientRect()
+      return {
+        count: slides.length,
+        columns: new Set(slides.map((slide) => Math.round(slide.getBoundingClientRect().left))).size,
+        sideways: element.scrollWidth - element.clientWidth,
+        pageSideways: document.documentElement.scrollWidth - innerWidth,
+        centre: masonry.left + masonry.width / 2,
+        ratios: slides.map((slide) => {
+          const image = slide.querySelector("img")!, rect = image.getBoundingClientRect()
+          return Math.abs(rect.width / rect.height - Number(image.getAttribute("width")) / Number(image.getAttribute("height")))
+        }),
+        overlaps: slides.some((a, i) => slides.some((b, j) => {
+          if (i >= j) return false
+          const p = a.getBoundingClientRect(), q = b.getBoundingClientRect()
+          return p.left < q.right - 1 && q.left < p.right - 1 && p.top < q.bottom - 1 && q.top < p.bottom - 1
+        })),
+      }
+    })
+    expect(layout.count).toBe(11)
+    expect(layout.columns, `${width}px`).toBe(width >= 700 ? 3 : 2)
+    expect(layout.sideways).toBe(0)
+    expect(layout.pageSideways).toBeLessThanOrEqual(0)
+    expect(layout.centre).toBeCloseTo(width / 2, 0)
+    expect(Math.max(...layout.ratios)).toBeLessThan(0.02)
+    expect(layout.overlaps).toBe(false)
+    await page.keyboard.press("Escape")
+    await expect(dialog(page)).toBeHidden()
   }
 })
 
-test("opening from a print starts the carousel on that photo", async ({ page }) => {
+test("opening from any print starts the sheet at its first row", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  for (const [width, indices] of [[1440, [4, 2, 0]], [390, [3, 0]]] as const) {
+    await page.setViewportSize({ width, height: 900 })
+    await openHome(page)
+    const prints = page.locator(".personal-photos-print")
+    for (const index of indices) {
+      // The prints are the first photos, so the top of the sheet is where
+      // every one of them lives; the tapped print never changes that.
+      await prints.nth(index).click()
+      await expect(dialog(page)).toBeVisible()
+      expect(await sheet(page).evaluate((element) => element.scrollTop), `${width}px print ${index}`).toBe(0)
+      // The prints are the first photos wherever the columns put them; dealing
+      // round-robin spreads them across the top instead of down one column, so
+      // compare the set rather than the sheet's DOM order.
+      const retained = await sheet(page).locator(".personal-photos-slide[data-photo-retained]").evaluateAll((slides) => slides.map((slide) => (slide as HTMLElement).dataset.photoId))
+      expect([...retained].sort()).toEqual([...await prints.evaluateAll((elements) => elements.map((print) => (print as HTMLElement).dataset.photoId))].sort())
+      await page.keyboard.press("Escape")
+      await expect(dialog(page)).toBeHidden()
+    }
+  }
+})
+
+/** The photos whose slot is on screen. Opening, only the ones with a print of
+    their own leave the fan; closing, every one of them goes back to it. */
+const onScreen = (page: Page, match: string) => sheet(page).evaluate((element, selector) =>
+  Array.from(element.querySelectorAll<HTMLElement>(selector)).filter((slide) => {
+    const rect = slide.getBoundingClientRect(), bounds = element.getBoundingClientRect()
+    return rect.bottom > bounds.top && rect.top < bounds.bottom
+  }).map((slide) => slide.dataset.photoId), match)
+
+const visibleRetained = (page: Page) => onScreen(page, ".personal-photos-slide[data-photo-retained]")
+const visibleSlides = (page: Page) => onScreen(page, ".personal-photos-slide")
+
+test("every print leaves for the middle of the screen in one beat and comes home in one beat", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  await holdFlights(page)
+  const prints = page.locator(".personal-photos-print")
+  const retained = await prints.evaluateAll((elements) => elements.map((print) => (print as HTMLElement).dataset.photoId))
+  await prints.first().click()
+  const flights = page.locator(".personal-photos-flight")
+  // The sheet deals its columns round-robin, so all five prints have a slot on
+  // screen to fly to and every one of them flies. The other slots have no
+  // frame to come from; they rise in with the sheet.
+  const flying = await visibleRetained(page)
+  expect(flying.length).toBe(retained.length)
+  expect(retained).toEqual(expect.arrayContaining(flying))
+  await expect(flights).toHaveCount(flying.length)
+  expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(flying)
+
+  // The sheet is centred on the page, so the hand lands on the middle of the
+  // screen together rather than being thrown out to one edge -- which is what
+  // has to hold wherever in the grid the band the fan sits in ends up.
+  // Read where each flight is headed, not where it is: the flights are held at
+  // their first frame, which is still the print's own place on the page. A
+  // clone is positioned on its landing slot and carries the trip back to the
+  // print in its transform, so `left` is the destination.
+  const landings = await flights.evaluateAll((elements) => elements.map((element) => {
+    const flight = element as HTMLElement
+    return { centre: parseFloat(flight.style.left), width: parseFloat(flight.style.width) }
+  }))
+  const landingCentre = (
+    Math.min(...landings.map(({ centre, width }) => centre - width / 2)) +
+    Math.max(...landings.map(({ centre, width }) => centre + width / 2))
+  ) / 2
+  expect(landingCentre).toBeCloseTo(1440 / 2, 0)
+
+  const deal = await flights.evaluateAll((elements) => elements.map((element) => {
+    const timing = element.getAnimations()[0].effect!.getTiming()
+    return { delay: Number(timing.delay), duration: Number(timing.duration) }
+  }))
+  // One beat, no stagger: the whole hand leaves at once.
+  expect(deal.every(({ delay }) => delay === 0)).toBe(true)
+  expect(deal.every(({ duration }) => duration === 200)).toBe(true)
+  await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
+  await expect(flights).toHaveCount(0)
+  await expect(sheet(page).locator(".personal-photos-slide").first()).toHaveCSS("opacity", "1")
+
+  // The return has no stagger either, and the whole sheet comes with it: the
+  // photos with a print of their own land on it, and the rest borrow the print
+  // nearest them and tuck in under it rather than fading where they stand.
+  await page.keyboard.press("Escape")
+  await expect(flights).not.toHaveCount(0)
+  const homebound = await visibleSlides(page)
+  expect(homebound.length).toBeGreaterThan(flying.length)
+  expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(homebound)
+  expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).hasAttribute("data-photo-trailing"))))
+    .toEqual(homebound.map((id) => !flying.includes(id)))
+  // The fan is a pile, and a flight keeps its print's place in it. Travelling
+  // on one flat tier stacked the photos in DOM order instead, and the print
+  // beside one covered it completely — a photo that plainly never came back.
+  // A borrower passes under the whole pile, or it lands in front of it.
+  const tiers = await flights.evaluateAll((elements) => elements.map((element) => ({
+    id: (element as HTMLElement).dataset.photoId,
+    trailing: (element as HTMLElement).hasAttribute("data-photo-trailing"), z: Number(getComputedStyle(element).zIndex),
+  })))
+  const depths = Object.fromEntries(await prints.evaluateAll((elements) => elements.map((print) =>
+    [(print as HTMLElement).dataset.photoId, Number(getComputedStyle(print).zIndex)] as const)))
+  const landing = tiers.filter(({ trailing }) => !trailing)
+  expect(landing.map(({ id, z }) => z - depths[id!])).toEqual(landing.map(() => landing[0].z - depths[landing[0].id!]))
+  expect(new Set(landing.map(({ z }) => z)).size).toBe(new Set(Object.values(depths)).size)
+  expect(Math.max(...tiers.filter(({ trailing }) => trailing).map(({ z }) => z)))
+    .toBeLessThan(Math.min(...landing.map(({ z }) => z)))
+  expect(await flights.evaluateAll((elements) => elements.map((element) => Number(element.getAnimations()[0].effect!.getTiming().delay)))).toEqual(
+    await flights.evaluateAll((elements) => elements.map(() => 0)),
+  )
+  await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
+  await expect(dialog(page)).toBeHidden()
+})
+
+test("Escape and the sheet's margin close it and hand focus back; there is no chrome", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/#about-panel")
-  const prints = page.locator(".personal-photos-print")
-  const strip = page.getByRole("region", { name: "Photo carousel" })
-  for (const index of [2, 0]) {
-    const id = await prints.nth(index).evaluate((print) => (print as HTMLElement).dataset.photoId)
-    await prints.nth(index).click()
-    await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-    const landed = await strip.evaluate((element) => {
-      const slides = Array.from(element.querySelectorAll<HTMLElement>(".personal-photos-slide"))
-      const first = slides[0]
-      return slides.find((slide) => Math.abs(slide.offsetLeft - first.offsetLeft - element.scrollLeft) < 1)?.dataset.photoId
-    })
-    expect(landed).toBe(id)
-    await page.keyboard.press("Escape")
-    await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeHidden()
-  }
+  await openHome(page)
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  await page.locator(".personal-photos-print").first().click()
+  await expect(dialog(page)).toBeVisible()
+  await expect(dialog(page).getByRole("button")).toHaveCount(0)
+  await page.keyboard.press("Escape")
+  await expect(dialog(page)).toBeHidden()
+  await expect(trigger).toBeFocused()
+
+  await page.keyboard.press("Enter")
+  await expect(dialog(page)).toBeVisible()
+  // The margin beside the masonry dismisses; a print does not.
+  await sheet(page).locator(".personal-photos-slide").first().click()
+  await expect(dialog(page)).toBeVisible()
+  await page.mouse.click(10, 450)
+  await expect(dialog(page)).toBeHidden()
+  await expect(trigger).toBeFocused()
 })
 
-test("touch pans the carousel from the shadow clearance and still taps to dismiss", async ({ browser }) => {
+test("the sheet scrolls with the wheel and keys and reopens at the top", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  await trigger.focus()
+  await page.keyboard.press("Enter")
+  await expect(dialog(page)).toBeVisible()
+  await expect(sheet(page)).toBeFocused()
+  const position = () => sheet(page).evaluate((element) => element.scrollTop)
+  await expect.poll(position).toBe(0)
+  await page.mouse.move(720, 450)
+  await page.mouse.wheel(0, 600)
+  await expect.poll(position).toBeGreaterThan(0)
+  await page.keyboard.press("End")
+  await expect.poll(() => sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
+  await page.keyboard.press("Home")
+  await expect.poll(position).toBe(0)
+  await page.keyboard.press("End")
+  await expect.poll(() => sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
+  await page.keyboard.press("Escape")
+  await expect(dialog(page)).toBeHidden()
+  // No visit reshuffles the stack, and the next one starts at the first row.
+  expect(await trigger.locator(".personal-photos-print").evaluateAll((prints) => prints.map((print) => (print as HTMLElement).dataset.photoId))).toEqual(["office", "san-francisco", "ballpark", "prom-dance-floor", "prom-friends"])
+  await trigger.focus()
+  await page.keyboard.press("Enter")
+  await expect(dialog(page)).toBeVisible()
+  await expect.poll(position).toBe(0)
+})
+
+test("closing from the first row is immediate; a scrolled sheet rewinds there first, then the same prints fly home", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  const prints = trigger.locator(".personal-photos-print")
+  const retained = await prints.evaluateAll((elements) => elements.map((print) => (print as HTMLElement).dataset.photoId))
+  const flights = page.locator(".personal-photos-flight")
+  // No photo fades where it stands: as the flights start, every slot on screen
+  // has handed its photo to one and snaps to zero, while the photos below the
+  // fold keep their colour and full strength and leave with the sheet's own
+  // fade. Read them by handle, since the dialog's role changes as the close
+  // begins.
+  const slots = () => page.evaluate(() => {
+    const sheet = document.querySelector<HTMLElement>(".personal-photos-sheet")!
+    const bounds = sheet.getBoundingClientRect()
+    return Array.from(sheet.querySelectorAll<HTMLElement>(".personal-photos-slide")).map((slide) => {
+      const rect = slide.getBoundingClientRect(), style = getComputedStyle(slide)
+      return `${rect.bottom > bounds.top && rect.top < bounds.bottom ? "on" : "off"} ${style.filter} ${style.opacity}`
+    })
+  })
+
+  // At the first row: nothing dims, nothing waits — the prints just leave.
+  await prints.last().click()
+  await expect(dialog(page)).toBeVisible()
+  await expect(flights).toHaveCount(0)
+  await holdFlights(page)
+  let t0 = Date.now()
+  await page.keyboard.press("Escape")
+  await expect(flights).not.toHaveCount(0)
+  expect(Date.now() - t0).toBeLessThan(150)
+  expect(new Set(await slots())).toEqual(new Set(["on none 0", "off none 1"]))
+  expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(await visibleSlides(page))
+  await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
+  await expect(dialog(page)).toBeHidden()
+
+  // Scrolled away: the sheet glides back to the first row, then the whole
+  // screenful leaves from the slots it was dealt to. Nothing dims under the
+  // rewind, and nothing is left fading in place once the flights start.
+  await prints.first().click()
+  await expect(dialog(page)).toBeVisible()
+  // The hold from the first visit is still in place; let the dealt flights land.
+  await expect(flights).not.toHaveCount(0)
+  await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
+  await expect(flights).toHaveCount(0)
+  await page.keyboard.press("End")
+  await expect.poll(() => sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
+  await holdFlights(page)
+  t0 = Date.now()
+  await page.keyboard.press("Escape")
+  // The rewind is under way before any print moves.
+  const bottom = await sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight)
+  await expect.poll(() => sheet(page).evaluate((element) => element.scrollTop)).toBeLessThan(bottom - 50)
+  expect(await flights.count()).toBe(0)
+  // Undimmed and at full strength, wherever the glide has reached. Which
+  // slides are on screen is deliberately not part of the claim: the masonry is
+  // twice the sheet's height, so around a fifth of the way through the rewind
+  // there is a band where every slide touches the sheet's box at once, and
+  // asking for an off-screen one is a race against a 360ms scroll nothing
+  // synchronises with.
+  expect(new Set((await slots()).map((slot) => slot.replace(/^(on|off) /, "")))).toEqual(new Set(["none 1"]))
+  await expect(flights).not.toHaveCount(0)
+  expect(new Set(await slots())).toEqual(new Set(["on none 0", "off none 1"]))
+  expect(Date.now() - t0).toBeGreaterThanOrEqual(300)
+  expect(await sheet(page).evaluate((element) => element.scrollTop)).toBe(0)
+  expect(retained).toEqual(expect.arrayContaining(await visibleRetained(page)))
+  expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(await visibleSlides(page))
+  await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
+  await expect(dialog(page)).toBeHidden()
+  expect(await prints.evaluateAll((elements) => elements.map((print) => (print as HTMLElement).dataset.photoId))).toEqual(retained)
+})
+
+test("the hand takes its shape before the photos come home, and holds it once they are back", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  const prints = trigger.locator(".personal-photos-print")
+  const rects = () => prints.evaluateAll((elements) => elements.map((print) => {
+    const { x, y, width, height } = print.getBoundingClientRect()
+    return [x, y, width, height].map((value) => Math.round(value * 10) / 10)
+  }))
+  // Untouched, before the pointer or the keyboard has been near the tile.
+  const resting = await rects()
+
+  await prints.nth(2).click()
+  await expect(dialog(page)).toBeVisible()
+  await holdFlights(page)
+  await page.keyboard.press("Escape")
+  const flights = page.locator(".personal-photos-flight")
+  await expect(flights).not.toHaveCount(0)
+  // Escape hands the tile its focus back, so the hand opens here — under the
+  // sheet, before a single photo has left it — and the flights are aimed at
+  // the frames it keeps. It used to wait for the dialog to unmount, which the
+  // flight holds off until the photos have landed, and the whole row then
+  // opened out from under them a beat after they arrived.
+  const aimed = await rects()
+  expect(aimed).not.toEqual(resting)
+
+  await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
+  await expect(dialog(page)).toBeHidden()
+  await expect(flights).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+  expect(await rects()).toEqual(aimed)
+  // Nothing glides on afterwards either: the settle is well inside 360ms.
+  await page.waitForTimeout(500)
+  expect(await rects()).toEqual(aimed)
+})
+
+test("on a phone the sheet keeps two columns, honours reduced motion, and fits landscape", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await openHome(page)
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  await trigger.click()
+  await expect(dialog(page)).toBeVisible()
+  expect(await dialog(page).evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThan(0.001)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  expect(await sheet(page).evaluate((element) => new Set(Array.from(element.querySelectorAll(".personal-photos-slide")).map((slide) => Math.round(slide.getBoundingClientRect().left))).size)).toBe(2)
+  await sheet(page).evaluate((element) => { element.scrollTop = element.scrollHeight })
+  await expect.poll(() => sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
+  await page.mouse.click(10, 10)
+  await expect(dialog(page)).toBeHidden()
+  // Every visit starts at the first row, where the prints are.
+  await trigger.focus()
+  await page.keyboard.press("Enter")
+  await expect(dialog(page)).toBeVisible()
+  await expect.poll(() => sheet(page).evaluate((element) => element.scrollTop)).toBe(0)
+  await page.setViewportSize({ width: 844, height: 390 })
+  const bounds = await dialog(page).boundingBox()
+  expect(bounds?.y).toBeGreaterThanOrEqual(0)
+  expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(390)
+})
+
+test("touch swipes scroll the sheet and a tap on its margin dismisses", async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 393, height: 659 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 })
   const page = await context.newPage()
   const cdp = await context.newCDPSession(page)
-  await page.goto("/#about-panel")
-  const dialog = page.getByRole("dialog", { name: "Personal photos" })
-  const strip = page.getByRole("region", { name: "Photo carousel" })
-  await page.getByRole("button", { name: "View personal photos" }).scrollIntoViewIfNeeded()
-  const print = await page.locator(".personal-photos-print").first().boundingBox()
-  if (!print) throw new Error("photo stack not visible")
-  await page.touchscreen.tap(print.x + print.width / 2, print.y + print.height / 2)
-  await expect(dialog).toBeVisible()
-  await expect(strip).toHaveCSS("pointer-events", "auto")
-
-  const card = await strip.locator("figure").first().boundingBox()
-  if (!card) throw new Error("photo card not visible")
-  const x = card.x + card.width / 2
-  for (const y of [card.y - 40, card.y + card.height + 40]) {
-    const before = await strip.evaluate((element) => element.scrollLeft)
-    // A raw touch sequence rather than a synthesized fling: the gesture
-    // synthesizer never moved the scroller on the Linux runner.
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] })
-    for (let step = 1; step <= 10; step += 1) {
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x - step * 20, y }] })
-    }
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
-    await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(before)
-    await expect(dialog).toBeVisible()
+  await openHome(page)
+  await page.locator(".personal-photos-print").first().tap()
+  await expect(dialog(page)).toBeVisible()
+  await expect(sheet(page)).toHaveCSS("pointer-events", "auto")
+  const before = await sheet(page).evaluate((element) => element.scrollTop)
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 196, y: 600 }] })
+  for (let step = 1; step <= 8; step++) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 196, y: 600 - step * 40 }] })
   }
-
-  await page.touchscreen.tap(x, card.y - 40)
-  await expect(dialog).toBeHidden()
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+  await expect.poll(() => sheet(page).evaluate((element) => element.scrollTop)).toBeGreaterThan(before)
+  await expect(dialog(page)).toBeVisible()
+  // A tap during the fling only stops the scroll; let it settle first.
+  await expect.poll(() => sheet(page).evaluate((element) => new Promise((resolve) => {
+    const start = element.scrollTop
+    setTimeout(() => resolve(element.scrollTop === start), 150)
+  }))).toBe(true)
+  // Once scrolled, the top margin has gone with the content; the side gutter
+  // beside the masonry is still the sheet's own margin, and a print is not.
+  await page.touchscreen.tap(196, 300)
+  await expect(dialog(page)).toBeVisible()
+  await page.touchscreen.tap(8, 400)
+  await expect(dialog(page)).toBeHidden()
   await context.close()
 })

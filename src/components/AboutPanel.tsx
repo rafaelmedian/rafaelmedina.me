@@ -7,7 +7,6 @@ import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { CompanyLogoGrid } from "./CompanyLogoGrid"
 import { InlineBookingLink } from "./InlineBookingLink"
 import { LocalTimeCard } from "./LocalTimeCard"
-import { PersonalPhotos } from "./PersonalPhotos"
 
 type AboutPanelProps = {
   links: SiteLinks
@@ -165,8 +164,6 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
                 .
               </p>
             </div>
-
-            <PersonalPhotos />
           </section>
 
           {/* The dated entries this used to introduce now live in the résumé

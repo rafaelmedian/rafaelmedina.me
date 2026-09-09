@@ -8,7 +8,7 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
-    await expect(tiles).toHaveCount(15)
+    await expect(tiles).toHaveCount(16)
     await expect(page.locator("a.mosaic-row-card")).toHaveCount(12)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect()
@@ -34,12 +34,18 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       const quote = boxes[6]
       expect(protector.width).toBeCloseTo(boxes[1].x + boxes[1].width - boxes[0].x, 0)
       expect(quote.width).toBeCloseTo(protector.width, 0)
+      // The personal-photo band spans both compact columns with them.
+      expect(boxes[8].width).toBeCloseTo(protector.width, 0)
     } else {
+      // The personal-photo band spans the portraits group on its own line.
+      expect(boxes[8].x).toBeCloseTo(boxes[3].x, 0)
+      expect(boxes[8].x + boxes[8].width).toBeCloseTo(boxes[7].x + boxes[7].width, 0)
+      expect(boxes[8].y).toBeGreaterThan(boxes[7].y + boxes[7].height - 1)
       // The long middle cards bridge the smaller stack alongside them.
       expect(boxes[5].height).toBeGreaterThan(boxes[6].height + 100)
       expect(boxes[5].y + boxes[5].height).toBeCloseTo(boxes[7].y + boxes[7].height, 0)
-      expect(boxes[8].y + boxes[8].height).toBeGreaterThan(boxes[9].y + boxes[9].height + 30)
-      expect(boxes[10].y + boxes[10].height).toBeCloseTo(boxes[11].y + boxes[11].height, 0)
+      expect(boxes[9].y + boxes[9].height).toBeGreaterThan(boxes[10].y + boxes[10].height + 30)
+      expect(boxes[11].y + boxes[11].height).toBeCloseTo(boxes[12].y + boxes[12].height, 0)
     }
   })
 }

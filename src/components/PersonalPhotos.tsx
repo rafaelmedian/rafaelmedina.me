@@ -1,12 +1,13 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
 
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
 
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 
-type OpenPhoto = (index: number, opener: HTMLElement) => void
+type OpenPhoto = (opener: HTMLElement) => void
 type PreviewPhoto = { photo: typeof photos[number]; src: string }
 const initialPreview = photos.slice(0, 5).map((photo) => ({ photo, src: `/images/personal/${photo.name}-thumb.webp` }))
 
@@ -19,15 +20,72 @@ function usePreviewCount() {
   return useSyncExternalStore(subscribePreviewWidth, () => window.innerWidth >= 700 ? 5 : 4, () => 5)
 }
 
-export function PersonalPhotosPreview({ onOpen, className = "", items, position = 0 }: { onOpen: OpenPhoto; className?: string; items?: PreviewPhoto[]; position?: number }) {
+/** The sheet's columns. JS owns the count rather than CSS `columns` because
+    the order matters: a CSS multi-column fills its first column top to bottom
+    before it starts the second, which parks every print that flies in the
+    left-hand column and throws the fan sideways on open. Dealing round-robin
+    puts the first photos across the top instead, so the prints converge on the
+    middle of the screen and every one of their slots is on screen to fly to. */
+function useSheetColumns() {
+  return useSyncExternalStore(subscribePreviewWidth, () => window.innerWidth >= 700 ? 3 : 2, () => 3)
+}
+
+/** Glides a scrolled sheet back to its first row, where the prints were
+    dealt, so they fly home from the same slots they flew to. */
+function rewindSheet(sheet: HTMLDivElement, halt: { cancelled: boolean }) {
+  const total = cssTimeToMilliseconds(getComputedStyle(sheet).getPropertyValue("--photo-rewind-duration"))
+  const from = sheet.scrollTop
+  return new Promise<void>((resolve) => {
+    const start = performance.now()
+    const step = (now: number) => {
+      if (halt.cancelled) return resolve()
+      const t = Math.min(1, (now - start) / total)
+      // CSS can't ease scrollTop; an ease-out cubic stands in for --ease-smooth.
+      sheet.scrollTop = from * (1 - (1 - (1 - t) ** 3))
+      if (t < 1) requestAnimationFrame(step)
+      else resolve()
+    }
+    requestAnimationFrame(step)
+  })
+}
+
+/** Where a print sits on the fan, at rest and opened.
+ *
+ *  The prints are dealt along an arc rather than jumbled: the lean runs
+ *  straight from one end of the row to the other, and each print drops by the
+ *  square of its distance from the middle, which is the arc a hand of cards
+ *  makes when it is spread. The drop is a share of the print's own height, so
+ *  it holds at every tile size.
+ *
+ *  The middle print sits on top and each one behind it steps back, so the fan
+ *  reads as one pile opening outwards instead of a row shingled left to right.
+ *
+ *  Pointing at the tile opens the whole hand at once: every print swings out to
+ *  its fanned angle on the same arc, deepened to match. The fan answers as one
+ *  thing, so there is no single print to pick out and no reason for the pile to
+ *  change hands under the pointer.
+ */
+function arcPlacement(index: number, middle: number, count: number): CSSProperties {
+  // -1 at the left end of the fan, 0 in the middle, 1 at the right end.
+  const spread = middle === 0 ? 0 : (index - middle) / middle
+  return {
+    "--print-tilt": `${(spread * 10).toFixed(2)}deg`,
+    "--print-fan-tilt": `${(spread * 16).toFixed(2)}deg`,
+    "--print-offset-y": `${(spread * spread * 10).toFixed(2)}%`,
+    "--print-fan-offset-y": `${(spread * spread * 16).toFixed(2)}%`,
+    "--print-depth": count - Math.round(Math.abs(index - middle) * 2),
+  } as CSSProperties
+}
+
+export function PersonalPhotosPreview({ onOpen, className = "", items }: { onOpen: OpenPhoto; className?: string; items?: PreviewPhoto[] }) {
   const previewRef = useRef<HTMLDivElement>(null)
   const count = usePreviewCount()
   const preview = items ?? initialPreview.slice(0, count)
   useEffect(() => {
     const element = previewRef.current
     if (!element) return
-    // Wide screens reveal photos beyond the stack. Warm their small bitmaps
-    // before opening so every flight can show its own photo from the first frame.
+    // Warm the small bitmaps before opening so every flight can show its own
+    // photo from the first frame.
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return
       photos.forEach((photo) => {
@@ -40,36 +98,23 @@ export function PersonalPhotosPreview({ onOpen, className = "", items, position 
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
+  // The middle print of the fan, which the arc is measured from. With an even
+  // count it falls between two prints and both lean the same amount.
+  const middle = (preview.length - 1) / 2
   return (
-    <div ref={previewRef} className={`personal-photos ${className}`} data-about-fade="">
-      <button type="button" className="personal-photos-trigger" aria-label="View personal photos" aria-haspopup="dialog" onClick={(event) => {
-        // A pointer names a photo; a keyboard press doesn't, so Enter and Space
-        // land on the button itself and resume where the last visit left off.
-        const print = (event.target as HTMLElement).closest<HTMLElement>(".personal-photos-print")
-        const tapped = print ? photos.findIndex((photo) => photo.id === print.dataset.photoId) : -1
-        onOpen(tapped < 0 ? position : tapped, event.currentTarget)
-      }}>
+    <div ref={previewRef} className={`personal-photos ${className}`}>
+      {/* Whichever print is tapped, the sheet opens at its first row: the
+          prints are always the first photos, and the close always brings
+          those same photos back, so no visit reshuffles the stack. */}
+      <button type="button" className="personal-photos-trigger" aria-haspopup="dialog" onClick={(event) => onOpen(event.currentTarget)}>
         <span className="personal-photos-stack" aria-hidden="true" style={{ "--photo-preview-count": preview.length } as CSSProperties}>
-          {preview.map(({ photo, src }) => (
-            <span className="personal-photos-print" data-photo-id={photo.id} key={photo.id}>
+          {preview.map(({ photo, src }, index) => (
+            <span className="personal-photos-print" data-photo-id={photo.id} key={photo.id} style={arcPlacement(index, middle, preview.length)}>
               <img src={src} alt="" width={photo.width} height={photo.height} loading="lazy" decoding="async" />
             </span>
           ))}
         </span>
-        {/* A pencil mark, not a UI arrow. An even-width stroke is the tell that
-            a line was drawn by a program, so the shaft and both barbs are filled
-            outlines that swell away from their ends the way a hand bears down
-            mid-stroke and lifts at the ends. Kept thin to sit with the note's
-            hand. Generated by offsetting each spine along its normal, which is
-            why the point lists are long and not worth hand-editing. */}
-        <span className="personal-photos-hint" aria-hidden="true">
-          <svg width="40" height="20" viewBox="0 0 40 20" fill="currentColor">
-            <path d="M37.2 4.2 L35.7 3.8 L34 3.6 L32.1 3.5 L30.2 3.5 L28.1 3.6 L25.9 3.9 L23.7 4.3 L21.4 4.9 L19.1 5.6 L16.9 6.4 L14.6 7.5 L12.4 8.6 L10.2 10 L8.2 11.4 L6.2 13.1 L4.4 14.9 L4.8 15.3 L6.7 13.6 L8.7 12.1 L10.8 10.8 L12.9 9.6 L15.1 8.6 L17.3 7.7 L19.6 6.9 L21.8 6.2 L24 5.7 L26.1 5.2 L28.2 4.9 L30.2 4.6 L32.2 4.5 L34 4.5 L35.6 4.5 L37.2 4.6Z" />
-            <path d="M4.6 15.7 L5.6 15.6 L6.5 15.4 L7.4 15.2 L8.3 15 L9.1 14.7 L10 14.4 L10.9 14 L11.9 13.6 L12.8 13.2 L12.8 13 L11.8 13.4 L10.8 13.7 L9.9 13.9 L9 14.1 L8.1 14.3 L7.2 14.4 L6.4 14.4 L5.5 14.5 L4.6 14.5Z" />
-            <path d="M5.2 15.2 L5.3 14.4 L5.4 13.6 L5.5 12.8 L5.6 12 L5.8 11.1 L6.1 10.3 L6.5 9.3 L6.9 8.4 L7.4 7.4 L7.2 7.4 L6.7 8.3 L6.2 9.2 L5.7 10.1 L5.3 10.9 L4.9 11.8 L4.6 12.6 L4.4 13.4 L4.2 14.2 L4 15Z" />
-          </svg>
-          <span>A few moments</span>
-        </span>
+        <span className="personal-photos-label">Personal life</span>
       </button>
     </div>
   )
@@ -77,186 +122,135 @@ export function PersonalPhotosPreview({ onOpen, className = "", items, position 
 
 export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto) => ReactNode }) {
   const [open, setOpen] = useState(false)
-  const [initialPosition, setInitialPosition] = useState(0)
-  const [resumePosition, setResumePosition] = useState(0)
   const previewCount = usePreviewCount()
-  const [previewAnchor, setPreviewAnchor] = useState(0)
+  const columnCount = useSheetColumns()
+  // The first photos are the prints, so dealing them round-robin puts them
+  // across the top of the sheet rather than down its left-hand column.
+  const sheetColumns = Array.from({ length: columnCount }, (_, column) =>
+    photos.map((photo, index) => ({ photo, index })).filter(({ index }) => index % columnCount === column))
   const [previewImages, setPreviewImages] = useState<Record<string, string>>({})
-  const previewStart = Math.min(previewAnchor, photos.length - previewCount)
-  const preview = photos.slice(previewStart, previewStart + previewCount).map((photo) => ({
+  const preview = photos.slice(0, previewCount).map((photo) => ({
     photo, src: previewImages[photo.id] ?? `/images/personal/${photo.name}-thumb.webp`,
   }))
   const [opener, setOpener] = useState<HTMLElement | null>(null)
   const [origins, setOrigins] = useState<ReturnType<typeof measurePhotoOrigins>>([])
-  const openPhoto: OpenPhoto = (index, opener) => {
-    setOrigins(measurePhotoOrigins(opener))
-    setOpener(opener)
-    setInitialPosition(index)
-    setOpen(true)
-  }
-  const stripRef = useRef<HTMLDivElement>(null)
-  const [stripNode, setStripNode] = useState<HTMLDivElement | null>(null)
-  const popupRef = useRef<HTMLDivElement>(null)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const [sheetNode, setSheetNode] = useState<HTMLDivElement | null>(null)
   const dialogActions = useRef<Dialog.Root.Actions>(null)
   const finishPhotoClose = useCallback(() => dialogActions.current?.unmount(), [])
-  const dragRef = useRef<{ pointerId: number; startX: number; startScroll: number; dragged: boolean } | null>(null)
   const pressedClearance = useRef(false)
-  const snapTimerRef = useRef(0)
-  const registerStrip = useCallback((strip: HTMLDivElement | null) => {
-    stripRef.current = strip
-    setStripNode(strip)
-    if (!strip) return
-    const slides = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")
-    const step = slides[1].offsetLeft - slides[0].offsetLeft
-    strip.scrollLeft = initialPosition * step
-  }, [initialPosition])
+  /** The rewind in progress, if a close has been asked for but not yet taken. */
+  const rewinding = useRef<{ cancelled: boolean } | null>(null)
+  const openPhoto: OpenPhoto = (opener) => {
+    setOrigins(measurePhotoOrigins(opener))
+    setOpener(opener)
+    setOpen(true)
+  }
+  // A reopen during the rewind (a render-prop consumer could) drops the
+  // pending close rather than letting it fire under the new visit.
+  useEffect(() => {
+    if (!open || !rewinding.current) return
+    rewinding.current.cancelled = true
+    rewinding.current = null
+  }, [open])
+  const registerSheet = useCallback((sheet: HTMLDivElement | null) => {
+    sheetRef.current = sheet
+    setSheetNode(sheet)
+    if (sheet) sheet.scrollTop = 0
+  }, [])
   const reducedMotion = usePrefersReducedMotion()
-  usePhotoOriginTransition(stripNode, open, opener, origins, reducedMotion, finishPhotoClose)
+  usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
-  const moveTo = (index: number) => {
-    const strip = stripRef.current
-    if (!strip) return
-    const next = Math.max(0, Math.min(photos.length - 1, index))
-    const slide = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[next]
-    const first = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[0]
-    strip.scrollTo({ left: slide.offsetLeft - first.offsetLeft, behavior: reducedMotion ? "instant" : "smooth" })
-  }
-
-  const nearestIndex = () => {
-    const strip = stripRef.current
-    if (!strip) return 0
-    const first = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[0]
-    let nearest = 0
-    let distance = Infinity
-    photos.forEach((_, index) => {
-      const slide = strip.querySelectorAll<HTMLElement>(".personal-photos-slide")[index]
-      const target = Math.min(slide.offsetLeft - first.offsetLeft, strip.scrollWidth - strip.clientWidth)
-      const delta = Math.abs(target - strip.scrollLeft)
-      if (delta < distance) {
-        nearest = index
-        distance = delta
-      }
-    })
-    return nearest
-  }
-
-  // Mouse drag-to-scroll; touch already pans natively. Snap is suspended while
-  // dragging so scrollLeft writes aren't fought by mandatory snap, then restored
-  // once the release scroll settles on the nearest slide.
-
+  // The sheet scrolls natively. Its own margin — the padding around the
+  // masonry — dismisses on click; the prints and the gaps between them keep
+  // swallowing theirs, so browsing never closes by accident.
   const onPointerDown = (event: ReactPointerEvent) => {
-    // Pointer capture retargets the closing click to the strip, so remember
-    // where the press actually landed rather than trusting the click's target.
+    // A press and its click can land on different nodes; trust the press.
     pressedClearance.current = event.target === event.currentTarget
-    if (event.pointerType !== "mouse" || event.button !== 0) return
-    const strip = stripRef.current
-    if (!strip) return
-    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startScroll: strip.scrollLeft, dragged: false }
   }
-
-  const onPointerMove = (event: ReactPointerEvent) => {
-    const drag = dragRef.current
-    const strip = stripRef.current
-    if (!drag || !strip || event.pointerId !== drag.pointerId) return
-    const delta = event.clientX - drag.startX
-    if (!drag.dragged) {
-      if (Math.abs(delta) < 4) return
-      drag.dragged = true
-      window.clearTimeout(snapTimerRef.current)
-      strip.setPointerCapture(drag.pointerId)
-      strip.style.scrollSnapType = "none"
-    }
-    strip.scrollLeft = drag.startScroll - delta
-  }
-
-  const onPointerEnd = (event: ReactPointerEvent) => {
-    const drag = dragRef.current
-    const strip = stripRef.current
-    if (!drag || event.pointerId !== drag.pointerId) return
-    dragRef.current = null
-    if (!drag.dragged || !strip) return
-    pressedClearance.current = false
-    moveTo(nearestIndex())
-    snapTimerRef.current = window.setTimeout(() => {
-      strip.style.scrollSnapType = ""
-    }, reducedMotion ? 0 : 450)
-  }
-
-  // Coarse pointers pan the whole strip, shadow clearance included, so the
-  // clearance has to take over the dismissal the backdrop used to give us. Only
-  // the strip's own padding counts; the card row keeps swallowing its clicks.
-  const onStripClick = (event: ReactMouseEvent) => {
+  const onSheetClick = (event: ReactMouseEvent) => {
     if (pressedClearance.current && event.target === event.currentTarget) dialogActions.current?.close()
-  }
-
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.altKey || event.ctrlKey || event.metaKey) return
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return
-    event.preventDefault()
-    moveTo(event.key === "Home" ? 0 : event.key === "End" ? photos.length - 1 : nearestIndex() + (event.key === "ArrowRight" ? 1 : -1))
   }
 
   const onOpenChange = (nextOpen: boolean, details: Dialog.Root.ChangeEventDetails) => {
     if (!nextOpen) {
-      const strip = stripRef.current
-      if (strip) {
-        const slides = Array.from(strip.querySelectorAll<HTMLElement>(".personal-photos-slide"))
-        const step = slides[1].offsetLeft - slides[0].offsetLeft
-        setResumePosition(strip.scrollLeft / step)
-        const bounds = strip.getBoundingClientRect()
-        const firstVisible = slides.findIndex((slide) => slide.getBoundingClientRect().right > bounds.left)
-        setPreviewAnchor(Math.max(0, firstVisible))
-        setPreviewImages(Object.fromEntries(slides.map((slide, index) => {
+      const sheet = sheetRef.current
+      // At the first row the close is immediate: the prints fly home and the
+      // rest of the sheet goes with it. A scrolled sheet first rewinds to
+      // that row, then asks again; only the second request closes. The dialog
+      // stays open under the rewind, and a second Escape during it closes at
+      // once.
+      if (sheet && sheet.scrollTop > 0 && !reducedMotion && !rewinding.current) {
+        const halt = { cancelled: false }
+        rewinding.current = halt
+        void rewindSheet(sheet, halt).then(() => {
+          if (!halt.cancelled) dialogActions.current?.close()
+        })
+        return
+      }
+      if (rewinding.current) rewinding.current.cancelled = true
+      rewinding.current = null
+      if (sheet) {
+        // Hand the stack the full-size bitmaps the sheet has loaded, so the
+        // returning photo and the print it lands on are the same image.
+        // Keyed by the slide's own photo, not by its place in the sheet: the
+        // columns are dealt round-robin, so DOM order is not photo order.
+        setPreviewImages(Object.fromEntries(Array.from(sheet.querySelectorAll<HTMLElement>(".personal-photos-slide")).flatMap((slide) => {
+          const photo = photos.find((item) => item.id === slide.dataset.photoId)
+          if (!photo) return []
           const image = slide.querySelector("img")!
-          const photo = photos[index]
-          return [photo.id, image.complete && image.naturalWidth ? image.currentSrc : `/images/personal/${photo.name}-thumb.webp`]
+          return [[photo.id, image.complete && image.naturalWidth ? image.currentSrc : `/images/personal/${photo.name}-thumb.webp`] as const]
         })))
       }
       // The flight owns its final frame. An interrupted CSS opacity transition
       // can finish early and must not unmount the returning photos underneath it.
       if (!reducedMotion && origins.length) details.preventUnmountOnClose()
-      window.clearTimeout(snapTimerRef.current)
-      dragRef.current = null
     }
     setOpen(nextOpen)
   }
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange} actionsRef={dialogActions}>
-      {children ? children(openPhoto) : <PersonalPhotosPreview onOpen={openPhoto} items={preview} position={resumePosition} />}
+      {children ? children(openPhoto) : <PersonalPhotosPreview onOpen={openPhoto} items={preview} />}
       <Dialog.Portal>
         <Dialog.Backdrop className="personal-photos-backdrop" />
-        <Dialog.Popup ref={popupRef} initialFocus={popupRef} finalFocus={() => opener} className="personal-photos-dialog" onKeyDown={onKeyDown}>
+        <Dialog.Popup initialFocus={sheetRef} finalFocus={() => opener} className="personal-photos-dialog">
           <Dialog.Title className="sr-only">Personal photos</Dialog.Title>
-          <Dialog.Description className="sr-only">A few moments outside the portfolio. Scroll horizontally, swipe, drag, or use the left and right arrow keys to browse.</Dialog.Description>
+          <Dialog.Description className="sr-only">A few moments outside the portfolio, laid out on one sheet. Scroll to browse; Escape or a click on the margin returns to the page.</Dialog.Description>
           <div
-            ref={registerStrip}
-            className="personal-photos-strip"
+            ref={registerSheet}
+            className="personal-photos-sheet"
             role="region"
-            aria-label="Photo carousel"
-            aria-roledescription="carousel"
+            aria-label="Photo sheet"
             tabIndex={0}
-            onClick={onStripClick}
             onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerEnd}
-            onPointerCancel={onPointerEnd}
+            onClick={onSheetClick}
           >
-            <div className="personal-photos-track">
-              {photos.map((photo, index) => (
-                <figure className="personal-photos-slide" data-photo-id={photo.id} key={photo.id} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${photos.length}`}>
-                  <img
-                    src={`/images/personal/${photo.name}.webp`}
-                    alt={photo.alt}
-                    width={photo.width}
-                    height={photo.height}
-                    data-orientation={photo.height === photo.width ? "square" : photo.height > photo.width ? "portrait" : "landscape"}
-                    decoding="async"
-                    draggable={false}
-                    style={{ backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
-                  />
-                  <figcaption>{photo.caption}</figcaption>
-                </figure>
+            <div className="personal-photos-masonry">
+              {sheetColumns.map((column, columnIndex) => (
+                <div className="personal-photos-column" key={columnIndex}>
+                  {column.map(({ photo, index }) => (
+                    <figure
+                      className="personal-photos-slide"
+                      data-photo-id={photo.id}
+                      data-photo-retained={index < previewCount ? "" : undefined}
+                      key={photo.id}
+                      role="group"
+                      aria-label={`${index + 1} of ${photos.length}`}
+                    >
+                      <img
+                        src={`/images/personal/${photo.name}.webp`}
+                        alt={photo.alt}
+                        width={photo.width}
+                        height={photo.height}
+                        decoding="async"
+                        draggable={false}
+                        style={{ backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
+                      />
+                      <figcaption>{photo.caption}</figcaption>
+                    </figure>
+                  ))}
+                </div>
               ))}
             </div>
           </div>

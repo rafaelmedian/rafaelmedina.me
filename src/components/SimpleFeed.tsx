@@ -20,6 +20,7 @@ import { ProfileEmailCopy } from "./ProfileEmailCopy"
 import { ProfileLocation } from "./ProfileLocation"
 import { SiteLastUpdated } from "./SiteLastUpdated"
 import { MobileTableOfContents } from "./MobileTableOfContents"
+import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
 import { ResumeTile } from "./ResumeTile"
 import { portfolioQuotes } from "../data/quotes"
@@ -995,6 +996,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           if (item.kind === "writings") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
                               <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
+                            </div>
+                          )
+                          if (item.kind === "photos") return (
+                            <div key={item.area} className={itemClass} style={itemStyle}>
+                              <PersonalPhotos />
                             </div>
                           )
                           const itemKey = item.card.id
