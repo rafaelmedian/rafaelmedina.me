@@ -105,7 +105,7 @@ export function PersonalPhotosPreview({ onOpen, className = "", items }: { onOpe
       {/* Whichever print is tapped, the sheet opens at its first row: the
           prints are always the first photos, and the close always brings
           those same photos back, so no visit reshuffles the stack. */}
-      <button type="button" className="personal-photos-trigger" aria-label="View personal photos" aria-haspopup="dialog" onClick={(event) => onOpen(event.currentTarget)}>
+      <button type="button" className="personal-photos-trigger" aria-haspopup="dialog" onClick={(event) => onOpen(event.currentTarget)}>
         <span className="personal-photos-stack" aria-hidden="true" style={{ "--photo-preview-count": preview.length } as CSSProperties}>
           {preview.map(({ photo, src }, index) => (
             <span className="personal-photos-print" data-photo-id={photo.id} key={photo.id} style={arcPlacement(index, middle, preview.length)}>

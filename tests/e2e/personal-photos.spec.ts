@@ -129,7 +129,7 @@ test("four or five photos stay in one overlapping row at each breakpoint", async
   await page.emulateMedia({ reducedMotion: "reduce" })
   await openHome(page)
   await expect(page.locator(".mosaic-about-photo")).toHaveCount(0)
-  const trigger = page.getByRole("button", { name: "View personal photos" })
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   const prints = page.locator(".personal-photos-print")
   for (const width of [1440, 900, 390, 320]) {
     await page.setViewportSize({ width, height: 900 })
@@ -377,7 +377,7 @@ test("Escape and the sheet's margin close it and hand focus back; there is no ch
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
-  const trigger = page.getByRole("button", { name: "View personal photos" })
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   await page.locator(".personal-photos-print").first().click()
   await expect(dialog(page)).toBeVisible()
   await expect(dialog(page).getByRole("button")).toHaveCount(0)
@@ -399,7 +399,7 @@ test("the sheet scrolls with the wheel and keys and reopens at the top", async (
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
-  const trigger = page.getByRole("button", { name: "View personal photos" })
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   await trigger.focus()
   await page.keyboard.press("Enter")
   await expect(dialog(page)).toBeVisible()
@@ -428,7 +428,7 @@ test("the sheet scrolls with the wheel and keys and reopens at the top", async (
 test("closing from the first row is immediate; a scrolled sheet rewinds there first, then the same prints fly home", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
-  const trigger = page.getByRole("button", { name: "View personal photos" })
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   const prints = trigger.locator(".personal-photos-print")
   const retained = await prints.evaluateAll((elements) => elements.map((print) => (print as HTMLElement).dataset.photoId))
   const flights = page.locator(".personal-photos-flight")
@@ -493,7 +493,7 @@ test("closing from the first row is immediate; a scrolled sheet rewinds there fi
 test("the hand takes its shape before the photos come home, and holds it once they are back", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
-  const trigger = page.getByRole("button", { name: "View personal photos" })
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   const prints = trigger.locator(".personal-photos-print")
   const rects = () => prints.evaluateAll((elements) => elements.map((print) => {
     const { x, y, width, height } = print.getBoundingClientRect()
@@ -530,7 +530,7 @@ test("on a phone the sheet keeps two columns, honours reduced motion, and fits l
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await openHome(page)
-  const trigger = page.getByRole("button", { name: "View personal photos" })
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   await trigger.click()
   await expect(dialog(page)).toBeVisible()
   expect(await dialog(page).evaluate((element) => parseFloat(getComputedStyle(element).transitionDuration))).toBeLessThan(0.001)

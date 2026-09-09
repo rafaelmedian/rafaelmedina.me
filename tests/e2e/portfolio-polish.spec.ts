@@ -2946,8 +2946,8 @@ test("shows about and the work history summary together", async ({ page }) => {
   )
 
   // The photos are a work-grid tile now, not the closing block of About.
-  await expect(panel.getByRole("button", { name: "View personal photos" })).toHaveCount(0)
-  await expect(page.locator("#work").getByRole("button", { name: "View personal photos" })).toBeVisible()
+  await expect(panel.getByRole("button", { name: "Personal life", exact: true })).toHaveCount(0)
+  await expect(page.locator("#work").getByRole("button", { name: "Personal life", exact: true })).toBeVisible()
   await expect(panel.getByRole("button", { name: /Briefcase sticker/ })).toHaveCount(0)
 })
 
