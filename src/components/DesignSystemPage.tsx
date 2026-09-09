@@ -277,7 +277,7 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, and entry rows, and every line of the About sheet below its two section headings",
+    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, and entry rows, and every line of the About sheet below its three section headings",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
@@ -1929,15 +1929,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
-                <li data-ds-terms={terms("about reading surface 36rem work history education stickers clamp(5rem, 10vw, 8.75rem) #about-panel-resume")}>
-                  <strong>About is one continuous reading surface.</strong> The introduction, Work history, and Education
-                  share one left-aligned 36rem reading axis in normal document flow. The introduction starts with a
+                <li data-ds-terms={terms("about reading surface 36rem work history education services pricing stickers clamp(5rem, 10vw, 8.75rem) #about-panel-resume #about-panel-services")}>
+                  <strong>About is one continuous reading surface.</strong> The introduction, Work history, Education, and
+                  Services share one left-aligned 36rem reading axis in normal document flow. The introduction starts with a
                   fluid <code>clamp(5rem, 10vw, 8.75rem)</code> (80–140px) inset from the sheet&rsquo;s top: 5rem on
                   mobile, growing to 8.75rem on wide desktops. Work history sits 5rem below About on mobile and
                   8.75rem below it on desktop, without a hairline. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users. Each role shows one representative result, aligns its
                   dates opposite the company on wider screens, then ends with a PDF download 5rem (80px) after Education.
+                  Services closes the sheet on the same 5rem/8.75rem gap and the same two-column entry grid, with an engagement
+                  shape where the résumé carries dates; it publishes no rate card, and ends on the email address and a
+                  booking link into the same Cal.com dialog the hero&rsquo;s availability line opens.
                   Company names are keyboard-focusable external links without hover or focus tooltips. There is no tab state or
-                  hidden panel; <code>#about-panel-resume</code> anchors directly to the visible Work history section.
+                  hidden panel; <code>#about-panel-resume</code> and <code>#about-panel-services</code> anchor directly to the
+                  visible Work history and Services sections.
                 </li>
               </ul>
             </div>
