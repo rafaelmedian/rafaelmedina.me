@@ -3406,7 +3406,23 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
       })
       observer.observe(element, { attributes: true, attributeFilter: ["class"] })
       document.querySelector<HTMLButtonElement>(selector)?.click()
-      await new Promise((resolve) => setTimeout(resolve, 600))
+      // Wait for the settle to land rather than for a fixed stretch of clock.
+      // The switch is three React commits stepped by a timer, and a runner
+      // slow enough to spread those past any sleep this test picks would fail
+      // it on the sleep rather than on the poses. Resolving on the return to
+      // rest keeps every assertion below exact -- a card that never settles
+      // still ends the recording on its last real pose and fails.
+      await new Promise<void>((resolve) => {
+        const cap = setTimeout(resolve, 5000)
+        const settled = new MutationObserver(() => {
+          if ([...element.classList].some((name) => name.includes("switch-"))) return
+          clearTimeout(cap)
+          settled.disconnect()
+          // One more turn so the idle pose reaches the recording observer.
+          setTimeout(resolve, 0)
+        })
+        settled.observe(element, { attributes: true, attributeFilter: ["class"] })
+      })
       observer.disconnect()
       return seen
     }, navSelector)
