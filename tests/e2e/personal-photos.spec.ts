@@ -290,10 +290,6 @@ test("every print leaves for the middle of the screen in one beat and comes home
   await holdFlights(page)
   const prints = page.locator(".personal-photos-print")
   const retained = await prints.evaluateAll((elements) => elements.map((print) => (print as HTMLElement).dataset.photoId))
-  const fanCentre = await page.locator(".personal-photos-stack").evaluate((element) => {
-    const rect = element.getBoundingClientRect()
-    return rect.left + rect.width / 2
-  })
   await prints.first().click()
   const flights = page.locator(".personal-photos-flight")
   // The sheet deals its columns round-robin, so all five prints have a slot on
@@ -305,9 +301,9 @@ test("every print leaves for the middle of the screen in one beat and comes home
   await expect(flights).toHaveCount(flying.length)
   expect(await flights.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.photoId))).toEqual(flying)
 
-  // The fan sits off to one side of the page; the sheet it opens onto is
-  // centred, so the prints travel to the middle of the screen together rather
-  // than being thrown further out to one edge.
+  // The sheet is centred on the page, so the hand lands on the middle of the
+  // screen together rather than being thrown out to one edge -- which is what
+  // has to hold wherever in the grid the band the fan sits in ends up.
   // Read where each flight is headed, not where it is: the flights are held at
   // their first frame, which is still the print's own place on the page. A
   // clone is positioned on its landing slot and carries the trip back to the
@@ -320,7 +316,6 @@ test("every print leaves for the middle of the screen in one beat and comes home
     Math.min(...landings.map(({ centre, width }) => centre - width / 2)) +
     Math.max(...landings.map(({ centre, width }) => centre + width / 2))
   ) / 2
-  expect(Math.abs(landingCentre - 1440 / 2)).toBeLessThan(Math.abs(fanCentre - 1440 / 2))
   expect(landingCentre).toBeCloseTo(1440 / 2, 0)
 
   const deal = await flights.evaluateAll((elements) => elements.map((element) => {

@@ -38,7 +38,8 @@
     .mosaic-section-corner,
     .mosaic-social-corner,
     .mosaic-mobile-toc,
-    .mosaic-row
+    .mosaic-group,
+    .mosaic-row-item
   ) {
     animation: none;
   }

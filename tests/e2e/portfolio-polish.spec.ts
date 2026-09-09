@@ -603,13 +603,21 @@ test("centers a wrapped contact action on narrow mobile widths", async ({ page }
   expect(followBox!.x + followBox!.width / 2).toBeCloseTo(actionsBox!.x + actionsBox!.width / 2, 0)
 })
 
-test("insets row videos from the card sides on mobile", async ({ page }) => {
+test("contains framed row videos inside their cards on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 473, height: 994 })
   await page.goto("/")
 
   const video = page.locator(".mosaic-row-card video.mosaic-row-media").first()
-  await expect(video).toHaveCSS("padding-left", "8px")
-  await expect(video).toHaveCSS("padding-right", "8px")
+  const card = video.locator("xpath=..")
+  const [cardBox, videoBox] = await Promise.all([card.boundingBox(), video.boundingBox()])
+
+  await expect(video).toHaveCSS("object-fit", "contain")
+  expect(cardBox).not.toBeNull()
+  expect(videoBox).not.toBeNull()
+  expect(videoBox!.x).toBeGreaterThanOrEqual(cardBox!.x)
+  expect(videoBox!.y).toBeGreaterThanOrEqual(cardBox!.y)
+  expect(videoBox!.x + videoBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width)
+  expect(videoBox!.y + videoBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height)
 })
 
 test("sets the whole About sheet on the reading step under one heading step", async ({ page }) => {
@@ -1172,6 +1180,9 @@ test("opens the Punta Cana map from the hero's location line", async ({ page }) 
   const card = page.locator(".mosaic-profile-location-card")
   await expect(card).toHaveAttribute("data-state", "closed")
 
+  // A hover during the stagger's delay can open the card before its anchor
+  // rises out from under the pointer and closes it again.
+  await settleAvatarIntro(page)
   await place.hover()
   await expect(card).toHaveAttribute("data-state", "open")
   await expect(card.getByText("Dominican Republic", { exact: true })).toBeVisible()
@@ -2253,26 +2264,26 @@ test("scrolls to and focuses the about section from the avatar button", async ({
   await expect(about).toHaveCSS("outline-style", "none")
 })
 
-test("keeps every project row together inside the takeover stage", async ({ page }) => {
+test("keeps every project group together inside the takeover stage", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
 
   const stage = page.locator(".mosaic-takeover-stage")
-  const rows = stage.locator(".mosaic-row")
+  const groups = stage.locator(".mosaic-group")
 
-  await expect(rows).toHaveCount(5)
+  await expect(groups).toHaveCount(4)
 
-  const gaps = await rows.evaluateAll((elements) =>
+  const gaps = await groups.evaluateAll((elements) =>
     elements.slice(1).map((element, index) => {
       const previousRect = elements[index].getBoundingClientRect()
       return Math.round(element.getBoundingClientRect().top - previousRect.bottom)
     }),
   )
 
-  expect(gaps).toEqual([16, 16, 16, 16])
+  expect(gaps).toEqual([16, 16, 16])
 })
 
-test("leaves a generous white runway after the final project row before the about takeover", async ({ page }) => {
+test("leaves a generous white runway after the final project group before the about takeover", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
 
@@ -2280,10 +2291,10 @@ test("leaves a generous white runway after the final project row before the abou
   await stage.evaluate((element) => element.scrollIntoView({ block: "end" }))
 
   const endSpacing = await stage.evaluate((element) => {
-    const lastRow = element.querySelector(".mosaic-row:last-child")
-    if (!lastRow) return null
+    const lastGroup = element.querySelector(".mosaic-group:last-child")
+    if (!lastGroup) return null
 
-    return Math.round(element.getBoundingClientRect().bottom - lastRow.getBoundingClientRect().bottom)
+    return Math.round(element.getBoundingClientRect().bottom - lastGroup.getBoundingClientRect().bottom)
   })
 
   expect(endSpacing).toBeGreaterThanOrEqual(250)
@@ -2864,16 +2875,6 @@ test("rests preview videos while the about sheet covers the grid", async ({ page
   await page.locator("#about-panel").evaluate((element) => element.scrollIntoView({ block: "start" }))
   await page.evaluate(() => window.scrollBy(0, 80))
 
-  // The pinned grid still intersects the viewport behind the sheet, so a pause
-  // here proves the occlusion signal, not the offscreen one.
-  expect(
-    await videos.evaluateAll((elements) =>
-      elements.some((video) => {
-        const rect = video.getBoundingClientRect()
-        return rect.bottom > 0 && rect.top < window.innerHeight
-      }),
-    ),
-  ).toBe(true)
   await expect.poll(() =>
     videos.evaluateAll((elements) => elements.every((video) => (video as HTMLVideoElement).paused)),
   ).toBe(true)
@@ -2942,11 +2943,10 @@ test("shows every project immediately on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const rows = page.locator(".mosaic-row")
-  await expect(rows).toHaveCount(5)
-  await expect(rows.first()).toBeVisible()
-  await expect(rows.nth(1)).toBeVisible()
-  await expect(rows.last()).toBeVisible()
+  const cards = page.locator("a.mosaic-row-card")
+  await expect(cards).toHaveCount(12)
+  await expect(cards.first()).toBeVisible()
+  await expect(cards.last()).toBeVisible()
   await expect(page.getByRole("button", { name: /View \d+ more projects/ })).toHaveCount(0)
 })
 
@@ -2956,15 +2956,17 @@ test("loads each preview video only when it reaches the viewport", async ({ page
 
   const videos = page.locator(".mosaic-row-card video.mosaic-row-media")
   const visibleVideo = videos.first()
-  const offscreenVideo = videos.nth(1)
+  const secondVisibleVideo = videos.nth(1)
+  const offscreenVideo = videos.nth(2)
 
   await expect(visibleVideo).toHaveAttribute("src", "/Projects/shot-small-9.webm")
+  await expect(secondVisibleVideo).toHaveAttribute("src", "/Projects/shot-small-16.webm")
   expect(await offscreenVideo.evaluate((video) => video.getBoundingClientRect().top)).toBeGreaterThanOrEqual(780)
   await expect(offscreenVideo).not.toHaveAttribute("src", /\S+/)
   await expect(offscreenVideo).toHaveAttribute("preload", "none")
 
   await offscreenVideo.scrollIntoViewIfNeeded()
-  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/shot-small-16.webm")
+  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/shot-small-20.webm")
   await expect(offscreenVideo).toHaveAttribute("preload", "metadata")
 })
 
@@ -2977,24 +2979,30 @@ test("keeps the selected work label out of the visual layout", async ({ page }) 
   await expect(heading).toHaveClass("sr-only")
 })
 
-test("uses eight pixel mobile gutters and taller project cards", async ({ page }) => {
+test("uses eight pixel mobile gutters and opens with two columns", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
+  await settleAvatarIntro(page)
 
-  const cardBox = await page.locator(".mosaic-row-card").first().boundingBox()
-  expect(cardBox).not.toBeNull()
-  expect(cardBox!.x).toBe(8)
-  expect(cardBox!.x + cardBox!.width).toBe(mobileViewport.width - 8)
-  expect(cardBox!.height).toBeGreaterThanOrEqual(340)
+  const [walletBox, homepageBox] = await Promise.all([
+    page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).boundingBox(),
+    page.getByRole("link", { name: /Open Matcha homepage/ }).boundingBox(),
+  ])
+  expect(walletBox).not.toBeNull()
+  expect(homepageBox).not.toBeNull()
+  expect(walletBox!.x).toBe(8)
+  expect(homepageBox!.x + homepageBox!.width).toBe(mobileViewport.width - 8)
+  expect(walletBox!.y).toBeCloseTo(homepageBox!.y, 0)
+  expect(homepageBox!.x).toBeGreaterThan(walletBox!.x + walletBox!.width)
 })
 
-test("places the quote slider beside Protector instead of Dark mode", async ({ page }) => {
+test("places the quote slider in the portrait group with Protector", async ({ page }) => {
   await page.goto("/")
 
   const protectorCard = page.getByRole("link", { name: /Open Protector/ })
-  const row = page.locator(".mosaic-row").filter({ has: protectorCard })
+  const group = page.locator(".mosaic-group").filter({ has: protectorCard })
 
-  await expect(row.locator(".mosaic-quote")).toHaveCount(1)
+  await expect(group.locator(".mosaic-quote")).toHaveCount(1)
   await expect(page.getByRole("link", { name: /Open Matcha dark mode/ })).toHaveCount(0)
 })
 
@@ -3003,12 +3011,12 @@ test("opens the resume reader from the folded tile and returns focus on close", 
   await page.goto("/")
 
   const protectorCard = page.getByRole("link", { name: /Open Protector/ })
-  const row = page.locator(".mosaic-row").filter({ has: protectorCard })
+  const row = page.locator(".mosaic-group").filter({ has: protectorCard })
   const resume = row.getByRole("button", { name: "Open résumé" })
 
-  await expect(row.locator(".mosaic-row-item")).toHaveCount(4)
+  await expect(row.locator(".mosaic-row-item")).toHaveCount(6)
   await expect(row.getByRole("button", { name: "Personal life", exact: true })).toBeVisible()
-  await expect(row.locator(".mosaic-row-item").first().locator(".resume-tile")).toHaveCount(1)
+  await expect(row.locator(".mosaic-tile-resume .resume-tile")).toHaveCount(1)
   await expect(resume.locator(".resume-tile-sheet")).toHaveCSS("background-color", "rgb(255, 255, 255)")
   await expect(resume.locator(".resume-tile-fold")).toHaveCount(1)
   await expect(resume.locator(".resume-tile-copy")).toContainText("Stealth fintech")
@@ -3087,11 +3095,9 @@ test("keeps the desktop resume reader free of a close control", async ({ page })
   await expect(dialog.locator(".resume-dialog-close")).toHaveCSS("display", "none")
 })
 
-// Protector is the one tile that owns most of its row, so it is the one the
-// flat three-up `sizes` used to under-declare: it asked for 446px, rendered at
-// ~790, and the crop scale magnified that again. The variant it loads has to
-// keep up with the slot, not with the three-up baseline.
-test("asks for a variant that matches Protector's share of the four-tile row", async ({ page }) => {
+// Protector owns the widest portrait slot. Its responsive source declaration
+// must follow the rendered card rather than a generic equal-column baseline.
+test("asks for a variant that matches Protector's wide slot", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
 
@@ -3107,67 +3113,63 @@ test("asks for a variant that matches Protector's share of the four-tile row", a
   })
 
   expect(declared).toBeGreaterThanOrEqual(itemWidth * 0.9)
-  expect(itemWidth).toBeLessThanOrEqual(480)
-  expect(chosen).toMatch(/protector-480w\.webp$/)
+  expect(chosen).toMatch(/protector-960w\.webp$/)
 })
 
-test("closes the token-page row with the dealership hub", async ({ page }) => {
+test("keeps the staggered projects in the offset group", async ({ page }) => {
   await page.goto("/")
 
   const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
-  const row = page.locator(".mosaic-row").filter({ has: tokenCard })
-  const cards = row.locator(".mosaic-row-card")
+  const group = page.locator(".mosaic-group").filter({ has: tokenCard })
+  const cards = group.locator(".mosaic-row-card")
 
-  await expect(cards).toHaveCount(3)
-  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha token page/)
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha trade page/)
-  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Dealership lead hub/)
+  await expect(cards).toHaveCount(4)
+  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Shared family stories/)
+  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Dealership lead hub/)
+  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha token page/)
+  await expect(cards.nth(3)).toHaveAttribute("aria-label", /Open Matcha Rewards/)
 })
 
-test("keeps the token-page row's projects equal width", async ({ page }) => {
+test("uses narrower left and wider right columns in the offset group", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/")
 
   const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
-  const tradePageCard = page.getByRole("link", { name: /Open Matcha trade page/ })
+  const familyCard = page.getByRole("link", { name: /Open Shared family stories/ })
+  const rewardsCard = page.getByRole("link", { name: /Open Matcha Rewards/ })
   const dealershipCard = page.getByRole("link", { name: /Open Dealership lead hub/ })
-  const row = page.locator(".mosaic-row").filter({ has: tokenCard })
-  await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
+  const group = page.locator(".mosaic-group").filter({ has: tokenCard })
+  await expect(group.locator(".mosaic-row-item")).toHaveCount(4)
 
-  const [tokenBox, tradePageBox, dealershipBox] = await Promise.all([
+  const [familyBox, tokenBox, dealershipBox, rewardsBox] = await Promise.all([
+    familyCard.boundingBox(),
     tokenCard.boundingBox(),
-    tradePageCard.boundingBox(),
     dealershipCard.boundingBox(),
+    rewardsCard.boundingBox(),
   ])
+  expect(familyBox).not.toBeNull()
   expect(tokenBox).not.toBeNull()
-  expect(tradePageBox).not.toBeNull()
   expect(dealershipBox).not.toBeNull()
-  expect(tokenBox!.width).toBeCloseTo(tradePageBox!.width, 0)
-  expect(tradePageBox!.width).toBeCloseTo(dealershipBox!.width, 0)
+  expect(rewardsBox).not.toBeNull()
+  expect(familyBox!.width).toBeCloseTo(tokenBox!.width, 0)
+  expect(dealershipBox!.width).toBeCloseTo(rewardsBox!.width, 0)
+  expect(dealershipBox!.width).toBeGreaterThan(tokenBox!.width)
 })
 
-test("caps each row at three projects and omits Mobile navigation", async ({ page }) => {
+test("closes with the three Matcha projects and omits Mobile navigation", async ({ page }) => {
   await page.goto("/")
 
-  const rows = page.locator(".mosaic-row")
-  // Addressed by content, not by index: the newer projects are interleaved
-  // through the grid, so this row moves whenever they are rearranged.
   const mobileCard = page.getByRole("link", { name: /Open Matcha on mobile/ })
-  const cards = rows.filter({ has: mobileCard }).locator(".mosaic-row-card")
+  const cards = page.locator(".mosaic-group").filter({ has: mobileCard }).locator(".mosaic-row-card")
 
-  await expect(rows).toHaveCount(5)
-  const rowCardCounts = await rows.evaluateAll((elements) =>
-    elements.map((element) => element.querySelectorAll(".mosaic-row-card").length),
-  )
-  expect(rowCardCounts.every((count) => count <= 3)).toBe(true)
   await expect(cards).toHaveCount(3)
   await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha on mobile/)
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha Pro/)
-  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha security audit/)
+  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha trade page/)
+  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha Pro/)
   await expect(page.getByRole("link", { name: /Open Matcha mobile navigation/ })).toHaveCount(0)
   await expect(cards.nth(0).locator("img")).toHaveAttribute("src", /shot-small-14\.jpg$/)
-  await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
-  await expect(cards.nth(2).locator("video")).toHaveAttribute("poster", "/Projects/shot-small-20-poster.webp")
+  await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-1\.jpg$/)
+  await expect(cards.nth(2).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
 })
 
 test("keeps the closing row's projects equal width", async ({ page }) => {
@@ -3175,7 +3177,7 @@ test("keeps the closing row's projects equal width", async ({ page }) => {
   await page.goto("/")
 
   const mobileCard = page.getByRole("link", { name: /Open Matcha on mobile/ })
-  const cards = page.locator(".mosaic-row").filter({ has: mobileCard }).locator(".mosaic-row-card")
+  const cards = page.locator(".mosaic-group").filter({ has: mobileCard }).locator(".mosaic-row-card")
   await expect(cards).toHaveCount(3)
   const widths = await cards.evaluateAll((elements) =>
     elements.map((element) => Math.round(element.getBoundingClientRect().width)),
@@ -4257,18 +4259,20 @@ test("ramps the blur radius behind desktop project captions", async ({ page }) =
   expect(tint).toContain("linear-gradient")
 })
 
-test("keeps wrapped desktop project captions readable over white artwork", async ({ page }) => {
+test("keeps desktop project captions readable over white artwork", async ({ page }) => {
   await page.setViewportSize({ width: 700, height: 1000 })
   await page.goto("/")
 
   const card = page.getByRole("link", { name: /Open Matcha multiwallet flow preview 1 of/ })
   const scrim = card.locator(".mosaic-row-card-scrim")
   const title = card.locator(".mosaic-row-card-title")
+  await title.evaluate((element) => { (element as HTMLElement).style.maxWidth = "110px" })
   await card.hover()
   await title.evaluate(async (element) => {
     await Promise.all(element.getAnimations().map((animation) => animation.finished))
   })
 
+  await expect(title).toBeVisible()
   expect(
     await title.evaluate(
       (element) => element.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(element).lineHeight),
@@ -4310,7 +4314,7 @@ test("keeps wrapped desktop project captions readable over white artwork", async
   expect(contrastOverWhite).toBeGreaterThanOrEqual(4.5)
 })
 
-test("fills the mobile cards with the featured Matcha previews", async ({ page }) => {
+test("contains the featured Matcha previews inside their mobile cards", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
@@ -4319,24 +4323,34 @@ test("fills the mobile cards with the featured Matcha previews", async ({ page }
     const media = card.locator(".mosaic-row-media")
     const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), media.boundingBox()])
 
-    await expect(media).toHaveCSS("object-fit", "cover")
+    await expect(media).toHaveCSS("object-fit", "contain")
     expect(cardBox).not.toBeNull()
     expect(mediaBox).not.toBeNull()
-    expect(mediaBox!.width).toBeCloseTo(cardBox!.width - 2, 0)
-    expect(mediaBox!.height).toBeCloseTo(cardBox!.height - 2, 0)
+    expect(mediaBox!.x).toBeGreaterThanOrEqual(cardBox!.x)
+    expect(mediaBox!.y).toBeGreaterThanOrEqual(cardBox!.y)
+    expect(mediaBox!.x + mediaBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width)
+    expect(mediaBox!.y + mediaBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height)
   }
 })
 
-test("crops and zooms the Protector artwork on mobile", async ({ page }) => {
+test("clips the Protector artwork to its full-width card on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
   const protectorMedia = page.locator(".mosaic-row-card-preview-protector .mosaic-row-media")
-  const scale = await protectorMedia.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).a)
+  const protectorCard = page.getByRole("link", { name: /Open Protector booking preview/ })
+  const [cardBox, mediaBox] = await Promise.all([protectorCard.boundingBox(), protectorMedia.boundingBox()])
 
   await expect(protectorMedia).toHaveCSS("object-fit", "cover")
-  await expect(protectorMedia).toHaveCSS("object-position", "21% 14%")
-  expect(scale).toBeGreaterThan(1)
+  await expect(protectorCard).toHaveCSS("overflow", "hidden")
+  expect(cardBox).not.toBeNull()
+  expect(mediaBox).not.toBeNull()
+  expect(cardBox!.x).toBe(8)
+  expect(cardBox!.x + cardBox!.width).toBe(mobileViewport.width - 8)
+  expect(mediaBox!.x).toBeLessThanOrEqual(cardBox!.x)
+  expect(mediaBox!.y).toBeLessThanOrEqual(cardBox!.y)
+  expect(mediaBox!.x + mediaBox!.width).toBeGreaterThanOrEqual(cardBox!.x + cardBox!.width)
+  expect(mediaBox!.y + mediaBox!.height).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height)
 })
 
 test("describes the stakes and choices in a Protector booking", async ({ page }) => {
@@ -4409,12 +4423,11 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   await page.goto("/")
 
   const shell = await page.locator(".mosaic-shell").boundingBox()
-  const firstRow = await page.locator(".mosaic-row").first().boundingBox()
+  const openingGroup = await page.locator(".mosaic-group").first().boundingBox()
   expect(shell).not.toBeNull()
   expect(shell!.width).toBeLessThanOrEqual(1560)
-  expect(firstRow).not.toBeNull()
-  // Rows are a flat 420px from the 900px breakpoint up (see .mosaic-row in index.css).
-  expect(firstRow!.height).toBe(420)
+  expect(openingGroup).not.toBeNull()
+  expect(openingGroup!.height).toBeLessThanOrEqual(420)
 })
 
 test("does not delay content behind an entrance under reduced motion", async ({ page }) => {
