@@ -11,6 +11,7 @@ import { usePortfolioItemUrl } from "../lib/portfolioUrl"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useOriginTravel, visibleOriginRect } from "../lib/originMotion"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
+import { NoteLikeButton } from "./NoteLikeButton"
 
 
 // A note is written as plain strings, and backticks are the one piece of markup
@@ -570,6 +571,7 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
                   ))}
                   {selected.href ? <a href={selected.href} target="_blank" rel="noreferrer">Read original article <ArrowUpRight size={16} aria-hidden="true" /></a> : null}
                 </div>
+                {open && reading && import.meta.env.VITE_LIKES_API_URL ? <NoteLikeButton key={selected.id} noteId={selected.id} /> : null}
                 {selected.acknowledgements ? (
                   <section className="writing-acknowledgements" aria-label="Acknowledgements">
                     <h3>Acknowledgements</h3>
