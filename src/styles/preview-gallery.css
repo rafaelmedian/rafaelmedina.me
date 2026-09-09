@@ -390,6 +390,26 @@
   object-fit: cover;
 }
 
+/* Family Stories is a transparent export of two tilted devices. They already
+   run off the bottom of their own canvas, but the tilt leaves an empty wedge
+   above and to the left of the front phone, and at this size the frame's grey
+   turns that wedge into a corner of dead space -- the artwork stops short of
+   the card while every other preview either fills its frame or sits in an even
+   mat. Zooming past the wedge closes it: the devices now meet the top and left
+   edges the way they already meet the bottom.
+
+   The origin does the choosing. Pinned to the bottom, the zoom cannot reopen
+   the bleed the composition is built on; held 8% off the right, it spends the
+   sliver of transparent margin the export carries on that side before it takes
+   anything off the story feed. 1.14 is the smallest scale that covers the
+   wedge -- below it the corner reappears, above it the "new story" pill and the
+   period labels start to go. */
+.preview-gallery-popup[data-preview-id="preview-family-stories"] .preview-gallery-media {
+  object-fit: cover;
+  transform: scale(1.14);
+  transform-origin: 92% 100%;
+}
+
 /* The frame, not the image, carries the landscape shape of the grid tile, so
    the crop stays put while the popup width changes. */
 .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
