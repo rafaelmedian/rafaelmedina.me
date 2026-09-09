@@ -39,6 +39,7 @@ Some files under `public/` are generated but committed, deliberately kept out of
 
 ```sh
 node scripts/build-resume.mjs                 # public/rafael-medina-resume.pdf + preview PNG
+node scripts/build-og-image.mjs               # public/og-image.png, shot from a built dist/
 node scripts/build-github-activity.mjs        # src/data/githubActivity.ts
 node scripts/build-writing-marks.mjs          # public/writings/marks/ pencil marks
 node scripts/generate-preview-variants.mjs    # -480w/-960w webp siblings
@@ -48,7 +49,9 @@ node scripts/optimize-video-previews.mjs      # re-encoded preview videos
 
 Run the relevant one after editing its source, then commit the result. The résumé
 is rendered from `src/data/cv.ts` — it is not a Figma export any more, so it stops
-drifting from the live site.
+drifting from the live site. The social card is a screenshot of the homepage, so
+it needs a fresh `npm run build` before it and a re-run after any change to the
+header or the first row of the work grid.
 
 ## Shared likes, locally
 
