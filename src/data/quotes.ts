@@ -105,14 +105,15 @@ export const teamQuotes: PortfolioQuote[] = [
     emphasis: "I miss working with you guys.",
     attribution: "John Gilman",
     caption: "VP Product and co-founder at Onit",
-    photo: "/quotes/jhon-onit.jpg",
+    photo: "/quotes/john-gilman.jpg",
   },
   {
     id: "cristina",
     text: "One of the proudest days of my career to have presented this prototype to the Managing Directors,",
     emphasis: "especially Rafael for making the prototype pop.",
     attribution: "Cristina Pieretti",
-    caption: "VP at Moody’s",
+    caption: "Managing Director at Moody’s",
+    photo: "/quotes/cristina-pieretti.jpg",
   },
   {
     id: "josh",
@@ -143,7 +144,7 @@ export const teamQuotes: PortfolioQuote[] = [
     text: "You handled the questions very well —",
     emphasis: "the value of your build was crystal clear.",
     attribution: "Rob Adams",
-    caption: "Senior UX Designer at DEPT",
+    caption: "Principal Designer at DEPT",
     photo: "/quotes/rob-adams.jpg",
   },
   {
@@ -151,7 +152,8 @@ export const teamQuotes: PortfolioQuote[] = [
     text: "The new treatment for Table of Contents is",
     emphasis: "AMAZING, I love it.",
     attribution: "Cristina Pieretti",
-    caption: "VP at Moody’s",
+    caption: "Managing Director at Moody’s",
+    photo: "/quotes/cristina-pieretti.jpg",
   },
   {
     id: "jhon-happen",
@@ -159,14 +161,14 @@ export const teamQuotes: PortfolioQuote[] = [
     emphasis: "you guys made this happen.",
     attribution: "John Gilman",
     caption: "VP Product and co-founder at Onit",
-    photo: "/quotes/jhon-onit.jpg",
+    photo: "/quotes/john-gilman.jpg",
   },
   {
     id: "rob-workshop",
     text: "Awesome job! Looks really good",
     emphasis: "and seems like a fun project.",
     attribution: "Rob Adams",
-    caption: "Senior UX Designer at DEPT",
+    caption: "Principal Designer at DEPT",
     photo: "/quotes/rob-adams.jpg",
   },
 ]

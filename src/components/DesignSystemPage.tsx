@@ -1456,8 +1456,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 the photo band does, so the grid&rsquo;s two bands match. It sits above the closing row
                 rather than after it because the takeover pins the last screenful while About slides
                 over it. Those quotes arrived as Slack messages and a testimonial card, so they carry
-                no X handle: the name is plain text with no profile preview, and Cristina&rsquo;s has no
-                portrait at all.
+                no X handle: the name is plain text with no profile preview. Every one of them
+                carries a portrait.
                 A drag commits at 16px or 4% of the card, whichever is smaller, rather than at a
                 quarter of it, and a quote let go of under the pointer settles over
                 <code>--duration-base</code> where one chosen from a dot keeps <code>--duration-slow</code>.
