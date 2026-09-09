@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test"
 
+// Exercise native tabs in full Chromium. The headless shell can receive the
+// destination HTML yet leave a modified-click tab on its provisional document.
+test.use({ channel: "chromium" })
+
 test("project pages ship distinct metadata and readable content without JavaScript", async ({ browser, request, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
   const page = await context.newPage()
@@ -25,7 +29,7 @@ test("project pages ship distinct metadata and readable content without JavaScri
   await context.close()
 })
 
-test("project pages hydrate into the gallery and homepage project links support a new tab", async ({ page, context }) => {
+test("project pages hydrate into the gallery after reload and index navigation", async ({ page }) => {
   const errors: string[] = []
   page.on("pageerror", error => errors.push(error.message))
   await page.goto("/work/matcha-multiwallet-flow/")
@@ -45,19 +49,23 @@ test("project pages hydrate into the gallery and homepage project links support 
   await expect(page.getByRole("dialog")).toHaveAccessibleName("Matcha multiwallet flow")
   await page.goto("/work/matcha-multiwallet-flow/index.html")
   await expect(page.getByRole("dialog")).toHaveAccessibleName("Matcha multiwallet flow")
+  expect(errors).toEqual([])
+})
+
+test("homepage project links support a new tab and an inline preview", async ({ page, context }) => {
+  const errors: string[] = []
+  page.on("pageerror", error => errors.push(error.message))
   await page.goto("/")
-  // The cards can be momentarily stable during their entrance delay. Wait for
-  // the actual cascade to finish before sending a native modified click.
-  await page.locator(".mosaic-rows").evaluate(element =>
-    Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished)),
-  )
+  // The portrait phase has no work-card animations to await yet. Wait for the
+  // complete intro before a modifier key can interrupt the moving click target.
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
   const link = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
   await expect(link).toHaveAttribute("href", "/work/matcha-multiwallet-flow/")
   const opened = context.waitForEvent("page")
   await link.click({ modifiers: ["ControlOrMeta"] })
   const newTab = await opened
   await newTab.bringToFront()
-  await newTab.waitForLoadState("domcontentloaded")
+  await newTab.waitForURL("**/work/matcha-multiwallet-flow/", { waitUntil: "domcontentloaded" })
   await expect(newTab).toHaveTitle("Matcha multiwallet flow — Rafael Medina")
   await expect(page.getByRole("dialog")).toHaveCount(0)
   await newTab.close()

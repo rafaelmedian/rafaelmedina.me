@@ -84,7 +84,7 @@ html[data-avatar-intro="revealing"] :is(
   .mosaic-section-corner,
   .mosaic-social-corner,
   .mosaic-mobile-toc,
-  .mosaic-row
+  .mosaic-group
 ) {
   animation: avatar-intro-content var(--duration-slow) var(--ease-smooth) var(--avatar-intro-delay, 0ms) both;
 }
@@ -93,13 +93,20 @@ html[data-avatar-intro="revealing"] .mosaic-work-history { --avatar-intro-delay:
 html[data-avatar-intro="revealing"] .mosaic-profile-location { --avatar-intro-delay: 120ms; }
 html[data-avatar-intro="revealing"] .mosaic-profile-contact { --avatar-intro-delay: 180ms; }
 html[data-avatar-intro="revealing"] :is(.mosaic-section-corner, .mosaic-social-corner, .mosaic-mobile-toc) { --avatar-intro-delay: 240ms; }
-html[data-avatar-intro="revealing"] .mosaic-row:nth-child(1) { --avatar-intro-delay: 300ms; }
-html[data-avatar-intro="revealing"] .mosaic-row:nth-child(2) { --avatar-intro-delay: 360ms; }
-html[data-avatar-intro="revealing"] .mosaic-row:nth-child(3) { --avatar-intro-delay: 420ms; }
-html[data-avatar-intro="revealing"] .mosaic-row:nth-child(n + 4) { --avatar-intro-delay: 480ms; }
+html[data-avatar-intro="revealing"] .mosaic-group:nth-child(1) { --avatar-intro-delay: 300ms; }
+html[data-avatar-intro="revealing"] .mosaic-group:nth-child(2) { --avatar-intro-delay: 360ms; }
+html[data-avatar-intro="revealing"] .mosaic-group:nth-child(3) { --avatar-intro-delay: 420ms; }
+html[data-avatar-intro="revealing"] .mosaic-group:nth-child(n + 4) { --avatar-intro-delay: 480ms; }
 
 html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   transform: none;
+}
+
+/* Compact groups have no box; their children carry the same group delay. */
+@media (max-width: 899.98px) {
+  html[data-avatar-intro="revealing"] .mosaic-group > .mosaic-row-item {
+    animation: avatar-intro-content var(--duration-slow) var(--ease-smooth) var(--avatar-intro-delay, 0ms) both;
+  }
 }
 
 @keyframes avatar-intro-content {

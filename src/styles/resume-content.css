@@ -1,0 +1,132 @@
+/* Company-led entries in the modal; About keeps its compact date column. */
+/* The PDF link closes the reader rather than heading it, so it sits under
+   education with the gap the entries keep between each other. */
+.resume-dialog-content .resume-dialog-download {
+  margin-top: 3rem;
+  margin-bottom: 0;
+}
+
+.resume-experience-list {
+  margin-top: 0;
+  gap: 3rem;
+}
+
+.resume-experience {
+  min-width: 0;
+}
+
+.resume-experience-logos {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.resume-experience-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0.45rem;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+}
+
+.resume-experience-logo + .resume-experience-logo {
+  margin-left: -0.26rem;
+}
+
+.resume-experience-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.resume-experience-details { min-width: 0; }
+
+.resume-experience-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
+}
+
+.mosaic-about-body .resume-experience-role {
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+.resume-experience-projects {
+  /* The pile has to fit the sheet's measure at every width, so the prints are
+     sized off the viewport and the overlap tracks their height. */
+  --resume-print-height: clamp(3.5rem, 15vw, 5.5rem);
+  display: flex;
+  align-items: flex-start;
+  /* The tilt and the shadows both reach past the images, so the group carries
+     its own room rather than clipping into the entry above and below. */
+  margin-top: 1.75rem;
+  padding: 0.75rem 0.5rem 1rem;
+}
+
+/* Loose prints dropped on the page: each one tilted off the last and lapping
+   over its neighbour, carrying its own shadow instead of a frame. */
+.resume-project {
+  display: block;
+  /* Never let the row squeeze a print: the height is fixed, so shrinking is
+     width-only and `cover` would quietly crop the shot. */
+  flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transform: rotate(-7deg);
+  transition:
+    transform var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
+}
+
+.resume-project + .resume-project {
+  margin-left: calc(var(--resume-print-height) * -0.35);
+  transform: translateY(0.25rem) rotate(2deg);
+}
+
+.resume-project:nth-child(3) { transform: translateY(-0.35rem) rotate(-2deg); }
+.resume-project:nth-child(4) { transform: translateY(0.2rem) rotate(-5deg); }
+
+/* A tilted print overlaps the one after it, so whichever is hovered or focused
+   has to come up out of the stack to be readable and clickable. */
+.resume-project:hover,
+.resume-project:focus-visible {
+  z-index: 1;
+}
+
+@media (hover: hover) {
+  .resume-project:hover {
+    transform: translateY(-0.25rem) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resume-project {
+    transition: none;
+  }
+
+  .resume-project:hover {
+    transform: none;
+  }
+}
+
+/* Each shot keeps its own aspect at a shared height, so portrait and landscape
+   prints lie in one pile without a mat to square them up. The shadow rides the
+   image because the image is the whole print. */
+.resume-project img {
+  display: block;
+  height: var(--resume-print-height);
+  width: auto;
+  max-width: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--mosaic-card-surface);
+  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+}
