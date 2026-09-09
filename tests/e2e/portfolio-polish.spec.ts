@@ -626,6 +626,7 @@ test("sets the whole About sheet on the reading step under one heading step", as
     ".mosaic-about-resume-location",
     ".mosaic-about-resume-description",
     ".mosaic-about-resume-heading",
+    ".mosaic-about-service-shape",
   ].join(", "))
   const sizes = await typeRoles.evaluateAll((elements) =>
     [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
@@ -638,9 +639,11 @@ test("sets the whole About sheet on the reading step under one heading step", as
   // it -- the same pairing the notes reader uses.
   expect(sizes).toEqual(["14px", "16px"])
 
-  // "About me" and "Work history" are the sheet's two section headings and
-  // are set identically, so neither reads as ranking above the other.
-  for (const heading of [sectionHeading, lede]) {
+  // "About me", "Worked with", "Work history" and "Services" are the sheet's
+  // four section headings and are set identically, so none reads as ranking
+  // above another.
+  await expect(sectionHeading).toHaveCount(3)
+  for (const heading of [...(await sectionHeading.all()), lede]) {
     await expect(heading).toHaveCSS("font-size", "16px")
     await expect(heading).toHaveCSS("font-weight", "600")
     await expect(heading).toHaveCSS("color", "rgb(45, 45, 45)")
@@ -670,6 +673,17 @@ test("sets the whole About sheet on the reading step under one heading step", as
       [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
     )
   expect(workHistorySizes).toEqual(["14px", "16px"])
+
+  // The services block closes the sheet and is set on the same two steps --
+  // including its booking trigger, which is a button inside a run of prose and
+  // would otherwise fall back to the browser's control font.
+  const servicesSizes = await page
+    .locator("#about-panel-services")
+    .locator("h2, h3, p, li, a, button")
+    .evaluateAll((elements) =>
+      [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
+    )
+  expect(servicesSizes).toEqual(["14px", "16px"])
 })
 
 test("gives mobile contact actions generous horizontal padding", async ({ page }) => {
@@ -1361,7 +1375,7 @@ test("keeps the mobile table of contents centered with comfortable targets", asy
   expect(before!.width).toBeLessThan(220)
   await trigger.click()
   const contents = page.getByRole("navigation", { name: "Table of contents" })
-  await expect(contents.getByRole("link")).toHaveCount(2)
+  await expect(contents.getByRole("link")).toHaveCount(3)
   for (const link of await contents.getByRole("link").all()) {
     const box = await link.boundingBox()
     expect(box!.height).toBeGreaterThanOrEqual(44)
@@ -1422,7 +1436,7 @@ test("mobile table of contents selects and tracks each section", async ({ page }
   await expect(trigger).toHaveText("01 Work")
   await trigger.click()
   await expect(trigger).toHaveAttribute("aria-current", "location")
-  for (const [number, label, target] of [["02", "About", "about-panel"], ["03", "Work history", "about-panel-resume"]]) {
+  for (const [number, label, target] of [["02", "About", "about-panel"], ["03", "Work history", "about-panel-resume"], ["04", "Services", "about-panel-services"]]) {
     await contents.getByRole("link", { name: label, exact: true }).click()
     await expect(contents.getByRole("link")).toHaveCount(0)
     await expect(page.locator(`#${target}`)).toBeFocused()
@@ -1430,7 +1444,7 @@ test("mobile table of contents selects and tracks each section", async ({ page }
     await expect(trigger).toHaveText(`${number} ${label}`)
     await trigger.click()
     await expect(trigger).toHaveAttribute("aria-current", "location")
-    await expect(contents.locator(".mosaic-mobile-toc-row")).toHaveText(["01 Work", "02 About", "03 Work history"])
+    await expect(contents.locator(".mosaic-mobile-toc-row")).toHaveText(["01 Work", "02 About", "03 Work history", "04 Services"])
   }
   await contents.getByRole("link", { name: "Work", exact: true }).click()
   await expect(page).toHaveURL(/#work$/)
@@ -1446,7 +1460,7 @@ test("lands on a section from the URL without drawing a ring around it", async (
   await page.setViewportSize(mobileViewport)
   await page.emulateMedia({ reducedMotion: "reduce" })
 
-  for (const id of ["work", "about-panel", "about-panel-resume"]) {
+  for (const id of ["work", "about-panel", "about-panel-resume", "about-panel-services"]) {
     await page.goto(`/#${id}`)
     const section = page.locator(`#${id}`)
     // The browser focuses the fragment target on load. Its default ring boxes
@@ -1464,7 +1478,7 @@ test("the TOC keeps its collapsed height while scrolling between sections", asyn
   await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
   const trigger = page.getByRole("button", { name: /^Table of contents:/ })
   await expect(trigger).toHaveText("01 Work")
-  for (const [target, label] of [["about-panel", "02 About"], ["about-panel-resume", "03 Work history"], ["work", "01 Work"]]) {
+  for (const [target, label] of [["about-panel", "02 About"], ["about-panel-resume", "03 Work history"], ["about-panel-services", "04 Services"], ["work", "01 Work"]]) {
     const heights = await page.evaluate(async (id) => {
       const surface = document.querySelector(".mosaic-mobile-toc-surface")!
       const samples: number[] = []
@@ -1479,8 +1493,8 @@ test("the TOC keeps its collapsed height while scrolling between sections", asyn
     await expect(trigger).toHaveText(label)
     for (const height of heights) expect(height).toBeCloseTo(48, 0)
     await trigger.click()
-    await expect(page.locator(".mosaic-mobile-toc-row")).toHaveText(["01 Work", "02 About", "03 Work history"])
-    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(160, 0)
+    await expect(page.locator(".mosaic-mobile-toc-row")).toHaveText(["01 Work", "02 About", "03 Work history", "04 Services"])
+    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(208, 0)
     await trigger.click()
     await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(48, 0)
   }
@@ -1523,7 +1537,7 @@ test("the TOC label leaves in the direction the page is travelling", async ({ pa
   await expect(page.locator(".mosaic-mobile-toc-ghost")).toHaveCount(0)
 })
 
-test("the TOC contains all three rows in one inset card", async ({ page }) => {
+test("the TOC contains all four rows in one inset card", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
@@ -1567,7 +1581,7 @@ test("table of contents dismisses outside and stays open when resizing to deskto
   await expect(contents.getByRole("link")).toHaveCount(0)
   await trigger.click()
   await page.setViewportSize({ width: 900, height: 844 })
-  await expect(contents.getByRole("link")).toHaveCount(2)
+  await expect(contents.getByRole("link")).toHaveCount(3)
   await expect(trigger).toBeVisible()
   await expect(trigger).toHaveAttribute("aria-expanded", "true")
   await expect(page.getByRole("navigation", { name: "Sections" })).toBeVisible()
@@ -1604,7 +1618,7 @@ for (const width of [768, 1440]) {
     await topNav.getByRole("link", { name: "About", exact: true }).click()
     await expect(trigger).toHaveText("02 About")
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-    await expect(trigger).toHaveText("03 Work history")
+    await expect(trigger).toHaveText("04 Services")
     const about = await page.locator("#about-panel").boundingBox()
     expect(about!.y + about!.height).toBeLessThan((await trigger.boundingBox())!.y)
   })
@@ -1616,7 +1630,7 @@ test("keeps the mobile profile and final content clear of the table of contents"
   const avatar = await page.getByRole("button", { name: "Read about Rafael Medina" }).boundingBox()
   expect(avatar!.y).toBeLessThan(96)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("03 Work history")
+  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("04 Services")
   const trigger = await page.getByRole("button", { name: /^Table of contents:/ }).boundingBox()
   const about = await page.locator("#about-panel").boundingBox()
   expect(about!.y + about!.height).toBeLessThan(trigger!.y)
@@ -2109,6 +2123,33 @@ test("pans the resume preview slowly under the wheel and hands the page back at 
   await page.waitForTimeout(200)
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
   expect(travel).toBeGreaterThan(0)
+})
+
+test("damps the resume preview from the first gesture, before its image arrives", async ({ page }) => {
+  // The frame is a real scroller, so until the damping listener is attached a
+  // wheel runs it to the bottom at full delta and chains the rest into the
+  // page. Hold the image back to open that window on purpose: the listener has
+  // to be waiting on the frame, not on the picture inside it.
+  await page.route("**/rafael-medina-resume-preview.png", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 4000))
+    await route.continue()
+  })
+  await page.goto("/")
+  await page.locator(".mosaic-resume-anchor").hover()
+
+  const frame = page.locator(".mosaic-resume-card-frame")
+  const box = await frame.boundingBox()
+  expect(box).not.toBeNull()
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
+
+  await page.mouse.wheel(0, 300)
+  await page.waitForTimeout(150)
+  const panned = await frame.evaluate((element) => element.scrollTop)
+  const travel = await frame.evaluate((element) => element.scrollHeight - element.clientHeight)
+  // A quarter of the gesture, not the whole scroller.
+  expect(panned).toBeGreaterThan(0)
+  expect(panned).toBeLessThan(travel)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
 })
 
 test("opens the resume from the preview without moving focus into the hidden card", async ({ context, page }) => {
@@ -2779,6 +2820,12 @@ test("raises each about copy block into view the first time it scrolls in", asyn
   await expect(download).toHaveAttribute("data-about-fade", "in")
   await expect(download).toHaveCSS("opacity", "1")
 
+  // Services closes the sheet below the résumé download, so run to the end of
+  // the page before claiming nothing is left waiting.
+  const closing = page.locator("#about-panel-services .mosaic-about-closing")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await expect(closing).toHaveAttribute("data-about-fade", "in")
+
   // The jump skipped every block between the intro and the download; none of
   // them may be left transparent above the viewport.
   await expect(page.locator('[data-about-fade="pending"]')).toHaveCount(0)
@@ -3385,10 +3432,13 @@ test("shows about and the work history summary together", async ({ page }) => {
   await expect(panel).toContainText("ITLA")
   // The résumé carries a phone number; the panel is public and does not.
   await expect(panel).not.toContainText("786 9580")
-  await expect(panel.getByRole("link", { name: contactEmail, exact: true })).toHaveAttribute(
-    "href",
-    `mailto:${contactEmail}`,
-  )
+  // The address is spelled out twice on purpose: once closing the introduction
+  // and once closing the Services block at the foot of the sheet.
+  const emailLinks = panel.getByRole("link", { name: contactEmail, exact: true })
+  await expect(emailLinks).toHaveCount(2)
+  for (const link of await emailLinks.all()) {
+    await expect(link).toHaveAttribute("href", `mailto:${contactEmail}`)
+  }
   await expect(panel.getByRole("link", { name: "Download résumé PDF" })).toHaveCount(0)
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Resume", exact: true })).toHaveAttribute(
     "href",
@@ -3556,19 +3606,27 @@ test("formats education with dates beside its details and extra section spacing"
 
 
 
-test("keeps a compact gap between the photo row and work history", async ({ page }) => {
+test("keeps one compact gap between every block below the photo row", async ({ page }) => {
+  // The photo row, the worked-with wall and the work history are three
+  // sections in a row, and they are separated by the same break so none of
+  // them reads as belonging to its neighbour.
   for (const { width, expectedGap } of [{ width: 1440, expectedGap: 80 }, { width: 390, expectedGap: 40 }]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto("/#about-panel")
 
-    const gap = await page.evaluate(() => {
-      const closing = document.querySelector(".personal-photos")
-      const photos = document.querySelector("#about-panel-resume")
-      if (!closing || !photos) return Number.POSITIVE_INFINITY
-      return Math.round(photos.getBoundingClientRect().top - closing.getBoundingClientRect().bottom)
+    const gaps = await page.evaluate(() => {
+      const blocks = [".personal-photos", ".mosaic-about-companies", "#about-panel-resume"].map((selector) =>
+        document.querySelector(selector),
+      )
+      if (blocks.some((block) => !block)) return [Number.POSITIVE_INFINITY]
+      return blocks
+        .slice(1)
+        .map((block, index) =>
+          Math.round(block!.getBoundingClientRect().top - blocks[index]!.getBoundingClientRect().bottom),
+        )
     })
 
-    expect(gap).toBe(expectedGap)
+    expect(gaps).toEqual([expectedGap, expectedGap])
   }
 })
 
@@ -3759,7 +3817,23 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
       })
       observer.observe(element, { attributes: true, attributeFilter: ["class"] })
       document.querySelector<HTMLButtonElement>(selector)?.click()
-      await new Promise((resolve) => setTimeout(resolve, 600))
+      // Wait for the settle to land rather than for a fixed stretch of clock.
+      // The switch is three React commits stepped by a timer, and a runner
+      // slow enough to spread those past any sleep this test picks would fail
+      // it on the sleep rather than on the poses. Resolving on the return to
+      // rest keeps every assertion below exact -- a card that never settles
+      // still ends the recording on its last real pose and fails.
+      await new Promise<void>((resolve) => {
+        const cap = setTimeout(resolve, 5000)
+        const settled = new MutationObserver(() => {
+          if ([...element.classList].some((name) => name.includes("switch-"))) return
+          clearTimeout(cap)
+          settled.disconnect()
+          // One more turn so the idle pose reaches the recording observer.
+          setTimeout(resolve, 0)
+        })
+        settled.observe(element, { attributes: true, attributeFilter: ["class"] })
+      })
       observer.disconnect()
       return seen
     }, navSelector)
@@ -3980,14 +4054,17 @@ test("travels one role-bearing work-history popover between company triggers wit
   expect((await popover.boundingBox())!.x).not.toBe(onitPopoverBox!.x)
   expect((await location.boundingBox())!.y).toBeCloseTo(initialLocationBox!.y, 0)
 
-  await page.getByRole("link", { name: "0x.org and Matcha.xyz", exact: true }).hover()
+  await page
+    .locator(".mosaic-work-history")
+    .getByRole("link", { name: "0x.org and Matcha.xyz", exact: true })
+    .hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("0x.org and Matcha.xyz")
 
-  await page.getByRole("link", { name: "Google", exact: true }).hover()
+  await getPreviousCompanyLink(page, "Google").hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Google")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
 
-  await page.getByRole("link", { name: "Protector and Patrol", exact: true }).hover()
+  await getPreviousCompanyLink(page, "Protector and Patrol").hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Protector and Patrol")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Design collab")
 })
@@ -4059,7 +4136,7 @@ test("opens the work-history popover from the keyboard and links each chip to it
 
   await expect(onit).toHaveAttribute("href", "https://www.onit.com")
   await expect(onit).toHaveAttribute("target", "_blank")
-  await expect(page.getByRole("link", { name: "Google", exact: true })).toHaveAttribute("href", "https://www.google.com")
+  await expect(getPreviousCompanyLink(page, "Google")).toHaveAttribute("href", "https://www.google.com")
 
   // Pointer users already saw the panel on hover, so the click travels.
   await stubCompanySite(context)
