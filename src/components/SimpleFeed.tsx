@@ -20,7 +20,7 @@ import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { QuoteCard } from "./QuoteCard"
 import { portfolioQuotes } from "../data/quotes"
-import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
+import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { useHoverCard } from "../lib/hoverCard"
@@ -144,7 +144,6 @@ type SimpleFeedProps = {
   links: SiteLinks
 }
 
-type RowFit = "cover" | "contain"
 
 type RowVideoMediaProps = {
   source: string
@@ -365,14 +364,13 @@ type RowImageMediaProps = {
   width?: number
   height?: number
   eager: boolean
-  /** The tile's fraction of its row's total span; see `previewSizesForShare`. */
-  share?: number
+  sizes: string
 }
 
 // Owns its own loaded flag on purpose. Hoisting it into SimpleFeed meant every
 // one of the ~11 images re-rendered the entire mosaic when it decoded, which
 // re-ran the row/tile tree eleven times during load.
-function RowImageMedia({ source, label, width, height, eager, share }: RowImageMediaProps) {
+function RowImageMedia({ source, label, width, height, eager, sizes }: RowImageMediaProps) {
   const [loaded, setLoaded] = useState(false)
   const [approached, setApproached] = useState(false)
   const imageRef = useRef<HTMLImageElement | null>(null)
@@ -409,7 +407,7 @@ function RowImageMedia({ source, label, width, height, eager, share }: RowImageM
     <img
       src={source}
       srcSet={srcSet}
-      sizes={srcSet ? previewSizesForShare(share) : undefined}
+      sizes={srcSet ? sizes : undefined}
       alt={label}
       width={width}
       height={height}
@@ -429,12 +427,6 @@ function RowImageMedia({ source, label, width, height, eager, share }: RowImageM
       }}
     />
   )
-}
-
-function defaultFitForCard(card: PortfolioCard): RowFit {
-  const ratio = card.previewAspectRatio
-  if (ratio == null) return "cover"
-  return ratio > 1.45 || ratio < 0.82 ? "contain" : "cover"
 }
 
 function formatPuntaCanaLocalTime(date = new Date()) {
@@ -760,40 +752,22 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     clearProject()
     setHasOpenedWorkPreview(false)
   }, [clearProject])
-  const rowsRender = useMemo(() => {
+  const groupsRender = useMemo(() => {
     let previewIndex = 0
-    return homeRows.map((row) => {
-      // Every tile in the row -- projects, the quote slider, the writings
-      // folder -- flexes against this total, so it is also what decides how much
-      // width a project's artwork has to cover. Feeds `previewSizesForShare`.
-      const rowSpan =
-        row.items.reduce((total, item) => total + (item.span ?? 1), 0) +
-        (row.quote ? row.quoteSpan ?? 1 : 0) +
-        (row.writings ? 1 : 0)
-      const items = row.items.flatMap((item) => {
-        const card = cards.find((candidate) => candidate.id === item.cardId)
-        if (!card) return []
-        const currentIndex = previewIndex++
-        const span = item.span ?? 1
-        return [
-          {
-            card,
-            span,
-            share: span / rowSpan,
-            width: item.width,
-            fit: item.fit ?? defaultFitForCard(card),
-            mediaMaxHeight: item.mediaMaxHeight,
-            previewIndex: currentIndex,
-          },
-        ]
-      })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, writings: row.writings, items }
-    })
+    return homeGroups.map(group => ({
+      ...group,
+      items: group.items.map(item => {
+        if (item.kind !== "project") return item
+        const card = cards.find(candidate => candidate.id === item.cardId)
+        if (!card) throw new Error(`Missing home project: ${item.cardId}`)
+        return { ...item, card, previewIndex: previewIndex++ }
+      }),
+    }))
   }, [cards])
 
   const flatWorkCards = useMemo(
-    () => rowsRender.flatMap((row) => row.items.map((item) => item.card)),
-    [rowsRender],
+    () => groupsRender.flatMap(group => group.items.flatMap(item => item.kind === "project" ? [item.card] : [])),
+    [groupsRender],
   )
   const projectIndex = flatWorkCards.findIndex((card) => card.id === projectId)
   const activeWorkPreviewIndex = projectIndex < 0 ? null : projectIndex
@@ -821,7 +795,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     source = card.image,
     label = card.title,
     eager = false,
-    share?: number,
+    sizes = previewSizesForShare(),
   ) => {
     if (isVideoSource(source)) {
       return (
@@ -847,7 +821,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         width={card.previewWidth}
         height={card.previewHeight}
         eager={eager}
-        share={share}
+        sizes={sizes}
       />
     )
   }
@@ -1085,94 +1059,59 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                     aria-label="Selected work previews"
                     id="selected-work-previews"
                   >
-                    {rowsRender.map((row, rowIndex) => {
-                      const rowStyle = {
-                        ...(row.height ? { "--row-height-input": row.height } : {}),
-                        ...(row.gap ? { "--row-gap": row.gap } : {}),
-                      } as CSSProperties
-                      const eagerRow = rowIndex === 0
-                      return (
-                        <div
-                          key={row.id}
-                          className={`mosaic-row${row.quote ? " mosaic-row-with-quote" : ""}`}
-                          style={rowStyle}
-                        >
-                          {row.quote ? (
-                            <div
-                              className="mosaic-row-item mosaic-row-quote"
-                              style={
-                                {
-                                  "--row-span": row.quoteSpan ?? 1,
-                                } as CSSProperties
-                              }
-                            >
+                    {groupsRender.map((group, groupIndex) => (
+                      <div key={group.layout} className={`mosaic-group mosaic-group-${group.layout}`}>
+                        {group.items.map(item => {
+                          const itemStyle = {
+                            gridArea: item.area,
+                            ...(item.kind === "project" && item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
+                          } as CSSProperties
+                          const itemClass = `mosaic-row-item mosaic-tile-${item.area}`
+                          if (item.kind === "quote") return (
+                            <div key={item.area} className={`${itemClass} mosaic-row-quote`} style={itemStyle}>
                               <QuoteCard quotes={portfolioQuotes} />
                             </div>
-                          ) : null}
-                          {row.items.map((item) => {
-                            const itemKey = `${item.card.id}-${item.previewIndex}`
-                            const itemStyle = {
-                              "--row-span": item.span,
-                              ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
-                              ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
-                            } as CSSProperties
-                            return (
-                              <div
-                                key={itemKey}
-                                className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
-                                style={itemStyle}
-                              >
-                                <a
-                                  href={projectPath(item.card)}
-                                  ref={(node) => {
-                                    const nodes = previewCardNodesRef.current
-                                    if (node) nodes.set(item.previewIndex, node)
-                                    else nodes.delete(item.previewIndex)
-                                  }}
-                                  className={`mosaic-row-card mosaic-row-card-${item.card.id}`}
-                                  onPointerEnter={prefetchPreviewGallery}
-                                  onPointerDown={prefetchPreviewGallery}
-                                  onFocus={prefetchPreviewGallery}
-                                  onClick={(event) => {
-                                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-                                    event.preventDefault()
-                                    openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
-                                  }}
-                                  aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
-                                  aria-describedby={`${itemKey}-description`}
-                                >
-                                  {renderRowMedia(item.card, item.card.image, item.card.title, eagerRow, item.share)}
-                                  {/* The caption backdrop. Four nodes because
-                                      each one carries a different blur radius
-                                      and its own mask, and a pseudo-element
-                                      pair only gets you two of them. */}
-                                  <span className="mosaic-row-card-scrim" aria-hidden="true">
-                                    <span />
-                                    <span />
-                                    <span />
-                                    <span />
-                                  </span>
-                                  <span className="mosaic-row-card-title" aria-hidden="true">
-                                    {item.card.title}
-                                  </span>
-                                  {/* Prerenders each project's description as real
-                                      text: crawlers get more than an aria-label,
-                                      and screen readers hear it after the label. */}
-                                  <span id={`${itemKey}-description`} className="sr-only">
-                                    {item.card.detail}
-                                  </span>
-                                </a>
-                              </div>
-                            )
-                          })}
-                          {row.writings ? (
-                            <div className="mosaic-row-item">
+                          )
+                          if (item.kind === "writings") return (
+                            <div key={item.area} className={itemClass} style={itemStyle}>
                               <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
                             </div>
-                          ) : null}
-                        </div>
-                      )
-                    })}
+                          )
+                          const itemKey = item.card.id
+                          return (
+                            <div key={item.area} className={`${itemClass} mosaic-row-item-fit-${item.fit}`} style={itemStyle}>
+                              <a
+                                href={projectPath(item.card)}
+                                ref={(node) => {
+                                  const nodes = previewCardNodesRef.current
+                                  if (node) nodes.set(item.previewIndex, node)
+                                  else nodes.delete(item.previewIndex)
+                                }}
+                                className={`mosaic-row-card mosaic-row-card-${item.card.id}`}
+                                onPointerEnter={prefetchPreviewGallery}
+                                onPointerDown={prefetchPreviewGallery}
+                                onFocus={prefetchPreviewGallery}
+                                onClick={(event) => {
+                                  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                                  event.preventDefault()
+                                  openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
+                                }}
+                                aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
+                                aria-describedby={`${itemKey}-description`}
+                              >
+                                {renderRowMedia(item.card, item.card.image, item.card.title, groupIndex === 0,
+                                  previewSizesForShare(item.share, group.columns, item.compactWide, item.card.previewCropped))}
+                                <span className="mosaic-row-card-scrim" aria-hidden="true">
+                                  <span /><span /><span /><span />
+                                </span>
+                                <span className="mosaic-row-card-title" aria-hidden="true">{item.card.title}</span>
+                                <span id={`${itemKey}-description`} className="sr-only">{item.card.detail}</span>
+                              </a>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="mosaic-takeover-spacer" aria-hidden="true" />
