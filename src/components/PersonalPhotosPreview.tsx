@@ -6,6 +6,23 @@ export type OpenPhoto = (opener: HTMLElement) => void
 export type PreviewPhoto = { photo: typeof photos[number]; src: string }
 const initialPreview = photos.slice(0, 5).map((photo) => ({ photo, src: `/images/personal/${photo.name}-thumb.webp` }))
 
+/** A hand-dealt wobble. The fan is a formula, and a formula lands every print
+ *  at exactly the angle its neighbour predicts, which reads as a printed
+ *  pattern rather than a hand of photos. These nudges break that up. They are
+ *  a fixed table rather than a random draw so a print gets the same nudge on
+ *  every render and the hand opens the same way twice, and they stay well
+ *  inside the arc's own step between neighbours — a nudge as large as the step
+ *  closes the gap between two prints and the hand reads as mis-dealt rather
+ *  than dealt by hand. The signs do not simply alternate, or the row zigzags.
+ */
+const printWobble = [
+  { tilt: -1.6, drop: 1.1 },
+  { tilt: 0.9, drop: -0.7 },
+  { tilt: 1.4, drop: 1.3 },
+  { tilt: -1.1, drop: -0.5 },
+  { tilt: 1.2, drop: 0.8 },
+]
+
 /** Where a print sits on the fan, at rest and opened.
  *
  *  The prints are dealt along an arc rather than jumbled: the lean runs
@@ -17,19 +34,23 @@ const initialPreview = photos.slice(0, 5).map((photo) => ({ photo, src: `/images
  *  The middle print sits on top and each one behind it steps back, so the fan
  *  reads as one pile opening outwards instead of a row shingled left to right.
  *
- *  Pointing at the tile opens the whole hand at once: every print swings out to
- *  its fanned angle on the same arc, deepened to match. The fan answers as one
- *  thing, so there is no single print to pick out and no reason for the pile to
- *  change hands under the pointer.
+ *  Pointing at the tile opens the whole hand at once: every print leans a
+ *  little further out, off the arc by its own wobble, and the whole hand
+ *  settles a few percent down the same curve — it eases rather than snapping
+ *  open. The fan answers as one thing, so there is no single print to pick out
+ *  and no reason for the pile to change hands under the pointer.
  */
 function arcPlacement(index: number, middle: number, count: number): CSSProperties {
   // -1 at the left end of the fan, 0 in the middle, 1 at the right end.
   const spread = middle === 0 ? 0 : (index - middle) / middle
+  const wobble = printWobble[index % printWobble.length]
   return {
     "--print-tilt": `${(spread * 10).toFixed(2)}deg`,
-    "--print-fan-tilt": `${(spread * 16).toFixed(2)}deg`,
+    "--print-fan-tilt": `${(spread * 16 + wobble.tilt).toFixed(2)}deg`,
     "--print-offset-y": `${(spread * spread * 10).toFixed(2)}%`,
-    "--print-fan-offset-y": `${(spread * spread * 16).toFixed(2)}%`,
+    // The hand comes down as a whole — the flat middle included — and still
+    // sits on a curve, because the drop keeps the arc's squared term.
+    "--print-fan-offset-y": `${(5 + spread * spread * 9 + wobble.drop).toFixed(2)}%`,
     "--print-depth": count - Math.round(Math.abs(index - middle) * 2),
   } as CSSProperties
 }

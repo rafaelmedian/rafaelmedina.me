@@ -107,10 +107,8 @@
 
 /* One overlapping row of equally sized prints, fanned along an arc. The lean,
    the drop and the depth are per-print and come from `arcPlacement` in
-   PersonalPhotos.tsx, because they are a formula over the print's place in the
-   row and the row is four prints on a phone and five above it. Hovering one
-   turns it just past flat, a degree against its lean, so it reads as picked up
-   rather than snapped to a grid; the others hold their place. */
+   PersonalPhotosPreview.tsx, because they are a formula over the print's place
+   in the row and the row is four prints on a phone and five above it. */
 
 .personal-photos-print img {
   width: 100%;
@@ -122,9 +120,12 @@
 }
 
 /* The tile answers as one thing: pointing at it, or reaching it with the
-   keyboard, swings every print out to its fanned angle together and the whole
-   hand opens. Nothing changes hands and no single print is picked out, so the
-   region each print answers to never moves under the pointer.
+   keyboard, leans every print a little further out and settles the whole hand
+   a few percent down its own curve. Each print takes its lean off the arc by
+   its own wobble, so the row loosens the way a hand of prints does rather than
+   stepping through even angles. Nothing changes hands and no single print is
+   picked out, so the region each print answers to never moves under the
+   pointer.
 
    An away print takes the hand's shape like any other, it just takes it
    without a transition. The hand is already in the shape it will rest in
