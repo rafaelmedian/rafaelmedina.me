@@ -71,7 +71,6 @@ function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean
           <span className="mosaic-quote-role">{quote.caption}</span>
         </span>
       </span>
-      <p className="mosaic-quote-note">{quote.attributionNote}</p>
     </figcaption>
   )
 }
@@ -292,7 +291,7 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
           ))}
       </div>
       <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {activeIndex + 1} of {quotes.length}. {activeQuote.attribution}. {activeQuote.caption}: {activeQuote.text} {activeQuote.emphasis}. {activeQuote.attributionNote}
+        {activeIndex + 1} of {quotes.length}. {activeQuote.attribution}. {activeQuote.caption}: {activeQuote.text} {activeQuote.emphasis}.
       </p>
     </div>
   )

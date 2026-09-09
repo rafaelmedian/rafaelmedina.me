@@ -6,7 +6,6 @@ export type PortfolioQuote = {
   emphasis: string
   attribution: string
   caption: string
-  attributionNote?: string
   photo?: string
   /** Confirmed X username, without @. Omit for unidentified sample authors. */
   xHandle?: string
@@ -106,7 +105,6 @@ export const teamQuotes: PortfolioQuote[] = [
     emphasis: "I miss working with you guys.",
     attribution: "John Gilman",
     caption: "VP Product and co-founder at Onit",
-    attributionNote: "You make new product development rewarding and a lot of fun.",
     photo: "/quotes/jhon-onit.jpg",
   },
   {
@@ -115,7 +113,6 @@ export const teamQuotes: PortfolioQuote[] = [
     emphasis: "especially Rafael for making the prototype pop.",
     attribution: "Cristina Pieretti",
     caption: "VP at Moody’s",
-    attributionNote: "Relayed to the sprint team the morning after her stakeholder review.",
   },
   {
     id: "josh",
@@ -155,7 +152,6 @@ export const teamQuotes: PortfolioQuote[] = [
     emphasis: "AMAZING, I love it.",
     attribution: "Cristina Pieretti",
     caption: "VP at Moody’s",
-    attributionNote: "Overheard in the team check-in and passed along the same morning.",
   },
   {
     id: "jhon-happen",
