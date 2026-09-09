@@ -5,6 +5,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
+import { cssTimeToMilliseconds } from "../lib/cssTime"
+import { originCloseEasePoints, originOpenEasePoints, toCssEasing, useOriginTravel } from "../lib/originMotion"
 import { PreviewMedia } from "./PreviewMedia"
 import { backSound, nextSound, openSound } from "../lib/sounds"
 
@@ -21,7 +23,6 @@ type PreviewGalleryDialogProps = {
 type PreviewSwitchDirection = "prev" | "next"
 type PreviewSwitchPhase = "idle" | "out" | "in"
 
-const previewSwitchExitMs = 190
 const previewCloseResetMs = 260
 const largeDesktopPreviewQuery = "(min-width: 1320px)"
 
@@ -32,133 +33,23 @@ function shouldOpenPreviewWide() {
 }
 
 // Origin-aware open/close: the popup travels from (and back to) the card that
-// was clicked, so the modal reads as that card growing into place. Every
-// duration and curve it uses lives in this block, including the ones only the
-// stylesheet needs — those are handed to CSS as custom properties below, so the
-// JS and CSS halves of the animation cannot drift apart.
-
-// The open is deliberately not an expo-out. A quintic curve is 97% done in its
-// first third, which for a surface growing out of a card means the growth is
-// over before the eye catches it and the rest of the duration is dead air. This
-// one spends its time where the size change is actually visible, then settles.
-const openEasePoints = [0.32, 0.8, 0.32, 1] as const
-const closeEasePoints = [0.4, 0, 1, 1] as const
-const toCssEasing = (points: readonly number[]) => `cubic-bezier(${points.join(", ")})`
-
-const galleryMotion = {
-  openMs: 200,
-  closeMs: 150,
-  openEase: toCssEasing(openEasePoints),
-  closeEase: toCssEasing(closeEasePoints),
-  contentInMs: 140,
-  contentOutMs: 120,
-  backdropInMs: 180,
-  backdropOutMs: 150,
-  switchMs: previewSwitchExitMs,
-}
+// was clicked, so the modal reads as that card growing into place. The geometry
+// and the curves are shared with the writings sheet in lib/originMotion;
+// everything below is this gallery's own timing.
 
 const galleryMotionVars = {
-  "--pg-open-ms": `${galleryMotion.openMs}ms`,
-  "--pg-close-ms": `${galleryMotion.closeMs}ms`,
-  "--pg-open-ease": galleryMotion.openEase,
-  "--pg-close-ease": galleryMotion.closeEase,
-  "--pg-content-in-ms": `${galleryMotion.contentInMs}ms`,
-  "--pg-content-out-ms": `${galleryMotion.contentOutMs}ms`,
-  "--pg-backdrop-in-ms": `${galleryMotion.backdropInMs}ms`,
-  "--pg-backdrop-out-ms": `${galleryMotion.backdropOutMs}ms`,
-  "--pg-switch-ms": `${galleryMotion.switchMs}ms`,
+  "--pg-open-ms": "var(--duration-base)",
+  "--pg-close-ms": "var(--duration-quick)",
+  "--pg-open-ease": toCssEasing(originOpenEasePoints),
+  "--pg-close-ease": toCssEasing(originCloseEasePoints),
+  "--pg-content-in-ms": "var(--duration-base)",
+  "--pg-content-out-ms": "var(--duration-quick)",
+  "--pg-backdrop-in-ms": "var(--duration-base)",
+  "--pg-backdrop-out-ms": "var(--duration-quick)",
+  "--pg-switch-ms": "var(--duration-base)",
 } as CSSProperties
 
-// Not a full flight from the card to the centre. Replaying the whole distance
-// reads as a journey — the modal has to cross the page, so it needs a long
-// duration to not feel thrown, and the wait is worse than the payoff. Instead
-// the travel is capped: enough to say "from over there" as the surface settles,
-// then it is out of the way. The direction survives the cap, the distance does
-// not.
-const originMaxTravel = 44
-const originScaleMin = 0.92
-const originScaleMax = 1
-// Used when the anchor card is off-screen: a plain 20px lift, no travel.
-const originFallback = { dx: 0, dy: 20, scale: 0.96 }
-
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
-
-function getOriginOffset(originRect: DOMRect, targetRect: DOMRect) {
-  if (targetRect.width <= 0 || targetRect.height <= 0) return null
-  if (originRect.width <= 0 || originRect.height <= 0) return null
-
-  // Clamped rather than a strict FLIP: the point is to hint at the origin, not
-  // to replay the geometry exactly.
-  const scale = Math.min(Math.max(originRect.width / targetRect.width, originScaleMin), originScaleMax)
-  const dx = originRect.left + originRect.width / 2 - (targetRect.left + targetRect.width / 2)
-  const dy = originRect.top + originRect.height / 2 - (targetRect.top + targetRect.height / 2)
-
-  // Keep the bearing, drop the distance: a card in the far corner and one just
-  // below the fold should both nudge in by the same amount, differing only in
-  // which way they come from.
-  const distance = Math.hypot(dx, dy)
-  const cap = distance > originMaxTravel ? originMaxTravel / distance : 1
-
-  return { dx: dx * cap, dy: dy * cap, scale }
-}
-
-// cubic-bezier(x1, y1, x2, y2) evaluated as a progress function.
-function cubicBezierEasing([x1, y1, x2, y2]: readonly number[]) {
-  const axis = (a: number, b: number, t: number) =>
-    3 * a * (1 - t) * (1 - t) * t + 3 * b * (1 - t) * t * t + t * t * t
-
-  return (x: number) => {
-    if (x <= 0) return 0
-    if (x >= 1) return 1
-
-    let low = 0
-    let high = 1
-    let t = x
-    // Bisection: 24 rounds is far inside a sub-pixel and costs nothing at the
-    // ~50 samples we take per open.
-    for (let round = 0; round < 24; round += 1) {
-      if (axis(x1, x2, t) < x) low = t
-      else high = t
-      t = (low + high) / 2
-    }
-    return axis(y1, y2, t)
-  }
-}
-
-const easeOpen = cubicBezierEasing(openEasePoints)
-const easeClose = cubicBezierEasing(closeEasePoints)
-
-// Enough samples that the linear interpolation between them is invisible at
-// 120Hz over the longest of these animations.
-const originSampleCount = 48
-
-// Bake the easing into sampled keyframes so the origin-aware translation and
-// scale remain one coordinated motion on the complete gallery surface.
-function buildOriginKeyframes(
-  mode: "open" | "close",
-  offset: { dx: number; dy: number; scale: number },
-) {
-  const ease = mode === "open" ? easeOpen : easeClose
-  const keyframes: Keyframe[] = []
-
-  for (let step = 0; step < originSampleCount; step += 1) {
-    const time = step / (originSampleCount - 1)
-    // `travel` is 0 at the origin card and 1 at the modal's resting place.
-    const eased = ease(time)
-    const travel = mode === "open" ? eased : 1 - eased
-    const scale = offset.scale + (1 - offset.scale) * travel
-    const dx = offset.dx * (1 - travel)
-    const dy = offset.dy * (1 - travel)
-
-    keyframes.push({
-      offset: time,
-      easing: "linear",
-      transform: `translate3d(${dx.toFixed(2)}px, ${dy.toFixed(2)}px, 0) scale(${scale.toFixed(5)})`,
-    })
-  }
-
-  return keyframes
-}
 
 function wrapIndex(index: number, length: number) {
   if (length === 0) return 0
@@ -199,7 +90,6 @@ export function PreviewGalleryDialog({
   const closeResetTimeoutRef = useRef<number | null>(null)
   const originWrapRef = useRef<HTMLDivElement | null>(null)
   const popupRef = useRef<HTMLDivElement | null>(null)
-  const originAnimationsRef = useRef<Animation[]>([])
   // The portal mounts its contents in a later commit than the one that flips
   // `open`, so the open animation keys off the node arriving, not off `open`.
   const [originWrapNode, setOriginWrapNode] = useState<HTMLDivElement | null>(null)
@@ -267,64 +157,28 @@ export function PreviewGalleryDialog({
     setSwitchPhase("idle")
   }, [cancelSwitchTransition, open])
 
-  // Read through a ref so the animation callback stays stable: it must not be
-  // re-created (and re-fire the open effect) when the selected index changes.
-  const originInputsRef = useRef({ getOriginRect, prefersReducedMotion, safeIndex })
-
-  // Layout effect, and declared before the open effect below, so a click that
-  // changes the index and opens in the same commit animates from the new card.
-  useIsomorphicLayoutEffect(() => {
-    originInputsRef.current = { getOriginRect, prefersReducedMotion, safeIndex }
-  }, [getOriginRect, prefersReducedMotion, safeIndex])
-
   // The translated surface can overflow its scroll containers and flash a
   // scrollbar mid-flight. One flag on the shell gates that clipping and the
-  // compositing hint, and it must come off however the animation ends.
-  const clearOriginAnimatingFlag = useCallback(() => {
-    originWrapRef.current?.parentElement?.removeAttribute("data-origin-animating")
+  // compositing hint, and it must come off however the flight ends.
+  const flagOriginAnimating = useCallback((flying: boolean) => {
+    const shell = originWrapRef.current?.parentElement
+    if (flying) shell?.setAttribute("data-origin-animating", "true")
+    else shell?.removeAttribute("data-origin-animating")
   }, [])
 
-  const cancelOriginAnimations = useCallback(() => {
-    for (const animation of originAnimationsRef.current) animation.cancel()
-    originAnimationsRef.current = []
-    clearOriginAnimatingFlag()
-  }, [clearOriginAnimatingFlag])
+  const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
 
-  const runOriginAnimation = useCallback((mode: "open" | "close") => {
-    const wrap = originWrapRef.current
-    const { getOriginRect: originRectAt, prefersReducedMotion: reducedMotion, safeIndex: index } =
-      originInputsRef.current
-    if (!wrap || reducedMotion || !originRectAt) return
-    if (typeof wrap.animate !== "function") return
-
-    cancelOriginAnimations()
-
-    // The wrapper sits at rest here (any in-flight animation was cancelled),
-    // so this is its untransformed target geometry.
-    const originRect = originRectAt(index)
-    const offset =
-      (originRect && getOriginOffset(originRect, wrap.getBoundingClientRect())) ?? originFallback
-    const keyframes = buildOriginKeyframes(mode, offset)
-
-    const options: KeyframeAnimationOptions = {
-      duration: mode === "open" ? galleryMotion.openMs : galleryMotion.closeMs,
-      // The curve is already baked into the keyframes.
-      easing: "linear",
-      fill: mode === "open" ? "none" : "forwards",
-    }
-
-    const travel = wrap.animate(keyframes, options)
-    originAnimationsRef.current = [travel]
-
-    wrap.parentElement?.setAttribute("data-origin-animating", "true")
-    // Only the open path unlocks on finish. On close the transform is held by
-    // `fill: forwards` until Base UI unmounts, so releasing the clip early would
-    // flash the very scrollbar the flag exists to suppress; the next
-    // `cancelOriginAnimations` clears it instead.
-    if (mode === "open") {
-      travel.finished.then(clearOriginAnimatingFlag).catch(() => undefined)
-    }
-  }, [cancelOriginAnimations, clearOriginAnimatingFlag])
+  // Declared before the open effect below, so a click that changes the index and
+  // opens in the same commit animates from the new card: the hook latches these
+  // inputs in a layout effect of its own.
+  const { run: runOriginAnimation } = useOriginTravel({
+    node: originWrapNode,
+    getOriginRect: () => getOriginRect?.(safeIndex) ?? null,
+    enabled: originMotionEnabled,
+    openDurationProperty: "--pg-open-ms",
+    closeDurationProperty: "--pg-close-ms",
+    onFlight: flagOriginAnimating,
+  })
 
   const attachOriginWrap = useCallback((node: HTMLDivElement | null) => {
     originWrapRef.current = node
@@ -335,12 +189,6 @@ export function PreviewGalleryDialog({
     if (!open || !originWrapNode) return
     runOriginAnimation("open")
   }, [open, originWrapNode, runOriginAnimation])
-
-  useEffect(() => {
-    return () => {
-      cancelOriginAnimations()
-    }
-  }, [cancelOriginAnimations])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -385,6 +233,14 @@ export function PreviewGalleryDialog({
         window.cancelAnimationFrame(switchFrameRef.current)
       }
 
+      // The exact property the card's transition reads, not the token behind
+      // it: this timer steps that transition, so the two cannot resolve
+      // differently. `--pg-switch-ms` only lives on the shell, so the fallback
+      // mirrors the one the stylesheet already carries.
+      const switchStyles = getComputedStyle(popupRef.current ?? document.documentElement)
+      const switchMs = cssTimeToMilliseconds(
+        switchStyles.getPropertyValue("--pg-switch-ms") || switchStyles.getPropertyValue("--duration-base"),
+      )
       setSwitchDirection(nextDirection)
       setSwitchPhase("out")
 
@@ -399,7 +255,7 @@ export function PreviewGalleryDialog({
           })
         })
         switchTimeoutRef.current = null
-      }, previewSwitchExitMs)
+      }, switchMs)
     },
     [cards.length, onSelectedIndexChange, playBack, playNext, prefersReducedMotion, safeIndex, switchPhase],
   )
@@ -437,7 +293,6 @@ export function PreviewGalleryDialog({
   if (!activeCard) return null
 
   const activeMediaIsVideo = isVideoSource(activeMediaSource)
-  const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
   const mediaFrameStyle = activeCard.previewMediaPadding
     ? ({ "--preview-gallery-media-padding": activeCard.previewMediaPadding } as CSSProperties)
     : undefined
@@ -525,7 +380,7 @@ export function PreviewGalleryDialog({
                         onClick={() => moveBy(-1)}
                         disabled={cards.length <= 1}
                       >
-                        <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                        <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
                       </button>
 
                       <button
@@ -536,7 +391,7 @@ export function PreviewGalleryDialog({
                         onClick={() => moveBy(1)}
                         disabled={cards.length <= 1}
                       >
-                        <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                        <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                       </button>
 
                       <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
@@ -598,7 +453,7 @@ export function PreviewGalleryDialog({
                   onClick={() => moveBy(-1)}
                   disabled={cards.length <= 1}
                 >
-                  <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
                 </button>
 
                 <button
@@ -609,7 +464,7 @@ export function PreviewGalleryDialog({
                   onClick={() => moveBy(1)}
                   disabled={cards.length <= 1}
                 >
-                  <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                 </button>
               </div>
             </Dialog.Popup>

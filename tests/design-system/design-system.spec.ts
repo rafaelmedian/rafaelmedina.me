@@ -90,20 +90,36 @@ const findScriptCustomPropertyReferences = (text: string, fileName = "source.tsx
 }
 
 test("grades meaningful non-text colors against the 3:1 threshold", async ({ page }) => {
+  // --accent used to sit on the booking pill's status dot, which rested visible
+  // and could be read straight off the page. The copy confirmation is its only
+  // wearer now, so the live sample has to be earned with a click -- and a real
+  // writeText rejects on a page that is not the frontmost one, which several
+  // parallel workers guarantee for most of them. The address's fallback for a
+  // rejection is a mailto: navigation, so the check would never appear. The
+  // colour is the subject here, not the clipboard, so the write is stubbed out.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => {} },
+    })
+  })
   await page.goto("/")
-  const liveAvailabilityColor = await page
-    .locator(".mosaic-availability-dot")
-    .evaluate((dot) => getComputedStyle(dot).backgroundColor)
+  await page.locator(".mosaic-social-corner .mosaic-profile-email").click()
+  const icon = page.locator('.mosaic-social-corner .mosaic-profile-email[data-copied="true"] .mosaic-profile-email-icon')
+  // The check fades from --ink to --accent, and a colour read mid-transition is
+  // neither value -- so wait the transition out before sampling it.
+  await icon.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const liveAccentColor = await icon.evaluate((element) => getComputedStyle(element).color)
 
   await openDesignSystem(page)
 
-  const availabilitySwatch = page.locator("#colour .ds-swatch-card").filter({ hasText: "Available" })
-  const badge = availabilitySwatch.locator(".ds-ratio")
-  const documentedAvailabilityColor = await availabilitySwatch
+  const accentSwatch = page.locator("#colour .ds-swatch-card").filter({ hasText: "Copied" })
+  const badge = accentSwatch.locator(".ds-ratio")
+  const documentedAccentColor = await accentSwatch
     .locator(".ds-swatch")
     .evaluate((swatch) => getComputedStyle(swatch).backgroundColor)
 
-  expect(documentedAvailabilityColor).toBe(liveAvailabilityColor)
+  expect(documentedAccentColor).toBe(liveAccentColor)
   await expect(badge).toHaveAttribute("data-pass", "pass")
   await expect(badge).toContainText("AA non-text")
 })
@@ -137,8 +153,10 @@ test("documents the computed navigation hit area", async ({ page }) => {
 })
 
 test("documents the computed resume-title weight", async ({ page }) => {
-  await page.goto("/#about-panel-resume")
+  await page.goto("/")
+  await page.getByRole("button", { name: "Open résumé" }).click()
   const resumeTitleWeight = await page
+    .getByRole("dialog", { name: "Work history" })
     .locator(".mosaic-about-resume-title")
     .first()
     .evaluate((title) => getComputedStyle(title).fontWeight)
@@ -153,15 +171,14 @@ test("documents the computed resume-title weight", async ({ page }) => {
 
 test("documents component-specific motion curves that still ship", async ({ page }) => {
   await page.goto("/")
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
 
   const curves = await page.evaluate(() => {
     const firstBezier = (value: string) => value.match(/cubic-bezier\([^)]*\)/)?.[0] ?? ""
-    const hero = getComputedStyle(document.querySelector(".mosaic-hero") as Element)
     const avatar = getComputedStyle(document.querySelector(".mosaic-avatar-coin-inner") as Element)
     const workHistory = getComputedStyle(document.querySelector(".mosaic-work-history") as Element)
 
     return [
-      firstBezier(hero.transitionTimingFunction),
       firstBezier(avatar.transitionTimingFunction),
       firstBezier(workHistory.getPropertyValue("--mosaic-popover-exit-ease")),
     ]
@@ -197,25 +214,25 @@ test("refreshes token values, specimens, and contrast when the stylesheet change
     --ease-standard: cubic-bezier(0.1, 0.2, 0.3, 1);
   }` })
 
-  const availability = page.locator("#colour .ds-swatch-card").filter({ hasText: "Available" })
-  await expect(availability).toContainText("#225588")
-  await expect(availability.locator(".ds-swatch")).toHaveCSS("background-color", "rgb(34, 85, 136)")
-  await expect(availability.locator(".ds-ratio")).toContainText("7.39:1")
+  const accent = page.locator("#colour .ds-swatch-card").filter({ hasText: "Copied" })
+  await expect(accent).toContainText("#225588")
+  await expect(accent.locator(".ds-swatch")).toHaveCSS("background-color", "rgb(34, 85, 136)")
+  await expect(accent.locator(".ds-ratio")).toContainText("7.39:1")
   await expect(page.locator("#typography .ds-type-row").filter({ hasText: "--text-md" })).toContainText("1.0625rem · 17px")
   await expect(page.locator("#space .ds-card").filter({ hasText: "--radius-md" })).toContainText("18px")
-  await expect(page.locator("#motion tr").filter({ hasText: "--duration-quick" })).toContainText("170ms")
+  await expect(page.locator("#motion tr").filter({ has: page.locator("td:first-child", { hasText: "--duration-quick" }) })).toContainText("170ms")
   await expect(page.locator("#motion .ds-motion-card").filter({ hasText: "--ease-standard" })).toContainText("cubic-bezier(0.1, 0.2, 0.3, 1)")
 
   await page.getByRole("searchbox").fill("#225588")
-  await expect(availability).toBeVisible()
+  await expect(accent).toBeVisible()
   await page.addStyleTag({ content: ":root { --accent: #334455; }" })
-  await expect(availability).toBeHidden()
+  await expect(accent).toBeHidden()
   await page.getByRole("searchbox").fill("#334455")
-  await expect(availability).toBeVisible()
+  await expect(accent).toBeVisible()
   await page.getByRole("searchbox").clear()
   await page.addStyleTag({ content: ":root { --accent: rgb(34 85 136); }" })
-  await expect(availability.locator(".ds-swatch")).toHaveCSS("background-color", "rgb(34, 85, 136)")
-  await expect(availability.locator(".ds-ratio")).toContainText("7.39:1")
+  await expect(accent.locator(".ds-swatch")).toHaveCSS("background-color", "rgb(34, 85, 136)")
+  await expect(accent.locator(".ds-ratio")).toContainText("7.39:1")
 })
 
 // Guards the invariant behind the token cleanup: a custom property defined in

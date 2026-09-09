@@ -1,8 +1,9 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react"
 
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
-import { measurePhotoOrigins, milliseconds, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
+import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
 
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 
@@ -32,7 +33,7 @@ function useSheetColumns() {
 /** Glides a scrolled sheet back to its first row, where the prints were
     dealt, so they fly home from the same slots they flew to. */
 function rewindSheet(sheet: HTMLDivElement, halt: { cancelled: boolean }) {
-  const total = milliseconds(getComputedStyle(sheet).getPropertyValue("--photo-rewind-duration"))
+  const total = cssTimeToMilliseconds(getComputedStyle(sheet).getPropertyValue("--photo-rewind-duration"))
   const from = sheet.scrollTop
   return new Promise<void>((resolve) => {
     const start = performance.now()

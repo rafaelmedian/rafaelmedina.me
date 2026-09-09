@@ -56,6 +56,8 @@ export type SiteLinks = {
   linkedin: string
   email: string
   resumePdf: string
+  /** Cal.com event type, opened as a calendar in the availability dialog. */
+  booking: string
 }
 
 export type HomeRowItem = {
@@ -75,6 +77,8 @@ export type HomeRow = {
   quote?: boolean
   /** Flex span for that quote slider, in the same units as `HomeRowItem.span`. */
   quoteSpan?: number
+  /** Open the résumé from a one-unit folded-paper tile at the start of this row. */
+  resume?: boolean
   /** Close this row with the writings folder tile, at a 1-unit span. */
   writings?: boolean
   /** Close this row with the personal photos tile. */
@@ -139,20 +143,19 @@ export const homeRows: HomeRow[] = [
   {
     id: "row-3",
     height: homeTileRowHeight,
+    // Keep the folded résumé sheet beside the quote, Protector, and photos.
+    resume: true,
     quote: true,
-    // Widens the quote at Protector's expense. The span was tuned when the
-    // writings tile shared this row and it totalled 4; the tile now closes row
-    // 2, so this is a 3-unit row and both tiles sit wider than that tuning
-    // assumed -- the quote's blockquote is capped at 21rem, so its extra width
-    // lands in side padding.
+    // The quote's blockquote is capped at 21rem, so any extra width lands
+    // in side padding rather than stretching the reading measure.
     quoteSpan: 1.25,
     items: [
       { cardId: "preview-protector", span: 1.75 },
     ],
     // The photos used to sit inside About, below the hobbies. They read better
     // as a tile in the grid, and this is the row with room for one: the quote
-    // and the photos are the two tiles here that are not a project, and
-    // Protector still takes the widest slot in the row at 1.75 of 4.25.
+    // and photos accompany the résumé, while Protector keeps the widest slot
+    // at 1.75 of the row's 5.25 units.
     //
     // Not a row of its own at the end of the grid, which is where they landed
     // first: the takeover pins the last screenful of the grid while About
@@ -195,7 +198,10 @@ export const siteLinks: SiteLinks = {
   x: "https://x.com/rafaelmedian",
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
-  email: "hellorafaelmedina@gmail.com",
+  email: "hey@rafaelmedina.me",
+  // The event type rather than the profile: /rafaelmedian alone opens a list of
+  // meeting lengths, and the dialog is meant to land on the calendar itself.
+  booking: "https://cal.com/rafaelmedian/30min",
   // Self-hosted so the link survives Drive permission changes and skips the
   // Drive viewer interstitial.
   resumePdf: "/rafael-medina-resume.pdf",

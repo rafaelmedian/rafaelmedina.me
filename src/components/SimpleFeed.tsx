@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type AnimationEvent,
   type CSSProperties,
   type ReactNode,
 } from "react"
@@ -17,17 +16,23 @@ import { ExternalLink, X } from "lucide-react"
 import { AboutPanel } from "./AboutPanel"
 import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
+import { ProfileEmailCopy } from "./ProfileEmailCopy"
+import { ProfileLocation } from "./ProfileLocation"
+import { SiteLastUpdated } from "./SiteLastUpdated"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
+import { ResumeTile } from "./ResumeTile"
 import { portfolioQuotes } from "../data/quotes"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { useHoverCard } from "../lib/hoverCard"
+import { visibleOriginRect } from "../lib/originMotion"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { useAvatarIntro } from "../lib/useAvatarIntro"
 import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
 import { projectPath } from "../lib/projectMetadata"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -102,33 +107,6 @@ class GalleryLoadBoundary extends Component<GalleryLoadBoundaryProps, { failed: 
     return this.state.failed ? null : this.props.children
   }
 }
-
-function PuntaCanaMapScreenshot() {
-  return (
-    <img
-      className="mosaic-local-time-map-screenshot"
-      src="/maps/punta-cana-openstreetmap.webp"
-      alt="OpenStreetMap screenshot of Punta Cana, Dominican Republic"
-      width="696"
-      height="320"
-      loading="lazy"
-      decoding="async"
-    />
-  )
-}
-
-function FailedPuntaCanaMap() {
-  return <PuntaCanaMapScreenshot />
-}
-
-const PuntaCanaMap = lazy(async () => {
-  try {
-    const module = await import("./PuntaCanaMap")
-    return { default: module.PuntaCanaMap }
-  } catch {
-    return { default: FailedPuntaCanaMap }
-  }
-})
 
 type SiteProfile = {
   name: string
@@ -226,6 +204,34 @@ function prefetchPreviewGallery() {
   void loadPreviewGallery().catch(() => undefined)
 }
 
+// The card paints the poster long before `loadeddata`, and on reduced motion or
+// a metered connection the loop never loads at all -- so a video tile's skeleton
+// has to clear on the poster's own decode rather than the video's. The element's
+// poster request and this one resolve to the same resource, so it costs no bytes.
+function usePosterReady(poster: string | undefined) {
+  const [ready, setReady] = useState(!poster)
+
+  useEffect(() => {
+    if (!poster) return
+
+    // Listeners go on before `src`, so a poster already in the cache still
+    // arrives through `load` rather than needing a synchronous `complete` check.
+    const image = new Image()
+    const finish = () => setReady(true)
+    image.addEventListener("load", finish)
+    // A poster that fails is not going to paint, so stop waiting on it rather
+    // than leaving the tile under a skeleton for the rest of the session.
+    image.addEventListener("error", finish)
+    image.src = poster
+    return () => {
+      image.removeEventListener("load", finish)
+      image.removeEventListener("error", finish)
+    }
+  }, [poster])
+
+  return ready
+}
+
 function RowVideoMedia({
   source,
   poster,
@@ -253,6 +259,7 @@ function RowVideoMedia({
   const [shouldLoad, setShouldLoad] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const posterReady = usePosterReady(poster)
 
   // With no observer to flip the state, `src` would stay undefined for the whole
   // session and only the poster would ever show -- so fall back to loading up
@@ -322,6 +329,7 @@ function RowVideoMedia({
       aria-label={label}
       className="mosaic-row-media"
       data-loaded={poster || loaded ? "true" : "false"}
+      data-pending={(poster ? posterReady : loaded) ? "false" : "true"}
       onLoadedData={() => setLoaded(true)}
     />
   )
@@ -342,7 +350,36 @@ type RowImageMediaProps = {
 // re-ran the row/tile tree eleven times during load.
 function RowImageMedia({ source, label, width, height, eager, share }: RowImageMediaProps) {
   const [loaded, setLoaded] = useState(false)
+  const [approached, setApproached] = useState(false)
+  const imageRef = useRef<HTMLImageElement | null>(null)
+  const supportsIntersectionObserver = useSyncExternalStore(
+    subscribeToNothing,
+    hasIntersectionObserver,
+    hasIntersectionObserverOnServer,
+  )
   const srcSet = buildPreviewSrcSet(source, width)
+  // A lazy tile ten screens down has no request in flight, so a skeleton there
+  // would promise an arrival that is not underway -- and its breathe would run
+  // for the session on a card nobody is looking at. Arm it on approach instead,
+  // roughly when `loading="lazy"` starts fetching. Eager tiles are already
+  // loading at mount, and without an observer to arm them the rest never would.
+  const armed = eager || approached || !supportsIntersectionObserver
+
+  useEffect(() => {
+    const image = imageRef.current
+    if (armed || !image) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return
+        setApproached(true)
+        observer.disconnect()
+      },
+      { rootMargin: "300px" },
+    )
+    observer.observe(image)
+    return () => observer.disconnect()
+  }, [armed])
 
   return (
     <img
@@ -357,10 +394,12 @@ function RowImageMedia({ source, label, width, height, eager, share }: RowImageM
       fetchPriority={eager ? "high" : "auto"}
       className="mosaic-row-media"
       data-loaded={loaded ? "true" : "false"}
+      data-pending={armed && !loaded ? "true" : "false"}
       onLoad={(event) => {
         if (event.currentTarget.naturalWidth > 0) setLoaded(true)
       }}
       ref={(el) => {
+        imageRef.current = el
         // A cached image can finish before React attaches onLoad.
         if (el && el.complete && el.naturalWidth > 0) setLoaded(true)
       }}
@@ -378,63 +417,22 @@ function formatPuntaCanaLocalTime(date = new Date()) {
   return puntaCanaTimeFormatter.format(date).replace(/\s?([AP])M(?=\s|$)/, (_, meridiem: string) => `${meridiem.toLowerCase()}m`)
 }
 
-function openPreview(card: PortfolioCard, previewIndex: number, setSelectedWorkPreviewIndex: (value: number) => void) {
+function openPreview(
+  card: PortfolioCard,
+  previewIndex: number,
+  setSelectedWorkPreviewIndex: (value: number) => void,
+  // The grid is not the only surface that opens a preview any more: the résumé
+  // reader hands a project back to the feed too, and those opens have to be
+  // told apart rather than going unrecorded.
+  placement: "grid" | "resume_reader" = "grid",
+) {
   trackEvent("work_preview_open", {
     preview_id: card.id,
     preview_title: card.title,
     preview_index: previewIndex + 1,
-    preview_placement: "grid",
+    preview_placement: placement,
   })
   setSelectedWorkPreviewIndex(previewIndex)
-}
-
-function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion: boolean }) {
-  const [displayedLabel, setDisplayedLabel] = useState(label)
-  const [incomingLabel, setIncomingLabel] = useState<string | null>(null)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const animationTimeoutRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (reducedMotion || label === displayedLabel) return
-
-    if (animationTimeoutRef.current !== null) {
-      window.clearTimeout(animationTimeoutRef.current)
-    }
-
-    const frameId = window.requestAnimationFrame(() => {
-      setIncomingLabel(label)
-      setIsAnimating(true)
-      animationTimeoutRef.current = window.setTimeout(() => {
-        setDisplayedLabel(label)
-        setIncomingLabel(null)
-        setIsAnimating(false)
-        animationTimeoutRef.current = null
-      }, 240)
-    })
-
-    return () => {
-      window.cancelAnimationFrame(frameId)
-      if (animationTimeoutRef.current !== null) {
-        window.clearTimeout(animationTimeoutRef.current)
-        animationTimeoutRef.current = null
-      }
-    }
-  }, [displayedLabel, label, reducedMotion])
-
-  const resolvedLabel = reducedMotion ? label : displayedLabel
-  const resolvedIncomingLabel = reducedMotion ? null : incomingLabel
-  const resolvedAnimatingState = reducedMotion ? false : isAnimating
-
-  return (
-    // No aria-live: this is ambient info, and a live region would re-announce
-    // the time to screen readers on every minute tick for the whole session.
-    <span className={`mosaic-live-time ${resolvedAnimatingState ? "is-animating" : ""}`}>
-      <span className="mosaic-live-time-track">
-        <span className="mosaic-live-time-value mosaic-live-time-value-current">{resolvedLabel}</span>
-        {resolvedIncomingLabel ? <span className="mosaic-live-time-value mosaic-live-time-value-next">{resolvedIncomingLabel}</span> : null}
-      </span>
-    </span>
-  )
 }
 
 const sectionLinks: { label: string; href: string }[] = [
@@ -447,12 +445,23 @@ function SectionCorner({
   resumeHref,
 }: {
   onSelect: (href: string) => void
-  onNotes: () => void
+  onNotes: (opener: HTMLElement) => void
   resumeHref: string
 }) {
   const { isOpen, hoverProps } = useHoverCard()
   const [previewLoaded, setPreviewLoaded] = useState(false)
-  const previewFrameRef = useRef<HTMLAnchorElement>(null)
+  // The frame is only mounted once the card first opens, a commit after any
+  // effect here last ran, so the wheel listener below has to key off the node
+  // arriving. It used to key off the preview image instead, which left the
+  // frame scrolling natively -- at full delta, and chaining the overflow into
+  // the page -- for as long as the image took to load. The ref is for the
+  // reset, which only ever writes to whatever node is current.
+  const [previewFrame, setPreviewFrame] = useState<HTMLAnchorElement | null>(null)
+  const previewFrameRef = useRef<HTMLAnchorElement | null>(null)
+  const attachPreviewFrame = useCallback((node: HTMLAnchorElement | null) => {
+    previewFrameRef.current = node
+    setPreviewFrame(node)
+  }, [])
 
   // The frame shows the top ~160px of a ~450px page, so an ordinary wheel
   // gesture would cover the whole travel in one flick and the middle of the
@@ -460,7 +469,7 @@ function SectionCorner({
   // into a slow pan. React registers its wheel listener passively, so this has
   // to be wired by hand to be allowed to preventDefault.
   useEffect(() => {
-    const frame = previewFrameRef.current
+    const frame = previewFrame
     if (!frame) return
 
     const handleWheel = (event: WheelEvent) => {
@@ -492,7 +501,7 @@ function SectionCorner({
 
     frame.addEventListener("wheel", handleWheel, { passive: false })
     return () => frame.removeEventListener("wheel", handleWheel)
-  }, [previewLoaded])
+  }, [previewFrame])
 
   // The card is mounted for the rest of the session once it has loaded, so a
   // reopen would otherwise resume wherever the last hover left off.
@@ -522,8 +531,10 @@ function SectionCorner({
         </a>
       ))}
       {/* Notes has no section of its own to scroll to: it opens the same
-          folder the mosaic tile does, so this is a button, not a link. */}
-      <button type="button" className="mosaic-social-link" onClick={onNotes}>
+          folder the mosaic tile does, so this is a button, not a link. It hands
+          itself over as the opener, so the sheet flies out of this corner
+          rather than out of a tile that may be pages down. */}
+      <button type="button" className="mosaic-social-link" onClick={(event) => onNotes(event.currentTarget)}>
         Notes
       </button>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
@@ -556,7 +567,7 @@ function SectionCorner({
         >
           {isOpen || previewLoaded ? (
             <a
-              ref={previewFrameRef}
+              ref={attachPreviewFrame}
               href={resumeHref}
               target="_blank"
               rel="noreferrer"
@@ -592,71 +603,24 @@ function SectionCorner({
   )
 }
 
-function SocialCorner({
-  reducedMotion,
-  timeLabel,
-}: {
-  reducedMotion: boolean
-  timeLabel: string
-}) {
-  const { isOpen, hoverProps } = useHoverCard()
-  const [mapLoaded, setMapLoaded] = useState(false)
-  const handleMapReady = useCallback(() => setMapLoaded(true), [])
 
+/**
+ * The page's top-right corner. It carried the local time and its map until the
+ * address moved in: a clock is ambient, an address is the thing a visitor came
+ * for, and only one of the two earns the corner. The clock is in About now,
+ * beside the rest of the answer to "who is this".
+ */
+function SocialCorner({ email }: { email: string }) {
   return (
     <div className="mosaic-social-corner">
-      <span className="mosaic-hover-anchor mosaic-local-time-anchor" {...hoverProps}>
-        <span
-          className="mosaic-social-time"
-          tabIndex={0}
-          aria-describedby="local-time-location"
-        >
-          Local time: <LiveTimeLabel label={timeLabel} reducedMotion={reducedMotion} />
-        </span>
-        {/* The description target is plain text on purpose: the visual card
-            below contains a link, which a tooltip/description must not. */}
-        <span id="local-time-location" className="sr-only">
-          Punta Cana, Dominican Republic
-        </span>
-        <span
-          className={`mosaic-local-time-card${isOpen ? " is-open" : ""}`}
-          data-state={isOpen ? "open" : "closed"}
-          inert={!isOpen}
-        >
-          <span className="mosaic-local-time-map">
-            {/* Nothing renders while closed so the screenshot is never fetched
-                for visitors who never hover; the Suspense fallback covers the
-                gap while Leaflet's chunk loads. */}
-            {isOpen || mapLoaded ? (
-              <Suspense fallback={<PuntaCanaMapScreenshot />}>
-                <PuntaCanaMap onReady={handleMapReady} />
-              </Suspense>
-            ) : null}
-            <a
-              className="mosaic-local-time-map-attribution"
-              href="https://www.openstreetmap.org/copyright"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="OpenStreetMap contributors"
-            >
-              © OpenStreetMap contributors
-            </a>
-          </span>
-          <span className="mosaic-local-time-card-copy">
-            <span>
-              <strong>Punta Cana</strong>
-              <span>Dominican Republic</span>
-            </span>
-            <span className="mosaic-local-time-card-clock">{timeLabel}</span>
-          </span>
-        </span>
-      </span>
+      <ProfileEmailCopy email={email} side="bottom" />
     </div>
   )
 }
 
 export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
+  const { avatarRef, active: introActive } = useAvatarIntro()
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { projectId, selectProject, clearProject } = useProjectUrl()
@@ -669,17 +633,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [availabilityLabel, setAvailabilityLabel] = useState(() =>
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
-  const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [writingsOpen, setWritingsOpen] = useState(false)
+  const [resumeOpen, setResumeOpen] = useState(false)
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
-
-  // Reduced motion suppresses animationend, so retire the one-shot intro
-  // marker as soon as the preference reads true — and latch it, so a later
-  // preference change cannot start the intro mid-session.
-  if (prefersReducedMotion && !hasCompletedWorkIntro) {
-    setHasCompletedWorkIntro(true)
-  }
 
   const handleGalleryLoadError = useCallback(() => {
     trackEvent("work_preview_load_error", {})
@@ -693,12 +650,14 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const rowsRender = useMemo(() => {
     let previewIndex = 0
     return homeRows.map((row) => {
-      // Every tile in the row -- projects, the quote slider, the writings
-      // folder -- flexes against this total, so it is also what decides how much
-      // width a project's artwork has to cover. Feeds `previewSizesForShare`.
+      // Every tile in the row -- projects, the quote slider, the résumé and the
+      // writings folder -- flexes against this total, so it is also what decides
+      // how much width a project's artwork has to cover. Feeds
+      // `previewSizesForShare`.
       const rowSpan =
         row.items.reduce((total, item) => total + (item.span ?? 1), 0) +
         (row.quote ? row.quoteSpan ?? 1 : 0) +
+        (row.resume ? 1 : 0) +
         (row.writings ? 1 : 0) +
         (row.photos ? row.photosSpan ?? 1 : 0)
       const items = row.items.flatMap((item) => {
@@ -718,7 +677,18 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, writings: row.writings, photos: row.photos, photosSpan: row.photosSpan, items }
+      return {
+        id: row.id,
+        height: row.height,
+        gap: row.gap,
+        quote: row.quote,
+        quoteSpan: row.quoteSpan,
+        resume: row.resume,
+        writings: row.writings,
+        photos: row.photos,
+        photosSpan: row.photosSpan,
+        items,
+      }
     })
   }, [cards])
 
@@ -742,18 +712,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
   // The gallery grows out of (and shrinks back into) the card it represents, so
   // it needs that card's live geometry at open and close time.
-  const getPreviewOriginRect = useCallback((index: number) => {
-    const node = previewCardNodesRef.current.get(index)
-    if (!node) return null
-
-    const rect = node.getBoundingClientRect()
-    if (rect.width <= 0 || rect.height <= 0) return null
-
-    // A card scrolled out of view would send the gallery flying off-screen, so
-    // only anchor to cards the viewer can actually see.
-    const onScreen = rect.bottom > 0 && rect.top < window.innerHeight
-    return onScreen ? rect : null
-  }, [])
+  const getPreviewOriginRect = useCallback(
+    (index: number) => visibleOriginRect(previewCardNodesRef.current.get(index)),
+    [],
+  )
 
   const renderRowMedia = (
     card: PortfolioCard,
@@ -774,7 +736,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen || resumeOpen}
         />
       )
     }
@@ -896,7 +858,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     if (window.location.hash !== hash) {
       // Section links share one visit instead of adding a history entry for
       // every jump within the same page.
-      if (["#work", "#about-panel", "#about-panel-resume"].includes(window.location.hash)) {
+      if (["#work", "#about-panel", "#about-panel-services"].includes(window.location.hash)) {
         window.history.replaceState(window.history.state, "", hash)
       } else {
         pushPortfolioUrl(hash, "about")
@@ -934,14 +896,14 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <h1 id="portfolio-title" className="sr-only" tabIndex={-1}>{profile.name} portfolio</h1>
       <SectionCorner
         onSelect={openAbout}
-        onNotes={() => writingsFolderRef.current?.openFolder()}
+        onNotes={(opener) => writingsFolderRef.current?.openFolder(opener)}
         resumeHref={links.resumePdf}
       />
-      <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+      <SocialCorner email={links.email} />
       <MobileTableOfContents
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
-        onWorkHistory={() => scrollToSection("toc_work_history", "about-panel-resume")}
+        onServices={() => scrollToSection("toc_services", "about-panel-services")}
       />
       <button
         type="button"
@@ -956,16 +918,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         <X aria-hidden="true" />
       </button>
       <header id="about" className="mosaic-hero">
-        <div className="mosaic-hero-profile mosaic-hero-profile-animated">
+        <div className="mosaic-hero-profile">
           <div className="mosaic-profile-info">
             <button
+              ref={avatarRef}
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
               aria-label={`Read about ${profile.name}`}
               onClick={() => scrollToSection("avatar")}
             >
               <div className="mosaic-avatar-coin-inner">
-                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
+                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" fetchPriority="high" decoding="async" />
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
               </div>
               <span className="mosaic-avatar-hint" aria-hidden="true">
@@ -992,18 +955,32 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
             </div>
           </div>
           <WorkedWithCompaniesInline variant="profile" />
-          <p className="mosaic-profile-location">
-            <span className="mosaic-profile-location-place">Punta Cana & NYC</span>
+          {/* The address left this line for the corner, and what replaced it is
+              the other thing the line was quietly saying: that this is a place
+              somebody still works on.
+
+              A div rather than a p: the place name opens a map card, and
+              Leaflet builds that map out of divs, which a paragraph cannot
+              legally contain. The line is a row of metadata rather than prose,
+              and the heading above it and the contact group below already give
+              a screen reader the boundaries the paragraph was providing. */}
+          <div className="mosaic-profile-location">
+            <ProfileLocation timeLabel={puntaCanaTimeLabel} />
             <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
-            <span className="mosaic-profile-availability">
-              {availabilityLabel}
-              <span className="mosaic-availability-dot" aria-hidden="true" />
+            <SiteLastUpdated />
+            {/* The corner is not rendered below 700px, so on a phone the address
+                comes back to the line it left. It is one control either way --
+                CSS decides which end of the page it appears at, so no visitor
+                ever meets two of it. */}
+            <span className="mosaic-profile-location-email">
+              <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
+              <ProfileEmailCopy email={links.email} />
             </span>
-          </p>
+          </div>
           <div className="mosaic-profile-contact">
             <ContactActionRow
-              email={links.email}
-              contactHref={`mailto:${links.email}`}
+              availabilityLabel={availabilityLabel}
+              bookingUrl={links.booking}
               linkedinHref={links.linkedin}
               xHref={links.x}
               xProfile={xProfilePreview}
@@ -1016,13 +993,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <>
           <article id="work" className="mosaic-work" tabIndex={-1}>
               <h2 className="sr-only">Selected work</h2>
-              {/* No `prefersReducedMotion` here on purpose: it is false on the
-                  server and on the first client render, so a JS gate would flash
-                  before the effect syncs. Reduced motion is handled in CSS. */}
               <div className="mosaic-takeover-runway">
                 <div className="mosaic-takeover-stage">
                   <div
-                    className={`mosaic-rows${hasCompletedWorkIntro ? "" : " mosaic-work-intro"}`}
+                    className="mosaic-rows"
                     role="group"
                     aria-label="Selected work previews"
                     id="selected-work-previews"
@@ -1033,43 +1007,44 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                         ...(row.gap ? { "--row-gap": row.gap } : {}),
                       } as CSSProperties
                       const eagerRow = rowIndex === 0
-                      // The intro is over once the last tile in the grid has
-                      // finished its entrance. Which tile that is depends on
-                      // the row: the photos row carries no projects, so the
-                      // handler has to ride whichever element the row ends on
-                      // or the stagger class never comes off.
-                      const isLastRow = rowIndex === rowsRender.length - 1
-                      const finishIntro = (event: AnimationEvent<HTMLElement>) => {
-                        if (event.target === event.currentTarget) setHasCompletedWorkIntro(true)
-                      }
                       return (
                         <div
                           key={row.id}
                           className={`mosaic-row${row.quote ? " mosaic-row-with-quote" : ""}`}
                           style={rowStyle}
                         >
+                          {row.resume ? (
+                            <div className="mosaic-row-item">
+                              <ResumeTile
+                                href={links.resumePdf}
+                                onOpenChange={setResumeOpen}
+                                onSelectProject={(id) => {
+                                  // Only the cards laid out on the grid have a
+                                  // preview to grow out of.
+                                  const index = flatWorkCards.findIndex((card) => card.id === id)
+                                  if (index < 0) return false
+                                  openPreview(flatWorkCards[index], index, setSelectedWorkPreviewIndex, "resume_reader")
+                                  return true
+                                }}
+                              />
+                            </div>
+                          ) : null}
                           {row.quote ? (
                             <div
                               className="mosaic-row-item mosaic-row-quote"
                               style={
                                 {
                                   "--row-span": row.quoteSpan ?? 1,
-                                  "--work-intro-row": rowIndex,
-                                  "--work-intro-col": 0,
                                 } as CSSProperties
                               }
                             >
                               <QuoteCard quotes={portfolioQuotes} />
                             </div>
                           ) : null}
-                          {row.items.map((item, itemIndex) => {
+                          {row.items.map((item) => {
                             const itemKey = `${item.card.id}-${item.previewIndex}`
                             const itemStyle = {
                               "--row-span": item.span,
-                              // Feeds the first-load stagger in `.mosaic-work-intro`.
-                              // Inert without that class, so set unconditionally.
-                              "--work-intro-row": rowIndex,
-                              "--work-intro-col": itemIndex + (row.quote ? 1 : 0),
                               ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
                               ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
                             } as CSSProperties
@@ -1078,11 +1053,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 key={itemKey}
                                 className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
                                 style={itemStyle}
-                                onAnimationEnd={
-                                  isLastRow && !row.photos && itemIndex === row.items.length - 1
-                                    ? finishIntro
-                                    : undefined
-                                }
                               >
                                 <a
                                   href={projectPath(item.card)}
@@ -1128,15 +1098,14 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                             )
                           })}
                           {row.writings ? (
-                            <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) } as CSSProperties}>
+                            <div className="mosaic-row-item">
                               <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
                             </div>
                           ) : null}
                           {row.photos ? (
                             <div
                               className="mosaic-row-item"
-                              style={{ "--row-span": row.photosSpan ?? 1, "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) + (row.writings ? 1 : 0) } as CSSProperties}
-                              onAnimationEnd={isLastRow ? finishIntro : undefined}
+                              style={{ "--row-span": row.photosSpan ?? 1 } as CSSProperties}
                             >
                               <PersonalPhotos />
                             </div>
@@ -1172,7 +1141,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               </div>
           </article>
 
-          <AboutPanel links={links} />
+          <AboutPanel links={links} localTimeLabel={puntaCanaTimeLabel} />
 
           {/* Stays mounted after the first open so Base UI can run the close
               transition instead of the dialog vanishing on unmount. */}

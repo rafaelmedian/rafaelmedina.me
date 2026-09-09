@@ -187,17 +187,6 @@ test("opens the interactive profile popover on touch", async ({ browser }) => {
   await context.close()
 })
 
-test("stages the quote and Protector in their second-row column order", async ({ page }) => {
-  await openHome(page)
-  const quote = carousel(page).locator("xpath=ancestor::*[contains(@class, 'mosaic-row-item')][1]")
-  const protector = page.getByRole("link", { name: /Open Protector/ }).locator("xpath=ancestor::*[contains(@class, 'mosaic-row-item')][1]")
-  const firstTile = page.locator(".mosaic-row-item").first()
-  const [firstDelay, quoteDelay, protectorDelay] = await Promise.all(
-    [firstTile, quote, protector].map((item) => item.evaluate((node) => Number.parseFloat(getComputedStyle(node).animationDelay))),
-  )
-  expect(quoteDelay).toBeGreaterThan(firstDelay)
-  expect(protectorDelay).toBeGreaterThan(quoteDelay)
-})
 
 for (const width of [390, 768, 1440]) {
   test(`keeps content and controls contained through About at ${width}px`, async ({ page }) => {
@@ -225,4 +214,26 @@ test("reduced motion settles quote changes immediately", async ({ page }) => {
   expect(await carousel(page).locator(".mosaic-quote-slide").evaluateAll((slides) => slides.every((slide) =>
     getComputedStyle(slide).transitionDuration.split(", ").every((duration) => Number.parseFloat(duration) <= 0.001),
   ))).toBe(true)
+})
+
+
+test("keeps every quote inside the four-tile row at compact desktop widths", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  for (const width of [700, 768, 899]) {
+    await openHome(page, width)
+    await carousel(page).scrollIntoViewIfNeeded()
+    await page.evaluate(() => document.fonts.ready)
+    const bounds = await carousel(page).evaluate((element) => {
+      const card = element.getBoundingClientRect()
+      return Array.from(element.querySelectorAll("blockquote, .mosaic-quote-credit")).map((node) => {
+        const rect = node.getBoundingClientRect()
+        return { top: rect.top - card.top, bottom: card.bottom - rect.bottom }
+      })
+    })
+    for (const box of bounds) {
+      expect(box.top, `${width}px top clearance`).toBeGreaterThanOrEqual(0)
+      expect(box.bottom, `${width}px bottom clearance`).toBeGreaterThanOrEqual(0)
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
 })

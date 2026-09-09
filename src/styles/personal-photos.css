@@ -78,7 +78,7 @@
   padding: 0.25rem 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   background: var(--canvas);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
   transform: translateY(var(--print-offset-y)) rotate(var(--print-tilt));
   /* The settle curve, not the carousel's: it starts moving the instant the
      pointer crosses onto a print and eases out long, so sweeping across the

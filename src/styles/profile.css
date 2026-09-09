@@ -15,9 +15,6 @@
   display: grid;
   place-items: center;
   padding-block: clamp(1.6rem, 5vw, 3.2rem);
-  transition:
-    min-height var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1),
-    padding-block var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .mosaic-hero-profile {
@@ -27,52 +24,95 @@
   text-align: center;
 }
 
-/* The hero has to lead the work cards. The top mosaic row now starts transparent
-   despite the +1240ms LCP cost described under `.mosaic-work-intro`, so the two
-   cascades need to remain distinct: every hero item is in flight by var(--duration-base), the
-   first four have landed by 500ms, and the cards start lifting at 520ms before
-   the final hero item settles at ~580ms.
-   Keep the last delay plus the duration under `--work-intro-base` + 60ms. */
-.mosaic-hero-profile-animated > * {
-  animation: mosaic-intro-rise 380ms var(--ease-smooth) both;
-  will-change: opacity, transform;
+/* The opt-in flag is set before prerendered content paints. Keep layout intact:
+   the actual header portrait animates in place before surrounding groups rise. */
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) {
+  background: var(--canvas);
 }
 
-.mosaic-hero-profile-animated > :nth-child(1) {
-  animation-delay: 0ms;
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) body {
+  background: var(--canvas);
 }
 
-.mosaic-hero-profile-animated > :nth-child(2) {
-  animation-delay: 40ms;
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) #root,
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) #root * {
+  visibility: hidden !important;
 }
 
-.mosaic-hero-profile-animated > :nth-child(3) {
-  animation-delay: 80ms;
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) #root :is(
+  .mosaic-avatar-button,
+  .mosaic-avatar-coin-inner,
+  .mosaic-avatar-face-front
+) {
+  visibility: visible !important;
 }
 
-.mosaic-hero-profile-animated > :nth-child(4) {
-  animation-delay: var(--duration-fast);
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) #root :is(
+  .mosaic-avatar-button,
+  .mosaic-avatar-coin-inner
+) {
+  transform: none;
+  transition: none;
 }
 
-.mosaic-hero-profile-animated > :nth-child(5) {
-  animation-delay: var(--duration-quick);
+html[data-avatar-intro="pending"] #root .mosaic-avatar-coin-inner {
+  opacity: 0;
+  filter: blur(var(--blur-reveal));
 }
 
-.mosaic-hero-profile-animated > :nth-child(6) {
-  animation-delay: var(--duration-base);
+html[data-avatar-intro="portrait"] #root .mosaic-avatar-coin-inner {
+  animation: avatar-intro-face var(--duration-slow) var(--ease-smooth) both;
 }
 
-@keyframes mosaic-intro-rise {
+@keyframes avatar-intro-face {
   from {
     opacity: 0;
     filter: blur(var(--blur-reveal));
-    transform: translateY(0.8rem);
   }
 
   to {
     opacity: 1;
-    filter: none;
+    filter: blur(0);
+  }
+}
+
+html[data-avatar-intro="revealing"] :is(
+  .mosaic-profile-meta,
+  .mosaic-work-history,
+  .mosaic-profile-location,
+  .mosaic-profile-contact,
+  .mosaic-section-corner,
+  .mosaic-social-corner,
+  .mosaic-mobile-toc,
+  .mosaic-row
+) {
+  animation: avatar-intro-content var(--duration-slow) var(--ease-smooth) var(--avatar-intro-delay, 0ms) both;
+}
+
+html[data-avatar-intro="revealing"] .mosaic-work-history { --avatar-intro-delay: 60ms; }
+html[data-avatar-intro="revealing"] .mosaic-profile-location { --avatar-intro-delay: 120ms; }
+html[data-avatar-intro="revealing"] .mosaic-profile-contact { --avatar-intro-delay: 180ms; }
+html[data-avatar-intro="revealing"] :is(.mosaic-section-corner, .mosaic-social-corner, .mosaic-mobile-toc) { --avatar-intro-delay: 240ms; }
+html[data-avatar-intro="revealing"] .mosaic-row:nth-child(1) { --avatar-intro-delay: 300ms; }
+html[data-avatar-intro="revealing"] .mosaic-row:nth-child(2) { --avatar-intro-delay: 360ms; }
+html[data-avatar-intro="revealing"] .mosaic-row:nth-child(3) { --avatar-intro-delay: 420ms; }
+html[data-avatar-intro="revealing"] .mosaic-row:nth-child(n + 4) { --avatar-intro-delay: 480ms; }
+
+html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
+  transform: none;
+}
+
+@keyframes avatar-intro-content {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+    filter: blur(var(--blur-reveal));
+  }
+
+  to {
+    opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
   }
 }
 
@@ -223,67 +263,6 @@
   }
 }
 
-/* First-load entrance for the work cards. It has to exist in the prerendered
-   HTML: CSS animations start at first paint, long before hydration, so the
-   class comes from `!hasCompletedWorkIntro` in SimpleFeed rather than from an
-   effect. Delays are data-driven from inline
-   `--work-intro-row` and
-   `--work-intro-col` rather than nth-child, so all twelve cards stagger; the
-   values continue through every row.
-   Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
-   700px the rows collapse into one flex column, and a smaller row step would
-   make a card arrive before the card above it.
-   The base is tuned against the hero cascade above, which now runs 0ms to var(--duration-base)
-   delays at 380ms each. Under the previous 40ms-to-350ms hero schedule, the old
-   320ms card base let work begin before the last two hero items, so both
-   cascades read as one undifferentiated wash. The 520ms base now puts the first
-   card after every hero item is in flight and the first four have landed, so
-   the mosaic answers the hero instead of arriving with it. The steps are
-   tightened to pay for the later start -- across five rows the last card still
-   begins under 900ms (520ms + 4 x 70ms + 2 x 32ms = 864ms). A sixth row would
-   push the tail past that; retune the row step rather than let it run. */
-/* ------------------------------------------------------- first-load intro --- */
-
-.mosaic-work-intro {
-  --work-intro-base: 520ms;
-  --work-intro-row-step: 70ms;
-  --work-intro-col-step: 32ms;
-}
-
-/* Fade, blur-to-sharp, and translateY. A scale would change the measured box of
-   `.mosaic-row`, whose height is asserted at exactly 420px in
-   tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
-   stays under the 1rem row gap, so a rising card never covers the one below. */
-.mosaic-work-intro .mosaic-row-item {
-  animation: mosaic-intro-rise 480ms var(--ease-smooth) both;
-  animation-delay: calc(
-    var(--work-intro-base) +
-    var(--work-intro-row, 0) * var(--work-intro-row-step) +
-    var(--work-intro-col, 0) * var(--work-intro-col-step)
-  );
-}
-
-/* The top row used to be exempted from the fade (a transform-only
-   `mosaic-intro-lift` keyframe, now deleted) to protect LCP. That exemption
-   left it fully opaque at first paint, so the cards were on screen before the
-   header existed -- the one thing this entrance must not do. Every row fades
-   now.
-   Know what it costs. The LCP element is the row-0 video poster
-   (Projects/shot-small-9-poster.webp). Measured at Fast 3G + 4x CPU, cold
-   context: 845ms with the top row transform-only, 2085ms once it fades.
-   The +1240ms is FIXED, not tunable. The same element wins LCP either way, and
-   the penalty does not scale with the animation: base 520ms + 540ms duration,
-   base 520ms + var(--duration-slow), and base 60ms + var(--duration-slow) (fade fully finished by 420ms) all
-   measured ~2085ms. Chrome defers an opacity-animated element's recorded paint
-   to a later repaint however brief the fade is. There is no timing that buys
-   the metric back -- the choice is binary, which is why the choreography above
-   is tuned purely for feel.
-   Perceptually the cards are on screen at ~1000ms (base + duration); the 2085ms
-   is the metric catching up afterwards. That is still inside the 2.5s "good"
-   threshold, but the headroom is thin -- re-measure before putting anything
-   else on the critical path, and do not try to win it back by shortening the
-   fade. That has been tried three ways and does nothing. */
-
 /* --------------------------------- profile meta, availability & live time --- */
 
 /* The hero is one size, --text-sm, from the name down to the contact pills, and
@@ -336,8 +315,96 @@
 }
 
 .mosaic-profile-location-place,
-.mosaic-profile-availability {
+.mosaic-profile-email {
   white-space: nowrap;
+}
+
+/* The place name opens the map card, so it looks pressable the way the rest of
+   this line already does: the same #e9e9e9 fill on the same --radius-sm as the
+   date beside it and the address after it, in the same 1.7em box the line's own
+   leading gives it. The side padding is carried at rest and cancelled on the
+   anchor, so the fill grows around the name instead of nudging a centred line
+   sideways under a pointer that is already on its way to it. */
+.mosaic-profile-location-anchor {
+  margin-inline: -0.375rem;
+}
+
+.mosaic-profile-location-place {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7em;
+  padding: 0 0.375rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  /* Not a link and not a button -- pointing at it is the whole interaction, so
+     the text cursor would be the only lie here. */
+  cursor: default;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-profile-location-anchor:hover .mosaic-profile-location-place,
+.mosaic-profile-location-place:focus-visible {
+  background: #e9e9e9;
+  color: var(--ink);
+}
+
+/* The address is the corner's tenant above 700px and the location line's below
+   it -- one control, rendered once, shown at whichever end of the page still
+   has room for it. `contents` rather than `inline` so the wrapper never becomes
+   a flex item of its own and the separator keeps the line's gap. */
+.mosaic-profile-location-email {
+  display: none;
+}
+
+/* In the corner the address is one of the rail's labels, so it wears the rail's
+   type rather than the hero sentence's: the same --text-sm on --muted-soft as
+   the section links opposite it, in the same 2rem box with the same 0.54rem of
+   side padding, so the two ends of the page line up. The negative margin the
+   hero line needs goes away with it -- there is no sentence here to stay flush
+   with, and the rail is inset by that padding on both sides by design. */
+.mosaic-social-corner .mosaic-profile-email {
+  margin-inline: 0;
+  padding: 0 0.54rem;
+  min-height: 2rem;
+  font-size: var(--text-sm);
+  line-height: 1;
+  color: var(--muted-soft);
+}
+
+.mosaic-social-corner .mosaic-profile-email:hover,
+.mosaic-social-corner .mosaic-profile-email:focus-visible {
+  color: #2d2d2d;
+}
+
+/* Read as "Punta Cana & NYC, and somebody was here on the 8th". It is a link to
+   the GitHub profile, but an underline would make it the only underlined thing
+   in the hero and would rule a line under a date for no reason. It takes the
+   same card the address wears instead -- same #e9e9e9, same --radius-sm, same
+   padding cancelled by an equal negative margin so the fill grows around the
+   clause rather than pushing the line. */
+.mosaic-last-updated {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7em;
+  margin-inline: -0.375rem;
+  padding: 0 0.375rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-last-updated:hover,
+.mosaic-last-updated:focus-visible {
+  background: #e9e9e9;
+  color: var(--ink);
+  text-decoration: none;
 }
 
 .mosaic-profile-contact {
@@ -346,34 +413,270 @@
   align-items: center;
 }
 
-.mosaic-profile-availability {
-  margin: 0;
+/* The address is the location line's second clause, so it reads as text until
+   the pointer is on it and only then fills in as a card. That fill is the
+   work-history chip's, one row up -- same #e9e9e9, same --radius-sm -- because
+   both are a name in a sentence that turns out to be pressable, and giving them
+   two different hover shapes would have made that one idea look like two.
+   The chip's geometry comes over with it: the same 0.375rem of side padding and
+   the same 1.7em box, which is already this line's own line height, so the card
+   takes its height from the text rather than adding to it. The padding is
+   carried at rest and cancelled by an equal negative margin, so the fill grows
+   around the address instead of pushing it -- the centred line cannot shift
+   under a pointer that is already on its way to the click. */
+.mosaic-profile-email {
+  appearance: none;
+  margin-inline: -0.375rem;
+  padding: 0 0.375rem;
+  min-height: 1.7em;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.375rem;
   font-family: var(--font-ui);
   font-size: inherit;
   font-weight: 400;
   letter-spacing: -0.005rem;
+  line-height: inherit;
+  text-align: inherit;
   color: var(--muted);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
-/* The dot used to be opacity 0 until the line was hovered, which meant the only
-   chromatic pixel in the site's own chrome was invisible at rest -- and it sits
-   next to the one fact a visitor is scanning for. It is on now; hover only
-   widens the halo. */
-.mosaic-availability-dot {
-  width: 0.375rem;
-  height: 0.375rem;
+.mosaic-profile-email:hover,
+.mosaic-profile-email:focus-visible {
+  background: #e9e9e9;
+  color: var(--ink);
+}
+
+/* The icon leads the address, so the affordance is read before the thing it
+   acts on rather than trailing it. It keeps its slot at rest and only fades in,
+   rather than being added to the line on hover: reserving the 0.875rem up front
+   is what lets the address hold still while the affordance arrives. */
+.mosaic-profile-email-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--ink);
+  opacity: 0;
+  transition:
+    color var(--duration-quick) var(--ease-standard),
+    opacity var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-profile-email-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.mosaic-profile-email:hover .mosaic-profile-email-icon,
+.mosaic-profile-email:focus-visible .mosaic-profile-email-icon {
+  opacity: 1;
+}
+
+/* On the copy the card empties out to the chip's resting look -- white behind
+   the same hairline, drawn as an inset shadow so it costs no layout -- and holds
+   it whether or not the pointer is still there. Two things needed that: the
+   confirmation outlives the hover, since a copy can come from the keyboard or
+   outlast the cursor; and --accent is a 3.2:1 graphic on white but only 2.7:1 on
+   the #e9e9e9 fill, which is under the 3:1 floor for the one moment the check
+   has to be read. Ordered after the hover rule, which it ties on specificity. */
+.mosaic-profile-email[data-copied="true"] {
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.07);
+}
+
+.mosaic-profile-email[data-copied="true"] .mosaic-profile-email-icon {
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* The GitHub profile card behind the "last updated" clause: who keeps this
+   place up, then what they have been committing. It is close to GitHub's own
+   hovercard on purpose -- the trigger links to that profile, so the card should
+   preview where the click goes rather than invent a second visual language for
+   the same thing. The greens are GitHub's, borrowed the way the LinkedIn pill
+   borrows #0a66c2 and for the same reason: a contribution graph in this site's
+   greys would read as a different product's graph. */
+.activity-card-positioner {
+  z-index: var(--z-overlay);
+}
+
+.activity-card {
+  /* The grid is the card: 26 columns of 8px on 2px gutters comes to 258px, and
+     everything else is sized to fit under it rather than the other way round.
+     max-content, not a hard 258px -- that was the border box, so the padding ate
+     26px out of the grid and the last three weeks fell off the right edge. */
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6875rem;
+  padding: 0.8125rem;
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-smooth);
+}
+
+.activity-card[data-starting-style],
+.activity-card[data-ending-style] {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+}
+
+.activity-card[data-ending-style] {
+  transition-duration: var(--duration-fast);
+}
+
+.activity-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The one round portrait on the page that is not the hero avatar. It carries
+   the same hairline the work chips do, so a light avatar still has an edge
+   against the white card. */
+.activity-card-avatar {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-full);
-  background: var(--accent);
-  box-shadow: 0 0 0 2px rgb(52 162 106 / 0.16);
-  transform: translateY(1px);
-  transition: box-shadow var(--duration-quick) var(--ease-standard);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.07);
+  object-fit: cover;
 }
 
-.mosaic-profile-availability:hover .mosaic-availability-dot {
-  box-shadow: 0 0 0 4px rgb(52 162 106 / 0.18);
+.activity-card-names {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.0625rem;
+  line-height: 1.25;
+}
+
+.activity-card-names strong {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: -0.0125rem;
+}
+
+.activity-card-names > span {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.activity-card-grid {
+  display: flex;
+  gap: 2px;
+}
+
+.activity-card-week {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 8px cells with 2px gutters: 26 weeks land at 258px, which is the width this
+   card wants anyway, so the grid sizes the popup rather than the other way
+   round and no week ever gets a fractional column. */
+.activity-card-day {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: #ebedf0;
+}
+
+.activity-card-day[data-level="1"] { background: #9be9a8; }
+.activity-card-day[data-level="2"] { background: #40c463; }
+.activity-card-day[data-level="3"] { background: #30a14e; }
+.activity-card-day[data-level="4"] { background: #216e39; }
+
+/* The half-weeks at either end of the window: cells that keep the grid
+   rectangular without claiming a quiet day happened. */
+.activity-card-day[data-level="outside"] {
+  background: none;
+}
+
+.activity-card-footer {
+  color: var(--muted-soft);
+  font-size: var(--text-xs);
+  line-height: 1.3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-card[data-starting-style],
+  .activity-card[data-ending-style] {
+    transform: none;
+  }
+}
+
+/* Hover cards that are a clip rather than a line of type. Two wearers -- the
+   address's copy button and the booking pill -- and one recipe between them,
+   because both are "hover this and something happens next". It is the 200px
+   white card the copy-email reaction always was, but it enters on the booking
+   hint's motion -- --duration-base, a 4px lift, 0.98 -- rather than the
+   overshoot curve it used to own, which was the only one of its kind here. */
+.reaction-card-positioner {
+  z-index: var(--z-overlay);
+}
+
+.reaction-card {
+  width: min(12.5rem, calc(100vw - 2rem));
+  padding: 0.3rem;
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-smooth);
+}
+
+.reaction-card[data-starting-style],
+.reaction-card[data-ending-style] {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+}
+
+.reaction-card[data-ending-style] {
+  transition-duration: var(--duration-fast);
+}
+
+/* The frame follows whichever clip is on show rather than letterboxing or
+   cropping any of them. No aspect-ratio here on purpose: the width and height
+   attributes are on every <img>, so the browser already reserves the right box
+   before the file lands, and one hard-coded ratio would crop the clips that do
+   not share it. */
+.reaction-card-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius-md) - 0.3rem);
+  background: #ecebea;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reaction-card[data-starting-style],
+  .reaction-card[data-ending-style] {
+    transform: none;
+  }
 }
 
 .mosaic-profile-contact .mosaic-profile-actions {
@@ -447,6 +750,12 @@
 
 }
 
+@media (max-width: 699.98px) {
+  .mosaic-profile-location-email {
+    display: contents;
+  }
+}
+
 @media (max-width: 327.98px) {
 
   .mosaic-profile-location {
@@ -484,14 +793,6 @@
   .mosaic-hero {
     min-height: clamp(18rem, 40vh, 24rem);
     padding-block: clamp(1.7rem, 4vw, 2.5rem);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* reduced-motion.css clamps durations but not delays. Remove the delayed
-     entrance too, so its filled from-state never hides the hero's content. */
-  .mosaic-hero-profile-animated > * {
-    animation: none;
   }
 }
 

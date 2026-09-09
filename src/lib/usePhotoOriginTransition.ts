@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 
+import { cssTimeToMilliseconds } from "./cssTime"
+
 const useClientLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 const frameProperties = ["height", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderRadius", "boxShadow"] as const
 const imageProperties = ["height", "borderRadius", "objectPosition"] as const
@@ -82,12 +84,6 @@ function nearestPrint(sources: PhotoOrigin[], target: DOMRect) {
 
 type Flight = { slide: HTMLElement; clone: HTMLElement; animations: Animation[] }
 
-/** A duration token's value in milliseconds. Production CSS can minify 200ms
-    to .2s; WAAPI and timers always expect milliseconds. */
-export function milliseconds(value: string) {
-  return parseFloat(value) * (value.trim().endsWith("ms") ? 1 : 1000)
-}
-
 function removeFlight({ slide, clone, animations }: Flight) {
   animations.forEach((animation) => animation.cancel())
   clone.remove()
@@ -155,7 +151,8 @@ export function usePhotoOriginTransition(
     const sources = open ? origins : measurePhotoOrigins(opener)
     if (!sources.length) return
     const tokens = getComputedStyle(strip)
-    const duration = milliseconds(tokens.getPropertyValue(open ? "--photo-open-duration" : "--photo-close-duration"))
+    const cssDuration = tokens.getPropertyValue(open ? "--photo-open-duration" : "--photo-close-duration").trim()
+    const duration = cssTimeToMilliseconds(cssDuration)
     const easing = tokens.getPropertyValue("--photo-motion-ease").trim()
     const exitEasing = tokens.getPropertyValue("--ease-exit").trim()
     // One beat in both directions: every print leaves the fan together and

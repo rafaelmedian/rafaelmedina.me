@@ -1,5 +1,6 @@
 const currentMonthFormatter = new Intl.DateTimeFormat("en-US", {
   month: "numeric",
+  year: "numeric",
   timeZone: "America/Santo_Domingo",
 })
 
@@ -8,8 +9,13 @@ const monthNameFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 })
 
+function getAvailabilityMonth(date = new Date()) {
+  const parts = currentMonthFormatter.formatToParts(date)
+  const year = Number(parts.find((part) => part.type === "year")!.value)
+  const month = Number(parts.find((part) => part.type === "month")!.value)
+  return new Date(Date.UTC(year, month, 1))
+}
+
 export function formatAvailability(date = new Date()) {
-  // The one-based current month is the zero-based next month, including December.
-  const nextMonth = new Date(Date.UTC(2000, Number(currentMonthFormatter.format(date)), 1))
-  return `Available in ${monthNameFormatter.format(nextMonth)}`
+  return `Available in ${monthNameFormatter.format(getAvailabilityMonth(date))}`
 }

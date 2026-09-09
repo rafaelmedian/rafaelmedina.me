@@ -1,17 +1,10 @@
 import { expect, test, type Page } from "@playwright/test"
 
 
-/** Home, with the tile holding still.
- *
- *  The fan is a tile in the work grid, and the grid deals its tiles in on first
- *  load: a click before that entrance settles measures a print that is still
- *  moving, and the photo then flies home to a frame that has slid a dozen
- *  pixels out from under it. The intro is a one-shot, and shedding its class is
- *  how the grid says it is done — under reduced motion the component retires
- *  the marker itself, so this waits either way. */
+/** The grid now appears with the shared avatar intro. */
 async function openHome(page: Page) {
   await page.goto("/")
-  await expect(page.locator(".mosaic-rows")).not.toHaveClass(/mosaic-work-intro/)
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
 }
 
 test("returning photos match the thumbnail crop and frame before the handoff", async ({ page }) => {
