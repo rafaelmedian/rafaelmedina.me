@@ -3530,6 +3530,80 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
   await expect(dialog).toBeHidden()
 })
 
+// The toolbar is the card's sibling rather than its first child, so the
+// between-previews switch -- 1.4rem of travel and a fade to nothing -- must not
+// reach it. Nested back inside the card, every press slid the control that was
+// pressed out from under the thumb and took the close with it.
+test("holds the compact toolbar still while the gallery pages", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const toolbar = dialog.locator(".preview-gallery-toolbar")
+  await expect(toolbar).toBeVisible()
+
+  // The gallery flies in from the tile it was opened from; measure it at rest.
+  await page
+    .locator(".preview-gallery-origin-wrap")
+    .evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const resting = await toolbar.boundingBox()
+
+  // Each phase is read as it lands rather than sampled from frames a busy
+  // runner can skip: the switch is stepped by a JS timer, and a whole leg of it
+  // can pass without a paint.
+  const poses = await dialog.locator(".preview-gallery-card").evaluate(async (element) => {
+    const bar = document.querySelector(".preview-gallery-toolbar")!
+    const seen: Array<Record<string, unknown>> = []
+    const record = () => {
+      const style = getComputedStyle(bar)
+      const box = bar.getBoundingClientRect()
+      seen.push({
+        phase: [...element.classList].find((name) => name.includes("switch-")) ?? "idle",
+        transform: style.transform,
+        opacity: style.opacity,
+        x: box.x,
+        y: box.y,
+        animations: bar.getAnimations().length,
+      })
+    }
+    const observer = new MutationObserver(record)
+    observer.observe(element, { attributes: true, attributeFilter: ["class"] })
+    record()
+    document.querySelector<HTMLButtonElement>(".preview-gallery-toolbar .preview-gallery-nav-next")?.click()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    observer.disconnect()
+    return seen
+  })
+
+  expect(poses.map((pose) => pose.phase)).toContain("preview-gallery-card-switch-out-next")
+  expect(poses.at(-1)!.phase).toBe("idle")
+  for (const pose of poses) {
+    expect(pose).toMatchObject({
+      transform: "none",
+      opacity: "1",
+      x: resting!.x,
+      y: resting!.y,
+      animations: 0,
+    })
+  }
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+
+  // Paging holds the leading edge and leaving holds the trailing one, with the
+  // corner between them empty.
+  const [prevBox, nextBox, closeBox] = await Promise.all(
+    ["Previous preview", "Next preview", "Close preview"].map((name) =>
+      dialog.getByRole("button", { name }).boundingBox(),
+    ),
+  )
+  expect(prevBox!.x).toBeLessThan(nextBox!.x)
+  expect(nextBox!.x + nextBox!.width).toBeLessThan(mobileViewport.width / 2)
+  expect(closeBox!.x).toBeGreaterThan(mobileViewport.width / 2)
+  // Both ends sit on the same inset, which is the card's own.
+  expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
+})
+
 test("treats a mostly vertical touch gesture as scrolling rather than gallery paging", async ({ browser }) => {
   const context = await browser.newContext({
     hasTouch: true,
