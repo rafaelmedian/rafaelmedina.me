@@ -428,6 +428,43 @@
   padding-top: clamp(0.8rem, 1.6vw, 1rem);
 }
 
+/* ------------------------------------------------------- the résumé slide --- */
+
+/* The CV sheet is a tile on the work grid, so the reader it opens is a slide of
+   this gallery rather than a modal of its own: it arrives in the same card, pages
+   with the same transition, grows out of its own tile, and is one arrow press
+   from the projects it cites. What it cannot share is the width -- the card is
+   sized from the artwork a 4:3 preview needs, and prose needs its measure
+   instead, so the slide restores the 46rem sheet the reader used to open at and
+   holds it on the wide layout too. */
+.preview-gallery-shell[data-kind="resume"],
+.preview-gallery-shell[data-kind="resume"][data-wide="true"] {
+  --preview-gallery-width: 46rem;
+}
+
+/* The reader's own measure, centred in the card. The 1.5rem the reading column
+   used to carry each side is the card's padding here, so only the measure is
+   restated. */
+.preview-gallery-resume {
+  width: min(100%, 34rem);
+  margin: 0 auto;
+  padding-bottom: 1.5rem;
+  text-align: left;
+}
+
+.preview-gallery-resume-body {
+  margin-top: 2rem;
+}
+
+/* Nothing above them to be level with: the chevrons page a page of prose, so
+   they take the middle of whatever of the sheet is on screen rather than the
+   middle of an artwork that is not there. */
+.preview-gallery-popup[data-preview-kind="resume"] .preview-gallery-rail,
+.preview-gallery-popup[data-preview-kind="resume"][data-wide="true"] .preview-gallery-rail {
+  --preview-gallery-rail-anchor: 50%;
+}
+
+
 .preview-gallery-controls {
   display: inline-flex;
   align-items: center;

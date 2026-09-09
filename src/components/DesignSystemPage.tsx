@@ -1465,18 +1465,25 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 seam, and the exported curl trimmed to the sheet side of the cut so its own stroke never crosses the
                 seam. The outer shadow is a drop-shadow filter on the whole paper (4px/21px at 6% and 2px/3px at 5%). The miniature entries come from the
                 first two roles in <code>cv.ts</code> and are hidden from assistive technology, because the
-                button&rsquo;s accessible name describes its action. They are set in Inter Medium at 12px on the
+                link&rsquo;s accessible name describes its action. They are set in Inter Medium at 12px on the
                 comp&rsquo;s 237px sheet, so 5.06cqw here, with a 1.5 line height, 12px between roles and 8px inside
                 one, in the comp&rsquo;s #2d2d2d and #838383; that illustrative scale and palette is the only
                 exception to the UI type ramp. On hover or focus, the paper rises 4px and the corner scales to 1.4&times; from its lower-right
                 anchor, both over <code>--duration-base</code> with <code>--ease-smooth</code>, so the page peels
-                further open like a book; reduced motion removes both. The reader reuses the Notes
-                backdrop, top edge, canvas, 34rem reading measure, toolbar divider, modal motion, focus return, and
-                mobile half-rem viewport margin. Its sheet caps at 46rem because the résumé has no marginalia. Work
-                history and Education use the same live <code>cv.ts</code> content as About. The toolbar is titled
-                “Work history” with no repeated body heading; Education uses weight 600. Below 700px the
-                toolbar adds the shared round close on the title line, because the sheet keeps only its
-                half-rem margin there and a phone has no Escape key to fall back on.
+                further open like a book; reduced motion removes both. The reader is a slide of the
+                preview gallery rather than a modal of its own: the tile is one of
+                the grid&rsquo;s tiles, so arrowing across the gallery reaches it in the place the grid keeps it, and
+                arrowing off it lands on its neighbours. It therefore takes the gallery&rsquo;s card, backdrop, origin
+                flight, paging transition, side rail, and compact-layout toolbar, and the tile is a link to
+                <code>/resume/</code>: a modified click opens that prerendered page instead. The slide restores the
+                reader&rsquo;s 46rem sheet and 34rem reading measure, because the card is otherwise sized from the
+                artwork a 4:3 preview needs. It is also the one slide the vertical arrows do not page: the sheet is
+                taller than the card that holds it, so up and down scroll it there and only left and right page,
+                which the rail&rsquo;s <code>aria-keyshortcuts</code> narrow to match. Opening focuses the card
+                rather than the popup on every slide, because the card is the surface that scrolls.
+                Work history and Education use the same live <code>cv.ts</code> content
+                as About, under a “Work history” title with no repeated body heading; Education uses weight
+                600. A project print pages the gallery to that project rather than leaving for its page.
                 “View resume PDF” opens the canonical PDF in a new tab and closes the reader rather than heading it:
                 it sits below Education, 3rem after it.
                 Education follows the same institution-and-date heading, credential, location, and description
@@ -1502,7 +1509,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 that rendered width rather than a full-width slot.
               </p>
               <div className="ds-resume-tile-specimen mosaic-row-item">
-                <ResumeTile href={links.resumePdf} />
+                <ResumeTile />
               </div>
             </div>
 
@@ -2055,7 +2062,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   The wall of marks follows on the same 2.5rem/5rem break Services takes, so the three blocks below
                   the photo row are separated identically and none reads as belonging to its neighbour.
                   Work history and Education are not repeated here: the résumé tile in the portraits group opens them as a
-                  reader, so the sheet reads as an introduction and closes on what can be bought.
+                  gallery slide, so the sheet reads as an introduction and closes on what can be bought.
                   Services closes it on the same 5rem/8.75rem gap and a two-column entry grid, with an engagement
                   shape where the résumé carries dates; it publishes no rate card, and ends on the email address and a
                   booking link into the same Cal.com dialog the hero&rsquo;s availability line opens.
@@ -2164,9 +2171,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 focus and closing after 140ms away or Escape. The preview is at most 22.5rem wide, fits
                 the viewport height, and is available from the desktop corner navigation. Its decorative image
                 is generated alongside the PDF and loads on demand; clicking the link opens the PDF in a new tab.
-                Separately, the folded résumé work tile is a button that opens the modal reader, traps focus, closes
-                on Escape, a backdrop press, or the mobile toolbar close, returns focus to the tile, and keeps the
-                PDF as its final link.
+                Separately, the folded résumé work tile is a link to <code>/resume/</code> whose plain click opens
+                the reader as a gallery slide: it traps focus, closes on Escape, a backdrop press, or the compact
+                toolbar close, returns focus to the tile, and keeps the PDF as its final link.
               </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>
                 <strong>Hover-only content has a non-hover fate.</strong> Social-pill hover cards are hidden on

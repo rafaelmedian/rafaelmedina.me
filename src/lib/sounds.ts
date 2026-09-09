@@ -37,3 +37,27 @@ export const backSound: SoundDefinition = {
   filter: { type: "lowpass", frequency: 2200 },
   gain: 0.12,
 }
+
+// The latch letting go. Same two-part shape as `openSound` so the pair reads as
+// one mechanism, but mirrored: the sweep falls instead of rising, and the
+// transient is duller and quieter — a close is an ending, so it should sit
+// below the open rather than answer it at the same volume.
+export const closeSound: SoundDefinition = {
+  layers: [
+    {
+      source: { type: "noise", color: "pink" },
+      envelope: { attack: 0.001, decay: 0.013 },
+      filter: [
+        { type: "highpass", frequency: 600 },
+        { type: "lowpass", frequency: 2600 },
+      ],
+      gain: 0.04,
+    },
+    {
+      source: { type: "sine", frequency: { start: 420, end: 310 } },
+      envelope: { attack: 0.002, decay: 0.075 },
+      filter: { type: "lowpass", frequency: 1400, resonance: 0.4 },
+      gain: 0.1,
+    },
+  ],
+}

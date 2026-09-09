@@ -34,8 +34,9 @@ import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightwei
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
-import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
+import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl } from "../lib/portfolioUrl"
 import { projectPath } from "../lib/projectMetadata"
+import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
@@ -411,19 +412,15 @@ function formatPuntaCanaLocalTime(date = new Date()) {
 }
 
 function openPreview(
-  card: PortfolioCard,
+  item: GalleryItem,
   previewIndex: number,
   setSelectedWorkPreviewIndex: (value: number) => void,
-  // The grid is not the only surface that opens a preview any more: the résumé
-  // reader hands a project back to the feed too, and those opens have to be
-  // told apart rather than going unrecorded.
-  placement: "grid" | "resume_reader" = "grid",
 ) {
   trackEvent("work_preview_open", {
-    preview_id: card.id,
-    preview_title: card.title,
+    preview_id: item.id,
+    preview_title: galleryItemTitle(item),
     preview_index: previewIndex + 1,
-    preview_placement: placement,
+    preview_placement: "grid",
   })
   setSelectedWorkPreviewIndex(previewIndex)
 }
@@ -617,10 +614,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const { avatarRef, active: introActive } = useAvatarIntro()
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
-  const { projectId, selectProject, clearProject } = useProjectUrl()
+  const { itemId: galleryItemId, selectItem: selectGalleryItem, clearItem: clearGalleryItem } = useGalleryUrl()
   const [lastWorkPreviewIndex, setLastWorkPreviewIndex] = useState(0)
   const [hasOpenedWorkPreview, setHasOpenedWorkPreview] = useState(false)
-  const previewCardNodesRef = useRef(new Map<number, HTMLAnchorElement>())
+  // A shared link and browser Forward open the gallery too, and they arrive with
+  // no gesture behind them. The dialog mounts already open either way and cannot
+  // tell the two apart on its own, so the feed says which it was.
+  const [openedByGesture, setOpenedByGesture] = useState(false)
+  // Keyed by gallery index, and the résumé tile is one of the keys: the sheet
+  // grows out of whichever tile the slide belongs to.
+  const previewCardNodesRef = useRef(new Map<number, HTMLElement>())
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
@@ -628,7 +631,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [writingsOpen, setWritingsOpen] = useState(false)
-  const [resumeOpen, setResumeOpen] = useState(false)
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
@@ -638,14 +640,19 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     // fresh lazy component means the next click re-attempts the fetch instead
     // of replaying the cached rejection.
     setGalleryDialog(() => createPreviewGalleryComponent())
-    clearProject()
+    clearGalleryItem()
     setHasOpenedWorkPreview(false)
-  }, [clearProject])
+  }, [clearGalleryItem])
   const groupsRender = useMemo(() => {
     let previewIndex = 0
     return homeGroups.map(group => ({
       ...group,
       items: group.items.map(item => {
+        // The résumé is a slide of the gallery as a project is, so it draws its
+        // number from the same counter and in the order the group already
+        // declares: the sequence the arrow keys walk has to be the one the grid
+        // shows, or they page through tiles a visitor cannot see.
+        if (item.kind === "resume") return { ...item, previewIndex: previewIndex++ }
         if (item.kind !== "project") return item
         const card = cards.find(candidate => candidate.id === item.cardId)
         if (!card) throw new Error(`Missing home project: ${item.cardId}`)
@@ -654,22 +661,36 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     }))
   }, [cards])
 
-  const flatWorkCards = useMemo(
-    () => groupsRender.flatMap(group => group.items.flatMap(item => item.kind === "project" ? [item.card] : [])),
+  const galleryItems = useMemo<GalleryItem[]>(
+    () =>
+      groupsRender.flatMap(group =>
+        group.items.flatMap(item =>
+          item.kind === "project"
+            ? [projectGalleryItem(item.card)]
+            : item.kind === "resume"
+              ? [resumeGalleryItem]
+              : [],
+        ),
+      ),
     [groupsRender],
   )
-  const projectIndex = flatWorkCards.findIndex((card) => card.id === projectId)
-  const activeWorkPreviewIndex = projectIndex < 0 ? null : projectIndex
+  const galleryIndex = galleryItems.findIndex((item) => item.id === galleryItemId)
+  const activeWorkPreviewIndex = galleryIndex < 0 ? null : galleryIndex
   // Keep the last preview mounted for its exit, including direct URL visits
   // and browser Forward, which do not pass through a card's click handler.
   if (activeWorkPreviewIndex !== null && (!hasOpenedWorkPreview || lastWorkPreviewIndex !== activeWorkPreviewIndex)) {
     setHasOpenedWorkPreview(true)
     setLastWorkPreviewIndex(activeWorkPreviewIndex)
   }
-  const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(flatWorkCards.length - 1, 0))
+  const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(galleryItems.length - 1, 0))
   const setSelectedWorkPreviewIndex = (index: number) => {
-    const card = flatWorkCards[index]
-    if (card) selectProject(card.id, projectId !== null)
+    const item = galleryItems[index]
+    if (item) selectGalleryItem(item.id, galleryItemId !== null)
+  }
+
+  const openGalleryItem = (item: GalleryItem, index: number) => {
+    setOpenedByGesture(true)
+    openPreview(item, index, setSelectedWorkPreviewIndex)
   }
 
   // The gallery grows out of (and shrinks back into) the card it represents, so
@@ -700,7 +721,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen || resumeOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
         />
       )
     }
@@ -977,13 +998,15 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           if (item.kind === "resume") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
                               <ResumeTile
-                                href={links.resumePdf}
-                                onOpenChange={setResumeOpen}
-                                onSelectProject={(id) => {
-                                  const index = flatWorkCards.findIndex(card => card.id === id)
-                                  if (index < 0) return false
-                                  openPreview(flatWorkCards[index], index, setSelectedWorkPreviewIndex, "resume_reader")
-                                  return true
+                                ref={(node) => {
+                                  const nodes = previewCardNodesRef.current
+                                  if (node) nodes.set(item.previewIndex, node)
+                                  else nodes.delete(item.previewIndex)
+                                }}
+                                onPrefetch={prefetchPreviewGallery}
+                                onOpen={() => {
+                                  trackEvent("resume_reader_open", { resume_placement: "work_tile" })
+                                  openGalleryItem(resumeGalleryItem, item.previewIndex)
                                 }}
                               />
                             </div>
@@ -1045,9 +1068,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 onClick={(event) => {
                                   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
                                   event.preventDefault()
-                                  openPreview(item.card, item.previewIndex, setSelectedWorkPreviewIndex)
+                                  openGalleryItem(projectGalleryItem(item.card), item.previewIndex)
                                 }}
-                                aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
+                                aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${galleryItems.length}`}
                                 aria-describedby={`${itemKey}-description`}
                               >
                                 {media}
@@ -1095,7 +1118,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
           {/* Stays mounted after the first open so Base UI can run the close
               transition instead of the dialog vanishing on unmount. */}
-          {hasOpenedWorkPreview && flatWorkCards.length > 0 ? (
+          {hasOpenedWorkPreview && galleryItems.length > 0 ? (
             <GalleryLoadBoundary onLoadError={handleGalleryLoadError}>
               <Suspense
                 // A dim that fades in on a short delay: a slow chunk fetch gets
@@ -1109,14 +1132,15 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                 }
               >
                 <GalleryDialog
-                  cards={flatWorkCards}
+                  items={galleryItems}
                   open={activeWorkPreviewIndex != null}
+                  openedByGesture={openedByGesture}
                   selectedIndex={selectedWorkPreviewIndex}
                   prefersReducedMotion={prefersReducedMotion}
                   getOriginRect={getPreviewOriginRect}
                   onOpenChange={(nextOpen) => {
                     if (!nextOpen) {
-                      clearProject()
+                      clearGalleryItem()
                     }
                   }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}
