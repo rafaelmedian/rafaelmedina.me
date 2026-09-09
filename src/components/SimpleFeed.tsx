@@ -28,6 +28,7 @@ import { visibleOriginRect } from "../lib/originMotion"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
 import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
 import { projectPath } from "../lib/projectMetadata"
@@ -732,6 +733,7 @@ function SocialCorner({
 
 export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
+  const { gridRef, runwayRef } = useWorkGridHeight()
   const { avatarRef, active: introActive } = useAvatarIntro()
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
@@ -1074,10 +1076,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <>
           <article id="work" className="mosaic-work" tabIndex={-1}>
               <h2 className="sr-only">Selected work</h2>
-              <div className="mosaic-takeover-runway">
+              <div className="mosaic-takeover-runway" ref={runwayRef}>
                 <div className="mosaic-takeover-stage">
                   <div
                     className="mosaic-rows"
+                    ref={gridRef}
                     role="group"
                     aria-label="Selected work previews"
                     id="selected-work-previews"
@@ -1172,6 +1175,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                     })}
                   </div>
                 </div>
+                <div className="mosaic-takeover-spacer" aria-hidden="true" />
                 {/* The scroll cue rides the runway, not the sheet, for the same
                     reason the hairline below does: nothing may paint outside
                     the sheet's own opaque layer. Two bars hinged at their

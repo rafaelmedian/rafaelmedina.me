@@ -447,6 +447,10 @@
   }
 }
 
+.mosaic-takeover-spacer {
+  display: none;
+}
+
 @media (min-width: 700px) {
   .mosaic-shell {
     timeline-scope: --about-takeover;
@@ -460,29 +464,10 @@
   }
 
   .mosaic-takeover-runway {
-    --takeover-row-height: clamp(180px, 16vw, 260px);
     --takeover-breathing-room: clamp(12rem, 30vh, 18rem);
-    /* Mirrors `.mosaic-rows`' own `--row-gap`. The runway cannot read that
-       value -- it is set on a descendant -- so any breakpoint that changes the
-       gap has to change both, or the sticky stage stops matching the scroll
-       distance reserved for it. */
-    --takeover-row-gap: 1rem;
-    /* One term per row in `homeRows`, plus a `--row-gap` between each pair.
-       Adding or removing a row means updating the count here. The `max` covers
-       the quote row: `.mosaic-quote` carries a 340px floor, which is taller
-       than `--takeover-row-height` between 700px and 900px. */
-    --takeover-row-count: 5;
-    --takeover-gallery-height: calc(
-      var(--takeover-row-height) * (var(--takeover-row-count) - 1) +
-        max(var(--takeover-row-height), 340px) +
-        var(--takeover-row-gap) * (var(--takeover-row-count) - 1) +
-        var(--takeover-breathing-room)
-    );
 
     position: relative;
     width: 100%;
-    height: calc(var(--takeover-gallery-height) + 100vh);
-    height: calc(var(--takeover-gallery-height) + 100dvh);
     display: block;
     /* Identical to what shows through here — App's wrapper already paints
        `--canvas` behind the whole page. It has to be painted *inside* the
@@ -493,13 +478,23 @@
     background: var(--canvas);
   }
 
+  /* Padding is outside the sticky containing block's content box. A real
+     spacer gives the stage a full viewport of travel before it unpins. */
+  .mosaic-takeover-spacer {
+    display: block;
+    height: 100vh;
+    height: 100dvh;
+    pointer-events: none;
+  }
+
   .mosaic-takeover-stage {
     position: sticky;
-    top: calc(100vh - var(--takeover-gallery-height));
-    top: calc(100dvh - var(--takeover-gallery-height));
+    /* Before hydration the natural grid stays in place. Only the sticky
+       offset needs a measurement; media loading never sets its height. */
+    top: min(0px, calc(100vh - var(--takeover-gallery-height, 100vh)));
+    top: min(0px, calc(100dvh - var(--takeover-gallery-height, 100dvh)));
     z-index: 0;
     width: 100%;
-    height: var(--takeover-gallery-height);
     display: block;
     transform-origin: center bottom;
   }
@@ -787,10 +782,6 @@
 /* Row data supplies --row-height-input. CSS owns the effective height, so
    responsive layouts can override it without fighting an inline property. */
 @media (min-width: 900px) {
-  .mosaic-takeover-runway {
-    --takeover-row-height: 420px;
-  }
-
   .mosaic-row {
     --row-height: 420px;
   }
@@ -1196,10 +1187,6 @@
     --row-gap: 0.625rem;
 
     padding-inline: 1rem;
-  }
-
-  .mosaic-takeover-runway {
-    --takeover-row-gap: 0.625rem;
   }
 
   .mosaic-row-with-quote {

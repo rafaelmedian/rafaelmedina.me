@@ -1870,12 +1870,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   see <a href="#page-entrances">page entrances</a> for the shared visibility rule.
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway clamp(12rem, 30vh, 18rem) 100dvh z-index 1 display contents")}>
-                  <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
-                  remain in one sticky stage with 1rem gaps (10px between 700px and 899px), including the quote tile in row two, followed by a responsive white
-                  runway of <code>clamp(12rem, 30vh, 18rem)</code>. The runway carries its own{" "}
-                  <code>--takeover-row-gap</code> mirroring that value, since the scroll distance it reserves has to
-                  match the gaps the stage actually draws.
-                  The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
+                  <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all project tiles
+                  remain in one naturally sized sticky stage, followed by a responsive white
+                  runway of <code>clamp(12rem, 30vh, 18rem)</code>. A ResizeObserver measures the grid's layout
+                  height, including that breathing room, for the sticky offset. It ignores the stage's animated
+                  scale, and updates when the content or viewport changes; there is no duplicated row-count formula.
+                  A normal-flow spacer adds <code>100dvh</code> after the stage. The runway is the gallery's
+                  natural height plus that spacer; the gallery pins when its bottom reaches the viewport, then the
                   full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards.
                   A top-only layer pairs that shadow with a <code>rgb(0 0 0 / 0.08)</code> hairline while the white sheet
                   remains continuous through the page end. The gallery retreats as one surface, and About
