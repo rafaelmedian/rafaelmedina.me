@@ -331,8 +331,8 @@ const SPACE = [
   { value: "0.75rem", use: "Work-history description offset and compact floating offsets" },
   { value: "1.25rem", use: "Maximum mobile contact-pill side padding" },
   { value: "1.5rem", use: "Takeover close offset from the right viewport edge" },
-  { value: "2.5rem", use: "Takeover close offset from the top viewport edge and mobile whitespace before Work history" },
-  { value: "5rem", use: "Minimum About inset, desktop whitespace before Work history, and rendered spacing before the CV download" },
+  { value: "2.5rem", use: "Takeover close offset from the top viewport edge and mobile whitespace before Services" },
+  { value: "5rem", use: "Minimum About inset and desktop whitespace before Services" },
   { value: "6rem", use: "Vertical clearance around the personal-photo carousel shadows" },
   { value: "8.75rem", use: "Maximum About inset" },
   { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
@@ -1453,39 +1453,54 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} />
             </div>
 
-            <div className="ds-block" data-ds-terms={terms("resume résumé folded paper tile modal dialog work history education cv pdf --mosaic-card-surface --radius-lg --radius-md --shadow-overlay --shadow-overlay-hover --text-xs 200ms 160ms")}>
+            <div className="ds-block" data-ds-terms={terms("resume résumé folded paper tile curl clip-path modal dialog close work history education cv pdf prints screenshots --mosaic-card-surface --radius-lg --radius-md --radius-sm --shadow-ring --shadow-control-hover 24px 5.06cqw 200ms 160ms")}>
               <p className="ds-subhead">Résumé tile</p>
               <p>
                 The first unit of the quote row opens the résumé reader. Its outer surface is
                 the standard work tile: <code>--mosaic-card-surface</code>, an 8% hairline, and
                 <code>--radius-lg</code> corners (<code>--radius-md</code> on the compact desktop row). Inside it, a
-                white sheet uses <code>--radius-md</code>, <code>--shadow-ring</code>, and
-                <code>--shadow-overlay</code>; a small vector fold turns up its lower-right corner. The miniature
-                entries come from the first two roles in <code>cv.ts</code> and are hidden from assistive technology,
-                because the button&rsquo;s accessible name describes its action. Their 8&ndash;12px illustrative scale
-                is the only exception to the UI type ramp. On hover or focus, the sheet rises 4px over
-                <code>--duration-base</code> with <code>--ease-smooth</code> and takes
-                <code>--shadow-overlay-hover</code>; reduced motion removes the lift. The reader reuses the Notes
+                white sheet sits 1px inside an uncut #d5d5d7 silhouette with the comp&rsquo;s 24px corners and a 1px
+                14% inset hairline, so the underside shows as a stroke around the whole card. The sheet spans 64% of
+                the tile up to 15rem. One SVG on its lower-right corner, 77 of the comp&rsquo;s 237 units wide, draws
+                the sliced corner from the Figma Paper outline, the underside through it with an 18% shade along the
+                seam, and the exported curl trimmed to the sheet side of the cut so its own stroke never crosses the
+                seam. The outer shadow is a drop-shadow filter on the whole paper (4px/21px at 6% and 2px/3px at 5%). The miniature entries come from the
+                first two roles in <code>cv.ts</code> and are hidden from assistive technology, because the
+                button&rsquo;s accessible name describes its action. They are set in Inter Medium at 12px on the
+                comp&rsquo;s 237px sheet, so 5.06cqw here, with a 1.5 line height, 12px between roles and 8px inside
+                one, in the comp&rsquo;s #2d2d2d and #838383; that illustrative scale and palette is the only
+                exception to the UI type ramp. On hover or focus, the paper rises 4px and the corner scales to 1.4&times; from its lower-right
+                anchor, both over <code>--duration-base</code> with <code>--ease-smooth</code>, so the page peels
+                further open like a book; reduced motion removes both. The reader reuses the Notes
                 backdrop, top edge, canvas, 34rem reading measure, toolbar divider, modal motion, focus return, and
                 mobile half-rem viewport margin. Its sheet caps at 46rem because the résumé has no marginalia. Work
                 history and Education use the same live <code>cv.ts</code> content as About. The toolbar is titled
-                “Work history” with no repeated body heading or close button; Education uses weight 600.
-                “View resume PDF” opens the canonical PDF in a new tab and sits above the entries, with 2rem below it.
+                “Work history” with no repeated body heading; Education uses weight 600. Below 700px the
+                toolbar adds the shared round close on the title line, because the sheet keeps only its
+                half-rem margin there and a phone has no Escape key to fall back on.
+                “View resume PDF” opens the canonical PDF in a new tab and closes the reader rather than heading it:
+                it sits below Education, 3rem after it.
                 Education follows the same institution-and-date heading, credential, location, and description
-                structure as the work entries; About retains its date-column layout.
+                structure as the work entries. About no longer carries a résumé at all — the sheet keeps its
+                introduction and Services, and this reader is the only place the history is set.
               </p>
               <p>
                 In the reader, company logos sit above each title in 2rem circular white badges with 0.45rem
                 padding, overlapping by 0.26rem like the work-history popover&rsquo;s logo group, restoring the earlier company-link treatment with
                 <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
-                Company names, dates, locations, and descriptions reuse About&rsquo;s résumé styles:
-                <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
-                Four selected Matcha screenshots sit below the description as photo prints capped at 5rem wide
-                (30% of the row on narrow screens), overlapping by 35% with the personal gallery&rsquo;s
-                -7, 2, -2, and -5 degree tilts.
-                They reuse its white mat, <code>--radius-sm</code>, and shared ring and overlay shadows;
-                the full 4:3 screenshots have concentric 4px corners and a 10% black inset hairline.
-                The compact row shrinks to fit mobile. About retains its existing text-only layout.
+                Company names, dates, locations, and descriptions reuse the shared résumé styles in
+                <code>about.css</code>: <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
+                Four selected Matcha screenshots sit below the description as loose photo prints. They are sized by
+                height — <code>clamp(3.5rem, 15vw, 5.5rem)</code>, so the row shrinks to fit a phone — and each
+                width follows its own 4:3 crop, which is what keeps the pile on the sheet&rsquo;s measure at every
+                size. They lap over each other by 35% of that height, at the personal gallery&rsquo;s -7, 2, -2, and
+                -5 degree tilts. Unlike the gallery&rsquo;s prints these carry no mat: the image is the whole print,
+                on <code>--radius-sm</code> corners with <code>--shadow-ring</code> and
+                <code>--shadow-control-hover</code>. A hovered or focused print raises above the one lapping over it,
+                so it is readable and clickable; with a fine pointer, hover also lifts it 0.25rem and straightens it
+                to 0 degrees over <code>--duration-quick</code>, which reduced motion removes.
+                They load the same <code>-480w</code>/<code>-960w</code> variants the grid tiles do, declared against
+                that rendered width rather than a full-width slot.
               </p>
               <div className="ds-resume-tile-specimen mosaic-row-item">
                 <ResumeTile href={links.resumePdf} />
@@ -1858,11 +1873,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>clamp(1rem, 5vw, 1.5rem)</code> gutter from 700px to 899px — dropped entirely at 900px so the
                   mosaic can run full-bleed.
                 </li>
-                <li data-ds-terms={terms("responsive mobile desktop table of contents TOC current section label Work About Work history 700px 14px 48px safe-area 24px 16px 360ms 200ms 160ms 120ms #e9e9e9 card 8px inset --toc-compact-width --toc-resize-duration --toc-row-height --toc-inset --blur-reveal")}>
+                <li data-ds-terms={terms("responsive mobile desktop table of contents TOC current section label Work About Services 700px 14px 48px safe-area 24px 16px 360ms 200ms 160ms 120ms #e9e9e9 card 8px inset --toc-compact-width --toc-resize-duration --toc-row-height --toc-inset --blur-reveal")}>
                   <strong>Floating table of contents</strong> appears after 96px of scrolling at every screen size,
                   centered 0.75rem above the bottom safe area. It fades in over 160ms with standard easing
                   and rises 0.375rem over 200ms with smooth easing. Returning to the first 96px hides and closes it;
-                  while hidden it is inert and excluded from assistive technology. Reduced motion removes the transition. From 700px up, the top section navigation and local time remain visible alongside it. Its numbered label follows the visible section: 01 Work, 02 About, or 03 Work history.
+                  while hidden it is inert and excluded from assistive technology. Reduced motion removes the transition. From 700px up, the top section navigation and local time remain visible alongside it. Its numbered label follows the visible section: 01 Work, 02 About, or 03 Services.
                   That change carries a direction: the outgoing label leaves the chip over 120ms on the exit
                   curve, travelling 0.25rem and resolving into <code>--blur-reveal</code> (4px), while the new one
                   arrives from the opposite edge over 160ms with standard easing. Scrolling further down the page
@@ -1974,19 +1989,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
-                <li data-ds-terms={terms("about reading surface 36rem work history education services pricing stickers clamp(5rem, 10vw, 8.75rem) #about-panel-resume #about-panel-services")}>
-                  <strong>About is one continuous reading surface.</strong> The introduction, Work history, Education, and
-                  Services share one left-aligned 36rem reading axis in normal document flow. The introduction starts with a
+                <li data-ds-terms={terms("about reading surface 36rem services pricing stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
+                  <strong>About is one continuous reading surface.</strong> The introduction and Services share one
+                  left-aligned 36rem reading axis in normal document flow. The introduction starts with a
                   fluid <code>clamp(5rem, 10vw, 8.75rem)</code> (80–140px) inset from the sheet&rsquo;s top: 5rem on
-                  mobile, growing to 8.75rem on wide desktops. Work history sits 5rem below About on mobile and
-                  8.75rem below it on desktop, without a hairline. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users. Each role shows one representative result, aligns its
-                  dates opposite the company on wider screens, then ends with a PDF download 5rem (80px) after Education.
-                  Services closes the sheet on the same 5rem/8.75rem gap and the same two-column entry grid, with an engagement
+                  mobile, growing to 8.75rem on wide desktops. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users.
+                  Work history and Education are not repeated here: the résumé tile in the quote row opens them as a
+                  reader, so the sheet reads as an introduction and closes on what can be bought.
+                  Services closes it on the same 5rem/8.75rem gap and a two-column entry grid, with an engagement
                   shape where the résumé carries dates; it publishes no rate card, and ends on the email address and a
                   booking link into the same Cal.com dialog the hero&rsquo;s availability line opens.
-                  Company names are keyboard-focusable external links without hover or focus tooltips. There is no tab state or
-                  hidden panel; <code>#about-panel-resume</code> and <code>#about-panel-services</code> anchor directly to the
-                  visible Work history and Services sections.
+                  There is no tab state or hidden panel; <code>#about-panel-services</code> anchors directly to the
+                  visible Services section.
                 </li>
               </ul>
             </div>
@@ -2088,10 +2102,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <strong>The Resume link previews the document.</strong> It shares the map card's surface,
                 6px inset, 16px radius, shadow, and motion, opening after 260ms of hover or immediately on
                 focus and closing after 140ms away or Escape. The preview is at most 22.5rem wide, fits
-                the viewport height, and is available from the desktop corner navigation. The mobile Work history entry scrolls to the on-page experience section; the PDF link lives below that section. Its decorative image
+                the viewport height, and is available from the desktop corner navigation. Its decorative image
                 is generated alongside the PDF and loads on demand; clicking the link opens the PDF in a new tab.
                 Separately, the folded résumé work tile is a button that opens the modal reader, traps focus, closes
-                on Escape or a backdrop press, returns focus to the tile, and keeps the PDF as its final link.
+                on Escape, a backdrop press, or the mobile toolbar close, returns focus to the tile, and keeps the
+                PDF as its final link.
               </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>
                 <strong>Hover-only content has a non-hover fate.</strong> Social-pill hover cards are hidden on
