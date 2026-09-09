@@ -141,6 +141,18 @@
 .writings-dialog.t-modal.is-closing {
   transition-duration: var(--modal-close-dur);
 }
+/* Origin-aware open and close, as a project preview has: the sheet flies out of
+   the control that opened it and shrinks back into it, carried by one Web
+   Animations flight on this element (lib/originMotion). The flight owns the
+   whole pose, so the scale below goes flat while it is on and only the fade is
+   left to CSS -- a running transition outranks an animation in the cascade, so
+   leaving the pose in place would let it overwrite the travel. The note-switch
+   poses further down carry one more attribute each and still win. */
+.writings-dialog.t-modal[data-origin-motion],
+.writings-dialog.t-modal.is-open[data-origin-motion],
+.writings-dialog.t-modal.is-closing[data-origin-motion] {
+  transform: none;
+}
 /* Page the whole reader with the same mirrored poses as project previews.
    The incoming pose is installed without a transition while the note swaps. */
 .writings-dialog.t-modal.is-open[data-switch-phase]:not([data-switch-phase="idle"]) {

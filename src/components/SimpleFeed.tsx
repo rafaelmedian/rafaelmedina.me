@@ -509,7 +509,7 @@ function SectionCorner({
   resumeHref,
 }: {
   onSelect: (href: string) => void
-  onNotes: () => void
+  onNotes: (opener: HTMLElement) => void
   resumeHref: string
 }) {
   const { isOpen, hoverProps } = useHoverCard()
@@ -584,8 +584,10 @@ function SectionCorner({
         </a>
       ))}
       {/* Notes has no section of its own to scroll to: it opens the same
-          folder the mosaic tile does, so this is a button, not a link. */}
-      <button type="button" className="mosaic-social-link" onClick={onNotes}>
+          folder the mosaic tile does, so this is a button, not a link. It hands
+          itself over as the opener, so the sheet flies out of this corner
+          rather than out of a tile that may be pages down. */}
+      <button type="button" className="mosaic-social-link" onClick={(event) => onNotes(event.currentTarget)}>
         Notes
       </button>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
@@ -980,7 +982,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <h1 id="portfolio-title" className="sr-only" tabIndex={-1}>{profile.name} portfolio</h1>
       <SectionCorner
         onSelect={openAbout}
-        onNotes={() => writingsFolderRef.current?.openFolder()}
+        onNotes={(opener) => writingsFolderRef.current?.openFolder(opener)}
         resumeHref={links.resumePdf}
       />
       <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
