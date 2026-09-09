@@ -2,10 +2,11 @@ import { renderToString } from "react-dom/server"
 
 import App from "./App"
 import { portfolioCards } from "./data/portfolio"
-import { pageMetadata, projectPath } from "./lib/projectMetadata"
+import { pageMetadata, projectPath, resumeItemId, resumePath } from "./lib/projectMetadata"
 
 export const pages = [
   { pathname: "/", metadata: pageMetadata() },
+  { pathname: resumePath, metadata: pageMetadata(resumeItemId) },
   ...portfolioCards.map(card => ({ pathname: projectPath(card), metadata: pageMetadata(card) })),
 ]
 

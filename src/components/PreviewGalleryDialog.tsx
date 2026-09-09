@@ -1,18 +1,23 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ChevronRight, ChevronLeft, X } from "lucide-react"
+import { ArrowUpRight, ChevronRight, ChevronLeft, X } from "lucide-react"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
-import { collaborators, type Collaborator, type PortfolioCard } from "../data/portfolio"
+import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
+import { trackEvent } from "../lib/analytics"
+import { resumeItemTitle, type GalleryItem } from "../lib/galleryItems"
 import { originCloseEasePoints, originOpenEasePoints, toCssEasing, useOriginTravel } from "../lib/originMotion"
 import { PreviewMedia } from "./PreviewMedia"
-import { backSound, nextSound, openSound } from "../lib/sounds"
+import { ResumeContent } from "./ResumeContent"
+import { backSound, closeSound, nextSound, openSound } from "../lib/sounds"
 
 type PreviewGalleryDialogProps = {
-  cards: PortfolioCard[]
+  items: GalleryItem[]
   open: boolean
+  /** Whether the open that mounted this dialog came from a press on a tile. */
+  openedByGesture: boolean
   selectedIndex: number
   prefersReducedMotion: boolean
   onOpenChange: (open: boolean) => void
@@ -75,8 +80,9 @@ function getInitials(name: string) {
 }
 
 export function PreviewGalleryDialog({
-  cards,
+  items,
   open,
+  openedByGesture,
   selectedIndex,
   prefersReducedMotion,
   onOpenChange,
@@ -84,25 +90,37 @@ export function PreviewGalleryDialog({
   getOriginRect,
 }: PreviewGalleryDialogProps) {
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
-  const prevOpenRef = useRef(open)
+  // This dialog is lazily mounted, so its first open is always the mount: `open`
+  // is already true here and an unconditional `useRef(open)` would swallow the
+  // latch every visitor hears first. Seeding it from the gesture flag instead
+  // sounds a press on a tile and stays quiet for a shared link, which opens the
+  // gallery with nothing for a sound to answer.
+  const prevOpenRef = useRef(open && !openedByGesture)
   const switchTimeoutRef = useRef<number | null>(null)
   const switchFrameRef = useRef<number | null>(null)
   const closeResetTimeoutRef = useRef<number | null>(null)
   const originWrapRef = useRef<HTMLDivElement | null>(null)
   const popupRef = useRef<HTMLDivElement | null>(null)
+  // The card is the surface that scrolls, so it is also what opening focuses:
+  // a slide long enough to need scrolling is unreachable from the keyboard if
+  // the caret sits on the popup, whose overflow is its child's.
+  const cardRef = useRef<HTMLElement | null>(null)
   // The portal mounts its contents in a later commit than the one that flips
   // `open`, so the open animation keys off the node arriving, not off `open`.
   const [originWrapNode, setOriginWrapNode] = useState<HTMLDivElement | null>(null)
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("next")
   const [isWide, setIsWide] = useState(shouldOpenPreviewWide)
-  const safeIndex = useMemo(() => wrapIndex(selectedIndex, cards.length), [cards.length, selectedIndex])
-  const activeCard = cards[safeIndex]
+  const safeIndex = useMemo(() => wrapIndex(selectedIndex, items.length), [items.length, selectedIndex])
+  const activeItem = items[safeIndex]
+  const activeCard = activeItem?.kind === "project" ? activeItem.card : undefined
+  const isResumeSlide = activeItem?.kind === "resume"
   const activeMediaSource = activeCard?.image ?? ""
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
 
   const playOpen = useSound(openSound, { volume: 0.3 })
+  const playClose = useSound(closeSound, { volume: 0.26 })
   const playNext = useSound(nextSound, { volume: 0.26 })
   const playBack = useSound(backSound, { volume: 0.26 })
 
@@ -193,6 +211,7 @@ export function PreviewGalleryDialog({
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) {
+        playClose()
         runOriginAnimation("close")
         cancelSwitchTransition()
         if (closeResetTimeoutRef.current !== null) {
@@ -206,24 +225,27 @@ export function PreviewGalleryDialog({
       }
       onOpenChange(nextOpen)
     },
-    [cancelSwitchTransition, onOpenChange, runOriginAnimation],
+    [cancelSwitchTransition, onOpenChange, playClose, runOriginAnimation],
   )
 
-  const moveBy = useCallback(
-    (direction: number) => {
-      if (cards.length <= 1) return
-      if (direction === 0) return
-      if (switchPhase !== "idle") return
+  // One step of the strip, in either direction, and the only way the selection
+  // ever changes while the gallery is open: `moveBy` walks to a neighbour and
+  // `selectItemId` jumps to a named item, and both land here so a jump gets the
+  // same paging transition a neighbour does rather than a bare swap. It reports
+  // whether it moved, because a caller standing in for a link -- the résumé
+  // slide's project prints -- has to know whether to swallow the click it
+  // intercepted or hand it back to the browser.
+  const goToIndex = useCallback(
+    (nextIndex: number, nextDirection: PreviewSwitchDirection) => {
+      if (switchPhase !== "idle") return false
+      if (nextIndex === safeIndex) return false
 
-      if (direction > 0) playNext()
+      if (nextDirection === "next") playNext()
       else playBack()
-
-      const nextIndex = wrapIndex(safeIndex + direction, cards.length)
-      const nextDirection = direction < 0 ? "prev" : "next"
 
       if (prefersReducedMotion) {
         onSelectedIndexChange(nextIndex)
-        return
+        return true
       }
 
       if (switchTimeoutRef.current !== null) {
@@ -256,8 +278,47 @@ export function PreviewGalleryDialog({
         })
         switchTimeoutRef.current = null
       }, switchMs)
+
+      return true
     },
-    [cards.length, onSelectedIndexChange, playBack, playNext, prefersReducedMotion, safeIndex, switchPhase],
+    [onSelectedIndexChange, playBack, playNext, prefersReducedMotion, safeIndex, switchPhase],
+  )
+
+  const moveBy = useCallback(
+    (direction: number) => {
+      if (items.length <= 1) return
+      if (direction === 0) return
+      goToIndex(wrapIndex(safeIndex + direction, items.length), direction < 0 ? "prev" : "next")
+    },
+    [goToIndex, items.length, safeIndex],
+  )
+
+  // The résumé slide's project prints page the gallery to that project instead
+  // of leaving for its own page: the reader is inside the gallery now, so the
+  // work it cites is one slide away rather than one navigation away.
+  const selectItemId = useCallback(
+    (id: string) => {
+      const nextIndex = items.findIndex((item) => item.id === id)
+      if (nextIndex < 0) return false
+      // A click that lands mid-transition is refused. It is still swallowed --
+      // a double-click on a print is the common way to land here, and a full
+      // page load answers that worse than doing nothing does -- but it is not
+      // recorded, because no slide opened.
+      if (!goToIndex(nextIndex, nextIndex < safeIndex ? "prev" : "next")) return true
+
+      const nextItem = items[nextIndex]
+      // The grid is not the only surface that opens a preview: the résumé slide
+      // cites projects too, and those opens have to be told apart rather than
+      // going unrecorded.
+      trackEvent("work_preview_open", {
+        preview_id: nextItem.id,
+        preview_title: nextItem.kind === "resume" ? resumeItemTitle : nextItem.card.title,
+        preview_index: nextIndex + 1,
+        preview_placement: "resume_reader",
+      })
+      return true
+    },
+    [goToIndex, items, safeIndex],
   )
 
   useEffect(() => {
@@ -274,10 +335,13 @@ export function PreviewGalleryDialog({
           ["INPUT", "TEXTAREA", "SELECT", "VIDEO", "AUDIO"].includes(target.tagName))
       if (typingOrScrubbing && event.key !== "Escape") return
 
-      if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      // The résumé slide is a document taller than the card that holds it, so
+      // there the vertical pair scrolls it and only the horizontal pair pages.
+      // On a preview, where there is nothing to scroll, both pairs page.
+      if (event.key === "ArrowLeft" || (!isResumeSlide && event.key === "ArrowUp")) {
         event.preventDefault()
         moveBy(-1)
-      } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      } else if (event.key === "ArrowRight" || (!isResumeSlide && event.key === "ArrowDown")) {
         event.preventDefault()
         moveBy(1)
       } else if (event.key === "Escape") {
@@ -288,16 +352,18 @@ export function PreviewGalleryDialog({
 
     window.addEventListener("keydown", onKeyDown, { capture: true })
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true })
-  }, [handleOpenChange, moveBy, open])
+  }, [handleOpenChange, isResumeSlide, moveBy, open])
 
-  if (!activeCard) return null
+  if (!activeItem) return null
 
   const activeMediaIsVideo = isVideoSource(activeMediaSource)
-  const mediaFrameStyle = activeCard.previewMediaPadding
+  const mediaFrameStyle = activeCard?.previewMediaPadding
     ? ({ "--preview-gallery-media-padding": activeCard.previewMediaPadding } as CSSProperties)
     : undefined
   const switchClassName =
     switchPhase === "idle" ? "" : ` preview-gallery-card-switch-${switchPhase}-${switchDirection}`
+  const prevKeyshortcuts = isResumeSlide ? "ArrowLeft" : "ArrowUp ArrowLeft"
+  const nextKeyshortcuts = isResumeSlide ? "ArrowRight" : "ArrowDown ArrowRight"
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -306,6 +372,11 @@ export function PreviewGalleryDialog({
 
         <div
           className="preview-gallery-shell"
+          // The résumé slide is a page of prose rather than a 4:3 shot, so it
+          // takes the reader's own measure instead of the width the artwork
+          // derives. Set on the shell because the width is a custom property
+          // the wrap and the popup both inherit.
+          data-kind={activeItem.kind}
           data-wide={isWide ? "true" : undefined}
           style={galleryMotionVars}
           onMouseDown={(event) => {
@@ -322,12 +393,13 @@ export function PreviewGalleryDialog({
             <Dialog.Popup
               className="preview-gallery-popup"
               ref={popupRef}
-              initialFocus={popupRef}
-              data-preview-media={activeMediaIsVideo ? "video" : "image"}
-              data-preview-crop={activeCard.previewCropped ? "true" : undefined}
+              initialFocus={cardRef}
+              data-preview-kind={activeItem.kind}
+              data-preview-media={activeCard ? (activeMediaIsVideo ? "video" : "image") : undefined}
+              data-preview-crop={activeCard?.previewCropped ? "true" : undefined}
               // Mirrors `mosaic-row-card-${id}` on the tile: a hook for the one
               // artwork whose framing the shared rules get wrong.
-              data-preview-id={activeCard.id}
+              data-preview-id={activeItem.id}
               data-origin-motion={originMotionEnabled ? "true" : undefined}
               data-wide={isWide ? "true" : undefined}
               // No aria-label here: it would override the aria-labelledby Base UI
@@ -338,6 +410,8 @@ export function PreviewGalleryDialog({
                   most of the surface a thumb actually lands on. */}
               <article
                 className={`preview-gallery-card${switchClassName}`}
+                ref={cardRef}
+                tabIndex={-1}
                 onTouchStart={(event) => {
                   // A horizontal drag on the video is the seek bar, not a swipe.
                   if (event.target instanceof Element && event.target.closest("video")) {
@@ -368,7 +442,7 @@ export function PreviewGalleryDialog({
                 <div className="preview-gallery-card-inner">
                   <div className="preview-gallery-toolbar">
                     <span className="preview-gallery-count">
-                      {safeIndex + 1} / {cards.length}
+                      {safeIndex + 1} / {items.length}
                     </span>
 
                     <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
@@ -376,9 +450,9 @@ export function PreviewGalleryDialog({
                         type="button"
                         className="preview-gallery-nav preview-gallery-nav-prev"
                         aria-label="Previous preview"
-                        aria-keyshortcuts="ArrowUp ArrowLeft"
+                        aria-keyshortcuts={prevKeyshortcuts}
                         onClick={() => moveBy(-1)}
-                        disabled={cards.length <= 1}
+                        disabled={items.length <= 1}
                       >
                         <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
                       </button>
@@ -387,60 +461,96 @@ export function PreviewGalleryDialog({
                         type="button"
                         className="preview-gallery-nav preview-gallery-nav-next"
                         aria-label="Next preview"
-                        aria-keyshortcuts="ArrowDown ArrowRight"
+                        aria-keyshortcuts={nextKeyshortcuts}
                         onClick={() => moveBy(1)}
-                        disabled={cards.length <= 1}
+                        disabled={items.length <= 1}
                       >
                         <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                       </button>
 
-                      <Dialog.Close className="preview-gallery-nav preview-gallery-close" aria-label="Close preview">
+                      <Dialog.Close
+                        className="preview-gallery-nav preview-gallery-close"
+                        aria-label={activeItem.kind === "resume" ? "Close résumé" : "Close preview"}
+                      >
                         <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
                       </Dialog.Close>
                     </div>
                   </div>
 
-                  <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
-                    <PreviewMedia key={activeMediaSource} card={activeCard} reducedMotion={prefersReducedMotion} />
-                  </div>
-
-                  <div className="preview-gallery-content">
-                    <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
-                    <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
-                    {activeCollaborators.length > 0 ? (
-                      <div className="preview-gallery-team">
-                        <ul className="preview-gallery-people" aria-label="Collaborators">
-                          {activeCollaborators.map((person) => (
-                            <li key={person.href}>
-                              <a
-                                className="preview-gallery-person"
-                                href={person.href}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {person.photo ? (
-                                  <img
-                                    className="preview-gallery-person-avatar"
-                                    src={person.photo}
-                                    alt=""
-                                    width={22}
-                                    height={22}
-                                    loading="lazy"
-                                    decoding="async"
-                                  />
-                                ) : (
-                                  <span className="preview-gallery-person-avatar" aria-hidden="true">
-                                    {getInitials(person.name)}
-                                  </span>
-                                )}
-                                <span className="preview-gallery-person-name">{person.name}</span>
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
+                  {activeCard ? (
+                    <>
+                      <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
+                        <PreviewMedia key={activeMediaSource} card={activeCard} reducedMotion={prefersReducedMotion} />
                       </div>
-                    ) : null}
-                  </div>
+
+                      <div className="preview-gallery-content">
+                        <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                        <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
+                        {activeCollaborators.length > 0 ? (
+                          <div className="preview-gallery-team">
+                            <ul className="preview-gallery-people" aria-label="Collaborators">
+                              {activeCollaborators.map((person) => (
+                                <li key={person.href}>
+                                  <a
+                                    className="preview-gallery-person"
+                                    href={person.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    {person.photo ? (
+                                      <img
+                                        className="preview-gallery-person-avatar"
+                                        src={person.photo}
+                                        alt=""
+                                        width={22}
+                                        height={22}
+                                        loading="lazy"
+                                        decoding="async"
+                                      />
+                                    ) : (
+                                      <span className="preview-gallery-person-avatar" aria-hidden="true">
+                                        {getInitials(person.name)}
+                                      </span>
+                                    )}
+                                    <span className="preview-gallery-person-name">{person.name}</span>
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="preview-gallery-resume">
+                      <Dialog.Title className="preview-gallery-title preview-gallery-resume-title">
+                        {resumeItemTitle}
+                      </Dialog.Title>
+                      <Dialog.Description className="sr-only">
+                        Rafael Medina's work history and education, with a link to the PDF résumé.
+                      </Dialog.Description>
+                      <div className="preview-gallery-resume-body mosaic-about-body">
+                        <ResumeContent onSelectProject={selectItemId} />
+                        <p className="mosaic-about-resume-download">
+                          <a
+                            href={siteLinks.resumePdf}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mosaic-about-link"
+                            onClick={() => {
+                              trackEvent("social_link_click", {
+                                social_label: "View Resume",
+                                social_href: siteLinks.resumePdf,
+                                social_placement: "resume_dialog",
+                              })
+                            }}
+                          >
+                            View resume PDF <ArrowUpRight size={16} aria-hidden="true" />
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </article>
 
@@ -449,9 +559,9 @@ export function PreviewGalleryDialog({
                   type="button"
                   className="preview-gallery-nav preview-gallery-nav-prev"
                   aria-label="Previous preview"
-                  aria-keyshortcuts="ArrowUp ArrowLeft"
+                  aria-keyshortcuts={prevKeyshortcuts}
                   onClick={() => moveBy(-1)}
-                  disabled={cards.length <= 1}
+                  disabled={items.length <= 1}
                 >
                   <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
                 </button>
@@ -460,9 +570,9 @@ export function PreviewGalleryDialog({
                   type="button"
                   className="preview-gallery-nav preview-gallery-nav-next"
                   aria-label="Next preview"
-                  aria-keyshortcuts="ArrowDown ArrowRight"
+                  aria-keyshortcuts={nextKeyshortcuts}
                   onClick={() => moveBy(1)}
-                  disabled={cards.length <= 1}
+                  disabled={items.length <= 1}
                 >
                   <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                 </button>

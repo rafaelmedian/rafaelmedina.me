@@ -55,6 +55,13 @@
   object-fit: contain;
 }
 
+/* The prerendered /resume/ page. Its body is the reader's, so it only has to
+   hand the entries a measure and clear the header above them; the entry, print,
+   and education rules are the ones the gallery slide uses. */
+.standalone-resume-body {
+  margin-top: 2.5rem;
+}
+
 .standalone-not-found {
   min-height: 100svh;
   display: grid;

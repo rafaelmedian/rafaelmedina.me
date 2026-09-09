@@ -97,6 +97,16 @@ Keep it in step with `src/data/cv.ts` (work history, dates, education) and
 reads the shipped PDF and fails when those disagree. The script refuses to write a
 second page.
 
+The reader that the folded CV tile opens is not a modal of its own: it is a slide
+of the preview gallery, at the place the tile occupies on the grid, so the arrow
+keys walk from a project into the résumé and out the other side. It owns
+`/resume/` the way a project owns `/work/<slug>/` — prerendered by
+`scripts/prerender.mjs`, listed in the sitemap, rendered as `ResumePage` for a
+crawler or a visitor without JavaScript, and swapped for the gallery slide once
+React is running. Adding another non-project tile to the sequence means adding a
+kind to `src/lib/galleryItems.ts` and a location to `src/lib/portfolioUrl.ts`;
+the gallery itself only knows about items.
+
 ## The last-updated clause and its GitHub card
 
 Two different things with two different lifecycles sit behind the hero's
