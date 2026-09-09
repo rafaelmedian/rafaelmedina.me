@@ -64,7 +64,6 @@ export function ResumeTile({ href, onOpenChange }: { href: string; onOpenChange?
           </Dialog.Description>
           <div className="resume-dialog-scroll" onScroll={(event) => setScrolled(event.currentTarget.scrollTop > 0)}>
             <article className="resume-dialog-content mosaic-about-body">
-              <ResumeContent illustrated />
               <p className="mosaic-about-resume-download resume-dialog-download">
                 <a
                   href={href}
@@ -82,6 +81,7 @@ export function ResumeTile({ href, onOpenChange }: { href: string; onOpenChange?
                   View resume PDF <ArrowUpRight size={16} aria-hidden="true" />
                 </a>
               </p>
+              <ResumeContent illustrated />
             </article>
           </div>
         </Dialog.Popup>

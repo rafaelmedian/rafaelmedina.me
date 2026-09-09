@@ -1,4 +1,9 @@
 /* Company-led entries in the modal; About keeps its compact date column. */
+.resume-dialog-content .resume-dialog-download {
+  margin-top: 0;
+  margin-bottom: 2rem;
+}
+
 .resume-experience-list {
   margin-top: 0;
   gap: 3rem;
@@ -11,7 +16,6 @@
 .resume-experience-logos {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
@@ -26,6 +30,10 @@
   border-radius: var(--radius-full);
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-control);
+}
+
+.resume-experience-logo + .resume-experience-logo {
+  margin-left: -0.26rem;
 }
 
 .resume-experience-logo img {

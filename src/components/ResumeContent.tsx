@@ -126,7 +126,19 @@ export function ResumeContent({ revealOnScroll = false, illustrated = false }: {
       <div className="mosaic-about-resume-education">
         <h3 className="mosaic-about-resume-heading" {...fadeProps}>Education</h3>
         <ul className="mosaic-about-resume mosaic-about-education-list" aria-label="Education">
-          {cvEducation.map((school) => (
+          {cvEducation.map((school) => illustrated ? (
+            <li className="resume-experience" key={school.school}>
+              <div className="resume-experience-heading">
+                <h4 className="mosaic-about-resume-title" aria-label={`${school.credential} at ${school.school}`}>
+                  {school.school}
+                </h4>
+                <p className="mosaic-about-resume-dates">{school.dates}</p>
+              </div>
+              <p className="resume-experience-role">{school.credential}</p>
+              <p className="mosaic-about-resume-location">{school.location}</p>
+              {school.details ? <p className="mosaic-about-resume-description">{school.details}</p> : null}
+            </li>
+          ) : (
             <li
               key={school.school}
               className="mosaic-about-resume-entry mosaic-about-work-entry"
