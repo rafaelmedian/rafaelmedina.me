@@ -359,7 +359,7 @@ const ELEVATION = [
   {
     name: "Resting control — --shadow-control",
     shadow: "var(--shadow-control)",
-    use: "Light contact pills and the writing-like button share --shadow-control, --shadow-control-hover, and --shadow-control-pressed. The dark email pill keeps its surface-specific shadow; the table of contents uses the overlay tier.",
+    use: "Light contact pills and the notes reader's like pill share --shadow-control, --shadow-control-hover, and --shadow-control-pressed. The same pill floating on a project preview's artwork takes the overlay tier instead. The dark email pill keeps its surface-specific shadow; the table of contents uses the overlay tier.",
   },
   {
     name: "Overlay — --shadow-overlay",
@@ -1190,6 +1190,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
                   header at z-index 1.
+                  The like pill rides the line where the artwork stops: a zero-height row centres it on that
+                  boundary, 1.25rem in from the card&rsquo;s right edge, half over the shot and half over the white
+                  below it. It is the notes reader&rsquo;s control on the overlay tier instead of the control
+                  tier &mdash; 36px rather than 32px, no border, a 92% white behind a 12px backdrop blur, and
+                  <code>--shadow-ring</code> over <code>--shadow-overlay</code> &mdash; because here it floats on a
+                  photograph rather than sitting on a page. Taking no room in the flow is the point: a row of its own
+                  under the title would push every description down whether or not anyone ever taps it.
                   Below the artwork, the project title and a single description cover the product, contribution,
                   and result. Left-aligned collaborator avatar links follow the description without a visible label,
                   starting with mine on every project so a solo shot is credited rather than unattributed.
@@ -1282,6 +1289,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 supplies the year, and a note kept only as an archive year leaves that column empty. The date is hidden from assistive technology so a row
                 is still named by its title alone; the reader's own header carries the full date.
                 The like control below the date is a 32px pill with a 44px hit area, --text-xs type, and the shared control shadows.
+                The project preview wears the same control on the overlay tier; everything below is shared by both.
                 Its 14px heart starts filled #b6b6ba; the heart and tabular, weight-600 count turn #e5352b after a tap.
                 The pill hugs the count, whose width follows its digit count in ch over --duration-quick with --ease-standard.
                 Each tap adds a like up to 16 per visitor, with a 360ms heart pop to scale(1.35) on cubic-bezier(0.34, 1.56, 0.64, 1)

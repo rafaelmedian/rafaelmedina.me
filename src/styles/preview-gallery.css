@@ -432,6 +432,73 @@
   transform-origin: var(--preview-crop-position);
 }
 
+/* The like pill rides the line where the artwork stops and the prose starts.
+
+   The row is a zero-height flex line, so it takes nothing out of the card's
+   flow and the pill centres itself on that boundary -- half over the shot, half
+   over the white. That is what keeps this control free: put on a row of its own
+   under the title it would push every description down by 44px on every slide,
+   whether or not anyone ever taps it, and pinned inside the frame it would be a
+   badge on the artwork rather than a control on the card.
+
+   It cannot live inside the media frame: that frame clips, so a cropped
+   preview's artwork cannot paint across its mat, and the pill would be cut in
+   half by the same rule. Hence a sibling, and the card padding handed back the
+   way the frame itself hands it back, so the pill measures its inset from the
+   artwork's edge rather than from the text column's.
+
+   Like the paging rail, the span either side of the pill gives the pointer back
+   to the card underneath. */
+.preview-gallery-likes {
+  position: relative;
+  z-index: 1;
+  height: 0;
+  min-height: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-inline: calc(-1 * var(--preview-gallery-card-padding));
+  padding-inline-end: 1.25rem;
+  pointer-events: none;
+}
+
+.preview-gallery-likes > * {
+  pointer-events: auto;
+}
+
+/* Floating chrome rather than a control on a page: no border, the overlay tier
+   the rest of this dialog's floating pieces wear, and enough opacity to stay
+   legible over whatever the shot puts under it. */
+.preview-gallery-likes .like-button {
+  height: 36px;
+  padding-inline: 0.85rem;
+  border: none;
+  background: rgb(255 255 255 / 0.92);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+}
+
+@media (hover: hover) {
+  .preview-gallery-likes .like-button:hover {
+    box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
+  }
+}
+
+/* A failed save has to read over artwork here, so it takes the same white chip
+   the media's own error already uses rather than sitting as bare grey text. */
+.preview-gallery-likes [role="alert"] {
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  text-align: right;
+  box-shadow: var(--shadow-overlay);
+}
+
 .preview-gallery-content {
   width: min(100%, 48rem);
   margin: 0 auto;
