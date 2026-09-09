@@ -64,8 +64,9 @@ test("commits a drag well short of a card width, and lands it quickly", async ({
   await openHome(page)
   const card = carousel(page)
   const surface = card.getByRole("button", { name: "Advance quote" })
-  // Under the old quarter-of-a-card threshold, over the slip-of-the-hand one.
-  await drag(surface, page, -18)
+  // Barely past the slip of the hand that separates a swipe from a click, and a
+  // world away from the quarter of a card this once asked for.
+  await drag(surface, page, -8)
   await expect(active(page)).toContainText("BASED FLOYD VIII")
   // A quote let go of under the pointer settles quicker than a dot selection.
   const dragDuration = await active(page).evaluate((node) => getComputedStyle(node).transitionDuration)
@@ -101,14 +102,31 @@ test("swiping backward wraps and tapping the card advances one quote", async ({ 
   await expect(active(page)).toContainText("Michael Wong")
 })
 
-test("a horizontal drag advances exactly once and a short drag snaps back", async ({ page }) => {
+test("a slight swipe backward goes back rather than advancing with the tap", async ({ page }) => {
+  await openHome(page)
+  const surface = carousel(page).getByRole("button", { name: "Advance quote" })
+  await drag(surface, page, 9)
+  await expect(active(page)).toContainText("Jakub Antalik")
+})
+
+test("a horizontal drag advances exactly once and a returned drag snaps back", async ({ page }) => {
   await openHome(page)
   const surface = carousel(page).getByRole("button", { name: "Advance quote" })
   await drag(surface, page, -80)
   await expect(active(page)).toContainText("BASED FLOYD VIII")
   await page.waitForTimeout(450)
   await expect(active(page)).toContainText("BASED FLOYD VIII")
-  await drag(surface, page, -12)
+  // Carried out and brought back to where it started: the card follows the
+  // pointer the whole way and keeps the quote it began on.
+  const box = await surface.boundingBox()
+  if (!box) throw new Error("Quote surface has no rendered bounds")
+  const x = box.x + box.width / 2
+  const y = box.y + box.height * 0.25
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  await page.mouse.move(x - 40, y, { steps: 5 })
+  await page.mouse.move(x, y, { steps: 5 })
+  await page.mouse.up()
   await expect(active(page)).toContainText("BASED FLOYD VIII")
   await expect(active(page)).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)", { timeout: 1_000 })
 })
