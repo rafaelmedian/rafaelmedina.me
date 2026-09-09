@@ -269,17 +269,14 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
                     <div className="mosaic-about-resume-details">
                       <h3 className="mosaic-about-resume-title">{service.title}</h3>
                       <p className="mosaic-about-resume-description">{service.description}</p>
-                      {service.price ? (
-                        <p className="mosaic-about-service-price">{service.price}</p>
-                      ) : null}
                     </div>
                   </li>
                 ))}
               </ul>
 
               {/* The questions that used to be answered one enquiry at a time,
-                  cost first -- the published figures are starting points and
-                  the answer explains how the scope determines the quote.
+                  cost first -- no figure is published, so the answer explains
+                  the weekly or monthly rate and the estimate it rests on.
                   Nested inside Services rather than
                   standing as its own section: every answer is about an
                   engagement, and the table of contents already stops here. */}
