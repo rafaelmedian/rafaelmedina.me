@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { maxNoteLikesPerVisitor } from "../../src/data/likeLimits"
+import { maxLikesPerVisitor } from "../../src/data/likeLimits"
 import { likesApiUrl } from "./likesApi"
 
 test("every increment counts across visitors and clamps at the per-visitor cap", async ({ request }) => {
@@ -17,10 +17,10 @@ test("every increment counts across visitors and clamps at the per-visitor cap",
   expect(await (await request.get(endpoint, { headers: headersA })).json()).toMatchObject({ count: initial + 8, visitorLikes: 5 })
   expect(await (await request.get(endpoint, { headers: headersB })).json()).toMatchObject({ count: initial + 8, visitorLikes: 3 })
   // Pushing A to the cap clamps the tally, and once there the total stops moving.
-  const capped = await request.put(endpoint, { headers: headersA, data: { increment: maxNoteLikesPerVisitor } })
-  expect(await capped.json()).toMatchObject({ count: initial + 3 + maxNoteLikesPerVisitor, visitorLikes: maxNoteLikesPerVisitor })
+  const capped = await request.put(endpoint, { headers: headersA, data: { increment: maxLikesPerVisitor } })
+  expect(await capped.json()).toMatchObject({ count: initial + 3 + maxLikesPerVisitor, visitorLikes: maxLikesPerVisitor })
   const past = await request.put(endpoint, { headers: headersA, data: { increment: 1 } })
-  expect(await past.json()).toMatchObject({ count: initial + 3 + maxNoteLikesPerVisitor, visitorLikes: maxNoteLikesPerVisitor })
+  expect(await past.json()).toMatchObject({ count: initial + 3 + maxLikesPerVisitor, visitorLikes: maxLikesPerVisitor })
 })
 
 test("likes API rejects unknown notes, invalid visitors, foreign origins and malformed writes", async ({ request }) => {
@@ -31,7 +31,7 @@ test("likes API rejects unknown notes, invalid visitors, foreign origins and mal
   expect((await request.put(endpoint, { headers: { ...headers, Origin: "https://example.com" }, data: { increment: 1 } })).status()).toBe(403)
   expect((await request.put(endpoint, { headers, data: { increment: "1" } })).status()).toBe(400)
   expect((await request.put(endpoint, { headers, data: { increment: 0 } })).status()).toBe(400)
-  expect((await request.put(endpoint, { headers, data: { increment: maxNoteLikesPerVisitor + 1 } })).status()).toBe(400)
+  expect((await request.put(endpoint, { headers, data: { increment: maxLikesPerVisitor + 1 } })).status()).toBe(400)
   expect((await request.put(endpoint, { headers, data: { liked: "true" } })).status()).toBe(400)
   expect((await request.put(endpoint, { headers, data: { increment: 1, padding: "x".repeat(300) } })).status()).toBe(413)
   const preflight = await request.fetch(endpoint, { method: "OPTIONS", headers })

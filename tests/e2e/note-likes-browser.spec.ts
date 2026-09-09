@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { maxNoteLikesPerVisitor } from "../../src/data/likeLimits"
+import { maxLikesPerVisitor } from "../../src/data/likeLimits"
 import { likesApiUrl } from "./likesApi"
 
 async function openNote(page: import("@playwright/test").Page, title = "Designing Matcha") {
@@ -55,7 +55,7 @@ test("the like limit blocks new writes without disturbing the count", async ({ p
   let writes = 0
   await page.route("**/notes/*/likes", async (route) => {
     if (route.request().method() === "PUT") writes++
-    await route.fulfill({ json: { count: 30, visitorLikes: maxNoteLikesPerVisitor } })
+    await route.fulfill({ json: { count: 30, visitorLikes: maxLikesPerVisitor } })
   })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await openNote(page)
