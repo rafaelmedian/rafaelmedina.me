@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test"
 
+// Exercise native tabs in full Chromium. The headless shell can receive the
+// destination HTML yet leave a modified-click tab on its provisional document.
+test.use({ channel: "chromium" })
+
 test("project pages ship distinct metadata and readable content without JavaScript", async ({ browser, request, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
   const page = await context.newPage()
