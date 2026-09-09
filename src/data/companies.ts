@@ -75,6 +75,16 @@ export const workedWithCompanies: WorkedWithCompany[] = [
     description: "Contributed to Web3 infrastructure interfaces with a focus on clarity and trust.",
   },
   {
+    id: "boldvoice",
+    name: "BoldVoice",
+    compactName: "BoldVoice",
+    logoUrls: ["/logos/boldvoice.png"],
+    href: "https://boldvoice.com",
+    relationship: "previous",
+    role: "Product designer",
+    description: "Sole designer on an accent-training app used by more than 50K people.",
+  },
+  {
     id: "google",
     name: "Google",
     compactName: "Google",
