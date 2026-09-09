@@ -476,6 +476,24 @@ test("removes the elastic scroll edge when reduced motion is preferred", async (
   await expect(page.locator(".mosaic-about-body")).toHaveCSS("translate", "none")
 })
 
+// The artwork runs to the card's top edge, so an overscroll that bounced peeled
+// it off the top and showed a white sliver of the card behind it. `contain` and
+// `none` both keep the scroll off the page behind the dialog; only `none` also
+// takes away the bounce.
+test("seals an open preview's artwork to the card's top edge", async ({ page }) => {
+  await page.goto("/work/protector-booking/")
+
+  const card = page.getByRole("dialog").locator(".preview-gallery-card")
+  await expect(card).toHaveCSS("overscroll-behavior-y", "none")
+
+  const artworkFromTop = await card.evaluate((element) => {
+    const frame = element.querySelector(".preview-gallery-media-frame") as HTMLElement
+    return Math.round(frame.getBoundingClientRect().top - element.getBoundingClientRect().top)
+  })
+
+  expect(artworkFromTop).toBe(0)
+})
+
 test("defines the overlapping About surface with a top border and shadow", async ({ page }) => {
   await page.goto("/")
 

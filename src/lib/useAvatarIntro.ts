@@ -16,7 +16,7 @@ export function useAvatarIntro() {
 
   useEffect(() => {
     const avatar = avatarRef.current
-    const portrait = avatar?.querySelector<HTMLImageElement>(".mosaic-avatar-face-front")
+    const portrait = avatar?.querySelector<HTMLImageElement>(".mosaic-avatar-face-front .mosaic-avatar-portrait")
     if (document.documentElement.dataset.avatarIntro !== "pending" || !portrait || !avatar) return
 
     let disposed = false

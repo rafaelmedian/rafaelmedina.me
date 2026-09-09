@@ -180,7 +180,12 @@
   max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  /* `none`, not `contain`: both keep the scroll off the page behind the dialog,
+     but a contained scroller still bounces -- and the artwork runs to this
+     box's top edge, so a pull past the first line peeled it off the top and
+     showed a white sliver of the card behind it. Nothing lifts now, so the
+     preview stays sealed to its own edge. */
+  overscroll-behavior: none;
   border-radius:
     var(--preview-gallery-card-radius) var(--preview-gallery-card-radius)
     var(--radius-lg) var(--radius-lg);

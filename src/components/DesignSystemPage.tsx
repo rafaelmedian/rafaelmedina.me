@@ -228,7 +228,7 @@ const INK_ENTRIES = [
   { hex: "#363636", token: "—", use: "Inline links on hover" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
   { hex: "#545454", token: "—", use: "About-panel prose and article prose" },
-  { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions, work-history chip labels at rest" },
+  { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions, work-history chip labels at rest, and both halves of the avatar hint — its Handlee line and the arrow beside it, which used to be the site's one red" },
   { token: "--muted-soft", use: "Tertiary labels: corner nav, the About sheet's local time, definition terms, and hobby notes" },
 ]
 
@@ -251,12 +251,6 @@ const NON_TEXT_ENTRIES = [
     kind: "non-text",
     name: "Tile focus",
     note: "--focus-ring one step lighter, for the work tiles only. Around 500px of artwork the darker ink reads as a frame rather than a selection; this still clears the 3:1 floor.",
-  },
-  {
-    hex: "#e5352b",
-    kind: "text",
-    name: "Hint",
-    note: "The Handlee avatar hint, now the only red one — the photo-stack note is written in Reenie Beanie on --muted. Display-sized text and non-text icons use a 3:1 floor.",
   },
 ] satisfies ReadonlyArray<{ hex?: string; token?: string; kind: ContrastKind; name: string; note: string }>
 
@@ -385,14 +379,14 @@ const EASINGS_ENTRIES = [
   {
     name: "Standard — --ease-standard",
     css: "--ease-standard",
-    duration: "160–300ms",
-    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
+    duration: "160–1200ms",
+    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place. Also the avatar coin, whose spin outgrew --ease-smooth: an expo-out puts three quarters of its travel in the first fifth of the duration, which over a whole rotation reads as a strobe rather than a spin.",
   },
   {
     name: "Smooth — --ease-smooth",
     css: "--ease-smooth",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the avatar coin flip, the live-time roll, the personal-photo fan opening on hover or focus, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the avatar's crop tightening under the pointer, the live-time roll, the personal-photo fan opening on hover or focus, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
@@ -429,7 +423,8 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening on hover or focus, and the sheet rewinding before close (--photo-rewind-duration)." },
   { value: "200ms", use: "Personal-photo sheet: --photo-open-duration and --photo-close-duration both alias --duration-base. Every flight, its caption, and the backdrop share one beat in either direction, with no stagger and no delay — the whole hand leaves together and comes home together. Reduced motion removes the transitions and flights." },
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
-  { value: "700ms", use: "The page-end content nudge settling and the avatar coin flip." },
+  { value: "700ms", use: "The page-end content nudge settling." },
+  { value: "1100ms / 1200ms / 240ms", use: "The avatar coin. One whole turn under the pointer over 1100ms, and a click adds another over 1200ms, then hands over to the About scroll 240ms in — long enough that the spin is what started the scroll, short enough that the click still feels answered. Both are slow on purpose: a coin this small has to turn lazily to read as turning at all. JavaScript reads all three numbers from the coin's own custom properties." },
   { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
 ]
 
@@ -730,8 +725,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <ul className="ds-list">
               <li data-ds-terms={terms("grey colour signal accent neutral ink saturated confirmation linkedin x brand")}>
                 <strong>Grey does the work; colour is a signal.</strong> Use the <a href="#colour">shared neutral
-                palette</a>. Saturated colours stay scoped to confirmations, borrowed brands, the avatar hint,
-                and the elastic page edge.
+                palette</a>. Saturated colours stay scoped to confirmations, borrowed brands, and the elastic page
+                edge. The avatar hint used to be the fourth: it was red because it is handwriting, and handwriting on a
+                grey page wants to be ink — but it sits beside a 52px portrait it is only there to explain, and at that
+                weight it was arriving first.
               </li>
               <li data-ds-terms={terms("hover reveal relocate reflow work-history popover float overlay space")}>
                 <strong>Hover reveals; it never relocates.</strong> Cards, titles, and icons fade and settle in place.
@@ -1340,8 +1337,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 short phrase pinned to the gutter beside the paragraph it belongs to. Two an article, one early and one
                 late, one in each gutter — it used to run to five, plus interjections dropped between the paragraphs,
                 and at that rate a reader stops reading the article and starts reading the margin.
-                It reads as pencil beside the article rather than a correction on top of it, so it shares the secondary
-                copy's grey instead of the avatar hint's red, and it takes no faux-bold text-stroke.
+                It reads as pencil beside the article rather than a correction on top of it, so it takes the secondary
+                copy's grey — the same one the avatar hint now sits on — without the hint's faux-bold text-stroke.
                 A note takes the gutter the reading column leaves over — 122px at the sheet's full width, at --text-xs
                 and balanced, which holds two or three even lines where the reading step broke into four ragged ones —
                 and a 16px bracket closes around the column on its inner edge, on --muted-soft at 0.7, two steps back
@@ -1857,7 +1854,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
               <div
                 className="ds-rule"
-                data-ds-terms={terms("direction axis preview gallery paging arrows chevron swipe translateX 1.4rem 0.985 --duration-base 200ms")}
+                data-ds-terms={terms("direction axis preview gallery paging arrows chevron swipe translateX 1.4rem 0.985 --duration-base 200ms overscroll behavior none contain bounce rubber band white sliver")}
               >
                 <strong>Motion moves along the axis its control points down.</strong>
                 <p>
@@ -1867,6 +1864,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   arrives from the opposite edge, both over <code>--duration-base</code> (200ms), so the set reads as a
                   strip moving past rather than two unrelated fades. This used to translate on Y, which contradicted
                   both affordances. Reduced motion swaps the preview outright.
+                </p>
+                <p>
+                  Along the axis it does not page on, the card does not move at all: its overscroll is{" "}
+                  <code>none</code> rather than <code>contain</code>, which keeps the scroll off the page behind it
+                  the way <code>contain</code> did and also takes away the bounce. The artwork runs to the card's top
+                  edge, so a bounce peeled it off and showed a white sliver of the card behind it &mdash; a gap where
+                  the preview should be sealed to its own edge.
                 </p>
               </div>
 
@@ -1931,6 +1935,36 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Video tiles wait on their <em>poster</em> decoding, not on <code>loadeddata</code>: reduced motion
                   and metered connections hold the loop back indefinitely, and the card has been showing the poster
                   the whole time. Reduced motion keeps the sheen and stops the breathe.
+                </p>
+              </div>
+
+              <div
+                className="ds-rule"
+                id="avatar-coin"
+                data-ds-terms={terms("avatar coin flip spin rotateY 360deg hover click about scroll 1100ms 1200ms 240ms crop zoom 1.12 object-fit cover composite add web animations preserve-3d backface hint arrow reduced motion")}
+              >
+                <strong>The avatar spins, and the spin is what goes to About.</strong>
+                <p>
+                  Pointing at the 52px portrait, or reaching it with the keyboard, turns it{" "}
+                  <code>360deg</code> &mdash; one whole turn, with the mirrored second face passing underneath and the
+                  first one coming back. The crop tightens at the same time: the circle keeps its size and the face
+                  inside it scales to <code>1.12</code> over <code>--duration-slow</code>, so the frame closes in rather
+                  than the avatar growing into the line of text beside it. Clicking adds another whole turn and,{" "}
+                  <code>240ms</code> later, scrolls to the About sheet with the same <code>scrollIntoView</code> every
+                  other section link uses.
+                  The grey Handlee hint reads &ldquo;read about me&rdquo; throughout; it is the only label the control has.
+                </p>
+                <p>
+                  The click spin is a script animation with <code>composite: &quot;add&quot;</code>, not a keyframe
+                  rule. CSS transitions outrank CSS animations, so a keyframe spin would sit and wait out a hover flip
+                  already in flight, and a replacing one would snap the coin back to zero before starting; an additive
+                  script animation composes onto whatever the transition is doing on that frame. Every rotation is a
+                  whole number of half turns, which is what lets the animation end on the angle its underlying value
+                  already holds &mdash; nothing to see when the transform is handed back &mdash; and lets an
+                  interrupted coin only ever rest on a face. The crop is clipped by a frame around each portrait rather
+                  than by the coin, because the coin carries <code>preserve-3d</code> and any overflow but{" "}
+                  <code>visible</code> would flatten it and take the flip with it. Reduced motion holds the coin, the
+                  crop, and the spin, and goes straight to About.
                 </p>
               </div>
 
