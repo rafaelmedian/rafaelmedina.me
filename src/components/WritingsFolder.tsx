@@ -555,6 +555,7 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
                     ) : <span>{selected.archiveYear ? `Archive · ${selected.archiveYear}` : "Undated"}</span>}
                   </div>
                   <h2 ref={titleRef} tabIndex={-1} className="writings-page-title">{selected.title}</h2>
+                  {open && reading && import.meta.env.VITE_LIKES_API_URL ? <NoteLikeButton key={selected.id} noteId={selected.id} /> : null}
                 </header>
                 {selected.cover ? <NoteImage image={selected.cover} /> : null}
                 <div className="writing-reader-prose">
@@ -571,7 +572,6 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
                   ))}
                   {selected.href ? <a href={selected.href} target="_blank" rel="noreferrer">Read original article <ArrowUpRight size={16} aria-hidden="true" /></a> : null}
                 </div>
-                {open && reading && import.meta.env.VITE_LIKES_API_URL ? <NoteLikeButton key={selected.id} noteId={selected.id} /> : null}
                 {selected.acknowledgements ? (
                   <section className="writing-acknowledgements" aria-label="Acknowledgements">
                     <h3>Acknowledgements</h3>
