@@ -44,23 +44,6 @@ jobs:
             )
             core.setOutput("runtime", String(!documentationOnly))
 
-  static:
-    name: Static checks
-    needs: changes
-    if: needs.changes.outputs.runtime == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run likes:check
-
   e2e:
     name: E2E (shard ${{ matrix.shard }})
     needs: changes
@@ -70,10 +53,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - shard: 1/2
+          - shard: 1/3
             artifact: 1
-          - shard: 2/2
+          - shard: 2/3
             artifact: 2
+          - shard: 3/3
+            artifact: 3
     steps:
       - uses: actions/checkout@v7
 
@@ -103,8 +88,8 @@ jobs:
           path: test-results/
           retention-days: 7
 
-  design_system:
-    name: Design-system tests
+  checks:
+    name: Static and design-system checks
     needs: changes
     if: needs.changes.outputs.runtime == 'true'
     runs-on: ubuntu-latest
@@ -117,6 +102,8 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npm run lint
+      - run: npm run likes:check
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
@@ -137,7 +124,7 @@ jobs:
   # work behind it runs in parallel. It also gives docs-only PRs a real success
   # result instead of leaving a path-filtered required check pending forever.
   verify:
-    needs: [changes, static, e2e, design_system]
+    needs: [changes, e2e, checks]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
@@ -145,9 +132,8 @@ jobs:
         env:
           CHANGES_RESULT: ${{ needs.changes.result }}
           RUNTIME: ${{ needs.changes.outputs.runtime }}
-          STATIC_RESULT: ${{ needs.static.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
-          DESIGN_SYSTEM_RESULT: ${{ needs.design_system.result }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
         run: |
           test "$CHANGES_RESULT" = "success"
 
@@ -156,6 +142,5 @@ jobs:
             exit 0
           fi
 
-          test "$STATIC_RESULT" = "success"
           test "$E2E_RESULT" = "success"
-          test "$DESIGN_SYSTEM_RESULT" = "success"
+          test "$CHECKS_RESULT" = "success"

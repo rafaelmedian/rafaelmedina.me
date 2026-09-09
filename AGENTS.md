@@ -35,7 +35,8 @@ CSS linting.
   assets, no patching hashed filenames, no committing a build. Change `src/` or
   `public/` and let the build produce the rest.
 - Cut feature branches from `main` and merge back through a PR. CI runs lint,
-  build, and Playwright on every PR.
+  build, and Playwright on every PR that can change the shipped site;
+  documentation-only PRs keep the required check but skip runtime verification.
 - `public/CNAME` carries the custom domain. Losing it takes the site off
   rafaelmedina.me, so the deploy workflow fails rather than ship without it.
 
