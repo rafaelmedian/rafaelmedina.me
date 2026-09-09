@@ -1397,7 +1397,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p>
                 The slider replaces the dark-mode tile at the start of project row two and takes a 1.25-unit
                 column beside a 1.75-unit Protector, so the row still totals four units with the writings tile. Between 700px and 899px, that row grows to 340px to fit the quote;
-                from 900px it shares the usual 420px row height. The card uses the existing #f2f2f2 chip surface, an 8%
+                from 900px it shares the usual 420px row height. The card uses a white surface, an 8%
                 black hairline, and --radius-lg corners (--radius-md between 700px and 899px, with the rest of the row). Quotes up to 80 characters (including spaces)
                 use --text-lg (18px); longer quotes use --text-md (16px). Both use 1.5 line height with a
                 centered 21rem measure and balanced line breaks; attribution uses --text-sm and --muted. A shared grid reserves the longest
@@ -1432,10 +1432,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Grabbing a settling slide catches it at its current position; drag limits apply to the new pointer displacement
                 so catching an early transition cannot jump. Reversing can return to the outgoing quote. The dots and card stay fixed. Reduced motion switches immediately.
                 Both side gutters soften moving content with four masked backdrop-blur layers, increasing
-                from 1px to 2px, 4px, and 8px toward the outer edge. A matching #f2f2f2 gradient fades the
+                from 1px to 2px, 4px, and 8px toward the outer edge. A matching white gradient fades the
                 blurred content into the background. The bands are 24px wide (16px between 700px and
                 899px), occupy only the gutters, and ignore pointer input. Resting text stays sharp;
-                the gray fade also works when backdrop filtering is unavailable.
+                the white fade also works when backdrop filtering is unavailable.
                 There is no autoplay. Based Floyd's quote uses the supplied post wording and X handle,
                 with his X profile photo and no additional attribution note.
                 Michael Wong's quote uses his supplied wording and handle. Phil Liao's supplied wording
