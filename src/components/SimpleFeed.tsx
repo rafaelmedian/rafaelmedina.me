@@ -24,6 +24,7 @@ import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { useHoverCard } from "../lib/hoverCard"
+import { visibleOriginRect } from "../lib/originMotion"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
@@ -795,18 +796,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
   // The gallery grows out of (and shrinks back into) the card it represents, so
   // it needs that card's live geometry at open and close time.
-  const getPreviewOriginRect = useCallback((index: number) => {
-    const node = previewCardNodesRef.current.get(index)
-    if (!node) return null
-
-    const rect = node.getBoundingClientRect()
-    if (rect.width <= 0 || rect.height <= 0) return null
-
-    // A card scrolled out of view would send the gallery flying off-screen, so
-    // only anchor to cards the viewer can actually see.
-    const onScreen = rect.bottom > 0 && rect.top < window.innerHeight
-    return onScreen ? rect : null
-  }, [])
+  const getPreviewOriginRect = useCallback(
+    (index: number) => visibleOriginRect(previewCardNodesRef.current.get(index)),
+    [],
+  )
 
   const renderRowMedia = (
     card: PortfolioCard,
