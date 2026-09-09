@@ -42,7 +42,7 @@ export const cvExperience: CvExperience[] = [
     role: "Senior Product Designer",
     href: "https://0x.org/",
     logoUrls: ["/logos/0x.png", "/logos/matcha.svg"],
-    projectIds: ["preview-shot-16", "preview-shot-21"],
+    projectIds: ["preview-shot-16", "preview-shot-21", "preview-shot-1", "preview-shot-19"],
     highlight: "Redesigned Matcha.xyz from scratch and introduced monetization flows that generated sustainable revenue.",
   },
   {

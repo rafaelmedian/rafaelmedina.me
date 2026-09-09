@@ -1480,11 +1480,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
                 Company names, dates, locations, and descriptions reuse About&rsquo;s résumé styles:
                 <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
-                Selected project screenshots sit below the description as 7rem-wide
-                photo prints, overlapping by 1rem with the personal gallery&rsquo;s -7 and 2 degree tilts.
+                Four selected Matcha screenshots sit below the description as photo prints capped at 5rem wide
+                (30% of the row on narrow screens), overlapping by 35% with the personal gallery&rsquo;s
+                -7, 2, -2, and -5 degree tilts.
                 They reuse its white mat, <code>--radius-sm</code>, and shared ring and overlay shadows;
                 the full 4:3 screenshots have concentric 4px corners and a 10% black inset hairline.
-                The compact row keeps the same size on mobile. About retains its existing text-only layout.
+                The compact row shrinks to fit mobile. About retains its existing text-only layout.
               </p>
               <div className="ds-resume-tile-specimen mosaic-row-item">
                 <ResumeTile href={links.resumePdf} />

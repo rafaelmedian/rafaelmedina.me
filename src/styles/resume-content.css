@@ -58,6 +58,7 @@
 }
 
 .resume-experience-projects {
+  --resume-print-width: min(5rem, 30%);
   display: flex;
   margin-top: 1.5rem;
   padding: 0.5rem 0.5rem 0.75rem;
@@ -66,7 +67,7 @@
 .resume-project {
   position: relative;
   display: block;
-  flex: 0 0 7rem;
+  flex: 0 0 var(--resume-print-width);
   padding: 0.25rem 0.25rem 0.75rem;
   text-decoration: none;
   border-radius: var(--radius-sm);
@@ -76,9 +77,12 @@
 }
 
 .resume-project + .resume-project {
-  margin-left: -1rem;
+  margin-left: calc(var(--resume-print-width) * -0.35);
   transform: translateY(0.25rem) rotate(2deg);
 }
+
+.resume-project:nth-child(3) { transform: translateY(-0.3rem) rotate(-2deg); }
+.resume-project:nth-child(4) { transform: translateY(0.2rem) rotate(-5deg); }
 
 .resume-project:focus-visible { z-index: 1; }
 
