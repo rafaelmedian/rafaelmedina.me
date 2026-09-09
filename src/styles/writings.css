@@ -383,7 +383,10 @@
 .writing-reader { width: min(100%, var(--writings-column)); margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 .writing-reader-header { margin-bottom: 1.5rem; }
 .writing-reader-date { margin-bottom: 0.25rem; color: var(--muted); font-size: var(--text-xs); line-height: 1.5; letter-spacing: 0; }
-.writing-reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1rem; min-height: 44px; color: var(--muted); font-size: var(--text-sm); }
+/* Sits under the title and date, so the reserved height is load-bearing: counts
+   arrive asynchronously, and without it the whole article shifts down when they
+   land. */
+.writing-reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 0.75rem; min-height: 44px; color: var(--muted); font-size: var(--text-sm); }
 .writing-like {
   position: relative;
   display: inline-flex;
