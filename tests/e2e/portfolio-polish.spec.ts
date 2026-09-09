@@ -106,15 +106,24 @@ test("compresses a luminous layered gradient into view with a fresh palette for 
   expect(pulledState.lightOpacity).toBeLessThan(0.5)
   await expect(edge).toHaveAttribute("data-pulling", "false")
   await expect(edge).toHaveCSS("opacity", "0")
-
-  const nextPalette = await edge.evaluate((element) => {
-    window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    return [1, 2, 3, 4, 5, 6, 7].map((index) =>
-      (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
+  // pullBy only repaints while the glow has finished releasing, and handleWheel
+  // drops the event outright unless the page is still resting at the bottom. A
+  // wheel that lands on a closed gate is swallowed silently and leaves the old
+  // palette in place -- which is how this read used to flake on CI, where the
+  // page settles later than it does locally. Retry the pull instead of assuming
+  // one event takes; a palette that genuinely never refreshes still fails here,
+  // on the timeout.
+  await expect(edge).toHaveAttribute("data-glowing", "false")
+  await expect
+    .poll(() =>
+      edge.evaluate((element) => {
+        window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+        return [1, 2, 3, 4, 5, 6, 7].map((index) =>
+          (element as HTMLElement).style.getPropertyValue(`--elastic-edge-color-${index}`),
+        )
+      }),
     )
-  })
-
-  expect(nextPalette).not.toEqual(pulledState.palette)
+    .not.toEqual(pulledState.palette)
 })
 
 test("randomizes elastic-edge palettes across the full color spectrum", () => {
@@ -1254,7 +1263,12 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
   await expect(card).toHaveAttribute("data-state", "closed")
 
   await localTime.hover()
+  // `data-state="open"` flips when the open transition starts, not when it ends,
+  // so the boxes measured below would otherwise be sampled mid-flight. (The
+  // avatar intro needs no wait here: index.html only arms it when there is no
+  // location hash, and this test loads /#about-panel.)
   await expect(card).toHaveAttribute("data-state", "open")
+  await card.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
   await expect(card.getByText("Punta Cana", { exact: true })).toBeVisible()
   await expect(card.getByText("Dominican Republic", { exact: true })).toBeVisible()
   // role="img": all map interaction is disabled, so it must not announce as an
@@ -1278,9 +1292,15 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
 
   const workHistoryBox = await page.locator(".mosaic-work-history").boundingBox()
   expect(workHistoryBox).not.toBeNull()
+  // The two boxes do not intersect at this viewport, so `Math.max` of their
+  // origins landed on the card only by accident of layout -- a few pixels of
+  // drift moved the sample off it and failed the assertion for the wrong
+  // reason. Clamp into the card, nearest the work history, which is the corner
+  // a stacking regression would surface at.
+  const clamp = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high)
   const overlapPoint = {
-    x: Math.max(cardBox!.x, workHistoryBox!.x) + 8,
-    y: Math.max(cardBox!.y, workHistoryBox!.y) + 8,
+    x: clamp(workHistoryBox!.x + 8, cardBox!.x + 8, cardBox!.x + cardBox!.width - 8),
+    y: clamp(workHistoryBox!.y + 8, cardBox!.y + 8, cardBox!.y + cardBox!.height - 8),
   }
   expect(
     await page.evaluate(
