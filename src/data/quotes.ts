@@ -94,9 +94,11 @@ export const portfolioQuotes: PortfolioQuote[] = [
 ]
 
 // The second card in the grid: praise from the teams and clients the work was
-// made with, rather than from the timeline. These arrived as Slack messages and
-// a testimonial card, so they carry no X handle and no profile preview -- the
-// name renders as plain text and the credit is the room the praise came from.
+// made with, rather than from the timeline -- both the summing-up afterwards and
+// the reactions from inside the work. These arrived as Slack messages and a
+// testimonial card, so they carry no X handle and no profile preview: the name
+// renders as plain text and the credit is the room the praise came from. A voice
+// that speaks twice is kept apart in the order rather than dropped.
 export const teamQuotes: PortfolioQuote[] = [
   {
     id: "jhon",
@@ -132,9 +134,41 @@ export const teamQuotes: PortfolioQuote[] = [
     photo: "/quotes/dan.jpg",
   },
   {
+    id: "jen",
+    text: "WOOOOOOO GO RAFAEL GO!",
+    emphasis: "You did a great job!",
+    attribution: "jen",
+    caption: "Moody’s prototype sprint",
+    photo: "/quotes/jen.jpg",
+  },
+  {
     id: "rob",
     text: "You handled the questions very well —",
     emphasis: "the value of your build was crystal clear.",
+    attribution: "Rob Adams",
+    caption: "Client workshop",
+    photo: "/quotes/rob-adams.jpg",
+  },
+  {
+    id: "cristina-toc",
+    text: "The new treatment for Table of Contents is",
+    emphasis: "AMAZING, I love it.",
+    attribution: "Cristina Pieretti",
+    caption: "VP at Moody’s",
+    attributionNote: "Overheard in the team check-in and passed along the same morning.",
+  },
+  {
+    id: "jhon-happen",
+    text: "I know I’ve said this before, but",
+    emphasis: "you guys made this happen.",
+    attribution: "Jhon Onit",
+    caption: "VP Product and co-founder at Onit",
+    photo: "/quotes/jhon-onit.jpg",
+  },
+  {
+    id: "rob-workshop",
+    text: "Awesome job! Looks really good",
+    emphasis: "and seems like a fun project.",
     attribution: "Rob Adams",
     caption: "Client workshop",
     photo: "/quotes/rob-adams.jpg",

@@ -77,7 +77,15 @@ function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean
 }
 
 export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
-  const [{ activeIndex, previousIndex, direction }, setSelection] = useState({ activeIndex: 0, previousIndex: 0, direction: 1 })
+  // `settle` is how the change was asked for, not how far it travels: a pointer
+  // gesture lands on the next quote quickly, a dot chosen across the card keeps
+  // the longer, more deliberate move.
+  const [{ activeIndex, previousIndex, direction, settle }, setSelection] = useState({
+    activeIndex: 0,
+    previousIndex: 0,
+    direction: 1,
+    settle: "slow" as "quick" | "slow",
+  })
   const slidesRef = useRef<HTMLDivElement>(null)
   const preparedSlide = useRef<HTMLElement | null>(null)
   const [dragOffset, setDragOffset] = useState(0)
@@ -123,10 +131,10 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     return positionOf(index, activeIndex)
   }
 
-  const selectQuote = (index: number, travel = Math.sign(positionOf(index, activeIndex))) => {
+  const selectQuote = (index: number, travel = Math.sign(positionOf(index, activeIndex)), settleAs: "quick" | "slow" = "slow") => {
     if (index === activeIndex) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setSelection({ previousIndex: index, activeIndex: index, direction: travel })
+      setSelection({ previousIndex: index, activeIndex: index, direction: travel, settle: settleAs })
       return
     }
     const incoming = slidesRef.current?.querySelector<HTMLElement>(`[data-quote-index="${index}"]`)
@@ -136,17 +144,24 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
       incoming.getBoundingClientRect()
       preparedSlide.current = incoming
     }
-    setSelection({ previousIndex: activeIndex, activeIndex: index, direction: travel })
+    setSelection({ previousIndex: activeIndex, activeIndex: index, direction: travel, settle: settleAs })
   }
 
-  const moveQuote = (travel: number) => selectQuote((activeIndex + travel + quotes.length) % quotes.length, travel)
+  const moveQuote = (travel: number, settleAs: "quick" | "slow" = "slow") =>
+    selectQuote((activeIndex + travel + quotes.length) % quotes.length, travel, settleAs)
 
   const startDrag = (event: PointerEvent<HTMLButtonElement>) => {
     if (!event.isPrimary || event.button !== 0) return
     suppressClick.current = false
     const currentSlide = event.currentTarget.parentElement?.querySelector('[data-active="true"]')
     const offset = currentSlide ? new DOMMatrixReadOnly(getComputedStyle(currentSlide).transform).m41 : 0
-    gesture.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, offset, axis: null }
+    gesture.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      offset,
+      axis: null,
+    }
     // Catch an in-flight slide at its rendered position so reversing a drag
     // doesn't jump to the previous animation's destination.
     setIsDragging(true)
@@ -177,15 +192,19 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     if (cancelled) suppressClick.current = true
     if (!cancelled && start.axis === "x") {
       const dx = start.offset + event.clientX - start.x
-      const threshold = Math.min(24, event.currentTarget.clientWidth * 0.06)
+      // A quote is a card, not a page. Asking for a quarter of the card before
+      // it changes is what makes a swipe feel like it was ignored, so the
+      // gesture commits as soon as it is more than a slip of the hand -- while
+      // staying above the few pixels a click can wander through the surface.
+      const threshold = Math.min(16, event.currentTarget.clientWidth * 0.04)
       if (Math.abs(dx) >= threshold) {
         const travel = dx < 0 ? 1 : -1
         // Reversing a caught transition returns to the quote still beside it,
         // including when that transition began with a distant dot selection.
         if (Math.abs(start.offset) > 1 && previousIndex !== activeIndex && travel === -direction) {
-          selectQuote(previousIndex, travel)
+          selectQuote(previousIndex, travel, "quick")
         } else {
-          moveQuote(travel)
+          moveQuote(travel, "quick")
         }
       }
     }
@@ -203,6 +222,7 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
       aria-roledescription="carousel"
       aria-label="Quotes"
       data-dragging={isDragging}
+      data-settle={settle}
       style={{ "--quote-drag-x": `${dragOffset}px` } as CSSProperties}
     >
       <button
@@ -218,7 +238,7 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
           // Pointer release also fires click. Only a tap (or keyboard activation)
           // advances here; completed and cancelled drags have already been handled.
           if (event.detail !== 0 && suppressClick.current) return
-          moveQuote(1)
+          moveQuote(1, "quick")
         }}
       />
       <div ref={slidesRef} className="mosaic-quote-slides">

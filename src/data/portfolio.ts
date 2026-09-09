@@ -143,10 +143,11 @@ export const homeGroups: HomeGroup[] = [
       { kind: "project", area: "rewards", cardId: "preview-matcha-rewards", share: 7 / 12, fit: "contain" },
     ],
   },
-  // The second quote card is a band of its own rather than a fifth tile in a
-  // project row: the card needs its full 340px to hold a quote, a face, and the
-  // dots, and every row that could have spared a column would have had to
-  // re-cut artwork to give it one. A band costs no project its shape.
+  // The second quote card is a band of its own rather than a fourth tile in a
+  // project row: no row has a column to spare without re-cutting the artwork
+  // that was composed for it, and the card needs its full 340px to hold a
+  // quote, a face, and the dots. The grid already speaks this way -- the
+  // personal-photo fan is a band inside the portraits group.
   //
   // Between the offset and closing groups, not after them. The takeover pins
   // the last screenful while About slides up over it, so the closing row of

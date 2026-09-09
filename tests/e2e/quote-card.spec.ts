@@ -42,22 +42,36 @@ test("carries the team quotes as a band between the project groups", async ({ pa
   await openHome(page)
   const card = teamCarousel(page)
   const slide = card.locator('.mosaic-quote-slide[data-active="true"]')
-  await expect(card.locator(".mosaic-quote-slide")).toHaveCount(5)
+  await expect(card.locator(".mosaic-quote-slide")).toHaveCount(9)
   await expect(slide).toContainText("Jhon Onit")
   await expect(slide).toContainText("VP Product and co-founder at Onit")
-  await card.getByRole("button", { name: "Show quote from Rob Adams" }).click()
-  await expect(slide).toContainText("Rob Adams")
+  await card.getByRole("button", { name: "Show quote from jen" }).click()
+  await expect(slide).toContainText("You did a great job!")
   // Named on the card but never linked: these came from Slack, not from X.
   await expect(card.getByRole("button", { name: /on X$/ })).toHaveCount(0)
-  // The closing row of projects is the screenful the takeover pins behind
-  // About, so the band has to sit above it to be read at all.
+  // A band across the grid, above the closing projects.
   const bounds = await page.evaluate(() => {
     const band = document.querySelector(".mosaic-tile-quote2")!.getBoundingClientRect()
     const closing = document.querySelector(".mosaic-tile-mobile")!.getBoundingClientRect()
-    return { bandBottom: band.bottom, closingTop: closing.top, bandWidth: band.width, rowsWidth: document.querySelector(".mosaic-group-closing")!.getBoundingClientRect().width }
+    const row = document.querySelector(".mosaic-group-closing")!.getBoundingClientRect()
+    return { bandBottom: band.bottom, closingTop: closing.top, bandWidth: band.width, rowWidth: row.width }
   })
   expect(bounds.closingTop).toBeGreaterThanOrEqual(bounds.bandBottom - 1)
-  expect(bounds.bandWidth).toBeCloseTo(bounds.rowsWidth, 0)
+  expect(bounds.bandWidth).toBeCloseTo(bounds.rowWidth, 0)
+})
+
+test("commits a drag well short of a card width, and lands it quickly", async ({ page }) => {
+  await openHome(page)
+  const card = carousel(page)
+  const surface = card.getByRole("button", { name: "Advance quote" })
+  // Under the old quarter-of-a-card threshold, over the slip-of-the-hand one.
+  await drag(surface, page, -18)
+  await expect(active(page)).toContainText("BASED FLOYD VIII")
+  // A quote let go of under the pointer settles quicker than a dot selection.
+  const dragDuration = await active(page).evaluate((node) => getComputedStyle(node).transitionDuration)
+  await card.getByRole("button", { name: /Show quote from Phil Liao/ }).click()
+  const dotDuration = await active(page).evaluate((node) => getComputedStyle(node).transitionDuration)
+  expect(Number.parseFloat(dragDuration)).toBeLessThan(Number.parseFloat(dotDuration))
 })
 
 test("exposes 10 by 40 dot targets with 4px gaps and selected emphasis", async ({ page }) => {
