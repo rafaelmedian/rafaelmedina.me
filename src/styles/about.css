@@ -428,3 +428,116 @@
     white-space: normal;
   }
 }
+
+/* --------------------------------------------- about sheet worked-with --- */
+
+/* A logo wall between the About lede and the dated work history: the same
+   companies the résumé spells out, read as marks first. It sits in the
+   sheet's 36rem column rather than breaking out of it, so it lines up with
+   the copy above and the entries below instead of reading as a banner. */
+.mosaic-about-companies {
+  position: relative;
+  width: 100%;
+  margin-block-start: 2.5rem;
+  text-align: left;
+}
+
+@media (min-width: 700px) {
+  .mosaic-about-companies {
+    margin-block-start: 5rem;
+  }
+}
+
+.mosaic-about-companies-copy {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+  text-align: left;
+}
+
+/* Three fixed columns, not auto-fit: nine companies fill three rows exactly,
+   and a fractional track keeps every lockup on the same left edge as the one
+   above it. Rows are aligned to their start so the one two-line name
+   ("Protector and Patrol") grows its row without dragging its neighbours'
+   marks down with it. */
+.mosaic-about-logo-grid {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.75rem 1.25rem;
+}
+
+.mosaic-about-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  letter-spacing: -0.00563rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-about-logo-link:hover,
+.mosaic-about-logo-link:focus-visible {
+  color: #2d2d2d;
+}
+
+.mosaic-about-logo-marks {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* Every mark is squared off to the same 1.25rem box and contained inside it,
+   so a tall logo and a wide one carry the same optical weight down the
+   column. The marks stay in brand colour -- they are the one place on the
+   sheet where colour is the content. */
+.mosaic-about-logo-mark {
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* Protector and Patrol ship as two marks under one name. Overlapped bare on
+   the canvas their two chevrons fused into one unreadable glyph, so the pair
+   takes the same ringed-chip stack the work-history popover already uses for
+   this company: a white disc behind each mark draws the edge that tells them
+   apart. */
+.mosaic-about-logo-marks.is-pair .mosaic-about-logo-mark {
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0.25rem;
+  border-radius: var(--radius-full);
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+}
+
+.mosaic-about-logo-marks.is-pair .mosaic-about-logo-mark + .mosaic-about-logo-mark {
+  margin-left: -0.3rem;
+}
+
+.mosaic-about-logo-name {
+  min-width: 0;
+  text-wrap: pretty;
+}
+
+@media (max-width: 699.98px) {
+  .mosaic-about-logo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 1rem;
+  }
+
+  /* Same 40px floor the sheet's inline links take on touch: a 20px mark and
+     one line of 14px text is a 21px target on its own. */
+  .mosaic-about-logo-link {
+    min-height: 40px;
+  }
+}
