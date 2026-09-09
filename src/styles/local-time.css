@@ -12,7 +12,7 @@
   gap: 0.25rem;
   padding: 0 0.54rem;
   border-radius: var(--radius-md);
-  color: #747474;
+  color: var(--muted-soft);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   font-weight: 400;
@@ -42,8 +42,8 @@
   padding: 0.375rem;
   border-radius: var(--radius-md);
   background: #ffffff;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
-  color: #171717;
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  color: var(--ink);
   font-family: var(--font-ui);
   text-align: left;
   transform: translateY(-0.25rem) scale(0.97);
@@ -81,7 +81,7 @@
      the long expo-out settle arriving, the quick exit curve dismissing. */
   transition:
     transform var(--duration-base) var(--ease-smooth),
-    opacity var(--duration-quick) ease-out,
+    opacity var(--duration-base) var(--ease-smooth),
     visibility var(--duration-base) linear;
 }
 

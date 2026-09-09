@@ -14,6 +14,7 @@ import {
 import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
+import { AvailabilityBooking } from "./AvailabilityBooking"
 import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
@@ -26,6 +27,7 @@ import { useHoverCard } from "../lib/hoverCard"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { useAvatarIntro } from "../lib/useAvatarIntro"
 import { closePortfolioUrl, pushPortfolioUrl, useProjectUrl } from "../lib/useProjectUrl"
 import { projectPath } from "../lib/projectMetadata"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -224,6 +226,34 @@ function prefetchPreviewGallery() {
   void loadPreviewGallery().catch(() => undefined)
 }
 
+// The card paints the poster long before `loadeddata`, and on reduced motion or
+// a metered connection the loop never loads at all -- so a video tile's skeleton
+// has to clear on the poster's own decode rather than the video's. The element's
+// poster request and this one resolve to the same resource, so it costs no bytes.
+function usePosterReady(poster: string | undefined) {
+  const [ready, setReady] = useState(!poster)
+
+  useEffect(() => {
+    if (!poster) return
+
+    // Listeners go on before `src`, so a poster already in the cache still
+    // arrives through `load` rather than needing a synchronous `complete` check.
+    const image = new Image()
+    const finish = () => setReady(true)
+    image.addEventListener("load", finish)
+    // A poster that fails is not going to paint, so stop waiting on it rather
+    // than leaving the tile under a skeleton for the rest of the session.
+    image.addEventListener("error", finish)
+    image.src = poster
+    return () => {
+      image.removeEventListener("load", finish)
+      image.removeEventListener("error", finish)
+    }
+  }, [poster])
+
+  return ready
+}
+
 function RowVideoMedia({
   source,
   poster,
@@ -251,6 +281,7 @@ function RowVideoMedia({
   const [shouldLoad, setShouldLoad] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const posterReady = usePosterReady(poster)
 
   // With no observer to flip the state, `src` would stay undefined for the whole
   // session and only the poster would ever show -- so fall back to loading up
@@ -320,6 +351,7 @@ function RowVideoMedia({
       aria-label={label}
       className="mosaic-row-media"
       data-loaded={poster || loaded ? "true" : "false"}
+      data-pending={(poster ? posterReady : loaded) ? "false" : "true"}
       onLoadedData={() => setLoaded(true)}
     />
   )
@@ -340,7 +372,36 @@ type RowImageMediaProps = {
 // re-ran the row/tile tree eleven times during load.
 function RowImageMedia({ source, label, width, height, eager, share }: RowImageMediaProps) {
   const [loaded, setLoaded] = useState(false)
+  const [approached, setApproached] = useState(false)
+  const imageRef = useRef<HTMLImageElement | null>(null)
+  const supportsIntersectionObserver = useSyncExternalStore(
+    subscribeToNothing,
+    hasIntersectionObserver,
+    hasIntersectionObserverOnServer,
+  )
   const srcSet = buildPreviewSrcSet(source, width)
+  // A lazy tile ten screens down has no request in flight, so a skeleton there
+  // would promise an arrival that is not underway -- and its breathe would run
+  // for the session on a card nobody is looking at. Arm it on approach instead,
+  // roughly when `loading="lazy"` starts fetching. Eager tiles are already
+  // loading at mount, and without an observer to arm them the rest never would.
+  const armed = eager || approached || !supportsIntersectionObserver
+
+  useEffect(() => {
+    const image = imageRef.current
+    if (armed || !image) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return
+        setApproached(true)
+        observer.disconnect()
+      },
+      { rootMargin: "300px" },
+    )
+    observer.observe(image)
+    return () => observer.disconnect()
+  }, [armed])
 
   return (
     <img
@@ -355,10 +416,12 @@ function RowImageMedia({ source, label, width, height, eager, share }: RowImageM
       fetchPriority={eager ? "high" : "auto"}
       className="mosaic-row-media"
       data-loaded={loaded ? "true" : "false"}
+      data-pending={armed && !loaded ? "true" : "false"}
       onLoad={(event) => {
         if (event.currentTarget.naturalWidth > 0) setLoaded(true)
       }}
       ref={(el) => {
+        imageRef.current = el
         // A cached image can finish before React attaches onLoad.
         if (el && el.complete && el.naturalWidth > 0) setLoaded(true)
       }}
@@ -655,6 +718,7 @@ function SocialCorner({
 
 export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
+  const { avatarRef, active: introActive } = useAvatarIntro()
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { projectId, selectProject, clearProject } = useProjectUrl()
@@ -667,17 +731,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [availabilityLabel, setAvailabilityLabel] = useState(() =>
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
-  const [hasCompletedWorkIntro, setHasCompletedWorkIntro] = useState(false)
   const [writingsOpen, setWritingsOpen] = useState(false)
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
-
-  // Reduced motion suppresses animationend, so retire the one-shot intro
-  // marker as soon as the preference reads true — and latch it, so a later
-  // preference change cannot start the intro mid-session.
-  if (prefersReducedMotion && !hasCompletedWorkIntro) {
-    setHasCompletedWorkIntro(true)
-  }
 
   const handleGalleryLoadError = useCallback(() => {
     trackEvent("work_preview_load_error", {})
@@ -771,7 +827,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
         />
       )
     }
@@ -953,16 +1009,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         <X aria-hidden="true" />
       </button>
       <header id="about" className="mosaic-hero">
-        <div className="mosaic-hero-profile mosaic-hero-profile-animated">
+        <div className="mosaic-hero-profile">
           <div className="mosaic-profile-info">
             <button
+              ref={avatarRef}
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
               aria-label={`Read about ${profile.name}`}
               onClick={() => scrollToSection("avatar")}
             >
               <div className="mosaic-avatar-coin-inner">
-                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" decoding="async" />
+                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" fetchPriority="high" decoding="async" />
                 <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
               </div>
               <span className="mosaic-avatar-hint" aria-hidden="true">
@@ -992,10 +1049,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           <p className="mosaic-profile-location">
             <span className="mosaic-profile-location-place">Punta Cana & NYC</span>
             <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
-            <span className="mosaic-profile-availability">
-              {availabilityLabel}
-              <span className="mosaic-availability-dot" aria-hidden="true" />
-            </span>
+            <AvailabilityBooking label={availabilityLabel} bookingUrl={links.booking} />
           </p>
           <div className="mosaic-profile-contact">
             <ContactActionRow
@@ -1013,13 +1067,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <>
           <article id="work" className="mosaic-work" tabIndex={-1}>
               <h2 className="sr-only">Selected work</h2>
-              {/* No `prefersReducedMotion` here on purpose: it is false on the
-                  server and on the first client render, so a JS gate would flash
-                  before the effect syncs. Reduced motion is handled in CSS. */}
               <div className="mosaic-takeover-runway">
                 <div className="mosaic-takeover-stage">
                   <div
-                    className={`mosaic-rows${hasCompletedWorkIntro ? "" : " mosaic-work-intro"}`}
+                    className="mosaic-rows"
                     role="group"
                     aria-label="Selected work previews"
                     id="selected-work-previews"
@@ -1042,22 +1093,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                               style={
                                 {
                                   "--row-span": row.quoteSpan ?? 1,
-                                  "--work-intro-row": rowIndex,
-                                  "--work-intro-col": 0,
                                 } as CSSProperties
                               }
                             >
                               <QuoteCard quotes={portfolioQuotes} />
                             </div>
                           ) : null}
-                          {row.items.map((item, itemIndex) => {
+                          {row.items.map((item) => {
                             const itemKey = `${item.card.id}-${item.previewIndex}`
                             const itemStyle = {
                               "--row-span": item.span,
-                              // Feeds the first-load stagger in `.mosaic-work-intro`.
-                              // Inert without that class, so set unconditionally.
-                              "--work-intro-row": rowIndex,
-                              "--work-intro-col": itemIndex + (row.quote ? 1 : 0),
                               ...(item.width ? { flex: `0 0 ${item.width}` } : {}),
                               ...(item.mediaMaxHeight ? { "--row-media-max-height": item.mediaMaxHeight } : {}),
                             } as CSSProperties
@@ -1066,16 +1111,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 key={itemKey}
                                 className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
                                 style={itemStyle}
-                                onAnimationEnd={
-                                  rowIndex === rowsRender.length - 1 &&
-                                  itemIndex === row.items.length - 1
-                                    ? (event) => {
-                                        if (event.target === event.currentTarget) {
-                                          setHasCompletedWorkIntro(true)
-                                        }
-                                      }
-                                    : undefined
-                                }
                               >
                                 <a
                                   href={projectPath(item.card)}
@@ -1121,7 +1156,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                             )
                           })}
                           {row.writings ? (
-                            <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) } as CSSProperties}>
+                            <div className="mosaic-row-item">
                               <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
                             </div>
                           ) : null}

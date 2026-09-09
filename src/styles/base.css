@@ -1,12 +1,27 @@
-/* Handlee (SIL OFL 1.1), the handwriting face Figma ships. Used only for the
-   hover hint on the profile photo, so it loads lazily and falls back to a
-   system cursive. */
+/* Handlee (SIL OFL 1.1), the handwriting face for the avatar hint, personal-photo
+   captions, and note marginalia. Falls back to a system cursive. */
 @font-face {
   font-family: "Handlee";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
   src: url("/fonts/Handlee-Regular.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Reenie Beanie (SIL OFL 1.1), the photo-stack note. Handlee is a rounded, even
+   print: every stroke is the same weight, so the note read as lettered rather
+   than written and needed a faux-bold text-stroke to hold up at all. This is a
+   pencil scrawl -- loose joins, a baseline that wanders, tall loping ascenders
+   over small lowercase. It is not preloaded: the note only surfaces on hover,
+   so a swap costs nothing. */
+@font-face {
+  font-family: "Reenie Beanie";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ReenieBeanie-Regular.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
     U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
@@ -22,7 +37,7 @@
   /* The stack most interface text actually renders with: system-first, so SF
      on Apple hardware. Distinct from --font-fallback, which leads with Inter. */
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Inter", sans-serif;
-  --body-color: #111;
+  --body-color: var(--ink);
   --body-bg: #fdfdfc;
   --mosaic-card-surface: #ececee;
   /* Motion. Three curves cover the site: --ease-standard is the house curve
@@ -36,7 +51,7 @@
   /* Durations. Four steps; pick the nearest one instead of minting a new
      number. The 140/150/160/180ms spread this file used to carry was one
      perceptual step, so it all collapsed onto --duration-quick. Longer
-     one-off choreography (240ms popover settle, 520ms work intro) stays
+     one-off choreography (240ms live-time roll, 700ms avatar flip) stays
      component-scoped. */
   --duration-fast: 120ms; /* taps, small fades */
   --duration-quick: 160ms; /* most hover and state transitions */
@@ -64,28 +79,47 @@
   --muted: #6b6b6b;
   --muted-soft: #757575;
   /* Focus indicators need 3:1 against the adjacent surface (WCAG 1.4.11), which
-     rules out mid-greys on our near-white backgrounds. */
+     rules out light greys on our near-white backgrounds. */
   --focus-ring: #2d2d2d;
+  /* The same ring, one step lighter, for the large work tiles. At chip scale
+     --focus-ring is a hairline; drawn around a 500px-wide piece of artwork the
+     same ink reads as a black frame rather than a selection. This grey still
+     clears 1.4.11 at 3.4:1 on --body-bg. */
+  --focus-ring-soft: #8a8a8a;
   /* The availability dot's accent is 3.0:1 on --body-bg for a non-text
      graphic. The availability label uses the neutral --muted text colour. */
   --accent: #34a26a;
   --elastic-edge-height: 56px;
   /* The floating-surface elevation. Hover cards, popovers, the takeover
      close and seam — one visual tier, one recipe. Surfaces without a border
-     prepend their own hairline ring before the var(). */
+     prepend --shadow-ring before the var(). */
   --shadow-overlay:
     0 1px 2px rgb(16 16 20 / 0.06),
     0 12px 32px rgb(16 16 20 / 0.16);
+  /* The hairline those border-less surfaces prepend. One weight for all of
+     them, so a floating button reads the same edge as the card beside it —
+     this used to be written by hand at 0.05 in some files and 0.06 in others. */
+  --shadow-ring: 0 0 0 1px rgb(0 0 0 / 0.06);
+  /* Overlay chrome deepens in place on hover rather than moving. */
+  --shadow-overlay-hover:
+    0 1px 2px rgb(16 16 20 / 0.08),
+    0 16px 36px rgb(16 16 20 / 0.2);
+  /* Light controls share the same resting, hover, and pressed elevation.
+     The dark email pill keeps its own surface-specific shadow. */
+  --shadow-control: 0 1px 5px rgb(46 42 42 / 0.08);
+  --shadow-control-hover: 0 4px 12px rgb(46 42 42 / 0.12);
+  --shadow-control-pressed: 0 1px 4px rgb(46 42 42 / 0.08);
   /* UI type scale. Four steps cover interface text -- see
      /design-system. The ramp used to carry twelve distinct sizes, half of them
      sitting a fraction of a pixel from a neighbour (0.82 next to 0.8125, 0.9
      next to 0.875), which is noise rather than a scale. If a new element does
-     not fit one of these four, change the element, not the scale.
-     Long-form writing titles have a scoped 24–40px editorial exception. */
-  --text-xs: 0.75rem; /* 12px -- map attribution, count pills, avatar initials */
-  --text-sm: 0.875rem; /* 14px -- the whole hero and corner nav, pill labels, body copy, detail rows */
-  --text-md: 1rem; /* 16px -- card titles, prose, overlay card headings */
-  --text-lg: 1.125rem; /* 18px -- about ledes, writing titles and reading prose at every viewport */
+     not fit one of these four, change the element, not the scale. The notes
+     reader used to hold the one exception -- 24-40px editorial titles over
+     18px prose -- and it now reads on --text-sm under a --text-lg title. */
+  --text-xs: 0.75rem; /* 12px -- map attribution, count pills, avatar initials, the notes reader's date, year headings and captions */
+  --text-sm: 0.875rem; /* 14px -- the whole hero and corner nav, pill labels, body copy, detail rows, the notes reader, the About sheet */
+  --text-md: 1rem; /* 16px -- card titles, overlay card headings, the Notes toolbar title, About section headings */
+  --text-lg: 1.125rem; /* 18px -- short quotes, a note's title in the reader, standalone-page headings, the handwriting faces */
   /* Radius. Four steps. Anything nested is derived from one of them by the
      concentric rule (outer = inner + the padding between them) rather than
      becoming a fifth value -- that is why the hover-card media uses a

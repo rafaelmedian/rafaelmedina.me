@@ -1,0 +1,275 @@
+/* --------------------------------------------------- booking dialog --- */
+
+/* The Cal.com calendar, opened from the hero's availability line. Clicking that
+   line is the trigger, so the surface has to arrive without ceremony: one fade
+   and a short lift, no origin flight. Chrome around the iframe stays minimal —
+   the calendar inside brings its own dense layout and a framed panel would
+   double every edge. */
+
+.booking-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog-backdrop);
+  background: rgb(18 18 18 / 0.42);
+  cursor: pointer;
+  backdrop-filter: blur(10px) saturate(0.92);
+  -webkit-backdrop-filter: blur(10px) saturate(0.92);
+  transition: opacity var(--duration-base) ease-out;
+}
+
+.booking-backdrop[data-starting-style],
+.booking-backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.booking-backdrop[data-ending-style] {
+  transition-duration: var(--duration-quick);
+}
+
+.booking-shell {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: grid;
+  place-items: center;
+  padding:
+    max(2.5rem, env(safe-area-inset-top))
+    max(1.25rem, env(safe-area-inset-right))
+    max(2.5rem, env(safe-area-inset-bottom))
+    max(1.25rem, env(safe-area-inset-left));
+  cursor: pointer;
+}
+
+.booking-popup {
+  position: relative;
+  /* Sized to the Cal.com month view rather than to the viewport: the embed
+     centres its own layout, so a taller surface only adds empty bands above
+     and below the calendar. */
+  width: min(1040px, 100%);
+  height: min(640px, 100%);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  cursor: auto;
+  background: var(--canvas);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-smooth);
+}
+
+.booking-popup[data-starting-style],
+.booking-popup[data-ending-style] {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+
+.booking-popup[data-ending-style] {
+  transition-duration: var(--duration-quick);
+}
+
+.booking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem 1rem 1.75rem;
+}
+
+.booking-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.booking-title {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.booking-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.booking-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.booking-external {
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+.booking-external:hover,
+.booking-external:focus-visible {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.booking-frame {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  background: var(--body-bg);
+}
+
+.booking-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  transition: opacity var(--duration-slow) ease-out;
+}
+
+.booking-frame[data-ready="true"] .booking-iframe {
+  opacity: 1;
+}
+
+.booking-loading {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 639.98px) {
+
+  .booking-shell {
+    padding:
+      max(1rem, env(safe-area-inset-top))
+      max(0.75rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom))
+      max(0.75rem, env(safe-area-inset-left));
+  }
+
+  .booking-popup {
+    height: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .booking-header {
+    padding: 1rem 1rem 0.75rem 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .booking-popup[data-starting-style],
+  .booking-popup[data-ending-style] {
+    transform: none;
+  }
+}
+
+/* A local month preview; the live calendar is only loaded after a press. */
+.booking-preview-positioner {
+  z-index: var(--z-overlay);
+}
+
+.booking-preview {
+  width: min(248px, calc(100vw - 32px));
+  padding: 1rem;
+  background: var(--canvas);
+  color: var(--ink);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-smooth);
+}
+
+.booking-preview[data-starting-style],
+.booking-preview[data-ending-style] {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+}
+
+.booking-preview[data-ending-style] {
+  transition-duration: var(--duration-fast);
+}
+
+.booking-preview-heading,
+.booking-preview-duration,
+.booking-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.booking-preview-heading {
+  font-weight: 500;
+}
+
+.booking-preview-duration {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+.booking-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  margin-top: 1rem;
+  text-align: center;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.booking-preview-grid > span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+
+.booking-preview-weekday {
+  color: var(--muted);
+}
+
+.booking-preview-day {
+  border-radius: var(--radius-sm);
+  background: var(--body-bg);
+}
+
+.booking-preview-note {
+  margin: 0.75rem 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.booking-preview-footer {
+  padding-top: 0.75rem;
+  box-shadow: 0 -1px 0 rgb(0 0 0 / 0.06);
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booking-preview[data-starting-style],
+  .booking-preview[data-ending-style] {
+    transform: none;
+  }
+}

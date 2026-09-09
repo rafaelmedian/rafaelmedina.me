@@ -94,7 +94,7 @@
 .mosaic-contact-pill-linkedin {
   border-color: #dedee0;
   background: linear-gradient(180deg, #f4f4f4 0%, #ffffff 69.12%);
-  box-shadow: 0 1px 5px rgb(46 42 42 / 0.08);
+  box-shadow: var(--shadow-control);
 }
 
 .mosaic-contact-pill-default {
@@ -149,12 +149,12 @@
 .mosaic-contact-pill-follow:focus-visible,
 .mosaic-contact-pill-linkedin:hover,
 .mosaic-contact-pill-linkedin:focus-visible {
-  box-shadow: 0 4px 12px rgb(46 42 42 / 0.12);
+  box-shadow: var(--shadow-control-hover);
 }
 
 .mosaic-contact-pill-follow:active,
 .mosaic-contact-pill-linkedin:active {
-  box-shadow: 0 1px 4px rgb(46 42 42 / 0.08);
+  box-shadow: var(--shadow-control-pressed);
 }
 
 /* Trimming the line box down to cap height and the baseline makes the flex
@@ -216,7 +216,7 @@
 .mosaic-contact-pill-dark {
   min-width: 80px;
   border-color: #000000;
-  background: linear-gradient(180deg, #171717 0%, #000000 100%);
+  background: linear-gradient(180deg, var(--ink) 0%, #000000 100%);
   box-shadow: 0 1px 10px rgb(0 0 0 / 0.15);
   color: #ffffff;
 }
@@ -304,7 +304,7 @@
   transform: translateY(0) scale(1);
   pointer-events: auto;
   transition:
-    opacity var(--duration-quick) ease-out,
+    opacity var(--duration-base) var(--ease-smooth),
     transform var(--duration-base) var(--ease-smooth);
 }
 

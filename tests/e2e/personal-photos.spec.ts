@@ -394,10 +394,13 @@ test("four or five photos stay in one overlapping row at each breakpoint", async
 })
 
 test("photo preview scrolls in and fans to varied angles on hover", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 500 })
+  // Short enough that the print row starts below the fold of the About panel:
+  // only blocks that begin offscreen are held pending for the scroll entrance.
+  await page.setViewportSize({ width: 1440, height: 420 })
   await page.goto("/#about-panel")
 
   const preview = page.locator(".personal-photos")
+  await expect(preview.evaluate((element) => element.getBoundingClientRect().top > innerHeight)).resolves.toBe(true)
   await expect(preview).toHaveAttribute("data-about-fade", "pending")
   await preview.scrollIntoViewIfNeeded()
   await expect(preview).toHaveAttribute("data-about-fade", "in")

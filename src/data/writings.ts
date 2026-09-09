@@ -9,10 +9,37 @@ export type WritingImage = {
   caption?: string
 }
 
+// A fenced sample. `language` is the only one the reader can highlight --
+// there is one code sample on the site and it is the Markdown the article is
+// about, so the highlighter is thirty lines here rather than a parser for
+// every language nobody is going to paste.
+export type WritingCode = {
+  language: "markdown"
+  /** One entry per line, so the sample reads as written in the source file. */
+  lines: string[]
+  caption?: string
+}
+
 export type WritingSection = {
   heading: string
   paragraphs: string[]
+  annotations?: WritingAnnotation[]
   image?: WritingImage
+  code?: WritingCode
+}
+
+// Marginalia. A note is a phrase Rafael would have pencilled beside his own
+// draft, pinned to the paragraph it belongs to and hanging in the gutter that
+// side of the reading column. Keep them short -- a gutter is about twenty
+// characters wide -- and keep them rare: two an article, one early and one
+// late, one in each gutter. They used to run to five, plus interjections
+// dropped between the paragraphs, and at that rate a reader stops reading the
+// article and starts reading the margin.
+export type WritingAnnotation = {
+  text: string
+  /** Zero-based paragraph within the block the note is pinned beside. */
+  at: number
+  place?: "left" | "right"
 }
 
 export type Writing = {
@@ -20,18 +47,24 @@ export type Writing = {
   title: string
   cover?: WritingImage
   paragraphs: string[]
+  annotations?: WritingAnnotation[]
   image?: WritingImage
+  code?: WritingCode
   sections?: WritingSection[]
   /** Publication or editorial edition date, YYYY-MM-DD. Project samples use illustrative dates. */
   publishedAt?: string
   /** Year grouping for sample notes without an exact publication date. */
   archiveYear?: number
+  /** Sources and credits, printed small and grey at the end of the article. */
+  acknowledgements?: string
   href?: string
 }
 
-// Personal essays expand Rafael's supplied X drafts and public posts; their
-// dates mark this editorial edition, not the dates of the source posts.
-// The project notes below use portfolio scope and illustrative dates.
+// Personal essays expand Rafael's supplied X drafts and public posts. Each
+// carries the date it was written rather than the date this edition shipped:
+// they were drafted over the year, and dating them all to one afternoon made
+// the archive read as a batch published in an evening instead of a year of
+// notes. The project notes below use portfolio scope and illustrative dates.
 function projectImage(id: string): WritingImage | undefined {
   const card = portfolioCards.find((entry) => entry.id === id)
   return card ? {
@@ -48,12 +81,37 @@ export const writings: Writing[] = [
     id: "project-context-in-markdown",
     title: "My project context is moving into Markdown",
     publishedAt: "2026-09-07",
+    acknowledgements: "Expanded from my own draft. The file names are this site's: `PROJECT_STATUS.md` and `DESIGN_QA.md` are the two I actually keep.",
     // Source: supplied draft screenshot, 01.19.00; PROJECT_STATUS.md and DESIGN_QA.md.
     paragraphs: [
-      "I've found myself creating more Markdown files lately. Things I would have put in Linear, or kept beside a design system in Figma, are ending up in files called PROJECT_STATUS.md and DESIGN_QA.md. It wasn't a big decision to change my workflow. I just kept needing somewhere to put information that both I and an agent could use.",
+      "I've found myself creating more Markdown files lately. Things I would have put in Linear, or kept beside a design system in Figma, are ending up in files called `PROJECT_STATUS.md` and `DESIGN_QA.md`. It wasn't a big decision to change my workflow. I just kept needing somewhere to put information that both I and an agent could use.",
       "A task needs a little history. A design decision needs a reason. A bug needs an explanation of what should have happened. When those details are scattered across tools, I become the person carrying them between places. The files started as a way to do less of that.",
       "What interests me is how ordinary the solution is. A heading, a few sentences, a list of things that still need attention. Enough context to pick up the work without reconstructing the whole conversation first.",
     ],
+    annotations: [
+      { at: 0, place: "right", text: "This one began as a to-do list" },
+    ],
+    code: {
+      language: "markdown",
+      caption: "PROJECT_STATUS.md, halfway through a week.",
+      lines: [
+        "# Portfolio — status",
+        "",
+        "Updated **7 Sep**. Read this before touching the notes reader.",
+        "",
+        "## Settled",
+        "",
+        "- Prose runs at `--text-sm` over a 34rem measure. Don't reopen it.",
+        "- Marginalia is two notes an article, one in each gutter.",
+        "",
+        "## Still open",
+        "",
+        "- Whether the sheet keeps growing past `56rem` on very wide screens.",
+        "- The archive has no empty state. See [design QA](./DESIGN_QA.md).",
+        "",
+        "> If a new element won't fit the four type steps, change the element.",
+      ],
+    },
     sections: [
       {
         heading: "The explanation belongs near the work",
@@ -78,13 +136,17 @@ export const writings: Writing[] = [
           "For the context I keep repeating, though, a small file is becoming a very comfortable place to start. I can change it while working, keep it close to the implementation, and give the next session something more useful than a blank slate.",
           "The question I'm trying to ask before creating another one is simple: what will this help me or the agent understand next time? If I can answer that clearly, the file probably deserves to exist.",
         ],
+        annotations: [
+          { at: 0, place: "left", text: "Kept Linear for the team parts anyway" },
+        ],
       },
     ],
   },
   {
     id: "ai-design-needs-control",
     title: "AI design needs more control",
-    publishedAt: "2026-09-07",
+    publishedAt: "2026-07-29",
+    acknowledgements: "Expanded from two posts of mine on X and a draft written alongside them. The Figma-to-code workflow described here is my own; nothing in it is a claim about how anyone else works.",
     // Sources: supplied draft screenshot, 01.18.48, and Rafael's public posts:
     // https://x.com/rafaelmedian/status/2020873645401276488
     // https://x.com/rafaelmedian/status/2020875883116937589
@@ -92,6 +154,9 @@ export const writings: Writing[] = [
       "Claude-only web design is wild when you already have a Figma design in front of you. There is very little mystery about what you want. You can see the layout, the spacing, the way the pieces belong together. Getting the code to arrive at that same place can still take a surprising amount of back and forth.",
       "I described it on X as three stretches: the first 60% flies, the next 30% takes ages of saying 'no, not like that,' and the final 10% feels like god mode. Those numbers describe the feeling, not a benchmark. The strange part is how quickly the experience swings from impressive to frustrating and back again.",
       "Once the structure is right, changes can feel almost instant. Before that, even a small request can turn into another round of explaining the layout. That middle stretch is where I keep getting stuck.",
+    ],
+    annotations: [
+      { at: 0, place: "right", text: "And I still typed three paragraphs describing it" },
     ],
     sections: [
       {
@@ -117,18 +182,25 @@ export const writings: Writing[] = [
           "The balance can change. A visual tool might make generation easier to steer. An agent might give me a better way to select and adjust a specific part of the page. Either would help with the same frustration.",
           "I want the speed of asking for a whole possibility and the precision of adjusting one small detail. The exciting moment is when those two things happen in the same workflow, and I can spend more time deciding what feels right than explaining why the last attempt still doesn't.",
         ],
+        annotations: [
+          { at: 1, place: "left", text: "Less sure about this than I was in July" },
+        ],
       },
     ],
   },
   {
     id: "building-it-yourself-isnt-free",
     title: "Building it yourself still costs something",
-    publishedAt: "2026-09-07",
+    publishedAt: "2026-06-16",
+    acknowledgements: "Expanded from a reply I drafted about tokens, time, and running costs. The accounting is mine, and it changes every time the tools do.",
     // Source: supplied draft screenshot, 01.19.00; reply about tokens, time, and running costs.
     paragraphs: [
       "Whenever someone says you can just build a tool yourself now, I have two reactions. The first is excitement, because more of those ideas are becoming possible. The second is a small accounting question: what are we including in the cost?",
       "In a draft reply, I listed tokens, time, and running costs. It was a fairly ordinary objection to a very exciting possibility. Being able to make the thing doesn't settle whether I want to be responsible for it.",
       "I think the decision will keep moving. Something that is too expensive or frustrating to build today might become a reasonable afternoon project later. Something that looks cheap in a demo might become a surprisingly demanding part of your week.",
+    ],
+    annotations: [
+      { at: 1, place: "right", text: "I always forget upkeep" },
     ],
     sections: [
       {
@@ -154,18 +226,25 @@ export const writings: Writing[] = [
           "I'd ask what happens if I stop maintaining it. Can I get my information out? Can I return to the previous tool? Does a broken version interrupt something important, or does it just mean an experiment has run its course? Those answers change how much uncertainty I'm comfortable taking on.",
           "The incentive will keep shifting as the tools change. I want to stay open to that without treating every new capability as another thing I should now own. Sometimes building is the right use of an afternoon. Sometimes paying for the tool is what gives me the afternoon back.",
         ],
+        annotations: [
+          { at: 1, place: "left", text: "First question now: can I get my data out" },
+        ],
       },
     ],
   },
   {
     id: "room-to-figure-it-out",
     title: "Room to figure it out",
-    publishedAt: "2026-09-07",
+    publishedAt: "2026-05-21",
+    acknowledgements: "Expanded from a draft about family, distance, and independence. It is written from my own experience and the conversations behind it, not as a description of anyone else's family.",
     // Source: supplied draft screenshot, 01.19.00; reflection on family and independence.
     paragraphs: [
       "I've been thinking about when people get their first real opportunity to figure things out on their own. In a draft, I compared the expectation of leaving home for college or work in the US with the stronger expectation of staying close to family in parts of Latin America and the Caribbean.",
       "That's a broad comparison, and there are plenty of lives it doesn't describe. Still, the question underneath it interests me: how much room do we give someone to practice independence while they still have support?",
       "Moving out is one way to get that room. It isn't the only one, and an address doesn't tell you how much responsibility a person carries. What I keep coming back to is the experience of making a decision and being the person who has to deal with what follows.",
+    ],
+    annotations: [
+      { at: 0, place: "right", text: "My cousins and I answered this differently" },
     ],
     sections: [
       {
@@ -191,18 +270,25 @@ export const writings: Writing[] = [
           "That asks for something from both sides. The person learning needs to take responsibility, including for the boring parts. The people helping need to tolerate a process they might have handled differently. Neither part sounds especially comfortable, which may be why the balance is hard to find.",
           "I don't think there is one correct age to leave, or one correct distance to put between yourself and home. I do think there should be increasing room to act on your own judgment. Staying close to the people who care about you ought to leave space for becoming someone they don't have to guide through every next step.",
         ],
+        annotations: [
+          { at: 0, place: "left", text: "Let them book the wrong flight once" },
+        ],
       },
     ],
   },
   {
     id: "a-song-we-all-know",
     title: "A song we all know",
-    publishedAt: "2026-09-07",
+    publishedAt: "2026-04-08",
+    acknowledgements: "Expanded from a post of mine on X about the song of the summer. Thanks to everyone who has sent me a track since; it is still the better way to hear one.",
     // Source: https://x.com/rafaelmedian/status/1940027633594458581
     paragraphs: [
       "I posted that it feels like there isn't a song of the summer anymore. Everyone gets their own tailored bubble of music. A song can seem unavoidable in one person's world and barely exist in someone else's.",
       "I don't mean that popular songs have disappeared. I'm talking about the feeling of assuming we all know the same one. The song you can mention without playing a clip first. The opening few seconds that make a whole room react at once.",
       "Personalized discovery gives us plenty to enjoy. The part I'm wondering about is what happens to the overlap. If each of us gets a better soundtrack for ourselves, do we lose a little of the soundtrack we had together?",
+    ],
+    annotations: [
+      { at: 0, place: "right", text: "Asked three friends, got three summers" },
     ],
     sections: [
       {
@@ -228,17 +314,24 @@ export const writings: Writing[] = [
           "I'd like more of those openings in the products we use. A way to step into someone else's listening for a while. A shared queue where the occasional unexpected choice is part of the point. Something that makes the distance between our separate recommendations easier to cross.",
           "I still want to discover music that feels like it was made for me. I also want the occasional song that belongs to a room full of people. Sometimes the best thing about a track is looking up when it starts and seeing that everyone else knows it too.",
         ],
+        annotations: [
+          { at: 0, place: "left", text: "It arrives with the friend attached" },
+        ],
       },
     ],
   },
   {
     id: "designing-matcha",
     title: "Designing Matcha",
-    publishedAt: "2026-09-01",
+    publishedAt: "2026-03-02",
+    acknowledgements: "Matcha was designed at the 0x Project, with its product, engineering, and research teams. The screens here are theirs as much as mine; the reading of them is my own.",
     cover: { src: "/Projects/shot-small-16-poster.webp", alt: "Matcha discovery homepage with token search and market overview", width: 640, height: 480 },
     paragraphs: [
       "A swap can fit inside a small rectangle: two tokens, an amount, a button. Designing that rectangle is only part of designing a trading product. Someone still has to find the token, decide whether they want it, choose an account, understand the quote, and work out what happened after they signed.",
       "My work on Matcha covered those surrounding parts as well as the trade itself. I worked on the homepage, token pages, wallets, the trade module, mobile, and the product's dark theme. Looking across them, the question I find most useful is fairly ordinary: what does someone have to remember when they move from here to the next screen?",
+    ],
+    annotations: [
+      { at: 1, place: "right", text: "The swap box was never the hard part" },
     ],
     sections: [
       {
@@ -271,6 +364,9 @@ export const writings: Writing[] = [
           "These images show the structure and the decisions I worked on. They don't tell me whether someone felt confident during a particular trade, or where they hesitated. I wouldn't want to turn a tidy screenshot into evidence for that.",
           "What I can point to is the connection between the pieces: a token carried from discovery into research, a wallet change that preserves the form, and transaction details available before signing. That's the part of this work I want the portfolio to make visible. The individual screens make more sense when you can see what they allow someone to do next.",
         ],
+        annotations: [
+          { at: 0, place: "left", text: "A tidy screenshot proves nothing here" },
+        ],
         image: projectImage("preview-shot-14"),
       },
     ],
@@ -279,9 +375,13 @@ export const writings: Writing[] = [
     id: "designing-for-active-traders",
     title: "Designing for active traders",
     publishedAt: "2026-02-10",
+    acknowledgements: "Matcha Pro was designed at the 0x Project, alongside the product and engineering teams who built and shipped it.",
     paragraphs: [
       "There's a version of interface simplicity that photographs very well: one action, a few numbers, plenty of empty space. It's useful for a focused task. It becomes less convincing when the task involves repeatedly checking a chart, an order, a balance, and a live quote.",
       "Matcha Pro brings live charts, token signals, transactions, and order management into a denser workspace. I led its product structure and interaction design. The density is the interesting part of that work, because adding information only helps if someone can keep finding what they came back for.",
+    ],
+    annotations: [
+      { at: 0, place: "right", text: "Photographs better than it works" },
     ],
     sections: [
       {
@@ -289,6 +389,9 @@ export const writings: Writing[] = [
         paragraphs: [
           "In a workspace used repeatedly, position does some of the work that labels do on a first visit. A person can learn where to look for an open order or a balance. If the layout keeps changing to accommodate whichever panel has the most content, that familiarity becomes less useful.",
           "My preference here is for a stable arrangement with a clear hierarchy inside it. The numbers and activity can change while their places stay recognizable. Density becomes easier to read when related details stay together and each region has an identifiable purpose.",
+        ],
+        annotations: [
+          { at: 0, place: "left", text: "By visit five you look, you don't read" },
         ],
         image: projectImage("preview-shot-23"),
       },
@@ -313,10 +416,14 @@ export const writings: Writing[] = [
     id: "quote-to-confirmation",
     title: "From quote to confirmation",
     publishedAt: "2025-11-12",
+    acknowledgements: "The trade module was designed at the 0x Project with its product and engineering teams. The token checks shown here use GoPlus data.",
     cover: { src: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg", alt: "Matcha trade module showing the quote, review, and confirmation interface", width: 1600, height: 1200 },
     paragraphs: [
       "The moment before signing a transaction deserves some space. Up to that point, a person has been editing a form. Now they're being asked to act on it. A large confirmation button is easy to design; a useful explanation of what that button commits them to takes more care.",
       "I owned the quote, fee, route, and transaction states in Matcha's trade module. The work included amount entry and token selection, but the part I want to talk about here is the handoff from entering a trade to reviewing it.",
+    ],
+    annotations: [
+      { at: 0, place: "right", text: "Up to here it is still just a form" },
     ],
     sections: [
       {
@@ -324,6 +431,9 @@ export const writings: Writing[] = [
         paragraphs: [
           "The amount entered, the amount expected back, and the network cost answer different questions. If they all look like equally weighted rows of numbers, a person has to work out the hierarchy for themselves. If the secondary details are made too quiet, the form looks simpler at the expense of being inspectable.",
           "In the module, the cost, route, and received amount are available before signing. I want the review to be readable in two passes: first, enough to recognize the trade; then, enough detail to check it. That second pass needs to be possible without losing track of the token pair and amount that started the flow.",
+        ],
+        annotations: [
+          { at: 1, place: "left", text: "Recognize it first, check it second" },
         ],
         image: projectImage("preview-shot-19"),
       },

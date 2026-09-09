@@ -15,9 +15,6 @@
   display: grid;
   place-items: center;
   padding-block: clamp(1.6rem, 5vw, 3.2rem);
-  transition:
-    min-height var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1),
-    padding-block var(--duration-quick) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .mosaic-hero-profile {
@@ -27,52 +24,95 @@
   text-align: center;
 }
 
-/* The hero has to lead the work cards. The top mosaic row now starts transparent
-   despite the +1240ms LCP cost described under `.mosaic-work-intro`, so the two
-   cascades need to remain distinct: every hero item is in flight by var(--duration-base), the
-   first four have landed by 500ms, and the cards start lifting at 520ms before
-   the final hero item settles at ~580ms.
-   Keep the last delay plus the duration under `--work-intro-base` + 60ms. */
-.mosaic-hero-profile-animated > * {
-  animation: mosaic-intro-rise 380ms var(--ease-smooth) both;
-  will-change: opacity, transform;
+/* The opt-in flag is set before prerendered content paints. Keep layout intact:
+   the actual header portrait animates in place before surrounding groups rise. */
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) {
+  background: var(--canvas);
 }
 
-.mosaic-hero-profile-animated > :nth-child(1) {
-  animation-delay: 0ms;
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) body {
+  background: var(--canvas);
 }
 
-.mosaic-hero-profile-animated > :nth-child(2) {
-  animation-delay: 40ms;
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) #root,
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) #root * {
+  visibility: hidden !important;
 }
 
-.mosaic-hero-profile-animated > :nth-child(3) {
-  animation-delay: 80ms;
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) #root :is(
+  .mosaic-avatar-button,
+  .mosaic-avatar-coin-inner,
+  .mosaic-avatar-face-front
+) {
+  visibility: visible !important;
 }
 
-.mosaic-hero-profile-animated > :nth-child(4) {
-  animation-delay: var(--duration-fast);
+html:is([data-avatar-intro="pending"], [data-avatar-intro="portrait"]) #root :is(
+  .mosaic-avatar-button,
+  .mosaic-avatar-coin-inner
+) {
+  transform: none;
+  transition: none;
 }
 
-.mosaic-hero-profile-animated > :nth-child(5) {
-  animation-delay: var(--duration-quick);
+html[data-avatar-intro="pending"] #root .mosaic-avatar-coin-inner {
+  opacity: 0;
+  filter: blur(var(--blur-reveal));
 }
 
-.mosaic-hero-profile-animated > :nth-child(6) {
-  animation-delay: var(--duration-base);
+html[data-avatar-intro="portrait"] #root .mosaic-avatar-coin-inner {
+  animation: avatar-intro-face var(--duration-slow) var(--ease-smooth) both;
 }
 
-@keyframes mosaic-intro-rise {
+@keyframes avatar-intro-face {
   from {
     opacity: 0;
     filter: blur(var(--blur-reveal));
-    transform: translateY(0.8rem);
   }
 
   to {
     opacity: 1;
-    filter: none;
+    filter: blur(0);
+  }
+}
+
+html[data-avatar-intro="revealing"] :is(
+  .mosaic-profile-meta,
+  .mosaic-work-history,
+  .mosaic-profile-location,
+  .mosaic-profile-contact,
+  .mosaic-section-corner,
+  .mosaic-social-corner,
+  .mosaic-mobile-toc,
+  .mosaic-row
+) {
+  animation: avatar-intro-content var(--duration-slow) var(--ease-smooth) var(--avatar-intro-delay, 0ms) both;
+}
+
+html[data-avatar-intro="revealing"] .mosaic-work-history { --avatar-intro-delay: 60ms; }
+html[data-avatar-intro="revealing"] .mosaic-profile-location { --avatar-intro-delay: 120ms; }
+html[data-avatar-intro="revealing"] .mosaic-profile-contact { --avatar-intro-delay: 180ms; }
+html[data-avatar-intro="revealing"] :is(.mosaic-section-corner, .mosaic-social-corner, .mosaic-mobile-toc) { --avatar-intro-delay: 240ms; }
+html[data-avatar-intro="revealing"] .mosaic-row:nth-child(1) { --avatar-intro-delay: 300ms; }
+html[data-avatar-intro="revealing"] .mosaic-row:nth-child(2) { --avatar-intro-delay: 360ms; }
+html[data-avatar-intro="revealing"] .mosaic-row:nth-child(3) { --avatar-intro-delay: 420ms; }
+html[data-avatar-intro="revealing"] .mosaic-row:nth-child(n + 4) { --avatar-intro-delay: 480ms; }
+
+html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
+  transform: none;
+}
+
+@keyframes avatar-intro-content {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+    filter: blur(var(--blur-reveal));
+  }
+
+  to {
+    opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
   }
 }
 
@@ -223,67 +263,6 @@
   }
 }
 
-/* First-load entrance for the work cards. It has to exist in the prerendered
-   HTML: CSS animations start at first paint, long before hydration, so the
-   class comes from `!hasCompletedWorkIntro` in SimpleFeed rather than from an
-   effect. Delays are data-driven from inline
-   `--work-intro-row` and
-   `--work-intro-col` rather than nth-child, so all twelve cards stagger; the
-   values continue through every row.
-   Keep `--work-intro-row-step` at or above 2 x `--work-intro-col-step`. Below
-   700px the rows collapse into one flex column, and a smaller row step would
-   make a card arrive before the card above it.
-   The base is tuned against the hero cascade above, which now runs 0ms to var(--duration-base)
-   delays at 380ms each. Under the previous 40ms-to-350ms hero schedule, the old
-   320ms card base let work begin before the last two hero items, so both
-   cascades read as one undifferentiated wash. The 520ms base now puts the first
-   card after every hero item is in flight and the first four have landed, so
-   the mosaic answers the hero instead of arriving with it. The steps are
-   tightened to pay for the later start -- across five rows the last card still
-   begins under 900ms (520ms + 4 x 70ms + 2 x 32ms = 864ms). A sixth row would
-   push the tail past that; retune the row step rather than let it run. */
-/* ------------------------------------------------------- first-load intro --- */
-
-.mosaic-work-intro {
-  --work-intro-base: 520ms;
-  --work-intro-row-step: 70ms;
-  --work-intro-col-step: 32ms;
-}
-
-/* Fade, blur-to-sharp, and translateY. A scale would change the measured box of
-   `.mosaic-row`, whose height is asserted at exactly 420px in
-   tests/e2e/portfolio-polish.spec.ts. The 0.8rem travel matches the hero's and
-   stays under the 1rem row gap, so a rising card never covers the one below. */
-.mosaic-work-intro .mosaic-row-item {
-  animation: mosaic-intro-rise 480ms var(--ease-smooth) both;
-  animation-delay: calc(
-    var(--work-intro-base) +
-    var(--work-intro-row, 0) * var(--work-intro-row-step) +
-    var(--work-intro-col, 0) * var(--work-intro-col-step)
-  );
-}
-
-/* The top row used to be exempted from the fade (a transform-only
-   `mosaic-intro-lift` keyframe, now deleted) to protect LCP. That exemption
-   left it fully opaque at first paint, so the cards were on screen before the
-   header existed -- the one thing this entrance must not do. Every row fades
-   now.
-   Know what it costs. The LCP element is the row-0 video poster
-   (Projects/shot-small-9-poster.webp). Measured at Fast 3G + 4x CPU, cold
-   context: 845ms with the top row transform-only, 2085ms once it fades.
-   The +1240ms is FIXED, not tunable. The same element wins LCP either way, and
-   the penalty does not scale with the animation: base 520ms + 540ms duration,
-   base 520ms + var(--duration-slow), and base 60ms + var(--duration-slow) (fade fully finished by 420ms) all
-   measured ~2085ms. Chrome defers an opacity-animated element's recorded paint
-   to a later repaint however brief the fade is. There is no timing that buys
-   the metric back -- the choice is binary, which is why the choreography above
-   is tuned purely for feel.
-   Perceptually the cards are on screen at ~1000ms (base + duration); the 2085ms
-   is the metric catching up afterwards. That is still inside the 2.5s "good"
-   threshold, but the headroom is thin -- re-measure before putting anything
-   else on the critical path, and do not try to win it back by shortening the
-   fade. That has been tried three ways and does nothing. */
-
 /* --------------------------------- profile meta, availability & live time --- */
 
 /* The hero is one size, --text-sm, from the name down to the contact pills, and
@@ -374,6 +353,37 @@
 
 .mosaic-profile-availability:hover .mosaic-availability-dot {
   box-shadow: 0 0 0 4px rgb(52 162 106 / 0.18);
+}
+
+/* The availability line is the booking trigger, so it is a button — but it is
+   still one clause of the hero's location sentence, and a button that announced
+   itself as one at rest would put a second control beside the contact pills.
+   It reads as text until the pointer is on it, and only then takes the
+   underline and the darker ink a link would have carried all along. */
+.mosaic-availability-trigger {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+/* The underline sits on the label rather than the button so it stops at the
+   text and never runs under the availability dot. */
+.mosaic-availability-trigger:hover .mosaic-availability-label,
+.mosaic-availability-trigger:focus-visible .mosaic-availability-label {
+  text-decoration: underline;
+  text-decoration-color: var(--muted-soft);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+.mosaic-availability-trigger:hover,
+.mosaic-availability-trigger:focus-visible {
+  color: var(--ink);
 }
 
 .mosaic-profile-contact .mosaic-profile-actions {
@@ -484,14 +494,6 @@
   .mosaic-hero {
     min-height: clamp(18rem, 40vh, 24rem);
     padding-block: clamp(1.7rem, 4vw, 2.5rem);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* reduced-motion.css clamps durations but not delays. Remove the delayed
-     entrance too, so its filled from-state never hides the hero's content. */
-  .mosaic-hero-profile-animated > * {
-    animation: none;
   }
 }
 

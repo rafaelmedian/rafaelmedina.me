@@ -47,7 +47,7 @@
 /* ------------------------------------------------- work history & popover --- */
 
 .mosaic-work-history {
-  --mosaic-popover-enter-duration: 240ms;
+  --mosaic-popover-enter-duration: var(--duration-base);
   --mosaic-popover-exit-duration: var(--duration-quick);
   --mosaic-popover-enter-ease: var(--ease-smooth);
   /* The house exit curve, not the old cubic-bezier(0.55, 0, 1, 0.45): that one
@@ -100,7 +100,7 @@
      made that ink read heavier inside the box than it does on the name, so a
      row of company names outranked the one name the hero is about. The border
      drops with it; at 0.09 the hairlines were the loudest edges in the hero.
-     Hover and the active state still go to #171717, so the chips get darker
+     Hover and the active state still go to --ink, so the chips get darker
      than the name only while you are pointing at one. */
   border: 1px solid rgb(0 0 0 / 0.07);
   border-radius: var(--radius-sm);
@@ -128,14 +128,14 @@
 .mosaic-work-history-chip.is-active {
   background: #e9e9e9;
   border-color: #e9e9e9;
-  color: #171717;
+  color: var(--ink);
 }
 
 
 /* WORK-HISTORY CARD MOTION
  *
  *   0ms        card appears 6px above its resting position
- *   0-240ms    card settles top-to-bottom while opacity reaches 1
+ *   0-200ms    card settles top-to-bottom while opacity reaches 1
  *   0-160ms    exit reverses upward and fades on the same clock, then
  *              visibility switches off
  */
@@ -151,7 +151,7 @@
   border-radius: var(--radius-md);
   background: #ffffff;
   text-align: left;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -177,7 +177,7 @@
   pointer-events: auto;
   transition:
     transform var(--mosaic-popover-enter-duration) var(--mosaic-popover-enter-ease),
-    opacity var(--duration-quick) ease-out,
+    opacity var(--mosaic-popover-enter-duration) var(--mosaic-popover-enter-ease),
     visibility 0ms linear;
 }
 
@@ -219,7 +219,7 @@
 }
 
 .mosaic-work-history-popover-name {
-  color: #171717;
+  color: var(--ink);
   font-size: var(--text-md);
   font-weight: 600;
   line-height: 1.5;
@@ -267,7 +267,7 @@
 
 .mosaic-work-history-popover-link:hover {
   background: #e9e9e9;
-  color: #171717;
+  color: var(--ink);
 }
 
 .mosaic-work-history-popover-logos {

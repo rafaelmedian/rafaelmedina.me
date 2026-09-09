@@ -1022,17 +1022,73 @@
   opacity: 1;
 }
 
+/* One ring, like every other control. This used to stack four -- the card's own
+   border darkened to --focus-ring, a 1px and a 6px shadow, and the outline --
+   which around a tile this size read as a black frame drawn over the artwork
+   rather than a focused element. */
 .mosaic-row-card:focus-visible {
-  border-color: var(--focus-ring);
   background: #e9e9e9;
-  box-shadow:
-    0 0 0 1px rgb(45 45 45 / 0.5),
-    0 0 0 6px rgb(45 45 45 / 0.14);
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--focus-ring-soft);
   outline-offset: 3px;
 }
 
+/* Skeleton. Until a tile's artwork decodes the card is a flat --mosaic-card-surface
+   rectangle, which on a slow connection reads as a layout bug rather than as
+   work in progress. This is the same surface with a soft sheen across it,
+   breathing, so an empty tile says "loading" without a spinner.
+
+   It fades on --duration-slow with --ease-smooth to match the media reveal it
+   sits under, so the two cross rather than one snapping away mid-fade. The
+   breathe rides `filter` instead of `opacity` for exactly that reason: the fade
+   owns `opacity`, and an animation on the same property would override it and
+   leave the skeleton to disappear in one frame the moment `data-pending` flips.
+   Both are composited, and the gradient rasterises once -- an animated
+   background-position would repaint every tile every frame during the one
+   moment the browser is already busy decoding eleven images. */
+.mosaic-row-card::before {
+  --card-skeleton-base: #e4e4e6;
+  --card-skeleton-sheen: #f3f3f5;
+
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    var(--card-skeleton-base) 0%,
+    var(--card-skeleton-sheen) 42%,
+    var(--card-skeleton-base) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-slow) var(--ease-smooth);
+}
+
+/* `alternate` plays --ease-standard forwards then backwards, so the breathe
+   eases out of each end instead of turning around on a straight line. 800ms
+   each way: slow enough not to read as a flicker behind a tile that decodes
+   quickly. */
+.mosaic-row-card:has(.mosaic-row-media[data-pending="true"])::before {
+  opacity: 1;
+  animation: mosaic-card-skeleton 800ms var(--ease-standard) infinite alternate;
+}
+
+@keyframes mosaic-card-skeleton {
+  from {
+    filter: opacity(1);
+  }
+
+  to {
+    filter: opacity(0.5);
+  }
+}
+
 .mosaic-row-media {
+  /* Positioned only so it paints over the skeleton behind it; in-flow content
+     otherwise draws below a z-index: 0 pseudo-element regardless of tree order. */
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: 100%;
   display: block;
@@ -1263,17 +1319,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The global reset in reduced-motion.css clamps
-     animation-duration but not animation-delay, so a delayed `both`-filled
-     entrance still holds its from-state -- invisible -- for the whole delay
-     window. These selectors have to match or beat the specificity of the rules
-     that set the animation, or those win despite coming earlier -- a bare
-     `.mosaic-row-item` reset would not reach `.mosaic-work-intro
-     .mosaic-row-item`. */
-  .mosaic-work-intro .mosaic-row-item {
-    animation: none;
-  }
-
+  /* The work cards no longer carry a first-load entrance of their own -- the
+     rows enter with the homepage stagger, which reduced-motion.css turns off
+     beside the rest of it. */
   .mosaic-row-card-title,
   .mosaic-row-card-scrim > span,
   .mosaic-row-card-scrim::after {

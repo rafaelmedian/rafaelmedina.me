@@ -26,15 +26,20 @@ const getPreviousCompanyLink = (page: Page, name: string) =>
     .getByRole("group", { name: "Previous companies" })
     .getByRole("link", { name, exact: true })
 
-// The work cards cascade in on first load, so a card clicked straight after
-// `goto` can still be sitting at its pre-start offset -- and the gallery grows
-// out of that card's live rect. Settle the cascade before touching a card.
+// Wait for finite tile interactions before measuring a preview origin.
 // Safe from hanging: the gallery's View Timeline lives on the parent stage,
 // outside this subtree, while every animation inside `.mosaic-rows` finishes.
 const settleWorkCards = (page: Page) =>
   page
     .locator(".mosaic-rows")
     .evaluate((element) => Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+
+// The reveal keyframes are held by `data-avatar-intro`, and they land on the
+// hero's children rather than the hero itself -- so waiting on an ancestor's
+// own `getAnimations()` resolves empty and measures a group still 12px low.
+// Removing the attribute drops the rules, which is the settled state.
+const settleAvatarIntro = (page: Page) =>
+  expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
 
 const pausePageClock = async (page: Page) => {
   await page.clock.install({ time: new Date("2026-08-18T12:00:00Z") })
@@ -498,6 +503,7 @@ test("keeps the wider copy-email action fixed when its label changes", async ({ 
 test("uses the same side padding for every contact action", async ({ page }) => {
   await page.setViewportSize({ width: 487, height: 1381 })
   await page.goto("/")
+  await expect(page.getByRole("group", { name: "Profile contact actions" })).toBeVisible()
 
   const sidePadding = await page
     .getByRole("group", { name: "Profile contact actions" })
@@ -551,9 +557,9 @@ test("optically centers the X mark in the Follow pill", async ({ page }) => {
   await page.goto("/")
 
   const followPill = page.getByRole("link", { name: "Follow on X" })
-  const [pillBox, iconBox] = await Promise.all([
-    followPill.boundingBox(),
-    followPill.locator(".mosaic-contact-pill-icon-x").boundingBox(),
+  const [pillBox, iconBox] = await followPill.evaluate((pill) => [
+    pill.getBoundingClientRect().toJSON(),
+    pill.querySelector(".mosaic-contact-pill-icon-x")?.getBoundingClientRect().toJSON(),
   ])
 
   expect(pillBox).not.toBeNull()
@@ -605,7 +611,7 @@ test("insets row videos from the card sides on mobile", async ({ page }) => {
   await expect(video).toHaveCSS("padding-right", "8px")
 })
 
-test("uses only the body and lead type steps throughout About", async ({ page }) => {
+test("sets the whole About sheet on the reading step under one heading step", async ({ page }) => {
   await page.setViewportSize({ width: 473, height: 994 })
   await page.goto("/")
 
@@ -627,27 +633,39 @@ test("uses only the body and lead type steps throughout About", async ({ page })
   const sectionHeading = page.locator(".mosaic-about-section-heading")
   const lede = page.locator("#about-section .mosaic-about-lede")
 
-  expect(sizes).toEqual(["16px", "18px"])
-  await expect(sectionHeading).toHaveCSS("font-size", "16px")
-  await expect(lede).toHaveCSS("font-size", "18px")
+  // Two steps across the whole sheet: the reading copy and the headings over
+  // it -- the same pairing the notes reader uses.
+  expect(sizes).toEqual(["14px", "16px"])
 
-  // Work history stays on the body step, but it is a heading: same weight and
-  // ink as the lede, so it cannot be mistaken for the prose beneath it.
-  await expect(sectionHeading).toHaveCSS("font-weight", "600")
-  await expect(sectionHeading).toHaveCSS("color", "rgb(45, 45, 45)")
-  await expect(lede).toHaveCSS("font-weight", "600")
-  await expect(lede).toHaveCSS("color", "rgb(45, 45, 45)")
+  // "About me" and "Work history" are the sheet's two section headings and
+  // are set identically, so neither reads as ranking above the other.
+  for (const heading of [sectionHeading, lede]) {
+    await expect(heading).toHaveCSS("font-size", "16px")
+    await expect(heading).toHaveCSS("font-weight", "600")
+    await expect(heading).toHaveCSS("color", "rgb(45, 45, 45)")
+  }
+
+  const aboutSizes = await page
+    .locator("#about-section .mosaic-about-section-copy")
+    .locator("h2, p, li, a")
+    .evaluateAll((elements) =>
+      [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
+    )
+  expect(aboutSizes).toEqual(["14px", "16px"])
 
   const workHistorySizes = await page
     .locator("#about-panel-resume")
     .locator("h2, h3, h4, p, li, a")
-    .evaluateAll((elements) => [...new Set(elements.map((element) => getComputedStyle(element).fontSize))])
-  expect(workHistorySizes).toEqual(["16px"])
+    .evaluateAll((elements) =>
+      [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
+    )
+  expect(workHistorySizes).toEqual(["14px", "16px"])
 })
 
 test("gives mobile contact actions generous horizontal padding", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
+  await expect(page.getByRole("group", { name: "Profile contact actions" })).toBeVisible()
 
   const actions = page
     .getByRole("group", { name: "Profile contact actions" })
@@ -1467,13 +1485,14 @@ test("shows current availability with the status dot on the right", async ({ pag
 
   const availabilityBox = await availability.boundingBox()
   const alignment = await availability.evaluate((element) => {
-    const textNode = Array.from(element.childNodes).find(
-      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-    )
-    if (!textNode) return null
+    const label = element.querySelector(".mosaic-availability-label")
+    if (!label) return null
 
+    // Ranged over the glyphs rather than the label's own box: the label is a
+    // flex item, so its box is the full line height and its centre would not
+    // say where the text actually sits.
     const range = document.createRange()
-    range.selectNode(textNode)
+    range.selectNodeContents(label)
     const textBox = range.getBoundingClientRect()
     const dotBox = element.querySelector(".mosaic-availability-dot")?.getBoundingClientRect()
     if (!dotBox) return null
@@ -1503,6 +1522,10 @@ test("uses a compact availability dot", async ({ page }) => {
 // line a visitor is scanning for. It rests visible now; hover widens the halo.
 test("keeps the availability dot visible at rest and widens its halo on hover", async ({ page }) => {
   await page.goto("/")
+  // The reveal's animation-delay window reads as two stable frames, so an
+  // unsettled hover can land on the line's pre-rise position and slide out
+  // from under the pointer 12px later -- leaving :hover never applied.
+  await settleAvatarIntro(page)
 
   const availability = page.locator(".mosaic-profile-availability")
   const dot = availability.locator(".mosaic-availability-dot")
@@ -1529,6 +1552,58 @@ test("keeps the availability dot visible without motion when reduced motion is r
   await availability.hover()
   await expect(dot).toHaveCSS("opacity", "1")
   await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
+})
+
+test("previews the calendar on hover and opens booking only on click", async ({ page }) => {
+  let calendarRequests = 0
+  await page.route("https://cal.com/**", (route) => {
+    calendarRequests++
+    return route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" })
+  })
+  await page.goto("/")
+  // Same guard as the halo test: hover only after the reveal has settled.
+  await settleAvatarIntro(page)
+  const trigger = page.locator(".mosaic-availability-trigger")
+  await trigger.hover()
+  const tooltip = page.getByRole("tooltip")
+  await expect(tooltip).toBeVisible()
+  await expect(tooltip).toContainText("Click to book a call")
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+  expect(calendarRequests).toBe(0)
+  await tooltip.hover()
+  await expect(tooltip).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(tooltip).toBeHidden()
+  await trigger.click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+  await expect(tooltip).toBeHidden()
+  await expect(dialog.locator("iframe.booking-iframe")).toHaveAttribute("src", /embed=true/)
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeHidden()
+  await expect(trigger).toBeFocused()
+})
+
+// Touch and keyboard have no hover to rest in, so the same line is a plain
+// button for them. Focus alone must not open it: tabbing past the hero would
+// otherwise trap the visitor in a calendar they never asked for.
+test("opens the booking calendar from a press, and never from focus alone", async ({ page }) => {
+  await page.route("https://cal.com/**", (route) =>
+    route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" }),
+  )
+  await page.goto("/")
+
+  // The hero is `visibility: hidden` until the avatar intro reveals it, and a
+  // hidden button cannot take focus.
+  const trigger = page.locator(".mosaic-availability-trigger")
+  await expect(trigger).toBeVisible()
+  await trigger.focus()
+  await expect(trigger).toBeFocused()
+  await page.waitForTimeout(600)
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+
+  await page.keyboard.press("Enter")
+  await expect(page.getByRole("dialog")).toBeVisible()
 })
 
 test("keeps availability text gray and its status dot green", async ({ page }) => {
@@ -2241,6 +2316,7 @@ test("retreats the complete project grid as one surface during takeover", async 
   })
   const card = stage.locator(".mosaic-row-card").first()
 
+  await expect(stage).not.toHaveCSS("filter", "none")
   expect(retreat.opacity).toBeLessThan(0.95)
   expect(retreat.transform).not.toBe("none")
   await expect(card).toHaveCSS("opacity", "1")
@@ -2475,7 +2551,7 @@ test("shows every project immediately on mobile", async ({ page }) => {
 })
 
 test("loads each preview video only when it reaches the viewport", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
+  await page.setViewportSize({ width: 390, height: 780 })
   await page.goto("/")
 
   const videos = page.locator(".mosaic-row-card video.mosaic-row-media")
@@ -2483,7 +2559,7 @@ test("loads each preview video only when it reaches the viewport", async ({ page
   const offscreenVideo = videos.nth(1)
 
   await expect(visibleVideo).toHaveAttribute("src", "/Projects/shot-small-9.webm")
-  expect(await offscreenVideo.evaluate((video) => video.getBoundingClientRect().top)).toBeGreaterThanOrEqual(844)
+  expect(await offscreenVideo.evaluate((video) => video.getBoundingClientRect().top)).toBeGreaterThanOrEqual(780)
   await expect(offscreenVideo).not.toHaveAttribute("src", /\S+/)
   await expect(offscreenVideo).toHaveAttribute("preload", "none")
 
@@ -2645,6 +2721,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
   await page.setViewportSize({ width: 1024, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
+  // A shared-token change must retime both CSS fades and the JS flight.
+  await page.addStyleTag({ content: ":root { --duration-base: .32s; }" })
 
   // Hold Web Animations at their first frame so the short opening motion is
   // still inspectable after React mounts the dialog portal.
@@ -2662,7 +2740,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
   const cardInner = page.locator(".preview-gallery-card-inner")
-  expect(await originWrap.evaluate((element) => element.getAnimations().length)).toBe(1)
+  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([320])
+  await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.32s")
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 
@@ -3282,7 +3361,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   const card = dialog.locator(".preview-gallery-card")
   await expect(card).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
 
-  // The switch is stepped by a JS timer, so on a busy runner a whole 190ms leg
+  // The switch is stepped by a JS timer, so on a busy runner a whole 200ms leg
   // can pass without a paint. Reading frames races that; the poses do not.
   // Each phase change is observed as it lands, and the transform it is heading
   // for is read off the CSS transition's own keyframes -- the same value a
@@ -3351,9 +3430,17 @@ test("opens the gallery wide without clipping navigation at the large desktop br
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveAttribute("data-wide", "true")
   await expect(dialog.getByRole("button", { name: /Expand preview|Exit wide view/ })).toHaveCount(0)
+  // The artwork bleeds to the card's sides, so the card is sized from it: 4:3 at
+  // the media's height cap here, under the 981px the wide view allows at most.
   const wideDialogBox = await dialog.boundingBox()
-  expect(wideDialogBox?.width).toBeCloseTo(981, 0)
+  expect(wideDialogBox?.width).toBeCloseTo(912, 0)
   expect(wideDialogBox?.y).toBeCloseTo(50, 0)
+
+  // Which is the point of deriving it: a landscape preview meets both edges
+  // instead of sitting in a band of the frame's grey.
+  const frameBox = await dialog.locator(".preview-gallery-media-frame").boundingBox()
+  const mediaBox = await dialog.locator(".preview-gallery-media").boundingBox()
+  expect(mediaBox!.width).toBeCloseTo(frameBox!.width, 0)
 
   // The controls flank the card, so both edges have to clear the viewport --
   // the shell hides horizontal overflow rather than scrolling to reach them.
@@ -3404,7 +3491,9 @@ test("fills the wide card width with cropped project artwork", async ({ page }) 
         const cardBox = element.getBoundingClientRect()
         const mediaFrameBox = mediaFrame.getBoundingClientRect()
         const styles = getComputedStyle(element)
-        const horizontalInset = [styles.borderLeftWidth, styles.paddingLeft, styles.paddingRight, styles.borderRightWidth]
+        // The artwork bleeds back out over the card's padding, so the hairline
+        // border is the only thing left between it and the card's edge.
+        const horizontalInset = [styles.borderLeftWidth, styles.borderRightWidth]
           .map(Number.parseFloat)
           .reduce((total, value) => total + value, 0)
 
@@ -3448,7 +3537,7 @@ test("keeps the expanded gallery scrollable without visible scrollbars", async (
 test("travels one role-bearing work-history popover between company triggers without shifting the page", async ({ page }) => {
   await page.goto("/")
   const location = page.locator(".mosaic-profile-location")
-  await location.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  await settleAvatarIntro(page)
   const initialLocationBox = await location.boundingBox()
   const popover = page.locator(".mosaic-work-history-popover")
   const onit = getPreviousCompanyLink(page, "Onit")
@@ -3489,7 +3578,7 @@ test("travels one role-bearing work-history popover between company triggers wit
         .map((duration) => Number.parseFloat(duration) * (duration.includes("ms") ? 0.001 : 1)),
     ),
   )
-  expect(longestPopoverTransition).toBeCloseTo(0.24, 2)
+  expect(longestPopoverTransition).toBeCloseTo(0.2, 2)
   await expect(popover).toHaveCSS("transition-property", "transform, opacity, visibility")
 
   const onitPopoverBox = await popover.boundingBox()
@@ -3945,102 +4034,22 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   expect(firstRow!.height).toBe(420)
 })
 
-// The first-load card cascade is CSS driven off a class and two custom
-// properties in the prerendered HTML, because animations start at first paint
-// long before hydration. Moving any of it into an effect breaks this test.
-test("ships the work-card intro in the prerendered markup", async ({ request }) => {
-  const html = await (await request.get("/")).text()
-  expect(html).toContain("mosaic-work-intro")
-  expect(html).toContain("--work-intro-row:2")
-  expect(html).toContain("--work-intro-col:2")
-})
-
-test("keeps the work-card entrance free of scale and horizontal travel", async ({ page }) => {
-  await page.goto("/")
-
-  // Read the keyframe source rather than a live animation: the mosaic row height
-  // is asserted at exactly 420px above, and only opacity plus translateY leave
-  // that measurement alone.
-  const keyframes = await page.evaluate(() => {
-    const wanted = ["mosaic-intro-rise"]
-    const found: Record<string, string[]> = {}
-    for (const sheet of [...document.styleSheets]) {
-      for (const rule of [...sheet.cssRules]) {
-        if (rule instanceof CSSKeyframesRule && wanted.includes(rule.name)) {
-          found[rule.name] = [...rule.cssRules].map((frame) => (frame as CSSKeyframeRule).style.transform)
-        }
-      }
-    }
-    return found
-  })
-
-  expect(Object.keys(keyframes)).toEqual(["mosaic-intro-rise"])
-  for (const transforms of Object.values(keyframes)) {
-    for (const transform of transforms) {
-      expect(transform === "" || /^translateY\([^)]+\)$/.test(transform)).toBe(true)
-    }
-  }
-})
-
-// No work card may be on screen before the header is. The top row was once
-// exempted from the fade to protect LCP, which made it opaque at first paint --
-// cards visible above a header that had not arrived yet. That exemption costs
-// +1240ms of LCP to undo and is deliberately not coming back; see index.css.
-test("hides every work card at first paint, including the top row", async ({ page }) => {
-  await page.goto("/")
-
-  const rows = await page.evaluate(() =>
-    [...document.querySelectorAll(".mosaic-row")].map((row) => ({
-      names: [
-        ...new Set(
-          [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).animationName),
-        ),
-      ],
-      // The from-state is what is on screen at first paint, since every card
-      // holds it through its delay via `both`.
-      opacities: [
-        ...new Set(
-          [...row.querySelectorAll(".mosaic-row-item")].map((el) => getComputedStyle(el).opacity),
-        ),
-      ],
-    })),
-  )
-
-  expect(rows.length).toBeGreaterThan(1)
-  for (const row of rows) {
-    expect(row.names).toEqual(["mosaic-intro-rise"])
-    expect(row.opacities).toEqual(["0"])
-  }
-})
-
 test("does not delay content behind an entrance under reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  // A one-shot read on purpose. The global reduced-motion reset zeroes
-  // animation-duration but not animation-delay, so a delayed `both`-filled
-  // entrance stays invisible for its whole delay -- and toHaveCSS would retry
-  // right past that window.
-  for (const selector of [".mosaic-row-item", ".mosaic-hero-profile-animated > *"]) {
-    const state = await page
-      .locator(selector)
-      .first()
-      .evaluate((element) => {
-        const style = getComputedStyle(element)
-        return { animationName: style.animationName, opacity: style.opacity }
-      })
-    expect(state.animationName).toBe("none")
-    expect(state.opacity).toBe("1")
+  for (const selector of [".mosaic-row-item", ".mosaic-hero-profile"]) {
+    const state = await page.locator(selector).first().evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { animationName: style.animationName, opacity: style.opacity }
+    })
+    expect(state).toEqual({ animationName: "none", opacity: "1" })
   }
 })
 
 test("does not replay the work-card intro when reduced motion is disabled later", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-
-  const rows = page.locator(".mosaic-rows")
-  await expect(rows).not.toHaveClass(/mosaic-work-intro/)
-
   await page.emulateMedia({ reducedMotion: "no-preference" })
   const states = await page.locator(".mosaic-row-item").evaluateAll((items) =>
     items.map((item) => {
@@ -4048,42 +4057,7 @@ test("does not replay the work-card intro when reduced motion is disabled later"
       return { animationName: style.animationName, opacity: style.opacity }
     }),
   )
-
   expect(states.every(({ animationName, opacity }) => animationName === "none" && opacity === "1")).toBe(true)
-})
-
-// The hero and the mosaic are two beats, not one. When the first card started
-// before the last hero item, the cascades overlapped and read as a single wash.
-test("starts the work-card intro after the hero cascade is fully in flight", async ({ page }) => {
-  await page.goto("/")
-
-  const { lastHeroDelay, firstCardDelay } = await page.evaluate(() => {
-    const delayOf = (element: Element) => parseFloat(getComputedStyle(element).animationDelay)
-    const hero = [...document.querySelectorAll(".mosaic-hero-profile-animated > *")]
-    const cards = [...document.querySelectorAll(".mosaic-row-item")]
-    return {
-      lastHeroDelay: Math.max(...hero.map(delayOf)),
-      firstCardDelay: Math.min(...cards.map(delayOf)),
-    }
-  })
-
-  expect(lastHeroDelay).toBeGreaterThan(0)
-  expect(firstCardDelay).toBeGreaterThan(lastHeroDelay)
-})
-
-test("keeps the work-card entrance inside its delay budget", async ({ page }) => {
-  await page.goto("/")
-
-  const maxDelay = await page.evaluate(() =>
-    Math.max(
-      ...[...document.querySelectorAll(".mosaic-row-item")].map((element) =>
-        parseFloat(getComputedStyle(element).animationDelay),
-      ),
-    ),
-  )
-  // Last card starts at 520ms + 4 x 70ms + 2 x 32ms = 864ms. The ceiling is
-  // deliberately loose -- it guards against a runaway intro, not the exact base.
-  expect(maxDelay).toBeLessThanOrEqual(0.95)
 })
 
 test("does not show a motion toggle beside the section links", async ({ page }) => {

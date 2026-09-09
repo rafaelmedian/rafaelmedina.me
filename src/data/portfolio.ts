@@ -56,6 +56,8 @@ export type SiteLinks = {
   linkedin: string
   email: string
   resumePdf: string
+  /** Cal.com event type, opened as a calendar in the availability dialog. */
+  booking: string
 }
 
 export type HomeRowItem = {
@@ -181,6 +183,9 @@ export const siteLinks: SiteLinks = {
   github: "https://github.com/rafaelmedian",
   linkedin: "https://www.linkedin.com/in/rafaelmedian",
   email: "hellorafaelmedina@gmail.com",
+  // The event type rather than the profile: /rafaelmedian alone opens a list of
+  // meeting lengths, and the dialog is meant to land on the calendar itself.
+  booking: "https://cal.com/rafaelmedian/30min",
   // Self-hosted so the link survives Drive permission changes and skips the
   // Drive viewer interstitial.
   resumePdf: "/rafael-medina-resume.pdf",
