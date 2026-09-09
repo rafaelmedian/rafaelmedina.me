@@ -43,7 +43,9 @@ test("the resume page ships its own metadata and the whole history without JavaS
   expect(image).toBe("https://rafaelmedina.me/rafael-medina-resume-preview.png")
   expect((await request.get(new URL(image!).pathname)).ok()).toBe(true)
 
-  await expect(page.getByRole("list", { name: "Work history" }).getByRole("listitem")).toHaveCount(6)
+  // Jobs are the history list's own children; an entry with two points nests a
+  // list of its own inside them.
+  await expect(page.getByRole("list", { name: "Work history" }).locator(":scope > li")).toHaveCount(6)
   await expect(page.getByRole("list", { name: "Education" }).getByRole("listitem")).toHaveCount(2)
   await expect(page.getByRole("link", { name: "View resume PDF" })).toHaveAttribute("href", "/rafael-medina-resume.pdf")
   await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")

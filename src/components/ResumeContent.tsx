@@ -5,12 +5,12 @@ import { portfolioCards } from "../data/portfolio"
 import { buildPreviewSrcSet } from "../lib/media"
 
 /* The rendered width of a print, which is what `sizes` has to declare: the CSS
-   fixes the height at `clamp(3.5rem, 15vw, 5.5rem)` and lets the width follow
-   the shot's 4:3 ratio, so the width is that clamp times 4/3 -- 75px until 15vw
-   clears the floor at 373px, then 20vw, then 118px once the height caps at
+   fixes the height at `clamp(2.8rem, 12vw, 4.4rem)` and lets the width follow
+   the shot's 4:3 ratio, so the width is that clamp times 4/3 -- 60px until 12vw
+   clears the floor at 373px, then 16vw, then 94px once the height caps at
    587px. Without this the browser assumes a full-width slot and takes the
    1600px original for a thumbnail. */
-const PRINT_SIZES = "(max-width: 373px) 75px, (max-width: 587px) 20vw, 118px"
+const PRINT_SIZES = "(max-width: 373px) 60px, (max-width: 587px) 16vw, 94px"
 
 function ResumeCompanyLink({ company, href }: { company: string; href: string }) {
   return (
@@ -81,7 +81,15 @@ function IllustratedExperience({ job, onSelectProject }: { job: CvExperience; on
         </div>
         <p className="resume-experience-role">{job.role}</p>
         <p className="mosaic-about-resume-location">{job.location}</p>
-        <p className="mosaic-about-resume-description">{job.highlight}</p>
+        {Array.isArray(job.highlight) ? (
+          <ul className="mosaic-about-resume-description resume-experience-points">
+            {job.highlight.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mosaic-about-resume-description">{job.highlight}</p>
+        )}
         {projects.length > 0 ? (
           <div className="resume-experience-projects" role="group" aria-label={`${job.company} project screenshots`}>
             {projects.map((project) => {

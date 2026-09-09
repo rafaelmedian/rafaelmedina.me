@@ -60,7 +60,12 @@
 /* Inter Medium 12px on the 237px Figma sheet: 5.06cqw, 1.5 line height, 12px
    between roles and 8px between a role's heading and its highlight. The words
    are decorative -- the button owns the accessible name -- but come from cv.ts so
-   the little page cannot advertise an old job. */
+   the little page cannot advertise an old job. One point per role leaves the
+   whole second entry on the sheet, so the fade is a long ramp over it rather
+   than a cut: it starts in the gap under the first role at 54% and reaches
+   nothing at the foot of the page, veiling the second role progressively -- its
+   name near full ink, its line down to a ghost -- so the eye lands on the
+   current job and the page still reads as one that carries on. */
 .resume-tile-copy {
   position: absolute;
   inset: 11.6% 10.5% 0 10.1%;
@@ -73,8 +78,8 @@
   font-weight: 500;
   line-height: 1.5;
   letter-spacing: -0.017em;
-  -webkit-mask-image: linear-gradient(#000 69%, transparent 82%);
-  mask-image: linear-gradient(#000 69%, transparent 82%);
+  -webkit-mask-image: linear-gradient(#000 54%, transparent 100%);
+  mask-image: linear-gradient(#000 54%, transparent 100%);
 }
 
 /* The document's title, a step above the roles at 14px on the comp's 12px. */

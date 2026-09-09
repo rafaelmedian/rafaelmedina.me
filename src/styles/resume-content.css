@@ -76,10 +76,24 @@
   color: var(--muted);
 }
 
+/* An entry that carries two points stays a list for screen readers, but reads
+   as consecutive paragraphs: no markers and no gutter, so every point starts on
+   the same left edge as the rest of the entry. The gap is the paragraph break —
+   wide enough to separate the points, short of the space above the entry. */
+.mosaic-about-body ul.mosaic-about-resume-description {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
 .resume-experience-projects {
   /* The pile has to fit the sheet's measure at every width, so the prints are
-     sized off the viewport and the overlap tracks their height. */
-  --resume-print-height: clamp(3.5rem, 15vw, 5.5rem);
+     sized off the viewport and the overlap tracks their height. Every step of
+     the clamp is the same fraction of what it was, so the prints shrink without
+     the pile changing shape or the breakpoints moving. */
+  --resume-print-height: clamp(2.8rem, 12vw, 4.4rem);
   display: flex;
   align-items: flex-start;
   /* The tilt and the shadows both reach past the images, so the group carries
@@ -89,13 +103,21 @@
 }
 
 /* Loose prints dropped on the page: each one tilted off the last and lapping
-   over its neighbour, carrying its own shadow instead of a frame. */
+   over its neighbour, wearing the same white mat as the photo pile on the home
+   grid. The border of page around the shot is what makes a screenshot read as
+   something printed and dropped here rather than an image pasted in, and it
+   holds the prints apart from each other where they overlap. */
 .resume-project {
   display: block;
   /* Never let the row squeeze a print: the height is fixed, so shrinking is
      width-only and `cover` would quietly crop the shot. */
   flex: 0 0 auto;
+  padding: 0.25rem;
   border-radius: var(--radius-sm);
+  background: var(--canvas);
+  /* The mat carries the shadow now: on the image it drew a line inside the
+     white edge instead of around the print. */
+  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
   text-decoration: none;
   transform: rotate(-7deg);
   transition:
@@ -135,15 +157,15 @@
 }
 
 /* Each shot keeps its own aspect at a shared height, so portrait and landscape
-   prints lie in one pile without a mat to square them up. The shadow rides the
-   image because the image is the whole print. */
+   prints lie in one pile without the mat squaring them up: the white border
+   follows each shot's own shape. The inner radius is the outer one less the
+   mat, so the two curves stay concentric. */
 .resume-project img {
   display: block;
   height: var(--resume-print-height);
   width: auto;
   max-width: 100%;
   object-fit: cover;
-  border-radius: var(--radius-sm);
+  border-radius: calc(var(--radius-sm) - 0.25rem);
   background: var(--mosaic-card-surface);
-  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
 }

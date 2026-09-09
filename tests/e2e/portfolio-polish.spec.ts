@@ -3123,10 +3123,14 @@ test("presents complete work history, education, and the resume PDF in the reade
   const workHistory = dialog.getByRole("list", { name: "Work history" })
   const education = dialog.getByRole("list", { name: "Education" })
 
-  await expect(workHistory.getByRole("listitem")).toHaveCount(6)
+  // An entry whose description is a pair of points nests its own list, so the
+  // jobs are the list's own children rather than every listitem under it.
+  const jobs = workHistory.locator(":scope > li")
+
+  await expect(jobs).toHaveCount(6)
   await expect(workHistory.getByRole("heading", { name: "Co-founder at Stealth fintech" })).toBeVisible()
-  await expect(workHistory.getByRole("listitem").first()).toContainText("2026 - Present")
-  await expect(workHistory.getByRole("listitem").last()).toContainText("Incubeta (Google)")
+  await expect(jobs.first()).toContainText("2026 - Present")
+  await expect(jobs.last()).toContainText("Incubeta (Google)")
   await expect(education.getByRole("listitem")).toHaveCount(2)
   await expect(education.getByRole("listitem").first()).toContainText("Computer Science")
 
@@ -3643,9 +3647,12 @@ test("gives the Chainlink work a fuller description", async ({ page }) => {
     .locator(".resume-experience")
     .filter({ has: page.getByRole("heading", { name: "Product Designer & Frontend Developer at TM (Chainlink, Twilio, and Onit)" }) })
 
-  await expect(chainlinkEntry.locator(".mosaic-about-resume-description")).toContainText(
-    "Collaborated with Chainlink on internal product tools and its brand system as the company scaled. The work made a complex oracle network read clearer and more consistent.",
-  )
+  // The two sentences are two bullets now, so the check is per point: joined
+  // text would pass on a run-on paragraph that had lost the split.
+  await expect(chainlinkEntry.locator(".mosaic-about-resume-description li")).toHaveText([
+    "Collaborated with Chainlink on internal product tools and its brand system as the company scaled.",
+    "The work made a complex oracle network read clearer and more consistent.",
+  ])
 })
 
 test("keeps one compact gap between the About closing line, companies, and services", async ({ page }) => {

@@ -4,7 +4,9 @@ export type CvExperience = {
   location: string
   dates: string
   role: string
-  highlight: string
+  /** One line, or a pair rendered as bullets. Two is the ceiling: a third turns
+      an entry into a block nobody reads down the length of the sheet. */
+  highlight: string | [string, string]
   /** Primary company link and decorative logo tooltip. */
   href?: string
   logoUrls?: string[]
@@ -32,8 +34,10 @@ export const cvExperience: CvExperience[] = [
     location: "Remote",
     dates: "2026 - Present",
     role: "Co-founder",
-    highlight:
-      "Building a mobile wallet for colmados, the corner stores of the Dominican Republic. Owners manage payments and day-to-day finances from their phones.",
+    highlight: [
+      "Building a mobile wallet for colmados, the corner stores of the Dominican Republic.",
+      "Owners manage payments and day-to-day finances from their phones.",
+    ],
   },
   {
     company: "0x Project",
@@ -46,7 +50,10 @@ export const cvExperience: CvExperience[] = [
     // hands the click back to the feed, and a card with no tile has no preview
     // to open. `preview-shot-19` and `preview-shot-22` are off the grid.
     projectIds: ["preview-shot-16", "preview-shot-21", "preview-shot-1", "preview-shot-14"],
-    highlight: "Redesigned Matcha.xyz from scratch. Then introduced the monetization flows that generated sustainable revenue.",
+    highlight: [
+      "Redesigned Matcha.xyz from scratch.",
+      "Introduced the monetization flows that generated sustainable revenue.",
+    ],
   },
   {
     company: "BoldVoice",
@@ -77,8 +84,10 @@ export const cvExperience: CvExperience[] = [
     location: "Remote, Los Angeles",
     dates: "2018 - 2020",
     role: "Product Designer & Frontend Developer",
-    highlight:
-      "Collaborated with Chainlink on internal product tools and its brand system as the company scaled. The work made a complex oracle network read clearer and more consistent.",
+    highlight: [
+      "Collaborated with Chainlink on internal product tools and its brand system as the company scaled.",
+      "The work made a complex oracle network read clearer and more consistent.",
+    ],
   },
   {
     company: "Incubeta (Google)",

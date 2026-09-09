@@ -1497,11 +1497,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Company names, dates, locations, and descriptions reuse the shared résumé styles in
                 <code>about.css</code>: <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
                 Four selected Matcha screenshots sit below the description as loose photo prints. They are sized by
-                height — <code>clamp(3.5rem, 15vw, 5.5rem)</code>, so the row shrinks to fit a phone — and each
+                image height — <code>clamp(2.8rem, 12vw, 4.4rem)</code>, so the row shrinks to fit a phone — and each
                 width follows its own 4:3 crop, which is what keeps the pile on the sheet&rsquo;s measure at every
                 size. They lap over each other by 35% of that height, at -7, 2, -2, and
-                -5 degree tilts. Unlike the gallery&rsquo;s prints these carry no mat: the image is the whole print,
-                on <code>--radius-sm</code> corners with <code>--shadow-ring</code> and
+                -5 degree tilts. Each print carries a 0.25rem white mat in <code>--canvas</code>, with
+                <code>--radius-sm</code> outer corners and an inner image radius of
+                <code>calc(var(--radius-sm) - 0.25rem)</code>. The mat carries <code>--shadow-ring</code> and
                 <code>--shadow-control-hover</code>. A hovered or focused print raises above the one lapping over it,
                 so it is readable and clickable; with a fine pointer, hover also lifts it 0.25rem and straightens it
                 to 0 degrees over <code>--duration-quick</code>, which reduced motion removes.
