@@ -50,15 +50,23 @@ commits carried it. A branch that was one "Implement X" commit leaves `git log` 
 
 ## Shared likes
 
-The notes reader mounts `NoteLikeButton` when `VITE_LIKES_API_URL` is set and a
-note is open. Without a configured URL, it remains hidden. Every tap counts up to a
+The notes reader and the project preview both mount `LikeButton` when
+`VITE_LIKES_API_URL` is set. Without a configured URL, it remains hidden. In the
+reader it sits under the note's date; in the preview it floats on the line where
+the artwork meets the prose, taking no room out of the card's flow. Notes and
+projects are separate collections on the API (`note_likes` and `project_likes`),
+so a project's likes are never counted into a note's. Every tap counts up to a
 per-visitor cap (`src/data/likeLimits.ts`), batched into one write per pause in
 the tapping. Browser coverage now checks optimistic spam counting, persistence,
 the cap, failed saves, and idle reading without polling. Queued taps flush on
 page hide and note exit; writes use keepalive so navigation does not abort
 saves. Regression coverage includes reloads before the debounce, overlapping
 saves on departure, and the previous client's API contract;
-`tests/e2e/shared-likes.spec.ts` separately exercises the local D1 API.
+`tests/e2e/shared-likes.spec.ts` separately exercises the local D1 API, including
+that the two collections stay apart. `tests/e2e/project-likes-browser.spec.ts`
+covers what is the gallery's own: the pill's seat on the seam, paging reading the
+new project's count rather than carrying the last one's over, and the résumé
+slide carrying no pill at all.
 
 The original 2026-09-09 reachability audit found no other unreachable TypeScript
 modules or stylesheets (declarations and assets excluded). That was module
