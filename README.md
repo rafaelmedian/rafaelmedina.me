@@ -7,7 +7,7 @@ Personal portfolio of Rafael Medina — a single-page Vite + React + TypeScript 
 ```sh
 npm install
 npm run dev      # local dev server
-npm run lint     # eslint
+npm run lint     # ESLint + Stylelint
 npm run build    # type-check + production build into dist/
 npm run preview  # serve the production build locally
 ```
@@ -22,15 +22,19 @@ and nothing is tracked in dev.
 
 ## Structure
 
-- `src/data/portfolio.ts` — all site copy, links, and work-preview card data.
+- `src/data/portfolio.ts` — site links, grid composition, and work-preview card data.
+- `src/data/cv.ts` and `src/data/writings.ts` — work history and reader content.
 - `src/components/SimpleFeed.tsx` — the homepage (profile hero + work mosaic).
-- `src/components/StyleguidePage.tsx` — dev-only styleguide at `/styleguide`.
+- `src/components/DesignSystemPage.tsx` — dev-only reference at `/design-system` (`/styleguide` is an alias).
+- `src/index.css` — ordered stylesheet imports; shared tokens live in `src/styles/base.css`.
 - `public/Projects/` — work preview images and videos.
 
 ## Testing
 
 ```sh
-npm run test:e2e   # Playwright; builds and serves the site itself
+npm run test:e2e           # Playwright; builds and serves the site itself
+npm run test:design-system # Playwright against the dev-only reference page
+npm run likes:check        # type-check the likes Worker
 ```
 
 ## Deployment
@@ -60,12 +64,14 @@ Worker and D1 database for shared likes. `VITE_LIKES_API_URL` is the public Work
 URL, not a secret.
 
 The reader does not currently show a like control. The Worker, its database, the
-client in `src/lib/noteLikes.ts`, and `NoteLikeButton` are all kept and still
-tested, so the control can be restored by mounting it in the reader again. Until
-then nothing on the site writes to the database.
+client in `src/lib/noteLikes.ts`, and `NoteLikeButton` are all kept. The API is
+still tested; the unmounted button and client have no current browser coverage.
+Restoring the control means mounting it in the reader and restoring that
+coverage. Until then nothing on the site writes to the database.
 
-Each browser stores a random anonymous visitor ID. D1 stores one row per note and
-visitor, so retries and concurrent requests cannot add duplicate likes; an unlike
+When mounted, the client stores a random anonymous visitor ID per browser. D1
+stores one row per note and visitor, so retries and concurrent requests cannot
+add duplicate likes; an unlike
 only removes that visitor's row. Counts refresh when a note opens, every 15 seconds
 while visible, and on returning to the page. Old browser-only likes are not imported
 as public engagement. This is one like per browser, not verified person: clearing
@@ -87,10 +93,11 @@ VITE_LIKES_API_URL=http://127.0.0.1:8787 npm run dev
 
 The local database persists under `.wrangler/` and is gitignored. Playwright starts
 the local Worker and connects the test build automatically. Shared-like tests use
-the actual local D1 database, including independent browser sessions, retries,
-unlikes, and failed saves.
+the actual local D1 database directly, covering independent visitor IDs,
+concurrent retries, repeated unlikes, and rejected requests.
 
-To activate shared likes publicly:
+To activate shared likes publicly, first restore the reader control and its
+browser tests, then complete the service setup:
 
 1. Sign in with `npx wrangler login`.
 2. Create the database with `npx wrangler d1 create rafaelmedina-note-likes --config workers/likes/wrangler.jsonc`.
