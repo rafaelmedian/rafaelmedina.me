@@ -151,7 +151,7 @@
   /* One term per entry in `SECTIONS` in MobileTableOfContents. That array also
      drives each row's `--toc-slot`, so a section added there without a bump
      here moves the rows correctly but leaves the open card at the old height. */
-  --toc-slot-count: 3;
+  --toc-slot-count: 4;
   --toc-swap-duration: var(--duration-quick);
   position: fixed;
   z-index: var(--z-social);
@@ -204,7 +204,7 @@
 
 /* Keep the development feedback control clear of the expanded contents. */
 body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
-  bottom: calc(15rem + env(safe-area-inset-bottom)) !important;
+  bottom: calc(18rem + env(safe-area-inset-bottom)) !important;
 }
 
 .mosaic-mobile-toc-list {
