@@ -2598,6 +2598,24 @@ test("places the quote slider beside Protector instead of Dark mode", async ({ p
   await expect(page.getByRole("link", { name: /Open Matcha dark mode/ })).toHaveCount(0)
 })
 
+test("restores the folded resume tile at the start of the quote row", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/")
+
+  const protectorCard = page.getByRole("link", { name: /Open Protector/ })
+  const row = page.locator(".mosaic-row").filter({ has: protectorCard })
+  const resume = row.getByRole("link", { name: "Open Rafael Medina's resume PDF" })
+
+  await expect(row.locator(".mosaic-row-item")).toHaveCount(3)
+  await expect(row.locator(".mosaic-row-item").first().locator(".resume-tile")).toHaveCount(1)
+  await expect(resume).toHaveAttribute("href", "/rafael-medina-resume.pdf")
+  await expect(resume).toHaveAttribute("target", "_blank")
+  await expect(resume.locator(".resume-tile-sheet")).toHaveCSS("background-color", "rgb(255, 255, 255)")
+  await expect(resume.locator(".resume-tile-fold")).toHaveCount(1)
+  await expect(resume.locator(".resume-tile-copy")).toContainText("Stealth fintech")
+  await expect(resume.locator(".resume-tile-copy")).toContainText("2026 - Present")
+})
+
 // Protector is the one tile that owns most of its row, so it is the one the
 // flat three-up `sizes` used to under-declare: it asked for 446px, rendered at
 // ~790, and the crop scale magnified that again. The variant it loads has to
