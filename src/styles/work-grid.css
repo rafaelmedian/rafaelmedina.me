@@ -38,6 +38,7 @@
 
 .mosaic-rows {
   --row-gap: 1rem;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: var(--row-gap);
@@ -45,13 +46,53 @@
   padding: 0 clamp(16px, 3vw, 32px) 16px;
 }
 
-.mosaic-row {
-  --row-height: var(--row-height-input, 320px);
-  display: flex;
+.mosaic-group {
+  display: grid;
   gap: var(--row-gap);
-  align-items: stretch;
-  height: var(--row-height, 320px);
-  min-height: var(--row-height, 320px);
+  min-width: 0;
+}
+
+.mosaic-group-opening,
+.mosaic-group-closing {
+  height: clamp(260px, 28.075cqw, 420px);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.mosaic-group-opening {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 6fr) minmax(0, 3fr);
+  grid-template-areas: "wallet homepage writings";
+}
+
+.mosaic-group-portraits {
+  height: clamp(536px, 44.118cqw, 660px);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 5fr) minmax(0, 4fr);
+  grid-template-rows: minmax(340px, 3fr) minmax(180px, 2fr);
+  grid-template-areas:
+    "popparazi protector quote"
+    "resume protector security";
+}
+
+.mosaic-group-offset {
+  height: clamp(600px, 60.16cqw, 900px);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-rows: minmax(0, 40fr) minmax(0, 15fr) minmax(0, 45fr);
+  grid-template-areas:
+    "family dealership"
+    "family rewards"
+    "token rewards";
+}
+
+.mosaic-group-closing {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas: "mobile trade pro";
+}
+
+.mosaic-tile-resume .resume-tile {
+  container-type: size;
+}
+
+.mosaic-tile-resume .resume-tile-paper {
+  width: min(64%, 15rem, calc(84cqh * 237 / 280));
 }
 
 .mosaic-row-quote .mosaic-quote {
@@ -447,6 +488,10 @@
   }
 }
 
+.mosaic-takeover-spacer {
+  display: none;
+}
+
 @media (min-width: 700px) {
   .mosaic-shell {
     timeline-scope: --about-takeover;
@@ -460,29 +505,10 @@
   }
 
   .mosaic-takeover-runway {
-    --takeover-row-height: clamp(180px, 16vw, 260px);
     --takeover-breathing-room: clamp(12rem, 30vh, 18rem);
-    /* Mirrors `.mosaic-rows`' own `--row-gap`. The runway cannot read that
-       value -- it is set on a descendant -- so any breakpoint that changes the
-       gap has to change both, or the sticky stage stops matching the scroll
-       distance reserved for it. */
-    --takeover-row-gap: 1rem;
-    /* One term per row in `homeRows`, plus a `--row-gap` between each pair.
-       Adding or removing a row means updating the count here. The `max` covers
-       the quote row: `.mosaic-quote` carries a 340px floor, which is taller
-       than `--takeover-row-height` between 700px and 900px. */
-    --takeover-row-count: 5;
-    --takeover-gallery-height: calc(
-      var(--takeover-row-height) * (var(--takeover-row-count) - 1) +
-        max(var(--takeover-row-height), 340px) +
-        var(--takeover-row-gap) * (var(--takeover-row-count) - 1) +
-        var(--takeover-breathing-room)
-    );
 
     position: relative;
     width: 100%;
-    height: calc(var(--takeover-gallery-height) + 100vh);
-    height: calc(var(--takeover-gallery-height) + 100dvh);
     display: block;
     /* Identical to what shows through here — App's wrapper already paints
        `--canvas` behind the whole page. It has to be painted *inside* the
@@ -493,13 +519,23 @@
     background: var(--canvas);
   }
 
+  /* Padding is outside the sticky containing block's content box. A real
+     spacer gives the stage a full viewport of travel before it unpins. */
+  .mosaic-takeover-spacer {
+    display: block;
+    height: 100vh;
+    height: 100dvh;
+    pointer-events: none;
+  }
+
   .mosaic-takeover-stage {
     position: sticky;
-    top: calc(100vh - var(--takeover-gallery-height));
-    top: calc(100dvh - var(--takeover-gallery-height));
+    /* Before hydration the natural grid stays in place. Only the sticky
+       offset needs a measurement; media loading never sets its height. */
+    top: min(0px, calc(100vh - var(--takeover-gallery-height, 100vh)));
+    top: min(0px, calc(100dvh - var(--takeover-gallery-height, 100dvh)));
     z-index: 0;
     width: 100%;
-    height: var(--takeover-gallery-height);
     display: block;
     transform-origin: center bottom;
   }
@@ -784,22 +820,10 @@
   }
 }
 
-/* Row data supplies --row-height-input. CSS owns the effective height, so
-   responsive layouts can override it without fighting an inline property. */
-@media (min-width: 900px) {
-  .mosaic-takeover-runway {
-    --takeover-row-height: 420px;
-  }
-
-  .mosaic-row {
-    --row-height: 420px;
-  }
-}
-
 /* -------------------------------------------------- work tiles & captions --- */
 
 .mosaic-row-item {
-  flex: var(--row-span, 1) 1 0;
+  min-height: 0;
   min-width: 0;
   display: flex;
 }
@@ -1127,6 +1151,7 @@
 .mosaic-row-item-fit-contain .mosaic-row-card {
   padding: clamp(0.6rem, 1vw, 1rem);
   display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
 }
 
@@ -1138,184 +1163,163 @@
   object-fit: contain;
 }
 
-/* The phone mockup's alpha box is already tight around the devices, and its
-   composition runs into the bottom corners, so the mat every other contained
-   tile gets reads here as slack rather than as framing -- the phones ended up
-   floating small in the middle of the card.
-
-   `cover` is the wrong correction: the artwork is wider than the tile, so
-   filling it by height shaves the outer edge off both phones. Instead the art
-   keeps its whole width and gives up the mat, and the slack it cannot avoid
-   collects above the phones -- which is where the composition already leaves
-   its empty corners. */
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories {
+/* These compositions already supply their own framing. Family Stories keeps
+   its devices on the bottom edge; Rewards supplies two independent banners;
+   Token and Pro extend their own backdrop across the card below. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-20 {
   padding: 0;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories {
   place-items: end center;
 }
 
-/* `width: auto` leaves the art at its density-corrected intrinsic width, which
-   `previewSizesForShare` pins to the 446px slot -- on the wide layout that is narrower
-   than the card and the mat comes back. Take the full width instead; the
-   inherited `max-height` still stops the art before it outgrows a card that is
-   ever narrower than the artwork. */
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
   width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
-/* The Rewards composite is built at 1.16, the ratio this slot measures at
-   1440px and wider, and its two banners already run off the frame's left and
-   right edges. The mat is what a `contain` tile adds around artwork that has
-   its own edges; this one does not, so the mat would only pull the crop back
-   inside the card and undo it. Dropped, the artwork meets the card's own
-   rounded edge on the wide layout, and the slack it collects on narrower ones
-   sits above and below -- where the composition already leaves its corners
-   empty. */
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards {
-  padding: 0;
+/* These two 4:3 exports carry the same dark vertical backdrop around their UI.
+   Continue that backdrop across the card instead of framing the export in the
+   generic pale tile surface. The image remains contained, so neither the token
+   workspace nor Matcha Pro loses product chrome at a differently shaped slot. */
+.mosaic-row-card-preview-shot-21,
+.mosaic-row-card-preview-shot-23 {
+  background: linear-gradient(
+    to bottom,
+    rgb(74 66 87) 0%,
+    rgb(63 62 68) 50%,
+    rgb(38 38 46) 100%
+  );
 }
 
-/* Same reason as the phone mockup above: `width: auto` would leave the art at
-   the intrinsic width `previewSizesForShare` pins it to, which is narrower than
-   the card on the wide layout and brings the mat back sideways. */
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards .mosaic-row-media {
+/* Rewards owns two complete campaign deliverables. Positioning them as two
+   media boxes keeps every rounded end inside the tile; the previous flattened
+   composite baked both banners into a single crop whose cut edges read as a
+   layout mistake whenever this organic slot changed ratio. */
+.mosaic-row-media-pair {
+  position: relative;
   width: 100%;
+  height: 100%;
+  display: block;
 }
 
-/* ------------------------------------------------------------- tablet fit --- */
-/* Between 700px and 900px the grid keeps the desktop's three-up rows but the
-   rows are only `clamp(180px, 16vw, 260px)` tall, so every tile is far more
-   landscape than the slot it was framed for at 900px and up (509x420). The
-   block below is what that narrower, shorter tile needs: less air between the
-   cards, a corner radius in proportion to a 180px box, and artwork that fits
-   inside the card instead of running past its edges. */
-@media (min-width: 700px) and (max-width: 899.98px) {
-  .mosaic-rows {
-    /* 1rem between two 420px tiles reads as a seam; between two 180px ones it
-       reads as a gutter. Both the gap and the page inset come in so the tiles
-       carry the row instead of the space around them. */
-    --row-gap: 0.625rem;
+.mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media {
+  position: absolute;
+  width: 68%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+}
 
+.mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:first-child {
+  top: 3%;
+  left: 2%;
+}
+
+.mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:last-child {
+  right: 2%;
+  bottom: 3%;
+}
+
+/* Below desktop the group wrappers release their boxes so adjacent tiles can
+   share a row across group boundaries. Explicit areas keep keyboard/DOM order
+   aligned with the visual reading order; no dense placement or CSS ordering. */
+@media (max-width: 899.98px) {
+  .mosaic-rows {
+    --compact-insets: 32px;
+    --row-gap: 0.625rem;
+    --compact-tile: calc((100vw - var(--compact-insets) - var(--row-gap)) / 2);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows:
+      var(--compact-tile)
+      calc(var(--compact-tile) * 1.25)
+      auto
+      auto
+      minmax(340px, auto)
+      var(--compact-tile)
+      calc(var(--compact-tile) * 0.25)
+      var(--compact-tile)
+      calc(var(--compact-tile) * 1.25)
+      var(--compact-tile);
+    grid-template-areas:
+      "wallet homepage"
+      "writings popparazi"
+      "resume resume"
+      "protector protector"
+      "quote quote"
+      "security family"
+      "dealership family"
+      "dealership token"
+      "rewards mobile"
+      "trade pro";
     padding-inline: 1rem;
   }
 
-  .mosaic-takeover-runway {
-    --takeover-row-gap: 0.625rem;
+  .mosaic-group {
+    display: contents;
   }
 
-  .mosaic-row-with-quote {
-    --row-height: 340px;
+  .mosaic-tile-resume,
+  .mosaic-tile-protector {
+    aspect-ratio: 1354 / 1025;
   }
 
   .mosaic-row-quote .mosaic-quote {
     --quote-inline-padding: 1rem;
   }
 
-  /* `--radius-lg` is drawn against a 420px tile. On a 180px one the same 24px
-     takes a seventh of the height out of each corner and the card stops
-     reading as a rectangle. */
   .mosaic-row-card,
   .mosaic-quote,
   .writings-tile {
     border-radius: var(--radius-md);
   }
 
-  /* The contained tiles are sized by width -- `max-height: 100%` is meant to
-     stop them, but the card's implicit grid row is content-sized, so the
-     percentage has no definite basis to resolve against and drops out. On the
-     wide layout that never showed: the artwork is shorter than a 420px tile
-     either way. Here it overflows by 20-60px and `overflow: hidden` takes the
-     difference off the top and bottom of the frame -- the phones in Family
-     Stories lose their home indicators, Rewards loses its countdown.
-     A single definite `1fr` track gives the percentage something to resolve
-     against, and the art letterboxes inside the card as intended. */
   .mosaic-row-item-fit-contain .mosaic-row-card {
-    grid-template-rows: minmax(0, 1fr);
-    /* Letterboxing already leaves these tiles a wide mat left and right; the
-       full inset would spend the little height they have on a second one. */
     padding: 0.375rem;
   }
 
-  /* These two are the exception to the letterboxing above, and they have to be:
-     both are bleed compositions -- the phones run off the bottom of their own
-     frame, the Rewards banners off its left and right -- which is why neither
-     takes the mat a contained tile normally gets. Letterboxed, that bleed stops
-     short of the card and reads as a mis-cut image floating in grey. Filling
-     the card puts the artwork's own cut back on the card's rounded edge, which
-     is the same thing the wide layout does with them. */
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards {
-    padding: 0;
-  }
-
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media,
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards .mosaic-row-media {
-    width: 100%;
-    height: 100%;
-    max-height: none;
-    object-fit: cover;
-  }
-
-  /* The phones sit at the top of their frame and already trail off the bottom
-     of it, so the slot's extra height comes off the bottom -- anywhere else
-     takes the status bars and the top of the feed with it. */
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
-    object-position: center top;
-  }
-
-  /* The two featured clips are 4:3 files with the interface framed inside their
-     own margin, so the card's inset only doubles a mat the artwork already
-     carries. Height is what they are short of here -- give them all of it. */
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16 {
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-20 {
     padding: 0;
   }
 
-  /* `mediaMaxHeight` values in the row data hold portrait art clear of a 420px
-     tile's edges. Against 180px they compound with the letterboxing above and
-     leave the art stranded in the middle of the card. */
-  .mosaic-row-item-fit-contain .mosaic-row-media {
-    max-height: 100%;
+  .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media {
+    width: calc(100% - 0.5rem);
+  }
+
+  .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:first-child {
+    top: 0.25rem;
+    left: 0.25rem;
+  }
+
+  .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:last-child {
+    right: 0.25rem;
+    bottom: 0.25rem;
   }
 }
 
 @media (max-width: 699.98px) {
-
   .mosaic-rows {
+    --compact-insets: 16px;
+    --row-gap: 1rem;
     padding-inline: 0;
   }
-
-  .mosaic-row {
-    --row-height: clamp(340px, 92vw, 380px);
-    flex-direction: column;
-    height: auto;
-    min-height: 0;
-  }
-
-  .mosaic-row-item {
-    flex: 1 1 auto;
-    height: var(--row-height, 240px);
-    min-height: var(--row-height, 240px);
-  }
-
-  video.mosaic-row-media {
-    padding-inline: 8px;
-  }
-
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16 {
-    display: block;
-    padding: 0;
-  }
-
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9 .mosaic-row-media,
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16 .mosaic-row-media {
-    width: 100%;
-    max-width: none;
-    height: 100%;
-    max-height: none;
-    object-fit: cover;
-  }
-
 }
 
 @media (prefers-reduced-motion: reduce) {
