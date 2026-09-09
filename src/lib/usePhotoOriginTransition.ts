@@ -72,10 +72,12 @@ export function measurePhotoOrigins(opener: HTMLElement): PhotoOrigin[] {
   return origins
 }
 
-/** Where a photo with no print of its own goes home to: the print nearest it
-    across the fan. Aiming every one of them at the same point would draw the
-    sheet down a single line; nearest-by-column keeps the left of the sheet
-    going to the left of the pile, so it gathers the way it was dealt. */
+/** The print a photo with no frame of its own comes out of, and goes home to:
+    the one nearest it across the fan. Aiming every one of them at the same
+    point would draw the sheet down a single line; nearest-by-column keeps the
+    left of the sheet going to the left of the pile, so it is dealt the way it
+    gathers. Both directions borrow the same print, so a photo leaves by the
+    way it came. */
 function nearestPrint(sources: PhotoOrigin[], target: DOMRect) {
   const centre = target.left + target.width / 2
   const distance = (source: PhotoOrigin) => Math.abs(source.rect.left + source.rect.width / 2 - centre)
@@ -154,7 +156,9 @@ export function usePhotoOriginTransition(
     const cssDuration = tokens.getPropertyValue(open ? "--photo-open-duration" : "--photo-close-duration").trim()
     const duration = cssTimeToMilliseconds(cssDuration)
     const easing = tokens.getPropertyValue("--photo-motion-ease").trim()
-    const exitEasing = tokens.getPropertyValue("--ease-exit").trim()
+    // A borrowed print has no frame to morph into, so those photos fade at the
+    // pile: in on the entrance curve, out on the accelerating one.
+    const fadeEasing = tokens.getPropertyValue(open ? "--ease-smooth" : "--ease-exit").trim()
     // One beat in both directions: every print leaves the fan together and
     // every print comes home together, the way the project preview grows out
     // of its card in a single move. Dealing them out one after another read as
@@ -174,14 +178,15 @@ export function usePhotoOriginTransition(
       // a screen away would have to cross all of it inside one 200ms beat,
       // which reads as the sheet scattering rather than gathering.
       const lands = target.right > bounds.left && target.left < bounds.right && target.bottom > bounds.top && target.top < bounds.bottom
-      // Opening, only the photos that have a print of their own come out of
-      // the fan and the rest of the sheet rises in behind them. Going home,
-      // the whole sheet goes back to the pile: a photo with no print aims at
-      // the print nearest it and slips in under the cards landing on top of
-      // it. Left to fade where they stood, those photos went transparent in
-      // place with the page showing through them.
+      // The whole screenful travels, in both directions: a photo with a print
+      // of its own grows out of that print and lands back on it, and one
+      // without borrows the print nearest it, sliding out from under the cards
+      // that carry their own photo and slipping back under them on the way
+      // home. Left to fade where they stood, those photos went transparent in
+      // place with the page showing through them, and the sheet arrived by a
+      // different move than the one it left by.
       const own = lands ? sources.find((item) => item.id === slide.dataset.photoId) : undefined
-      const source = own ?? (lands && !open ? nearestPrint(sources, target) : undefined)
+      const source = own ?? (lands ? nearestPrint(sources, target) : undefined)
       if (!source) {
         if (previous) removeFlight(previous)
         return
@@ -255,14 +260,27 @@ export function usePhotoOriginTransition(
         clone.animate([open ? originFrame(own) : currentFrame, open ? targetFrame : originFrame(own)], timing),
         image.animate([open ? originImage(own) : currentImage, open ? targetImage : originImage(own)], timing),
         caption.animate([{ opacity: open ? 0 : currentCaptionOpacity }, { opacity: open ? 1 : 0 }], timing),
+      ] : open ? [
+        // The same trip, run backwards. There is no print-shaped frame for
+        // this one to grow out of, so the whole card swells from the print it
+        // borrowed rather than morphing, and it waits out the first sliver of
+        // the flight: shown from the first frame it would sit on top of the
+        // very cards it is meant to come out from under. Its caption rides
+        // with the card rather than fading on its own.
+        clone.animate([{ transform: previous ? currentTransform : tuckedTransform }, { transform: restingTransform }], timing),
+        clone.animate(
+          previous
+            ? [{ opacity: currentOpacity }, { opacity: 1 }]
+            : [{ opacity: 0 }, { opacity: 0, offset: 0.15 }, { opacity: 1 }],
+          { ...timing, easing: fadeEasing },
+        ),
       ] : [
         // There is no print-shaped frame for this one to land in, so the whole
         // card shrinks rather than morphing, and it leaves on the accelerating
         // curve: full strength for most of the trip, then out just before the
-        // print it is tucking under comes down. Its caption travels with the
-        // card rather than fading on its own.
+        // print it is tucking under comes down.
         clone.animate([{ transform: currentTransform }, { transform: tuckedTransform }], timing),
-        clone.animate([{ opacity: currentOpacity }, { opacity: 0, offset: 0.85 }], { ...timing, easing: exitEasing }),
+        clone.animate([{ opacity: currentOpacity }, { opacity: 0, offset: 0.85 }], { ...timing, easing: fadeEasing }),
       ]
       const flight = { slide, clone, animations }
       flights.current.push(flight)
