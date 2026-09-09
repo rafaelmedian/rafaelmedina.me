@@ -137,8 +137,10 @@ test("documents the computed navigation hit area", async ({ page }) => {
 })
 
 test("documents the computed resume-title weight", async ({ page }) => {
-  await page.goto("/#about-panel-resume")
+  await page.goto("/")
+  await page.getByRole("button", { name: "Open résumé" }).click()
   const resumeTitleWeight = await page
+    .getByRole("dialog", { name: "Work history" })
     .locator(".mosaic-about-resume-title")
     .first()
     .evaluate((title) => getComputedStyle(title).fontWeight)
