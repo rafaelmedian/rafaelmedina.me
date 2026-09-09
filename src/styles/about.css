@@ -460,21 +460,28 @@
    and a fractional track keeps every lockup on the same left edge as the one
    above it. Rows are aligned to their start so the one two-line name
    ("Protector and Patrol") grows its row without dragging its neighbours'
-   marks down with it. */
+   marks down with it. The heading clears the wall by the 1.5rem the Work
+   history heading clears its own list, so the sheet's two stacked sections
+   open the same way. */
 .mosaic-about-logo-grid {
-  margin: 0.5rem 0 0;
+  margin: 1.5rem 0 0;
   padding: 0;
   list-style: none;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
-  gap: 1.75rem 1.25rem;
+  gap: 1.5rem 1.25rem;
 }
 
+/* No chip, no fill, no hairline: nine bordered boxes turn a quiet wall into
+   a table, and the sheet already spends its only hard edges on the rules
+   between résumé entries. The lockups are held apart by whitespace, and the
+   one thing that moves on hover is the ink -- the same --muted-to---ink
+   travel the hero's company chips make. */
 .mosaic-about-logo-link {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.25rem;
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   line-height: 1.5;
@@ -484,44 +491,33 @@
   transition: color var(--duration-quick) var(--ease-standard);
 }
 
+/* One value for hover and focus, as on the hero chips: a name under the
+   cursor and a name under the keyboard mean the same thing. */
 .mosaic-about-logo-link:hover,
 .mosaic-about-logo-link:focus-visible {
-  color: #2d2d2d;
+  color: var(--ink);
 }
 
+/* Marks sit 0.25rem off their label -- the scale's icon-to-label step.
+   Protector and Patrol ship two of them under one name and take the same
+   step between the pair: overlapped, their two chevrons fused into a single
+   unreadable glyph. */
 .mosaic-about-logo-marks {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
+  gap: 0.25rem;
 }
 
-/* Every mark is squared off to the same 1.25rem box and contained inside it,
-   so a tall logo and a wide one carry the same optical weight down the
-   column. The marks stay in brand colour -- they are the one place on the
-   sheet where colour is the content. */
+/* Every mark is squared off to the same box and contained inside it, so a
+   tall logo and a wide one carry the same optical weight down the column.
+   The marks stay in brand colour -- borrowed artwork, like the vendor
+   palettes, not a colour this site owns. */
 .mosaic-about-logo-mark {
   width: 1.25rem;
   height: 1.25rem;
   object-fit: contain;
   object-position: center;
-}
-
-/* Protector and Patrol ship as two marks under one name. Overlapped bare on
-   the canvas their two chevrons fused into one unreadable glyph, so the pair
-   takes the same ringed-chip stack the work-history popover already uses for
-   this company: a white disc behind each mark draws the edge that tells them
-   apart. */
-.mosaic-about-logo-marks.is-pair .mosaic-about-logo-mark {
-  width: 1.35rem;
-  height: 1.35rem;
-  padding: 0.25rem;
-  border-radius: var(--radius-full);
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
-}
-
-.mosaic-about-logo-marks.is-pair .mosaic-about-logo-mark + .mosaic-about-logo-mark {
-  margin-left: -0.3rem;
 }
 
 .mosaic-about-logo-name {
@@ -532,12 +528,32 @@
 @media (max-width: 699.98px) {
   .mosaic-about-logo-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.25rem 1rem;
+    gap: 1.25rem;
   }
 
-  /* Same 40px floor the sheet's inline links take on touch: a 20px mark and
-     one line of 14px text is a 21px target on its own. */
+  /* Two columns leave an odd list one lockup short of a full row. The last
+     one takes the whole row, which is also what keeps the longest name off a
+     second line, and the selector reads the parity off the list, so adding a
+     tenth company puts it back in its column without anyone remembering this
+     rule exists. */
+  .mosaic-about-logo-cell:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  /* The lockup keeps its printed height and grows its target underneath, the
+     same way the hero chips and the corner nav links reach 40px on touch
+     without printing a taller box. */
   .mosaic-about-logo-link {
-    min-height: 40px;
+    position: relative;
+  }
+
+  .mosaic-about-logo-link::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    transform: translateY(-50%);
   }
 }
