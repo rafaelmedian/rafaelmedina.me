@@ -469,7 +469,7 @@ test("does not claim a sitemap modification date for every deployment", async ({
   expect(await response.text()).not.toContain("<lastmod>")
 })
 
-test("offers LinkedIn and X actions beside copy email", async ({ page }) => {
+test("offers LinkedIn and X actions beside booking", async ({ page }) => {
   await page.goto("/")
 
   const actions = page.locator(".mosaic-profile-contact").getByRole("group", { name: "Profile contact actions" })
@@ -480,24 +480,25 @@ test("offers LinkedIn and X actions beside copy email", async ({ page }) => {
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
 })
 
-test("keeps the wider copy-email action fixed when its label changes", async ({ context, page }) => {
-  await context.grantPermissions(["clipboard-write"])
+test("leads the contact row with the booking pill", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
-  await pausePageClock(page)
 
-  const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
-  const beforeCopy = await copyButton.boundingBox()
+  const actions = page.getByRole("group", { name: "Profile contact actions" })
+  const bookButton = actions.locator(".mosaic-booking-pill")
 
-  expect(beforeCopy).not.toBeNull()
-  expect(beforeCopy!.width).toBe(112)
+  await expect(bookButton).toHaveText("Book a call")
+  await expect(bookButton).toHaveAccessibleName(/^Book a call — Available in /)
 
-  await copyButton.click()
-  await expect(copyButton).toHaveText("Copied!")
+  const bookBox = await bookButton.boundingBox()
+  const linkedInBox = await actions.getByRole("link", { name: "Message on LinkedIn" }).boundingBox()
 
-  const afterCopy = await copyButton.boundingBox()
-  expect(afterCopy).not.toBeNull()
-  expect(afterCopy!.width).toBe(beforeCopy!.width)
+  expect(bookBox).not.toBeNull()
+  expect(linkedInBox).not.toBeNull()
+  expect(bookBox!.x).toBeLessThan(linkedInBox!.x)
+  // The dark pill is the only one carrying the availability dot.
+  await expect(bookButton.locator(".mosaic-availability-dot")).toHaveCount(1)
+  await expect(actions.locator(".mosaic-availability-dot")).toHaveCount(1)
 })
 
 test("uses the same side padding for every contact action", async ({ page }) => {
@@ -724,7 +725,7 @@ test("reserves balanced wrapping for headings", async ({ page }) => {
   await page.goto("/")
 
   await expect(page.locator("#about-section .mosaic-about-section-copy > p").nth(1)).toHaveCSS("text-wrap", "pretty")
-  await expect(page.getByRole("button", { name: "Copy email" })).not.toHaveCSS("text-wrap", "balance")
+  await expect(page.locator(".mosaic-booking-pill")).not.toHaveCSS("text-wrap", "balance")
 })
 
 test("matches the mobile browser theme color to the page canvas", async ({ page, request }) => {
@@ -740,96 +741,91 @@ test("matches the mobile browser theme color to the page canvas", async ({ page,
   })
 })
 
-test("previews the copy reaction without copying on hover", async ({ page }) => {
+test("copies the hero address on click and says so in its tooltip", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-write", "clipboard-read"])
   await page.goto("/")
+  await pausePageClock(page)
 
-  const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
-  const reaction = page.locator(".mosaic-copy-reaction")
+  const email = page.locator(".mosaic-profile-email")
+  const hint = page.locator(".booking-hint")
 
-  await expect(reaction).toHaveCount(0)
-  await copyButton.hover()
-  await expect(reaction).toBeVisible()
-  await expect(copyButton).toHaveText("Copy email")
-  await expect(copyButton).toHaveAttribute("title", contactEmail)
-  await expect(reaction.locator("source")).toHaveAttribute("srcset", "/reactions/copy-email-before-still.webp")
-  await expect(reaction.locator("img")).toHaveAttribute("src", "/reactions/copy-email-before.webp")
+  await expect(email).toHaveText(contactEmail)
+  await expect(email).toHaveAccessibleName(`Copy email address ${contactEmail}`)
+
+  await email.hover()
+  // The paused clock also holds the tooltip's 160ms intent delay.
+  await page.clock.fastForward(200)
+  await expect(hint).toHaveText("Click to copy")
+
+  await email.click()
+  // The tooltip is the confirmation surface, so the press must not close it.
+  await expect(hint).toHaveText("Copied to clipboard")
+  await expect(page.getByRole("status")).toHaveText(`${contactEmail} copied to clipboard`)
+  await expect(
+    page.evaluate(() => navigator.clipboard.readText()),
+  ).resolves.toBe(contactEmail)
+
+  // And it goes back to the invitation, so the next hover reads as an offer.
+  await page.clock.fastForward(1_600)
+  await expect(hint).toHaveText("Click to copy")
 })
 
-test("celebrates a copied email below the trigger on the highest hero layer", async ({ context, page }) => {
+test("copies the hero address again on every repeat click", async ({ context, page }) => {
+  await context.grantPermissions(["clipboard-write", "clipboard-read"])
+  await page.goto("/")
+  await pausePageClock(page)
+
+  const email = page.locator(".mosaic-profile-email")
+  const hint = page.locator(".booking-hint")
+
+  await email.click()
+  await page.clock.fastForward(200)
+  await expect(hint).toHaveText("Copied to clipboard")
+  await page.clock.fastForward(1_600)
+  await expect(hint).toHaveText("Click to copy")
+
+  // A second copy gets its own full confirmation window rather than inheriting
+  // the tail of the first one.
+  await page.evaluate(() => navigator.clipboard.writeText("cleared"))
+  await email.click()
+  await expect(hint).toHaveText("Copied to clipboard")
+  await expect(
+    page.evaluate(() => navigator.clipboard.readText()),
+  ).resolves.toBe(contactEmail)
+
+  await page.clock.fastForward(800)
+  await expect(hint).toHaveText("Copied to clipboard")
+  await page.clock.fastForward(800)
+  await expect(hint).toHaveText("Click to copy")
+})
+
+test("keeps the address icon in place and marks a copy in the accent", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-write"])
   await page.goto("/")
   await pausePageClock(page)
 
-  const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
-  const reaction = page.locator(".mosaic-copy-reaction")
+  const email = page.locator(".mosaic-profile-email")
+  const icon = email.locator(".mosaic-profile-email-icon")
 
-  await expect(copyButton).toHaveAccessibleName("Copy email")
-  await expect(reaction).toHaveCount(0)
-  await copyButton.click()
+  // The icon holds its slot at rest, so the centred line never shifts under a
+  // pointer that is already on its way to the click.
+  await expect(icon).toBeVisible()
+  const restBox = await icon.boundingBox()
+  await email.hover()
+  const hoverBox = await icon.boundingBox()
+  expect(restBox).not.toBeNull()
+  expect(hoverBox).not.toBeNull()
+  expect(hoverBox!.x).toBeCloseTo(restBox!.x, 0)
+  expect(restBox!.width).toBeCloseTo(14, 0)
 
-  await expect(copyButton).toHaveText("Copied!")
-  await expect(reaction).toBeVisible()
-  await expect(reaction.evaluate((element) => getComputedStyle(element, "::after").content)).resolves.toBe("none")
-  const buttonBox = await copyButton.boundingBox()
-  const reactionBox = await reaction.boundingBox()
-  expect(buttonBox).not.toBeNull()
-  expect(reactionBox).not.toBeNull()
-  expect(reactionBox!.y).toBeGreaterThanOrEqual(buttonBox!.y + buttonBox!.height)
+  await expect(icon).toHaveCSS("color", "rgb(20, 20, 20)")
 
-  const contactLayer = await page.locator(".mosaic-profile-contact").evaluate((element) =>
-    Number.parseInt(getComputedStyle(element).zIndex, 10),
-  )
-  const navigationLayer = await page.locator(".mosaic-social-corner").evaluate((element) =>
-    Number.parseInt(getComputedStyle(element).zIndex, 10),
-  )
-  const reactionLayer = await reaction.evaluate((element) => Number.parseInt(getComputedStyle(element).zIndex, 10))
-  const socialCardLayer = await page.locator(".mosaic-x-card").evaluate((element) =>
-    Number.parseInt(getComputedStyle(element).zIndex, 10),
-  )
-  expect(contactLayer).toBeGreaterThan(navigationLayer)
-  expect(reactionLayer).toBeGreaterThan(socialCardLayer)
+  await email.click()
+  await expect(email).toHaveAttribute("data-copied", "true")
+  await expect(icon).toHaveCSS("color", "rgb(52, 162, 106)")
 
-  const image = reaction.locator("img")
-  await expect(image).toHaveAttribute("src", "/reactions/copy-email-success.webp")
-  await expect.poll(() => image.evaluate((element) => element.naturalWidth)).toBeGreaterThan(0)
-  await page.clock.fastForward(1_800)
-  await expect(copyButton).toHaveText("Copy email")
-  await expect(reaction).toBeVisible()
-  await page.keyboard.press("Escape")
-  await expect(reaction).toHaveCount(0)
-})
-
-test("dismisses the copied-email reaction as soon as another contact pill is hovered", async ({ context, page }) => {
-  await context.grantPermissions(["clipboard-write"])
-  await page.goto("/")
-  await pausePageClock(page)
-
-  const copyButton = page.getByRole("button", { name: "Copy email" })
-  const reaction = page.locator(".mosaic-copy-reaction")
-
-  await copyButton.click()
-  await expect(reaction).toBeVisible()
-
-  await page.getByRole("link", { name: "Message on LinkedIn" }).hover()
-  await expect(reaction).toHaveCount(0, { timeout: 400 })
-})
-
-test("keeps the copy reaction inside a narrow viewport", async ({ context, page }) => {
-  await context.grantPermissions(["clipboard-write"])
-  await page.setViewportSize(mobileViewport)
-  await page.goto("/")
-  await pausePageClock(page)
-
-  const copyButton = page.locator(".mosaic-profile-contact").getByRole("button")
-  await copyButton.click()
-  await expect(copyButton).toHaveText("Copied!")
-  const reaction = page.locator(".mosaic-copy-reaction")
-  await reaction.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
-  const reactionBox = await reaction.boundingBox()
-
-  expect(reactionBox).not.toBeNull()
-  expect(reactionBox!.x).toBeGreaterThanOrEqual(0)
-  expect(reactionBox!.x + reactionBox!.width).toBeLessThanOrEqual(mobileViewport.width)
+  await page.clock.fastForward(1_600)
+  await expect(email).not.toHaveAttribute("data-copied", "true")
 })
 
 test("previews the X profile while the Follow pill is hovered", async ({ page }) => {
@@ -1450,43 +1446,49 @@ test("keeps local time separate from the navigation", async ({ page }) => {
 
   const location = page.locator(".mosaic-profile-location")
   await expect(location).toContainText("Punta Cana & NYC")
-  await expect(location).toContainText("Available in September")
+  await expect(location).toContainText(contactEmail)
   await expect(location).not.toContainText("Local time:")
-  await expect(page.locator(".mosaic-profile-contact > .mosaic-profile-availability")).toHaveCount(0)
+  await expect(location).not.toContainText("Available in")
+  await expect(page.locator(".mosaic-profile-contact > .mosaic-profile-email")).toHaveCount(0)
 })
 
-test("keeps the location and availability copy together at 320px", async ({ page }) => {
+test("keeps the location and address copy together at 320px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.goto("/")
 
   const place = page.locator(".mosaic-profile-location-place")
-  const availability = page.locator(".mosaic-profile-availability")
+  const email = page.locator(".mosaic-profile-email")
   const separator = page.locator(".mosaic-profile-location-separator")
   await expect(place).toHaveCSS("white-space", "nowrap")
-  await expect(availability).toHaveCSS("white-space", "nowrap")
+  // The address never breaks mid-domain; it drops to its own line instead.
+  await expect(email).toHaveCSS("white-space", "nowrap")
   await expect(separator).toBeHidden()
 
-  const [placeBox, availabilityBox] = await Promise.all([place.boundingBox(), availability.boundingBox()])
+  const [placeBox, emailBox] = await Promise.all([place.boundingBox(), email.boundingBox()])
   expect(placeBox).not.toBeNull()
-  expect(availabilityBox).not.toBeNull()
-  expect(availabilityBox!.y).toBeGreaterThan(placeBox!.y)
+  expect(emailBox).not.toBeNull()
+  expect(emailBox!.y).toBeGreaterThan(placeBox!.y)
+  expect(emailBox!.x).toBeGreaterThanOrEqual(0)
+  expect(emailBox!.x + emailBox!.width).toBeLessThanOrEqual(320)
 })
 
-test("shows current availability with the status dot on the right", async ({ page }) => {
+test("carries the availability month in the booking pill's hint, with the dot ahead of its label", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
+  await settleAvatarIntro(page)
 
-  const availability = page.locator(".mosaic-profile-availability")
-  await expect(availability).toHaveText("Available in September")
-  await page.locator(".mosaic-profile-location").evaluate((element) =>
-    Promise.all(element.getAnimations().map((animation) => animation.finished)),
-  )
+  const bookButton = page.locator(".mosaic-booking-pill")
+  await expect(bookButton).toHaveText("Book a call")
 
-  const availabilityBox = await availability.boundingBox()
-  const alignment = await availability.evaluate((element) => {
-    const label = element.querySelector(".mosaic-availability-label")
-    if (!label) return null
+  // The month left the location line; the hint is where it lives now.
+  await bookButton.hover()
+  await expect(page.getByRole("tooltip")).toHaveText("Available in September · 30 minutes in my calendar")
+
+  const alignment = await bookButton.evaluate((element) => {
+    const label = element.querySelector(".mosaic-contact-pill-dark-label")
+    const dot = element.querySelector(".mosaic-availability-dot")
+    if (!label || !dot) return null
 
     // Ranged over the glyphs rather than the label's own box: the label is a
     // flex item, so its box is the full line height and its centre would not
@@ -1494,20 +1496,18 @@ test("shows current availability with the status dot on the right", async ({ pag
     const range = document.createRange()
     range.selectNodeContents(label)
     const textBox = range.getBoundingClientRect()
-    const dotBox = element.querySelector(".mosaic-availability-dot")?.getBoundingClientRect()
-    if (!dotBox) return null
+    const dotBox = dot.getBoundingClientRect()
 
     return {
-      dotCenterX: dotBox.x + dotBox.width / 2,
+      dotRight: dotBox.right,
+      labelLeft: textBox.left,
       dotCenterY: dotBox.y + dotBox.height / 2,
       textCenterY: textBox.y + textBox.height / 2,
     }
   })
-  expect(availabilityBox).not.toBeNull()
   expect(alignment).not.toBeNull()
-  expect(alignment!.dotCenterX).toBeGreaterThan(availabilityBox!.x + availabilityBox!.width / 2)
-  expect(alignment!.dotCenterY - alignment!.textCenterY).toBeGreaterThanOrEqual(1)
-  expect(alignment!.dotCenterY - alignment!.textCenterY).toBeLessThanOrEqual(2)
+  expect(alignment!.dotRight).toBeLessThanOrEqual(alignment!.labelLeft)
+  expect(Math.abs(alignment!.dotCenterY - alignment!.textCenterY)).toBeLessThanOrEqual(1.5)
 })
 
 test("uses a compact availability dot", async ({ page }) => {
@@ -1518,22 +1518,22 @@ test("uses a compact availability dot", async ({ page }) => {
 })
 
 // The dot used to be opacity 0 until the label was hovered, which hid the only
-// chromatic pixel in the site's own chrome behind an interaction — on the one
-// line a visitor is scanning for. It rests visible now; hover widens the halo.
+// chromatic pixel in the site's own chrome behind an interaction. It rests
+// visible now; hover widens the halo.
 test("keeps the availability dot visible at rest and widens its halo on hover", async ({ page }) => {
   await page.goto("/")
   // The reveal's animation-delay window reads as two stable frames, so an
-  // unsettled hover can land on the line's pre-rise position and slide out
+  // unsettled hover can land on the pill's pre-rise position and slide out
   // from under the pointer 12px later -- leaving :hover never applied.
   await settleAvatarIntro(page)
 
-  const availability = page.locator(".mosaic-profile-availability")
-  const dot = availability.locator(".mosaic-availability-dot")
+  const bookButton = page.locator(".mosaic-booking-pill")
+  const dot = bookButton.locator(".mosaic-availability-dot")
   await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
   await expect(dot).toHaveCSS("opacity", "1")
 
   const restHalo = await dot.evaluate((element) => getComputedStyle(element).boxShadow)
-  await availability.hover()
+  await bookButton.hover()
   await expect(dot).not.toHaveCSS("box-shadow", restHalo)
   await expect(dot).toHaveCSS("opacity", "1")
 
@@ -1545,11 +1545,11 @@ test("keeps the availability dot visible without motion when reduced motion is r
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  const availability = page.locator(".mosaic-profile-availability")
-  const dot = availability.locator(".mosaic-availability-dot")
+  const bookButton = page.locator(".mosaic-booking-pill")
+  const dot = bookButton.locator(".mosaic-availability-dot")
   await expect(dot).toHaveCSS("opacity", "1")
 
-  await availability.hover()
+  await bookButton.hover()
   await expect(dot).toHaveCSS("opacity", "1")
   await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
 })
@@ -1563,11 +1563,11 @@ test("hints at booking on hover and opens the calendar only on click", async ({ 
   await page.goto("/")
   // Same guard as the halo test: hover only after the reveal has settled.
   await settleAvatarIntro(page)
-  const trigger = page.locator(".mosaic-availability-trigger")
+  const trigger = page.locator(".mosaic-booking-pill")
   await trigger.hover()
   const tooltip = page.getByRole("tooltip")
   await expect(tooltip).toBeVisible()
-  await expect(tooltip).toHaveText("Click to book a time in my calendar")
+  await expect(tooltip).toHaveText(/^Available in \w+ · 30 minutes in my calendar$/)
   await expect(page.getByRole("dialog")).toHaveCount(0)
   expect(calendarRequests).toBe(0)
   await tooltip.hover()
@@ -1595,7 +1595,7 @@ test("opens the booking calendar from a press, and never from focus alone", asyn
 
   // The hero is `visibility: hidden` until the avatar intro reveals it, and a
   // hidden button cannot take focus.
-  const trigger = page.locator(".mosaic-availability-trigger")
+  const trigger = page.locator(".mosaic-booking-pill")
   await expect(trigger).toBeVisible()
   await trigger.focus()
   await expect(trigger).toBeFocused()
@@ -1606,10 +1606,10 @@ test("opens the booking calendar from a press, and never from focus alone", asyn
   await expect(page.getByRole("dialog")).toBeVisible()
 })
 
-test("keeps availability text gray and its status dot green", async ({ page }) => {
+test("keeps the location line gray and the status dot green", async ({ page }) => {
   await page.goto("/")
 
-  await expect(page.locator(".mosaic-profile-availability")).toHaveCSS("color", "rgb(107, 107, 107)")
+  await expect(page.locator(".mosaic-profile-email")).toHaveCSS("color", "rgb(107, 107, 107)")
   await expect(page.locator(".mosaic-profile-location-place")).toHaveCSS("color", "rgb(107, 107, 107)")
   await expect(page.locator(".mosaic-availability-dot")).toHaveCSS("background-color", "rgb(52, 162, 106)")
 })
