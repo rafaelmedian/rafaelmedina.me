@@ -343,7 +343,7 @@ const SPACE = [
   { value: "8.75rem", use: "Maximum About inset" },
   { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
   { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
-  { value: "clamp(16px, 3vw, 32px)", use: "Page gutter from 700px to 899px" },
+  { value: "clamp(16px, 3vw, 32px)", use: "Grid inset from 900px up; compact tablet uses 1rem" },
   { value: "clamp(1.25rem, 4vw, 5rem)", use: "Personal-photo carousel side gutters" },
   { value: "clamp(12rem, 30vh, 18rem)", use: "Desktop white runway before the About takeover" },
 ]
@@ -439,10 +439,10 @@ const BREAKPOINTS = [
   { at: "≤ 327.98px", change: "Contact pills use 0.625rem side padding; the wrapped X card centers on its trigger; location and address stack without a separator." },
   { at: "≤ 479.98px", change: "Contact pills gain up to 1.25rem side padding and wrap when their container cannot accommodate them." },
   { at: "≤ 639.98px", change: "The hero uses 2rem of top padding plus the top safe area." },
-  { at: "≤ 699.98px", change: "Local time and corner navigation hide; a centered floating control labeled with the current section opens a table of contents with 14px labels; the shell uses 8px gutters; every project shows in one 340–380px column; featured media crops to fill its card; the full-bleed About sheet returns to normal document flow; work-card captions and their scrim are hidden, on any screen without hover." },
+  { at: "≤ 699.98px", change: "Local time and corner navigation hide; a centered floating control labeled with the current section opens a table of contents with 14px labels; the shell uses 8px gutters around the compact two-column mosaic; the full-bleed About sheet returns to normal document flow; work-card captions and their scrim are hidden, on any screen without hover." },
   { at: "480–699.98px + fine hover", change: "Contact pills stay 34px tall." },
   { at: "≥ 760px", change: "This page's own two-column grids. Not a portfolio breakpoint." },
-  { at: "≥ 900px", change: "Mosaic rows go to 420px and the shell drops its inline padding." },
+  { at: "≥ 900px", change: "The mosaic becomes four named desktop groups with independent container-relative heights and the shell drops its inline padding." },
   {
     at: "≥ 1320px",
     change: "Project previews open in the wide view with a 5vh top inset: at most 981px, and narrower when the media’s height cap gives a 4:3 preview less width to fill.",
@@ -1262,13 +1262,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements origin flight bearing 200ms 160ms 360ms --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder /></div>
               <p className="ds-caption">
                 A tile on --mosaic-card-surface with 24px corners and one label, “Writings &amp; notes”.
-                Between 700px and 899px the corners drop to 16px and the folder is zoomed to 0.7 so it and the
-                label both fit a 180px row; the artwork is absolutely positioned at fixed offsets, so only a
+                Below 900px the corners drop to 16px and the folder is zoomed to 0.7 so it and the
+                label both fit its compact portrait slot; the artwork is absolutely positioned at fixed offsets, so only a
                 layout-affecting scale keeps it off the label.
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
                 with 8px corners and reader-sized 14px type scaled to one third. Papers fan over 360ms with smooth easing.
@@ -1397,13 +1397,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </p>
             </div>
 
-            <div className="ds-block" data-ds-terms={terms("quote blockquote attribution avatars --radius-lg --text-lg --text-md --text-sm 340px")}>
+            <div className="ds-block" data-ds-terms={terms("quote blockquote attribution avatars portraits group 3fr 5fr 4fr protector security compact wide span two columns --radius-lg --radius-md --text-lg --text-md --text-sm 340px 660px")}>
               <p className="ds-subhead">Quote slider</p>
               <p>
-                The slider sits in the quote row and takes a 1.25-unit
-                column beside a one-unit résumé tile and 1.75-unit Protector, so the row totals four units. Between 700px and 899px, that row grows to 340px to fit the quote;
-                from 900px it shares the usual 420px row height. The card uses a white surface, an 8%
-                black hairline, and --radius-lg corners (--radius-md between 700px and 899px, with the rest of the row). Quotes up to 80 characters (including spaces)
+                On desktop the slider occupies the upper-right area of the 3:5:4 portraits group, above Security
+                and beside the full-height Protector tile. Below 900px it spans both compact columns and keeps a
+                340px minimum row so the longest quote has room. The card uses a white surface, an 8%
+                black hairline, and --radius-lg corners on desktop (--radius-md throughout the compact grid). Quotes up to 80 characters (including spaces)
                 use --text-lg (18px); longer quotes use --text-md (16px). Both use 1.5 line height with a
                 centered 21rem measure and balanced line breaks; attribution uses --text-sm and --muted. A shared grid reserves the longest
                 quote's height, author row, and attribution-note row using subgrid. Each 40px portrait and attribution fit their content and are centered
@@ -1452,15 +1452,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} />
             </div>
 
-            <div className="ds-block" data-ds-terms={terms("resume résumé folded paper tile curl clip-path modal dialog close work history education cv pdf prints screenshots --mosaic-card-surface --radius-lg --radius-md --radius-sm --shadow-ring --shadow-control-hover 24px 5.06cqw 200ms 160ms")}>
+            <div className="ds-block" data-ds-terms={terms("resume résumé folded paper tile curl clip-path modal dialog close work history education cv pdf prints screenshots --mosaic-card-surface --radius-lg --radius-md --radius-sm --shadow-ring --shadow-control-hover 24px 5.06cqw 84cqh 237:280 200ms 160ms")}>
               <p className="ds-subhead">Résumé tile</p>
               <p>
-                The first unit of the quote row opens the résumé reader. Its outer surface is
+                The lower-left tile of the portraits group opens the résumé reader; below 900px it spans both columns. Its outer surface is
                 the standard work tile: <code>--mosaic-card-surface</code>, an 8% hairline, and
-                <code>--radius-lg</code> corners (<code>--radius-md</code> on the compact desktop row). Inside it, a
+                <code>--radius-lg</code> corners (<code>--radius-md</code> throughout the compact grid). Inside it, a
                 white sheet sits 1px inside an uncut #d5d5d7 silhouette with the comp&rsquo;s 24px corners and a 1px
                 14% inset hairline, so the underside shows as a stroke around the whole card. The sheet spans 64% of
-                the tile up to 15rem. One SVG on its lower-right corner, 77 of the comp&rsquo;s 237 units wide, draws
+                the tile up to 15rem, capped at 84% of the tile height while keeping its 237:280 ratio. One SVG on its lower-right corner, 77 of the comp&rsquo;s 237 units wide, draws
                 the sliced corner from the Figma Paper outline, the underside through it with an 18% shade along the
                 seam, and the exported curl trimmed to the sheet side of the cut so its own stroke never crosses the
                 seam. The outer shadow is a drop-shadow filter on the whole paper (4px/21px at 6% and 2px/3px at 5%). The miniature entries come from the
@@ -1700,11 +1700,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </div>
                 <div
                   className="ds-specimen ds-specimen-block"
-                  data-ds-terms={terms("tile #ececee work card resume résumé 24px radius rgb(0 0 0 / 0.08)")}
+                  data-ds-terms={terms("tile #ececee work card 24px 16px radius desktop compact below 900px rgb(0 0 0 / 0.08)")}
                 >
                   <strong className="ds-specimen-title">Tile — #ececee</strong>
                   <p className="ds-specimen-note">
-                    Work cards and the résumé tile use a 24px radius — 16px between 700px and 899px, where standard rows are 180px tall and the quote row is 340px —{" "}
+                    Work cards and the résumé tile use a 24px radius on desktop and 16px throughout the compact grid below 900px —{" "}
                     <code>1px solid rgb(0 0 0 / 0.08)</code>, and no shadow —
                     they sit in the page rather than above it. About uses the full-bleed white canvas surface.
                   </p>
@@ -1873,15 +1873,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
               </div>
 
-              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load preload avatar portrait 52px stationary opacity blur 4px translate 12px 60ms stagger --duration-slow work cards reduced motion")}>
+              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load preload avatar portrait 52px stationary opacity blur 4px translate 12px 60ms stagger desktop groups compact children inherit delay --duration-slow work cards reduced motion")}>
                 <strong>The avatar animates before the homepage content.</strong>
                 <p>
                   A fresh homepage visit starts with the actual 52px header portrait at its final size and
                   position. It never moves, scales, or flips. Once decoded, the face fades in and resolves
                   from <code>--blur-reveal</code> (4px) over <code>--duration-slow</code> (360ms).
                   Only after that finishes do the name, work history, location, contact actions, corner
-                  navigation, and project rows rise 12px and resolve from the same blur and duration, with
-                  60ms between groups. Layout stays fixed throughout.
+                  navigation, and named project groups rise 12px and resolve from the same blur and duration, with
+                  60ms between groups. Below 900px the group wrappers have no box, so each group's children inherit
+                  its delay and animate in its place. Layout stays fixed throughout.
                 </p>
                 <p>
                   Images prepare in the background; video playback waits until the stagger completes. Reduced motion,
@@ -1914,10 +1915,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-block">
               <p className="ds-subhead">Shell</p>
               <ul className="ds-list">
-                <li data-ds-terms={terms("max width 1560px gutter 8px clamp(1rem, 5vw, 1.5rem) 700px 900px full-bleed")}>
-                  <strong>Max width 1560px</strong>, with an 8px gutter below 700px and a{" "}
-                  <code>clamp(1rem, 5vw, 1.5rem)</code> gutter from 700px to 899px — dropped entirely at 900px so the
-                  mosaic can run full-bleed.
+                <li data-ds-terms={terms("max width 1560px gutter 8px 16px 700px 900px full-bleed")}>
+                  <strong>Max width 1560px</strong>, with an 8px shell gutter below 700px. From 700px up the
+                  shell has no inline padding; the grid owns its inset, 16px per side on tablet and
+                  <code> clamp(16px, 3vw, 32px)</code> from 900px up.
                 </li>
                 <li data-ds-terms={terms("responsive mobile desktop table of contents TOC current section label Work About Services 700px 14px 48px safe-area 24px 16px 360ms 200ms 160ms 120ms #e9e9e9 card 8px inset --toc-compact-width --toc-resize-duration --toc-row-height --toc-inset --blur-reveal")}>
                   <strong>Floating table of contents</strong> appears after 96px of scrolling at every screen size,
@@ -1949,35 +1950,43 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
                 </li>
-                <li data-ds-terms={terms("mosaic row flex 1rem gap 0.625rem 10px tablet --row-height --row-span 320px 420px clamp(340px, 92vw, 380px) contain letterbox minmax(0, 1fr) 16px radius")}>
-                  <strong>Mosaic rows</strong> are flex, <code>1rem</code> gap, with height driven by{" "}
-                  <code>--row-height</code>, which CSS resolves from the row data's{" "}
-                  <code>--row-height-input</code>: <code>clamp(340px, 92vw, 380px)</code> stacked on mobile, 320px
-                  base, and 420px from 900px up. Items flex by an inline <code>--row-span</code>. Between 700px and
-                  899px the row is only <code>clamp(180px, 16vw, 260px)</code> tall, so the gap closes to{" "}
-                  <code>0.625rem</code> (10px), the page inset to 1rem, and every tile — card, quote, and writings —
-                  drops to a 16px radius. Contained artwork letterboxes inside the card at that width: the card's grid
+                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 420px 536px 660px 600px 900px compact two columns display contents protector quote span both 10px tablet 32px total inset 16px mobile gap 8px outer radius 16px 24px contain letterbox zero mat family stories rewards wallet homepage security token pro dark gradient background pair center bottom minmax(0, 1fr)")}>
+                  <strong>The mosaic is four named groups.</strong> At 900px and above, Opening is a 3:6:3 row
+                  and Closing is three equal columns; each is <code>clamp(260px, 28.075cqw, 420px)</code> tall.
+                  Portraits uses 3:5:4 columns and two internal rows within
+                  <code>clamp(536px, 44.118cqw, 660px)</code>; its quote row keeps a 340px floor, with Popparazi above the résumé on the left. The résumé paper is capped at 84% of its tile height while preserving its 237:280 ratio. Offset uses 5:7
+                  columns and 40:15:45 internal rows within <code>clamp(600px, 60.16cqw, 900px)</code>. These heights
+                  resolve against the mosaic's inline-size container, so each composition grows independently.
+                  Below 900px the group wrappers become <code>display: contents</code> and their areas form one
+                  two-column grid without changing DOM order. The résumé, Protector, and the quote span both columns. From 700px
+                  to 899px the gap is 10px and the grid provides 32px total horizontal inset; below 700px
+                  the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 16px radius;
+                  desktop tiles use 24px. Contained artwork letterboxes inside the card: the card's grid
                   gets one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
-                  height to resolve against, and the inset drops to <code>0.375rem</code> (to zero for the two featured
-                  clips, whose files already carry their own margin). The two bleed compositions — Family Stories and
-                  Matcha Rewards, the same pair that drop the mat from 900px up — instead fill the card with{" "}
-                  <code>cover</code>, so their artwork's own cut lands on the card's rounded edge rather than stopping
-                  short of it in grey. Family Stories anchors to <code>center top</code>, since its phones already
-                  trail off the bottom of their frame.
+                  height to resolve against, and the inset drops to <code>0.375rem</code>. Seven compositions remove the
+                  pale mat entirely: Family Stories, Matcha Rewards, Matcha Token, Matcha Pro, Wallet, Homepage, and
+                  Security. Family Stories anchors to <code>center bottom</code> so its devices meet the lower edge.
+                  Rewards positions its two complete banners independently — diagonal on desktop and stacked below
+                  900px — so their rounded ends remain inside the card at every slot ratio. Token and Pro keep their
+                  4:3 exports contained while the card continues the artwork&rsquo;s sampled dark vertical gradient from
+                  <code>rgb(74 66 87)</code> through <code>rgb(63 62 68)</code> to <code>rgb(38 38 46)</code>, making
+                  the whole surface read as one background without cropping product chrome. Wallet, Homepage, and
+                  Security rely on the framing already present in their files; Security is the third clip with zero
+                  extra mat.
                 </li>
-                <li data-ds-terms={terms("row height 420px assertion playwright portfolio-polish initial load entrance")}>
-                  <strong>Row height is asserted at exactly 420px</strong> in{" "}
-                  <code>tests/e2e/portfolio-polish.spec.ts</code>. Work cards have no load animation;
-                  see <a href="#page-entrances">page entrances</a> for the shared visibility rule.
+                <li data-ds-terms={terms("work cards initial load entrance named groups compact children inherited delay")}>
+                  <strong>Work cards have no load animation of their own.</strong> See{" "}
+                  <a href="#page-entrances">page entrances</a> for the named-group stagger and its compact child inheritance.
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway clamp(12rem, 30vh, 18rem) 100dvh z-index 1 display contents")}>
-                  <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all four project rows
-                  remain in one sticky stage with 1rem gaps (10px between 700px and 899px), including the quote tile in row two, followed by a responsive white
-                  runway of <code>clamp(12rem, 30vh, 18rem)</code>. The runway carries its own{" "}
-                  <code>--takeover-row-gap</code> mirroring that value, since the scroll distance it reserves has to
-                  match the gaps the stage actually draws.
-                  The runway is the gallery's natural height plus <code>100dvh</code>; the gallery pins when its bottom reaches the viewport, then the
-                  full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards.
+                  <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, all project tiles
+                  remain in one naturally sized sticky stage, followed by a responsive white
+                  runway of <code>clamp(12rem, 30vh, 18rem)</code>. A ResizeObserver measures the grid's layout
+                  height, including that breathing room, for the sticky offset. It ignores the stage's animated
+                  scale, and updates when the content or viewport changes; there is no duplicated row-count formula.
+                  A normal-flow spacer adds <code>100dvh</code> after the stage, giving the sticky grid its full travel.
+                  The runway is the gallery's natural height plus that spacer. The gallery pins when its bottom reaches
+                  the viewport, then the full-bleed white About sheet crosses it at z-index 1 with the same layered shadow as the hover cards.
                   A top-only layer pairs that shadow with a <code>rgb(0 0 0 / 0.08)</code> hairline while the white sheet
                   remains continuous through the page end. The gallery retreats as one surface, and About
                   continues in normal flow after the cover. Below 700px both wrappers collapse with{" "}
@@ -2042,7 +2051,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   top: 5rem on mobile, growing to 8.75rem on wide desktops. Five overlapping photo prints stay in one row below the contact text, with one gallery trigger for pointer and keyboard users.
                   The wall of marks follows on the same 2.5rem/5rem break Services takes, so the three blocks below
                   the photo row are separated identically and none reads as belonging to its neighbour.
-                  Work history and Education are not repeated here: the résumé tile in the quote row opens them as a
+                  Work history and Education are not repeated here: the résumé tile in the portraits group opens them as a
                   reader, so the sheet reads as an introduction and closes on what can be bought.
                   Services closes it on the same 5rem/8.75rem gap and a two-column entry grid, with an engagement
                   shape where the résumé carries dates; it publishes no rate card, and ends on the email address and a

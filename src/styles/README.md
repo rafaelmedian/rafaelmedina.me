@@ -29,8 +29,17 @@ file. The work-grid file owns the takeover's cross-component layout rules and
 the crop properties shared with the preview gallery, so it follows the profile
 and About styles. Preserve cascade order when moving shared selectors.
 
-Row data sets `--row-height-input`; CSS resolves `--row-height` and can override
-it at layout breakpoints without `!important`.
+`src/data/portfolio.ts` owns the grid's semantic source and reading order: its
+named opening, portraits, offset, and closing groups assign each tile a CSS area
+and desktop width share. `work-grid.css` owns both compositions: independent,
+container-relative group heights on desktop, and the explicit two-column area
+map used after group wrappers become `display: contents` below 900px. Keep those
+area names and the data order in step when adding or moving a tile.
+
+The grid and its desktop breathing room stay naturally sized. A `ResizeObserver`
+copies that rendered height to the sticky stage's offset, while a separate
+normal-flow `100dvh` spacer gives the About takeover its scrolling distance.
+Do not replace either with a row-count height formula.
 
 Tailwind maps its named utilities to the shared CSS tokens. The design-system
 page reads root token values from computed styles and refreshes on CSS hot

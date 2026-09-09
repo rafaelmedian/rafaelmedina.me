@@ -32,6 +32,16 @@ export type PortfolioCard = {
   previewMediaPadding?: string
   /** The grid tile crops this shot; the gallery repeats the same crop. */
   previewCropped?: boolean
+  /** Alternate artwork used only in the home mosaic. The project preview and
+      social metadata continue to use `image` as their single hero source. */
+  homeImages?: PortfolioImage[]
+}
+
+export type PortfolioImage = {
+  source: string
+  label: string
+  width: number
+  height: number
 }
 
 export type Collaborator = {
@@ -60,116 +70,68 @@ export type SiteLinks = {
   booking: string
 }
 
-export type HomeRowItem = {
-  cardId: string
-  span?: number
-  width?: string
-  fit?: "cover" | "contain"
-  mediaMaxHeight?: string
+type HomeTilePlacement = {
+  /** Named CSS area, shared by the wide and compact compositions. */
+  area: string
+  /** Fraction of the desktop group's usable width, excluding gutters. */
+  share: number
+  compactWide?: boolean
 }
 
-export type HomeRow = {
-  id: string
-  height?: string
-  gap?: string
-  items: HomeRowItem[]
-  /** Place the quote slider before the project tiles in this row. */
-  quote?: boolean
-  /** Flex span for that quote slider, in the same units as `HomeRowItem.span`. */
-  quoteSpan?: number
-  /** Open the résumé from a one-unit folded-paper tile at the start of this row. */
-  resume?: boolean
-  /** Close this row with the writings folder tile, at a 1-unit span. */
-  writings?: boolean
+export type HomeTile = HomeTilePlacement & (
+  | { kind: "project"; cardId: string; fit: "cover" | "contain"; mediaMaxHeight?: string }
+  | { kind: "quote" }
+  | { kind: "writings" }
+  | { kind: "resume" }
+)
+
+export type HomeGroup = {
+  layout: "opening" | "portraits" | "offset" | "closing"
+  columns: 2 | 3
+  items: HomeTile[]
 }
 
-const homeTileRowHeight = "clamp(180px, 16vw, 260px)"
-
-export const homeRows: HomeRow[] = [
+// One reading order for the DOM, keyboard, compact grid, and preview gallery.
+// Desktop groups share outer edges; their interior seams can end at different
+// heights. Compact CSS lets the items cross group boundaries without reordering.
+export const homeGroups: HomeGroup[] = [
   {
-    id: "row-featured",
-    height: homeTileRowHeight,
+    layout: "opening",
+    columns: 3,
     items: [
-      { cardId: "preview-shot-9", span: 2 },
-      { cardId: "preview-shot-16", span: 2 },
-      { cardId: "preview-popparazi-v1", span: 1, fit: "contain", mediaMaxHeight: "84%" },
-    ],
-  },
-  // The three newest projects are spread through the grid rather than parked in
-  // a block at the end, so the Matcha run is broken up on the way down.
-  //
-  // Where they can go is tighter than it looks. All three want a span-1 slot in
-  // a three-unit row (~509px against a 420px row): the dealership shot and the
-  // phone mockup are matted, so a wider slot only grows the mat, and the
-  // Rewards composite is cut to the tile's own ratio, so a slot with a
-  // different shape only mats it. The Matcha 4:3 shots have the same
-  // requirement from the other side -- at span 1 in a four-unit row `cover`
-  // eats a third of their width. That leaves three-unit rows as the home for
-  // most of the cards, so the three newest take one row each on the way down:
-  // Rewards and the phone mockup in row 2, the dealership hub in row 4. Row 1
-  // keeps its pair of clips: index.html preloads their posters, and the first
-  // is the LCP element.
-  //
-  // Pulling the phone mockup up into row 2 leaves row 5 all Matcha, which the
-  // spread above was meant to avoid. It is unavoidable once the mockup moves:
-  // rows 4 and 5 hold six slots and five Matcha shots between them, and the
-  // dealership hub can only break up one of the two.
-  {
-    id: "row-2",
-    height: homeTileRowHeight,
-    // The writings tile is this row's third unit, so the two projects keep the
-    // ~509px slot the note above asks for.
-    writings: true,
-    // Both tiles are `contain` and both drop the mat that normally comes with
-    // it; see `.mosaic-row-card-preview-family-stories` and
-    // `.mosaic-row-card-preview-matcha-rewards` in work-grid.css.
-    //
-    // Rewards is `contain` against 1.16, which is what this slot measures at
-    // 1440px and wider, so on the wide layout the artwork fills the tile edge
-    // to edge and the crop the composition wants is the one it was built with.
-    // `cover` would have re-cut it at every breakpoint instead: the same slot
-    // swings from 0.65 at 900px to 1.16 at 1440, and at the portrait end that
-    // is a quarter of the frame off each side — enough to take "left" off the
-    // countdown headline.
-    items: [
-      { cardId: "preview-family-stories", span: 1, fit: "contain" },
-      { cardId: "preview-matcha-rewards", span: 1, fit: "contain" },
+      { kind: "project", area: "wallet", cardId: "preview-shot-9", share: 3 / 12, fit: "contain" },
+      { kind: "project", area: "homepage", cardId: "preview-shot-16", share: 6 / 12, fit: "contain" },
+      { kind: "writings", area: "writings", share: 3 / 12 },
     ],
   },
   {
-    id: "row-3",
-    height: homeTileRowHeight,
-    // Restores the four-unit composition this row was designed around: the
-    // folded résumé sheet sits beside the quote and the wider Protector art.
-    resume: true,
-    quote: true,
-    // Widens the quote at Protector's expense without changing the four-unit
-    // total; the quote's blockquote is capped at 21rem, so any extra width lands
-    // in side padding rather than stretching the reading measure.
-    quoteSpan: 1.25,
+    layout: "portraits",
+    columns: 3,
     items: [
-      { cardId: "preview-protector", span: 1.75 },
+      { kind: "project", area: "popparazi", cardId: "preview-popparazi-v1", share: 3 / 12, fit: "contain", mediaMaxHeight: "84%" },
+      { kind: "resume", area: "resume", share: 3 / 12, compactWide: true },
+      { kind: "project", area: "protector", cardId: "preview-protector", share: 5 / 12, fit: "cover", compactWide: true },
+      { kind: "quote", area: "quote", share: 4 / 12, compactWide: true },
+      { kind: "project", area: "security", cardId: "preview-shot-20", share: 4 / 12, fit: "contain" },
     ],
   },
   {
-    id: "row-4",
-    height: homeTileRowHeight,
-    // `contain` is explicit here rather than inferred: the dealership shot's
-    // 1.6 ratio sits just past the threshold either way, and it is a browser
-    // frame, so `cover` would trim its chrome off the edge.
+    layout: "offset",
+    columns: 2,
     items: [
-      { cardId: "preview-shot-21", span: 1 },
-      { cardId: "preview-shot-1", span: 1 },
-      { cardId: "preview-dealership-lead-hub", span: 1, fit: "contain" },
+      { kind: "project", area: "family", cardId: "preview-family-stories", share: 5 / 12, fit: "contain" },
+      { kind: "project", area: "dealership", cardId: "preview-dealership-lead-hub", share: 7 / 12, fit: "contain" },
+      { kind: "project", area: "token", cardId: "preview-shot-21", share: 5 / 12, fit: "contain" },
+      { kind: "project", area: "rewards", cardId: "preview-matcha-rewards", share: 7 / 12, fit: "contain" },
     ],
   },
   {
-    id: "row-5",
-    height: homeTileRowHeight,
+    layout: "closing",
+    columns: 3,
     items: [
-      { cardId: "preview-shot-14", span: 1 },
-      { cardId: "preview-shot-23", span: 1 },
-      { cardId: "preview-shot-20", span: 1 },
+      { kind: "project", area: "mobile", cardId: "preview-shot-14", share: 1 / 3, fit: "contain" },
+      { kind: "project", area: "trade", cardId: "preview-shot-1", share: 1 / 3, fit: "contain" },
+      { kind: "project", area: "pro", cardId: "preview-shot-23", share: 1 / 3, fit: "contain" },
     ],
   },
 ]
@@ -498,25 +460,27 @@ export const portfolioCards: PortfolioCard[] = [
     role: "I designed the campaign key visual and the variants it ships in.",
     outcome:
       "The rewards program launched with one visual system shared by its social posts and link previews.",
-    // Both deliverables in one frame — the green link preview behind and to the
-    // left, the purple countdown post in front and to the right — composed as a
-    // single asset rather than two tiles so one campaign reads as one project.
-    //
-    // They overlap and each runs off its own edge instead of sitting side by
-    // side. Laid out whole as a diptych, two 1.9:1 banners force a ~3.2 frame,
-    // and a strip that wide gets matted down to a sliver in a tile close to
-    // square — the banners ended up too small to read as artwork. Overlapping
-    // them lets each render about as wide as the whole tile, and the crop is
-    // part of the composition rather than something the tile does: the frame is
-    // 1.16, the slot's own ratio on the wide layout, so `contain` fills it edge
-    // to edge there. The green banner's subtitle is cut by design — it is the
-    // layer behind, and the cut lands in the space before "cash" — while both
-    // headlines and the whole countdown post stay inside the frame. The wedges
-    // the two banners leave in the opposite corners are transparent, so the
-    // tile's own surface shows through them.
+    // The project preview keeps the compact campaign composite, while the home
+    // tile lays out the two complete deliverables independently. Keeping their
+    // rounded ends inside the card prevents an intentional bleed from reading
+    // as an accidental crop when the organic grid changes shape.
     image: "/Projects/matcha-rewards.webp",
     previewWidth: 1540,
     previewHeight: 1325,
+    homeImages: [
+      {
+        source: "/Projects/matcha-rewards-link-preview.webp",
+        label: "Matcha Rewards link preview",
+        width: 770,
+        height: 480,
+      },
+      {
+        source: "/Projects/matcha-rewards-countdown.webp",
+        label: "Matcha Rewards countdown post",
+        width: 770,
+        height: 480,
+      },
+    ],
     ...matchaMeta,
     previewAspectRatio: 1540 / 1325,
   },

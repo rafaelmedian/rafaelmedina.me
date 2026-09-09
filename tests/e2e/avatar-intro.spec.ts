@@ -38,7 +38,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       ".mosaic-profile-location",
       ".mosaic-profile-contact",
       ".mosaic-section-corner",
-      ".mosaic-row:first-child",
+      ".mosaic-group:first-child",
     ].join(",")).evaluateAll((elements) => elements.map((element) => {
       const style = getComputedStyle(element)
       return {
