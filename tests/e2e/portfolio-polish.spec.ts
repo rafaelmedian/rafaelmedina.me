@@ -57,7 +57,7 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(await response.text()).toContain('<div id="root"><')
 
   await page.goto("/")
-  await expect(page.getByRole("heading", { name: "Rafael Medina portfolio" })).toBeAttached()
+  await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeAttached()
   expect(errors).toEqual([])
 })
 
@@ -1379,7 +1379,7 @@ test("keeps the static Punta Cana map when the interactive map chunk fails", asy
   // rejection, so let that recovery cycle settle before inspecting the page.
   await page.waitForTimeout(500)
 
-  await expect(page.getByRole("heading", { name: "Rafael Medina portfolio" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeVisible()
   await expect(
     page.getByRole("img", {
       name: "OpenStreetMap screenshot of Punta Cana, Dominican Republic",
@@ -3759,7 +3759,7 @@ test("keeps the site usable when the gallery chunk fails at click time", async (
   const trigger = page.getByRole("link", { name: /Open Matcha token page preview/ })
   await trigger.click()
 
-  await expect(page.getByRole("heading", { name: "Rafael Medina portfolio" })).toBeAttached()
+  await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeAttached()
   await expect(page.getByRole("dialog")).toHaveCount(0)
   await expect(page.locator(".preview-gallery-pending")).toHaveCount(0)
 

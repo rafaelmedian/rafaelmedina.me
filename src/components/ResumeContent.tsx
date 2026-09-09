@@ -54,7 +54,13 @@ function ResumeCompany({ job }: { job: CvExperience }) {
   return <span>{job.company}</span>
 }
 
-function IllustratedExperience({ job, onSelectProject }: { job: CvExperience; onSelectProject?: (id: string) => boolean }) {
+/* The About sheet and the gallery slide sit under an h2, so their companies are
+   h3; the standalone /resume/ page has an h1 of its own and its companies are
+   h2. Education sits at the same level as a company, its schools one below. */
+export type ResumeHeadingLevel = 2 | 3
+
+function IllustratedExperience({ job, level, onSelectProject }: { job: CvExperience; level: ResumeHeadingLevel; onSelectProject?: (id: string) => boolean }) {
+  const Company = `h${level}` as const
   const logos = job.logoUrls ?? job.clients?.map((client) => client.logoUrl) ?? []
   const projects = (job.projectIds ?? []).flatMap((id) => {
     const project = portfolioCards.find((card) => card.id === id)
@@ -74,9 +80,9 @@ function IllustratedExperience({ job, onSelectProject }: { job: CvExperience; on
       ) : null}
       <div className="resume-experience-details">
         <div className="resume-experience-heading">
-          <h3 className="mosaic-about-resume-title resume-experience-company" aria-label={`${job.role} at ${getCompanyLabel(job)}`}>
+          <Company className="mosaic-about-resume-title resume-experience-company" aria-label={`${job.role} at ${getCompanyLabel(job)}`}>
             <ResumeCompany job={job} />{job.company === "0x Project" ? " / Matcha" : null}
-          </h3>
+          </Company>
           <p className="mosaic-about-resume-dates">{job.dates}</p>
         </div>
         <p className="resume-experience-role">{job.role}</p>
@@ -135,24 +141,26 @@ function IllustratedExperience({ job, onSelectProject }: { job: CvExperience; on
   )
 }
 
-export function ResumeContent({ onSelectProject }: { onSelectProject?: (id: string) => boolean }) {
+export function ResumeContent({ level = 3, onSelectProject }: { level?: ResumeHeadingLevel; onSelectProject?: (id: string) => boolean }) {
+  const SectionHeading = `h${level}` as const
+  const School = level === 2 ? "h3" : "h4"
   return (
     <>
       <ol className="mosaic-about-resume mosaic-about-work-list resume-experience-list" aria-label="Work history">
         {cvExperience.map((job) => (
-          <IllustratedExperience key={`${job.company}-${job.dates}`} job={job} onSelectProject={onSelectProject} />
+          <IllustratedExperience key={`${job.company}-${job.dates}`} job={job} level={level} onSelectProject={onSelectProject} />
         ))}
       </ol>
 
       <div className="mosaic-about-resume-education">
-        <h3 className="mosaic-about-resume-heading">Education</h3>
+        <SectionHeading className="mosaic-about-resume-heading">Education</SectionHeading>
         <ul className="mosaic-about-resume mosaic-about-education-list" aria-label="Education">
           {cvEducation.map((school) => (
             <li className="resume-experience" key={school.school}>
               <div className="resume-experience-heading">
-                <h4 className="mosaic-about-resume-title" aria-label={`${school.credential} at ${school.school}`}>
+                <School className="mosaic-about-resume-title" aria-label={`${school.credential} at ${school.school}`}>
                   {school.school}
-                </h4>
+                </School>
                 <p className="mosaic-about-resume-dates">{school.dates}</p>
               </div>
               <p className="resume-experience-role">{school.credential}</p>

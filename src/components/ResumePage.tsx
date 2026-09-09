@@ -27,7 +27,7 @@ export function ResumePage() {
         </p>
       </header>
       <div className="standalone-resume-body mosaic-about-body">
-        <ResumeContent />
+        <ResumeContent level={2} />
         <p className="mosaic-about-resume-download">
           <a href={siteLinks.resumePdf} target="_blank" rel="noreferrer" className="mosaic-about-link">
             View resume PDF <ArrowUpRight size={16} aria-hidden="true" />

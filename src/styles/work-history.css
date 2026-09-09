@@ -68,7 +68,7 @@
   gap: 0.25rem;
   color: var(--muted);
   font-family: var(--font-ui);
-  /* One size for the whole hero -- see .mosaic-profile-meta h2. The chips take
+  /* One size for the whole hero -- see .mosaic-profile-meta h1. The chips take
      `font: inherit`, so this line sets the copy and the chips together. */
   font-size: var(--text-sm);
   font-weight: 400;
