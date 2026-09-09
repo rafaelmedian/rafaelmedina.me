@@ -1,12 +1,12 @@
 # Project Status
 
-Last updated: 2026-09-07
+Last updated: 2026-09-09
 
 ## Current state
 
 - The homepage renders `SimpleFeed` (`src/App.tsx` → `src/components/SimpleFeed.tsx`): profile hero with live Punta Cana clock, company history, and the selected-work mosaic (`showProjects` is on).
 - All card content and site links live in `src/data/portfolio.ts`.
-- `/styleguide` renders `StyleguidePage` in dev only; it is not deployed as a static route in production.
+- `/design-system` renders `DesignSystemPage` in dev only; the chunk is not built for production, where the path falls through to `public/404.html`. `/styleguide` is kept as an alias to the same page.
 - `npm run lint`, `npm run build`, and `npm run test:e2e` all pass.
 
 ## Branch layout
@@ -83,7 +83,3 @@ dark-filled contact pill in `ContactActionRow`, not a theme hook.
   the time. Confirm the custom-domain box still delivers; changing the address
   means editing `siteLinks.email` and `scripts/build-resume.mjs`, then
   regenerating the PDF.
-- `tests/e2e/portfolio-polish.spec.ts:430` ("hides every work card at first
-  paint") races the entrance animation and fails on a loaded machine — it failed
-  3/3 on an untouched `main` checkout while other workspaces were building. It is
-  flaky, not a regression; worth making it wait on a deterministic signal.
