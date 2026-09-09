@@ -1849,7 +1849,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
                 </li>
-                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 420px 536px 660px 600px 900px compact two columns display contents protector quote span both 10px tablet 32px total inset 16px mobile gap 8px outer radius 16px 24px contain letterbox zero mat family stories rewards wallet homepage security center bottom minmax(0, 1fr)")}>
+                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 420px 536px 660px 600px 900px compact two columns display contents protector quote span both 10px tablet 32px total inset 16px mobile gap 8px outer radius 16px 24px contain letterbox zero mat family stories rewards wallet homepage security token pro dark gradient background pair center bottom minmax(0, 1fr)")}>
                   <strong>The mosaic is four named groups.</strong> At 900px and above, Opening is a 3:6:3 row
                   and Closing is three equal columns; each is <code>clamp(260px, 28.075cqw, 420px)</code> tall.
                   Portraits uses 3:5:4 columns and two internal rows within
@@ -1862,12 +1862,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 16px radius;
                   desktop tiles use 24px. Contained artwork letterboxes inside the card: the card's grid
                   gets one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
-                  height to resolve against, and the inset drops to <code>0.375rem</code>. Five compositions remove the
-                  mat entirely: Family Stories, Matcha Rewards, Wallet, Homepage, and Security. Family Stories and
-                  Rewards still use <code>contain</code> while letting the media box fill the card, preserving every
-                  device and the complete banner text. Family Stories anchors to <code>center bottom</code> so its
-                  devices meet the lower edge. Wallet, Homepage, and Security rely on the framing already present in
-                  their files; Security is the third clip with zero extra mat.
+                  height to resolve against, and the inset drops to <code>0.375rem</code>. Seven compositions remove the
+                  pale mat entirely: Family Stories, Matcha Rewards, Matcha Token, Matcha Pro, Wallet, Homepage, and
+                  Security. Family Stories anchors to <code>center bottom</code> so its devices meet the lower edge.
+                  Rewards positions its two complete banners independently — diagonal on desktop and stacked below
+                  900px — so their rounded ends remain inside the card at every slot ratio. Token and Pro keep their
+                  4:3 exports contained while the card continues the artwork&rsquo;s sampled dark vertical gradient from
+                  <code>rgb(74 66 87)</code> through <code>rgb(63 62 68)</code> to <code>rgb(38 38 46)</code>, making
+                  the whole surface read as one background without cropping product chrome. Wallet, Homepage, and
+                  Security rely on the framing already present in their files; Security is the third clip with zero
+                  extra mat.
                 </li>
                 <li data-ds-terms={terms("work cards initial load entrance named groups compact children inherited delay")}>
                   <strong>Work cards have no load animation of their own.</strong> See{" "}

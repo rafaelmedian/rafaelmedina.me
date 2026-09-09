@@ -32,6 +32,16 @@ export type PortfolioCard = {
   previewMediaPadding?: string
   /** The grid tile crops this shot; the gallery repeats the same crop. */
   previewCropped?: boolean
+  /** Alternate artwork used only in the home mosaic. The project preview and
+      social metadata continue to use `image` as their single hero source. */
+  homeImages?: PortfolioImage[]
+}
+
+export type PortfolioImage = {
+  source: string
+  label: string
+  width: number
+  height: number
 }
 
 export type Collaborator = {
@@ -448,25 +458,27 @@ export const portfolioCards: PortfolioCard[] = [
     role: "I designed the campaign key visual and the variants it ships in.",
     outcome:
       "The rewards program launched with one visual system shared by its social posts and link previews.",
-    // Both deliverables in one frame — the green link preview behind and to the
-    // left, the purple countdown post in front and to the right — composed as a
-    // single asset rather than two tiles so one campaign reads as one project.
-    //
-    // They overlap and each runs off its own edge instead of sitting side by
-    // side. Laid out whole as a diptych, two 1.9:1 banners force a ~3.2 frame,
-    // and a strip that wide gets matted down to a sliver in a tile close to
-    // square — the banners ended up too small to read as artwork. Overlapping
-    // them lets each render about as wide as the whole tile, and the crop is
-    // part of the composition rather than something the tile does: the frame is
-    // 1.16, the slot's own ratio on the wide layout, so `contain` fills it edge
-    // to edge there. The green banner's subtitle is cut by design — it is the
-    // layer behind, and the cut lands in the space before "cash" — while both
-    // headlines and the whole countdown post stay inside the frame. The wedges
-    // the two banners leave in the opposite corners are transparent, so the
-    // tile's own surface shows through them.
+    // The project preview keeps the compact campaign composite, while the home
+    // tile lays out the two complete deliverables independently. Keeping their
+    // rounded ends inside the card prevents an intentional bleed from reading
+    // as an accidental crop when the organic grid changes shape.
     image: "/Projects/matcha-rewards.webp",
     previewWidth: 1540,
     previewHeight: 1325,
+    homeImages: [
+      {
+        source: "/Projects/matcha-rewards-link-preview.webp",
+        label: "Matcha Rewards link preview",
+        width: 770,
+        height: 480,
+      },
+      {
+        source: "/Projects/matcha-rewards-countdown.webp",
+        label: "Matcha Rewards countdown post",
+        width: 770,
+        height: 480,
+      },
+    ],
     ...matchaMeta,
     previewAspectRatio: 1540 / 1325,
   },

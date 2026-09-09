@@ -796,6 +796,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     label = card.title,
     eager = false,
     sizes = previewSizesForShare(),
+    width = card.previewWidth,
+    height = card.previewHeight,
   ) => {
     if (isVideoSource(source)) {
       return (
@@ -803,8 +805,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           source={source}
           poster={card.previewPoster}
           label={label}
-          width={card.previewWidth}
-          height={card.previewHeight}
+          width={width}
+          height={height}
           prefersReducedMotion={prefersReducedMotion}
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
@@ -818,8 +820,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         key={source}
         source={source}
         label={label}
-        width={card.previewWidth}
-        height={card.previewHeight}
+        width={width}
+        height={height}
         eager={eager}
         sizes={sizes}
       />
@@ -1078,6 +1080,31 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                             </div>
                           )
                           const itemKey = item.card.id
+                          const mediaSizes = previewSizesForShare(
+                            item.share,
+                            group.columns,
+                            item.compactWide,
+                            item.card.previewCropped,
+                          )
+                          const media = item.card.homeImages ? (
+                            <span className="mosaic-row-media-pair">
+                              {item.card.homeImages.map(homeImage => renderRowMedia(
+                                item.card,
+                                homeImage.source,
+                                homeImage.label,
+                                groupIndex === 0,
+                                mediaSizes,
+                                homeImage.width,
+                                homeImage.height,
+                              ))}
+                            </span>
+                          ) : renderRowMedia(
+                            item.card,
+                            item.card.image,
+                            item.card.title,
+                            groupIndex === 0,
+                            mediaSizes,
+                          )
                           return (
                             <div key={item.area} className={`${itemClass} mosaic-row-item-fit-${item.fit}`} style={itemStyle}>
                               <a
@@ -1099,8 +1126,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${flatWorkCards.length}`}
                                 aria-describedby={`${itemKey}-description`}
                               >
-                                {renderRowMedia(item.card, item.card.image, item.card.title, groupIndex === 0,
-                                  previewSizesForShare(item.share, group.columns, item.compactWide, item.card.previewCropped))}
+                                {media}
                                 <span className="mosaic-row-card-scrim" aria-hidden="true">
                                   <span /><span /><span /><span />
                                 </span>

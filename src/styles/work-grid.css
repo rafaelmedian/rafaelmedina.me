@@ -1156,9 +1156,12 @@
 }
 
 /* These compositions already supply their own framing. Family Stories keeps
-   its devices on the bottom edge; Rewards retains its complete banner text. */
+   its devices on the bottom edge; Rewards supplies two independent banners;
+   Token and Pro extend their own backdrop across the card below. */
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-20 {
@@ -1169,15 +1172,55 @@
   place-items: end center;
 }
 
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media,
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards .mosaic-row-media {
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center bottom;
 }
 
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
-  object-position: center bottom;
+/* These two 4:3 exports carry the same dark vertical backdrop around their UI.
+   Continue that backdrop across the card instead of framing the export in the
+   generic pale tile surface. The image remains contained, so neither the token
+   workspace nor Matcha Pro loses product chrome at a differently shaped slot. */
+.mosaic-row-card-preview-shot-21,
+.mosaic-row-card-preview-shot-23 {
+  background: linear-gradient(
+    to bottom,
+    rgb(74 66 87) 0%,
+    rgb(63 62 68) 50%,
+    rgb(38 38 46) 100%
+  );
+}
+
+/* Rewards owns two complete campaign deliverables. Positioning them as two
+   media boxes keeps every rounded end inside the tile; the previous flattened
+   composite baked both banners into a single crop whose cut edges read as a
+   layout mistake whenever this organic slot changed ratio. */
+.mosaic-row-media-pair {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media {
+  position: absolute;
+  width: 68%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+}
+
+.mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:first-child {
+  top: 3%;
+  left: 2%;
+}
+
+.mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:last-child {
+  right: 2%;
+  bottom: 3%;
 }
 
 /* Below desktop the group wrappers release their boxes so adjacent tiles can
@@ -1237,10 +1280,26 @@
 
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-20 {
     padding: 0;
+  }
+
+  .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media {
+    width: calc(100% - 0.5rem);
+  }
+
+  .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:first-child {
+    top: 0.25rem;
+    left: 0.25rem;
+  }
+
+  .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media:last-child {
+    right: 0.25rem;
+    bottom: 0.25rem;
   }
 }
 

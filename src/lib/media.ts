@@ -22,6 +22,8 @@ const webpPreviewVariantSources = new Set([
   "/Projects/dealership-lead-hub.webp",
   "/Projects/shared-family-stories.webp",
   "/Projects/matcha-rewards.webp",
+  "/Projects/matcha-rewards-link-preview.webp",
+  "/Projects/matcha-rewards-countdown.webp",
 ])
 const hasPreviewVariants = (source: string) =>
   /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)

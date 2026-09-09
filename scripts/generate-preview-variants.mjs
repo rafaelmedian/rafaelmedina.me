@@ -16,6 +16,8 @@ const sources = [
   ["public/Projects/dealership-lead-hub.webp", 1600],
   ["public/Projects/shared-family-stories.webp", 1600],
   ["public/Projects/matcha-rewards.webp", 1540],
+  ["public/Projects/matcha-rewards-link-preview.webp", 770],
+  ["public/Projects/matcha-rewards-countdown.webp", 770],
 ]
 
 function resize(input, output, width) {
