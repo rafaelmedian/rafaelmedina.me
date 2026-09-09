@@ -155,6 +155,21 @@ about 100KB. Swapping a clip is a single `Reaction` constant —
 About sheet's prose link, or `AvailabilityBooking.tsx` for the booking pill —
 and the card takes its shape from the `width`/`height` you give it.
 
+## Personal photo variants
+
+The photo sheet uses generated 400/800 px WebP siblings in
+`public/images/personal/`. Add originals and their dimensions to
+`src/data/personalPhotos.ts`, then run `node scripts/optimize-personal-media.mjs`
+with Node 22.18 or newer. Commit the generated variants. The original stays in
+`srcSet` for large/high-density displays; `sizes` mirrors the sheet's columns,
+gutters, gaps, and print padding in `src/styles/personal-photos.css`.
+
+The same script accepts an optional original GIF or animated WebP path to rebuild
+`copy-email-success.webp` at 400 px / 10 fps / quality 55. Always use the source,
+not the optimized result. The pre-optimization source is recoverable with
+`git show 9e2be59:public/reactions/copy-email-success.webp > /tmp/copy-email-source.webp`.
+Its existing still remains the reduced-motion/data-saving alternative.
+
 ## Generated artwork
 
 `public/writings/marks/` holds the notes reader's pencil marks: the bracket that
