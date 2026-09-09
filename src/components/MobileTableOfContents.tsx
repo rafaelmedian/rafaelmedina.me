@@ -5,6 +5,7 @@ const SECTIONS = [
   { id: "work", number: "01", label: "Work", href: "#work" },
   { id: "about", number: "02", label: "About", href: "#about-panel" },
   { id: "history", number: "03", label: "Work history", href: "#about-panel-resume" },
+  { id: "services", number: "04", label: "Services", href: "#about-panel-services" },
 ] as const
 
 type SectionId = (typeof SECTIONS)[number]["id"]
@@ -21,10 +22,12 @@ export function MobileTableOfContents({
   onWork,
   onAbout,
   onWorkHistory,
+  onServices,
 }: {
   onWork: () => void
   onAbout: () => void
   onWorkHistory: () => void
+  onServices: () => void
 }) {
   const panelId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -38,7 +41,12 @@ export function MobileTableOfContents({
   // scroll-driven change reads as a direction rather than a jump cut.
   const [leaving, setLeaving] = useState<{ id: SectionId; direction: "up" | "down" }>()
 
-  const actions: Record<SectionId, () => void> = { work: onWork, about: onAbout, history: onWorkHistory }
+  const actions: Record<SectionId, () => void> = {
+    work: onWork,
+    about: onAbout,
+    history: onWorkHistory,
+    services: onServices,
+  }
 
   useEffect(() => {
     const updateVisibility = () => {
@@ -96,7 +104,8 @@ export function MobileTableOfContents({
   useEffect(() => {
     const about = document.getElementById("about-panel")
     const history = document.getElementById("about-panel-resume")
-    if (!about || !history) return
+    const servicesSection = document.getElementById("about-panel-services")
+    if (!about || !history || !servicesSection) return
 
     // Follow the visible section, including manual scrolling and history
     // navigation. A section becomes current at the upper third of the screen.
@@ -106,15 +115,21 @@ export function MobileTableOfContents({
       const height = window.innerHeight
       observer = new IntersectionObserver(() => {
         const detectionLine = height * 0.31
+        const servicesBounds = servicesSection.getBoundingClientRect()
         const historyBounds = history.getBoundingClientRect()
         const aboutBounds = about.getBoundingClientRect()
+        // Tested last section first: services sits inside the About sheet and
+        // after the work history, so all three are still on screen together at
+        // the bottom of the page and the deepest match is the current one.
         setActiveSection(
-          historyBounds.top <= detectionLine && historyBounds.bottom > 0 ? "history"
+          servicesBounds.top <= detectionLine && servicesBounds.bottom > 0 ? "services"
+            : historyBounds.top <= detectionLine && historyBounds.bottom > 0 ? "history"
             : aboutBounds.top <= detectionLine && aboutBounds.bottom > 0 ? "about" : "work",
         )
       }, { rootMargin: `-${height * 0.3}px 0px -${height * 0.69}px 0px` })
       observer.observe(about)
       observer.observe(history)
+      observer.observe(servicesSection)
     }
     observeSection()
     window.addEventListener("resize", observeSection)

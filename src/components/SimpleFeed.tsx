@@ -955,7 +955,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     if (window.location.hash !== hash) {
       // Section links share one visit instead of adding a history entry for
       // every jump within the same page.
-      if (["#work", "#about-panel", "#about-panel-resume"].includes(window.location.hash)) {
+      if (["#work", "#about-panel", "#about-panel-resume", "#about-panel-services"].includes(window.location.hash)) {
         window.history.replaceState(window.history.state, "", hash)
       } else {
         pushPortfolioUrl(hash, "about")
@@ -1001,6 +1001,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
         onWorkHistory={() => scrollToSection("toc_work_history", "about-panel-resume")}
+        onServices={() => scrollToSection("toc_services", "about-panel-services")}
       />
       <button
         type="button"
