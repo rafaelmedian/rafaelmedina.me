@@ -4,13 +4,16 @@ export type FaqEntry = {
 }
 
 /** The questions that arrive in the first reply to an enquiry, answered where
-    the engagement shapes are rather than in an email nobody else reads. Kept
-    to the published starting figures and the scope agreed for each project. */
+    the engagement shapes are rather than in an email nobody else reads. No
+    figure is published: the rate is weekly or monthly, and what it comes to
+    depends on the scope and duration we estimate before starting. A client who
+    wants one number to approve gets the scope quoted as a single figure, paid
+    monthly across the agreed timeline. */
 export const faq: FaqEntry[] = [
   {
     question: "What does it cost?",
     answer:
-      "The figures above are starting points rather than fixed rates. Every engagement is priced to its scope. Tell me what you are building and roughly when you need it, and I will come back with a number and a timeline. Fixed-scope work is quoted as a single figure, and the standing partnership is billed monthly.",
+      "Engagements are billed by the week or by the month, not by the deliverable. We start by estimating the scope and how long it will take, and the total follows from that. If you would rather have one number to approve, I quote the whole scope as a single figure and you pay it monthly across a timeline we set before the work starts. Tell me what you are building and roughly when you need it, and I will come back with both.",
   },
   {
     question: "How long does it take?",

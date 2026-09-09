@@ -386,14 +386,6 @@
   white-space: nowrap;
 }
 
-.mosaic-about-body .mosaic-about-service-price {
-  margin-top: 0.5rem;
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  letter-spacing: -0.00563rem;
-  color: #2d2d2d;
-}
-
 /* The questions sit inside Services, so they are separated from the shapes
    above by the gap Services itself takes from the block above it -- enough
    that the two stacks do not read as one list, not so much that the questions
