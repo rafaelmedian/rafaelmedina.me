@@ -496,9 +496,9 @@ test("leads the contact row with the booking pill", async ({ page }) => {
   expect(bookBox).not.toBeNull()
   expect(linkedInBox).not.toBeNull()
   expect(bookBox!.x).toBeLessThan(linkedInBox!.x)
-  // The dark pill is the only one carrying the availability dot.
-  await expect(bookButton.locator(".mosaic-availability-dot")).toHaveCount(1)
-  await expect(actions.locator(".mosaic-availability-dot")).toHaveCount(1)
+  // The pill carries its label alone: the status dot it used to hold was the
+  // hero's only chromatic pixel, for a month the hover hint already names.
+  await expect(actions.locator(".mosaic-availability-dot")).toHaveCount(0)
 })
 
 test("uses the same side padding for every contact action", async ({ page }) => {
@@ -649,8 +649,17 @@ test("sets the whole About sheet on the reading step under one heading step", as
   const aboutSizes = await page
     .locator("#about-section .mosaic-about-section-copy")
     .locator("h2, p, li, a")
+    // The local-time card sits in this column but is a floating surface, not
+    // reading copy -- its map attribution is --text-xs like every other piece
+    // of card chrome on the site, and the sheet's type scale does not own it.
     .evaluateAll((elements) =>
-      [...new Set(elements.map((element) => getComputedStyle(element).fontSize))].sort(),
+      [
+        ...new Set(
+          elements
+            .filter((element) => !element.closest(".mosaic-local-time-card"))
+            .map((element) => getComputedStyle(element).fontSize),
+        ),
+      ].sort(),
     )
   expect(aboutSizes).toEqual(["14px", "16px"])
 
@@ -741,25 +750,32 @@ test("matches the mobile browser theme color to the page canvas", async ({ page,
   })
 })
 
-test("copies the hero address on click and says so in its tooltip", async ({ context, page }) => {
+test("copies the corner address on click and reacts to it in the tooltip", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-write", "clipboard-read"])
+  // writeText rejects outright on an unfocused document, and the component's
+  // answer to that is the mailto: fallback rather than a copy -- so the flag
+  // this asserts on would simply never appear.
+  await page.bringToFront()
   await page.goto("/")
   await pausePageClock(page)
 
-  const email = page.locator(".mosaic-profile-email")
-  const hint = page.locator(".booking-hint")
+  const email = page.locator(".mosaic-social-corner .mosaic-profile-email")
+  const reaction = page.locator(".reaction-card-media img")
 
   await expect(email).toHaveText(contactEmail)
   await expect(email).toHaveAccessibleName(`Copy email address ${contactEmail}`)
+  // The card is decorative, so the words a screen reader needs stay in the
+  // description and in the live region rather than in the picture.
+  await expect(email).toHaveAccessibleDescription("Click to copy")
 
   await email.hover()
   // The paused clock also holds the tooltip's 160ms intent delay.
   await page.clock.fastForward(200)
-  await expect(hint).toHaveText("Click to copy")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 
   await email.click()
   // The tooltip is the confirmation surface, so the press must not close it.
-  await expect(hint).toHaveText("Copied to clipboard")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-success.webp")
   await expect(page.getByRole("status")).toHaveText(`${contactEmail} copied to clipboard`)
   await expect(
     page.evaluate(() => navigator.clipboard.readText()),
@@ -767,65 +783,166 @@ test("copies the hero address on click and says so in its tooltip", async ({ con
 
   // And it goes back to the invitation, so the next hover reads as an offer.
   await page.clock.fastForward(1_600)
-  await expect(hint).toHaveText("Click to copy")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 })
 
-test("copies the hero address again on every repeat click", async ({ context, page }) => {
+test("copies the corner address again on every repeat click", async ({ context, page }) => {
   await context.grantPermissions(["clipboard-write", "clipboard-read"])
+  // writeText rejects outright on an unfocused document, and the component's
+  // answer to that is the mailto: fallback rather than a copy -- so the flag
+  // this asserts on would simply never appear.
+  await page.bringToFront()
   await page.goto("/")
   await pausePageClock(page)
 
-  const email = page.locator(".mosaic-profile-email")
-  const hint = page.locator(".booking-hint")
+  const email = page.locator(".mosaic-social-corner .mosaic-profile-email")
+  const reaction = page.locator(".reaction-card-media img")
 
   await email.click()
   await page.clock.fastForward(200)
-  await expect(hint).toHaveText("Copied to clipboard")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-success.webp")
   await page.clock.fastForward(1_600)
-  await expect(hint).toHaveText("Click to copy")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 
   // A second copy gets its own full confirmation window rather than inheriting
   // the tail of the first one.
   await page.evaluate(() => navigator.clipboard.writeText("cleared"))
   await email.click()
-  await expect(hint).toHaveText("Copied to clipboard")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-success.webp")
   await expect(
     page.evaluate(() => navigator.clipboard.readText()),
   ).resolves.toBe(contactEmail)
 
   await page.clock.fastForward(800)
-  await expect(hint).toHaveText("Copied to clipboard")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-success.webp")
   await page.clock.fastForward(800)
-  await expect(hint).toHaveText("Click to copy")
+  await expect(reaction).toHaveAttribute("src", "/reactions/copy-email-before.webp")
 })
 
-test("keeps the address icon in place and marks a copy in the accent", async ({ context, page }) => {
-  await context.grantPermissions(["clipboard-write"])
+// The clip that reads as an interaction is not the clip that reads as a still,
+// so the card ships both and lets the media query pick.
+test("swaps the address reaction for a still under reduced motion", async ({ page }) => {
+  // These two assert on the copied state, not on the clipboard's contents, and a
+  // real writeText rejects on a page that is not the frontmost one -- which most
+  // of them are not, with the suite fully parallel. Stubbing the write keeps the
+  // state deterministic; the two tests above still use the real clipboard,
+  // because reading the address back out of it is their whole point.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => {} },
+    })
+  })
+  await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   await pausePageClock(page)
 
-  const email = page.locator(".mosaic-profile-email")
+  const email = page.locator(".mosaic-social-corner .mosaic-profile-email")
+  const reaction = page.locator(".reaction-card-media img")
+  const currentFrame = () => reaction.evaluate((img) => (img as HTMLImageElement).currentSrc)
+
+  await email.hover()
+  await page.clock.fastForward(200)
+  await expect(reaction).toBeVisible()
+  await expect(currentFrame()).resolves.toContain("/reactions/copy-email-before-still.webp")
+
+  await email.click()
+  await expect(currentFrame()).resolves.toContain("/reactions/copy-email-success-still.webp")
+})
+
+test("reveals the address icon on hover without moving the line", async ({ page }) => {
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const email = page.locator(".mosaic-social-corner .mosaic-profile-email")
+  const label = email.locator(".mosaic-profile-email-label")
   const icon = email.locator(".mosaic-profile-email-icon")
 
-  // The icon holds its slot at rest, so the centred line never shifts under a
-  // pointer that is already on its way to the click.
-  await expect(icon).toBeVisible()
-  const restBox = await icon.boundingBox()
-  await email.hover()
-  const hoverBox = await icon.boundingBox()
-  expect(restBox).not.toBeNull()
-  expect(hoverBox).not.toBeNull()
-  expect(hoverBox!.x).toBeCloseTo(restBox!.x, 0)
-  expect(restBox!.width).toBeCloseTo(14, 0)
+  // Invisible at rest, but still occupying its slot: the icon fades in where it
+  // already was, so the centred line never shifts under a pointer that is
+  // already on its way to the click.
+  await expect(icon).toHaveCSS("opacity", "0")
+  const [restIcon, restLabel] = await Promise.all([icon.boundingBox(), label.boundingBox()])
+  expect(restIcon).not.toBeNull()
+  expect(restLabel).not.toBeNull()
+  expect(restIcon!.width).toBeCloseTo(14, 0)
 
-  await expect(icon).toHaveCSS("color", "rgb(20, 20, 20)")
+  await email.hover()
+  await expect(icon).toHaveCSS("opacity", "1")
+  const [hoverIcon, hoverLabel] = await Promise.all([icon.boundingBox(), label.boundingBox()])
+  expect(hoverIcon!.x).toBeCloseTo(restIcon!.x, 0)
+  expect(hoverLabel!.x).toBeCloseTo(restLabel!.x, 0)
+  expect(hoverLabel!.y).toBeCloseTo(restLabel!.y, 0)
+})
+
+// The address wears the work-history chip's hover fill rather than an underline:
+// both are a name in a sentence that turns out to be pressable, so they get one
+// shape between them.
+test("fills the address in as a chip card on hover and focus", async ({ page }) => {
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const email = page.locator(".mosaic-social-corner .mosaic-profile-email")
+  const chip = page.locator(".mosaic-work-history-chip").first()
+
+  await email.hover()
+  await expect(email).toHaveCSS("background-color", "rgb(233, 233, 233)")
+  // The corner rail's hover ink, shared with the section links opposite.
+  await expect(email).toHaveCSS("color", "rgb(45, 45, 45)")
+
+  const [emailRadius, chipRadius] = await Promise.all([
+    email.evaluate((element) => getComputedStyle(element).borderRadius),
+    chip.evaluate((element) => getComputedStyle(element).borderRadius),
+  ])
+  expect(emailRadius).toBe(chipRadius)
+
+  // The fill grows around the address instead of pushing it, so the rest of the
+  // centred line stays exactly where it was.
+  const place = page.locator(".mosaic-profile-location-place")
+  const hoveredBox = await place.boundingBox()
+  await page.mouse.move(1, 1)
+  await expect(email).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+  const restBox = await place.boundingBox()
+  expect(hoveredBox!.x).toBeCloseTo(restBox!.x, 0)
+
+  // Chromium grants :focus-visible to a programmatic focus only when the last
+  // interaction was a keyboard one, so the Tab is what makes this the keyboard
+  // path rather than a second hover.
+  await page.keyboard.press("Tab")
+  await email.focus()
+  await expect(email).toHaveCSS("background-color", "rgb(233, 233, 233)")
+})
+
+test("marks a copy in the accent and lets go of it again", async ({ page }) => {
+  // The copied state is the subject here, not the clipboard, so the write is
+  // stubbed for the same reason as the reduced-motion test above.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => {} },
+    })
+  })
+  await page.goto("/")
+  await pausePageClock(page)
+
+  const email = page.locator(".mosaic-social-corner .mosaic-profile-email")
+  const icon = email.locator(".mosaic-profile-email-icon")
 
   await email.click()
   await expect(email).toHaveAttribute("data-copied", "true")
   await expect(icon).toHaveCSS("color", "rgb(52, 162, 106)")
+  // The card empties to white for the confirmation: --accent is 3.2:1 there and
+  // only 2.7:1 on the grey hover fill, which is the one moment it has to read.
+  await expect(email).toHaveCSS("background-color", "rgb(255, 255, 255)")
+  // And the check outlasts the pointer -- it is lit by the copy, not the hover,
+  // so a keyboard copy shows it too.
+  await page.mouse.move(1, 1)
+  await expect(icon).toHaveCSS("opacity", "1")
+  await expect(email).toHaveCSS("background-color", "rgb(255, 255, 255)")
 
   await page.clock.fastForward(1_600)
   await expect(email).not.toHaveAttribute("data-copied", "true")
+  await expect(email).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
 })
 
 test("previews the X profile while the Follow pill is hovered", async ({ page }) => {
@@ -985,10 +1102,11 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
       body: transparentMapTile,
     }),
   )
-  await page.goto("/")
+  await page.goto("/#about-panel")
 
   const localTime = page.locator(".mosaic-social-time")
-  const card = page.locator(".mosaic-local-time-card")
+  // Scoped: the hero's location line opens the same card from its own anchor.
+  const card = page.locator(".mosaic-about-local-time .mosaic-local-time-card")
 
   await expect(card).toHaveAttribute("data-state", "closed")
 
@@ -1035,9 +1153,62 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
   await expect(card).toHaveAttribute("data-state", "closed")
 })
 
+test("opens the Punta Cana map from the hero's location line", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.route(openStreetMapTileUrl, (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      body: transparentMapTile,
+    }),
+  )
+  await page.goto("/")
+
+  const place = page.locator(".mosaic-profile-location-place")
+  const card = page.locator(".mosaic-profile-location-card")
+  await expect(card).toHaveAttribute("data-state", "closed")
+
+  await place.hover()
+  await expect(card).toHaveAttribute("data-state", "open")
+  await expect(card.getByText("Dominican Republic", { exact: true })).toBeVisible()
+  // Leaflet's chunk is fetched on the hover that opened this card, so the wait
+  // is a download's worth rather than a render's -- and the whole suite is
+  // competing for the same server.
+  await expect(card.getByRole("img", { name: "Map of Punta Cana, Dominican Republic" })).toBeVisible({
+    timeout: 15_000,
+  })
+  await card.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  const [cardBox, placeBox, actionsBox] = await Promise.all([
+    card.boundingBox(),
+    place.boundingBox(),
+    page.getByRole("group", { name: "Profile contact actions" }).boundingBox(),
+  ])
+  expect(cardBox).not.toBeNull()
+  expect(placeBox).not.toBeNull()
+  expect(actionsBox).not.toBeNull()
+  // Upward, clear of the contact actions: the card is taller than the gap
+  // between the location line and the only row in the hero worth pressing.
+  expect(cardBox!.y + cardBox!.height).toBeLessThanOrEqual(placeBox!.y)
+  expect(cardBox!.y + cardBox!.height).toBeLessThan(actionsBox!.y)
+  // Centred on the name it hangs off.
+  expect(cardBox!.x + cardBox!.width / 2).toBeCloseTo(placeBox!.x + placeBox!.width / 2, 0)
+})
+
+test("keeps the hero location card on screen once its line wraps", async ({ page }) => {
+  await page.setViewportSize({ width: 520, height: 900 })
+  await page.goto("/")
+
+  await page.locator(".mosaic-profile-location-place").focus()
+  const cardBox = await page.locator(".mosaic-profile-location-card").boundingBox()
+
+  expect(cardBox).not.toBeNull()
+  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(520)
+})
+
 test("shows a Punta Cana map screenshot while OpenStreetMap tiles are unavailable", async ({ page }) => {
   await page.route(openStreetMapTileUrl, () => {})
-  await page.goto("/")
+  await page.goto("/#about-panel")
 
   await page.locator(".mosaic-social-time").hover()
 
@@ -1050,7 +1221,7 @@ test("shows a Punta Cana map screenshot while OpenStreetMap tiles are unavailabl
 
 test("keeps the static Punta Cana map when the interactive map chunk fails", async ({ page }) => {
   await page.route("**/assets/PuntaCanaMap-*.js", (route) => route.abort("failed"))
-  await page.goto("/")
+  await page.goto("/#about-panel")
 
   const mapChunkFailure = page.waitForEvent(
     "requestfailed",
@@ -1071,14 +1242,14 @@ test("keeps the static Punta Cana map when the interactive map chunk fails", asy
 })
 
 test("matches the local-time trigger corners to its card", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/#about-panel")
 
   await expect(page.locator(".mosaic-social-time")).toHaveCSS("border-radius", "16px")
-  await expect(page.locator(".mosaic-local-time-card")).toHaveCSS("border-radius", "16px")
+  await expect(page.locator(".mosaic-about-local-time .mosaic-local-time-card")).toHaveCSS("border-radius", "16px")
 })
 
 test("keeps the local-time hover highlight compact without shrinking its hover target", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/#about-panel")
 
   const hoverTarget = page.locator(".mosaic-local-time-anchor")
   const highlight = page.locator(".mosaic-social-time")
@@ -1093,10 +1264,10 @@ test("keeps the local-time hover highlight compact without shrinking its hover t
 })
 
 test("keeps the local-time card close to the visible trigger", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/#about-panel")
 
   const trigger = page.locator(".mosaic-social-time")
-  const card = page.locator(".mosaic-local-time-card")
+  const card = page.locator(".mosaic-about-local-time .mosaic-local-time-card")
   await trigger.hover()
   await expect(card).toHaveAttribute("data-state", "open")
   await card.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
@@ -1109,26 +1280,43 @@ test("keeps the local-time card close to the visible trigger", async ({ page }) 
 
 test("keeps the local-time card inside the narrowest viewport where it remains visible", async ({ page }) => {
   await page.setViewportSize({ width: 700, height: 568 })
-  await page.goto("/")
+  await page.goto("/#about-panel")
 
   await page.locator(".mosaic-social-time").focus()
-  const cardBox = await page.locator(".mosaic-local-time-card").boundingBox()
+  const cardBox = await page.locator(".mosaic-about-local-time .mosaic-local-time-card").boundingBox()
 
   expect(cardBox).not.toBeNull()
   expect(cardBox!.x).toBeGreaterThanOrEqual(0)
   expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(700)
 })
 
-test("removes local time from the mobile hero", async ({ page }) => {
+// The corner is gone below 700px, and the address it holds is the one thing on
+// it a phone still needs -- so the address falls back into the hero's location
+// line rather than disappearing with the corner.
+test("moves the corner address into the hero line on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
   await expect(page.locator(".mosaic-social-corner")).toBeHidden()
+  const heroAddress = page.locator(".mosaic-profile-location .mosaic-profile-email")
+  await expect(heroAddress).toBeVisible()
+  await expect(heroAddress).toHaveText(contactEmail)
+  // One control either way: the corner copy is the same element, hidden.
+  await expect(page.locator(".mosaic-profile-email")).toHaveCount(2)
+  await expect(page.locator(".mosaic-social-corner .mosaic-profile-email")).toBeHidden()
+})
+
+test("keeps the address in the corner and out of the hero line on desktop", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+
+  await expect(page.locator(".mosaic-social-corner .mosaic-profile-email")).toBeVisible()
+  await expect(page.locator(".mosaic-profile-location .mosaic-profile-email")).toBeHidden()
 })
 
 test("uses the body type step at the narrowest visible local-time width", async ({ page }) => {
   await page.setViewportSize({ width: 700, height: 1381 })
-  await page.goto("/")
+  await page.goto("/#about-panel")
 
   await expect(page.locator(".mosaic-social-time")).toHaveCSS("font-size", "14px")
 })
@@ -1435,21 +1623,164 @@ test("keeps the mobile profile and final content clear of the table of contents"
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
-test("keeps local time separate from the navigation", async ({ page }) => {
+test("gives the corner the address and the About sheet the clock", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
 
-  const localTime = page.locator(".mosaic-social-corner")
-  await expect(localTime.getByRole("link")).toHaveCount(0)
-  await expect(localTime).toContainText("Local time:")
-  await expect(localTime.locator(".mosaic-live-time")).toBeVisible()
+  // The corner holds one thing and it is not a link: a copy button, so the
+  // section navigation opposite it stays the only navigation up there.
+  const corner = page.locator(".mosaic-social-corner")
+  await expect(corner.getByRole("link")).toHaveCount(0)
+  await expect(corner).toContainText(contactEmail)
+  await expect(corner).not.toContainText("Local time:")
+
+  // The clock went down to About, where the rest of "who is this" already is.
+  const clock = page.locator(".mosaic-about-local-time")
+  await expect(clock).toContainText("Local time:")
+  await expect(clock.locator(".mosaic-live-time")).toBeVisible()
 
   const location = page.locator(".mosaic-profile-location")
   await expect(location).toContainText("Punta Cana & NYC")
-  await expect(location).toContainText(contactEmail)
+  await expect(location).toContainText("Last updated")
   await expect(location).not.toContainText("Local time:")
   await expect(location).not.toContainText("Available in")
   await expect(page.locator(".mosaic-profile-contact > .mosaic-profile-email")).toHaveCount(0)
+})
+
+// The clause is the site's own commit history, read out of git at build time,
+// and its hint is the GitHub hovercard the trigger links to.
+test("previews the GitHub profile behind the last-updated clause", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const clause = page.locator(".mosaic-last-updated")
+  await expect(clause).toContainText("Last updated")
+  await expect(clause).toHaveAttribute("href", "https://github.com/rafaelmedian")
+  // A machine-readable date beside the human one, so the clause is not just a
+  // string that happens to look like a day.
+  await expect(clause.locator("time")).toHaveAttribute("dateTime", /^\d{4}-\d{2}-\d{2}$/)
+
+  await clause.hover()
+  const card = page.locator(".activity-card")
+  await expect(card).toBeVisible()
+  await expect(card.locator(".activity-card-names")).toContainText("Rafael Medina")
+  await expect(card.locator(".activity-card-names")).toContainText("@rafaelmedian")
+  // Self-hosted: nothing on this card waits on githubusercontent.com.
+  await expect(card.locator(".activity-card-avatar")).toHaveAttribute("src", "/people/github-rafaelmedian.jpg")
+
+  // Whole weeks, every one of them seven cells, including the half-weeks the
+  // six-month window cuts at either end.
+  const weeks = card.locator(".activity-card-week")
+  const weekCount = await weeks.count()
+  expect(weekCount).toBeGreaterThanOrEqual(26)
+  await expect(card.locator(".activity-card-day")).toHaveCount(weekCount * 7)
+
+  // "Contributions", not "commits": the graph counts pull requests, reviews,
+  // and issues across every repository, so calling them commits would undercount
+  // and mislabel at the same time.
+  const grid = card.getByRole("img", { name: /^[\d,]+ contributions in the last six months$/ })
+  await expect(grid).toBeVisible()
+  await expect(card.locator(".activity-card-footer")).toHaveText(
+    /^[\d,]+ contributions in the last six months$/,
+  )
+
+  // The card is exactly as wide as the grid it is built around, padding and all.
+  // Measured after the entrance settles: the card arrives at scale(0.98), and
+  // boundingBox() reports the transformed box, so a read taken mid-transition
+  // is a fraction short of the width being asserted.
+  await card.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const [cardBox, gridBox] = await Promise.all([card.boundingBox(), card.locator(".activity-card-grid").boundingBox()])
+  expect(gridBox!.width).toBeCloseTo(weekCount * 10 - 2, 0)
+  expect(cardBox!.width).toBeCloseTo(gridBox!.width + 26, 0)
+  expect(gridBox!.x + gridBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width)
+})
+
+// The pill's hint was a line of grey type; it is a clip now, the same card the
+// address wears. The month rides underneath it because that is the fact the
+// hint exists to carry and a picture cannot say "October".
+test("hints at booking with a clip over the availability month", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const bookButton = page.locator(".mosaic-booking-pill")
+  await bookButton.hover()
+
+  const hint = page.locator(".reaction-card")
+  await expect(hint).toBeVisible()
+  await expect(hint.locator(".reaction-card-media img")).toHaveAttribute(
+    "src",
+    "/reactions/booking-reaction.webp",
+  )
+  // The card is a picture and nothing else -- no words at all in the hint.
+  await expect(hint).toHaveText("")
+  // Which is why the month has to survive somewhere a screen reader reaches:
+  // once in the pill's own name, once in its description.
+  await expect(bookButton).toHaveAccessibleDescription("Available in September · 30 minutes in my calendar")
+  await expect(bookButton).toHaveAccessibleName("Book a call — Available in September")
+})
+
+// One recipe for both wearers: a card that is a clip is a card that is a clip,
+// whether it is reporting a copy or offering a call.
+test("gives the address and the booking pill the same reaction card", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const readCard = async () => {
+    const card = page.locator(".reaction-card")
+    await expect(card).toBeVisible()
+    return card.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { width: style.width, radius: style.borderRadius, padding: style.padding, shadow: style.boxShadow }
+    })
+  }
+
+  await page.locator(".mosaic-social-corner .mosaic-profile-email").hover()
+  const addressCard = await readCard()
+  await page.mouse.move(1, 1)
+  await expect(page.locator(".reaction-card")).toHaveCount(0)
+
+  await page.locator(".mosaic-booking-pill").hover()
+  const bookingCard = await readCard()
+
+  expect(bookingCard).toEqual(addressCard)
+  expect(addressCard.width).toBe("200px")
+})
+
+test("draws the contribution grid on GitHub's borrowed greens", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  await page.locator(".mosaic-last-updated").hover()
+  const days = page.locator(".activity-card-day")
+  await expect(days.first()).toBeVisible()
+
+  const palette = await days.evaluateAll((cells) => {
+    const byLevel: Record<string, string> = {}
+    for (const cell of cells) {
+      const level = cell.getAttribute("data-level") ?? "?"
+      byLevel[level] ??= getComputedStyle(cell).backgroundColor
+    }
+    return byLevel
+  })
+
+  // Empty days are grey; every step above that is GitHub's own ramp, and the
+  // days the calendar has not reached leave no mark at all.
+  expect(palette["0"]).toBe("rgb(235, 237, 240)")
+  expect(palette["1"]).toBe("rgb(155, 233, 168)")
+  // The cells outside the six-month window keep the grid rectangular and draw
+  // nothing, so a half-week never reads as a quiet week.
+  expect(palette["outside"]).toBe("rgba(0, 0, 0, 0)")
+  // The busier steps only appear when the history has them, so assert on
+  // whichever of them this repository actually produced.
+  for (const [level, expected] of [["2", "rgb(64, 196, 99)"], ["3", "rgb(48, 161, 78)"], ["4", "rgb(33, 110, 57)"]]) {
+    if (palette[level]) expect(palette[level]).toBe(expected)
+  }
 })
 
 test("keeps the location and address copy together at 320px", async ({ page }) => {
@@ -1457,12 +1788,16 @@ test("keeps the location and address copy together at 320px", async ({ page }) =
   await page.goto("/")
 
   const place = page.locator(".mosaic-profile-location-place")
-  const email = page.locator(".mosaic-profile-email")
-  const separator = page.locator(".mosaic-profile-location-separator")
+  const email = page.locator(".mosaic-profile-location .mosaic-profile-email")
+  // Two of them at this width: the one before the "last updated" clause and the
+  // one before the address that the corner hands back below 700px. The line
+  // stacks here, so neither is drawn.
+  const separators = page.locator(".mosaic-profile-location-separator")
   await expect(place).toHaveCSS("white-space", "nowrap")
   // The address never breaks mid-domain; it drops to its own line instead.
   await expect(email).toHaveCSS("white-space", "nowrap")
-  await expect(separator).toBeHidden()
+  await expect(separators).toHaveCount(2)
+  for (const separator of await separators.all()) await expect(separator).toBeHidden()
 
   const [placeBox, emailBox] = await Promise.all([place.boundingBox(), email.boundingBox()])
   expect(placeBox).not.toBeNull()
@@ -1472,7 +1807,7 @@ test("keeps the location and address copy together at 320px", async ({ page }) =
   expect(emailBox!.x + emailBox!.width).toBeLessThanOrEqual(320)
 })
 
-test("carries the availability month in the booking pill's hint, with the dot ahead of its label", async ({ page }) => {
+test("carries the availability month in the booking pill's hint and nowhere on the pill", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
@@ -1481,14 +1816,20 @@ test("carries the availability month in the booking pill's hint, with the dot ah
   const bookButton = page.locator(".mosaic-booking-pill")
   await expect(bookButton).toHaveText("Book a call")
 
-  // The month left the location line; the hint is where it lives now.
+  // The month left the location line; the hint is where it lives now, and it is
+  // also what retired the green status dot -- a glance-level signal for a fact
+  // the hint spells out a beat later.
+  await expect(bookButton.locator(".mosaic-availability-dot")).toHaveCount(0)
   await bookButton.hover()
-  await expect(page.getByRole("tooltip")).toHaveText("Available in September · 30 minutes in my calendar")
+  // The hint is a clip now, so the month it carries is spoken rather than drawn.
+  await expect(page.locator(".reaction-card")).toBeVisible()
+  await expect(bookButton).toHaveAccessibleDescription("Available in September · 30 minutes in my calendar")
 
-  const alignment = await bookButton.evaluate((element) => {
+  // With the dot gone the label is the pill's only content, so it has to sit on
+  // the pill's own centre rather than off to one side of a vacated slot.
+  const centring = await bookButton.evaluate((element) => {
     const label = element.querySelector(".mosaic-contact-pill-dark-label")
-    const dot = element.querySelector(".mosaic-availability-dot")
-    if (!label || !dot) return null
+    if (!label) return null
 
     // Ranged over the glyphs rather than the label's own box: the label is a
     // flex item, so its box is the full line height and its centre would not
@@ -1496,62 +1837,25 @@ test("carries the availability month in the booking pill's hint, with the dot ah
     const range = document.createRange()
     range.selectNodeContents(label)
     const textBox = range.getBoundingClientRect()
-    const dotBox = dot.getBoundingClientRect()
+    const pillBox = element.getBoundingClientRect()
 
     return {
-      dotRight: dotBox.right,
-      labelLeft: textBox.left,
-      dotCenterY: dotBox.y + dotBox.height / 2,
-      textCenterY: textBox.y + textBox.height / 2,
+      textCenterX: textBox.x + textBox.width / 2,
+      pillCenterX: pillBox.x + pillBox.width / 2,
     }
   })
-  expect(alignment).not.toBeNull()
-  expect(alignment!.dotRight).toBeLessThanOrEqual(alignment!.labelLeft)
-  expect(Math.abs(alignment!.dotCenterY - alignment!.textCenterY)).toBeLessThanOrEqual(1.5)
+  expect(centring).not.toBeNull()
+  expect(Math.abs(centring!.textCenterX - centring!.pillCenterX)).toBeLessThanOrEqual(1)
 })
 
-test("uses a compact availability dot", async ({ page }) => {
+// The dot was the site's one saturated pixel at rest, standing in for a month
+// the pill's own hint names in full. Nothing on the page wears --accent now
+// except the address's copy confirmation, which is gone again after 1.6s.
+test("leaves no availability dot anywhere on the page", async ({ page }) => {
   await page.goto("/")
+  await expect(page.locator(".mosaic-profile-actions")).toBeVisible()
 
-  await expect(page.locator(".mosaic-availability-dot")).toHaveCSS("width", "6px")
-  await expect(page.locator(".mosaic-availability-dot")).toHaveCSS("height", "6px")
-})
-
-// The dot used to be opacity 0 until the label was hovered, which hid the only
-// chromatic pixel in the site's own chrome behind an interaction. It rests
-// visible now; hover widens the halo.
-test("keeps the availability dot visible at rest and widens its halo on hover", async ({ page }) => {
-  await page.goto("/")
-  // The reveal's animation-delay window reads as two stable frames, so an
-  // unsettled hover can land on the pill's pre-rise position and slide out
-  // from under the pointer 12px later -- leaving :hover never applied.
-  await settleAvatarIntro(page)
-
-  const bookButton = page.locator(".mosaic-booking-pill")
-  const dot = bookButton.locator(".mosaic-availability-dot")
-  await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
-  await expect(dot).toHaveCSS("opacity", "1")
-
-  const restHalo = await dot.evaluate((element) => getComputedStyle(element).boxShadow)
-  await bookButton.hover()
-  await expect(dot).not.toHaveCSS("box-shadow", restHalo)
-  await expect(dot).toHaveCSS("opacity", "1")
-
-  await page.mouse.move(1, 1)
-  await expect(dot).toHaveCSS("box-shadow", restHalo)
-})
-
-test("keeps the availability dot visible without motion when reduced motion is requested", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-
-  const bookButton = page.locator(".mosaic-booking-pill")
-  const dot = bookButton.locator(".mosaic-availability-dot")
-  await expect(dot).toHaveCSS("opacity", "1")
-
-  await bookButton.hover()
-  await expect(dot).toHaveCSS("opacity", "1")
-  await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
+  await expect(page.locator(".mosaic-availability-dot")).toHaveCount(0)
 })
 
 test("hints at booking on hover and opens the calendar only on click", async ({ page }) => {
@@ -1565,9 +1869,9 @@ test("hints at booking on hover and opens the calendar only on click", async ({ 
   await settleAvatarIntro(page)
   const trigger = page.locator(".mosaic-booking-pill")
   await trigger.hover()
-  const tooltip = page.getByRole("tooltip")
+  const tooltip = page.locator(".reaction-card")
   await expect(tooltip).toBeVisible()
-  await expect(tooltip).toHaveText(/^Available in \w+ · 30 minutes in my calendar$/)
+  await expect(trigger).toHaveAccessibleDescription(/^Available in \w+ · 30 minutes in my calendar$/)
   await expect(page.getByRole("dialog")).toHaveCount(0)
   expect(calendarRequests).toBe(0)
   await tooltip.hover()
@@ -1658,12 +1962,31 @@ test("opens the booking calendar from a press, and never from focus alone", asyn
   await expect(page.getByRole("dialog")).toBeVisible()
 })
 
-test("keeps the location line gray and the status dot green", async ({ page }) => {
+test("keeps the whole location line gray at rest", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
 
-  await expect(page.locator(".mosaic-profile-email")).toHaveCSS("color", "rgb(107, 107, 107)")
+  // Both clauses read as one sentence until pointed at -- the repository link
+  // included, which is why it inherits its colour rather than taking a link's.
   await expect(page.locator(".mosaic-profile-location-place")).toHaveCSS("color", "rgb(107, 107, 107)")
-  await expect(page.locator(".mosaic-availability-dot")).toHaveCSS("background-color", "rgb(52, 162, 106)")
+  await expect(page.locator(".mosaic-last-updated")).toHaveCSS("color", "rgb(107, 107, 107)")
+  await expect(page.locator(".mosaic-last-updated")).toHaveCSS("text-decoration-line", "none")
+})
+
+test("keeps the corner address gray and uncarded at rest", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+
+  // The address is a button, but it reads as plain corner text until it is
+  // pointed at: no card behind it, the same ink the clock used to carry.
+  const email = page.locator(".mosaic-social-corner .mosaic-profile-email")
+  // The rail's type, not the hero sentence's: --text-sm on --muted-soft, the
+  // same as the section links at the other end of the corner.
+  await expect(email).toHaveCSS("color", "rgb(117, 117, 117)")
+  await expect(email).toHaveCSS("font-size", "14px")
+  await expect(email).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+  const link = page.locator(".mosaic-section-corner .mosaic-social-link").first()
+  await expect(link).toHaveCSS("font-size", await email.evaluate((el) => getComputedStyle(el).fontSize))
 })
 
 test("places the resume link beside about in the section navigation", async ({ page }) => {
@@ -1745,7 +2068,7 @@ test("matches the resume preview to the local-time map and opens on the top of t
   // The two cards hang off the same corner rail and should read as one
   // component with two contents.
   await page.locator(".mosaic-social-time").hover()
-  const mapHeight = await page.locator(".mosaic-local-time-map").evaluate((map) => map.clientHeight)
+  const mapHeight = await page.locator(".mosaic-about-local-time .mosaic-local-time-map").evaluate((map) => map.clientHeight)
 
   await page.locator(".mosaic-resume-anchor").hover()
   const geometry = await frame.evaluate((element) => ({

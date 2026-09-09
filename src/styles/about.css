@@ -58,6 +58,12 @@
   display: grid;
   gap: 1.05rem;
   text-align: left;
+  /* The entrance animation already makes this a stacking context, which traps
+     the local-time card's --z-overlay inside the column. Without a z-index of
+     its own the column then paints in document order -- behind the photo stack
+     that follows it -- and the map opened under the polaroids. */
+  position: relative;
+  z-index: 1;
 }
 
 /* About copy rises in from below, released per block the first time it

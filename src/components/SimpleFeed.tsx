@@ -17,6 +17,8 @@ import { AboutPanel } from "./AboutPanel"
 import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { ProfileEmailCopy } from "./ProfileEmailCopy"
+import { ProfileLocation } from "./ProfileLocation"
+import { SiteLastUpdated } from "./SiteLastUpdated"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { QuoteCard } from "./QuoteCard"
 import { portfolioQuotes } from "../data/quotes"
@@ -102,33 +104,6 @@ class GalleryLoadBoundary extends Component<GalleryLoadBoundaryProps, { failed: 
     return this.state.failed ? null : this.props.children
   }
 }
-
-function PuntaCanaMapScreenshot() {
-  return (
-    <img
-      className="mosaic-local-time-map-screenshot"
-      src="/maps/punta-cana-openstreetmap.webp"
-      alt="OpenStreetMap screenshot of Punta Cana, Dominican Republic"
-      width="696"
-      height="320"
-      loading="lazy"
-      decoding="async"
-    />
-  )
-}
-
-function FailedPuntaCanaMap() {
-  return <PuntaCanaMapScreenshot />
-}
-
-const PuntaCanaMap = lazy(async () => {
-  try {
-    const module = await import("./PuntaCanaMap")
-    return { default: module.PuntaCanaMap }
-  } catch {
-    return { default: FailedPuntaCanaMap }
-  }
-})
 
 type SiteProfile = {
   name: string
@@ -449,55 +424,6 @@ function openPreview(card: PortfolioCard, previewIndex: number, setSelectedWorkP
   setSelectedWorkPreviewIndex(previewIndex)
 }
 
-function LiveTimeLabel({ label, reducedMotion }: { label: string; reducedMotion: boolean }) {
-  const [displayedLabel, setDisplayedLabel] = useState(label)
-  const [incomingLabel, setIncomingLabel] = useState<string | null>(null)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const animationTimeoutRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (reducedMotion || label === displayedLabel) return
-
-    if (animationTimeoutRef.current !== null) {
-      window.clearTimeout(animationTimeoutRef.current)
-    }
-
-    const frameId = window.requestAnimationFrame(() => {
-      setIncomingLabel(label)
-      setIsAnimating(true)
-      animationTimeoutRef.current = window.setTimeout(() => {
-        setDisplayedLabel(label)
-        setIncomingLabel(null)
-        setIsAnimating(false)
-        animationTimeoutRef.current = null
-      }, 240)
-    })
-
-    return () => {
-      window.cancelAnimationFrame(frameId)
-      if (animationTimeoutRef.current !== null) {
-        window.clearTimeout(animationTimeoutRef.current)
-        animationTimeoutRef.current = null
-      }
-    }
-  }, [displayedLabel, label, reducedMotion])
-
-  const resolvedLabel = reducedMotion ? label : displayedLabel
-  const resolvedIncomingLabel = reducedMotion ? null : incomingLabel
-  const resolvedAnimatingState = reducedMotion ? false : isAnimating
-
-  return (
-    // No aria-live: this is ambient info, and a live region would re-announce
-    // the time to screen readers on every minute tick for the whole session.
-    <span className={`mosaic-live-time ${resolvedAnimatingState ? "is-animating" : ""}`}>
-      <span className="mosaic-live-time-track">
-        <span className="mosaic-live-time-value mosaic-live-time-value-current">{resolvedLabel}</span>
-        {resolvedIncomingLabel ? <span className="mosaic-live-time-value mosaic-live-time-value-next">{resolvedIncomingLabel}</span> : null}
-      </span>
-    </span>
-  )
-}
-
 const sectionLinks: { label: string; href: string }[] = [
   { label: "About", href: "#about-panel" },
 ]
@@ -653,65 +579,17 @@ function SectionCorner({
   )
 }
 
-function SocialCorner({
-  reducedMotion,
-  timeLabel,
-}: {
-  reducedMotion: boolean
-  timeLabel: string
-}) {
-  const { isOpen, hoverProps } = useHoverCard()
-  const [mapLoaded, setMapLoaded] = useState(false)
-  const handleMapReady = useCallback(() => setMapLoaded(true), [])
 
+/**
+ * The page's top-right corner. It carried the local time and its map until the
+ * address moved in: a clock is ambient, an address is the thing a visitor came
+ * for, and only one of the two earns the corner. The clock is in About now,
+ * beside the rest of the answer to "who is this".
+ */
+function SocialCorner({ email }: { email: string }) {
   return (
     <div className="mosaic-social-corner">
-      <span className="mosaic-hover-anchor mosaic-local-time-anchor" {...hoverProps}>
-        <span
-          className="mosaic-social-time"
-          tabIndex={0}
-          aria-describedby="local-time-location"
-        >
-          Local time: <LiveTimeLabel label={timeLabel} reducedMotion={reducedMotion} />
-        </span>
-        {/* The description target is plain text on purpose: the visual card
-            below contains a link, which a tooltip/description must not. */}
-        <span id="local-time-location" className="sr-only">
-          Punta Cana, Dominican Republic
-        </span>
-        <span
-          className={`mosaic-local-time-card${isOpen ? " is-open" : ""}`}
-          data-state={isOpen ? "open" : "closed"}
-          inert={!isOpen}
-        >
-          <span className="mosaic-local-time-map">
-            {/* Nothing renders while closed so the screenshot is never fetched
-                for visitors who never hover; the Suspense fallback covers the
-                gap while Leaflet's chunk loads. */}
-            {isOpen || mapLoaded ? (
-              <Suspense fallback={<PuntaCanaMapScreenshot />}>
-                <PuntaCanaMap onReady={handleMapReady} />
-              </Suspense>
-            ) : null}
-            <a
-              className="mosaic-local-time-map-attribution"
-              href="https://www.openstreetmap.org/copyright"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="OpenStreetMap contributors"
-            >
-              © OpenStreetMap contributors
-            </a>
-          </span>
-          <span className="mosaic-local-time-card-copy">
-            <span>
-              <strong>Punta Cana</strong>
-              <span>Dominican Republic</span>
-            </span>
-            <span className="mosaic-local-time-card-clock">{timeLabel}</span>
-          </span>
-        </span>
-      </span>
+      <ProfileEmailCopy email={email} side="bottom" />
     </div>
   )
 }
@@ -990,7 +868,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         onNotes={() => writingsFolderRef.current?.openFolder()}
         resumeHref={links.resumePdf}
       />
-      <SocialCorner timeLabel={puntaCanaTimeLabel} reducedMotion={prefersReducedMotion} />
+      <SocialCorner email={links.email} />
       <MobileTableOfContents
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
@@ -1046,11 +924,28 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
             </div>
           </div>
           <WorkedWithCompaniesInline variant="profile" />
-          <p className="mosaic-profile-location">
-            <span className="mosaic-profile-location-place">Punta Cana & NYC</span>
+          {/* The address left this line for the corner, and what replaced it is
+              the other thing the line was quietly saying: that this is a place
+              somebody still works on.
+
+              A div rather than a p: the place name opens a map card, and
+              Leaflet builds that map out of divs, which a paragraph cannot
+              legally contain. The line is a row of metadata rather than prose,
+              and the heading above it and the contact group below already give
+              a screen reader the boundaries the paragraph was providing. */}
+          <div className="mosaic-profile-location">
+            <ProfileLocation timeLabel={puntaCanaTimeLabel} />
             <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
-            <ProfileEmailCopy email={links.email} />
-          </p>
+            <SiteLastUpdated />
+            {/* The corner is not rendered below 700px, so on a phone the address
+                comes back to the line it left. It is one control either way --
+                CSS decides which end of the page it appears at, so no visitor
+                ever meets two of it. */}
+            <span className="mosaic-profile-location-email">
+              <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
+              <ProfileEmailCopy email={links.email} />
+            </span>
+          </div>
           <div className="mosaic-profile-contact">
             <ContactActionRow
               availabilityLabel={availabilityLabel}
@@ -1191,7 +1086,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               </div>
           </article>
 
-          <AboutPanel links={links} />
+          <AboutPanel links={links} localTimeLabel={puntaCanaTimeLabel} />
 
           {/* Stays mounted after the first open so Base UI can run the close
               transition instead of the dialog vanishing on unmount. */}

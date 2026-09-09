@@ -146,42 +146,6 @@
   }
 }
 
-/* A plain hint; the live calendar is only loaded after a press. */
-.booking-hint-positioner {
-  z-index: var(--z-overlay);
-}
-
-.booking-hint {
-  max-width: min(240px, calc(100vw - 32px));
-  padding: 0.5rem 0.75rem;
-  background: var(--canvas);
-  color: var(--ink);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
-  font-family: var(--font-ui);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  line-height: 1.4;
-  text-wrap: balance;
-  transform-origin: var(--transform-origin);
-  transition:
-    opacity var(--duration-base) var(--ease-standard),
-    transform var(--duration-base) var(--ease-smooth);
-}
-
-.booking-hint[data-starting-style],
-.booking-hint[data-ending-style] {
-  opacity: 0;
-  transform: translateY(-4px) scale(0.98);
-}
-
-.booking-hint[data-ending-style] {
-  transition-duration: var(--duration-fast);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .booking-hint[data-starting-style],
-  .booking-hint[data-ending-style] {
-    transform: none;
-  }
-}
+/* The pill's hint used to be this file's own one-line text popup. It is a
+   reaction card now, shared with the address -- see .reaction-card in
+   profile.css. The live calendar is still only loaded after a press. */

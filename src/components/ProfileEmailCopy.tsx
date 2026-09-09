@@ -2,11 +2,31 @@ import { Tooltip } from "@base-ui/react/tooltip"
 import { Check, Copy } from "lucide-react"
 import { useEffect, useId, useRef, useState } from "react"
 
-type ProfileEmailCopyProps = {
-  email: string
+import { ReactionCard, type Reaction } from "./ReactionCard"
+
+// Patrick's drumroll while the offer stands, the Predator handshake once the
+// address is on the clipboard.
+const INVITATION: Reaction = {
+  src: "/reactions/copy-email-before.webp",
+  still: "/reactions/copy-email-before-still.webp",
+  width: 480,
+  height: 371,
 }
 
-export function ProfileEmailCopy({ email }: ProfileEmailCopyProps) {
+const CONFIRMATION: Reaction = {
+  src: "/reactions/copy-email-success.webp",
+  still: "/reactions/copy-email-success-still.webp",
+  width: 400,
+  height: 262,
+}
+
+type ProfileEmailCopyProps = {
+  email: string
+  /** Which way the reaction card hangs off the address. */
+  side?: "top" | "bottom"
+}
+
+export function ProfileEmailCopy({ email, side = "top" }: ProfileEmailCopyProps) {
   const hintId = useId()
   const [isCopied, setIsCopied] = useState(false)
   const resetTimeoutRef = useRef<number | undefined>(undefined)
@@ -45,21 +65,32 @@ export function ProfileEmailCopy({ email }: ProfileEmailCopyProps) {
           aria-describedby={hintId}
           onClick={handleCopy}
         >
-          <span className="mosaic-profile-email-label">{email}</span>
           <span className="mosaic-profile-email-icon" aria-hidden="true">
             {isCopied ? <Check strokeWidth={2.25} /> : <Copy strokeWidth={2} />}
           </span>
+          <span className="mosaic-profile-email-label">{email}</span>
         </Tooltip.Trigger>
         <Tooltip.Portal>
-          {/* Above the line, not below it: the contact pills sit a row down, and a
-              hint that covers them hides the next thing the visitor might click. */}
-          <Tooltip.Positioner side="top" align="center" sideOffset={10} collisionPadding={16} className="booking-hint-positioner">
-            <Tooltip.Popup className="booking-hint" role="tooltip" id={hintId}>
-              {isCopied ? "Copied to clipboard" : "Click to copy"}
+          {/* In the corner the card hangs down, because there is nothing above
+              it but the edge of the page. */}
+          <Tooltip.Positioner side={side} align="center" sideOffset={10} collisionPadding={16} className="reaction-card-positioner">
+            {/* The reaction is the whole hint. It says "click to copy" and then
+                "copied" in a register a line of grey type cannot, which is why
+                the address is worth hovering at all; the words are still there
+                for screen readers, in the description below and the live region
+                that announces the copy. */}
+            <Tooltip.Popup className="reaction-card" data-copied={isCopied ? "true" : undefined} aria-hidden="true">
+              <ReactionCard
+                key={isCopied ? "success" : "invitation"}
+                reaction={isCopied ? CONFIRMATION : INVITATION}
+              />
             </Tooltip.Popup>
           </Tooltip.Positioner>
         </Tooltip.Portal>
       </Tooltip.Root>
+      <span id={hintId} className="sr-only">
+        Click to copy
+      </span>
       <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {isCopied ? `${email} copied to clipboard` : ""}
       </span>
