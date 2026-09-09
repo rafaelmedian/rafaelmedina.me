@@ -48,6 +48,7 @@
     "pdfjs-dist": "^6.3.289",
     "postcss": "^8.4.38",
     "roughjs": "^4.6.6",
+    "sharp": "0.35.4",
     "stylelint": "^17.15.0",
     "stylelint-config-recommended": "^18.0.0",
     "tailwindcss": "^4.3.3",

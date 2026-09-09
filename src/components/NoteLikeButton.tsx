@@ -27,12 +27,10 @@ export function NoteLikeButton({ noteId }: { noteId: string }) {
   useEffect(() => {
     void refresh()
     const onFocus = () => { if (document.visibilityState === "visible") void refresh() }
-    const interval = window.setInterval(onFocus, 15000)
     window.addEventListener("focus", onFocus)
     document.addEventListener("visibilitychange", onFocus)
     return () => {
       requestRef.current?.abort()
-      window.clearInterval(interval)
       window.removeEventListener("focus", onFocus)
       document.removeEventListener("visibilitychange", onFocus)
     }

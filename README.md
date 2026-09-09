@@ -50,8 +50,8 @@ or committed.
 
 The site is live. As of **September 9, 2026**, these are the remaining follow-ups:
 
-- [ ] **Connect shared note likes.** The button, client, and Cloudflare Worker
-  exist. Mount the button, provision D1, deploy the Worker, and configure its URL.
+- [x] **Connect shared note likes.** Done — the Worker and its D1 database are
+  live, and merging to `main` redeploys them before the site.
 - [ ] **Review six archived pieces of writing.** Decide which ones to publish
   from [the archive](docs/archive/writings.md).
 - [ ] **Test the contact inbox.** Confirm `hey@rafaelmedina.me` receives mail.

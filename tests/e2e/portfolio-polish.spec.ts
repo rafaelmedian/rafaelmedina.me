@@ -2458,6 +2458,8 @@ test("pins the complete project grid when its bottom reaches the viewport", asyn
 test("scrolls the about surface over the pinned project grid", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
+  // During the portrait intro the page is deliberately not hit-testable.
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
 
   const stage = page.locator(".mosaic-takeover-stage")
   await stage.evaluate((element) => element.scrollIntoView({ block: "end" }))

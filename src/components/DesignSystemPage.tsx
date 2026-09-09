@@ -1851,7 +1851,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
                 <p>
                   Data Saver, 3G or slower connections, and offline mode keep feed video posters visible
-                  without requesting loops. Connection changes update this behavior live. Preview videos
+                  without requesting loops. Decorative email/booking reactions use stills on these connections,
+                  and the LinkedIn clip receives a video source only while open on a suitable connection
+                  with motion enabled. Connection changes update this behavior live. Preview videos
                   offer native playback controls on these connections and wait for an explicit play.
                   Full-size images keep a responsive thumbnail underneath while decoding; loading feedback
                   and a retry button cover slow or failed requests without blocking preview navigation.
