@@ -385,43 +385,8 @@
 .writing-reader-date { margin-bottom: 0.25rem; color: var(--muted); font-size: var(--text-xs); line-height: 1.5; letter-spacing: 0; }
 /* Sits under the title and date, so the reserved height is load-bearing: counts
    arrive asynchronously, and without it the whole article shifts down when they
-   land. */
-.writing-reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 0.75rem; min-height: 44px; color: var(--muted); font-size: var(--text-sm); }
-.writing-like {
-  position: relative;
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  height: 32px;
-  padding: 0 0.75rem;
-  border: 1px solid #dedee0;
-  border-radius: var(--radius-full);
-  background: var(--canvas);
-  color: var(--muted);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  line-height: 1;
-  box-shadow: var(--shadow-control);
-  transition: box-shadow var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-standard);
-}
-.writing-like::before { content: ""; position: absolute; inset: -6px 0; border-radius: inherit; }
-@media (hover: hover) {
-  .writing-like:hover { box-shadow: var(--shadow-control-hover); }
-}
-.writing-like:active { transform: scale(0.96); box-shadow: var(--shadow-control-pressed); }
-.writing-like-heart { display: inline-flex; }
-.writing-like svg { fill: #b6b6ba; color: #b6b6ba; transition: color var(--duration-quick) var(--ease-standard), fill var(--duration-quick) var(--ease-standard); }
-.writing-like[data-liked] svg { color: #e5352b; fill: currentColor; }
-/* Width rides the digit count (set inline in ch), so the pill hugs a lone
-   digit and grows smoothly as the number gains places. */
-.writing-like-count { font-variant-numeric: tabular-nums; font-weight: 600; text-align: left; transition: color var(--duration-quick) var(--ease-standard), width var(--duration-quick) var(--ease-standard); }
-.writing-like[data-liked] .writing-like-count { color: #e5352b; }
-/* Particles fly past the pill's edge, so the layer only positions them. */
-.writing-like-burst { position: absolute; inset: 0; pointer-events: none; }
-.writing-like-particle { position: absolute; border-radius: var(--radius-full); background: #e5352b; }
-.writing-like-particle[data-soft] { filter: blur(2px); opacity: 0.6; }
+   land. The row's own shape lives in likes.css, shared with the preview. */
+.writing-reader-header .like-row { margin-top: 0.75rem; }
 /* Darker than the 18px prose it replaces: a smaller face needs the contrast
    back, so reading copy sits on the heading ink rather than the body grey.
    The column is the measure now, so paragraphs no longer carry their own. */

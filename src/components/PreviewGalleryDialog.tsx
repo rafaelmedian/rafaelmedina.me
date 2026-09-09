@@ -9,6 +9,7 @@ import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
 import { resumeItemTitle, type GalleryItem } from "../lib/galleryItems"
 import { originCloseEasePoints, originOpenEasePoints, toCssEasing, useOriginTravel } from "../lib/originMotion"
+import { LikeButton } from "./LikeButton"
 import { PreviewMedia } from "./PreviewMedia"
 import { ResumeContent } from "./ResumeContent"
 import { backSound, closeSound, nextSound, openSound } from "../lib/sounds"
@@ -514,6 +515,18 @@ export function PreviewGalleryDialog({
                       <div className="preview-gallery-media-frame" style={mediaFrameStyle}>
                         <PreviewMedia key={activeMediaSource} card={activeCard} reducedMotion={prefersReducedMotion} />
                       </div>
+
+                      {/* On the line where the artwork meets the prose rather
+                          than in either: the pill answers the shot, and a row
+                          of its own above the title would push every
+                          description down whether or not anyone ever taps it.
+                          Keyed by project, so paging starts the next count
+                          from scratch instead of carrying this one's over
+                          while its own read is still in flight. */}
+                      {import.meta.env.VITE_LIKES_API_URL ? (
+                        <LikeButton key={activeCard.id} collection="projects" itemId={activeCard.id}
+                          className="preview-gallery-likes" />
+                      ) : null}
 
                       <div className="preview-gallery-content">
                         <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>

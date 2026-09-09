@@ -11,7 +11,7 @@ import { usePortfolioItemUrl } from "../lib/portfolioUrl"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useOriginTravel, visibleOriginRect } from "../lib/originMotion"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
-import { NoteLikeButton } from "./NoteLikeButton"
+import { LikeButton } from "./LikeButton"
 
 
 // A note is written as plain strings, and backticks are the one piece of markup
@@ -538,7 +538,7 @@ export function WritingsReader({ onOpenChange, ref, triggerRef }: { onOpenChange
                     ) : <span>{selected.archiveYear ? `Archive · ${selected.archiveYear}` : "Undated"}</span>}
                   </div>
                   <h2 ref={titleRef} tabIndex={-1} className="writings-page-title">{selected.title}</h2>
-                  {open && reading && import.meta.env.VITE_LIKES_API_URL ? <NoteLikeButton key={selected.id} noteId={selected.id} /> : null}
+                  {open && reading && import.meta.env.VITE_LIKES_API_URL ? <LikeButton key={selected.id} collection="notes" itemId={selected.id} /> : null}
                 </header>
                 {selected.cover ? <NoteImage image={selected.cover} /> : null}
                 <div className="writing-reader-prose">

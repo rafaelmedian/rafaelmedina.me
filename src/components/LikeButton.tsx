@@ -1,7 +1,7 @@
 import { Heart } from "lucide-react"
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
-import { maxNoteLikesPerVisitor } from "../data/likeLimits"
-import { requestNoteLikes, type NoteLikes } from "../lib/noteLikes"
+import { maxLikesPerVisitor } from "../data/likeLimits"
+import { requestLikes, type LikeCollection, type LikeCounts } from "../lib/likes"
 
 /* Clicks land instantly on screen and drain to the API in one batched write
    shortly after the tapping stops, so spamming the heart costs one request. */
@@ -11,9 +11,24 @@ function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 }
 
-/** Mounted per note so late responses cannot change a different note's count. */
-export function NoteLikeButton({ noteId }: { noteId: string }) {
-  const [confirmed, setConfirmed] = useState<NoteLikes | null>(null)
+/* One control, two collections. The wording is the only thing that differs, and
+   it is spelled out here rather than assembled from the collection name so the
+   accessible names stay greppable. */
+const subjects: Record<LikeCollection, { like: string; atLimit: string; status: string }> = {
+  notes: { like: "Like this note", atLimit: "Like this note (limit reached)", status: "Note likes" },
+  projects: { like: "Like this project", atLimit: "Like this project (limit reached)", status: "Project likes" },
+}
+
+type LikeButtonProps = {
+  collection: LikeCollection
+  itemId: string
+  /** Layout class for the row; the button itself is the same everywhere. */
+  className?: string
+}
+
+/** Mounted per item so late responses cannot change a different item's count. */
+export function LikeButton({ collection, itemId, className }: LikeButtonProps) {
+  const [confirmed, setConfirmed] = useState<LikeCounts | null>(null)
   const [optimistic, setOptimistic] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const pendingRef = useRef(0)
@@ -48,7 +63,7 @@ export function NoteLikeButton({ noteId }: { noteId: string }) {
     const originY = heart.offsetTop + heart.offsetHeight / 2
     for (let i = 0; i < 12; i++) {
       const particle = document.createElement("span")
-      particle.className = "writing-like-particle"
+      particle.className = "like-particle"
       // A couple of oversized blurred blobs behind the sharp specks read as
       // the soft ink splatter in the reference clip.
       const soft = i < 3
@@ -89,19 +104,19 @@ export function NoteLikeButton({ noteId }: { noteId: string }) {
     requestRef.current?.abort()
     const controller = new AbortController()
     requestRef.current = controller
-    void requestNoteLikes(noteId, AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]))
+    void requestLikes(collection, itemId, AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]))
       .then((value) => {
         if (controller.signal.aborted) return
         setConfirmed(value)
         if (clearError) setError(null)
-        // Returning to a note you already liked replays the heart's pop.
+        // Returning to something you already liked replays the heart's pop.
         if (!hadDataRef.current && value.visitorLikes > 0) popHeart()
         hadDataRef.current = true
       })
       .catch(() => {
         if (!controller.signal.aborted) setError("Likes are unavailable right now.")
       })
-  }, [noteId])
+  }, [collection, itemId])
 
   function scheduleFlush() {
     clearTimeout(flushTimerRef.current)
@@ -120,9 +135,9 @@ export function NoteLikeButton({ noteId }: { noteId: string }) {
     activeWritesRef.current += 1
     inflightRef.current += delta
     requestRef.current?.abort()
-    let saved: NoteLikes | null = null
+    let saved: LikeCounts | null = null
     try {
-      saved = await requestNoteLikes(noteId, AbortSignal.timeout(10000), delta)
+      saved = await requestLikes(collection, itemId, AbortSignal.timeout(10000), delta)
     } catch {
       reconcileRef.current = true
       if (mountedRef.current) {
@@ -169,14 +184,14 @@ export function NoteLikeButton({ noteId }: { noteId: string }) {
       clearTimeout(flushTimerRef.current)
       flushOnLeave()
       // This controller owns reads only. Saves use keepalive and must finish
-      // after the note or document goes away, without resending their deltas.
+      // after the item or document goes away, without resending their deltas.
       requestRef.current?.abort()
     }
-  }, [noteId, refresh])
+  }, [collection, itemId, refresh])
 
   function handleClick() {
     if (!confirmed) return
-    if (confirmed.visitorLikes + pendingRef.current + inflightRef.current >= maxNoteLikesPerVisitor) {
+    if (confirmed.visitorLikes + pendingRef.current + inflightRef.current >= maxLikesPerVisitor) {
       shake()
       return
     }
@@ -190,21 +205,23 @@ export function NoteLikeButton({ noteId }: { noteId: string }) {
 
   const displayCount = confirmed ? confirmed.count + optimistic : null
   const liked = confirmed !== null && (confirmed.visitorLikes > 0 || optimistic > 0)
-  const atLimit = confirmed !== null && confirmed.visitorLikes + optimistic >= maxNoteLikesPerVisitor
+  const atLimit = confirmed !== null && confirmed.visitorLikes + optimistic >= maxLikesPerVisitor
+
+  const subject = subjects[collection]
 
   return (
-    <div className="writing-reader-meta">
-      <button ref={buttonRef} type="button" className="writing-like" data-liked={liked || undefined}
-        aria-label={atLimit ? "Like this note (limit reached)" : "Like this note"}
+    <div className={className ? `like-row ${className}` : "like-row"}>
+      <button ref={buttonRef} type="button" className="like-button" data-liked={liked || undefined}
+        aria-label={atLimit ? subject.atLimit : subject.like}
         disabled={!confirmed} onClick={handleClick}>
-        <span ref={heartRef} className="writing-like-heart" aria-hidden="true"><Heart size={14} /></span>
-        <span className="writing-like-count" aria-hidden="true"
+        <span ref={heartRef} className="like-heart" aria-hidden="true"><Heart size={14} /></span>
+        <span className="like-count" aria-hidden="true"
           style={displayCount === null ? undefined : { width: `${String(displayCount).length}ch` }}>
           {displayCount ?? "…"}
         </span>
-        <span ref={burstRef} className="writing-like-burst" aria-hidden="true" />
+        <span ref={burstRef} className="like-burst" aria-hidden="true" />
       </button>
-      <span role="status" aria-label="Note likes" aria-live="polite" aria-atomic="true" className="sr-only">
+      <span role="status" aria-label={subject.status} aria-live="polite" aria-atomic="true" className="sr-only">
         {displayCount !== null ? `${displayCount} ${displayCount === 1 ? "like" : "likes"}` : error ? "" : "Loading likes…"}
       </span>
       {error ? <span role="alert">{error}</span> : null}

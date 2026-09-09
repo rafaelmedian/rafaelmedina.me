@@ -70,6 +70,23 @@ The local database persists under `.wrangler/` and is gitignored. Shared-like
 tests use the actual local D1 database, including independent browser sessions,
 batched increments, the per-visitor cap, and failed saves.
 
+Notes and projects are separate collections — `/notes/<id>/likes` and
+`/projects/<id>/likes`, counted in `note_likes` and `project_likes`. The path
+segment picks the table, and each ID is only valid under its own collection, so
+liking a project can never show up on a note. `src/data/writingIds.ts` and
+`src/data/projectIds.ts` are the registries the Worker checks; a project's ID is
+typed into `PortfolioCard`, so adding a card without registering it fails the
+build rather than 404ing at runtime.
+
+Port 8787 is repo-wide, so a second checkout cannot run its suite while the
+first is serving. Set `LIKES_API_URL` to give it a port of its own — the
+Playwright config starts the Worker there, the build is pointed at it, and the
+direct API tests call it:
+
+```sh
+LIKES_API_URL=http://127.0.0.1:8791 npm run test:e2e
+```
+
 ## Shared likes, publicly
 
 Configured on 2026-09-09 and verified against the deployed service. What is in

@@ -85,16 +85,31 @@ for (const { chunk, triggerName, dialogName, retryLabel } of [
   })
 }
 
+/* A chunk a reader needs but does not own. Retrying cannot recover it -- the
+   module registry keeps the rejection -- so the reader offers a reload instead.
+
+   The name is whatever Rollup emits for the imports two lazy readers have in
+   common, not something this repo authors: the notes entry here was `sounds`
+   until the like pill became the second module the notes reader and the preview
+   gallery both pull in, and the shared chunk took the pill's name. So the route
+   counts what it stopped, and the test fails on a pattern that has gone stale
+   rather than quietly blocking nothing and reporting a missing error message. */
 for (const { dependency, triggerName, retryLabel, reloadLabel, dialogName } of [
-  { dependency: "sounds", triggerName: "Open writings folder", retryLabel: "Try opening notes again", reloadLabel: "Reload to try notes again", dialogName: "Notes" },
+  { dependency: "LikeButton", triggerName: "Open writings folder", retryLabel: "Try opening notes again", reloadLabel: "Reload to try notes again", dialogName: "Notes" },
   { dependency: "DialogTitle", triggerName: "Personal life", retryLabel: "Try opening photos again", reloadLabel: "Reload to try photos again", dialogName: "Personal photos" },
 ]) {
   test(`offers a reload when a cached ${dependency} dependency cannot be retried`, async ({ page }) => {
     let fail = true
-    await page.route(`**/${dependency}-*.js*`, route => fail ? route.abort("failed") : route.continue())
+    let blocked = 0
+    await page.route(`**/${dependency}-*.js*`, route => {
+      if (!fail) return route.continue()
+      blocked++
+      return route.abort("failed")
+    })
     await page.goto("/")
     await page.getByRole("button", { name: triggerName, exact: true }).click()
     await expect(page.getByText(retryLabel, { exact: true })).toBeVisible()
+    expect(blocked).toBeGreaterThan(0)
     fail = false
     const retryName = triggerName === "Personal life" ? retryLabel : triggerName
     await page.getByRole("button", { name: retryName, exact: true }).click()

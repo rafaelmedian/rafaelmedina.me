@@ -86,7 +86,10 @@ test("keeps a thumbnail visible during a slow preview and offers retry after fai
   await page.goto("/")
   await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByRole("status")).toContainText("Loading preview")
+  // The like pill keeps a live region of its own in here, so the media's status
+  // is named by its element rather than by being the dialog's only one.
+  const mediaStatus = dialog.getByRole("status").and(dialog.locator(".preview-gallery-media-status"))
+  await expect(mediaStatus).toContainText("Loading preview")
   const thumbnail = dialog.locator(".preview-gallery-media-placeholder")
   await expect(thumbnail).toBeVisible()
   await expect.poll(() => thumbnail.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
@@ -95,7 +98,7 @@ test("keeps a thumbnail visible during a slow preview and offers retry after fai
   await page.unroute("**/Projects/protector.webp")
   await dialog.getByRole("button", { name: "Retry preview" }).click()
   await expect(dialog.locator(".preview-gallery-media[data-loaded='true']")).toBeVisible()
-  await expect(dialog.getByRole("status")).toHaveCount(0)
+  await expect(mediaStatus).toHaveCount(0)
 })
 
 test("slow connections only fetch a preview video after an explicit play", async ({ page }) => {

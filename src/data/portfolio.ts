@@ -1,7 +1,9 @@
 import profilePhoto from "../assets/profile-photo.webp"
+import type { ProjectId } from "./projectIds"
 
 export type PortfolioCard = {
-  id: string
+  /** Registered in `projectIds`, so the likes API knows every project by name. */
+  id: ProjectId
   /** Stable public URL; changing a title must not break shared links. */
   slug: string
   category: string
