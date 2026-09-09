@@ -27,6 +27,7 @@ import { portfolioQuotes, teamQuotes, type PortfolioQuote } from "../data/quotes
 import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type QuoteSource, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { useHoverCard } from "../lib/hoverCard"
 import { visibleOriginRect } from "../lib/originMotion"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
@@ -624,6 +625,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
   const { gridRef, runwayRef } = useWorkGridHeight()
   const { avatarRef, active: introActive } = useAvatarIntro()
+  const avatarSpinTimerRef = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(avatarSpinTimerRef.current), [])
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { itemId: galleryItemId, selectItem: selectGalleryItem, clearItem: clearGalleryItem } = useGalleryUrl()
@@ -872,6 +875,35 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     aboutPanel.focus({ preventScroll: true })
   }
 
+  // Clicking the avatar carries the turn the pointer already started round once
+  // more and then leaves for About, so the scroll reads as something the coin
+  // did rather than something that happened next to it.
+  //
+  // The spin is a script animation composed onto whatever the hover transition
+  // is doing at that instant: transitions outrank CSS animations, so a keyframe
+  // rule here would sit and wait out a flip already in flight, and a replacing
+  // animation would snap the coin back to zero before starting. Adding a whole
+  // turn also means the animation ends on the angle its underlying value is
+  // already at, so there is nothing to see when it hands the transform back.
+  const spinAvatarToAbout = () => {
+    const coin = avatarRef.current?.querySelector<HTMLElement>(".mosaic-avatar-coin-inner")
+    if (!coin || prefersReducedMotion) {
+      scrollToSection("avatar")
+      return
+    }
+    const style = getComputedStyle(coin)
+    coin.animate([{ transform: "rotateY(0deg)" }, { transform: "rotateY(360deg)" }], {
+      duration: cssTimeToMilliseconds(style.getPropertyValue("--avatar-spin-duration")),
+      easing: style.getPropertyValue("--ease-standard").trim(),
+      composite: "add",
+    })
+    window.clearTimeout(avatarSpinTimerRef.current)
+    avatarSpinTimerRef.current = window.setTimeout(
+      () => scrollToSection("avatar"),
+      cssTimeToMilliseconds(style.getPropertyValue("--avatar-spin-lead")),
+    )
+  }
+
   const closeAbout = () => {
     const url = new URL(window.location.href)
     url.hash = ""
@@ -925,11 +957,15 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
               aria-label={`Read about ${profile.name}`}
-              onClick={() => scrollToSection("avatar")}
+              onClick={spinAvatarToAbout}
             >
               <div className="mosaic-avatar-coin-inner">
-                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-front" loading="eager" fetchPriority="high" decoding="async" />
-                <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-face mosaic-avatar-face-back" loading="eager" decoding="async" />
+                <span className="mosaic-avatar-face mosaic-avatar-face-front">
+                  <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-portrait" loading="eager" fetchPriority="high" decoding="async" />
+                </span>
+                <span className="mosaic-avatar-face mosaic-avatar-face-back">
+                  <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-portrait" loading="eager" decoding="async" />
+                </span>
               </div>
               <span className="mosaic-avatar-hint" aria-hidden="true">
                 <svg
