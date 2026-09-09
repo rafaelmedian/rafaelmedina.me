@@ -17,21 +17,6 @@ export type PortfolioQuote = {
 // Supplied feedback.
 export const portfolioQuotes: PortfolioQuote[] = [
   {
-    id: "anon",
-    xHandle: "basedfloyd888",
-    xProfile: {
-      name: "BASED FLOYD VIII",
-      bio: "gmeow. have a blessed day.",
-      following: "1,014",
-      followers: "5,792",
-    },
-    text: "matcha has",
-    emphasis: "dope product designers",
-    attribution: "BASED FLOYD VIII",
-    caption: "@basedfloyd888",
-    photo: "/quotes/basedfloyd888-avatar.jpg",
-  },
-  {
     id: "wong",
     xHandle: "wongisrite",
     xProfile: {
@@ -45,6 +30,21 @@ export const portfolioQuotes: PortfolioQuote[] = [
     attribution: "Michael Wong",
     caption: "michaelwong.eth",
     photo: "/quotes/wong.jpg",
+  },
+  {
+    id: "anon",
+    xHandle: "basedfloyd888",
+    xProfile: {
+      name: "BASED FLOYD VIII",
+      bio: "gmeow. have a blessed day.",
+      following: "1,014",
+      followers: "5,792",
+    },
+    text: "matcha has",
+    emphasis: "dope product designers",
+    attribution: "BASED FLOYD VIII",
+    caption: "@basedfloyd888",
+    photo: "/quotes/basedfloyd888-avatar.jpg",
   },
   {
     id: "phil",
