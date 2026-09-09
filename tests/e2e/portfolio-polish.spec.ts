@@ -310,6 +310,50 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   await expect(curtains.first()).toHaveCSS("animation-name", "none")
 })
 
+test("keeps the curtains rising when the release lands on the glow's first frame", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+
+  // Hold the pull's paint so the release can run in the same task, before any
+  // style flush has advanced the opacity transition that paint starts. A busy
+  // CI frame reaches this order on its own, and the edge used to read the
+  // still-zero opacity as a glow that had never painted and cut the curtains.
+  const painted = await page.evaluate(() => {
+    const edge = document.querySelector<HTMLElement>(".elastic-scroll-edge")!
+    const scheduledFrames: FrameRequestCallback[] = []
+    const requestFrame = window.requestAnimationFrame
+
+    window.requestAnimationFrame = (callback) => {
+      scheduledFrames.push(callback)
+      return scheduledFrames.length
+    }
+
+    try {
+      window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
+      const paint = scheduledFrames.shift()
+      if (!paint) throw new Error("The pull queued no paint")
+
+      paint(performance.now())
+      const opacity = edge.style.getPropertyValue("--elastic-edge-opacity")
+      document.dispatchEvent(new Event("touchend"))
+
+      return { opacity: Number.parseFloat(opacity), glowing: edge.dataset.glowing }
+    } finally {
+      window.requestAnimationFrame = requestFrame
+      scheduledFrames.splice(0).forEach((callback) => requestFrame.call(window, callback))
+    }
+  })
+
+  expect(painted.opacity).toBeGreaterThan(0)
+  expect(painted.glowing).toBe("true")
+  const curtainDelays = page.locator(".elastic-scroll-edge-curtain")
+  await expect(curtainDelays).toHaveCount(7)
+  const delays = await curtainDelays.evaluateAll((elements) =>
+    elements.map((element) => parseFloat(getComputedStyle(element).animationDelay)),
+  )
+  expect(delays).toEqual([0, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24])
+})
+
 test("a thumb\u2019s worth of overscroll fills the elastic edge the way a fling does", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
