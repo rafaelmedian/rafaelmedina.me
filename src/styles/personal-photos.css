@@ -1,68 +1,116 @@
 /* ----------------------------------------------------- personal photos --- */
 
+/* The photos are a tile in the work grid, so the surface, the border and the
+   label match the writings folder beside them rather than the About panel
+   they used to sit in. The fan is a fixed size at the middle of a row-wide
+   tile: sized from the row instead, it would swell to a banner of prints on a
+   wide layout. */
 .personal-photos {
-  width: min(100%, 36rem);
-  margin: 1.5rem auto 0;
   display: flex;
-  justify-content: flex-start;
-  padding: 0.75rem 0.75rem 0.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .personal-photos-trigger {
   position: relative;
-  width: min(27rem, calc(100% - 7.5rem));
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Clearance for the fan, not just for the label: the outer prints lean far
+     enough that their corners hang below the row's own box. */
+  gap: 2.25rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  padding: 1.25rem 1rem;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: var(--radius-lg);
+  background: var(--mosaic-card-surface);
   color: var(--muted);
+  font-family: var(--font-ui);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.personal-photos-label {
+  font-size: var(--text-sm);
+  line-height: 1.7;
 }
 
 .personal-photos-stack {
-  --photo-print-width: min(28%, calc(100% / (1 + (var(--photo-preview-count, 5) - 1) * 0.65)));
+  /* Each print advances half its own width, so the fan overlaps hard enough to
+     read as one hand of prints; the cap keeps a four-print phone row from
+     dealing prints wider than a five-print one. A short count leaves the row
+     narrower than the stack, so it centres rather than hanging off the left. */
+  --photo-print-width: min(35%, calc(100% / (1 + (var(--photo-preview-count, 5) - 1) * 0.5)));
   position: relative;
   display: flex;
-  width: 100%;
+  justify-content: center;
+  width: min(100%, 27rem);
   isolation: isolate;
+  /* Only the press. Nothing lifts or shifts the stack as a whole: an away
+     print has to hold the rect its return flight was aimed at, and a transform
+     on the stack is an ancestor transform that carries the away prints with it
+     — the photos then come down a few pixels off their frames. Everything the
+     fan does, it does through each print's own transform. */
   transition: scale var(--duration-fast) var(--ease-standard);
 }
 
+/* Each print carries its resting lean and the near-flat angle it squares up
+   to when the pointer picks it out of the pile. The lift is a share of the
+   print's own height, so it scales with the row. */
 .personal-photos-print {
   --print-tilt: -7deg;
-  --print-hover-tilt: -10deg;
-  --print-offset-x: 0rem;
   --print-offset-y: 0rem;
-  --print-spread-x: -0.5rem;
-  --print-spread-y: -0.5rem;
+  /* The opened hand. `arcPlacement` sets all four per print; these are the
+     fallbacks that keep a print on the arc if it ever renders without them. */
+  --print-fan-tilt: var(--print-tilt);
+  --print-fan-offset-y: var(--print-offset-y);
+  /* The middle of the fan is the front of the pile; `arcPlacement` steps the
+     depth down towards both ends. */
+  --print-depth: 0;
   position: relative;
+  z-index: var(--print-depth);
   flex: 0 0 var(--photo-print-width);
-  margin-left: calc(var(--photo-print-width) * -0.35);
+  margin-left: calc(var(--photo-print-width) * -0.5);
   padding: 0.25rem 0.25rem 0.75rem;
   border-radius: var(--radius-sm);
   background: var(--canvas);
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), var(--shadow-overlay);
-  transform: translate(var(--print-offset-x), var(--print-offset-y)) rotate(var(--print-tilt));
-  transition: transform var(--duration-slow) var(--photo-motion-ease);
+  transform: translateY(var(--print-offset-y)) rotate(var(--print-tilt));
+  /* The settle curve, not the carousel's: it starts moving the instant the
+     pointer crosses onto a print and eases out long, so sweeping across the
+     row reads as one print handing off to the next rather than each one
+     waiting a beat before it stirs. */
+  transition: transform var(--duration-slow) var(--ease-smooth);
 }
 
 .personal-photos-print:first-child { margin-left: 0; }
 
-/* Leave a quiet card-shaped marker where each expanded photo belongs. */
+/* Leave a quiet card-shaped marker where each expanded photo belongs. It
+   holds still: the return flight is aimed at the rect this print has when the
+   close is measured, and anything that would carry it past that point — the
+   un-lift after a click on a hovered print, or a new resting tilt when the
+   preview re-anchors on close and the photo lands in another slot — has to
+   snap rather than glide, or the photo comes down beside its frame. */
 .personal-photos-print[data-photo-away] {
   background: #f2f2f2;
   border: 0;
   outline: 1px solid rgb(0 0 0 / 0.06);
   outline-offset: -1px;
   box-shadow: none;
+  transition: none;
 }
 .personal-photos-print[data-photo-away] img { opacity: 0; }
 
-/* One overlapping row of equally sized prints. */
-.personal-photos-print:nth-child(2) { --print-tilt: 2deg; --print-hover-tilt: 6deg; --print-offset-x: -0.2rem; --print-offset-y: 0.25rem; --print-spread-x: -0.25rem; }
-.personal-photos-print:nth-child(3) { --print-tilt: -2deg; --print-hover-tilt: -4deg; --print-offset-y: -0.3rem; --print-spread-x: 0rem; }
-.personal-photos-print:nth-child(4) { --print-tilt: -5deg; --print-hover-tilt: -8deg; --print-offset-x: 0.25rem; --print-offset-y: 0.2rem; --print-spread-x: 0.25rem; }
-.personal-photos-print:nth-child(5) { --print-tilt: 4deg; --print-hover-tilt: 8deg; --print-offset-x: 0.35rem; --print-offset-y: -0.2rem; --print-spread-x: 0.5rem; }
+/* One overlapping row of equally sized prints, fanned along an arc. The lean,
+   the drop and the depth are per-print and come from `arcPlacement` in
+   PersonalPhotos.tsx, because they are a formula over the print's place in the
+   row and the row is four prints on a phone and five above it. Hovering one
+   turns it just past flat, a degree against its lean, so it reads as picked up
+   rather than snapped to a grid; the others hold their place. */
 
 .personal-photos-print img {
   width: 100%;
@@ -73,80 +121,36 @@
   border-radius: calc(var(--radius-sm) - 0.375rem);
 }
 
-.personal-photos-hint {
-  position: absolute;
-  top: 50%;
-  left: calc(100% + 1rem);
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  width: max-content;
-  max-width: 6.5rem;
-  color: #e5352b;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%) translateX(-0.5rem) rotate(-3deg);
-  transition:
-    opacity var(--duration-slow) var(--photo-motion-ease),
-    transform var(--duration-slow) var(--photo-motion-ease);
-  font-family: "Handlee", "Bradley Hand", "Segoe Print", cursive;
-  font-size: var(--text-md);
-  font-weight: 400;
-  line-height: 1.2;
-  text-align: left;
-  -webkit-text-stroke: 0.45px currentColor;
-}
+/* The tile answers as one thing: pointing at it, or reaching it with the
+   keyboard, swings every print out to its fanned angle together and the whole
+   hand opens. Nothing changes hands and no single print is picked out, so the
+   region each print answers to never moves under the pointer.
 
-.personal-photos-hint svg { flex-shrink: 0; width: 2.25rem; height: 1.25rem; overflow: visible; }
-
-.personal-photos-trigger:focus-visible .personal-photos-hint {
-  opacity: 1;
-  transform: translateY(-50%) rotate(-3deg);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .personal-photos-trigger:hover .personal-photos-hint {
-    opacity: 1;
-    transform: translateY(-50%) rotate(-3deg);
-  }
-}
-
+   An away print takes the hand's shape like any other, it just takes it
+   without a transition. The hand is already in the shape it will rest in
+   before the photos start home — pointed at, or holding the focus the sheet
+   handed back — so the flights are aimed at the frames it actually keeps and
+   nothing shifts once they land. Excluding away prints here left them at rest
+   through the flight and opened the hand under the photos the instant they
+   arrived, which read as the whole row settling a second time. */
 @media (prefers-reduced-motion: no-preference) {
-  .personal-photos-trigger:focus-visible .personal-photos-print {
-    transform:
-      translate(
-        calc(var(--print-offset-x) + var(--print-spread-x)),
-        calc(var(--print-offset-y) + var(--print-spread-y))
-      )
-      rotate(var(--print-hover-tilt));
+  .personal-photos-trigger:not([data-photo-away]):focus-visible .personal-photos-print {
+    transform: translateY(var(--print-fan-offset-y)) rotate(var(--print-fan-tilt));
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .personal-photos-trigger:hover .personal-photos-print {
-      transform:
-        translate(
-          calc(var(--print-offset-x) + var(--print-spread-x)),
-          calc(var(--print-offset-y) + var(--print-spread-y))
-        )
-        rotate(var(--print-hover-tilt));
+    .personal-photos-trigger:not([data-photo-away]):hover .personal-photos-print {
+      transform: translateY(var(--print-fan-offset-y)) rotate(var(--print-fan-tilt));
     }
   }
 }
 
-@media (min-width: 700px) {
-  .personal-photos-hint { max-width: none; white-space: nowrap; }
-}
 
+/* A phone deals four prints instead of five, and the row it sits in is
+   shorter, so the fan comes down with it. */
 @media (max-width: 699.98px) {
-  .personal-photos { padding-bottom: 1.5rem; }
-  .personal-photos-trigger { width: 100%; }
-  .personal-photos-hint {
-    top: calc(100% + 1.5rem);
-    left: auto;
-    right: 0;
-    max-width: none;
-    white-space: nowrap;
-  }
+  .personal-photos-trigger { gap: 1.5rem; padding: 1rem 0.75rem; }
+  .personal-photos-stack { width: min(100%, 20rem); }
 }
 
 .personal-photos-trigger:active .personal-photos-stack { scale: 0.96; }
@@ -175,18 +179,17 @@
 .personal-photos-backdrop[data-ending-style] { opacity: 0; }
 
 .personal-photos-dialog {
-  /* The column scrolls within the viewport while the source stack stays put. */
+  /* The sheet scrolls within the viewport while the source stack stays put. */
   pointer-events: none;
-  --photo-width: min(76vw, 40dvh, 24rem);
   --photo-gutter: clamp(1.25rem, 4vw, 5rem);
+  --photo-column-gap: 1.5rem;
+  /* A scrolled sheet glides back to its first row before the prints fly
+     home, so they leave from the slots they were dealt to. At the top the
+     close is immediate. */
+  --photo-rewind-duration: var(--duration-slow);
   position: fixed;
-  top: 50%;
-  left: 0;
+  inset: 0;
   z-index: var(--z-dialog);
-  width: 100%;
-  max-height: calc(100dvh - 2rem);
-  overflow: hidden;
-  translate: 0 -50%;
   outline: none;
   color: var(--canvas);
   transition: opacity var(--photo-open-duration) var(--photo-motion-ease);
@@ -198,74 +201,69 @@
   transition-duration: var(--photo-close-duration);
 }
 
-.personal-photos-strip {
-  --photo-gap: 2.5rem;
-  position: relative;
+/* One sheet of every print. It scrolls natively — wheel, swipe, keys — with
+   nothing snapping or dragging; the margin around the masonry dismisses. */
+.personal-photos-sheet {
+  position: absolute;
+  inset: 0;
   pointer-events: auto;
-  height: calc(100dvh - 2rem);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
-  scroll-snap-type: y proximity;
-  scroll-padding-block: 6rem;
-  /* Leave room for the print shadows at both ends of the column. */
-  padding: 6rem var(--photo-gutter);
+  /* Room above the first row and below the last for their shadows. */
+  padding: 5rem var(--photo-gutter) 6rem;
   scrollbar-width: none;
   user-select: none;
-  cursor: grab;
 }
-.personal-photos-track {
+.personal-photos-sheet::-webkit-scrollbar { display: none; }
+/* The modal is the browsing context; don't frame the entire sheet. */
+.personal-photos-sheet:focus { outline: none; }
+
+/* Columns the component fills itself, rather than a CSS multi-column. Both
+   lay out the same, but `columns` fills the first column top to bottom before
+   it starts the second, which puts every print that flies down the left-hand
+   edge; these are dealt round-robin, so the first photos run across the top
+   and the fan converges on the middle of the screen when it opens. */
+.personal-photos-masonry {
   display: flex;
-  flex-direction: column;
-  gap: var(--photo-gap);
-  width: var(--photo-width);
+  align-items: flex-start;
+  gap: var(--photo-column-gap);
+  width: min(100%, 64rem);
   margin-inline: auto;
   pointer-events: auto;
 }
-.personal-photos-strip:active { cursor: grabbing; }
-.personal-photos-strip::-webkit-scrollbar { display: none; }
-/* The modal is the keyboard browsing context; don't frame the entire scroller. */
-.personal-photos-strip:focus { outline: none; }
+
+.personal-photos-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--photo-column-gap);
+  min-width: 0;
+}
 
 .personal-photos-slide {
-  flex: 0 0 auto;
-  width: var(--photo-width);
+  width: 100%;
   margin: 0;
   padding: 1rem 1rem 0;
   border-radius: var(--radius-sm);
   background: var(--canvas);
   color: var(--ink);
   box-shadow: 0 1px 1px rgb(0 0 0 / 0.04), 0 18px 44px -18px rgb(0 0 0 / 0.28), 0 48px 92px -42px rgb(0 0 0 / 0.38);
-  scroll-snap-align: start;
+  /* No transition of its own. The flight hands off to its slot by snapping
+     the slot's opacity, and the photos that never fly arrive and leave with
+     the sheet's single fade: a per-photo fade or dim on top of that read as
+     the pictures going transparent, with the page showing through. */
 }
+/* Each photo keeps its own shape; the width and height attributes set the
+   ratio before the bitmap arrives, with the thumbnail showing through until it does. */
 .personal-photos-slide img {
-  border-radius: calc(var(--radius-sm) / 2);
+  display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 3 / 4;
-  object-fit: contain;
-  background-size: contain;
+  border-radius: calc(var(--radius-sm) / 2);
+  background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
-  cursor: grab;
-}
-.personal-photos-slide img:active { cursor: grabbing; }
-.personal-photos-flight {
-  position: fixed;
-  z-index: var(--z-dialog);
-  pointer-events: none;
-  transform-origin: center;
-  overflow: hidden;
-}
-.personal-photos-flight figcaption {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-}
-.personal-photos-slide img[data-orientation="portrait"],
-.personal-photos-slide img[data-orientation="landscape"] {
-  object-fit: cover;
-  background-size: cover;
 }
 .personal-photos-slide figcaption {
   display: grid;
@@ -275,20 +273,46 @@
   font-size: var(--text-lg);
 }
 
-@media (max-width: 699.98px) {
-  .personal-photos-strip { --photo-gap: 1.25rem; }
+.personal-photos-flight {
+  position: fixed;
+  /* Each flight carries the depth of the print it belongs to, so the hand
+     keeps its order in the air: the middle print stays in front and the ends
+     stay behind. Flying at one flat tier stacked them in DOM order instead,
+     and a print landing beside one covered it completely. */
+  z-index: calc(var(--z-dialog) + var(--print-depth, 0));
+  pointer-events: none;
+  transform-origin: center;
+  overflow: hidden;
 }
+/* The sheet shows the whole photo and the print shows a square of it. The
+   flight crops between the two rather than stretching between them: without
+   this the picture squashes on the way down and then snaps to the print's
+   crop as the clone hands off, which read as the photo resizing after it had
+   already landed. */
+.personal-photos-flight img { object-fit: cover; }
+.personal-photos-flight figcaption {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+}
+/* Coming home, a photo with no print of its own borrows the nearest one to
+   aim at, so it has to pass under the card that is landing there rather than
+   over it: one tier down puts every borrower behind the pile and still well
+   clear of the backdrop. */
+.personal-photos-flight[data-photo-trailing] { z-index: calc(var(--z-dialog) - 1); }
 
-@media (max-height: 500px) {
-  .personal-photos-dialog { --photo-width: min(60vw, 36dvh, 24rem); }
+@media (max-width: 699.98px) {
+  .personal-photos-dialog { --photo-column-gap: 1rem; }
+  .personal-photos-slide { padding: 0.5rem 0.5rem 0; }
+  .personal-photos-slide figcaption {
+    min-height: 3rem;
+    font-size: var(--text-md);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .personal-photos-print,
   .personal-photos-stack,
-  .personal-photos-hint,
   .personal-photos-backdrop,
   .personal-photos-dialog { transition: none; }
-  .personal-photos-dialog[data-starting-style],
-  .personal-photos-dialog[data-ending-style] { transform: none; }
 }

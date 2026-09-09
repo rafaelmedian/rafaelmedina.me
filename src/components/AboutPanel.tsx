@@ -5,7 +5,6 @@ import type { CvExperience } from "../data/cv"
 import type { SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
-import { PersonalPhotos } from "./PersonalPhotos"
 
 type AboutPanelProps = {
   links: SiteLinks
@@ -207,8 +206,6 @@ export function AboutPanel({ links }: AboutPanelProps) {
                 .
               </p>
             </div>
-
-            <PersonalPhotos />
           </section>
 
           <section

@@ -2945,7 +2945,9 @@ test("shows about and the work history summary together", async ({ page }) => {
     "_blank",
   )
 
-  await expect(panel.getByRole("button", { name: "View personal photos" })).toBeVisible()
+  // The photos are a work-grid tile now, not the closing block of About.
+  await expect(panel.getByRole("button", { name: "View personal photos" })).toHaveCount(0)
+  await expect(page.locator("#work").getByRole("button", { name: "View personal photos" })).toBeVisible()
   await expect(panel.getByRole("button", { name: /Briefcase sticker/ })).toHaveCount(0)
 })
 
@@ -3102,16 +3104,19 @@ test("formats education with dates beside its details and extra section spacing"
 
 
 
-test("keeps a compact gap between the photo row and work history", async ({ page }) => {
+// The photos used to close this section and this measured the gap below them.
+// They are a work-grid tile now, so the closing line is the last thing About
+// says before the work history; the gap it keeps is the same one.
+test("keeps a compact gap between the about closing line and work history", async ({ page }) => {
   for (const { width, expectedGap } of [{ width: 1440, expectedGap: 80 }, { width: 390, expectedGap: 40 }]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto("/#about-panel")
 
     const gap = await page.evaluate(() => {
-      const closing = document.querySelector(".personal-photos")
-      const photos = document.querySelector("#about-panel-resume")
-      if (!closing || !photos) return Number.POSITIVE_INFINITY
-      return Math.round(photos.getBoundingClientRect().top - closing.getBoundingClientRect().bottom)
+      const closing = document.querySelector(".mosaic-about-closing")
+      const history = document.querySelector("#about-panel-resume")
+      if (!closing || !history) return Number.POSITIVE_INFINITY
+      return Math.round(history.getBoundingClientRect().top - closing.getBoundingClientRect().bottom)
     })
 
     expect(gap).toBe(expectedGap)

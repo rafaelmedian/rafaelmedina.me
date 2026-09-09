@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type AnimationEvent,
   type CSSProperties,
   type ReactNode,
 } from "react"
@@ -17,6 +18,7 @@ import { AboutPanel } from "./AboutPanel"
 import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { MobileTableOfContents } from "./MobileTableOfContents"
+import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
 import { portfolioQuotes } from "../data/quotes"
 import { homeRows, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type SiteLinks } from "../data/portfolio"
@@ -697,7 +699,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       const rowSpan =
         row.items.reduce((total, item) => total + (item.span ?? 1), 0) +
         (row.quote ? row.quoteSpan ?? 1 : 0) +
-        (row.writings ? 1 : 0)
+        (row.writings ? 1 : 0) +
+        (row.photos ? row.photosSpan ?? 1 : 0)
       const items = row.items.flatMap((item) => {
         const card = cards.find((candidate) => candidate.id === item.cardId)
         if (!card) return []
@@ -715,7 +718,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           },
         ]
       })
-      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, writings: row.writings, items }
+      return { id: row.id, height: row.height, gap: row.gap, quote: row.quote, quoteSpan: row.quoteSpan, writings: row.writings, photos: row.photos, photosSpan: row.photosSpan, items }
     })
   }, [cards])
 
@@ -1030,6 +1033,15 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                         ...(row.gap ? { "--row-gap": row.gap } : {}),
                       } as CSSProperties
                       const eagerRow = rowIndex === 0
+                      // The intro is over once the last tile in the grid has
+                      // finished its entrance. Which tile that is depends on
+                      // the row: the photos row carries no projects, so the
+                      // handler has to ride whichever element the row ends on
+                      // or the stagger class never comes off.
+                      const isLastRow = rowIndex === rowsRender.length - 1
+                      const finishIntro = (event: AnimationEvent<HTMLElement>) => {
+                        if (event.target === event.currentTarget) setHasCompletedWorkIntro(true)
+                      }
                       return (
                         <div
                           key={row.id}
@@ -1067,13 +1079,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 className={`mosaic-row-item mosaic-row-item-fit-${item.fit}`}
                                 style={itemStyle}
                                 onAnimationEnd={
-                                  rowIndex === rowsRender.length - 1 &&
-                                  itemIndex === row.items.length - 1
-                                    ? (event) => {
-                                        if (event.target === event.currentTarget) {
-                                          setHasCompletedWorkIntro(true)
-                                        }
-                                      }
+                                  isLastRow && !row.photos && itemIndex === row.items.length - 1
+                                    ? finishIntro
                                     : undefined
                                 }
                               >
@@ -1123,6 +1130,15 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           {row.writings ? (
                             <div className="mosaic-row-item" style={{ "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) } as CSSProperties}>
                               <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
+                            </div>
+                          ) : null}
+                          {row.photos ? (
+                            <div
+                              className="mosaic-row-item"
+                              style={{ "--row-span": row.photosSpan ?? 1, "--work-intro-row": rowIndex, "--work-intro-col": row.items.length + (row.quote ? 1 : 0) + (row.writings ? 1 : 0) } as CSSProperties}
+                              onAnimationEnd={isLastRow ? finishIntro : undefined}
+                            >
+                              <PersonalPhotos />
                             </div>
                           ) : null}
                         </div>

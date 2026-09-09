@@ -77,6 +77,10 @@ export type HomeRow = {
   quoteSpan?: number
   /** Close this row with the writings folder tile, at a 1-unit span. */
   writings?: boolean
+  /** Close this row with the personal photos tile. */
+  photos?: boolean
+  /** Flex span for that photos tile, in the same units as `HomeRowItem.span`. */
+  photosSpan?: number
 }
 
 const homeTileRowHeight = "clamp(180px, 16vw, 260px)"
@@ -145,6 +149,17 @@ export const homeRows: HomeRow[] = [
     items: [
       { cardId: "preview-protector", span: 1.75 },
     ],
+    // The photos used to sit inside About, below the hobbies. They read better
+    // as a tile in the grid, and this is the row with room for one: the quote
+    // and the photos are the two tiles here that are not a project, and
+    // Protector still takes the widest slot in the row at 1.75 of 4.25.
+    //
+    // Not a row of its own at the end of the grid, which is where they landed
+    // first: the takeover pins the last screenful of the grid while About
+    // slides up over it, so a trailing row is behind the About sheet from
+    // roughly halfway down the page and never reads on its own.
+    photos: true,
+    photosSpan: 1.25,
   },
   {
     id: "row-4",
