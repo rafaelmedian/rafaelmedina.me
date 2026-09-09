@@ -386,6 +386,9 @@ function RowImageMedia({ source, label, width, height, eager, sizes }: RowImageM
       src={source}
       srcSet={srcSet}
       sizes={srcSet ? sizes : undefined}
+      // Auto sizing implies size containment. Preserve each original canvas
+      // instead of the browser's 300 by 150px intrinsic placeholder.
+      style={sizes.startsWith("auto,") && width && height ? { containIntrinsicSize: `${width}px ${height}px` } : undefined}
       alt={label}
       width={width}
       height={height}
@@ -740,7 +743,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         width={width}
         height={height}
         eager={eager}
-        sizes={sizes}
+        // Lazy, uncropped images can use their actual laid-out width, including
+        // containment and paired banners. Keep the formula as a browser fallback;
+        // cropped artwork needs its explicit zoom-aware size.
+        sizes={eager || card.previewCropped ? sizes : `auto, ${sizes}`}
       />
     )
   }

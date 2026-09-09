@@ -3399,7 +3399,7 @@ test("asks for a variant that matches Protector's wide slot", async ({ page }) =
   })
 
   expect(declared).toBeGreaterThanOrEqual(itemWidth * 0.9)
-  expect(chosen).toMatch(/protector-960w\.webp$/)
+  expect(chosen).toMatch(/protector-800w\.webp$/)
 })
 
 test("keeps the staggered projects in the offset group", async ({ page }) => {

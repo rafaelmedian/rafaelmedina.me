@@ -9,10 +9,10 @@ export function isVideoSource(source: string): boolean {
   return normalized.endsWith(".webm") || normalized.endsWith(".mp4")
 }
 
-// Each 1600x1200 shot-small source has `-480w`/`-960w` siblings generated next
+// Each shot-small source has responsive width siblings generated next
 // to it. The mosaic selects an appropriate size for each composed slot;
 // the gallery dialog keeps loading the original.
-const previewVariantWidths = [480, 960]
+const previewVariantWidths = [96, 160, 240, 320, 480, 640, 800, 960]
 // The webp previews are one-offs, so their resized siblings are listed
 // explicitly instead of pattern-matched. Regenerate with
 // scripts/generate-preview-variants.mjs when one of these sources changes.
