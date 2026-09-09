@@ -231,14 +231,13 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
                 ))}
               </ul>
 
-              {/* No rate card: the figures are quoted per engagement, and a
-                  number invented for the page would be wrong the first time
-                  anyone held me to it. `Service.price` renders one per row the
-                  day there is something real to publish. */}
+              {/* Every shape prints a figure now, so this paragraph is what
+                  keeps the three of them from reading as a rate card: they are
+                  the floor, and the quote still follows the scope. */}
               <p className="mosaic-about-services-pricing" data-about-fade="">
-                Every engagement is priced to its scope, so there is no rate card here. Tell me what
-                you are building and roughly when you need it, and I will come back with a number
-                and a timeline.
+                Those are starting points rather than fixed rates — what an engagement costs follows
+                its scope. Tell me what you are building and roughly when you need it, and I will
+                come back with a number and a timeline.
               </p>
 
               <p className="mosaic-about-closing" data-about-fade="">

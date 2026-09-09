@@ -2064,7 +2064,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Work history and Education are not repeated here: the résumé tile in the portraits group opens them as a
                   gallery slide, so the sheet reads as an introduction and closes on what can be bought.
                   Services closes it on the same 5rem/8.75rem gap and a two-column entry grid, with an engagement
-                  shape where the résumé carries dates; it publishes no rate card, and ends on the email address and a
+                  shape where the résumé carries dates; each shape publishes a starting figure rather than a rate
+                  card, and it ends on the email address and a
                   booking link into the same Cal.com dialog the hero&rsquo;s availability line opens.
                   There is no tab state or hidden panel; <code>#about-panel-services</code> anchors directly to the
                   visible Services section.

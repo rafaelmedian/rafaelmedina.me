@@ -4,9 +4,9 @@ export type Service = {
   shape: string
   title: string
   description: string
-  /** Published figure for this engagement. Everything is quoted per scope
-      today, so none carry one; setting it renders a price line under the
-      description without any other change. */
+  /** Published figure for this engagement: a starting point, not a quote. The
+      paragraph under the list carries the caveat, so a row can print a number
+      without it reading as a fixed rate. Unset renders no price line. */
   price?: string
 }
 
@@ -16,17 +16,20 @@ export const services: Service[] = [
     title: "End-to-end product design",
     description:
       "Discovery, research, UX and UI through to shipped screens. The shape of the Matcha rebuild and BoldVoice: one designer owning the problem from the first interview to what ships.",
+    price: "Per project or time-based, starting at $5,000",
   },
   {
     shape: "Monthly",
-    title: "Fractional design partner",
+    title: "Fractional to full-time design partner",
     description:
-      "A standing engagement for a team without an in-house designer — new surfaces, design review, and a system your engineers can keep building on after I step back.",
+      "A standing engagement for a team without an in-house designer — a few days a week, or full time when the roadmap needs it: new surfaces, design review, and a system your engineers can keep building on after I step back.",
+    price: "$5,000 – $20,000 per month",
   },
   {
     shape: "1 – 2 weeks",
     title: "Design sprint and UX audit",
     description:
       "A fixed engagement: user research, a teardown of the product you have today, and a direction you can start building against at the end of it.",
+    price: "$5,000 per week",
   },
 ]
