@@ -30,6 +30,21 @@ jobs:
 
       - run: npm ci
 
+      # Opt in after the one-time Cloudflare setup. Deploy before the site so
+      # newly published note IDs are already accepted by the API.
+      - name: Update shared likes
+        if: vars.VITE_LIKES_API_URL != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Likes are enabled; add the Cloudflare secrets described in README.md."
+            exit 1
+          fi
+          npm run likes:migrate:remote
+          npm run likes:deploy
+
       # Vite inlines this at build time. Unset means the analytics code is
       # tree-shaken away and nothing is tracked.
       - run: npm run build

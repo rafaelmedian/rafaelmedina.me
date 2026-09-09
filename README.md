@@ -63,20 +63,26 @@ The site stays on GitHub Pages. `workers/likes/` provides a separate Cloudflare
 Worker and D1 database for shared likes. `VITE_LIKES_API_URL` is the public Worker
 URL, not a secret.
 
-The reader does not currently show a like control. The Worker, its database, the
-client in `src/lib/noteLikes.ts`, and `NoteLikeButton` are all kept. The API is
-still tested; the unmounted button and client have no current browser coverage.
-Restoring the control means mounting it in the reader and restoring that
-coverage. Until then nothing on the site writes to the database.
+The reader shows the existing like control when `VITE_LIKES_API_URL` is set.
+Without it, the control is hidden. Each browser stores a random anonymous visitor
+ID; D1 stores one row per note and visitor, so retries cannot duplicate likes.
+Counts refresh when a note opens and when the reader returns to a visible tab or
+focuses the window. There is no background polling. Failed saves preserve the last
+confirmed count and show an error; the rest of the reader remains usable.
 
-When mounted, the client stores a random anonymous visitor ID per browser. D1
-stores one row per note and visitor, so retries and concurrent requests cannot
-add duplicate likes; an unlike
-only removes that visitor's row. Counts refresh when a note opens, every 15 seconds
-while visible, and on returning to the page. Old browser-only likes are not imported
-as public engagement. This is one like per browser, not verified person: clearing
-storage or using another browser creates another identity. No names or email
-addresses are collected. This is not a bot-proof voting system.
+Use **Cloudflare Workers Free**, not Workers Paid, to keep this service free.
+As checked on 2026-09-09, it includes 100,000 Worker requests/day; D1 includes
+5 million rows read/day, 100,000 rows written/day, and 5 GB total storage.
+These are account-wide limits, not a visitor allowance. Counting likes scans
+that note's rows, so a request can consume multiple row reads. On the Free plan,
+exhausted daily quotas cause errors until reset rather than overage charges.
+See [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
+and [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/).
+
+No visitor accounts, scheduled jobs, or server upkeep are required. One browser
+is not one verified person: clearing storage creates another identity, and this
+is not bot-proof voting. Old browser-only likes are not imported. No names or
+email addresses are collected.
 
 For local development, run:
 
@@ -94,24 +100,33 @@ VITE_LIKES_API_URL=http://127.0.0.1:8787 npm run dev
 The local database persists under `.wrangler/` and is gitignored. Playwright starts
 the local Worker and connects the test build automatically. Shared-like tests use
 the actual local D1 database directly, covering independent visitor IDs,
-concurrent retries, repeated unlikes, and rejected requests.
+concurrent retries, repeated unlikes, and rejected requests. Browser tests also
+cover save/reload/unlike, failed saves, and the absence of idle polling.
 
-To activate shared likes publicly, first restore the reader control and its
-browser tests, then complete the service setup:
+One-time setup (keep the account on Workers Free; the site stays on GitHub Pages
+and the API uses a free `workers.dev` address, with no DNS move):
 
 1. Sign in with `npx wrangler login`.
 2. Create the database with `npx wrangler d1 create rafaelmedina-note-likes --config workers/likes/wrangler.jsonc`.
 3. Replace `local-note-likes` in `workers/likes/wrangler.jsonc` with the returned
    database ID. The ID is configuration, not a credential.
 4. Run `npm run likes:migrate:remote`, then `npm run likes:deploy`.
-5. Set the GitHub repository variable `VITE_LIKES_API_URL` to the deployed Worker
+5. Create a Cloudflare API token scoped to this account with **Workers Scripts:
+   Edit** and **D1: Edit** permissions. Add it to GitHub repository Actions
+   secrets as `CLOUDFLARE_API_TOKEN`, and add the account ID as
+   `CLOUDFLARE_ACCOUNT_ID`. Enter secrets in GitHub settings, not source files
+   or chat. See [Cloudflare's GitHub Actions guide](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/).
+6. Set the GitHub repository variable `VITE_LIKES_API_URL` to the deployed Worker
    URL. Merge the site changes through a PR to `main` to build with that URL.
    Set the same URL in `.env` if local development should use the public database.
 
-Never delete the D1 database when redeploying: it holds the shared counts. Deploy
-Worker changes with `npm run likes:deploy`; site builds do not deploy the Worker.
-When adding notes, add their stable IDs to `src/data/writingIds.ts` and redeploy
-the Worker so its allowlist recognizes them. The article data's `WritingId` type
+Never delete the D1 database when redeploying: it holds the shared counts.
+Once configured, the main-branch deployment applies pending migrations and
+updates the Worker before publishing the site. New notes therefore require no
+separate manual Worker deployment. Cloudflare failures stop the deployment and
+leave the previously published site in place. For local/manual recovery,
+`npm run likes:migrate:remote` and `npm run likes:deploy` remain available.
+When adding notes, add their stable IDs to `src/data/writingIds.ts`. The article data's `WritingId` type
 checks that notes use registered IDs. Changing an ID starts a separate count.
 
 ## Writing selection
