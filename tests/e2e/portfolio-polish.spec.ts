@@ -3522,7 +3522,9 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  await expect(dialog.getByText("2 / 13", { exact: true })).toBeVisible()
+  // The counter is a screen-reader label on this layout rather than a pill, so
+  // the swipe is confirmed by what it says and not by whether it is drawn.
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()

@@ -438,14 +438,18 @@ export function PreviewGalleryDialog({
                   >
                     <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                   </button>
-
-                  <Dialog.Close
-                    className="preview-gallery-nav preview-gallery-close"
-                    aria-label={activeItem.kind === "resume" ? "Close résumé" : "Close preview"}
-                  >
-                    <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
-                  </Dialog.Close>
                 </div>
+
+                {/* Outside the paging group, and the only thing on its side of
+                    the bar: leaving is not a third step through the set, and
+                    stacked with the chevrons in one corner it was the one
+                    control a thumb reaching for "next" could hit by mistake. */}
+                <Dialog.Close
+                  className="preview-gallery-nav preview-gallery-close"
+                  aria-label={activeItem.kind === "resume" ? "Close résumé" : "Close preview"}
+                >
+                  <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                </Dialog.Close>
               </div>
 
               {/* Swipe is handled on the whole card, not just the media: on

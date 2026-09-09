@@ -792,6 +792,22 @@
     background: var(--canvas);
   }
 
+  /* The count is the toolbar's third item on paper and its label in practice:
+     the chevrons hold one end of the bar and the close the other, and a pill
+     between them only crowded the corner the close now has to itself. It is
+     kept for a screen reader, where "5 / 13" is the one place the position in
+     the set is not already legible from the artwork. */
+  .preview-gallery-count {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   /* The compact gallery still shows the full composition even though the
      feed tile focuses on the first row of phones. */
   .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
@@ -842,3 +858,4 @@
     padding-inline: 1.25rem;
   }
 }
+
