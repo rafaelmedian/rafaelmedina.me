@@ -406,12 +406,6 @@ const EASINGS_ENTRIES = [
     use: "Apple Core Animation’s documented default timing curve, scoped to the personal-photo hover fan, hint, flights, captions, and backdrop. Movement builds before easing into place; opening and closing share a quick 200ms beat and captions move with the prints without delay.",
   },
   {
-    name: "Overshoot",
-    css: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-    duration: "220ms",
-    use: "The copy-email reaction (220ms, and the only 220ms left in the file). The only curve in the system that overshoots — the reaction needs a shape to travel past its mark and settle, so keep new work off it unless it does too.",
-  },
-  {
     name: "Scroll linked",
     css: "linear",
     duration: "1 viewport of scroll",
@@ -472,7 +466,6 @@ const STACKING_ENTRIES = [
     note: "Hover cards, the local-time card, and the work-history block. The popover inside that block stacks locally (z 4 within its isolated container), so only the container carries the tier.",
   },
   { z: "--z-dialog-backdrop / --z-dialog", name: "--z-dialog-backdrop / --z-dialog", note: "The preview gallery and personal-photo backdrops, then their dialog shells." },
-  { z: "--z-reaction", name: "--z-reaction", note: "The copy-email reaction has to clear the dialog trigger it sits under." },
   { z: "--z-skip-link", name: "--z-skip-link", note: "Above everything, always." },
   {
     z: "500 (scoped)",
@@ -1465,11 +1458,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Contact pills</p>
               <div
                 className="ds-specimen ds-specimen-canvas ds-specimen-center"
-                data-ds-terms={terms("contact pill copy email linkedin x follow button specular bevel")}
+                data-ds-terms={terms("contact pill book a call booking linkedin x follow button specular bevel")}
               >
                 <ContactActionRow
-                  email={links.email}
-                  contactHref={`mailto:${links.email}`}
+                  availabilityLabel={formatAvailability()}
+                  bookingUrl={links.booking}
                   linkedinHref={links.linkedin}
                   xHref={links.x}
                   xProfile={xProfilePreview}
@@ -1486,10 +1479,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ds-terms={terms("email dark pill --ink #000 white label 112px primary action")}>
-                      <td>Email</td>
+                    <tr data-ds-terms={terms("book a call booking dark pill --ink #000 white label 116px availability dot primary action")}>
+                      <td>Book a call</td>
                       <td>
-                        <code>var(--ink) → #000</code> gradient, white label, 112px fixed
+                        <code>var(--ink) → #000</code> gradient, white label, 116px min, <code>--accent</code> dot
                       </td>
                       <td>The primary action. One per row.</td>
                     </tr>
@@ -1505,7 +1498,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                       <td>
                         <code>#f4f4f4 → #fff</code> gradient, dark label and mark, 80px min
                       </td>
-                      <td>Tertiary. The light treatment keeps email as the primary action.</td>
+                      <td>Tertiary. The light treatment keeps booking as the primary action.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1525,7 +1518,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Chips &amp; controls</p>
               <div
                 className="ds-specimen ds-specimen-canvas"
-                data-ds-terms={terms("chip nav link local time count pill takeover close availability dot booking book a call #f2f2f2 #e9e9e9")}
+                data-ds-terms={terms("chip nav link local time count pill takeover close availability dot booking book a call copy email #f2f2f2 #e9e9e9")}
               >
                 <button type="button" className="mosaic-work-history-chip">
                   Chip · rest
@@ -1552,12 +1545,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </button>
                 <button
                   type="button"
-                  className="mosaic-profile-availability mosaic-availability-trigger"
-                  style={{ margin: 0 }}
+                  className="mosaic-contact-pill mosaic-contact-pill-dark mosaic-booking-pill"
                   aria-haspopup="dialog"
                 >
-                  <span className="mosaic-availability-dot" style={{ opacity: 1 }} aria-hidden="true" />
-                  <span className="mosaic-availability-label">{formatAvailability()}</span>
+                  <span className="mosaic-contact-pill-content">
+                    <span className="mosaic-availability-dot" aria-hidden="true" />
+                    <span className="mosaic-contact-pill-dark-label">Book a call</span>
+                  </span>
+                </button>
+                <button type="button" className="mosaic-profile-email">
+                  <span className="mosaic-profile-email-label">{links.email}</span>
+                  <span className="mosaic-profile-email-icon" aria-hidden="true">
+                    <Copy strokeWidth={2} />
+                  </span>
                 </button>
               </div>
               <p className="ds-caption">
@@ -1567,13 +1567,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 under the cursor mean the same thing. Nav links extend a <code>2.5rem</code> invisible <code>::before</code> so the tap target reaches
                 40px while the visible label stays 2rem. The takeover close is a 51.2px white raised control with the
                 overlay shadow over <code>--shadow-ring</code> and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
-                its viewport crossing. The availability line is a button, not text: it reads as the rest of the hero
-                sentence at rest and only takes <code>--ink</code> and a <code>--muted-soft</code> underline on hover
-                or focus, where a 260ms intent delay reveals a non-interactive month preview. Clicking or pressing
-                Enter opens the Cal.com booking dialog. The preview uses the overlay shadow, ring,
-                <code>--radius-md</code>, and existing small type tokens; it enters over
-                <code>--duration-base</code> with a 4px lift and 0.98 scale, and exits over
-                <code>--duration-fast</code>. Dates are illustrative, not live availability.
+                its viewport crossing. Booking is the dark pill and the contact row's primary action; the{" "}
+                <code>--accent</code> status dot rides inside it with a white 16% halo, because the green's own tint
+                goes to mud on black. A 260ms intent delay reveals a one-line hint carrying the live availability
+                month, and a press opens the Cal.com dialog. The address beside it is a button too, not text: it reads
+                as the rest of the hero sentence at rest and only takes <code>--ink</code> and a{" "}
+                <code>--muted-soft</code> underline on hover or focus. Its copy icon holds its 0.875rem slot at rest
+                so the centred line never shifts under the pointer, and turns to <code>--accent</code> as a check for
+                1.6s after a copy. Both hints use the overlay shadow, ring, <code>--radius-md</code>, and existing
+                small type tokens; they enter over <code>--duration-base</code> with a 4px lift and 0.98 scale, and
+                exit over <code>--duration-fast</code>.
               </p>
             </div>
 
