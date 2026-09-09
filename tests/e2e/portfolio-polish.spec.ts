@@ -3011,6 +3011,7 @@ test("keeps the selected work label out of the visual layout", async ({ page }) 
 test("uses eight pixel mobile gutters and opens with two columns", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
+  await settleAvatarIntro(page)
 
   const [walletBox, homepageBox] = await Promise.all([
     page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).boundingBox(),
