@@ -480,6 +480,7 @@ test("keeps marginalia to two notes an article, one in each gutter", async ({ pa
   await folder.click()
   const dialog = page.getByRole("dialog")
   const entries = dialog.locator(".writings-year li button")
+  await expect(entries.first()).toBeVisible()
   const count = await entries.count()
   expect(count).toBeGreaterThan(0)
   for (let index = 0; index < count; index += 1) {
