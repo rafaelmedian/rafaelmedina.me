@@ -15,7 +15,7 @@ and the global reduced-motion policy last.
 - `work-grid.css`: project rows, captions, media, and About takeover choreography.
 - `personal-photos.css`: photo stack and carousel dialog.
 - `preview-gallery.css`: project preview dialog.
-- `booking.css`: the availability calendar-preview tooltip, booking dialog, and Cal.com frame.
+- `booking.css`: the availability booking hint tooltip, booking dialog, and Cal.com frame.
 - `writings.css`: writings folder tile, reader dialog, and its transitions.
 - `standalone.css`: prerendered project pages and the 404.
 - `reduced-motion.css`: the shared duration clamp and final visibility resets.

@@ -1554,7 +1554,7 @@ test("keeps the availability dot visible without motion when reduced motion is r
   await expect(dot.evaluate((element) => element.getAnimations().length)).resolves.toBe(0)
 })
 
-test("previews the calendar on hover and opens booking only on click", async ({ page }) => {
+test("hints at booking on hover and opens the calendar only on click", async ({ page }) => {
   let calendarRequests = 0
   await page.route("https://cal.com/**", (route) => {
     calendarRequests++
@@ -1567,7 +1567,7 @@ test("previews the calendar on hover and opens booking only on click", async ({ 
   await trigger.hover()
   const tooltip = page.getByRole("tooltip")
   await expect(tooltip).toBeVisible()
-  await expect(tooltip).toContainText("Click to book a call")
+  await expect(tooltip).toHaveText("Click to book a time in my calendar")
   await expect(page.getByRole("dialog")).toHaveCount(0)
   expect(calendarRequests).toBe(0)
   await tooltip.hover()
