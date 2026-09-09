@@ -76,7 +76,7 @@ function App({ pathname }: { pathname?: string }) {
         )}
         {Agentation ? (
           <Suspense fallback={null}>
-            <Agentation className="portfolio-feedback-toolbar max-[699.98px]:!bottom-[calc(6rem+env(safe-area-inset-bottom))]" />
+            <Agentation className="portfolio-feedback-toolbar max-[699.98px]:bottom-[calc(6rem+env(safe-area-inset-bottom))]!" />
           </Suspense>
         ) : null}
         {isTuningEdge && ElasticEdgeTuner ? (

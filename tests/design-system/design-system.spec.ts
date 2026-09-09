@@ -61,7 +61,7 @@ const findScriptCustomPropertyReferences = (text: string, fileName = "source.tsx
         ["getPropertyValue", "removeProperty", "setProperty"].includes(current.expression.name.text)
       ) return true
     }
-    return fileName === "tailwind.config.js"
+    return false
   }
 
   const visit = (node: ts.Node) => {
@@ -237,7 +237,7 @@ test("refreshes token values, specimens, and contrast when the stylesheet change
 
 // Guards the invariant behind the token cleanup: a custom property defined in
 // the stylesheets must be consumed somewhere (CSS var(), a JS property read,
-// or the Tailwind config) — otherwise it is drift and should be deleted, not
+// or the Tailwind theme in src/styles/tailwind.css) — otherwise it is drift and should be deleted, not
 // documented. Prose mentions on the design-system page do not count.
 test("every custom property defined in the stylesheets is referenced", () => {
   const walk = (dir: string): string[] =>
@@ -248,7 +248,10 @@ test("every custom property defined in the stylesheets is referenced", () => {
     })
 
   const definitions = new Set<string>()
-  for (const file of walk("src").filter((path) => path.endsWith(".css"))) {
+  // src/styles/tailwind.css declares Tailwind's theme namespace; its entries
+  // are consumed by generated utilities, not by the stylesheets, so they are
+  // not site tokens for this check.
+  for (const file of walk("src").filter((path) => path.endsWith(".css") && !path.endsWith("tailwind.css"))) {
     const css = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "")
     for (const match of css.matchAll(/^\s*(--[\w-]+)\s*:/gm)) {
       definitions.add(match[1])
@@ -256,7 +259,7 @@ test("every custom property defined in the stylesheets is referenced", () => {
   }
 
   const references = new Set<string>()
-  for (const file of [...walk("src"), "tailwind.config.js", "index.html"]) {
+  for (const file of [...walk("src"), "index.html"]) {
     const text = readFileSync(file, "utf8")
     const tokens = file.endsWith(".css") || file.endsWith(".html")
       ? findCssCustomPropertyReferences(text)
