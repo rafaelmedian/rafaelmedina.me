@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test"
 import { maxNoteLikesPerVisitor } from "../../src/data/likeLimits"
+import { likesApiUrl } from "./likesApi"
 
 test("every increment counts across visitors and clamps at the per-visitor cap", async ({ request }) => {
-  const endpoint = "http://127.0.0.1:8787/notes/building-a-dark-theme/likes"
+  const endpoint = `${likesApiUrl}/notes/building-a-dark-theme/likes`
   const headersA = { Origin: "http://127.0.0.1:4174", "X-Visitor-ID": crypto.randomUUID() }
   const headersB = { ...headersA, "X-Visitor-ID": crypto.randomUUID() }
   const before = await request.get(endpoint, { headers: headersA })
@@ -23,7 +24,7 @@ test("every increment counts across visitors and clamps at the per-visitor cap",
 })
 
 test("likes API rejects unknown notes, invalid visitors, foreign origins and malformed writes", async ({ request }) => {
-  const endpoint = "http://127.0.0.1:8787/notes/designing-matcha/likes"
+  const endpoint = `${likesApiUrl}/notes/designing-matcha/likes`
   const headers = { Origin: "http://127.0.0.1:4174", "X-Visitor-ID": crypto.randomUUID() }
   expect((await request.get(endpoint.replace("designing-matcha", "not-a-note"), { headers })).status()).toBe(404)
   expect((await request.get(endpoint, { headers: { ...headers, "X-Visitor-ID": "invalid" } })).status()).toBe(400)
@@ -39,7 +40,7 @@ test("likes API rejects unknown notes, invalid visitors, foreign origins and mal
 })
 
 test("legacy clients can read, retry likes, and unlike during rollout", async ({ request }) => {
-  const endpoint = "http://127.0.0.1:8787/notes/a-song-we-all-know/likes"
+  const endpoint = `${likesApiUrl}/notes/a-song-we-all-know/likes`
   const headers = { Origin: "http://127.0.0.1:4174", "X-Visitor-ID": crypto.randomUUID() }
   const initial = await (await request.get(endpoint, { headers })).json()
   expect(initial.liked).toBe(false)

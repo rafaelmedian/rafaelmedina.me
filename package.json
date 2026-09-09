@@ -9,7 +9,7 @@
     "lint": "eslint . && npm run lint:css",
     "lint:css": "stylelint \"src/**/*.css\"",
     "preview": "vite preview",
-    "test:e2e": "VITE_LIKES_API_URL=http://127.0.0.1:8787 npm run build && playwright test",
+    "test:e2e": "VITE_LIKES_API_URL=${LIKES_API_URL:-http://127.0.0.1:8787} npm run build && playwright test",
     "test:design-system": "playwright test --config playwright.design-system.config.ts",
     "test:e2e:serve": "vite preview --host 127.0.0.1 --port 4174",
     "likes:dev": "wrangler dev --config workers/likes/wrangler.jsonc --port 8787",

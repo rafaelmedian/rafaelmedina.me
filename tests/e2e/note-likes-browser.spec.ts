@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { maxNoteLikesPerVisitor } from "../../src/data/likeLimits"
+import { likesApiUrl } from "./likesApi"
 
 async function openNote(page: import("@playwright/test").Page, title = "Designing Matcha") {
   await page.goto("/")
@@ -75,7 +76,7 @@ test("taps survive reloading before the debounce flush", async ({ page, request 
   await expect(like).toBeEnabled()
   const visitor = await page.evaluate(() => localStorage.getItem("rafaelmedina:likes-visitor")!)
   const headers = { Origin: "http://127.0.0.1:4174", "X-Visitor-ID": visitor }
-  const endpoint = "http://127.0.0.1:8787/notes/room-to-figure-it-out/likes"
+  const endpoint = `${likesApiUrl}/notes/room-to-figure-it-out/likes`
   // Freeze timers so the click cannot accidentally drain before navigation.
   await page.clock.install()
   await page.clock.pauseAt(new Date())
