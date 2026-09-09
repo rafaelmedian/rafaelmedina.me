@@ -202,6 +202,42 @@ test("a vertical touch scroll leaves the selected quote unchanged", async ({ pag
   await expect(active(page)).toContainText("Michael Wong")
 })
 
+// Real fingers do not travel in straight lines. Each point is an offset from
+// where the touch went down, dispatched in order and released at the last one.
+async function touchPath(page: Page, surface: Locator, path: [number, number][]) {
+  await surface.scrollIntoViewIfNeeded()
+  const box = await surface.boundingBox()
+  if (!box) throw new Error("Quote surface has no rendered bounds")
+  const client = await page.context().newCDPSession(page)
+  const x = box.x + box.width / 2
+  const y = box.y + box.height * 0.25
+  await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] })
+  for (const [dx, dy] of path) {
+    await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + dx, y: y + dy }] })
+  }
+  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+}
+
+test("a short swipe that begins with a vertical roll still changes the quote", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "CDP touch input is Chromium-specific")
+  await openHome(page, 390)
+  const surface = carousel(page).getByRole("button", { name: "Advance quote" })
+  // The axis is chosen six pixels in, where the roll of the hand that opens a
+  // real swipe still measures as tall as the sideways intent behind it.
+  await touchPath(page, surface, [[-2, -5], [-6, -6], [-12, -6], [-20, -6]])
+  await expect(active(page)).toContainText("BASED FLOYD VIII")
+})
+
+test("a press whose finger rolls advances the quote once, as a tap", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "CDP touch input is Chromium-specific")
+  await openHome(page, 390)
+  const surface = carousel(page).getByRole("button", { name: "Advance quote" })
+  // Inside the tap radius and mostly vertical: the swipe never commits, so the
+  // click behind it advances the card exactly as a still finger would.
+  await touchPath(page, surface, [[1, 4], [2, 7]])
+  await expect(active(page)).toContainText("BASED FLOYD VIII")
+})
+
 test("the focused quote author opens the full X preview and Escape closes it", async ({ page }) => {
   await openHome(page)
   const author = active(page).getByRole("button", { name: "Michael Wong on X" })
@@ -221,12 +257,27 @@ test("the focused quote author opens the full X preview and Escape closes it", a
   await expect(author).toBeFocused()
   const trigger = active(page).getByRole("button", { name: "Michael Wong on X" })
   await trigger.hover()
+  // The hovered name wears the hero's inline fill: its own line box plus 6px of
+  // side padding, no underline, and no taller target under a pointer that hovers.
   const triggerStyle = await trigger.evaluate((node) => {
     const style = getComputedStyle(node)
-    return { hitHeight: Number.parseFloat(getComputedStyle(node, "::before").minHeight), background: style.backgroundColor }
+    const box = node.getBoundingClientRect()
+    const role = node.closest(".mosaic-quote-attribution")?.querySelector(".mosaic-quote-role")
+    return {
+      background: style.backgroundColor,
+      decoration: style.textDecorationLine,
+      hitTarget: getComputedStyle(node, "::before").content,
+      height: box.height,
+      lineHeight: Number.parseFloat(style.lineHeight),
+      textLeft: box.left + Number.parseFloat(style.paddingLeft),
+      roleLeft: role?.getBoundingClientRect().left ?? -1,
+    }
   })
-  expect(triggerStyle.hitHeight).toBeGreaterThanOrEqual(40)
   expect(triggerStyle.background).not.toBe("rgba(0, 0, 0, 0)")
+  expect(triggerStyle.decoration).toBe("none")
+  expect(triggerStyle.hitTarget).toBe("none")
+  expect(triggerStyle.height).toBeCloseTo(triggerStyle.lineHeight, 1)
+  expect(triggerStyle.textLeft).toBeCloseTo(triggerStyle.roleLeft, 1)
   await carousel(page).getByRole("button", { name: /Show quote from Phil Liao/ }).click()
   await active(page).getByRole("button", { name: "Phil Liao on X" }).focus()
   await expect(page.locator(".mosaic-quote-profile-popup .mosaic-x-card")).toContainText("Phil 🍵")
@@ -237,7 +288,13 @@ test("opens the interactive profile popover on touch", async ({ browser }) => {
   const page = await context.newPage()
   await page.goto("/")
   const card = carousel(page)
-  await card.getByRole("button", { name: "Michael Wong on X" }).tap()
+  const trigger = card.getByRole("button", { name: "Michael Wong on X" })
+  // A finger opens the preview by tapping, so here — and only here — the name
+  // carries the invisible 40px target behind it.
+  expect(
+    await trigger.evaluate((node) => Number.parseFloat(getComputedStyle(node, "::before").minHeight)),
+  ).toBeGreaterThanOrEqual(40)
+  await trigger.tap()
   const preview = page.locator(".mosaic-quote-profile-popup .mosaic-x-card")
   await expect(preview).toBeVisible()
   await expect(preview.getByRole("link", { name: "Follow" })).toBeVisible()

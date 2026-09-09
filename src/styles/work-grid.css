@@ -180,17 +180,20 @@
 }
 
 /* The linked name sits above the next-quote surface; the rest of the slide
-   lets taps and drags reach that button. The preview is portaled past the clip. */
+   lets taps and drags reach that button. The preview is portaled past the clip.
+   The fill is the hero's: the name's own line box with 0.375rem of side padding
+   cancelled by an equal negative margin, so it grows around the name without
+   moving it off the caption's left edge or opening a gap above it. No underline
+   -- nothing else in this card or the hero rules a line under a name. */
 .mosaic-quote-profile-link {
   appearance: none;
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
   width: fit-content;
   max-width: 100%;
-  padding: 0;
-  margin: 0;
+  margin-inline: -0.375rem;
+  padding: 0 0.375rem;
   border: 0;
   color: inherit;
   font: inherit;
@@ -199,30 +202,28 @@
   pointer-events: auto;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 0.375rem transparent;
-  transition:
-    background-color var(--duration-quick) var(--ease-standard),
-    box-shadow var(--duration-quick) var(--ease-standard);
+  background: transparent;
+  transition: background-color var(--duration-quick) var(--ease-standard);
 }
 
-/* Extend the hit target without adding space between the name and caption. */
-.mosaic-quote-profile-link::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: -0.5rem;
-  right: -0.5rem;
-  min-height: 40px;
-  height: 100%;
-  transform: translateY(-50%);
+/* A pointer that hovers gets exactly the name; only a finger, which never
+   opens the preview by hovering, needs the taller invisible target. */
+@media (hover: none), (pointer: coarse) {
+  .mosaic-quote-profile-link::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    min-height: 40px;
+    height: 100%;
+    transform: translateY(-50%);
+  }
 }
 
 .mosaic-quote-profile-link:hover,
 .mosaic-quote-profile-link:focus-visible {
   background: var(--mosaic-card-surface);
-  box-shadow: 0 0 0 0.375rem var(--mosaic-card-surface);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .mosaic-quote-profile-link:focus-visible {
