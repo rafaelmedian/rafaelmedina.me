@@ -9,13 +9,16 @@
   transform: translate(-50%, 0.25rem);
   opacity: 0;
   pointer-events: none;
-  color: white;
+  color: var(--card-caption-ink);
   font-size: clamp(var(--text-xs), 1vw, var(--text-sm));
   font-weight: 600;
   line-height: 1.12;
   letter-spacing: -0.025em;
   text-align: center;
-  text-shadow: 0 1px 8px rgb(0 0 0 / 0.28);
+  /* Only the dark band needs the halo -- it separates white type from the
+     highlights the tint cannot fully cover. Ink on the pale band has nothing
+     to separate itself from and a shadow there just reads as a smudge. */
+  text-shadow: var(--card-caption-ink-halo);
   transition:
     opacity var(--duration-quick) ease-out,
     transform var(--duration-quick) var(--ease-standard);
@@ -844,7 +847,29 @@
   display: flex;
 }
 
+/* The caption band's colour, set here so the tint and the label it carries can
+   never disagree.
+
+   Most tiles letterbox their artwork against --mosaic-card-surface, and a black
+   band over that read as a grey bruise laid on the tile rather than as part of
+   it: the card is pale everywhere except the one strip the caption needs. These
+   wash toward the card's own surface instead, so the band is the tile colour
+   coming forward over the artwork and the label is ordinary ink.
+
+   --card-caption-weight scales every stop of the ramp below. The pale tint has
+   to work harder than black did for the same separation -- it is only a few
+   levels off the artwork it covers on a light screenshot, where black had the
+   full range to itself -- so it runs half again as heavy and reaches the tile
+   colour outright at the bottom edge.
+
+   The four tiles whose artwork or backdrop runs dark to the bottom edge keep the
+   black band and the white label; they are listed directly below. */
 .mosaic-row-card {
+  --card-caption-tint: 236 236 238; /* --mosaic-card-surface */
+  --card-caption-weight: 1.5;
+  --card-caption-ink: var(--ink);
+  --card-caption-ink-halo: none;
+
   appearance: none;
   position: relative;
   flex: 1;
@@ -864,6 +889,20 @@
     background-color var(--duration-quick) var(--ease-standard),
     border-color var(--duration-quick) var(--ease-standard),
     box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+/* Protector is a full-bleed photograph, Family Stories seats its phones on the
+   bottom edge, and Token and Pro carry their own rgb(63 62 68) backdrop to all
+   four. There is no pale surface for the band to wash toward on any of them,
+   and ink would land on artwork it cannot beat. */
+.mosaic-row-card-preview-protector,
+.mosaic-row-card-preview-family-stories,
+.mosaic-row-card-preview-shot-21,
+.mosaic-row-card-preview-shot-23 {
+  --card-caption-tint: 0 0 0;
+  --card-caption-weight: 1;
+  --card-caption-ink: white;
+  --card-caption-ink-halo: 0 1px 8px rgb(0 0 0 / 0.28);
 }
 
 /* The caption backdrop. Four separately masked layers step the blur radius from
@@ -987,28 +1026,29 @@
   /* On wide layouts this is nearly flat across the bottom seventh, where the
      caption sits, then eased to nothing over the rest of the band. The plateau
      is what buys the weight back: contrast is only owed at the label, so the
-     tint holds ~0.57 behind it -- the same composite the old 0.68 straight ramp
-     put there, and the same margin over 4.5:1 on white artwork -- and sheds
-     about a third of its weight through the middle of the band, which is the
-     part you actually read as heavy. It also has no top: a ramp that reaches
+     tint holds ~0.57 of its weight behind it -- on the black band, the same
+     composite the old 0.68 straight ramp put there -- and sheds about a third
+     of that through the middle of the band, which is the part you actually
+     read as heavy. Every stop is scaled by --card-caption-weight, so the two
+     bands share this shape and differ only in how hard they pull. It also has no top: a ramp that reaches
      zero partway up changes slope there, and the eye reads that break as an
      edge. Compact desktop overrides the stop positions below because its
      labels can wrap inside a shorter band. */
   background: linear-gradient(
     to top,
-    rgb(0 0 0 / 0.62) 0%,
-    rgb(0 0 0 / 0.595) 8%,
-    rgb(0 0 0 / 0.56) 14%,
-    rgb(0 0 0 / 0.475) 21%,
-    rgb(0 0 0 / 0.36) 30%,
-    rgb(0 0 0 / 0.27) 38%,
-    rgb(0 0 0 / 0.19) 47%,
-    rgb(0 0 0 / 0.13) 56%,
-    rgb(0 0 0 / 0.085) 65%,
-    rgb(0 0 0 / 0.05) 74%,
-    rgb(0 0 0 / 0.027) 82%,
-    rgb(0 0 0 / 0.012) 89%,
-    rgb(0 0 0 / 0.003) 95%,
+    rgb(var(--card-caption-tint) / calc(0.62 * var(--card-caption-weight))) 0%,
+    rgb(var(--card-caption-tint) / calc(0.595 * var(--card-caption-weight))) 8%,
+    rgb(var(--card-caption-tint) / calc(0.56 * var(--card-caption-weight))) 14%,
+    rgb(var(--card-caption-tint) / calc(0.475 * var(--card-caption-weight))) 21%,
+    rgb(var(--card-caption-tint) / calc(0.36 * var(--card-caption-weight))) 30%,
+    rgb(var(--card-caption-tint) / calc(0.27 * var(--card-caption-weight))) 38%,
+    rgb(var(--card-caption-tint) / calc(0.19 * var(--card-caption-weight))) 47%,
+    rgb(var(--card-caption-tint) / calc(0.13 * var(--card-caption-weight))) 56%,
+    rgb(var(--card-caption-tint) / calc(0.085 * var(--card-caption-weight))) 65%,
+    rgb(var(--card-caption-tint) / calc(0.05 * var(--card-caption-weight))) 74%,
+    rgb(var(--card-caption-tint) / calc(0.027 * var(--card-caption-weight))) 82%,
+    rgb(var(--card-caption-tint) / calc(0.012 * var(--card-caption-weight))) 89%,
+    rgb(var(--card-caption-tint) / calc(0.003 * var(--card-caption-weight))) 95%,
     transparent 100%
   );
   opacity: 0;
@@ -1023,9 +1063,9 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .mosaic-row-card-scrim::after {
     background:
-      linear-gradient(to top, rgb(0 0 0 / 0.34) 0%, transparent 48%),
-      linear-gradient(to top, rgb(0 0 0 / 0.2) 0%, transparent 74%),
-      linear-gradient(to top, rgb(0 0 0 / 0.1) 0%, transparent 100%);
+      linear-gradient(to top, rgb(var(--card-caption-tint) / calc(0.34 * var(--card-caption-weight))) 0%, transparent 48%),
+      linear-gradient(to top, rgb(var(--card-caption-tint) / calc(0.2 * var(--card-caption-weight))) 0%, transparent 74%),
+      linear-gradient(to top, rgb(var(--card-caption-tint) / calc(0.1 * var(--card-caption-weight))) 0%, transparent 100%);
   }
 }
 
@@ -1037,19 +1077,19 @@
   .mosaic-row-card-scrim::after {
     background: linear-gradient(
       to top,
-      rgb(0 0 0 / 0.62) 0%,
-      rgb(0 0 0 / 0.595) 18%,
-      rgb(0 0 0 / 0.57) 40%,
-      rgb(0 0 0 / 0.475) 48%,
-      rgb(0 0 0 / 0.36) 56%,
-      rgb(0 0 0 / 0.27) 64%,
-      rgb(0 0 0 / 0.19) 72%,
-      rgb(0 0 0 / 0.13) 80%,
-      rgb(0 0 0 / 0.085) 87%,
-      rgb(0 0 0 / 0.05) 92%,
-      rgb(0 0 0 / 0.027) 96%,
-      rgb(0 0 0 / 0.012) 98%,
-      rgb(0 0 0 / 0.003) 99%,
+      rgb(var(--card-caption-tint) / calc(0.62 * var(--card-caption-weight))) 0%,
+      rgb(var(--card-caption-tint) / calc(0.595 * var(--card-caption-weight))) 18%,
+      rgb(var(--card-caption-tint) / calc(0.57 * var(--card-caption-weight))) 40%,
+      rgb(var(--card-caption-tint) / calc(0.475 * var(--card-caption-weight))) 48%,
+      rgb(var(--card-caption-tint) / calc(0.36 * var(--card-caption-weight))) 56%,
+      rgb(var(--card-caption-tint) / calc(0.27 * var(--card-caption-weight))) 64%,
+      rgb(var(--card-caption-tint) / calc(0.19 * var(--card-caption-weight))) 72%,
+      rgb(var(--card-caption-tint) / calc(0.13 * var(--card-caption-weight))) 80%,
+      rgb(var(--card-caption-tint) / calc(0.085 * var(--card-caption-weight))) 87%,
+      rgb(var(--card-caption-tint) / calc(0.05 * var(--card-caption-weight))) 92%,
+      rgb(var(--card-caption-tint) / calc(0.027 * var(--card-caption-weight))) 96%,
+      rgb(var(--card-caption-tint) / calc(0.012 * var(--card-caption-weight))) 98%,
+      rgb(var(--card-caption-tint) / calc(0.003 * var(--card-caption-weight))) 99%,
       transparent 100%
     );
   }
@@ -1411,8 +1451,8 @@
      accessible name and in the prerendered description, so assistive tech and
      crawlers still get it.
 
-     Dropping the caption takes the band with it: the scrim exists only to keep
-     white text legible, so on touch it was already a blur nobody read. */
+     Dropping the caption takes the band with it: the scrim exists only to hold
+     the caption's ground, so on touch it was already a blur nobody read. */
   .mosaic-row-card-title,
   .mosaic-row-card-scrim {
     display: none;

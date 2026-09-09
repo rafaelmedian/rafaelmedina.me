@@ -1230,7 +1230,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="project-caption-visibility"
-                data-ds-terms={terms("--card-caption-blur 2.5rem scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 360ms eased compact desktop mobile touch no caption hidden aria-label")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem --card-caption-tint --card-caption-weight scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 0.93 ink white 360ms eased compact desktop mobile touch no caption hidden aria-label")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1239,11 +1239,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Four masked layers on <code>.mosaic-row-card-scrim</code> step the radius through 12%, 30%, 62%, and
                   100% of that value, so the artwork softens toward the bottom edge instead of stopping at a seam. A
                   single masked blur layer is not the same effect — a mask fades the opacity of a uniformly blurred
-                  layer, which leaves the top of the band a half-strength blend of sharp and blurred. A{" "}
-                  <code>rgb(0 0 0 / 0.62)</code> ramp sits above all four: blur cannot promise contrast on its own,
-                  because a blurred white screenshot is still white. On wide layouts it is nearly flat across the
+                  layer, which leaves the top of the band a half-strength blend of sharp and blurred. A tint ramp sits
+                  above all four: blur cannot promise contrast on its own, because a blurred white screenshot is still
+                  white. Its colour is the tile's, not black. Most tiles letterbox their artwork against{" "}
+                  <code>--mosaic-card-surface</code>, and a black band over that read as a grey bruise laid on a pale
+                  card, so <code>--card-caption-tint</code> defaults to that surface and the label to{" "}
+                  <code>--ink</code>: the band is the tile colour coming forward over the artwork.{" "}
+                  <code>--card-caption-weight</code> scales every stop, and the pale tint runs at 1.5 — it is only a
+                  few levels off the light screenshot it covers, where black had the full range to itself — so it
+                  reaches <code>rgb(236 236 238 / 0.93)</code> at the bottom edge. The four tiles whose artwork or
+                  backdrop runs dark to that edge — Protector, Family Stories, Token, and Pro — keep{" "}
+                  <code>rgb(0 0 0 / 0.62)</code> and a white label. On wide layouts the ramp is nearly flat across the
                   bottom seventh of the band, where the caption sits. From 700px through 899px, the shorter band holds
-                  57% black through 40% of its height so a wrapped two-line label also clears 4.5:1 over white artwork.
+                  its second stop through 40% of its height so a wrapped two-line label also clears 4.5:1.
                   Contrast is only owed at the label, so the rest of each band sheds its weight quickly and reads far
                   lighter than a ramp that starts at the same value. Every ramp here — the
                   four masks and the tint — fades on an eased stop list rather than a straight line, and trails off
