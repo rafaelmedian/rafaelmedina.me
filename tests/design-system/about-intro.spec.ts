@@ -4,6 +4,7 @@ const intro = (page: Page) => page.getByRole("region", { name: "A quick hello fr
 const openAbout = async (page: Page) => {
   await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
   await expect(intro(page)).toBeVisible()
+  await intro(page).getByRole("button", { name: "Show introduction actions" }).focus()
 }
 
 test("defers introduction assets until About and recording until play", async ({ page }) => {
@@ -178,6 +179,7 @@ test("hides and pauses while the booking dialog covers About", async ({ page }) 
   await page.goto("/?intro=preview")
   await page.locator("#about-panel-services").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
   await expect(intro(page)).toBeVisible()
+  await intro(page).getByRole("button", { name: "Show introduction actions" }).focus()
   await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
   await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
   await page.getByRole("button", { name: "book a 30-minute call", exact: true }).click()

@@ -2156,20 +2156,22 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code> --duration-quick</code> to collapse, and <code>--ease-smooth</code> throughout.
                   The white control surface uses the existing #e9e9e9 hover fill, 44px buttons and seek target,
                   <code> --text-xs</code> tabular time, and <code>--text-sm</code> captions and desktop invitation.
-                  The portrait opens its actions on tap. A glass badge overlaps its upper-right corner,
-                  using the TOC’s 92% white and 16px backdrop blur. It grows from 52px to a 148px pill
-                  on hover, focus or tap, revealing three 44px targets: play, text reply and video reply.
-                  The dark play icon sits on <code>--accent</code>; replies use an 18% accent mix with white.
-                  Fine-pointer hover scales the portrait to 1.04; the 36px inner play disc carries keyboard focus.
-                  The reply panel caps at 320px, uses <code>--radius-lg</code> and shared overlay shadows,
-                  and asks for email before an optional question. Input text uses <code>--text-md</code>
-                  to prevent Safari focus zoom. Camera recording starts only on a press, stays in memory,
-                  and stops when the panel closes or the tab hides. Email drafts require the visitor to send;
-                  downloaded video must be attached manually.
+                  The speaking portrait reveals a centered 44px play disc on hover, keyboard focus or tap.
+                  A 100px glass pill at the upper-right holds separate 44px email and text actions,
+                  with small named tooltips. It uses the TOC’s 92% white and 16px backdrop blur.
+                  The dark play icon sits on <code>--accent</code>; reply icons use an 18% accent mix with white.
+                  Fine-pointer hover scales the portrait to 1.04. Controls settle from 4px over
+                  <code> --duration-quick</code>; reduced motion removes the movement.
+                  Email opens one 52px-high pill: a labeled input and a 44px arrow on its right.
+                  Text adds only a textarea above that row, with <code>--radius-lg</code> corners.
+                  Both cap at 320px, use shared overlay shadows and <code>--text-md</code> input text
+                  to prevent Safari focus zoom. Escape closes the composer and returns focus;
+                  clicking outside closes without stealing focus. The arrow opens an email draft
+                  for the visitor to review and send. The website does not collect the address.
                   Media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
                   Reduced motion removes the morph and press feedback. Captions start enabled, and
-                  leaving About, hiding the tab or opening a dialog pauses sound. Preview the portrait teaser and synthetic recording
+                  leaving About, hiding the tab or opening a dialog pauses sound. Preview the speaking GIF and synthetic recording
                   fixture on the <a href="/#about-panel">development homepage</a> (a short video and matching GIF,
                   labeled Placeholder); <code>?intro=off</code> hides it for development comparisons. Production stays
                   disabled until the real recording is ready.

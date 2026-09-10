@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
-import { Captions, ChevronDown, MessageCircle, Pause, Play, RotateCcw, Video, Volume2, VolumeX, X } from "lucide-react"
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import { Captions, ChevronDown, Mail, MessageCircle, Pause, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react"
 
 import AboutIntroReply from "./AboutIntroReply"
 
@@ -34,7 +34,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
 }) {
   const id = useId()
   const [actionsOpen, setActionsOpen] = useState(false)
-  const [reply, setReply] = useState<"text" | "video" | null>(null)
+  const [reply, setReply] = useState<"email" | "text" | null>(null)
   const available = visible && repliesAvailable
   const [wasAvailable, setWasAvailable] = useState(available)
   // A new About visit starts with the portrait, while the video retains time.
@@ -47,7 +47,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
     }
   }
   const textReplyRef = useRef<HTMLButtonElement>(null)
-  const videoReplyRef = useRef<HTMLButtonElement>(null)
+  const emailReplyRef = useRef<HTMLButtonElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const teaserRef = useRef<HTMLVideoElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -140,13 +140,13 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
     // inert from it, with no transition timer to race a rapid reopen.
     requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }))
   }
-  const closeReply = () => {
-    const target = reply === "video" ? videoReplyRef : textReplyRef
+  const closeReply = useCallback((restoreFocus = true) => {
+    const target = reply === "email" ? emailReplyRef : textReplyRef
     setReply(null)
-    setActionsOpen(true)
-    requestAnimationFrame(() => target.current?.focus({ preventScroll: true }))
-  }
-  const startReply = (mode: "text" | "video") => {
+    setActionsOpen(restoreFocus)
+    if (restoreFocus) requestAnimationFrame(() => target.current?.focus({ preventScroll: true }))
+  }, [reply])
+  const startReply = (mode: "email" | "text") => {
     requestRef.current += 1
     videoRef.current?.pause()
     onOpenChange(false)
@@ -160,7 +160,11 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
       onPointerEnter={event => { if (event.pointerType === "mouse") setActionsOpen(true) }}
       onPointerLeave={event => { if (!event.currentTarget.contains(document.activeElement)) setActionsOpen(false) }}
       onFocusCapture={() => setActionsOpen(true)}
-      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setActionsOpen(false) }}
+      onBlurCapture={event => {
+        // Safari blurs a focused button on pointer-down without focusing the
+        // next button. Keep the hovered target alive until its click completes.
+        if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
+      }}
       data-open={open} data-actions-open={actionsOpen} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
         if (event.key === "Escape" && reply && repliesAvailable) {
@@ -198,6 +202,10 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
         <button type="button" className="about-intro-portrait-trigger" aria-label="Show introduction actions"
           aria-expanded={actionsOpen} aria-controls={`${id}-actions`} onClick={() => setActionsOpen(true)}
           inert={open} aria-hidden={open} />
+        <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
+          aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+          <span className="about-intro-play-disc"><Play size={18} fill="currentColor" aria-hidden="true" /></span>
+        </button>
         <div id={id} className="about-intro-expanded" inert={!open} aria-hidden={!open}>
           {media.placeholder && <span className="about-intro-placeholder">Placeholder</span>}
           <button type="button" className="about-intro-collapse about-intro-button" onClick={collapse} aria-label="Collapse introduction">
@@ -239,14 +247,14 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
         </div>
       </div>
       <div id={`${id}-actions`} className="about-intro-actions" inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
-        <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
-          title="Play introduction" aria-expanded={open} aria-controls={id} onClick={play}>
-          <span className="about-intro-play-disc"><Play size={18} fill="currentColor" aria-hidden="true" /></span>
+        <button ref={emailReplyRef} type="button" className="about-intro-reply-action" aria-label="Email"
+          aria-describedby={`${id}-email-tooltip`} onClick={() => startReply("email")}>
+          <Mail size={19} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" className="about-intro-tooltip">Email</span>
         </button>
-        <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Reply in text"
-          title="Reply in text" onClick={() => startReply("text")}><MessageCircle size={19} aria-hidden="true" /></button>
-        <button ref={videoReplyRef} type="button" className="about-intro-reply-action" aria-label="Reply on video"
-          title="Reply on video" onClick={() => startReply("video")}><Video size={19} aria-hidden="true" /></button>
+        <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Text"
+          aria-describedby={`${id}-text-tooltip`} onClick={() => startReply("text")}>
+          <MessageCircle size={19} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" className="about-intro-tooltip">Text</span>
+        </button>
       </div>
       {reply && visible && repliesAvailable && <AboutIntroReply key={reply} mode={reply} onClose={closeReply} />}
       <span className="about-intro-label" aria-hidden="true">A quick hello <span>{media.placeholder ? "Placeholder · " : ""}{timeLabel(duration)}</span></span>

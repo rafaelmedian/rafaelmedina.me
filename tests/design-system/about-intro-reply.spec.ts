@@ -1,125 +1,77 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
-test.use({
-  launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
-  permissions: ['camera', 'microphone'],
-})
-
-test('reveals reply actions and asks for email before an optional message', async ({ page }) => {
+const openAbout = async (page: Page) => {
   await page.goto('/?intro=preview')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
   await expect(intro).toBeVisible()
+  return intro
+}
+
+test('reveals play on the portrait and offers email and text tooltips', async ({ page }) => {
+  const intro = await openAbout(page)
+  await expect(intro.locator('.about-intro-play-disc')).toHaveCSS('opacity', '0')
+  await intro.getByRole('button', { name: 'Show introduction actions' }).hover()
+  await expect(intro.locator('.about-intro-play-disc')).toHaveCSS('opacity', '1')
+  const email = intro.getByRole('button', { name: 'Email', exact: true })
+  await email.hover()
+  await expect(intro.getByRole('tooltip', { name: 'Email', exact: true })).toBeVisible()
+  await expect(intro.getByRole('button', { name: 'Text', exact: true })).toBeVisible()
+  await expect(intro.getByRole('button', { name: 'Reply on video' })).toHaveCount(0)
+})
+
+test('opens a minimal email input with an arrow and returns focus on escape', async ({ page }) => {
+  const intro = await openAbout(page)
   await intro.hover()
-  await intro.getByRole('button', { name: 'Reply in text', exact: true }).click()
-  const email = intro.getByRole('textbox', { name: 'What’s your email?' })
+  await intro.getByRole('button', { name: 'Email', exact: true }).click()
+  const panel = intro.getByRole('region', { name: 'Email reply' })
+  const email = panel.getByRole('textbox', { name: 'Your email' })
   await expect(email).toBeFocused()
-  await expect(intro.getByRole('textbox', { name: 'Anything you’d like to know?' })).toHaveCount(0)
-  await intro.getByRole('button', { name: 'Continue', exact: true }).click()
+  await expect(panel.getByRole('textbox')).toHaveCount(1)
+  await expect(panel.getByRole('button')).toHaveCount(1)
+  await expect(panel.locator('header, p')).toHaveCount(0)
+  const arrow = panel.getByRole('button', { name: 'Open email draft' })
+  const inputBox = await email.boundingBox()
+  const arrowBox = await arrow.boundingBox()
+  expect(arrowBox!.x).toBeGreaterThan(inputBox!.x)
+  expect(Math.abs(inputBox!.y - arrowBox!.y)).toBeLessThan(4)
+  await arrow.click()
   await expect(email).toBeFocused()
-  await email.fill('visitor@example.com')
-  await intro.getByRole('button', { name: 'Continue', exact: true }).click()
-  const message = intro.getByRole('textbox', { name: 'Anything you’d like to know?' })
-  await expect(message).toBeFocused()
-  await expect(message).not.toHaveAttribute('required')
-  await intro.getByRole('button', { name: 'Edit email' }).click()
-  await expect(email).toHaveValue('visitor@example.com')
+  await email.fill('hello@example.com')
   await page.keyboard.press('Escape')
-  await expect(intro.getByRole('button', { name: 'Reply in text', exact: true })).toBeFocused()
+  await expect(intro.getByRole('button', { name: 'Email', exact: true })).toBeFocused()
   await expect(intro.locator('video[data-recording]')).not.toHaveAttribute('src')
 })
 
-test('keeps an email-only reply optional and hands off an encoded draft', async ({ page }) => {
-  await page.goto('/?intro=preview')
-  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
-  const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
-  await intro.getByRole('button', { name: 'Show introduction actions' }).click()
-  await intro.getByRole('button', { name: 'Reply in text', exact: true }).click()
-  await intro.getByRole('textbox', { name: 'What’s your email?' }).fill('hello+site@example.com')
-  await intro.getByRole('button', { name: 'Continue', exact: true }).click()
-  const draft = intro.getByRole('link', { name: 'Open email draft' })
-  const href = await draft.getAttribute('href')
-  const url = new URL(href!)
-  expect(url.protocol).toBe('mailto:')
-  expect(url.pathname).toBe('hey@rafaelmedina.me')
-  expect(url.searchParams.get('body')).toContain('Reply to: hello+site@example.com')
-  expect(url.searchParams.get('body')).toContain('Hi Rafael, I’d like to know more.')
-  await intro.getByRole('textbox', { name: 'Anything you’d like to know?' }).fill('A question & an idea?\nThanks!')
-  expect(new URL((await draft.getAttribute('href'))!).searchParams.get('body')).toContain('A question & an idea?\nThanks!')
+test('opens a compact text composer and keeps delivery explicit', async ({ page }) => {
+  const intro = await openAbout(page)
+  await intro.hover()
+  await intro.getByRole('button', { name: 'Text', exact: true }).click()
+  const panel = intro.getByRole('region', { name: 'Text reply' })
+  await expect(panel.getByRole('textbox', { name: 'Your message' })).toBeFocused()
+  await panel.getByRole('textbox', { name: 'Your message' }).fill('A question & an idea?')
+  await panel.getByRole('textbox', { name: 'Your email' }).fill('hello+site@example.com')
+  await expect(panel.getByRole('button', { name: 'Open email draft' })).toHaveAttribute('title', 'Review and send in your email app')
+  await page.mouse.click(310, 100)
+  await expect(panel).toHaveCount(0)
 })
 
-test('fits the action badge and email prompts at 320px', async ({ page }) => {
+test.describe('touch layout', () => {
+  test.use({ hasTouch: true, isMobile: true })
+
+test('keeps minimal email controls together at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
-  await page.goto('/?intro=preview')
-  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
-  const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
-  await intro.getByRole('button', { name: 'Show introduction actions' }).click()
-  const action = intro.getByRole('button', { name: 'Reply in text', exact: true })
-  await expect(action).toBeVisible()
-  await action.click()
-  const panel = intro.getByRole('region', { name: 'Text reply' })
+  const intro = await openAbout(page)
+  await intro.getByRole('button', { name: 'Show introduction actions' }).tap()
+  await intro.getByRole('button', { name: 'Email', exact: true }).click()
+  const panel = intro.getByRole('region', { name: 'Email reply' })
   const box = await panel.boundingBox()
   expect(box!.x).toBeGreaterThanOrEqual(12)
   expect(box!.x + box!.width).toBeLessThanOrEqual(308)
-  expect(box!.y).toBeGreaterThanOrEqual(12)
+  expect(box!.height).toBeLessThanOrEqual(64)
   await page.setViewportSize({ width: 320, height: 420 })
-  await expect(intro.getByRole('button', { name: 'Continue', exact: true })).toBeInViewport()
+  await expect(panel.getByRole('button', { name: 'Open email draft' })).toBeInViewport()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
-test.describe('local video recording', () => {
-
-  test('asks for email first, records locally, and releases the camera on close', async ({ page }) => {
-    await page.addInitScript(() => {
-      const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
-      Object.assign(window, { cameraRequests: 0, capturedStreams: [] as MediaStream[] })
-      navigator.mediaDevices.getUserMedia = async constraints => {
-        const state = window as unknown as { cameraRequests: number; capturedStreams: MediaStream[] }
-        state.cameraRequests++
-        const stream = await original(constraints)
-        state.capturedStreams.push(stream)
-        return stream
-      }
-    })
-    const sent: string[] = []
-    page.on('request', request => { if (request.method() === 'POST') sent.push(request.url()) })
-    await page.goto('/?intro=preview')
-    await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
-    const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
-    await intro.getByRole('button', { name: 'Show introduction actions' }).click()
-    await intro.getByRole('button', { name: 'Reply on video', exact: true }).click()
-    await expect(intro.getByRole('textbox', { name: 'What’s your email?' })).toBeFocused()
-    await intro.getByRole('textbox', { name: 'What’s your email?' }).fill('visitor@example.com')
-    await intro.getByRole('button', { name: 'Continue', exact: true }).click()
-    expect(await page.evaluate(() => (window as unknown as { cameraRequests: number }).cameraRequests)).toBe(0)
-    await intro.getByRole('button', { name: 'Record a video', exact: true }).click()
-    await expect(intro.getByRole('button', { name: /Stop recording · 0:01/ })).toBeVisible()
-    await intro.getByRole('button', { name: /Stop recording/ }).click()
-    const download = intro.getByRole('link', { name: 'Download video to attach' })
-    await expect(download).toHaveAttribute('href', /^blob:/)
-    await expect.poll(() => page.evaluate(() => (window as unknown as { capturedStreams: MediaStream[] }).capturedStreams.every(stream => stream.getTracks().every(track => track.readyState === 'ended')))).toBe(true)
-    await intro.getByRole('button', { name: 'Play your reply', exact: true }).click()
-    await expect(intro.getByRole('button', { name: 'Pause your reply' })).toBeVisible()
-    await intro.getByRole('button', { name: 'Edit email' }).click()
-    await intro.getByRole('button', { name: 'Continue', exact: true }).click()
-    await expect(download).toHaveAttribute('href', /^blob:/)
-    await intro.getByRole('button', { name: 'Retake video' }).click()
-    await expect(intro.getByRole('button', { name: /Stop recording · 0:01/ })).toBeVisible()
-    await page.evaluate(() => {
-      Object.defineProperty(document, 'hidden', { configurable: true, value: true })
-      document.dispatchEvent(new Event('visibilitychange'))
-    })
-    await expect(download).toHaveAttribute('href', /^blob:/)
-    await expect.poll(() => page.evaluate(() => (window as unknown as { capturedStreams: MediaStream[] }).capturedStreams.every(stream => stream.getTracks().every(track => track.readyState === 'ended')))).toBe(true)
-    await page.evaluate(() => {
-      Object.defineProperty(document, 'hidden', { configurable: true, value: false })
-      document.dispatchEvent(new Event('visibilitychange'))
-    })
-    await expect(intro.getByRole('button', { name: /Stop recording/ })).toHaveCount(0)
-    await intro.getByRole('button', { name: 'Retake video' }).click()
-    await expect(intro.getByRole('button', { name: /Stop recording/ })).toBeVisible()
-    await intro.getByRole('button', { name: 'Close reply', exact: true }).click()
-    await expect.poll(() => page.evaluate(() => (window as unknown as { capturedStreams: MediaStream[] }).capturedStreams.every(stream => stream.getTracks().every(track => track.readyState === 'ended')))).toBe(true)
-    expect(sent).toEqual([])
-  })
 })

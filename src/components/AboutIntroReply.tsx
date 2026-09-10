@@ -1,61 +1,51 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react"
-import { ArrowLeft, ArrowRight, X } from "lucide-react"
-
-import AboutIntroRecorder from "./AboutIntroRecorder"
+import { ArrowRight } from "lucide-react"
 
 import { siteLinks } from "../data/portfolio"
 
-// No draft is written to localStorage or a database. Closing the panel clears it.
 export default function AboutIntroReply({ mode, onClose }: {
-  mode: "text" | "video"
-  onClose: () => void
+  mode: "email" | "text"
+  onClose: (restoreFocus?: boolean) => void
 }) {
   const id = useId()
-  const [step, setStep] = useState<"email" | "message">("email")
-  const [draftOpened, setDraftOpened] = useState(false)
-  const [email, setEmail] = useState("")
-  const [clip, setClip] = useState<Blob | null>(null)
-  const [message, setMessage] = useState("")
+  const panelRef = useRef<HTMLElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
+  const [email, setEmail] = useState("")
+  const [message, setMessage] = useState("")
+  const [draftOpened, setDraftOpened] = useState(false)
 
   useEffect(() => {
-    if (step === "email") emailRef.current?.focus({ preventScroll: true })
-    if (step === "message") messageRef.current?.focus({ preventScroll: true })
-  }, [step])
+    const input = mode === "email" ? emailRef.current : messageRef.current
+    input?.focus({ preventScroll: true })
+    const dismiss = (event: PointerEvent) => {
+      if (event.target instanceof Node && !panelRef.current?.closest(".about-intro")?.contains(event.target)) onClose(false)
+    }
+    document.addEventListener("pointerdown", dismiss)
+    return () => document.removeEventListener("pointerdown", dismiss)
+  }, [mode, onClose])
 
-  const continueReply = (event: FormEvent<HTMLFormElement>) => {
+  const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setStep("message")
+    const body = `Reply to: ${email.trim()}\n\n${message.trim() || "Hi Rafael, I’d like to know more."}`
+    window.location.href = `mailto:${siteLinks.email}?subject=${encodeURIComponent("A hello from your website")}&body=${encodeURIComponent(body)}`
+    setDraftOpened(true)
   }
 
   return (
-    <section className="about-intro-reply" aria-label={mode === "video" ? "Video reply" : "Text reply"}>
-      <header className="about-intro-reply-header">
-        <span>A little hello back</span>
-        <button type="button" className="about-intro-button" aria-label="Close reply" onClick={onClose}><X size={18} aria-hidden="true" /></button>
-      </header>
-      <form hidden={step !== "email"} onSubmit={continueReply}>
-        <label htmlFor={`${id}-email`}>What’s your email?</label>
-        <p>So I can get back to you.</p>
-        <input ref={emailRef} id={`${id}-email`} type="email" name="email" autoComplete="email" required
-          maxLength={254} value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" />
-        <button className="about-intro-reply-primary" type="submit">Continue <ArrowRight size={16} aria-hidden="true" /></button>
+    <section ref={panelRef} className="about-intro-reply" data-mode={mode} aria-label={mode === "email" ? "Email reply" : "Text reply"}>
+      <form onSubmit={submit}>
+        {mode === "text" && <textarea ref={messageRef} aria-label="Your message" name="message" rows={3}
+          maxLength={2000} value={message} onChange={event => setMessage(event.target.value)} placeholder="Your message…" />}
+        <div className="about-intro-email-row">
+          <input ref={emailRef} type="email" name="email" aria-label="Your email" autoComplete="email" required
+            maxLength={254} value={email} onChange={event => setEmail(event.target.value)} placeholder="Your email" />
+          <button type="submit" className="about-intro-send" aria-label="Open email draft" aria-describedby={`${id}-hint`}
+            title="Review and send in your email app"><ArrowRight size={19} aria-hidden="true" /></button>
+        </div>
       </form>
-      <div hidden={step !== "message"}>
-        <button type="button" className="about-intro-reply-back" aria-label="Edit email" onClick={() => setStep("email")}>
-          <ArrowLeft size={14} aria-hidden="true" /><span>{email}</span>
-        </button>
-        <label htmlFor={`${id}-message`}>Anything you’d like to know?</label>
-        <p>Optional. A question, an idea, or just a hello.</p>
-        <textarea ref={messageRef} id={`${id}-message`} name="message" rows={3} maxLength={2000}
-          value={message} onChange={event => setMessage(event.target.value)} placeholder="I’d love to hear more about…" />
-        {mode === "video" && <AboutIntroRecorder onChange={setClip} active={step === "message"} />}
-        <a className="about-intro-reply-primary" href={`mailto:${siteLinks.email}?subject=${encodeURIComponent("A hello from your website")}&body=${encodeURIComponent(`Reply to: ${email}\n\n${message.trim() || "Hi Rafael, I’d like to know more."}`)}`}
-          onClick={() => setDraftOpened(true)}>Open email draft <ArrowRight size={16} aria-hidden="true" /></a>
-        <p className="about-intro-reply-note">{clip ? "Download your video above, then attach it in your email app. Attachments aren’t added automatically." : "You’ll review and send it in your email app."}</p>
-      </div>
-      {draftOpened && <p className="about-intro-reply-note" role="status">Finish sending in your email app. Nothing has been sent by this website.</p>}
+      <span id={`${id}-hint`} className="sr-only">Review and send in your email app.</span>
+      {draftOpened && <span className="about-intro-draft-status" role="status">Finish sending in your email app.</span>}
     </section>
   )
 }

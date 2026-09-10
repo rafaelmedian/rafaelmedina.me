@@ -118,32 +118,24 @@ export const aboutIntro: AboutIntroMedia = aboutIntroManifest
 Run lint, build, and the About intro browser tests before committing that
 activation with the generated files.
 
-## Portrait preview and replies
+## Speaking preview and minimal replies
 
-The development teaser now uses the existing profile photo with a gentle zoom,
-not generated speech. Rebuild that 2.5-second GIF (about 104 KB) and its WebP
-poster with `node scripts/build-about-intro-placeholder.mjs`. The separate
-five-second color-bar recording and its captions still exercise real playback.
+The development teaser uses a two-second speaking clip of Pedro Pascal from
+[this Tenor interview GIF](https://tenor.com/view/pedro-pascal-palta-avocado-gif-16406806577894432292).
+It is a temporary placeholder, not Rafael. The script crops the face above the
+original subtitles and produces a 144px, 8fps GIF (about 112 KB) plus a still.
+Rebuild with `node scripts/build-about-intro-placeholder.mjs [original.gif]`;
+without an argument it downloads the documented source. These files stay in
+`tests/fixtures/`, and the production widget remains disabled. The separate
+five-second color-bar recording still exercises playback and captions.
 
-The glass badge at the portrait's upper-right reveals Play, Reply in text, and
-Reply on video. Hover or keyboard focus reveals the actions on desktop; tapping
-the portrait also opens them. Each reply starts with “What’s your email?” and
-then “Anything you’d like to know?” The second prompt is optional. Editing the
-email preserves the message and any recorded video.
+Hover or focus the portrait to reveal play in its center and two small glass
+controls above it: Email and Text. Touch users tap the portrait to reveal them.
+The action icons have named tooltips and 44px targets.
 
-Delivery currently opens a prefilled email draft addressed to `siteLinks.email`.
-The visitor reviews and sends it in their email app. The site does not claim
-that opening a draft means a message was sent. No email service or storage has
-been configured, and no reply data is posted from the page.
-
-Video capture requires a separate press after the email step. It records for
-up to 60 seconds, stops at 8 MB, and remains in browser memory. Closing the
-panel or hiding the page stops the camera and microphone. A finished recording
-can be previewed, retaken, and downloaded. To email it, the visitor downloads the
-clip and attaches it manually; a `mailto:` link cannot add that attachment.
-Closing the reply discards its in-memory draft. Email software will retain a
-copy once the visitor sends it, according to their provider's settings.
-
-Direct delivery can replace the email-app handoff once an email service is
-chosen. An attachment can be forwarded without adding persistent website file
-storage, but the delivery provider and recipient mailbox still handle copies.
+Email opens only an input and an arrow on the right. Text opens a small textarea
+above that same email row. The arrow validates the address and opens a prefilled
+email draft addressed to `siteLinks.email`. The visitor reviews and sends it in
+their email app; the website does not send or store their reply. Escape closes
+and returns focus to the action, while clicking elsewhere closes without moving
+focus away from the clicked control. No camera permission is requested.
