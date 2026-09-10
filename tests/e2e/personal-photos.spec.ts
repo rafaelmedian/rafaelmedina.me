@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
+import { personalPhotoItems } from "../../src/data/personalPhotos"
 
 
 /** The grid now appears with the shared avatar intro. */
@@ -308,7 +309,7 @@ test("the sheet lays every print out in columns at its own aspect ratio", async 
         })),
       }
     })
-    expect(layout.count).toBe(11)
+    expect(layout.count).toBe(personalPhotoItems.length)
     expect(layout.columns, `${width}px`).toBe(width >= 700 ? 3 : 2)
     expect(layout.sideways).toBe(0)
     expect(layout.pageSideways).toBeLessThanOrEqual(0)
@@ -472,18 +473,35 @@ test("the sheet scrolls with the wheel and keys and reopens at the top", async (
   const position = () => sheet(page).evaluate((element) => element.scrollTop)
   await expect.poll(position).toBe(0)
   await page.mouse.move(720, 450)
+  // Every scroll here animates -- the wheel's, and End's and Home's too -- and
+  // a key pressed while the last one is still easing in can be overtaken by
+  // it, leaving the sheet where the previous scroll was headed. Each step waits
+  // for the sheet to come to rest before the next key.
+  const settled = async () => {
+    let last = -1
+    await expect.poll(async () => {
+      const now = await position()
+      const still = now === last
+      last = now
+      return still
+    }).toBe(true)
+  }
+  const fromBottom = () => sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)
   await page.mouse.wheel(0, 600)
   await expect.poll(position).toBeGreaterThan(0)
+  await settled()
   await page.keyboard.press("End")
-  await expect.poll(() => sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
+  await expect.poll(fromBottom).toBeLessThan(1)
+  await settled()
   await page.keyboard.press("Home")
   await expect.poll(position).toBe(0)
+  await settled()
   await page.keyboard.press("End")
-  await expect.poll(() => sheet(page).evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)).toBeLessThan(1)
+  await expect.poll(fromBottom).toBeLessThan(1)
   await page.keyboard.press("Escape")
   await expect(dialog(page)).toBeHidden()
   // No visit reshuffles the stack, and the next one starts at the first row.
-  expect(await trigger.locator(".personal-photos-print").evaluateAll((prints) => prints.map((print) => (print as HTMLElement).dataset.photoId))).toEqual(["office", "san-francisco", "ballpark", "prom-dance-floor", "prom-friends"])
+  expect(await trigger.locator(".personal-photos-print").evaluateAll((prints) => prints.map((print) => (print as HTMLElement).dataset.photoId))).toEqual(personalPhotoItems.slice(0, 5).map((photo) => photo.id))
   await trigger.focus()
   await page.keyboard.press("Enter")
   await expect(dialog(page)).toBeVisible()
