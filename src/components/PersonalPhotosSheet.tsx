@@ -96,6 +96,10 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   }
 
   const onOpenChange = (nextOpen: boolean, details: Dialog.Root.ChangeEventDetails) => {
+    // The dev tuner's panel sits outside the sheet; working its dials is not a
+    // press on the page behind.
+    if (import.meta.env.DEV && !nextOpen && details.reason === "outside-press"
+      && details.event.target instanceof Element && details.event.target.closest(".dialkit-root")) return
     if (!nextOpen) {
       const sheet = sheetRef.current
       // At the first row the close is immediate: the prints fly home and the
