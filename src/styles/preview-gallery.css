@@ -966,3 +966,119 @@
   }
 }
 
+/* Notes is a nested view of this same card. Keep the chrome opaque while the
+   content uses the very same page-turn poses as the work cards. */
+.notes-gallery-card {
+  --notes-room: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
+  height: var(--notes-list-height, auto);
+  max-height: var(--notes-room);
+  overflow: hidden;
+  transition:
+    height var(--pg-switch-ms) var(--ease-smooth),
+    opacity var(--pg-switch-ms) ease-out,
+    transform var(--pg-switch-ms) var(--ease-standard);
+}
+.preview-gallery-popup[data-reading-note="true"] .notes-gallery-card {
+  height: var(--notes-room);
+}
+.notes-gallery-card .preview-gallery-card-inner,
+.notes-gallery-card .preview-gallery-notes {
+  height: 100%;
+  min-height: 0;
+}
+.notes-gallery-card .preview-gallery-notes {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+.notes-gallery-heading {
+  position: relative;
+  flex: none;
+  width: min(100%, var(--writings-measure));
+  margin: 0 auto 2rem;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
+  transition: box-shadow var(--duration-quick) var(--ease-standard);
+}
+.notes-gallery-heading .preview-gallery-notes-title {
+  width: auto;
+  margin: 0;
+  transition: transform var(--pg-switch-ms) var(--ease-standard);
+}
+.notes-gallery-back {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 0.75rem);
+  translate: 0 -50%;
+  border-color: transparent;
+  box-shadow: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(-1.4rem);
+  transition:
+    opacity var(--pg-switch-ms) ease-out,
+    transform var(--pg-switch-ms) var(--ease-standard),
+    visibility var(--pg-switch-ms);
+}
+.preview-gallery-notes[data-reading="true"] .notes-gallery-back {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(0);
+}
+.notes-gallery-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-inline: -0.5rem;
+  padding-inline: 0.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.notes-gallery-page {
+  position: relative;
+  transition:
+    opacity var(--pg-switch-ms) ease-out,
+    transform var(--pg-switch-ms) var(--ease-standard);
+}
+.notes-gallery-page[class*="preview-gallery-card-switch-in-"] {
+  transition: none;
+}
+/* The list still measures at the current width while an article is forward.
+   Hidden and inert keeps its rows out of focus and accessibility. */
+.notes-gallery-list[hidden] {
+  display: block;
+  position: absolute;
+  inset: 0 0 auto;
+  visibility: hidden;
+  pointer-events: none;
+}
+.notes-gallery-card .writing-reader {
+  --writing-note-width: calc((100cqi - var(--writings-measure)) / 2 - 1.05rem - 15px);
+  width: min(100%, var(--writings-measure));
+  padding: 0 0 3rem;
+}
+.preview-gallery-notes[data-scrolled="true"] .notes-gallery-heading {
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
+}
+@container writings (max-width: 47.99rem) {
+  .notes-gallery-back {
+    right: auto;
+    left: 0;
+  }
+  .preview-gallery-notes[data-reading="true"] .preview-gallery-notes-title {
+    transform: translateX(calc(var(--preview-gallery-nav-size) + 0.75rem));
+  }
+}
+@media (max-width: 699.98px), (hover: none), (pointer: coarse) {
+  .preview-gallery-popup .notes-gallery-card {
+    height: auto;
+    max-height: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .notes-gallery-page,
+  .notes-gallery-back,
+  .notes-gallery-heading .preview-gallery-notes-title {
+    transition: none;
+  }
+}

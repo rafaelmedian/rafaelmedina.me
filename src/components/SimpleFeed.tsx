@@ -35,7 +35,7 @@ import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightwei
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
-import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl } from "../lib/portfolioUrl"
+import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl, usePortfolioItemUrl } from "../lib/portfolioUrl"
 import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
 import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -646,7 +646,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [availabilityLabel, setAvailabilityLabel] = useState(() =>
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
-  const [writingsOpen, setWritingsOpen] = useState(false)
+  const [readerModule, setReaderModule] = useState<typeof import("./WritingsReader") | null>(null)
+  const { itemId: writingId, selectItem: selectWriting, clearItem: clearWriting } = usePortfolioItemUrl("writing")
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
   // Where the gallery hands focus back when the control that opened it is gone.
   // The reader's back arrow is the case: the sheet closes as the notes slide
@@ -777,7 +778,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null}
         />
       )
     }
@@ -1114,8 +1115,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 ref={writingsFolderRef}
                                 onOpen={openNotes}
                                 onPrefetch={prefetchPreviewGallery}
-                                onBack={returnToNotes}
-                                onOpenChange={setWritingsOpen}
+                                onReaderReady={setReaderModule}
                                 onStatusChange={setNotesStatus}
                                 tileRef={(node) => {
                                   writingsFolderTileRef.current = node
@@ -1243,19 +1243,14 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   selectedIndex={selectedWorkPreviewIndex}
                   prefersReducedMotion={prefersReducedMotion}
                   getOriginRect={getPreviewOriginRect}
-                  onOpenChange={(nextOpen) => {
-                    if (!nextOpen) {
-                      clearGalleryItem()
-                    }
-                  }}
+                  onOpenChange={(nextOpen) => { if (!nextOpen) clearGalleryItem() }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}
-                  onSelectWriting={(id) => {
-                    // The sheet takes the URL and this closes behind it. Naming
-                    // an anchor makes the close insist on focusing it, over
-                    // the sheet's own title, so the one Back set is dropped.
-                    setGalleryFallbackFocus(null)
-                    writingsFolderRef.current?.openWriting(id)
-                  }}
+                  onSelectWriting={(id) => writingsFolderRef.current?.openWriting(id)}
+                  writingId={writingId}
+                  WritingReader={readerModule?.WritingsReader}
+                  onPageWriting={(id) => selectWriting(id, true)}
+                  onRetryWriting={() => writingsFolderRef.current?.retry()}
+                  onBackFromWriting={() => clearWriting(returnToNotes)}
                   notesStatus={notesStatus}
                   finalFocus={galleryFallbackFocus ? { current: galleryFallbackFocus } : undefined}
                 />

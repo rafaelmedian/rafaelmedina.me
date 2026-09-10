@@ -25,6 +25,9 @@ test("opens a directly linked note without requiring the folder first", async ({
   await page.goto("/?writing=designing-matcha")
   await expect(page.getByRole("dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
   await page.keyboard.press("Escape")
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await expect(page.locator(".writings-dialog")).toBeHidden()
+  await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()
   await expect(page).not.toHaveURL(/writing=/)
 })
@@ -273,11 +276,10 @@ test("retrying a directly linked note preserves the selected article", async ({ 
   let fail = true
   await page.route("**/WritingsReader-*.js*", route => fail ? route.abort("failed") : route.continue())
   await page.goto("/?writing=designing-matcha")
-  await expect(page.getByText("Try opening notes again", { exact: true })).toBeVisible()
+  await expect(page.getByRole("dialog").getByRole("status")).toHaveText("Try opening notes again")
   fail = false
-  // The tile wears the failure and retries the note rather than opening the
-  // list: opening the list would drop the note the link was for.
-  await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
+  // Retry belongs inside the active dialog and preserves the requested URL.
+  await page.getByRole("button", { name: "Try again", exact: true }).click()
   await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
   await expect(page).toHaveURL(/writing=designing-matcha/)
 })

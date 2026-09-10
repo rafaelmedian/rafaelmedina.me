@@ -120,10 +120,11 @@ out the other side. It owns `/notes/` — prerendered, in the sitemap, rendered 
 open the gallery on it. `WritingsArchive` is the list itself, shared by the slide
 and that page.
 
-A **note** opens in the reader's own sheet over the list (`WritingsReader`), with
-the hearts, the copy link, and arrows that turn note to note; its back arrow and
-Escape return to the list. Each note owns `/notes/<id>/` the way a project owns
-`/work/<slug>/`, rendered as `WritingPage` for a crawler. `?writing=<id>` was the
+A **note** is a nested view inside the same preview-gallery dialog. Its deferred
+`WritingsReader` renders article content only; the gallery owns the backdrop,
+card, focus trap, and controls. Arrows browse notes while an article is forward;
+Back and Escape return to the list. Each note owns `/notes/<id>/`, rendered as
+`WritingPage` for a crawler. `?writing=<id>` was the
 old address and still opens the reader. `WritingArticle` is the article, shared
 by the sheet and that page.
 
@@ -136,9 +137,12 @@ date is written once.
 
 The reader chunk is fetched by a row of the list, not by the tile, and
 `WritingsFolder` is where it is fetched, cancelled, and retried; the list prints
-its status. The gallery closes behind a sheet that opens over it, so never hand
-the gallery an explicit `finalFocus` while a note is being opened — it would
-take focus back from the sheet's title.
+its status. The gallery stays on its Notes item for both /notes/ and a note URL.
+Only content turns horizontally: the card remains opaque and grows downward to
+the viewport's bottom gutter for articles, then shrinks to the list on Back.
+The list stays measured, hidden, and inert while reading so its scroll position
+and row focus can be restored. Do not reintroduce a second dialog, copied sheet
+geometry, or a separate backdrop for notes.
 
 ## The last-updated clause and its GitHub card
 

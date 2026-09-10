@@ -36,7 +36,8 @@ const itemLocations: Record<PortfolioItem, ItemLocation> = {
   gallery: {
     read: () => {
       if (isResumePath(window.location.pathname)) return resumeItemId
-      if (isNotesPath(window.location.pathname)) return writingsItemId
+      if (isNotesPath(window.location.pathname) || writingAtPath(window.location.pathname) ||
+        writingSummaries.some(writing => writing.id === new URLSearchParams(window.location.search).get("writing"))) return writingsItemId
       return projectAtPath(window.location.pathname)?.id ?? new URLSearchParams(window.location.search).get("project")
     },
     set: (url, id) => {
@@ -76,7 +77,7 @@ const itemLocations: Record<PortfolioItem, ItemLocation> = {
     },
     clear: url => {
       url.searchParams.delete("writing")
-      if (writingAtPath(url.pathname)) url.pathname = "/"
+      if (writingAtPath(url.pathname)) url.pathname = notesPath
     },
   },
 }
