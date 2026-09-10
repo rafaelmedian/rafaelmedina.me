@@ -1,5 +1,5 @@
 // Build development preview media from an explicitly supplied local recording.
-// Usage: node scripts/build-about-intro-placeholder.mjs <original.mp4>
+// Usage: node scripts/build-about-intro-placeholder.mjs <original.mp4> [vertical-crop-position]
 import { spawnSync, execFileSync } from 'node:child_process'
 import { copyFile, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -10,6 +10,10 @@ import ffmpeg from 'ffmpeg-static'
 const root = fileURLToPath(new URL('../', import.meta.url))
 if (!process.argv[2]) throw new Error('Supply a local recording: node scripts/build-about-intro-placeholder.mjs <original.mp4>')
 const input = resolve(process.argv[2])
+const cropPosition = Number(process.argv[3] ?? 0.5)
+if (!Number.isFinite(cropPosition) || cropPosition < 0 || cropPosition > 1) {
+  throw new Error('Vertical crop position must be between 0 (top) and 1 (bottom)')
+}
 const temporary = await mkdtemp(join(tmpdir(), 'about-speaking-'))
 const probe = file => {
   const result = spawnSync(ffmpeg, ['-hide_banner', '-i', file], { encoding: 'utf8' })
@@ -19,15 +23,16 @@ const probe = file => {
   return { duration: Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]), hasAudio: /Stream #.*Audio:/.test(result.stderr) }
 }
 try {
-  probe(input)
+  const source = probe(input)
   const output = join(root, 'tests/fixtures/about-intro')
   const run = args => execFileSync(ffmpeg, ['-y', ...args], { stdio: 'ignore', timeout: 120_000 })
-  // The supplied screen capture is 624x732. A centered square keeps the face
-  // intact and excludes the captured controls at the top. Keep the full take.
-  const crop = "crop='min(iw,ih)':'min(iw,ih)'"
-  run(['-i', input, '-map', '0:v:0', '-map', '0:a?', '-vf', `${crop},fps=30`,
+  // Reserve room for audio and container overhead within the 5 MB budget.
+  const videoKbps = Math.min(650, Math.floor(4_700_000 * 8 / source.duration / 1000 - (source.hasAudio ? 96 : 0)))
+  if (videoKbps < 150) throw new Error('Recording is too long for the preview budget')
+  const crop = `crop='min(iw,ih)':'min(iw,ih)':(iw-ow)/2:(ih-oh)*${cropPosition}`
+  run(['-i', input, '-map', '0:v:0', '-map', '0:a?', '-vf', `${crop},scale='min(iw,624)':-2,fps=30`,
     '-c:v', 'libx264', '-crf', '25', '-preset', 'slow', '-pix_fmt', 'yuv420p',
-    '-maxrate', '650k', '-bufsize', '1300k', '-c:a', 'aac', '-b:a', '96k',
+    '-maxrate', `${videoKbps}k`, '-bufsize', `${videoKbps * 2}k`, '-c:a', 'aac', '-b:a', '96k',
     '-movflags', '+faststart', join(temporary, 'recording.mp4')])
   // Keep the largest preview that fits the existing 150KB request budget.
   for (const size of [224, 192, 160, 144]) {
