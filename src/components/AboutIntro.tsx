@@ -45,6 +45,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
   const id = useId()
   const [actionsOpen, setActionsOpen] = useState(false)
   const [reply, setReply] = useState<"email" | "text" | null>(null)
+  const [replyContent, setReplyContent] = useState<"email" | "text" | null>(null)
   const available = visible && repliesAvailable
   const [wasAvailable, setWasAvailable] = useState(available)
   // A new About visit starts with the portrait, while the video retains time.
@@ -58,6 +59,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
   }
   const textReplyRef = useRef<HTMLButtonElement>(null)
   const emailReplyRef = useRef<HTMLButtonElement>(null)
+  const restoringReplyFocus = useRef(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const teaserRef = useRef<HTMLVideoElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -147,25 +149,31 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
   }
 
   const collapse = () => {
+    const focusTarget = triggerRef.current?.closest<HTMLElement>("[role='dialog'], dialog[open]") ?? triggerRef.current
     requestRef.current += 1
     videoRef.current?.pause()
     onOpenChange(false)
     setEnlarged(false)
     // The trigger stays mounted through the morph; focus after React removes
     // inert from it, with no transition timer to race a rapid reopen.
-    requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }))
+    requestAnimationFrame(() => focusTarget?.focus({ preventScroll: true }))
   }
   const closeReply = useCallback((restoreFocus = true) => {
     const target = reply === "email" ? emailReplyRef : textReplyRef
+    restoringReplyFocus.current = restoreFocus
     setReply(null)
     setActionsOpen(restoreFocus)
-    if (restoreFocus) requestAnimationFrame(() => target.current?.focus({ preventScroll: true }))
+    if (restoreFocus) requestAnimationFrame(() => {
+      target.current?.focus({ preventScroll: true })
+      restoringReplyFocus.current = false
+    })
   }, [reply])
   const startReply = (mode: "email" | "text") => {
     requestRef.current += 1
     videoRef.current?.pause()
     onOpenChange(false)
     setReply(mode)
+    setReplyContent(mode)
     setActionsOpen(false)
   }
   const action = error ? "Retry introduction" : ended ? "Replay introduction" : started ? "Resume introduction" : "Play introduction"
@@ -176,6 +184,10 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
       onPointerLeave={event => { if (!event.currentTarget.contains(document.activeElement)) setActionsOpen(false) }}
       onFocusCapture={() => setActionsOpen(true)}
       onBlurCapture={event => {
+        if (restoringReplyFocus.current) return
+        // Closing keeps the composer mounted for its fade. Its newly inert
+        // input blurs before focus is restored to the reply action.
+        if (!reply && event.target instanceof HTMLElement && event.target.closest(".about-intro-reply")) return
         // Safari blurs a focused button on pointer-down without focusing the
         // next button. Keep the hovered target alive until its click completes.
         if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
@@ -247,18 +259,27 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
               <button ref={playRef} type="button" className="about-intro-button"
                 aria-label={playing ? "Pause introduction" : action}
                 onClick={() => { if (playing) videoRef.current?.pause(); else play() }}>
-                {playing ? <HugeiconsIcon icon={PauseIcon} strokeWidth={1.5} size={18} aria-hidden="true" /> : ended || error ? <HugeiconsIcon icon={ArrowReloadHorizontalIcon} strokeWidth={1.5} size={18} aria-hidden="true" /> : <HugeiconsIcon icon={PlayIcon} strokeWidth={1.5} size={18} aria-hidden="true" />}
+                <span className="t-icon-swap" data-state={playing ? "b" : "a"} aria-hidden="true">
+                  <span className="t-icon" data-icon="a"><HugeiconsIcon icon={ended || error ? ArrowReloadHorizontalIcon : PlayIcon} strokeWidth={1.5} size={18} /></span>
+                  <span className="t-icon" data-icon="b"><HugeiconsIcon icon={PauseIcon} strokeWidth={1.5} size={18} /></span>
+                </span>
               </button>
               <button type="button" className="about-intro-button" aria-label={muted ? "Unmute introduction" : "Mute introduction"}
                 onClick={() => {
                   if (videoRef.current) videoRef.current.muted = !muted
                   setMuted(!muted)
                 }}>
-                {muted ? <HugeiconsIcon icon={VolumeMute01Icon} strokeWidth={1.5} size={18} aria-hidden="true" /> : <HugeiconsIcon icon={VolumeHighIcon} strokeWidth={1.5} size={18} aria-hidden="true" />}
+                <span className="t-icon-swap" data-state={muted ? "b" : "a"} aria-hidden="true">
+                  <span className="t-icon" data-icon="a"><HugeiconsIcon icon={VolumeHighIcon} strokeWidth={1.5} size={18} /></span>
+                  <span className="t-icon" data-icon="b"><HugeiconsIcon icon={VolumeMute01Icon} strokeWidth={1.5} size={18} /></span>
+                </span>
               </button>
               <button type="button" className="about-intro-button" aria-label={enlarged ? "Shrink introduction" : "Expand introduction"}
                 onClick={() => setEnlarged(!enlarged)}>
-                {enlarged ? <HugeiconsIcon icon={MinimizeScreenIcon} strokeWidth={1.5} size={16} aria-hidden="true" /> : <HugeiconsIcon icon={FullScreenIcon} strokeWidth={1.5} size={16} aria-hidden="true" />}
+                <span className="t-icon-swap" data-state={enlarged ? "b" : "a"} aria-hidden="true">
+                  <span className="t-icon" data-icon="a"><HugeiconsIcon icon={FullScreenIcon} strokeWidth={1.5} size={16} /></span>
+                  <span className="t-icon" data-icon="b"><HugeiconsIcon icon={MinimizeScreenIcon} strokeWidth={1.5} size={16} /></span>
+                </span>
               </button>
               <span className="about-intro-time" aria-hidden="true">{timeLabel(position)} / {timeLabel(duration)}</span>
             </div>
@@ -277,7 +298,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
           <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" className="about-intro-tooltip">Text</span>
         </button>
         </div>
-        {reply && visible && repliesAvailable && <AboutIntroReply key={reply} mode={reply} onClose={closeReply} />}
+        {replyContent && visible && repliesAvailable && <AboutIntroReply key={replyContent} mode={replyContent} active={Boolean(reply)} onClose={closeReply} />}
       </div>
       <span className="about-intro-label" aria-hidden="true">A quick hello <span>{timeLabel(duration)}</span></span>
     </section>

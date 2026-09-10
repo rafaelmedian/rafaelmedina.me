@@ -157,3 +157,16 @@ These controls appear on hover or keyboard focus; touch users tap to toggle
 them. Expand grows to 480px within viewport bounds. The placeholder badge is
 omitted; synthetic test captions start off, while real captions start on.
 Press C while focused on the player to toggle captions.
+
+The resting preview is 112px on desktop and 64px on mobile. Motion follows
+transitions.dev’s resize, content morph, tooltip intent, and icon-swap patterns:
+360ms expansion / 160ms collapse use the existing surface easing; reply contents
+cross-fade with an 8px slide and 2px blur; tooltips wait 80ms on entry only.
+Playback, volume and size icons use the recipe’s 250ms reversible cross-fade.
+
+Once opened, the mini-player stays open when the video ends, while scrolling
+away from About, and over dialogs. The same video element moves into the
+active dialog’s focus scope, using a manual popover to escape clipping and
+transforms. Paused clips stay paused; a move only resumes a previously playing
+clip in browsers that pause moved media. The X or Escape closes the player.
+Opening the TOC still collapses it, and background tabs still pause playback.

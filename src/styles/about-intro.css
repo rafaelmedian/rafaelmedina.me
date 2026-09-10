@@ -4,8 +4,36 @@
   display: contents;
 }
 
+.about-intro-anchor,
+.about-intro-layer {
+  display: contents;
+}
+
+/* Inside a dialog's focus scope, but above its transformed/clipped surface. */
+.about-intro-layer:popover-open {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+  pointer-events: none;
+}
+
+.about-intro-layer::backdrop {
+  display: none;
+}
+
+.about-intro-layer[data-relocating] .about-intro-surface {
+  transition-property: width, height, border-radius, transform;
+}
+
 .about-intro {
-  --intro-size: 96px;
+  --intro-size: 112px;
   --intro-open-size: 240px;
   position: fixed;
   left: max(1.5rem, env(safe-area-inset-left));
@@ -60,6 +88,7 @@
 
 .about-intro-recording {
   opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .about-intro-recording::cue {
@@ -109,17 +138,22 @@
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
   visibility: hidden;
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateX(-8px) scale(0.97);
+  transform-origin: left center;
   transition: width var(--duration-quick) var(--ease-smooth), height var(--duration-quick) var(--ease-smooth), border-radius var(--duration-quick) var(--ease-smooth), opacity var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-smooth), visibility var(--duration-quick);
 }
 
 .about-intro-action-buttons {
   display: flex;
   gap: 4px;
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-base) var(--ease-smooth), filter var(--duration-quick) var(--ease-standard);
 }
 
 .about-intro-action-buttons[aria-hidden="true"] {
-  visibility: hidden;
+  opacity: 0;
+  transform: translateX(-8px) scale(0.97);
+  filter: blur(2px);
+  pointer-events: none;
 }
 
 .about-intro-actions[data-reply="email"],
@@ -196,7 +230,7 @@
   height: 32px;
   opacity: 0;
   transform: scale(0.96);
-  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-smooth);
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-base) var(--ease-smooth);
 }
 
 .about-intro[data-actions-open="true"] .about-intro-play-mark {
@@ -226,6 +260,7 @@
   visibility: visible;
   opacity: 1;
   transform: translate(-50%, 0);
+  transition-delay: 80ms;
 }
 
 .about-intro-play-mark svg {
@@ -460,7 +495,9 @@
   left: 0;
   visibility: hidden;
   opacity: 0;
-  transition: opacity var(--duration-quick) var(--ease-standard);
+  transform: scale(0.98);
+  transform-origin: left bottom;
+  transition: opacity var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-smooth), visibility var(--duration-fast);
   padding: 8px 12px;
   border-radius: var(--radius-md);
   background: var(--canvas);
@@ -480,6 +517,9 @@
 .about-intro[data-actions-open="true"]:not([data-open="true"]):not([data-reply-open="true"]) .about-intro-label {
   visibility: visible;
   opacity: 1;
+  transform: none;
+  transition-duration: var(--duration-quick);
+  transition-delay: 80ms;
 }
 
 @media (max-width: 699.98px) {
@@ -517,7 +557,7 @@
   }
 
   .about-intro {
-    --intro-size: 56px;
+    --intro-size: 64px;
     --intro-open-size: min(256px, calc(100vw - 24px), calc(100dvh - 112px - env(safe-area-inset-bottom)));
     right: 12px;
     left: auto;
@@ -564,10 +604,30 @@
 
   .about-intro[data-reply-open="true"] .about-intro-actions {
     top: auto;
-    bottom: 2px;
+    bottom: calc((var(--intro-size) - 52px) / 2);
     right: auto;
     left: calc(100% + 12px);
-    width: min(320px, calc(100vw - 92px));
+    width: min(320px, calc(100vw - 100px));
+  }
+
+  .about-intro-anchor[data-detached="true"] {
+    display: block;
+    width: 64px;
+    height: 64px;
+  }
+
+  .about-intro-layer:popover-open .about-intro {
+    --intro-dock-width: var(--intro-size);
+    position: fixed;
+    left: calc(50% - var(--intro-size) / 2);
+    right: auto;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    width: var(--intro-size);
+    height: var(--intro-size);
+  }
+
+  .about-intro-layer:popover-open .about-intro-surface {
+    bottom: 0;
   }
 
   body:has(.about-intro[data-visible="true"]) .portfolio-feedback-toolbar {
@@ -606,6 +666,27 @@
   border-radius: inherit;
   font-family: var(--font-ui);
   font-size: var(--text-sm);
+  opacity: 0;
+  transform: translateX(8px) scale(0.97);
+  filter: blur(2px);
+  pointer-events: none;
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-base) var(--ease-smooth), filter var(--duration-quick) var(--ease-standard);
+}
+
+.about-intro-reply[data-active="true"] {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+  pointer-events: auto;
+  transition-delay: 80ms;
+}
+
+@starting-style {
+  .about-intro-reply[data-active="true"] {
+    opacity: 0;
+    transform: translateX(8px) scale(0.97);
+    filter: blur(2px);
+  }
 }
 
 .about-intro-email-row {
@@ -669,6 +750,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .about-intro-action-buttons,
+  .about-intro-reply,
+  .about-intro-label,
   .about-intro-actions,
   .about-intro-tooltip,
   .about-intro-send,
@@ -685,4 +769,34 @@
   .about-intro-send:active {
     transform: none;
   }
+}
+
+/* transitions.dev: keep both control glyphs mounted through a state swap. */
+.t-icon-swap {
+  position: relative;
+  display: inline-grid;
+}
+.t-icon-swap .t-icon {
+  grid-area: 1 / 1;
+  transition:
+    opacity   var(--icon-swap-dur) var(--icon-swap-ease),
+    filter    var(--icon-swap-dur) var(--icon-swap-ease),
+    transform var(--icon-swap-dur) var(--icon-swap-ease);
+  will-change: opacity, filter, transform;
+}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="a"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="b"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="b"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="a"] {
+  opacity: 0;
+  filter: blur(var(--icon-swap-blur));
+  transform: scale(var(--icon-swap-start-scale));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-icon-swap .t-icon { transition: none !important; }
 }

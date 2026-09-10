@@ -2,6 +2,7 @@ import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, ty
 
 import { getAboutIntro } from "../data/aboutIntro"
 import { MobileTableOfContents } from "./MobileTableOfContents"
+import { AboutIntroLayer } from "./AboutIntroLayer"
 
 const AboutIntro = lazy(() => import("./AboutIntro"))
 
@@ -45,7 +46,6 @@ export function AboutIntroDock(props: {
     const about = document.getElementById("about-panel")
     if (!about) return
     let frame = 0
-    let wasActive = false
     const sync = () => {
       frame = 0
       const bounds = about.getBoundingClientRect()
@@ -54,10 +54,6 @@ export function AboutIntroDock(props: {
       // without IntersectionObserver; no media URL exists above this boundary.
       if (bounds.top <= window.innerHeight + 200 && bounds.bottom >= -200) setApproached(true)
       setActive(nowActive)
-      if (wasActive && !nowActive) {
-        setOpen(false)
-      }
-      wasActive = nowActive
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(sync) }
     const observer = "IntersectionObserver" in window
@@ -91,7 +87,6 @@ export function AboutIntroDock(props: {
         .some(dialog => !dialog.hasAttribute("data-closed") &&
           dialog.getAttribute("aria-hidden") !== "true" && dialog.getClientRects().length > 0)
       setObscured(covered)
-      if (covered) setOpen(false)
     }
     const observer = new MutationObserver(sync)
     observer.observe(document.body, {
@@ -102,7 +97,7 @@ export function AboutIntroDock(props: {
     return () => observer.disconnect()
   }, [media, approached])
 
-  const visible = active && !obscured
+  const visible = open || (active && !obscured)
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
       data-intro-visible={Boolean(media && approached && visible)} data-toc-open={tocOpen}>
@@ -110,7 +105,9 @@ export function AboutIntroDock(props: {
       {media && approached && (
         <IntroBoundary>
           <Suspense fallback={null}>
-            <AboutIntro media={media} repliesAvailable={!tocOpen} visible={visible} open={open} onOpenChange={setOpen} />
+            <AboutIntroLayer open={open}>
+              <AboutIntro media={media} repliesAvailable={!tocOpen && !obscured} visible={visible} open={open} onOpenChange={setOpen} />
+            </AboutIntroLayer>
           </Suspense>
         </IntroBoundary>
       )}

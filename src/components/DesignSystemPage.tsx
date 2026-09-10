@@ -2146,22 +2146,23 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
-                <li data-ds-terms={terms("about introduction video teaser circle 96px 56px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion")}>
-                  <strong>The optional introduction grows from its own circle.</strong> A 96px desktop circle
+                <li data-ds-terms={terms("about introduction video teaser circle 112px 64px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion pip transitions.dev")}>
+                  <strong>The optional introduction grows from its own circle.</strong> A 112px desktop circle
                   sits at the bottom-left on <code>--z-corner</code>, expanding to 240px with
                   <code> --radius-lg</code> corners, <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
-                  Below 700px a 56px circle shares the centered TOC row with a 12px gap on
+                  Below 700px a 64px circle shares the centered TOC row with a 12px gap on
                   <code> --z-social</code>; the player grows above that row, capped at 256px and the viewport.
                   Width, height, corner radius and vertical position use <code>--duration-slow</code> to expand,
                   <code> --duration-quick</code> to collapse, and <code>--ease-smooth</code> throughout.
-                  Video fills the square edge to edge. White 16–18px icons sit in 44px targets on a
+                  Video fills the square edge to edge, fading in over <code>--duration-base</code> once ready.
+                  White 16–18px icons sit in 44px targets on a
                   transparent-to-72%-black bottom scrim, with a 2px 60%-white seek track, 8px thumb and
                   <code> --text-xs</code> tabular time aligned right. Play/pause, volume, expand and a close X
                   appear on hover or keyboard focus; touch users tap the video to show or hide controls.
                   Close has a 36%-black backing for contrast; hovered controls use 16% white.
                   Expand grows the square to 480px, constrained
                   by the viewport and the mobile TOC. Captions remain enabled for real recordings and
-                  can be toggled with C; the synthetic test recording starts without its descriptive captions.
+                  can be toggled with C; the silent stock recording starts without its descriptive captions.
                   The speaking portrait reveals a centered 24px white play triangle on hover, keyboard focus or tap.
                   A 20%-black overlay darkens the portrait only while those actions are shown, fading over
                   <code> --duration-quick</code>. The triangle has no disc or colored background.
@@ -2170,14 +2171,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls use Hugeicons rounded strokes at 1.5px; email, text and the reply arrow are 24px
                   dark icons on transparent buttons. The focused play triangle uses a white outline.
                   The desktop “A quick hello” and duration tooltip is hidden until hover or focus.
-                  Fine-pointer hover scales the portrait to 1.04. Controls settle from 4px over
-                  <code> --duration-quick</code>; reduced motion removes the movement.
+                  Fine-pointer hover scales the portrait to 1.04. The action pill settles from an 8px horizontal offset and 0.97 scale over
+                  <code> --duration-quick</code>. Tooltips use an 80ms intent delay only on entry,
+                  and the hello label settles from 0.98 scale. Reduced motion removes the movement.
                   The same white surface expands to a 320px-wide, 52px-high email field, 12px to the
                   right of the portrait, using <code>--duration-slow</code> to open and
                   <code>--duration-quick</code> to collapse with <code>--ease-smooth</code>.
-                  Its only contents are the input and a 44px arrow. Text grows that surface upward to
+                  Its input and 44px arrow enter after 80ms with an 8px slide, 0.97 scale and 2px cross-blur;
+                  exiting content stays mounted, inert and hidden from assistive technology while it fades.
+                  Text grows that surface upward to
                   172px with <code>--radius-lg</code> corners. On mobile, portrait and field share a
-                  row above the TOC, with the field constrained to the viewport minus 92px.
+                  row above the TOC, with the field constrained to the viewport minus 100px.
                   There is no corner dismiss button.
                   Both cap at 320px, use shared overlay shadows and <code>--text-md</code> input text
                   to prevent Safari focus zoom. Escape closes the composer and returns focus;
@@ -2185,8 +2189,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   for the visitor to review and send. The website does not collect the address.
                   Media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
-                  Reduced motion removes the morph and press feedback. For real recordings captions start enabled, and
-                  leaving About, hiding the tab or opening a dialog pauses sound. Preview the speaking GIF and synthetic recording
+                  The transitions.dev icon-swap recipe keeps play/pause, volume and expand/shrink glyphs
+                  stacked in one cell: <code>--icon-swap-dur</code> (250ms), <code>--icon-swap-blur</code> (2px),
+                  <code>--icon-swap-start-scale</code> (0.25) and <code>--icon-swap-ease</code> (ease-in-out).
+                  Reduced motion removes the morph, swaps and press feedback. Real captions start enabled.
+                  An open player stays visible through scrolling and playback end until explicitly closed;
+                  hiding the tab still pauses it. Opening the TOC collapses it to keep navigation clear.
+                  In a dialog, the same player joins that dialog’s focus scope and uses a manual popover
+                  in the browser top layer, keeping it above transformed content without a new z-index.
+                  On mobile this floating player sits centered, 80px above the safe-area bottom edge.
+                  Closing it returns focus to the dialog. Preview the matching bedroom GIF and silent recording
                   fixture on the <a href="/#about-panel">development homepage</a> (a speaking GIF and
                   test recording); <code>?intro=off</code> hides it for development comparisons. Production stays
                   disabled until the real recording is ready.

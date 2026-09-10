@@ -4,8 +4,9 @@ import ArrowRight02Icon from "@hugeicons/core-free-icons/ArrowRight02Icon"
 
 import { siteLinks } from "../data/portfolio"
 
-export default function AboutIntroReply({ mode, onClose }: {
+export default function AboutIntroReply({ mode, active, onClose }: {
   mode: "email" | "text"
+  active: boolean
   onClose: (restoreFocus?: boolean) => void
 }) {
   const id = useId()
@@ -17,6 +18,7 @@ export default function AboutIntroReply({ mode, onClose }: {
   const [draftOpened, setDraftOpened] = useState(false)
 
   useEffect(() => {
+    if (!active) return
     const input = mode === "email" ? emailRef.current : messageRef.current
     input?.focus({ preventScroll: true })
     const dismiss = (event: PointerEvent) => {
@@ -24,7 +26,7 @@ export default function AboutIntroReply({ mode, onClose }: {
     }
     document.addEventListener("pointerdown", dismiss)
     return () => document.removeEventListener("pointerdown", dismiss)
-  }, [mode, onClose])
+  }, [mode, active, onClose])
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -34,7 +36,7 @@ export default function AboutIntroReply({ mode, onClose }: {
   }
 
   return (
-    <section ref={panelRef} className="about-intro-reply" data-mode={mode} aria-label={mode === "email" ? "Email reply" : "Text reply"}>
+    <section ref={panelRef} className="about-intro-reply" data-mode={mode} data-active={active} inert={!active} aria-hidden={!active} aria-label={mode === "email" ? "Email reply" : "Text reply"}>
       <form onSubmit={submit}>
         {mode === "text" && <textarea ref={messageRef} aria-label="Your message" name="message" rows={3}
           maxLength={2000} value={message} onChange={event => setMessage(event.target.value)} placeholder="Your message…" />}
