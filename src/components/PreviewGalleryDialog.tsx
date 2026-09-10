@@ -9,6 +9,10 @@ import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
 import { galleryItemTitle, resumeItemTitle, writingsItemTitle, type GalleryItem } from "../lib/galleryItems"
 import { originCloseEasePoints, originOpenEasePoints, toCssEasing, useOriginTravel } from "../lib/originMotion"
+import { writingSummaries } from "../data/writingIndex"
+import { groupWritingsByYear } from "../lib/writings"
+import { useGalleryPage, type GalleryPageDirection } from "../lib/useGalleryPage"
+import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
 import { PreviewMedia } from "./PreviewMedia"
 import { ResumeContent } from "./ResumeContent"
@@ -28,10 +32,15 @@ type PreviewGalleryDialogProps = {
   getOriginRect?: (index: number) => DOMRect | null
   /** Where focus lands on close when the control that opened this is gone. */
   finalFocus?: React.ComponentProps<typeof Dialog.Popup>["finalFocus"]
-  /** A row of the notes slide was pressed: open that note in its own sheet. */
+  /** A row was pressed: fetch and select its nested article. */
   onSelectWriting?: (id: string) => void
-  /** What the notes slide says while that sheet is on its way. */
+  /** Deferred article loading and retry feedback. */
   notesStatus?: WritingsReaderStatus
+  writingId: string | null
+  WritingReader?: React.ComponentType<WritingsReaderProps>
+  onPageWriting: (id: string) => void
+  onBackFromWriting: () => void
+  onRetryWriting: () => void
 }
 
 type PreviewSwitchDirection = "prev" | "next"
@@ -48,8 +57,7 @@ function shouldOpenPreviewWide() {
 
 // Origin-aware open/close: the popup travels from (and back to) the card that
 // was clicked, so the modal reads as that card growing into place. The geometry
-// and the curves are shared with the writings sheet in lib/originMotion;
-// everything below is this gallery's own timing.
+// lives in lib/originMotion; nested Notes turns keep that outer shell in place.
 
 const galleryMotionVars = {
   "--pg-open-ms": "var(--duration-base)",
@@ -100,6 +108,11 @@ export function PreviewGalleryDialog({
   finalFocus,
   onSelectWriting,
   notesStatus,
+  writingId,
+  WritingReader,
+  onPageWriting,
+  onBackFromWriting,
+  onRetryWriting,
 }: PreviewGalleryDialogProps) {
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
   // This dialog is lazily mounted, so its first open is always the mount: `open`
@@ -120,6 +133,14 @@ export function PreviewGalleryDialog({
   // The portal mounts its contents in a later commit than the one that flips
   // `open`, so the open animation keys off the node arriving, not off `open`.
   const [originWrapNode, setOriginWrapNode] = useState<HTMLDivElement | null>(null)
+  const [hasPresented, setHasPresented] = useState(false)
+  // A cold direct link remains cancellable from the page until its article
+  // arrives. Once shown (including a retry state), keep this dialog in place.
+  const present = open && (hasPresented || !writingId || Boolean(WritingReader) || Boolean(notesStatus?.status?.includes("again")))
+  useIsomorphicLayoutEffect(() => {
+    if (!open) setHasPresented(false)
+    else if (originWrapNode) setHasPresented(true)
+  }, [open, originWrapNode])
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("next")
   const [isWide, setIsWide] = useState(shouldOpenPreviewWide)
@@ -131,6 +152,63 @@ export function PreviewGalleryDialog({
   // than the window, so both give the vertical arrows back to scrolling and
   // page on the horizontal pair alone.
   const isReaderSlide = isResumeSlide || activeItem?.kind === "writings"
+  const noteDirection = useRef<GalleryPageDirection>("next")
+  const notesPage = useGalleryPage(writingId, noteDirection, cardRef, prefersReducedMotion || !open || !isReaderSlide)
+  const readingNote = activeItem?.kind === "writings" && notesPage.displayed !== null
+  const noteTitleRef = useRef<HTMLHeadingElement>(null)
+  const notesListRef = useRef<HTMLDivElement>(null)
+  const notesScrollRef = useRef<HTMLDivElement>(null)
+  const notesTitleRef = useRef<HTMLHeadingElement>(null)
+  const returnRow = useRef<HTMLButtonElement | null>(null)
+  const listScrollTop = useRef(0)
+  const focusNoteTitle = useRef(true)
+  const orderedNotes = useMemo(() => groupWritingsByYear(writingSummaries).flatMap(group => group.entries), [])
+  const [listHeight, setListHeight] = useState<number | null>(null)
+
+  useIsomorphicLayoutEffect(() => {
+    if (!open || activeItem?.kind !== "writings" || !originWrapNode) return
+    const list = notesListRef.current
+    if (!list) return
+    const measure = () => {
+      const card = cardRef.current
+      const heading = notesTitleRef.current?.closest("header")
+      const scroller = notesScrollRef.current
+      if (!card || !heading || !scroller) return
+      const styles = getComputedStyle(card)
+      const scrollerStyles = getComputedStyle(scroller)
+      setListHeight(list.scrollHeight + heading.offsetHeight +
+        Number.parseFloat(scrollerStyles.paddingTop) + Number.parseFloat(scrollerStyles.paddingBottom) +
+        Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(list)
+    return () => observer.disconnect()
+  }, [open, activeItem?.kind, originWrapNode])
+
+  useIsomorphicLayoutEffect(() => {
+    if (!open || activeItem?.kind !== "writings") return
+    const scroller = notesScrollRef.current
+    if (!scroller) return
+    if (notesPage.displayed) {
+      scroller.scrollTop = 0
+      returnRow.current = notesListRef.current?.querySelector<HTMLButtonElement>(
+        `[data-writing-id="${notesPage.displayed}"]`,
+      ) ?? returnRow.current
+      if (focusNoteTitle.current) noteTitleRef.current?.focus({ preventScroll: true })
+    } else {
+      scroller.scrollTop = listScrollTop.current
+      const row = returnRow.current
+      if (row?.isConnected) row.focus({ preventScroll: true })
+    }
+  }, [notesPage.displayed, WritingReader, open, activeItem?.kind, originWrapNode])
+
+  const pageNote = useCallback((id: string, direction?: GalleryPageDirection) => {
+    noteDirection.current = direction ?? (orderedNotes.findIndex(note => note.id === id) <
+      orderedNotes.findIndex(note => note.id === writingId) ? "prev" : "next")
+    onPageWriting(id)
+  }, [onPageWriting, orderedNotes, writingId])
+
   const activeMediaSource = activeCard?.image ?? ""
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
@@ -226,6 +304,11 @@ export function PreviewGalleryDialog({
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
+      if (!nextOpen && writingId) {
+        playBack()
+        onBackFromWriting()
+        return
+      }
       if (!nextOpen) {
         playClose()
         runOriginAnimation("close")
@@ -241,7 +324,7 @@ export function PreviewGalleryDialog({
       }
       onOpenChange(nextOpen)
     },
-    [cancelSwitchTransition, onOpenChange, playClose, runOriginAnimation],
+    [cancelSwitchTransition, onOpenChange, playClose, playBack, runOriginAnimation, writingId, onBackFromWriting],
   )
 
   // One step of the strip, in either direction, and the only way the selection
@@ -302,11 +385,21 @@ export function PreviewGalleryDialog({
 
   const moveBy = useCallback(
     (direction: number) => {
-      if (items.length <= 1) return
       if (direction === 0) return
+      if (writingId) {
+        const index = orderedNotes.findIndex(note => note.id === writingId)
+        const next = orderedNotes[wrapIndex(index + direction, orderedNotes.length)]
+        if (next) {
+          if (direction > 0) playNext()
+          else playBack()
+          pageNote(next.id, direction < 0 ? "prev" : "next")
+        }
+        return
+      }
+      if (items.length <= 1) return
       goToIndex(wrapIndex(safeIndex + direction, items.length), direction < 0 ? "prev" : "next")
     },
-    [goToIndex, items.length, safeIndex],
+    [goToIndex, items.length, safeIndex, writingId, orderedNotes, pageNote, playNext, playBack],
   )
 
   // The résumé slide's project prints page the gallery to that project instead
@@ -354,9 +447,9 @@ export function PreviewGalleryDialog({
       // The stationary toolbar is outside the scrolling card, so native
       // scrolling cannot reach the résumé from a focused paging/close button.
       // Forward those keys without moving focus away from the controls.
-      const card = cardRef.current
+      const card = activeItem?.kind === "writings" ? notesScrollRef.current : cardRef.current
       if (isReaderSlide && card && target instanceof Element &&
-        target.closest(".preview-gallery-toolbar") && !event.altKey && !event.metaKey) {
+        target.closest(".preview-gallery-toolbar, .preview-gallery-rail, .notes-gallery-heading") && !event.altKey && !event.metaKey) {
         const scrollSteps: Record<string, number> = {
           ArrowDown: 40,
           ArrowUp: -40,
@@ -378,19 +471,24 @@ export function PreviewGalleryDialog({
       // On a preview, where there is nothing to scroll, both pairs page.
       if (event.key === "ArrowLeft" || (!isReaderSlide && event.key === "ArrowUp")) {
         event.preventDefault()
+        focusNoteTitle.current = true
         moveBy(-1)
       } else if (event.key === "ArrowRight" || (!isReaderSlide && event.key === "ArrowDown")) {
         event.preventDefault()
+        focusNoteTitle.current = true
         moveBy(1)
       } else if (event.key === "Escape") {
         event.preventDefault()
+        // This one handler owns the nested Back action. Letting the same key
+        // reach Base UI would dismiss the now-visible parent list as well.
+        event.stopPropagation()
         handleOpenChange(false)
       }
     }
 
     window.addEventListener("keydown", onKeyDown, { capture: true })
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true })
-  }, [handleOpenChange, isReaderSlide, moveBy, open])
+  }, [handleOpenChange, isReaderSlide, moveBy, open, activeItem?.kind])
 
   if (!activeItem) return null
 
@@ -404,7 +502,7 @@ export function PreviewGalleryDialog({
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+    <Dialog.Root open={present} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
 
@@ -416,6 +514,7 @@ export function PreviewGalleryDialog({
           // the wrap and the popup both inherit.
           data-kind={activeItem.kind}
           data-wide={isWide ? "true" : undefined}
+          data-reading-note={readingNote ? "true" : undefined}
           style={galleryMotionVars}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
@@ -429,11 +528,12 @@ export function PreviewGalleryDialog({
             ref={attachOriginWrap}
           >
             <Dialog.Popup
-              className="preview-gallery-popup"
+              className={`preview-gallery-popup${readingNote ? " writings-dialog" : ""}`}
               ref={popupRef}
-              initialFocus={cardRef}
+              initialFocus={() => writingId ? noteTitleRef.current ?? cardRef.current : cardRef.current}
               finalFocus={finalFocus}
               data-preview-kind={activeItem.kind}
+              data-reading-note={readingNote ? "true" : undefined}
               data-preview-media={activeCard ? (activeMediaIsVideo ? "video" : "image") : undefined}
               data-preview-crop={activeCard?.previewCropped ? "true" : undefined}
               // Mirrors `mosaic-row-card-${id}` on the tile: a hook for the one
@@ -459,9 +559,9 @@ export function PreviewGalleryDialog({
                   <button
                     type="button"
                     className="preview-gallery-nav preview-gallery-nav-prev"
-                    aria-label="Previous preview"
+                    aria-label={readingNote ? "Previous note" : "Previous preview"}
                     aria-keyshortcuts={prevKeyshortcuts}
-                    onClick={() => moveBy(-1)}
+                    onClick={(event) => { focusNoteTitle.current = event.detail === 0; moveBy(-1) }}
                     disabled={items.length <= 1}
                   >
                     <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
@@ -470,9 +570,9 @@ export function PreviewGalleryDialog({
                   <button
                     type="button"
                     className="preview-gallery-nav preview-gallery-nav-next"
-                    aria-label="Next preview"
+                    aria-label={readingNote ? "Next note" : "Next preview"}
                     aria-keyshortcuts={nextKeyshortcuts}
-                    onClick={() => moveBy(1)}
+                    onClick={(event) => { focusNoteTitle.current = event.detail === 0; moveBy(1) }}
                     disabled={items.length <= 1}
                   >
                     <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
@@ -485,7 +585,7 @@ export function PreviewGalleryDialog({
                     control a thumb reaching for "next" could hit by mistake. */}
                 <Dialog.Close
                   className="preview-gallery-nav preview-gallery-close"
-                  aria-label={activeItem.kind === "resume" ? "Close résumé" : activeItem.kind === "writings" ? "Close notes" : "Close preview"}
+                  aria-label={readingNote ? "Close note" : activeItem.kind === "resume" ? "Close résumé" : activeItem.kind === "writings" ? "Close notes" : "Close preview"}
                 >
                   <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
                 </Dialog.Close>
@@ -495,8 +595,11 @@ export function PreviewGalleryDialog({
                   phones the media is capped at 32vh, so the text below it is
                   most of the surface a thumb actually lands on. */}
               <article
-                className={`preview-gallery-card${switchClassName}`}
+                className={`preview-gallery-card${switchClassName}${activeItem.kind === "writings" ? " notes-gallery-card" : ""}`}
                 ref={cardRef}
+                style={activeItem.kind === "writings" && listHeight !== null ? {
+                  "--notes-list-height": `${listHeight}px`,
+                } as CSSProperties : undefined}
                 tabIndex={-1}
                 onTouchStart={(event) => {
                   // A horizontal drag on the video is the seek bar, not a swipe.
@@ -583,18 +686,49 @@ export function PreviewGalleryDialog({
                       </div>
                     </>
                   ) : activeItem.kind === "writings" ? (
-                    /* The folder's slide: every note by year, with the pencil
-                       objects in the gutters the card leaves either side of the
-                       list. A row opens the note in the reader's own sheet. */
-                    <div className="preview-gallery-notes writings-surface">
-                      <Dialog.Title className="preview-gallery-title preview-gallery-notes-title">
-                        {writingsItemTitle}
-                      </Dialog.Title>
+                    <div className="preview-gallery-notes writings-surface" data-reading={readingNote ? "true" : undefined}>
+                      <header className="notes-gallery-heading writings-toolbar">
+                        <div className="notes-gallery-heading-column">
+                          <button type="button" className="preview-gallery-nav notes-gallery-back"
+                            aria-label="Go back to Notes" aria-hidden={!readingNote} tabIndex={readingNote ? 0 : -1}
+                            onClick={() => handleOpenChange(false)}>
+                            <ChevronLeft className="preview-gallery-nav-icon" aria-hidden="true" />
+                          </button>
+                          <Dialog.Title ref={notesTitleRef} className="preview-gallery-title preview-gallery-notes-title">
+                            {writingsItemTitle}
+                          </Dialog.Title>
+                        </div>
+                      </header>
                       <Dialog.Description className="sr-only">
-                        Rafael Medina's notes, grouped by year. Choose one to read it.
+                        {readingNote ? "Read this note. Use Back to return to Notes, or the left and right arrows to browse notes."
+                          : "Rafael Medina's notes, grouped by year. Choose one to read it."}
                       </Dialog.Description>
-                      <WritingsArchive onSelectWriting={onSelectWriting}
-                        pendingId={notesStatus?.pendingId} status={notesStatus?.status} />
+                      <div className="notes-gallery-viewport writings-scroll" ref={notesScrollRef}
+                        onScroll={(event) => {
+                          if (!readingNote) listScrollTop.current = event.currentTarget.scrollTop
+                          event.currentTarget.closest(".preview-gallery-notes")?.setAttribute("data-scrolled",
+                            event.currentTarget.scrollTop > 0 ? "true" : "false")
+                        }}>
+                        <div className={`notes-gallery-page${notesPage.phase === "idle" ? "" : ` preview-gallery-card-switch-${notesPage.phase}-${notesPage.direction}`}`}
+                          data-switch-phase={notesPage.phase} data-switch-direction={notesPage.direction}>
+                          <div ref={notesListRef} className="notes-gallery-list" hidden={readingNote || Boolean(writingId && !WritingReader)}
+                            inert={readingNote || Boolean(writingId && !WritingReader)} aria-hidden={readingNote || undefined}>
+                            <WritingsArchive onSelectWriting={(id, trigger) => {
+                              returnRow.current = trigger
+                              focusNoteTitle.current = true
+                              listScrollTop.current = notesScrollRef.current?.scrollTop ?? 0
+                              onSelectWriting?.(id)
+                            }} pendingId={notesStatus?.pendingId} status={notesStatus?.status} />
+                          </div>
+                          {readingNote && WritingReader ? <WritingReader writingId={notesPage.displayed!} titleRef={noteTitleRef}
+                            onSelectWriting={(id) => { focusNoteTitle.current = true; pageNote(id) }} /> : null}
+                          {writingId && !WritingReader ? <div className="notes-gallery-pending">
+                            <p role="status">{notesStatus?.status ?? "Opening notes…"}</p>
+                            {notesStatus?.status?.includes("again") ? <button type="button"
+                              className="writing-entry-trigger" onClick={onRetryWriting}>Try again</button> : null}
+                          </div> : null}
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="preview-gallery-resume">
@@ -629,13 +763,13 @@ export function PreviewGalleryDialog({
                 </div>
               </article>
 
-              <div className="preview-gallery-rail" role="group" aria-label="Preview navigation">
+              <div className="preview-gallery-rail" role="group" aria-label={readingNote ? "Note navigation" : "Preview navigation"}>
                 <button
                   type="button"
                   className="preview-gallery-nav preview-gallery-nav-prev"
-                  aria-label="Previous preview"
+                  aria-label={readingNote ? "Previous note" : "Previous preview"}
                   aria-keyshortcuts={prevKeyshortcuts}
-                  onClick={() => moveBy(-1)}
+                  onClick={(event) => { focusNoteTitle.current = event.detail === 0; moveBy(-1) }}
                   disabled={items.length <= 1}
                 >
                   <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
@@ -644,9 +778,9 @@ export function PreviewGalleryDialog({
                 <button
                   type="button"
                   className="preview-gallery-nav preview-gallery-nav-next"
-                  aria-label="Next preview"
+                  aria-label={readingNote ? "Next note" : "Next preview"}
                   aria-keyshortcuts={nextKeyshortcuts}
-                  onClick={() => moveBy(1)}
+                  onClick={(event) => { focusNoteTitle.current = event.detail === 0; moveBy(1) }}
                   disabled={items.length <= 1}
                 >
                   <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />

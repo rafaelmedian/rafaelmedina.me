@@ -18,10 +18,10 @@ and the global reduced-motion policy last.
 - `resume-content.css`: company logos, work history entries, and selected project screenshots in the reader.
 - `likes.css`: the like pill shared by the notes reader and the project preview.
 - `personal-photos.css`: photo stack and carousel dialog.
-- `preview-gallery.css`: project preview dialog.
+- `preview-gallery.css`: shared gallery dialog, nested Notes pages, and card motion.
 - `booking.css`: the hint tooltip shared by the booking pill and the address,
   the booking dialog, and the Cal.com frame.
-- `writings.css`: writings folder tile, reader dialog, and its transitions.
+- `writings.css`: writings folder tile, article typography, and margin artwork.
 - `standalone.css`: prerendered project pages and the 404.
 - `reduced-motion.css`: the shared duration clamp and final visibility resets.
 

@@ -1276,7 +1276,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
           <section id="components" className="ds-section">
             <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
-              <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onBack={() => {}} /></div>
+              <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onReaderReady={() => {}} /></div>
               <p className="ds-caption">
                 A tile on --mosaic-card-surface with 24px corners and one label, “Writings &amp; notes”.
                 Below 900px the corners drop to 16px and the folder is zoomed to 0.7 so it and the
@@ -1315,31 +1315,27 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s rows.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
                 The top bar carries one title, Notes, with no year crumb, search, document count, author byline, or subtitle.
-                Notes uses --text-md, aligned with the archive's year column in the same 37rem column and shared side gutters when the list is open.
-                Toolbar top padding is 32px on desktop and 20px plus the safe area on mobile.
-                The toolbar carries no divider while the article rests at its top; once it scrolls, an 8% black hairline and a short shadow fade in over 160ms and fade back out at the top,
-                and turning to the next note resets the reader and clears it.
-                A back button leads the title, reusing the project gallery’s round chevron so it matches the previous/next controls;
-                from 900px it hangs in the left gutter so the title keeps the column edge, and below that it sits in the flow with a
-                12px margin. It is always there, because there is always the list to go back to.
-                Previous/next controls reuse the project gallery’s 44px round buttons, border, shadow and press state.
-                Previous/next controls sit outside the desktop reader and cycle through the notes in archive order, resetting scroll.
-                The list itself is not in the sheet: it is a slide of the preview gallery, at the tile's place in the sequence
-                ("3 / 14"), so the gallery's own arrows walk from the Matcha homepage into the notes and out to Popparazi, in the
-                same card and with the same page-turn as the résumé. A row opens the note in this sheet over the list, and the back
-                arrow and Escape close the sheet to the list; closing the list returns focus to the folder tile.
-                Switching notes pages the whole modal like project previews: next sends the current note 1.4rem left,
-                previous sends it right, fading to zero at scale(0.985) over 200ms. The new note arrives from the
-                opposite side over the same 200ms, using standard transform easing and ease-out opacity.
-                The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
-                Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
-                during the switch, and closing or going back to Notes cancels pending selection. Reduced motion switches instantly.
-                The sheet keeps one width and no expand control, but it is only as tall as the article in it, up to the room
-                the viewport leaves, and content that resizes under the reader grows it over 200ms with smooth easing. It hangs
-                from its top edge throughout, so growing never moves the title. Reduced motion resizes instantly.
-                On mobile it keeps its 0.5rem margins and safe-area clearance.
-                The desktop header has no close icon; Escape and outside click dismiss it. On mobile, previous, next, and close ride the title line at the
-                top right instead of a bottom bar, which returns that bar's 68px of height to the article.
+                Notes uses --text-md, aligned with the archive's year column on the shared 34rem measure.
+                Heading insets follow the gallery card's responsive padding.
+                Notes is a nested view of the same preview-gallery dialog: one backdrop, focus trap, and card.
+                The list remains at its tile's place in the outer sequence ("3 / 14"). Its arrows page work items;
+                opening a row changes those same controls to browse notes in archive order, with wraparound.
+                The back button enters from the left over 200ms and returns to the list, as do Escape and dismiss.
+                Its 44px hit area hangs in the gutter from a 48rem Notes container; below that, the title shifts
+                horizontally to make room inside the card. The heading and backdrop stay mounted throughout.
+                Next sends outgoing content 1.4rem left, fading over 200ms; previous reverses it.
+                Notes sets --pg-switch-scale to 1: scaling a long article around its centre would make it dip
+                vertically. Work cards retain their 0.985 scale; note content only travels sideways.
+                Incoming content arrives from the opposite side over 200ms, sharing the work gallery's standard transform
+                easing and ease-out opacity. The card stays opaque during nested transitions.
+                The list retains its scroll position and measurements while hidden and inert. Back restores it and focuses
+                the selected row. Keyboard navigation focuses article headings; pointer navigation keeps control focus.
+                Rapid input cancels stale transitions and settles on the current URL; dismissal cannot reopen an old selection.
+                Opening an article grows the card downward over 200ms on smooth easing, preserving its width and top edge,
+                to 1rem above the viewport bottom or the safe-area inset, whichever is larger. All articles retain that height
+                and scroll internally; Back animates to the list's natural height. Mobile keeps the full-height gallery
+                frame and toolbar. Reduced motion changes state instantly.
+                The toolbar's 5% black divider and short shadow appear only while scrolled, over 160ms.
                 The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
@@ -1364,7 +1360,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 page is prerendered and the two renders have to agree: each note drops 0 to 2.9em into its paragraph,
                 sits 7 to 17px outside the column, and leans up to 2.4 degrees either way. Notes sharing one offset drew
                 a second column down each edge, and a fixed cycle of three only moved that pattern rather than breaking it.
-                The gutters only exist once the modal is wide enough to leave them, so below 1000px a note folds into the
+                The gutters only exist from a 48rem Notes container; below that a note folds into the
                 column under its paragraph, bracket first. Nothing else interrupts the column: the reader has no rules
                 and no interjections between paragraphs.
                 Notes are ordinary text in the reading order: a gutter note reads after its paragraph, and it is never
@@ -1378,7 +1374,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 than per year, alternating rails so no two face each other, on three lifts and three tilts between
                 -5 and 7 degrees. The three objects cycle, so the archive passes ten notes before one repeats. They
                 are decorative and hidden from assistive technology, absolutely positioned so they never enter the
-                content height the sheet measures, and they leave with the gutters below 1000px.
+                content height the card measures, and they leave below the same 48rem container threshold.
                 An article can print a fenced sample: monospace from the system stack at --text-xs on
                 --mosaic-card-surface, --radius-md with the same 5% inset hairline the reader's figures take, over a
                 --text-xs grey caption. There is one such sample and it is Markdown, so the highlighter is thirty lines
@@ -1394,7 +1390,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Personal essays are text-only; project writings reuse existing portfolio illustrations as covers or within their sections.
                 The date sits above the title in month, day, year format; sample articles use illustrative dates.
                 A note's own title uses --text-lg, 600 weight, 1.35 line height and -0.02rem tracking; the toolbar
-                title above it is --text-md at 1.4. Prose stays --text-sm on desktop and mobile, with 1.5 line
+                title above it retains the gallery’s --text-md, 500 weight and 1.25 line height. Prose stays --text-sm on desktop and mobile, with 1.5 line
                 height and -0.00563rem tracking, and the column is the measure, so paragraphs carry none of their own.
                 Paragraphs are separated by 16px. Section headings sit on the reading step at 600 weight with 1.45 line
                 height and -0.00563rem tracking, 48px above and 12px below, so the space does the grouping the size no
@@ -1403,21 +1399,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Year headings use --text-xs. Font kerning is enabled throughout the dialog.
                 Inline images retain their intrinsic
                 aspect ratio, fill the reading column, load lazily, and use 16px corners. Optional image captions are --text-xs.
-                The reading column is 37rem wide including its side padding — a 34rem (544px) measure, about 68 characters
+                The gallery supplies padding around a 34rem (544px) reading measure, about 68 characters
                 on the 14px step. Prose uses #2d2d2d, dark enough to hold at that size; secondary text uses --muted.
-                Archive and reader begin 24px below the toolbar and end with 48px of breathing room.
+                Archive and reader begin 32px below the heading; the article ends with 48px of breathing room.
                 More articles is separated from the article by a 1px black divider at 8% opacity, with 48px above the line and 24px below.
                 Rows have 12px vertical padding, year headings sit 4px above their entries, and groups are separated by 48px on desktop or 32px on mobile.
-                Reader headers have a 24px bottom margin. Desktop side padding is 24px; mobile side padding is 20px.
-                Open takes 200ms and close 160ms, origin-aware like a project preview: the sheet grows out of whatever
-                opened it — the mosaic tile, or the header's Notes button — from scale 0.92 along a bearing capped at
-                44px, on cubic-bezier(0.32, 0.8, 0.32, 1), and leaves on that same bearing with --ease-exit, so it
-                shrinks back into the control it came from rather than in place. Travel and scale are one Web
-                Animations flight on the sheet, measured at its resting size at both ends; the fade stays in CSS on
-                smooth easing. With nothing on screen to fly from — a bookmarked note, or a tile scrolled away — it
-                falls back to a 20px lift at scale 0.96. Reduced motion removes transitions and the paper fan. Control hit areas are at least 44px; the dialog traps focus, closes on Escape or outside click,
-                and returns focus to the folder. Notes receives focus on open; opening an article focuses its heading,
-                and returning through the back button restores focus to the selected row. Reduced motion disables the panel and back-button transitions.
+                Reader headers have a 24px bottom margin. Side padding follows the gallery in each responsive layout.
+                The outer gallery opens in 200ms and closes in 160ms, including for a direct note link.
+                A visible tile supplies its origin: scale 0.92 and travel capped at 44px; an offscreen tile falls
+                back to the existing 20px lift at scale 0.96. Nested Notes navigation only turns content and resizes
+                the card. URLs remain /notes/ and /notes/&lt;id&gt;/, and article code and prose remain deferred.
+                Pending rows keep the list visible and support cancellation and retry. Reduced motion removes page,
+                resize, and back-button transitions. Controls keep their 44px targets.
               </p>
             </div>
             <div className="ds-section-heading">

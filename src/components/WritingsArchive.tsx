@@ -110,7 +110,11 @@ const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month:
 // out of the accessible name: "Designing Matcha, button" beats reading a row as
 // "Designing Matcha oh one slash oh nine", and the note's own header announces
 // the full date the moment it opens.
-function WritingEntry({ writing, busy, onClick }: { writing: WritingSummary; busy?: boolean; onClick?: () => void }) {
+function WritingEntry({ writing, busy, onClick }: {
+  writing: WritingSummary
+  busy?: boolean
+  onClick?: (trigger: HTMLButtonElement) => void
+}) {
   const date = writing.publishedAt ? (
     <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{dayMonthFormat.format(noteDate(writing.publishedAt))}</time>
   ) : null
@@ -123,7 +127,8 @@ function WritingEntry({ writing, busy, onClick }: { writing: WritingSummary; bus
     )
   }
   return (
-    <button type="button" className="writing-entry-trigger" onClick={onClick} aria-busy={busy || undefined}>
+    <button type="button" className="writing-entry-trigger" data-writing-id={writing.id}
+      onClick={(event) => onClick?.(event.currentTarget)} aria-busy={busy || undefined}>
       <span className="writing-entry-title">{writing.title}</span>
       {date}
     </button>
@@ -133,11 +138,10 @@ function WritingEntry({ writing, busy, onClick }: { writing: WritingSummary; bus
 
 type WritingsArchiveProps = {
   /**
-   * Open a note. On the gallery's slide this hands the id up and the reader's
-   * sheet opens over the list; the static `/notes/` page has no sheet, so its
+   * Open a nested note within the gallery; the static `/notes/` page has no dialog, so its
    * rows are ordinary links to each note's own address.
    */
-  onSelectWriting?: (id: string) => void
+  onSelectWriting?: (id: string, trigger: HTMLButtonElement) => void
   /** The note whose reader is on its way, while its chunk downloads. */
   pendingId?: string | null
   /** What to say under the heading while a reader fails to arrive. */
@@ -168,7 +172,7 @@ export function WritingsArchive({ onSelectWriting, pendingId, status }: Writings
                 <li key={writing.id}>
                   {drawing ? <ArchiveDrawing drawing={drawing} /> : null}
                   <WritingEntry writing={writing} busy={pendingId === writing.id}
-                    onClick={onSelectWriting ? () => onSelectWriting(writing.id) : undefined} />
+                    onClick={onSelectWriting ? (trigger) => onSelectWriting(writing.id, trigger) : undefined} />
                 </li>
               )
             })}</ul>

@@ -35,7 +35,7 @@ import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightwei
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
-import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl } from "../lib/portfolioUrl"
+import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl, usePortfolioItemUrl } from "../lib/portfolioUrl"
 import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
 import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -646,15 +646,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [availabilityLabel, setAvailabilityLabel] = useState(() =>
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
-  const [writingsOpen, setWritingsOpen] = useState(false)
+  const [readerModule, setReaderModule] = useState<typeof import("./WritingsReader") | null>(null)
+  const { itemId: writingId, selectItem: selectWriting, clearItem: clearWriting } = usePortfolioItemUrl("writing")
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
-  // Where the gallery hands focus back when the control that opened it is gone.
-  // The reader's back arrow is the case: the sheet closes as the notes slide
-  // comes forward, so without this the slide's close would drop focus on the
-  // body instead of on the tile the notes are filed in. State, not a ref,
-  // because the prop has to be absent on every other open -- naming an anchor
-  // at all changes how insistently the dialog returns focus, and a preview
-  // opened from a tile already returns to it.
+  // Direct note links have no opener to restore when the gallery finally
+  // closes. Returning to their list establishes the folder as that fallback.
   const [galleryFallbackFocus, setGalleryFallbackFocus] = useState<HTMLElement | null>(null)
   // What the notes slide says while a reader is on its way or failed to come.
   const [notesStatus, setNotesStatus] = useState<WritingsReaderStatus>({ status: null, pendingId: null })
@@ -732,11 +728,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     openGalleryItem(galleryItems[notesIndex], notesIndex)
   }
 
-  // The reader's back arrow. The note has given its URL up by now: if that
-  // uncovered the notes slide it came from, the gallery is already reopening
-  // on it; a note arrived at by a shared link has nothing underneath, so the
-  // slide is put forward for it. Either way the sheet closed with the row
-  // that was focused, so the folder tile stands in.
+  // Back stays inside the same dialog. Canonical note paths already clear to
+  // /notes/; a legacy query link also needs that parent address installed.
   const returnToNotes = () => {
     setGalleryFallbackFocus(writingsFolderTileRef.current)
     if (isNotesPath(window.location.pathname) || notesIndex < 0) return
@@ -777,7 +770,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null}
         />
       )
     }
@@ -1114,8 +1107,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 ref={writingsFolderRef}
                                 onOpen={openNotes}
                                 onPrefetch={prefetchPreviewGallery}
-                                onBack={returnToNotes}
-                                onOpenChange={setWritingsOpen}
+                                onReaderReady={setReaderModule}
                                 onStatusChange={setNotesStatus}
                                 tileRef={(node) => {
                                   writingsFolderTileRef.current = node
@@ -1245,17 +1237,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   getOriginRect={getPreviewOriginRect}
                   onOpenChange={(nextOpen) => {
                     if (!nextOpen) {
+                      writingsFolderRef.current?.cancelPending()
                       clearGalleryItem()
                     }
                   }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}
-                  onSelectWriting={(id) => {
-                    // The sheet takes the URL and this closes behind it. Naming
-                    // an anchor makes the close insist on focusing it, over
-                    // the sheet's own title, so the one Back set is dropped.
-                    setGalleryFallbackFocus(null)
-                    writingsFolderRef.current?.openWriting(id)
-                  }}
+                  onSelectWriting={(id) => writingsFolderRef.current?.openWriting(id)}
+                  writingId={writingId}
+                  WritingReader={readerModule?.WritingsReader}
+                  onPageWriting={(id) => selectWriting(id, true)}
+                  onRetryWriting={() => writingsFolderRef.current?.retry()}
+                  onBackFromWriting={() => clearWriting(returnToNotes)}
                   notesStatus={notesStatus}
                   finalFocus={galleryFallbackFocus ? { current: galleryFallbackFocus } : undefined}
                 />
