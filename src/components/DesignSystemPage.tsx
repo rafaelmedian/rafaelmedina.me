@@ -2162,14 +2162,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Expand grows the square to 480px, constrained
                   by the viewport and the mobile TOC. Captions remain enabled for real recordings and
                   can be toggled with C; the synthetic test recording starts without its descriptive captions.
-                  The speaking portrait reveals a centered 32px play disc on hover, keyboard focus or tap.
-                  A 100px glass pill to the right holds separate 44px email and text actions,
-                  with small named tooltips. It uses the TOC’s 92% white and 16px backdrop blur.
-                  The 14px dark play icon sits on <code>--accent</code>; reply icons use an 18% accent mix with white.
+                  The speaking portrait reveals a centered 24px white play triangle on hover, keyboard focus or tap.
+                  A 20%-black overlay darkens the portrait only while those actions are shown, fading over
+                  <code> --duration-quick</code>. The triangle has no disc or colored background.
+                  A 100px white pill to the right holds separate 44px email and text actions,
+                  with small named tooltips and the shared ring and overlay shadows, without backdrop blur.
+                  Controls use Hugeicons rounded strokes at 1.5px; email, text and the reply arrow are 24px
+                  dark icons on transparent buttons. The focused play triangle uses a white outline.
                   The desktop “A quick hello” and duration tooltip is hidden until hover or focus.
                   Fine-pointer hover scales the portrait to 1.04. Controls settle from 4px over
                   <code> --duration-quick</code>; reduced motion removes the movement.
-                  The same glass surface expands to a 320px-wide, 52px-high email field, 12px to the
+                  The same white surface expands to a 320px-wide, 52px-high email field, 12px to the
                   right of the portrait, using <code>--duration-slow</code> to open and
                   <code>--duration-quick</code> to collapse with <code>--ease-smooth</code>.
                   Its only contents are the input and a 44px arrow. Text grows that surface upward to

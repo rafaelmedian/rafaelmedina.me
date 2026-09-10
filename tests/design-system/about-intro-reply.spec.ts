@@ -10,9 +10,9 @@ const openAbout = async (page: Page) => {
 
 test('reveals play on the portrait and offers email and text tooltips', async ({ page }) => {
   const intro = await openAbout(page)
-  await expect(intro.locator('.about-intro-play-disc')).toHaveCSS('opacity', '0')
+  await expect(intro.locator('.about-intro-play-mark')).toHaveCSS('opacity', '0')
   await intro.getByRole('button', { name: 'Show introduction actions' }).hover()
-  await expect(intro.locator('.about-intro-play-disc')).toHaveCSS('opacity', '1')
+  await expect(intro.locator('.about-intro-play-mark')).toHaveCSS('opacity', '1')
   const email = intro.getByRole('button', { name: 'Email', exact: true })
   await email.hover()
   await expect(intro.getByRole('tooltip', { name: 'Email', exact: true })).toBeVisible()

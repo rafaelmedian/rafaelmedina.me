@@ -105,10 +105,8 @@
   height: 52px;
   padding: 4px;
   border-radius: var(--radius-full);
-  background: rgb(255 255 255 / 0.92);
+  background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   visibility: hidden;
   opacity: 0;
   transform: translateY(4px);
@@ -144,10 +142,23 @@
   height: 100%;
   padding: 0;
   border: 0;
-  color: var(--ink);
+  color: var(--canvas);
   background: transparent;
   pointer-events: none;
   cursor: pointer;
+}
+
+.about-intro-trigger::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.2);
+  opacity: 0;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+.about-intro[data-actions-open="true"] .about-intro-trigger::before {
+  opacity: 1;
 }
 
 .about-intro-reply-action {
@@ -161,7 +172,7 @@
   border: 0;
   border-radius: var(--radius-full);
   color: var(--ink);
-  background: color-mix(in srgb, var(--accent) 18%, var(--canvas));
+  background: transparent;
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-standard);
 }
@@ -177,20 +188,18 @@
   pointer-events: auto;
 }
 
-.about-intro-play-disc {
+.about-intro-play-mark {
+  position: relative;
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--accent);
-  box-shadow: var(--shadow-ring), var(--shadow-control);
   opacity: 0;
   transform: scale(0.96);
   transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-smooth);
 }
 
-.about-intro[data-actions-open="true"] .about-intro-play-disc {
+.about-intro[data-actions-open="true"] .about-intro-play-mark {
   opacity: 1;
   transform: none;
 }
@@ -219,9 +228,9 @@
   transform: translate(-50%, 0);
 }
 
-.about-intro-play-disc svg {
-  width: 14px;
-  height: 14px;
+.about-intro-play-mark svg {
+  width: 24px;
+  height: 24px;
   transform: translateX(1px);
 }
 
@@ -229,8 +238,8 @@
   outline: none;
 }
 
-.about-intro-trigger:focus-visible .about-intro-play-disc {
-  outline: 2px solid var(--focus-ring);
+.about-intro-trigger:focus-visible .about-intro-play-mark {
+  outline: 2px solid var(--canvas);
   outline-offset: 2px;
 }
 
@@ -253,7 +262,7 @@
   outline-offset: -4px;
 }
 
-.about-intro-trigger:active .about-intro-play-disc,
+.about-intro-trigger:active .about-intro-play-mark,
 .about-intro-button:active,
 .about-intro-reply-action:active {
   transform: scale(0.96);
@@ -572,7 +581,7 @@
   .about-intro-surface,
   .about-intro-trigger,
   .about-intro-expanded,
-  .about-intro-play-disc,
+  .about-intro-play-mark,
   .about-intro-button,
   .about-intro-actions,
   .about-intro-reply-action {
@@ -580,7 +589,7 @@
   }
 
   .about-intro:not([data-open="true"]):hover .about-intro-surface,
-  .about-intro-trigger:active .about-intro-play-disc,
+  .about-intro-trigger:active .about-intro-play-mark,
   .about-intro-reply-action:active,
   .about-intro-button:active {
     transform: none;
@@ -633,8 +642,8 @@
   padding: 0;
   border: 0;
   border-radius: var(--radius-full);
-  background: var(--ink);
-  color: var(--canvas);
+  background: transparent;
+  color: var(--ink);
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-standard);
 }
@@ -663,7 +672,7 @@
   .about-intro-actions,
   .about-intro-tooltip,
   .about-intro-send,
-  .about-intro-play-disc {
+  .about-intro-play-mark {
     transition: none;
     transform: none;
   }

@@ -129,11 +129,16 @@ without an argument it downloads the documented source. These files stay in
 `tests/fixtures/`, and the production widget remains disabled. The separate
 five-second color-bar recording still exercises playback and captions.
 
-Hover or focus the portrait to reveal play in its center and two small glass
+Hover or focus the portrait to reveal play in its center and two small reply
 controls beside it: Email and Text. Touch users tap the portrait to reveal them.
 The action icons have named tooltips and 44px targets.
 
-Email expands the same glass control into an input and arrow, 12px to the right
+The play triangle is white with no disc. A 20% dark overlay fades over the
+portrait while actions are shown. Reply icons and the send arrow use simple
+24px Hugeicons rounded strokes on transparent buttons; their shared white
+surface keeps the site's existing shadows without glass blur or green fills.
+
+Email expands the same white control into an input and arrow, 12px to the right
 of the image. Text expands it upward to add a small textarea above the email
 row. Opening takes 360ms and closing 160ms; reduced motion removes the morph.
 On mobile, the image and field move into a side-by-side row above the TOC.

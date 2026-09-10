@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
-import { Mail, Maximize2, Minimize2, MessageCircle, Pause, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+// Direct imports keep the deferred development chunk free of the full icon catalog.
+import ArrowReloadHorizontalIcon from "@hugeicons/core-free-icons/ArrowReloadHorizontalIcon"
+import BubbleChatIcon from "@hugeicons/core-free-icons/BubbleChatIcon"
+import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon"
+import FullScreenIcon from "@hugeicons/core-free-icons/FullScreenIcon"
+import Mail01Icon from "@hugeicons/core-free-icons/Mail01Icon"
+import MinimizeScreenIcon from "@hugeicons/core-free-icons/MinimizeScreenIcon"
+import PauseIcon from "@hugeicons/core-free-icons/PauseIcon"
+import PlayIcon from "@hugeicons/core-free-icons/PlayIcon"
+import VolumeHighIcon from "@hugeicons/core-free-icons/VolumeHighIcon"
+import VolumeMute01Icon from "@hugeicons/core-free-icons/VolumeMute01Icon"
 
 import AboutIntroReply from "./AboutIntroReply"
 
@@ -213,13 +224,13 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
           inert={open} aria-hidden={open} />
         <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
           aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
-          <span className="about-intro-play-disc"><Play size={18} fill="currentColor" aria-hidden="true" /></span>
+          <span className="about-intro-play-mark"><HugeiconsIcon icon={PlayIcon} strokeWidth={1.5} size={24} fill="currentColor" aria-hidden="true" /></span>
         </button>
         <div id={id} className="about-intro-expanded" inert={!open} aria-hidden={!open}>
           <button type="button" className="about-intro-video-touch" aria-label={touchControls ? "Hide video controls" : "Show video controls"}
             onClick={() => setTouchControls(!touchControls)} />
           <button type="button" className="about-intro-collapse about-intro-button" onClick={collapse} aria-label="Close introduction">
-            <X size={16} aria-hidden="true" />
+            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.5} size={16} aria-hidden="true" />
           </button>
           <div className="about-intro-controls">
             <div className="about-intro-progress">
@@ -236,18 +247,18 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
               <button ref={playRef} type="button" className="about-intro-button"
                 aria-label={playing ? "Pause introduction" : action}
                 onClick={() => { if (playing) videoRef.current?.pause(); else play() }}>
-                {playing ? <Pause size={18} aria-hidden="true" /> : ended || error ? <RotateCcw size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
+                {playing ? <HugeiconsIcon icon={PauseIcon} strokeWidth={1.5} size={18} aria-hidden="true" /> : ended || error ? <HugeiconsIcon icon={ArrowReloadHorizontalIcon} strokeWidth={1.5} size={18} aria-hidden="true" /> : <HugeiconsIcon icon={PlayIcon} strokeWidth={1.5} size={18} aria-hidden="true" />}
               </button>
               <button type="button" className="about-intro-button" aria-label={muted ? "Unmute introduction" : "Mute introduction"}
                 onClick={() => {
                   if (videoRef.current) videoRef.current.muted = !muted
                   setMuted(!muted)
                 }}>
-                {muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
+                {muted ? <HugeiconsIcon icon={VolumeMute01Icon} strokeWidth={1.5} size={18} aria-hidden="true" /> : <HugeiconsIcon icon={VolumeHighIcon} strokeWidth={1.5} size={18} aria-hidden="true" />}
               </button>
               <button type="button" className="about-intro-button" aria-label={enlarged ? "Shrink introduction" : "Expand introduction"}
                 onClick={() => setEnlarged(!enlarged)}>
-                {enlarged ? <Minimize2 size={16} aria-hidden="true" /> : <Maximize2 size={16} aria-hidden="true" />}
+                {enlarged ? <HugeiconsIcon icon={MinimizeScreenIcon} strokeWidth={1.5} size={16} aria-hidden="true" /> : <HugeiconsIcon icon={FullScreenIcon} strokeWidth={1.5} size={16} aria-hidden="true" />}
               </button>
               <span className="about-intro-time" aria-hidden="true">{timeLabel(position)} / {timeLabel(duration)}</span>
             </div>
@@ -259,11 +270,11 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
         <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}>
         <button ref={emailReplyRef} type="button" className="about-intro-reply-action" aria-label="Email"
           aria-describedby={`${id}-email-tooltip`} onClick={() => startReply("email")}>
-          <Mail size={19} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" className="about-intro-tooltip">Email</span>
+          <HugeiconsIcon icon={Mail01Icon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" className="about-intro-tooltip">Email</span>
         </button>
         <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Text"
           aria-describedby={`${id}-text-tooltip`} onClick={() => startReply("text")}>
-          <MessageCircle size={19} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" className="about-intro-tooltip">Text</span>
+          <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" className="about-intro-tooltip">Text</span>
         </button>
         </div>
         {reply && visible && repliesAvailable && <AboutIntroReply key={reply} mode={reply} onClose={closeReply} />}

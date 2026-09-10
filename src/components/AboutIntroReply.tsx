@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react"
-import { ArrowRight } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import ArrowRight02Icon from "@hugeicons/core-free-icons/ArrowRight02Icon"
 
 import { siteLinks } from "../data/portfolio"
 
@@ -41,7 +42,7 @@ export default function AboutIntroReply({ mode, onClose }: {
           <input ref={emailRef} type="email" name="email" aria-label="Your email" autoComplete="email" required
             maxLength={254} value={email} onChange={event => setEmail(event.target.value)} placeholder="Your email" />
           <button type="submit" className="about-intro-send" aria-label="Open email draft" aria-describedby={`${id}-hint`}
-            title="Review and send in your email app"><ArrowRight size={19} aria-hidden="true" /></button>
+            title="Review and send in your email app"><HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={1.5} size={24} aria-hidden="true" /></button>
         </div>
       </form>
       <span id={`${id}-hint`} className="sr-only">Review and send in your email app.</span>
