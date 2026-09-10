@@ -2154,26 +2154,38 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code> --z-social</code>; the player grows above that row, capped at 256px and the viewport.
                   Width, height, corner radius and vertical position use <code>--duration-slow</code> to expand,
                   <code> --duration-quick</code> to collapse, and <code>--ease-smooth</code> throughout.
-                  The white control surface uses the existing #e9e9e9 hover fill, 44px buttons and seek target,
-                  <code> --text-xs</code> tabular time, and <code>--text-sm</code> captions and desktop invitation.
-                  The speaking portrait reveals a centered 44px play disc on hover, keyboard focus or tap.
-                  A 100px glass pill at the upper-right holds separate 44px email and text actions,
+                  Video fills the square edge to edge. White 16–18px icons sit in 44px targets on a
+                  transparent-to-72%-black bottom scrim, with a 2px 60%-white seek track, 8px thumb and
+                  <code> --text-xs</code> tabular time aligned right. Play/pause, volume, expand and a close X
+                  appear on hover or keyboard focus; touch users tap the video to show or hide controls.
+                  Close has a 36%-black backing for contrast; hovered controls use 16% white.
+                  Expand grows the square to 480px, constrained
+                  by the viewport and the mobile TOC. Captions remain enabled for real recordings and
+                  can be toggled with C; the synthetic test recording starts without its descriptive captions.
+                  The speaking portrait reveals a centered 32px play disc on hover, keyboard focus or tap.
+                  A 100px glass pill to the right holds separate 44px email and text actions,
                   with small named tooltips. It uses the TOC’s 92% white and 16px backdrop blur.
-                  The dark play icon sits on <code>--accent</code>; reply icons use an 18% accent mix with white.
+                  The 14px dark play icon sits on <code>--accent</code>; reply icons use an 18% accent mix with white.
+                  The desktop “A quick hello” and duration tooltip is hidden until hover or focus.
                   Fine-pointer hover scales the portrait to 1.04. Controls settle from 4px over
                   <code> --duration-quick</code>; reduced motion removes the movement.
-                  Email opens one 52px-high pill: a labeled input and a 44px arrow on its right.
-                  Text adds only a textarea above that row, with <code>--radius-lg</code> corners.
+                  The same glass surface expands to a 320px-wide, 52px-high email field, 12px to the
+                  right of the portrait, using <code>--duration-slow</code> to open and
+                  <code>--duration-quick</code> to collapse with <code>--ease-smooth</code>.
+                  Its only contents are the input and a 44px arrow. Text grows that surface upward to
+                  172px with <code>--radius-lg</code> corners. On mobile, portrait and field share a
+                  row above the TOC, with the field constrained to the viewport minus 92px.
+                  There is no corner dismiss button.
                   Both cap at 320px, use shared overlay shadows and <code>--text-md</code> input text
                   to prevent Safari focus zoom. Escape closes the composer and returns focus;
                   clicking outside closes without stealing focus. The arrow opens an email draft
                   for the visitor to review and send. The website does not collect the address.
                   Media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
-                  Reduced motion removes the morph and press feedback. Captions start enabled, and
+                  Reduced motion removes the morph and press feedback. For real recordings captions start enabled, and
                   leaving About, hiding the tab or opening a dialog pauses sound. Preview the speaking GIF and synthetic recording
-                  fixture on the <a href="/#about-panel">development homepage</a> (a short video and matching GIF,
-                  labeled Placeholder); <code>?intro=off</code> hides it for development comparisons. Production stays
+                  fixture on the <a href="/#about-panel">development homepage</a> (a speaking GIF and
+                  test recording); <code>?intro=off</code> hides it for development comparisons. Production stays
                   disabled until the real recording is ready.
                 </li>
                 <li data-ds-terms={terms("about reading surface 36rem process how i work services pricing faq common questions stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>

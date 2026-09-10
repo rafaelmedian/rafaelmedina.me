@@ -130,12 +130,23 @@ without an argument it downloads the documented source. These files stay in
 five-second color-bar recording still exercises playback and captions.
 
 Hover or focus the portrait to reveal play in its center and two small glass
-controls above it: Email and Text. Touch users tap the portrait to reveal them.
+controls beside it: Email and Text. Touch users tap the portrait to reveal them.
 The action icons have named tooltips and 44px targets.
 
-Email opens only an input and an arrow on the right. Text opens a small textarea
-above that same email row. The arrow validates the address and opens a prefilled
-email draft addressed to `siteLinks.email`. The visitor reviews and sends it in
+Email expands the same glass control into an input and arrow, 12px to the right
+of the image. Text expands it upward to add a small textarea above the email
+row. Opening takes 360ms and closing 160ms; reduced motion removes the morph.
+On mobile, the image and field move into a side-by-side row above the TOC.
+The collapsed widget has no corner X. The arrow validates the address and opens
+a prefilled email draft addressed to `siteLinks.email`. The visitor reviews and sends it in
 their email app; the website does not send or store their reply. Escape closes
 and returns focus to the action, while clicking elsewhere closes without moving
 focus away from the clicked control. No camera permission is requested.
+
+The compact “A quick hello” label and duration appear only on hover or focus.
+The player fills its square edge to edge with controls overlaid on the video:
+play/pause, a thin seek bar, right-aligned time, volume, expand/shrink, and close.
+These controls appear on hover or keyboard focus; touch users tap to toggle
+them. Expand grows to 480px within viewport bounds. The placeholder badge is
+omitted; synthetic test captions start off, while real captions start on.
+Press C while focused on the player to toggle captions.

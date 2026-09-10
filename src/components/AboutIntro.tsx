@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
-import { Captions, ChevronDown, Mail, MessageCircle, Pause, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react"
+import { Mail, Maximize2, Minimize2, MessageCircle, Pause, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react"
 
 import AboutIntroReply from "./AboutIntroReply"
 
@@ -24,13 +24,12 @@ const subscribeVisibility = (listener: () => void) => {
 const pageIsHidden = () => document.hidden
 const hiddenOnServer = () => true
 
-export default function AboutIntro({ media, visible, open, onOpenChange, onDismiss, repliesAvailable = true }: {
+export default function AboutIntro({ media, visible, open, onOpenChange, repliesAvailable = true }: {
   media: AboutIntroMedia
   repliesAvailable?: boolean
   visible: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
-  onDismiss: () => void
 }) {
   const id = useId()
   const [actionsOpen, setActionsOpen] = useState(false)
@@ -55,12 +54,14 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
   const requestRef = useRef(0)
   const [started, setStarted] = useState(false)
   const [playing, setPlaying] = useState(false)
+  const [enlarged, setEnlarged] = useState(false)
+  const [touchControls, setTouchControls] = useState(true)
   const [ready, setReady] = useState(false)
   const [waiting, setWaiting] = useState(false)
   const [error, setError] = useState(false)
   const [ended, setEnded] = useState(false)
   const [muted, setMuted] = useState(false)
-  const [captions, setCaptions] = useState(true)
+  const [captions, setCaptions] = useState(!media.placeholder)
   const [position, setPosition] = useState(0)
   const [duration, setDuration] = useState(media.duration)
   const reducedMotion = usePrefersReducedMotion()
@@ -109,6 +110,8 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
     if (!video) return
     setReply(null)
     setActionsOpen(false)
+    setTouchControls(true)
+    if (!open) setEnlarged(false)
     const request = ++requestRef.current
     teaserRef.current?.pause()
     setStarted(true)
@@ -136,6 +139,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
     requestRef.current += 1
     videoRef.current?.pause()
     onOpenChange(false)
+    setEnlarged(false)
     // The trigger stays mounted through the morph; focus after React removes
     // inert from it, with no transition timer to race a rapid reopen.
     requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }))
@@ -165,8 +169,13 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
         // next button. Keep the hovered target alive until its click completes.
         if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
       }}
-      data-open={open} data-actions-open={actionsOpen} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
+      data-open={open} data-enlarged={enlarged && open} data-touch-controls={touchControls} data-actions-open={actionsOpen} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
+        if (event.key.toLowerCase() === "c" && open && !event.metaKey && !event.ctrlKey && !event.altKey &&
+          !(event.target instanceof HTMLElement && event.target.matches("input, textarea, [contenteditable]"))) {
+          setCaptionMode(videoRef.current, !captions)
+          setCaptions(!captions)
+        }
         if (event.key === "Escape" && reply && repliesAvailable) {
           event.preventDefault()
           event.stopPropagation()
@@ -184,7 +193,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
         {animateTeaser && !teaserIsGif && <video ref={teaserRef} className="about-intro-teaser" src={media.assets.teaser}
           muted loop playsInline preload="metadata" aria-hidden="true" />}
         <video ref={videoRef} className="about-intro-recording" data-recording="" playsInline preload="none"
-          aria-label="Rafael's introduction" aria-hidden={!open} tabIndex={-1}
+          aria-label={media.placeholder ? "Placeholder introduction" : "Rafael's introduction"} aria-description="Press C to toggle captions." aria-hidden={!open} tabIndex={-1}
           onLoadedMetadata={event => {
             const next = event.currentTarget.duration
             if (Number.isFinite(next) && next > 0) setDuration(next)
@@ -197,7 +206,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
           onEnded={() => { setEnded(true); setPlaying(false); setWaiting(false) }}
           onError={() => { setError(true); setWaiting(false); setPlaying(false) }}>
           {started && <track kind="captions" label="English" srcLang="en" src={media.assets.captions}
-            default onLoad={syncCaptions} />}
+            default={captions} onLoad={syncCaptions} />}
         </video>
         <button type="button" className="about-intro-portrait-trigger" aria-label="Show introduction actions"
           aria-expanded={actionsOpen} aria-controls={`${id}-actions`} onClick={() => setActionsOpen(true)}
@@ -207,9 +216,10 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
           <span className="about-intro-play-disc"><Play size={18} fill="currentColor" aria-hidden="true" /></span>
         </button>
         <div id={id} className="about-intro-expanded" inert={!open} aria-hidden={!open}>
-          {media.placeholder && <span className="about-intro-placeholder">Placeholder</span>}
-          <button type="button" className="about-intro-collapse about-intro-button" onClick={collapse} aria-label="Collapse introduction">
-            <ChevronDown size={18} aria-hidden="true" />
+          <button type="button" className="about-intro-video-touch" aria-label={touchControls ? "Hide video controls" : "Show video controls"}
+            onClick={() => setTouchControls(!touchControls)} />
+          <button type="button" className="about-intro-collapse about-intro-button" onClick={collapse} aria-label="Close introduction">
+            <X size={16} aria-hidden="true" />
           </button>
           <div className="about-intro-controls">
             <div className="about-intro-progress">
@@ -228,7 +238,6 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
                 onClick={() => { if (playing) videoRef.current?.pause(); else play() }}>
                 {playing ? <Pause size={18} aria-hidden="true" /> : ended || error ? <RotateCcw size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
               </button>
-              <span className="about-intro-time" aria-hidden="true">{timeLabel(position)} / {timeLabel(duration)}</span>
               <button type="button" className="about-intro-button" aria-label={muted ? "Unmute introduction" : "Mute introduction"}
                 onClick={() => {
                   if (videoRef.current) videoRef.current.muted = !muted
@@ -236,17 +245,18 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
                 }}>
                 {muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
               </button>
-              <button type="button" className="about-intro-button" aria-label="Captions" aria-pressed={captions}
-                onClick={() => {
-                  setCaptionMode(videoRef.current, !captions)
-                  setCaptions(!captions)
-                }}><Captions size={18} aria-hidden="true" /></button>
+              <button type="button" className="about-intro-button" aria-label={enlarged ? "Shrink introduction" : "Expand introduction"}
+                onClick={() => setEnlarged(!enlarged)}>
+                {enlarged ? <Minimize2 size={16} aria-hidden="true" /> : <Maximize2 size={16} aria-hidden="true" />}
+              </button>
+              <span className="about-intro-time" aria-hidden="true">{timeLabel(position)} / {timeLabel(duration)}</span>
             </div>
           </div>
           <span className="about-intro-status" role="status">{error ? "Couldn’t load video. Try again." : waiting ? "Loading introduction…" : ""}</span>
         </div>
       </div>
-      <div id={`${id}-actions`} className="about-intro-actions" inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+      <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+        <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}>
         <button ref={emailReplyRef} type="button" className="about-intro-reply-action" aria-label="Email"
           aria-describedby={`${id}-email-tooltip`} onClick={() => startReply("email")}>
           <Mail size={19} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" className="about-intro-tooltip">Email</span>
@@ -255,11 +265,10 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
           aria-describedby={`${id}-text-tooltip`} onClick={() => startReply("text")}>
           <MessageCircle size={19} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" className="about-intro-tooltip">Text</span>
         </button>
+        </div>
+        {reply && visible && repliesAvailable && <AboutIntroReply key={reply} mode={reply} onClose={closeReply} />}
       </div>
-      {reply && visible && repliesAvailable && <AboutIntroReply key={reply} mode={reply} onClose={closeReply} />}
-      <span className="about-intro-label" aria-hidden="true">A quick hello <span>{media.placeholder ? "Placeholder · " : ""}{timeLabel(duration)}</span></span>
-      <button className="about-intro-dismiss about-intro-button" type="button" aria-label="Dismiss introduction"
-        onClick={() => { videoRef.current?.pause(); onDismiss() }}><X size={14} aria-hidden="true" /></button>
+      <span className="about-intro-label" aria-hidden="true">A quick hello <span>{timeLabel(duration)}</span></span>
     </section>
   )
 }

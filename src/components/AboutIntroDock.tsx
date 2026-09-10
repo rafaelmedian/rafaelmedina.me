@@ -23,7 +23,6 @@ export function AboutIntroDock(props: {
   const [approached, setApproached] = useState(false)
   const [active, setActive] = useState(false)
   const [obscured, setObscured] = useState(false)
-  const [dismissed, setDismissed] = useState(false)
   const [open, setOpen] = useState(false)
   const [tocOpen, setTocOpen] = useState(false)
   const handleTocOpen = useCallback((next: boolean) => {
@@ -57,7 +56,6 @@ export function AboutIntroDock(props: {
       setActive(nowActive)
       if (wasActive && !nowActive) {
         setOpen(false)
-        setDismissed(false)
       }
       wasActive = nowActive
     }
@@ -104,7 +102,7 @@ export function AboutIntroDock(props: {
     return () => observer.disconnect()
   }, [media, approached])
 
-  const visible = active && !obscured && !dismissed
+  const visible = active && !obscured
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
       data-intro-visible={Boolean(media && approached && visible)} data-toc-open={tocOpen}>
@@ -112,8 +110,7 @@ export function AboutIntroDock(props: {
       {media && approached && (
         <IntroBoundary>
           <Suspense fallback={null}>
-            <AboutIntro media={media} repliesAvailable={!tocOpen} visible={visible} open={open} onOpenChange={setOpen}
-              onDismiss={() => { setOpen(false); setDismissed(true) }} />
+            <AboutIntro media={media} repliesAvailable={!tocOpen} visible={visible} open={open} onOpenChange={setOpen} />
           </Suspense>
         </IntroBoundary>
       )}

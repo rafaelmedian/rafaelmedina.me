@@ -45,7 +45,7 @@ export default function AboutIntroReply({ mode, onClose }: {
         </div>
       </form>
       <span id={`${id}-hint`} className="sr-only">Review and send in your email app.</span>
-      {draftOpened && <span className="about-intro-draft-status" role="status">Finish sending in your email app.</span>}
+      {draftOpened && <span className="sr-only" role="status">Finish sending in your email app.</span>}
     </section>
   )
 }
