@@ -212,8 +212,7 @@ export function WritingsReader({ onOpenChange, onBack, triggerRef }: WritingsRea
     <Dialog.Root open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) return
-        cancelSwitch()
-        if (writingId !== null) clearWriting()
+        returnToNotes()
       }}
       onOpenChangeComplete={(nextOpen) => {
         if (!nextOpen) setSelectedId(null)

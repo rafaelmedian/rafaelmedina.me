@@ -61,6 +61,19 @@ test("a shared writing opens after hydration and refresh and closes locally", as
   expect(errors).toEqual([])
 })
 
+test("Escape returns a refreshed shared note to Notes", async ({ page }) => {
+  await page.goto("/notes/designing-matcha/?ref=shared")
+  await page.reload()
+  await expect(page.locator(".writings-dialog")).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(page).toHaveURL(/\/notes\/\?ref=shared$/)
+  await expect(page.locator(".preview-gallery-popup")).toBeVisible()
+  await expect(page.locator(".writings-dialog")).toBeHidden()
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog")).toBeHidden()
+  await expect(page.getByRole("button", { name: "Open writings folder" })).toBeFocused()
+})
+
 test("returning to notes clears the writing URL and closing consumes its history entries", async ({ page }) => {
   await page.goto("/?from=previous")
   await page.goto("/?ref=portfolio")
@@ -188,8 +201,9 @@ test("closing during a note switch cancels the pending selection", async ({ page
     element.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }))
     element.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))
   })
-  await expect(dialog).toBeHidden()
+  await expect(page.locator(".writings-dialog")).toBeHidden()
   await page.waitForTimeout(450)
-  await expect(page).toHaveURL(/\/$/)
-  await expect(dialog).toHaveCount(0)
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await expect(page.locator(".writings-dialog")).toBeHidden()
+  await expect(page.locator(".preview-gallery-popup")).toBeVisible()
 })
