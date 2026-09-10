@@ -973,6 +973,9 @@
   height: var(--notes-list-height, auto);
   max-height: var(--notes-room);
   overflow: hidden;
+  /* The viewport carries the bottom padding instead, so text scrolls to the
+     card's edge rather than being cut off a padding's height above it. */
+  padding-bottom: 0;
   transition:
     height var(--pg-switch-ms) var(--ease-smooth),
     opacity var(--pg-switch-ms) ease-out,
@@ -1039,7 +1042,7 @@
   flex: 1 1 auto;
   min-height: 0;
   margin-inline: -0.5rem;
-  padding: 0.5rem 0.5rem 0;
+  padding: 0.5rem 0.5rem var(--preview-gallery-card-padding);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;

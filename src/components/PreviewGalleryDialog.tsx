@@ -175,8 +175,9 @@ export function PreviewGalleryDialog({
       const scroller = notesScrollRef.current
       if (!card || !heading || !scroller) return
       const styles = getComputedStyle(card)
+      const scrollerStyles = getComputedStyle(scroller)
       setListHeight(list.scrollHeight + heading.offsetHeight +
-        Number.parseFloat(getComputedStyle(scroller).paddingTop) +
+        Number.parseFloat(scrollerStyles.paddingTop) + Number.parseFloat(scrollerStyles.paddingBottom) +
         Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom))
     }
     measure()
