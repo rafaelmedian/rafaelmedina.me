@@ -1,7 +1,7 @@
 # About video introduction
 
 The About introduction is designed for a short, face-only recording. Local
-development shows a portrait teaser and a synthetic recording so the interaction
+development shows a portrait teaser and a sample recording so the interaction
 can be reviewed before that recording exists. Production stays disabled until
 the real recording, captions, and transcript have been reviewed and generated
 into `public/about-intro/`. Running the asset script does not enable production.
@@ -78,7 +78,7 @@ The script refuses unreadable video, empty transcripts, malformed captions, a
 recording at or above 5 MB, or a teaser at or above 150 KB. It stages the whole
 result and only replaces the output directory after every asset succeeds.
 
-To rebuild the committed synthetic fixture used in development, provide its
+To generate a fixture with reviewed captions and a transcript, provide its
 output path and URL prefix:
 
 ```sh
@@ -97,8 +97,8 @@ Confirm the square crop throughout the take, legible caption breaks, synchronize
 starts and ends, clear audio, and a poster and silent teaser that still look like
 the same recording.
 
-After running `npm run dev`, `http://localhost:5173/` shows the portrait teaser and synthetic
-placeholder recording by default. Use `http://localhost:5173/?intro=off` when the widget
+After running `npm run dev`, `http://localhost:5173/` shows the portrait teaser and sample
+recording by default. Use `http://localhost:5173/?intro=off` when the widget
 would get in the way of other development work. The placeholder code and query
 switch are development-only and cannot enable the widget in a production build.
 
@@ -120,20 +120,28 @@ activation with the generated files.
 
 ## Speaking preview and minimal replies
 
-The development preview uses the user-supplied recording
-`CleanShot 2026-09-10 at 19.33.10-converted.mp4`. Its full 50.6 seconds are
-preserved. The source contains no audio track, so the optimized video is silent.
-A centered square crop keeps the face and removes the captured player controls.
-The 624px MP4 is 3.84 MB; the matching two-second 160px/8fps GIF is 136 KB,
-and its 360px WebP poster is 13 KB.
+The development preview uses the user-selected [YouTube Short](https://www.youtube.com/shorts/PSrLXbNjWos)
+with its original English audio. The full 60.05-second video and audio stay
+together to preserve synchronization; the earlier CleanShot upload had no audio.
+The square crop is positioned toward the top to keep the speaker's head intact.
+The 624px MP4 is 4.77 MB; its matching two-second 160px/8fps silent GIF is
+131 KB, and the 360px WebP poster is 17 KB. Speech captions have not been supplied;
+the preview's descriptive track remains off by default.
 
-Rebuild with `node scripts/build-about-intro-placeholder.mjs <original.mp4>`.
-The original is a local input, never downloaded from a stock provider. The
-script generates `src/data/aboutIntroPreview.ts` with the encoded duration and
-asset paths so the hover duration cannot drift from the recording. It keeps
-the largest GIF that fits the 150 KB budget and checks both media sizes before
-replacing the fixtures. These files stay in `tests/fixtures/`, and production
-remains disabled until the introduction is ready to publish.
+Rebuild from a local copy of the original video:
+
+```sh
+node scripts/build-about-intro-placeholder.mjs <original.mp4> 0.1
+```
+
+The optional vertical crop position runs from 0 (top) to 1 (bottom), defaulting
+to 0.5 (center). The script retains any source audio and adjusts the video bitrate
+to fit the duration and audio within the 5 MB budget. It generates
+`src/data/aboutIntroPreview.ts` with the encoded duration and asset paths so the
+hover duration cannot drift from the recording. It keeps the largest GIF that
+fits the 150 KB budget and checks both media sizes before replacing the fixtures.
+The original remains a local input. Generated files stay in `tests/fixtures/`,
+and production remains disabled until the introduction is ready to publish.
 
 Hover or focus the portrait to reveal play in its center and two small reply
 controls beside it: Email and Text. Touch users tap the portrait to reveal them.
@@ -159,7 +167,7 @@ The player fills its square edge to edge with controls overlaid on the video:
 play/pause, a thin seek bar, right-aligned time, volume, expand/shrink, and close.
 These controls appear on hover or keyboard focus; touch users tap to toggle
 them. Expand grows to 480px within viewport bounds. The placeholder badge is
-omitted; synthetic test captions start off, while real captions start on.
+omitted; descriptive test captions start off, while real captions start on.
 Press C while focused on the player to toggle captions.
 
 The resting preview is 112px on desktop and 64px on mobile. Motion follows
