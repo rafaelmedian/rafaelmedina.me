@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
-import { Captions, ChevronDown, Pause, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react"
+import { Captions, ChevronDown, MessageCircle, Pause, Play, RotateCcw, Video, Volume2, VolumeX, X } from "lucide-react"
+
+import AboutIntroReply from "./AboutIntroReply"
 
 import type { AboutIntroMedia } from "../data/aboutIntro"
 import { useLightweightMedia } from "../lib/useLightweightMedia"
@@ -22,14 +24,30 @@ const subscribeVisibility = (listener: () => void) => {
 const pageIsHidden = () => document.hidden
 const hiddenOnServer = () => true
 
-export default function AboutIntro({ media, visible, open, onOpenChange, onDismiss }: {
+export default function AboutIntro({ media, visible, open, onOpenChange, onDismiss, repliesAvailable = true }: {
   media: AboutIntroMedia
+  repliesAvailable?: boolean
   visible: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
   onDismiss: () => void
 }) {
   const id = useId()
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const [reply, setReply] = useState<"text" | "video" | null>(null)
+  const available = visible && repliesAvailable
+  const [wasAvailable, setWasAvailable] = useState(available)
+  // A new About visit starts with the portrait, while the video retains time.
+  // Adjust this component's state before rendering children into a new context.
+  if (wasAvailable !== available) {
+    setWasAvailable(available)
+    if (!available) {
+      setReply(null)
+      setActionsOpen(false)
+    }
+  }
+  const textReplyRef = useRef<HTMLButtonElement>(null)
+  const videoReplyRef = useRef<HTMLButtonElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const teaserRef = useRef<HTMLVideoElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -89,6 +107,8 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
   const play = () => {
     const video = videoRef.current
     if (!video) return
+    setReply(null)
+    setActionsOpen(false)
     const request = ++requestRef.current
     teaserRef.current?.pause()
     setStarted(true)
@@ -120,13 +140,34 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
     // inert from it, with no transition timer to race a rapid reopen.
     requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }))
   }
+  const closeReply = () => {
+    const target = reply === "video" ? videoReplyRef : textReplyRef
+    setReply(null)
+    setActionsOpen(true)
+    requestAnimationFrame(() => target.current?.focus({ preventScroll: true }))
+  }
+  const startReply = (mode: "text" | "video") => {
+    requestRef.current += 1
+    videoRef.current?.pause()
+    onOpenChange(false)
+    setReply(mode)
+    setActionsOpen(false)
+  }
   const action = error ? "Retry introduction" : ended ? "Replay introduction" : started ? "Resume introduction" : "Play introduction"
 
   return (
     <section className="about-intro" aria-label="A quick hello from Rafael" data-visible={visible}
-      data-open={open} inert={!visible} aria-hidden={!visible}
+      onPointerEnter={event => { if (event.pointerType === "mouse") setActionsOpen(true) }}
+      onPointerLeave={event => { if (!event.currentTarget.contains(document.activeElement)) setActionsOpen(false) }}
+      onFocusCapture={() => setActionsOpen(true)}
+      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setActionsOpen(false) }}
+      data-open={open} data-actions-open={actionsOpen} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
-        if (event.key === "Escape" && open) {
+        if (event.key === "Escape" && reply && repliesAvailable) {
+          event.preventDefault()
+          event.stopPropagation()
+          closeReply()
+        } else if (event.key === "Escape" && open) {
           event.preventDefault()
           event.stopPropagation()
           collapse()
@@ -154,10 +195,9 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
           {started && <track kind="captions" label="English" srcLang="en" src={media.assets.captions}
             default onLoad={syncCaptions} />}
         </video>
-        <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
-          aria-expanded={open} aria-controls={id} onClick={play} inert={open} aria-hidden={open}>
-          <span className="about-intro-play-disc"><Play size={20} fill="currentColor" aria-hidden="true" /></span>
-        </button>
+        <button type="button" className="about-intro-portrait-trigger" aria-label="Show introduction actions"
+          aria-expanded={actionsOpen} aria-controls={`${id}-actions`} onClick={() => setActionsOpen(true)}
+          inert={open} aria-hidden={open} />
         <div id={id} className="about-intro-expanded" inert={!open} aria-hidden={!open}>
           {media.placeholder && <span className="about-intro-placeholder">Placeholder</span>}
           <button type="button" className="about-intro-collapse about-intro-button" onClick={collapse} aria-label="Collapse introduction">
@@ -198,6 +238,17 @@ export default function AboutIntro({ media, visible, open, onOpenChange, onDismi
           <span className="about-intro-status" role="status">{error ? "Couldn’t load video. Try again." : waiting ? "Loading introduction…" : ""}</span>
         </div>
       </div>
+      <div id={`${id}-actions`} className="about-intro-actions" inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+        <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
+          title="Play introduction" aria-expanded={open} aria-controls={id} onClick={play}>
+          <span className="about-intro-play-disc"><Play size={18} fill="currentColor" aria-hidden="true" /></span>
+        </button>
+        <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Reply in text"
+          title="Reply in text" onClick={() => startReply("text")}><MessageCircle size={19} aria-hidden="true" /></button>
+        <button ref={videoReplyRef} type="button" className="about-intro-reply-action" aria-label="Reply on video"
+          title="Reply on video" onClick={() => startReply("video")}><Video size={19} aria-hidden="true" /></button>
+      </div>
+      {reply && visible && repliesAvailable && <AboutIntroReply key={reply} mode={reply} onClose={closeReply} />}
       <span className="about-intro-label" aria-hidden="true">A quick hello <span>{media.placeholder ? "Placeholder · " : ""}{timeLabel(duration)}</span></span>
       <button className="about-intro-dismiss about-intro-button" type="button" aria-label="Dismiss introduction"
         onClick={() => { videoRef.current?.pause(); onDismiss() }}><X size={14} aria-hidden="true" /></button>

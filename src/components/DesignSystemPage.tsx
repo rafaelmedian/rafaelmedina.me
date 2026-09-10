@@ -244,7 +244,7 @@ const NON_TEXT_ENTRIES = [
     token: "--accent",
     kind: "non-text",
     name: "Copied",
-    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. The same address set in the About sheet's prose has no icon slot to light, so it takes the green under itself instead: the link's underline, for the same window. A graphic only, in both places; the confirmation itself is spoken in the tooltip and read out to screen readers.",
+    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. The same address set in the About sheet's prose has no icon slot to light, so it takes the green under itself instead: the link's underline, for the same window. The About introduction also uses this green behind its dark play icon, and an 18% mix with white for its reply actions. A graphic only, in the copy confirmations; the confirmation itself is spoken in the tooltip and read out to screen readers.",
   },
   {
     token: "--focus-ring-soft",
@@ -2156,12 +2156,20 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code> --duration-quick</code> to collapse, and <code>--ease-smooth</code> throughout.
                   The white control surface uses the existing #e9e9e9 hover fill, 44px buttons and seek target,
                   <code> --text-xs</code> tabular time, and <code>--text-sm</code> captions and desktop invitation.
-                  The play disc is 44px on desktop and 32px inside the mobile circle, whose entire 56px
-                  surface is the button. Keyboard focus outlines that inner disc to avoid clipping.
+                  The portrait opens its actions on tap. A glass badge overlaps its upper-right corner,
+                  using the TOC’s 92% white and 16px backdrop blur. It grows from 52px to a 148px pill
+                  on hover, focus or tap, revealing three 44px targets: play, text reply and video reply.
+                  The dark play icon sits on <code>--accent</code>; replies use an 18% accent mix with white.
+                  Fine-pointer hover scales the portrait to 1.04; the 36px inner play disc carries keyboard focus.
+                  The reply panel caps at 320px, uses <code>--radius-lg</code> and shared overlay shadows,
+                  and asks for email before an optional question. Input text uses <code>--text-md</code>
+                  to prevent Safari focus zoom. Camera recording starts only on a press, stays in memory,
+                  and stops when the panel closes or the tab hides. Email drafts require the visitor to send;
+                  downloaded video must be attached manually.
                   Media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
                   Reduced motion removes the morph and press feedback. Captions start enabled, and
-                  leaving About, hiding the tab or opening a dialog pauses sound. Preview the synthetic
+                  leaving About, hiding the tab or opening a dialog pauses sound. Preview the portrait teaser and synthetic recording
                   fixture on the <a href="/#about-panel">development homepage</a> (a short video and matching GIF,
                   labeled Placeholder); <code>?intro=off</code> hides it for development comparisons. Production stays
                   disabled until the real recording is ready.

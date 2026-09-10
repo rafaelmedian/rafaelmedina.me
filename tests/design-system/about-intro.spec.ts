@@ -48,7 +48,7 @@ test("keeps the mobile bubble beside the TOC and expanded video above it", async
   const toc = page.getByRole("button", { name: "Table of contents: About" })
   const bubble = intro(page).getByRole("button", { name: "Play introduction", exact: true })
   const tocBox = await toc.boundingBox()
-  const bubbleBox = await bubble.boundingBox()
+  const bubbleBox = await intro(page).getByRole("button", { name: "Show introduction actions" }).boundingBox()
   expect(bubbleBox!.x - (tocBox!.x + tocBox!.width)).toBeCloseTo(12, 0)
   expect(bubbleBox!.x + bubbleBox!.width).toBeLessThanOrEqual(308)
   await bubble.click()
@@ -61,7 +61,8 @@ test("keeps the mobile bubble beside the TOC and expanded video above it", async
   expect(playerBox!.x).toBeGreaterThanOrEqual(12)
   expect(playerBox!.x + playerBox!.width).toBeLessThanOrEqual(308)
   await toc.click()
-  await expect(intro(page).getByRole("button", { name: "Resume introduction", exact: true })).toBeVisible()
+  await expect(intro(page)).toHaveAttribute("data-open", "false")
+  await expect(intro(page).getByRole("button", { name: "Show introduction actions" })).toBeVisible()
   await expect.poll(() => intro(page).locator("video[data-recording]").evaluate(video => (video as HTMLVideoElement).paused)).toBe(true)
   await expect(page.getByRole("navigation", { name: "Table of contents" })).toHaveCSS("width", "272px")
   await expect.poll(async () => {

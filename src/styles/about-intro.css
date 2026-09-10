@@ -36,7 +36,7 @@
   border-radius: calc(var(--intro-size) / 2);
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
-  transition-property: width, height, border-radius, bottom, right;
+  transition-property: width, height, border-radius, bottom, right, transform;
   transition-duration: var(--duration-quick);
   transition-timing-function: var(--ease-smooth);
 }
@@ -82,42 +82,103 @@
   object-fit: contain;
 }
 
-.about-intro-trigger {
+.about-intro-portrait-trigger {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
   width: 100%;
   height: 100%;
   padding: 0;
   border: 0;
+  border-radius: inherit;
   background: transparent;
-  color: var(--ink);
   cursor: pointer;
+}
+
+.about-intro-portrait-trigger:focus-visible {
+  outline-offset: -4px;
+}
+
+.about-intro-actions {
+  position: absolute;
+  top: -12px;
+  left: calc(100% - 24px);
+  display: flex;
+  gap: 4px;
+  width: 52px;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transition: width var(--duration-quick) var(--ease-smooth), opacity var(--duration-quick) var(--ease-standard);
+}
+
+.about-intro-trigger,
+.about-intro-reply-action {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--ink);
+  background: var(--accent);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-standard), opacity var(--duration-quick) var(--ease-standard);
+}
+
+.about-intro-reply-action {
+  visibility: hidden;
+  opacity: 0;
+  background: color-mix(in srgb, var(--accent) 18%, var(--canvas));
+}
+
+.about-intro[data-actions-open="true"] .about-intro-actions {
+  width: 148px;
+  transition-duration: var(--duration-slow);
+}
+
+.about-intro[data-actions-open="true"] .about-intro-reply-action {
+  visibility: visible;
+  opacity: 1;
 }
 
 .about-intro-play-disc {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-full);
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-control);
-  transition: transform var(--duration-fast) var(--ease-standard), box-shadow var(--duration-quick) var(--ease-standard);
 }
 
 .about-intro-play-disc svg {
   transform: translateX(1px);
 }
 
-.about-intro-trigger:hover .about-intro-play-disc {
-  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+.about-intro-trigger:focus-visible {
+  outline: none;
 }
 
 .about-intro-trigger:focus-visible .about-intro-play-disc {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+.about-intro[data-open="true"] .about-intro-actions,
+.about-intro-actions[aria-hidden="true"],
+.about-intro[data-open="true"] .about-intro-portrait-trigger {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .about-intro:not([data-open="true"]):hover .about-intro-surface {
+    transform: scale(1.04);
+  }
 }
 
 .about-intro-button:focus-visible,
@@ -126,7 +187,8 @@
 }
 
 .about-intro-trigger:active .about-intro-play-disc,
-.about-intro-button:active {
+.about-intro-button:active,
+.about-intro-reply-action:active {
   transform: scale(0.96);
 }
 
@@ -245,8 +307,8 @@
 
 .about-intro-label {
   position: absolute;
-  top: 50%;
-  left: calc(100% + 12px);
+  top: 70%;
+  left: calc(100% + 16px);
   transform: translateY(-50%);
   padding: 8px 12px;
   border-radius: var(--radius-md);
@@ -264,13 +326,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-.about-intro[data-open="true"] .about-intro-label {
+.about-intro[data-open="true"] .about-intro-label,
+.about-intro[data-reply-open="true"] .about-intro-label {
   visibility: hidden;
 }
 
 .about-intro-dismiss {
   position: absolute;
-  top: -36px;
+  top: -44px;
   left: -12px;
   background: transparent;
 }
@@ -342,23 +405,21 @@
     display: none;
   }
 
-  .about-intro-play-disc {
-    width: 32px;
-    height: 32px;
-  }
-
-  .about-intro-play-disc svg {
-    width: 16px;
-    height: 16px;
+  .about-intro-actions {
+    top: -44px;
+    right: -16px;
+    flex-direction: row-reverse;
+    left: auto;
   }
 
   .about-intro-dismiss {
-    top: -40px;
-    left: 6px;
+    top: 8px;
+    left: 56px;
   }
 
-  body:has(.about-intro[data-open="true"]) .portfolio-feedback-toolbar {
-    bottom: calc(256px + 112px + env(safe-area-inset-bottom)) !important;
+  body:has(.about-intro[data-visible="true"]) .portfolio-feedback-toolbar {
+    top: max(12px, env(safe-area-inset-top));
+    bottom: auto !important;
   }
 }
 
@@ -368,12 +429,160 @@
   .about-intro-trigger,
   .about-intro-expanded,
   .about-intro-play-disc,
-  .about-intro-button {
+  .about-intro-button,
+  .about-intro-actions,
+  .about-intro-reply-action {
     transition: none;
   }
 
+  .about-intro:not([data-open="true"]):hover .about-intro-surface,
   .about-intro-trigger:active .about-intro-play-disc,
+  .about-intro-reply-action:active,
   .about-intro-button:active {
     transform: none;
   }
+}
+
+
+/* Reply steps share one quiet surface and retain their draft only in memory. */
+.about-intro-reply {
+  position: absolute;
+  bottom: calc(100% + 64px);
+  left: 0;
+  width: min(320px, calc(100vw - 24px));
+  max-height: calc(100dvh - 208px - env(safe-area-inset-bottom));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+.about-intro-reply-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -8px -8px 12px 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.about-intro-reply label {
+  display: block;
+  color: var(--ink);
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.about-intro-reply p {
+  margin: 8px 0 16px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.about-intro-reply input,
+.about-intro-reply textarea {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: #f2f2f2;
+  color: var(--ink);
+  font: inherit;
+  /* 16px prevents Safari from zooming the page on input focus. */
+  font-size: var(--text-md);
+}
+
+.about-intro-reply textarea {
+  resize: vertical;
+  max-height: 160px;
+}
+
+.about-intro-reply-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--ink);
+  color: var(--canvas);
+  text-decoration: none;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.about-intro-reply-primary:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.about-intro-reply-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  margin-bottom: 8px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.about-intro-reply-back span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.about-intro-reply p.about-intro-reply-note {
+  margin-bottom: 0;
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 699.98px) {
+  .about-intro-reply {
+    right: calc((var(--intro-dock-width) - min(320px, 100vw - 24px)) / 2);
+    left: auto;
+    max-height: calc(100dvh - 160px - env(safe-area-inset-bottom));
+  }
+}
+
+.about-intro-recorder {
+  margin-top: 16px;
+}
+
+.about-intro-recorder > video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  background: var(--ink);
+  object-fit: contain;
+}
+
+.about-intro-recorded-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.about-intro-recorded-controls input {
+  min-width: 0;
+  padding: 0;
+  accent-color: var(--ink);
+  background: transparent;
 }

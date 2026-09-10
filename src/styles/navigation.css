@@ -433,3 +433,10 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
     font-size: var(--text-sm);
   }
 }
+
+/* Keep development feedback controls clear of the mobile navigation. */
+@media (max-width: 699.98px) {
+  .portfolio-feedback-toolbar {
+    bottom: calc(6rem + env(safe-area-inset-bottom)) !important;
+  }
+}

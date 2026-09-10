@@ -112,7 +112,7 @@ export function AboutIntroDock(props: {
       {media && approached && (
         <IntroBoundary>
           <Suspense fallback={null}>
-            <AboutIntro media={media} visible={visible} open={open} onOpenChange={setOpen}
+            <AboutIntro media={media} repliesAvailable={!tocOpen} visible={visible} open={open} onOpenChange={setOpen}
               onDismiss={() => { setOpen(false); setDismissed(true) }} />
           </Suspense>
         </IntroBoundary>

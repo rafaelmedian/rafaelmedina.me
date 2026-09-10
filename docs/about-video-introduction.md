@@ -1,7 +1,7 @@
 # About video introduction
 
 The About introduction is designed for a short, face-only recording. Local
-development shows a clearly synthetic placeholder by default so the interaction
+development shows a portrait teaser and a synthetic recording so the interaction
 can be reviewed before that recording exists. Production stays disabled until
 the real recording, captions, and transcript have been reviewed and generated
 into `public/about-intro/`. Running the asset script does not enable production.
@@ -97,8 +97,8 @@ Confirm the square crop throughout the take, legible caption breaks, synchronize
 starts and ends, clear audio, and a poster and silent teaser that still look like
 the same recording.
 
-After running `npm run dev`, `http://localhost:5173/` shows the synthetic
-placeholder by default. Use `http://localhost:5173/?intro=off` when the widget
+After running `npm run dev`, `http://localhost:5173/` shows the portrait teaser and synthetic
+placeholder recording by default. Use `http://localhost:5173/?intro=off` when the widget
 would get in the way of other development work. The placeholder code and query
 switch are development-only and cannot enable the widget in a production build.
 
@@ -117,3 +117,33 @@ export const aboutIntro: AboutIntroMedia = aboutIntroManifest
 
 Run lint, build, and the About intro browser tests before committing that
 activation with the generated files.
+
+## Portrait preview and replies
+
+The development teaser now uses the existing profile photo with a gentle zoom,
+not generated speech. Rebuild that 2.5-second GIF (about 104 KB) and its WebP
+poster with `node scripts/build-about-intro-placeholder.mjs`. The separate
+five-second color-bar recording and its captions still exercise real playback.
+
+The glass badge at the portrait's upper-right reveals Play, Reply in text, and
+Reply on video. Hover or keyboard focus reveals the actions on desktop; tapping
+the portrait also opens them. Each reply starts with “What’s your email?” and
+then “Anything you’d like to know?” The second prompt is optional. Editing the
+email preserves the message and any recorded video.
+
+Delivery currently opens a prefilled email draft addressed to `siteLinks.email`.
+The visitor reviews and sends it in their email app. The site does not claim
+that opening a draft means a message was sent. No email service or storage has
+been configured, and no reply data is posted from the page.
+
+Video capture requires a separate press after the email step. It records for
+up to 60 seconds, stops at 8 MB, and remains in browser memory. Closing the
+panel or hiding the page stops the camera and microphone. A finished recording
+can be previewed, retaken, and downloaded. To email it, the visitor downloads the
+clip and attaches it manually; a `mailto:` link cannot add that attachment.
+Closing the reply discards its in-memory draft. Email software will retain a
+copy once the visitor sends it, according to their provider's settings.
+
+Direct delivery can replace the email-app handoff once an email service is
+chosen. An attachment can be forwarded without adding persistent website file
+storage, but the delivery provider and recipient mailbox still handle copies.
