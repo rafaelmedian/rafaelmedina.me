@@ -91,8 +91,7 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   await expect(page.locator(".notes-gallery-list")).toBeHidden()
   await expect(page.locator(".preview-gallery-backdrop")).toHaveCount(1)
   await expect(page.locator(".writings-backdrop")).toHaveCount(0)
-  // The held visual surface is removed from the active modal tree by the
-  // reader, so assistive technology still encounters one dialog.
+  // List and article share the same active modal tree.
   await expect(page.getByRole("dialog")).toHaveCount(1)
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
   await expect(sheet(page).locator(".writings-toolbar")).toHaveText("Notes")

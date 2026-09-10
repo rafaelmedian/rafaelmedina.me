@@ -649,13 +649,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [readerModule, setReaderModule] = useState<typeof import("./WritingsReader") | null>(null)
   const { itemId: writingId, selectItem: selectWriting, clearItem: clearWriting } = usePortfolioItemUrl("writing")
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
-  // Where the gallery hands focus back when the control that opened it is gone.
-  // The reader's back arrow is the case: the sheet closes as the notes slide
-  // comes forward, so without this the slide's close would drop focus on the
-  // body instead of on the tile the notes are filed in. State, not a ref,
-  // because the prop has to be absent on every other open -- naming an anchor
-  // at all changes how insistently the dialog returns focus, and a preview
-  // opened from a tile already returns to it.
+  // Direct note links have no opener to restore when the gallery finally
+  // closes. Returning to their list establishes the folder as that fallback.
   const [galleryFallbackFocus, setGalleryFallbackFocus] = useState<HTMLElement | null>(null)
   // What the notes slide says while a reader is on its way or failed to come.
   const [notesStatus, setNotesStatus] = useState<WritingsReaderStatus>({ status: null, pendingId: null })
@@ -733,11 +728,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     openGalleryItem(galleryItems[notesIndex], notesIndex)
   }
 
-  // The reader's back arrow. The note has given its URL up by now: if that
-  // uncovered the notes slide it came from, the gallery is already reopening
-  // on it; a note arrived at by a shared link has nothing underneath, so the
-  // slide is put forward for it. Either way the sheet closed with the row
-  // that was focused, so the folder tile stands in.
+  // Back stays inside the same dialog. Canonical note paths already clear to
+  // /notes/; a legacy query link also needs that parent address installed.
   const returnToNotes = () => {
     setGalleryFallbackFocus(writingsFolderTileRef.current)
     if (isNotesPath(window.location.pathname) || notesIndex < 0) return
