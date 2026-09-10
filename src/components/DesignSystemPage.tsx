@@ -1554,8 +1554,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 -5 degree tilts. Each print carries a 0.25rem white mat in <code>--canvas</code>, with
                 <code>--radius-sm</code> outer corners and an inner image radius of
                 <code>calc(var(--radius-sm) - 0.25rem)</code>. The mat carries <code>--shadow-ring</code> and
-                <code>--shadow-control-hover</code>. A hovered or focused print raises above the one lapping over it,
-                so it is readable and clickable; with a fine pointer, hover also lifts it 0.25rem and straightens it
+                <code>--shadow-control-hover</code>. Keyboard focus raises a print above its neighbours to keep
+                its focus ring visible; hover keeps the pile&rsquo;s stacking order, lifts it 0.25rem, and straightens it
                 to 0 degrees over <code>--duration-quick</code>, which reduced motion removes.
                 They load the same <code>-480w</code>/<code>-960w</code> variants the grid tiles do, declared against
                 that rendered width rather than a full-width slot.
