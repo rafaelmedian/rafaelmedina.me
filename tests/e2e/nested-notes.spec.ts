@@ -2,6 +2,24 @@ import { expect, test } from "@playwright/test"
 import { writingSummaries } from "../../src/data/writingIndex"
 import { groupWritingsByYear } from "../../src/lib/writings"
 
+test("gallery controls scroll an overflowing notes list with the keyboard", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 568 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/")
+  const popup = page.locator(".preview-gallery-popup")
+  const scroller = popup.locator(".notes-gallery-viewport")
+  const next = popup.getByRole("button", { name: "Next preview", exact: true })
+  await next.focus()
+  await expect.poll(() => scroller.evaluate(element => element.scrollHeight - element.clientHeight)).toBeGreaterThan(0)
+  for (const key of ["ArrowDown", "PageDown", "End"]) {
+    await page.keyboard.press(key)
+    await expect.poll(() => scroller.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+    await expect(next).toBeFocused()
+    await page.keyboard.press("Home")
+    await expect.poll(() => scroller.evaluate(element => element.scrollTop)).toBe(0)
+  }
+})
+
 for (const width of [1440, 390]) {
   test(`note paging stays horizontal without a vertical dip at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })

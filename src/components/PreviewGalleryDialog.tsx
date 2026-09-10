@@ -446,7 +446,7 @@ export function PreviewGalleryDialog({
       // The stationary toolbar is outside the scrolling card, so native
       // scrolling cannot reach the résumé from a focused paging/close button.
       // Forward those keys without moving focus away from the controls.
-      const card = readingNote ? notesScrollRef.current : cardRef.current
+      const card = activeItem?.kind === "writings" ? notesScrollRef.current : cardRef.current
       if (isReaderSlide && card && target instanceof Element &&
         target.closest(".preview-gallery-toolbar, .preview-gallery-rail, .notes-gallery-heading") && !event.altKey && !event.metaKey) {
         const scrollSteps: Record<string, number> = {
@@ -487,7 +487,7 @@ export function PreviewGalleryDialog({
 
     window.addEventListener("keydown", onKeyDown, { capture: true })
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true })
-  }, [handleOpenChange, isReaderSlide, moveBy, open, readingNote])
+  }, [handleOpenChange, isReaderSlide, moveBy, open, activeItem?.kind])
 
   if (!activeItem) return null
 
