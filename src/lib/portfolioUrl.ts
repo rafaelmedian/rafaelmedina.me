@@ -187,9 +187,12 @@ export function usePortfolioItemUrl(entry: PortfolioItem) {
   const discardItem = useCallback(() => {
     const url = new URL(window.location.href)
     location.clear(url)
+    // Superseding a pending note is not Back into its parent list. Leave the
+    // new dialog in charge instead of opening Notes behind it.
+    if (entry === "writing" && isNotesPath(url.pathname)) url.pathname = "/"
     window.history.replaceState(window.history.state, "", url)
     window.dispatchEvent(new Event(portfolioUrlEvent))
-  }, [location])
+  }, [entry, location])
 
   return { itemId, selectItem, clearItem, discardItem }
 }

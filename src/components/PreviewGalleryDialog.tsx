@@ -133,6 +133,14 @@ export function PreviewGalleryDialog({
   // The portal mounts its contents in a later commit than the one that flips
   // `open`, so the open animation keys off the node arriving, not off `open`.
   const [originWrapNode, setOriginWrapNode] = useState<HTMLDivElement | null>(null)
+  const [hasPresented, setHasPresented] = useState(false)
+  // A cold direct link remains cancellable from the page until its article
+  // arrives. Once shown (including a retry state), keep this dialog in place.
+  const present = open && (hasPresented || !writingId || Boolean(WritingReader) || Boolean(notesStatus?.status?.includes("again")))
+  useIsomorphicLayoutEffect(() => {
+    if (!open) setHasPresented(false)
+    else if (originWrapNode) setHasPresented(true)
+  }, [open, originWrapNode])
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("next")
   const [isWide, setIsWide] = useState(shouldOpenPreviewWide)
@@ -493,7 +501,7 @@ export function PreviewGalleryDialog({
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+    <Dialog.Root open={present} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
 

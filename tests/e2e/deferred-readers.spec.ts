@@ -227,13 +227,23 @@ test("offers a reload when a cached DialogTitle dependency cannot be retried", a
   await expect(page.getByRole("dialog", { name: "Personal photos", exact: true })).toBeVisible()
 })
 
-for (const destination of ["project", "photos"]) {
-  test(`a pending directly linked note yields to ${destination}`, async ({ page }) => {
+for (const { destination, address } of [
+  { destination: "project", address: "/?writing=designing-matcha" },
+  { destination: "photos", address: "/?writing=designing-matcha" },
+  { destination: "project", address: "/notes/designing-matcha/" },
+  { destination: "photos", address: "/notes/designing-matcha/" },
+]) {
+  test(`a pending directly linked note at ${address} yields to ${destination}`, async ({ page }) => {
     let release!: () => void
     const held = new Promise<void>(resolve => { release = resolve })
     await page.route("**/WritingsReader-*.js*", async route => { await held; await route.continue() })
-    await page.goto("/?writing=designing-matcha")
+    const galleryLoaded = page.waitForResponse(response => /PreviewGalleryDialog-.*\.js/.test(response.url()))
+    await page.goto(address)
     await expect(page.locator('[aria-busy="true"]')).toBeVisible()
+    await (await galleryLoaded).finished()
+    await expect(page.locator(".preview-gallery-pending")).toHaveCount(0)
+    // A faster gallery chunk must not trap focus over the still-pending reader.
+    await expect(page.getByRole("dialog")).toHaveCount(0)
     if (destination === "project") {
       await page.locator(".mosaic-row-card").first().click()
       await expect(page.locator(".preview-gallery-popup")).toBeVisible()
@@ -246,6 +256,7 @@ for (const destination of ["project", "photos"]) {
     await expect(page.locator('[role="dialog"]:visible')).toHaveCount(1)
     await expect(page.locator(".writings-dialog")).toHaveCount(0)
     await expect(page).not.toHaveURL(/writing=/)
+    await expect(page).not.toHaveURL(/\/notes\//)
   })
 }
 
