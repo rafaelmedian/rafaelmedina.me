@@ -250,7 +250,7 @@ const NON_TEXT_ENTRIES = [
     token: "--focus-ring-soft",
     kind: "non-text",
     name: "Tile focus",
-    note: "--focus-ring one step lighter, for the work tiles only. Around 500px of artwork the darker ink reads as a frame rather than a selection; this still clears the 3:1 floor.",
+    note: "--focus-ring one step lighter, for the work tiles only, the quote card among them. Around 500px of artwork the darker ink reads as a frame rather than a selection; this still clears the 3:1 floor.",
   },
 ] satisfies ReadonlyArray<{ hex?: string; token?: string; kind: ContrastKind; name: string; note: string }>
 
@@ -2256,8 +2256,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 light grey because 1.4.11 wants 3:1 against the adjacent surface. The work tiles are the one exception
                 to the colour, not to the shape: they take the same single ring in{" "}
                 <code>--focus-ring-soft</code> (<code>#8a8a8a</code>, 3.4:1 on the page background), because at tile
-                scale <code>#2d2d2d</code> frames the artwork instead of marking a selection. Nothing stacks a second
-                ring, a border darkening, or a halo behind the outline.
+                scale <code>#2d2d2d</code> frames the artwork instead of marking a selection. The quote card wears
+                that ring too, drawn on the card for the advance button that covers it, since the card's clip would
+                cut the button's own ring down to a line. Nothing stacks a second ring, a border darkening, or a halo
+                behind the outline.
               </li>
               <li data-ds-terms={terms("tabindex -1 landing container hash #work skip link outline none focus ring")}>
                 <strong>Landing containers take focus without taking a ring.</strong> Sections that receive focus

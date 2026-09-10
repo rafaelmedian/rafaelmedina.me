@@ -424,6 +424,18 @@
   cursor: grabbing;
 }
 
+/* The advance button is the card, so the card wears its ring -- the work
+   tiles' one. On the button itself the card's overflow clipped the ring to its
+   bottom edge, a dark rule drawn across the card above the dots. */
+.mosaic-quote-next:focus-visible {
+  outline: none;
+}
+
+.mosaic-quote:has(> .mosaic-quote-next:focus-visible) {
+  outline: 2px solid var(--focus-ring-soft);
+  outline-offset: 3px;
+}
+
 .mosaic-quote-dots {
   position: absolute;
   bottom: 0;
