@@ -69,7 +69,8 @@
 .writings-backdrop { position: fixed; inset: 0; z-index: var(--z-dialog-backdrop); background: rgb(18 18 18 / 0.46); transition: opacity var(--duration-base) var(--ease-standard); }
 .writings-backdrop[data-starting-style], .writings-backdrop[data-ending-style] { opacity: 0; }
 .writings-backdrop[data-ending-style] { transition-duration: var(--duration-quick); }
-.writings-dialog {
+.writings-dialog,
+.standalone-writing {
   font-kerning: normal;
   /* The reading scale. This is the site's one long-form surface and it used to
      be the only place with type the rest of the interface does not have: 18px
@@ -82,6 +83,8 @@
      archive, and the reader all sit on one column edge. */
   --writings-measure: 34rem;
   --writings-column: calc(var(--writings-measure) + 3rem);
+}
+.writings-dialog {
   /* The sheet runs wider than the reading column needs. That surplus is the
      marginalia's: the column keeps its measure at every width and the extra
      all lands in the two gutters, where the notes live. */
@@ -484,7 +487,7 @@
   .writing-margin-note-bracket { background-color: var(--muted-soft); }
 }
 @media (min-width: 1000px) {
-  .writing-margin-note {
+  .writings-dialog .writing-margin-note {
     position: absolute;
     /* Lift, rail, and tilt all arrive per note from the component, hashed off
        the note's own text: notes sharing one offset drew a second column down
@@ -494,19 +497,19 @@
     width: var(--writing-note-width);
     margin-top: 0;
   }
-  .writing-margin-note[data-place="left"] {
+  .writings-dialog .writing-margin-note[data-place="left"] {
     right: calc(100% + var(--writing-note-gap));
     padding-inline: 0 1.5rem;
     text-align: right;
     rotate: var(--writing-note-tilt, -1.25deg);
   }
-  .writing-margin-note[data-place="right"] {
+  .writings-dialog .writing-margin-note[data-place="right"] {
     left: calc(100% + var(--writing-note-gap));
     rotate: var(--writing-note-tilt, 1.25deg);
   }
   /* The bracket moves to the note's inner edge and turns, so it always closes
      around the column it holds rather than around the handwriting. */
-  .writing-margin-note[data-place="left"] .writing-margin-note-bracket { inset-inline: auto 0; scale: -1 1; }
+  .writings-dialog .writing-margin-note[data-place="left"] .writing-margin-note-bracket { inset-inline: auto 0; scale: -1 1; }
 }
 /* Sources and thanks, at the size of a caption because they are one. */
 .writing-acknowledgements { margin-top: 3rem; }

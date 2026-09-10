@@ -1313,6 +1313,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 the confirmation is announced from a live region beside it. Modified and secondary presses are left to the browser.
                 Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
                 canonical, and listed in the sitemap, the way a project owns `/work/&lt;slug&gt;/`.
+                The standalone article shares the reader's 34rem prose measure, but keeps annotations below their
+                paragraphs at every viewport width: its narrower page has no reserved margin-note gutters.
                 Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s rows.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
                 The top bar carries one title, Notes, with no year crumb, search, document count, author byline, or subtitle.

@@ -112,6 +112,29 @@ test("note pages ship their own metadata and the whole article without JavaScrip
   await context.close()
 })
 
+test("standalone note annotations remain readable without JavaScript", async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
+  const page = await context.newPage()
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto("/notes/project-context-in-markdown/")
+    const notes = await page.locator(".writing-margin-note").evaluateAll(elements => elements.map(element => {
+      const rect = element.getBoundingClientRect()
+      const label = element.querySelector(".writing-margin-note-label")!
+      return { width: rect.width, left: rect.left, right: rect.right,
+        lines: label.getBoundingClientRect().height / parseFloat(getComputedStyle(label).lineHeight) }
+    }))
+    expect(notes.length).toBeGreaterThan(0)
+    for (const note of notes) {
+      expect(note.width).toBeGreaterThan(100)
+      expect(note.lines).toBeLessThanOrEqual(4)
+      expect(note.left).toBeGreaterThanOrEqual(0)
+      expect(note.right).toBeLessThanOrEqual(width)
+    }
+  }
+  await context.close()
+})
+
 test("the notes list ships its own page with a link to every note", async ({ browser, request, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
   const page = await context.newPage()
