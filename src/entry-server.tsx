@@ -4,7 +4,7 @@ import App from "./App"
 import { loadWritingPage } from "./lib/writingPageSlot"
 import { portfolioCards } from "./data/portfolio"
 import { writingSummaries } from "./data/writingIndex"
-import { pageMetadata, projectPath, resumeItemId, resumePath, writingPath } from "./lib/projectMetadata"
+import { notesPath, pageMetadata, projectPath, resumeItemId, resumePath, writingPath, writingsItemId } from "./lib/projectMetadata"
 
 /**
  * The note article lives in its own chunk on the client, so the prerender has
@@ -17,6 +17,7 @@ export const ready = loadWritingPage()
 export const pages = [
   { pathname: "/", metadata: pageMetadata() },
   { pathname: resumePath, metadata: pageMetadata(resumeItemId) },
+  { pathname: notesPath, metadata: pageMetadata(writingsItemId) },
   ...portfolioCards.map(card => ({ pathname: projectPath(card), metadata: pageMetadata(card) })),
   ...writingSummaries.map(writing => ({ pathname: writingPath(writing), metadata: pageMetadata(writing) })),
 ]

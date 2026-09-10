@@ -110,22 +110,35 @@ the gallery itself only knows about items.
 
 ## Notes
 
-A note owns `/notes/<id>/` the way a project owns `/work/<slug>/`: prerendered
-by `scripts/prerender.mjs`, listed in the sitemap, rendered as `WritingPage` for
-a crawler or a visitor without JavaScript, and swapped for the folder's reader
-once React is running. `?writing=<id>` was the old address and still opens the
-reader, so links already shared keep working.
+The notes are two surfaces, and which one a change belongs to matters.
 
-The article itself is `WritingArticle`, shared by the reader and that static
-page — including the "Copy link" control, which puts the public address on the
-clipboard rather than leaving it in the URL bar.
+The **list** is a slide of the preview gallery, exactly as the résumé is: a
+`writings` item in `src/lib/galleryItems.ts`, at the place the folder tile
+occupies on the grid, so the arrow keys walk from a project into the notes and
+out the other side. It owns `/notes/` — prerendered, in the sitemap, rendered as
+`NotesPage` for a crawler — and the folder tile and the header's Notes link both
+open the gallery on it. `WritingsArchive` is the list itself, shared by the slide
+and that page.
 
-Two modules hold a note, and which one a change belongs in matters.
-`src/data/writingIndex.ts` is the eager half: id, title, date, blurb, and the
-social card. `src/data/writings.ts` is the prose, and it is 34KB — it stays out
-of the main bundle, so the standalone page is fetched before hydration by
-`src/lib/writingPageSlot.ts` rather than imported. Add a note to the index and
-`writings.ts` will spread its fields; a title or a date is written once.
+A **note** opens in the reader's own sheet over the list (`WritingsReader`), with
+the hearts, the copy link, and arrows that turn note to note; its back arrow and
+Escape return to the list. Each note owns `/notes/<id>/` the way a project owns
+`/work/<slug>/`, rendered as `WritingPage` for a crawler. `?writing=<id>` was the
+old address and still opens the reader. `WritingArticle` is the article, shared
+by the sheet and that page.
+
+Two modules hold a note. `src/data/writingIndex.ts` is the eager half: id,
+title, date, blurb, and the social card. `src/data/writings.ts` is the prose,
+and it is 34KB — it stays out of the main bundle, so the standalone note page is
+fetched before hydration by `src/lib/writingPageSlot.ts` rather than imported.
+Add a note to the index and `writings.ts` will spread its fields; a title or a
+date is written once.
+
+The reader chunk is fetched by a row of the list, not by the tile, and
+`WritingsFolder` is where it is fetched, cancelled, and retried; the list prints
+its status. The gallery closes behind a sheet that opens over it, so never hand
+the gallery an explicit `finalFocus` while a note is being opened — it would
+take focus back from the sheet's title.
 
 ## The last-updated clause and its GitHub card
 

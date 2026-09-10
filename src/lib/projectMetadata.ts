@@ -11,8 +11,16 @@ export const siteOrigin = "https://rafaelmedina.me"
 export const resumeItemId = "resume"
 export const resumePath = "/resume/"
 
-/** A project, a note, the résumé, or the portfolio itself. */
-export type GalleryTarget = PortfolioCard | WritingSummary | typeof resumeItemId
+/**
+ * The notes folder is a gallery item for the same reason: its tile opens a
+ * slide -- the list of notes -- and that list owns `/notes/`, with every note
+ * under it at `/notes/<id>/`.
+ */
+export const writingsItemId = "writings"
+export const notesPath = "/notes/"
+
+/** A project, a note, the notes list, the résumé, or the portfolio itself. */
+export type GalleryTarget = PortfolioCard | WritingSummary | typeof resumeItemId | typeof writingsItemId
 
 /** Only a project carries a slug, which is what tells the two objects apart. */
 const isCard = (target: PortfolioCard | WritingSummary): target is PortfolioCard => "slug" in target
@@ -32,6 +40,10 @@ export function projectAtPath(pathname: string) {
 
 export function isResumePath(pathname: string) {
   return `${normalizePath(pathname)}/` === resumePath
+}
+
+export function isNotesPath(pathname: string) {
+  return `${normalizePath(pathname)}/` === notesPath
 }
 
 /**
@@ -81,6 +93,17 @@ const resumePage: PageDescription = {
   imageAlt: "The first page of Rafael Medina's résumé.",
 }
 
+// The list has no artwork at all, so it carries the site's own card.
+const notesPage: PageDescription = {
+  title: "Notes — Rafael Medina",
+  description: "Rafael Medina's notes on design, tools, and working with agents: short essays written over the year, newest first.",
+  path: notesPath,
+  image: "/og-image.png",
+  imageWidth: 1200,
+  imageHeight: 630,
+  imageAlt: "The rafaelmedina.me homepage: Rafael Medina's portrait and intro above the first row of work tiles.",
+}
+
 // A note is prose, so it has no artwork of its own unless it opens with a
 // cover. The two that do preview with it; the rest fall back to the site's own
 // card, which is the portrait a link to anything else here carries.
@@ -112,6 +135,7 @@ function projectPage(card: PortfolioCard): PageDescription {
 function describePage(target?: GalleryTarget) {
   if (!target) return homePage
   if (target === resumeItemId) return resumePage
+  if (target === writingsItemId) return notesPage
   return isCard(target) ? projectPage(target) : writingPage(target)
 }
 

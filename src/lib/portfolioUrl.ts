@@ -3,7 +3,9 @@ import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { portfolioCards } from "../data/portfolio"
 import { writingSummaries } from "../data/writingIndex"
 import {
+  isNotesPath,
   isResumePath,
+  notesPath,
   projectAtPath,
   projectPath,
   resumeItemId,
@@ -11,6 +13,7 @@ import {
   updatePageMetadata,
   writingAtPath,
   writingPath,
+  writingsItemId,
 } from "./projectMetadata"
 
 const portfolioUrlEvent = "portfolio-item-url"
@@ -33,22 +36,29 @@ const itemLocations: Record<PortfolioItem, ItemLocation> = {
   gallery: {
     read: () => {
       if (isResumePath(window.location.pathname)) return resumeItemId
+      if (isNotesPath(window.location.pathname)) return writingsItemId
       return projectAtPath(window.location.pathname)?.id ?? new URLSearchParams(window.location.search).get("project")
     },
     set: (url, id) => {
+      url.searchParams.delete("project")
+      // A note the reader never opened -- an id nothing matches -- has no
+      // business outliving the selection of something else.
+      url.searchParams.delete("writing")
       if (id === resumeItemId) {
         url.pathname = resumePath
-        url.searchParams.delete("project")
+        return
+      }
+      if (id === writingsItemId) {
+        url.pathname = notesPath
         return
       }
       const card = portfolioCards.find(card => card.id === id)
       if (!card) return
       url.pathname = projectPath(card)
-      url.searchParams.delete("project")
     },
     clear: url => {
       url.searchParams.delete("project")
-      if (projectAtPath(url.pathname) || isResumePath(url.pathname)) url.pathname = "/"
+      if (projectAtPath(url.pathname) || isResumePath(url.pathname) || isNotesPath(url.pathname)) url.pathname = "/"
     },
   },
   writing: {
@@ -158,12 +168,16 @@ export function usePortfolioItemUrl(entry: PortfolioItem) {
     window.dispatchEvent(new Event(portfolioUrlEvent))
   }, [entry, location])
 
-  const clearItem = useCallback(() => {
+  // `onClosed` runs once the URL has actually given the item up. That is a
+  // later tick when history has to be traversed, and the popstate it arrives
+  // on retires every dialog intent opened before it -- so anything that opens
+  // in this item's place has to wait for it rather than go first.
+  const clearItem = useCallback((onClosed?: () => void) => {
     const url = new URL(window.location.href)
     location.clear(url)
     // Pop entries created by this portfolio, but close direct bookmarks in
     // place so an external previous entry cannot take the visitor off-site.
-    closePortfolioUrl(url, entry)
+    closePortfolioUrl(url, entry, onClosed)
     window.dispatchEvent(new Event(portfolioUrlEvent))
   }, [entry, location])
 
@@ -195,8 +209,8 @@ export function useGalleryUrl() {
       updatePageMetadata(writing)
       return
     }
-    if (itemId === resumeItemId) {
-      updatePageMetadata(resumeItemId)
+    if (itemId === resumeItemId || itemId === writingsItemId) {
+      updatePageMetadata(itemId)
       return
     }
     updatePageMetadata(portfolioCards.find(card => card.id === itemId))

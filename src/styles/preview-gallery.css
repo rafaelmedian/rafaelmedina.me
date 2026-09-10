@@ -258,6 +258,7 @@
   filter: blur(var(--blur-reveal));
 }
 
+
 .preview-gallery-popup[data-ending-style] .preview-gallery-title {
   transition-duration: var(--pg-content-out-ms, var(--duration-quick));
   transition-timing-function: var(--ease-exit);
@@ -543,11 +544,14 @@
 
 /* Nothing above them to be level with: the chevrons page a page of prose, so
    they take the middle of whatever of the sheet is on screen rather than the
-   middle of an artwork that is not there. */
+   middle of an artwork that is not there. The notes list is the same case. */
 .preview-gallery-popup[data-preview-kind="resume"] .preview-gallery-rail,
-.preview-gallery-popup[data-preview-kind="resume"][data-wide="true"] .preview-gallery-rail {
+.preview-gallery-popup[data-preview-kind="resume"][data-wide="true"] .preview-gallery-rail,
+.preview-gallery-popup[data-preview-kind="writings"] .preview-gallery-rail,
+.preview-gallery-popup[data-preview-kind="writings"][data-wide="true"] .preview-gallery-rail {
   --preview-gallery-rail-anchor: 50%;
 }
+
 
 
 .preview-gallery-controls {
@@ -618,6 +622,23 @@
   text-wrap: balance;
   filter: none;
   transition: filter var(--pg-content-in-ms, var(--duration-base)) var(--ease-smooth);
+}
+
+/* --------------------------------------------------------- the notes slide --- */
+
+/* The folder's slide, for the same reason the CV sheet has one: the tile is on
+   the work grid, so what it opens pages with the projects, in the same card,
+   with the same transition, one arrow press from the work either side of it.
+   The list inside takes the résumé's measure; the card's width either side of
+   that is where the pencil objects hang (see writings.css). */
+.preview-gallery-notes { padding-bottom: 1.5rem; }
+/* After the shared title rule, which sets the margin this reopens. The title
+   takes the list's measure so "Notes" sits on the column edge the year
+   headings and the rows share, 2rem above the first year. */
+.preview-gallery-notes-title {
+  width: min(100%, var(--writings-measure, 34rem));
+  margin: 0 auto 2rem;
+  text-align: left;
 }
 
 .preview-gallery-description {

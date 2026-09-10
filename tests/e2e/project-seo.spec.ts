@@ -112,6 +112,22 @@ test("note pages ship their own metadata and the whole article without JavaScrip
   await context.close()
 })
 
+test("the notes list ships its own page with a link to every note", async ({ browser, request, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
+  const page = await context.newPage()
+  await page.goto("/notes/")
+  await expect(page).toHaveTitle("Notes — Rafael Medina")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Notes")
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/notes/")
+  // Every note, newest first, each an ordinary link to its own page.
+  const rows = page.locator(".writings-year a.writing-entry-trigger")
+  await expect(rows).toHaveCount(8)
+  await expect(rows.first()).toHaveAttribute("href", "/notes/project-context-in-markdown/")
+  await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")
+  expect(await (await request.get("/sitemap.xml")).text()).toContain("https://rafaelmedina.me/notes/")
+  await context.close()
+})
+
 // The note's page and its reader are the same article, so the swap at hydration
 // has nothing to reconcile: no mismatch, and the reader opens over the URL.
 test("a note page hydrates into the reader without replacing its article", async ({ page }) => {

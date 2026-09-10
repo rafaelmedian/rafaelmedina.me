@@ -1279,7 +1279,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
           <section id="components" className="ds-section">
             <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
-              <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder /></div>
+              <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onBack={() => {}} /></div>
               <p className="ds-caption">
                 A tile on --mosaic-card-surface with 24px corners and one label, “Writings &amp; notes”.
                 Below 900px the corners drop to 16px and the folder is zoomed to 0.7 so it and the
@@ -1287,9 +1287,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 layout-affecting scale keeps it off the label.
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
                 with 8px corners and reader-sized 14px type scaled to one third. Papers fan over 360ms with smooth easing.
-                The list and reader share one modal up to 56rem wide that hangs from the line a project preview opens on — 8vh
+                The reader is a sheet up to 56rem wide that hangs from the line a project preview opens on — 8vh
                 from the top of the viewport, 5vh from 1320px — and runs to 1rem above the bottom, with room for the navigation
-                rail, white, overlay elevation, and 24px corners. Selecting a note preserves the modal dimensions.
+                rail, white, overlay elevation, and 24px corners.
                 Rows are grouped by publication or archive year, newest first; eight writings are visible, with seven in 2026 and one in 2025.
                 The year labels a 5rem column on the left, on the first row's baseline, so the titles run as one list down the page; on a phone it goes back
                 over its rows, where the gutter would take a fifth of the measure.
@@ -1318,32 +1318,32 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The top bar carries one title, Notes, with no year crumb, search, document count, author byline, or subtitle.
                 Notes uses --text-md, aligned with the archive's year column in the same 37rem column and shared side gutters when the list is open.
                 Toolbar top padding is 32px on desktop and 20px plus the safe area on mobile.
-                The toolbar carries no divider while the page beneath rests at its top; once that page scrolls, an 8% black hairline and a short shadow fade in over 160ms and fade back out at the top.
-                Each page keeps its own offset, so the divider follows whichever one is forward: opening a note resets the reader and clears it, and returning to the list restores it with the archive's retained scroll.
-                Opening a note grows a back button in front of the title, reusing the project gallery’s round chevron so it matches the
-                previous/next controls. Its box starts on the column edge; it fades in over 160ms while its width and 12px margin open
-                over 200ms with smooth easing, sliding the title 56px right. The list has nowhere to go back to, so it collapses to zero
-                width and leaves the accessibility tree. Back returns to the list with its scroll and focus restored.
+                The toolbar carries no divider while the article rests at its top; once it scrolls, an 8% black hairline and a short shadow fade in over 160ms and fade back out at the top,
+                and turning to the next note resets the reader and clears it.
+                A back button leads the title, reusing the project gallery’s round chevron so it matches the previous/next controls;
+                from 900px it hangs in the left gutter so the title keeps the column edge, and below that it sits in the flow with a
+                12px margin. It is always there, because there is always the list to go back to.
                 Previous/next controls reuse the project gallery’s 44px round buttons, border, shadow and press state.
-                Previous/next controls sit outside the desktop reader and cycle through notes in archive order, resetting scroll.
+                Previous/next controls sit outside the desktop reader and cycle through the notes in archive order, resetting scroll.
+                The list itself is not in the sheet: it is a slide of the preview gallery, at the tile's place in the sequence
+                ("3 / 14"), so the gallery's own arrows walk from the Matcha homepage into the notes and out to Popparazi, in the
+                same card and with the same page-turn as the résumé. A row opens the note in this sheet over the list, and the back
+                arrow and Escape close the sheet to the list; closing the list returns focus to the folder tile.
                 Switching notes pages the whole modal like project previews: next sends the current note 1.4rem left,
                 previous sends it right, fading to zero at scale(0.985) over 200ms. The new note arrives from the
                 opposite side over the same 200ms, using standard transform easing and ease-out opacity.
                 The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
                 Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
                 during the switch, and closing or going back to Notes cancels pending selection. Reduced motion switches instantly.
-                The modal keeps one width and no expand control, but it is only as tall as the page in front of it: the
-                archive stops at its last row rather than leaving empty paper below it, and opening a note grows the sheet
-                to the article over 200ms with smooth easing, up to the room the viewport leaves. It hangs from its top
-                edge throughout, so growing never moves the title. Reduced motion resizes instantly.
+                The sheet keeps one width and no expand control, but it is only as tall as the article in it, up to the room
+                the viewport leaves, and content that resizes under the reader grows it over 200ms with smooth easing. It hangs
+                from its top edge throughout, so growing never moves the title. Reduced motion resizes instantly.
                 On mobile it keeps its 0.5rem margins and safe-area clearance.
                 The desktop header has no close icon; Escape and outside click dismiss it. On mobile, previous, next, and close ride the title line at the
                 top right instead of a bottom bar, which returns that bar's 68px of height to the article.
-                List and reader occupy overlapping, independently scrolling layers with stable scrollbar gutters.
-                Forward navigation sends the list left and brings the reader from 48px right over 360ms; back reverses
-                that direction over 200ms. Opacity uses 200ms standard easing, transforms use smooth easing, and blur is zero.
-                Inactive panels are inert and hidden from assistive technology. Both remain mounted to preserve the
-                return animation and archive scroll. Rapid reversals retarget the same CSS transitions without timers.
+                The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes" title on the same column
+                edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
+                open from 48rem, so the compact card below 1320px lists without them however wide the window is.
                 Every note carries marginalia in Handlee on --muted, authored per paragraph rather than generated: a
                 short phrase pinned to the gutter beside the paragraph it belongs to. Two an article, one early and one
                 late, one in each gutter — it used to run to five, plus interjections dropped between the paragraphs,

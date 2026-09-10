@@ -1,26 +1,72 @@
-import { beginDialogIntent, subscribeDialogIntent } from "../lib/dialogIntent"
+import { useSound } from "@web-kits/audio/react"
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react"
+
 import { writingPreviews } from "../data/writingPreviews"
 import { createModuleLoader, useDeferredModule } from "../lib/deferredModule"
+import { beginDialogIntent, subscribeDialogIntent } from "../lib/dialogIntent"
 import { usePortfolioItemUrl } from "../lib/portfolioUrl"
-import type { WritingsFolderHandle as ReaderHandle } from "./WritingsReader"
+import { openSound } from "../lib/sounds"
 
 const loadReader = createModuleLoader(() => import("./WritingsReader"), "WritingsReader")
-export type WritingsFolderHandle = ReaderHandle & { preload: () => void }
 
-export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: boolean) => void; ref?: Ref<WritingsFolderHandle> }) {
+export type WritingsFolderHandle = {
+  /** Open a note in the reader's sheet, fetching the reader first if need be. */
+  openWriting: (id: string) => void
+  /** Warm the reader's chunk ahead of a row being pressed. */
+  preload: () => void
+}
+
+/** What the notes slide says while a reader is on its way, or failed to come. */
+export type WritingsReaderStatus = { status: string | null; pendingId: string | null }
+
+type WritingsFolderProps = {
+  /** The tile was pressed: open the gallery on the notes slide. */
+  onOpen: () => void
+  /** The tile was hovered or focused: warm the gallery's chunk. */
+  onPrefetch?: () => void
+  /** The reader's back arrow: put the notes slide forward. */
+  onBack: () => void
+  onOpenChange?: (open: boolean) => void
+  onStatusChange?: (status: WritingsReaderStatus) => void
+  /** The tile: what the notes slide and the reader's sheet both grow out of. */
+  tileRef?: (node: HTMLButtonElement | null) => void
+  ref?: Ref<WritingsFolderHandle>
+}
+
+/**
+ * The folder tile, and the reader it keeps on hand. The tile opens the
+ * gallery on the list of notes; a row of that list comes back here to open the
+ * note, because the reader is a chunk of its own and this is where it is
+ * fetched, cancelled, and retried. A shared link to a note fetches it the same
+ * way, without the list first.
+ */
+export function WritingsFolder({ onOpen, onPrefetch, onBack, onOpenChange, onStatusChange, tileRef, ref }: WritingsFolderProps) {
   const { module, status, load, warm } = useDeferredModule(loadReader)
   const Reader = module?.WritingsReader
+  const playOpen = useSound(openSound, { volume: 0.3 })
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const readerRef = useRef<ReaderHandle>(null)
-  const [request, setRequest] = useState<{ opener: HTMLElement | null; isCurrent: () => boolean } | null>(null)
-  const { itemId: writingId, clearItem, discardItem } = usePortfolioItemUrl("writing")
+  const [request, setRequest] = useState<{ id: string; isCurrent: () => boolean } | null>(null)
+  const { itemId: writingId, selectItem: selectWriting, clearItem, discardItem } = usePortfolioItemUrl("writing")
 
-  const openFolder = (opener?: HTMLElement | null) => {
-    setRequest({ opener: opener ?? triggerRef.current, isCurrent: beginDialogIntent("writing") })
+  const openWriting = (id: string) => {
+    setRequest({ id, isCurrent: beginDialogIntent("writing") })
     if (!Reader) void load()
   }
-  useImperativeHandle(ref, () => ({ openFolder, preload: warm }))
+  useImperativeHandle(ref, () => ({ openWriting, preload: warm }))
+
+  // A row was pressed and the reader is here: put the note in the URL, which
+  // is what opens the sheet. Only the most recent activation gets to -- a
+  // download that lands after another dialog was chosen is kept but not shown.
+  // The request is spent by the selection itself: once the note is in the URL
+  // the sheet is open, and a stale request is retired by its own intent.
+  const served = useRef<typeof request>(null)
+  useEffect(() => {
+    if (!Reader || !request || served.current === request) return
+    served.current = request
+    if (!request.isCurrent()) return
+    playOpen()
+    selectWriting(request.id, false)
+  }, [Reader, request, playOpen, selectWriting])
   useEffect(() => {
     if (Reader || !writingId) return
     return subscribeDialogIntent(destination => {
@@ -31,10 +77,6 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
     if (writingId && !Reader) void load()
   }, [writingId, Reader, load])
   useEffect(() => {
-    if (!Reader || !request || !request.isCurrent()) return
-    readerRef.current?.openFolder(request.opener)
-  }, [Reader, request])
-  useEffect(() => {
     if (Reader || (!request && !writingId)) return
     const cancel = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return
@@ -44,12 +86,27 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
     window.addEventListener("keydown", cancel)
     return () => window.removeEventListener("keydown", cancel)
   }, [Reader, request, writingId, clearItem])
+  const statusLabel = status === "loading" ? "Opening notes…" : status === "error" ? "Try opening notes again" : status === "reload" ? "Reload to try notes again" : null
+  useEffect(() => {
+    onStatusChange?.({ status: statusLabel, pendingId: status === "loading" ? request?.id ?? writingId ?? null : null })
+  }, [status, statusLabel, request, writingId, onStatusChange])
 
   return (
     <>
       <button type="button" className="writings-tile" aria-label="Open writings folder" aria-haspopup="dialog"
-        aria-busy={status === "loading" || undefined} ref={triggerRef}
-        onPointerEnter={warm} onFocus={warm} onClick={() => openFolder()}>
+        ref={(node) => {
+          triggerRef.current = node
+          tileRef?.(node)
+        }}
+        aria-busy={status === "loading" || undefined}
+        onPointerEnter={onPrefetch} onFocus={onPrefetch}
+        onClick={() => {
+          // A shared link's reader that failed to arrive is retried from here:
+          // the tile is wearing the failure, and opening the list instead would
+          // drop the note the link was for.
+          if (writingId && !Reader) void load()
+          else onOpen()
+        }}>
         <span className="writings-folder" aria-hidden="true">
           <img className="writings-folder-back" src="/writings/folder-back.png" alt="" width={237} height={200} loading="lazy" />
           {writingPreviews.map(writing => (
@@ -62,9 +119,11 @@ export function WritingsFolder({ onOpenChange, ref }: { onOpenChange?: (open: bo
           ))}
           <span className="writings-folder-front"><img src="/writings/folder-front.png" alt="" width={149} height={133} loading="lazy" /></span>
         </span>
-        <span className="writings-tile-label" role="status">{status === "loading" ? "Opening notes…" : status === "error" ? "Try opening notes again" : status === "reload" ? "Reload to try notes again" : "Writings & notes"}</span>
+        {/* The tile wears the reader's status too: a shared link opens a note
+            with no list on screen to say what is happening. */}
+        <span className="writings-tile-label" role="status">{statusLabel ?? "Writings & notes"}</span>
       </button>
-      {Reader ? <Reader ref={readerRef} triggerRef={triggerRef} onOpenChange={onOpenChange} /> : null}
+      {Reader ? <Reader triggerRef={triggerRef} onOpenChange={onOpenChange} onBack={onBack} /> : null}
     </>
   )
 }

@@ -3,9 +3,10 @@ import { lazy, Suspense, useState, useSyncExternalStore } from "react"
 import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
 import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
-import { isResumePath, projectAtPath, writingAtPath } from "./lib/projectMetadata"
+import { isNotesPath, isResumePath, projectAtPath, writingAtPath } from "./lib/projectMetadata"
 import { ProjectPage } from "./components/ProjectPage"
 import { ResumePage } from "./components/ResumePage"
+import { NotesPage } from "./components/NotesPage"
 import { DeferredWritingPage } from "./components/DeferredWritingPage"
 import { getWritingPage } from "./lib/writingPageSlot"
 
@@ -53,6 +54,7 @@ function App({ pathname }: { pathname?: string }) {
   const standaloneProject = isHydrated ? undefined : projectAtPath(currentPath)
   const standaloneResume = !isHydrated && isResumePath(currentPath)
   const standaloneWriting = isHydrated ? undefined : writingAtPath(currentPath)
+  const standaloneNotes = !isHydrated && isNotesPath(currentPath)
   const isDesignSystemPage = DesignSystemPage !== null && DESIGN_SYSTEM_PATHS.has(currentPath)
   const isTuningEdge = ElasticEdgeTuner !== null && !isDesignSystemPage
     && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tune") === "edge"
@@ -69,7 +71,7 @@ function App({ pathname }: { pathname?: string }) {
         ) : (
           <>
             <main id="main-content" tabIndex={-1} className="relative z-dock">
-              {standaloneProject ? <ProjectPage card={standaloneProject} /> : standaloneResume ? <ResumePage /> : standaloneWriting && getWritingPage() ? (
+              {standaloneProject ? <ProjectPage card={standaloneProject} /> : standaloneResume ? <ResumePage /> : standaloneNotes ? <NotesPage /> : standaloneWriting && getWritingPage() ? (
                 <DeferredWritingPage writing={standaloneWriting} />
               ) : (
                 <>

@@ -1,59 +1,53 @@
 import { expect, test } from "@playwright/test"
 import { groupWritingsByYear } from "../../src/lib/writings"
 
-for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 768 }]) {
-  test(`notes sit within viewport margins and preserve reading at ${viewport.width}px`, async ({ page }) => {
-    await page.setViewportSize(viewport)
-    await page.emulateMedia({ reducedMotion: "reduce" })
-    await page.goto("/")
-    const folder = page.getByRole("button", { name: "Open writings folder" })
-    await folder.click()
-    const dialog = page.getByRole("dialog")
-    const waitForSettledDialog = () => expect.poll(() => dialog.evaluate((element) => {
-      const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
-      return Math.abs(matrix.a - 1) < 0.001 && Math.abs(matrix.d - 1) < 0.001
-    })).toBe(true)
-    await waitForSettledDialog()
-    const original = (await dialog.boundingBox())!
-    // The dialog hangs from the line a project preview opens on -- 8vh, and
-    // 5vh from 1320px where the preview goes wide -- over a 1rem bottom gutter.
-    const top = viewport.height * (viewport.width >= 1320 ? 0.05 : 0.08)
-    const room = viewport.height - top - 16
-    expect(original.y).toBeCloseTo(top, 0)
-    // The sheet is as tall as the page in front of it: the toolbar plus the
-    // archive, so the list stops at its last row rather than leaving empty
-    // paper below it.
-    const listFit = await dialog.evaluate((element) =>
-      element.querySelector(".writings-toolbar")!.getBoundingClientRect().height +
-      element.querySelector(".writings-archive")!.getBoundingClientRect().height,
-    )
-    expect(original.height).toBeCloseTo(listFit, 0)
-    expect(original.height).toBeLessThan(room)
-    expect(await dialog.evaluate((element) => getComputedStyle(element).borderRadius)).toBe("24px")
-    // Growing is the only sizing there is: no expand control, and the sheet
-    // still hangs from the same line once it has grown.
-    await expect(dialog.getByRole("button", { name: /Expand modal|Restore modal size/ })).toHaveCount(0)
-    await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
-    const reading = (await dialog.boundingBox())!
-    expect(reading.height).toBeCloseTo(room, 0)
-    expect(reading.y).toBeCloseTo(top, 0)
-    expect(reading.width).toBe(original.width)
-    const reader = dialog.locator('[data-page-id="2"]')
-    await reader.evaluate((element) => element.scrollTo(0, 400))
-    expect(await dialog.boundingBox()).toEqual(reading)
-    expect((await dialog.getByRole("heading", { name: "Notes", exact: true }).boundingBox())!.y).toBeLessThan(original.y + 80)
-    await expect(dialog.getByRole("button", { name: "Next note" })).toBeInViewport()
-    await expect.poll(() => reader.evaluate((element) => element.scrollTop)).toBe(400)
-    await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toHaveCount(1)
-    await page.keyboard.press("Escape")
-    await expect(dialog).not.toBeVisible()
-    await folder.click()
-    await waitForSettledDialog()
-    expect(await dialog.boundingBox()).toEqual(original)
-  })
-}
+/* The notes are two surfaces. The list is a slide of the preview gallery, at
+   the place the folder tile occupies on the grid, so the arrow keys walk from a
+   project into the notes and out the other side the way they walk into the
+   résumé. A note opens in the reader's own sheet over that list, with the
+   hearts, the copy link, and the arrows that turn to the next note, and its
+   back arrow returns to the slide. */
 
-test("the header Notes link opens the folder on the project preview's line", async ({ page }) => {
+const sheet = (page: import("@playwright/test").Page) => page.locator(".writings-dialog")
+const popup = (page: import("@playwright/test").Page) => page.locator(".preview-gallery-popup")
+
+test("the notes list is a slide of the preview gallery", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  const folder = page.getByRole("button", { name: "Open writings folder" })
+  await expect(folder.locator(".writings-tile-label")).toHaveText("Writings & notes")
+  await folder.click()
+  // The same popup a project opens, on the list's own address, counted in the
+  // sequence at the tile's place: after the two projects of the first row.
+  await expect(popup(page)).toBeVisible()
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await expect(page).toHaveTitle("Notes — Rafael Medina")
+  await expect(popup(page)).toHaveAttribute("data-preview-kind", "writings")
+  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page).locator(".writings-year > h3")).toHaveText(["2026", "2025"])
+  await expect(popup(page).getByRole("searchbox")).toHaveCount(0)
+  await expect(sheet(page)).toHaveCount(0)
+
+  // Either arrow leaves for the tile on that side, in the same popup.
+  await page.keyboard.press("ArrowRight")
+  await expect(page).toHaveURL(/\/work\/popparazi-v1\/$/)
+  await expect(popup(page)).toHaveAttribute("data-preview-kind", "project")
+  await page.keyboard.press("ArrowLeft")
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await page.keyboard.press("ArrowLeft")
+  await expect(page).toHaveURL(/\/work\/matcha-homepage\/$/)
+  await page.keyboard.press("ArrowRight")
+  await expect(popup(page).getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+
+  await page.keyboard.press("Escape")
+  await expect(popup(page)).toBeHidden()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(folder).toBeFocused()
+})
+
+test("the header Notes link opens the list on the project preview's line", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
@@ -61,28 +55,116 @@ test("the header Notes link opens the folder on the project preview's line", asy
   const card = page.locator(".mosaic-row-card").first()
   await card.scrollIntoViewIfNeeded()
   await card.click()
-  const preview = page.locator(".preview-gallery-popup")
-  await expect(preview).toBeVisible()
-  const previewTop = (await preview.boundingBox())!.y
+  await expect(popup(page)).toBeVisible()
+  const previewTop = (await popup(page).boundingBox())!.y
   await page.keyboard.press("Escape")
-  await expect(preview).toBeHidden()
+  await expect(popup(page)).toBeHidden()
   await page.evaluate(() => window.scrollTo(0, 0))
 
   const notes = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Notes", exact: true })
   await notes.click()
-  const dialog = page.getByRole("dialog")
-  await expect(dialog.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
-  // The two modals share a top edge, so moving between them holds the header still.
-  expect((await dialog.boundingBox())!.y).toBeCloseTo(previewTop, 0)
+  await expect(popup(page).getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+  // One modal, so the header cannot move between a project and the notes.
+  // Polled, because the popup's first frames are its starting pose and the
+  // attribute that marks it lands a frame after the popup does.
+  await expect.poll(async () => Math.round((await popup(page).boundingBox())!.y)).toBe(Math.round(previewTop))
 
   await page.keyboard.press("Escape")
-  await expect(dialog).toBeHidden()
+  await expect(popup(page)).toBeHidden()
   // Focus returns to the header link, not to the folder tile down in the mosaic.
   await expect(notes).toBeFocused()
   expect(await page.evaluate(() => window.scrollY)).toBe(0)
 })
 
-test("the notes sheet flies out of the control that opened it and back into it", async ({ page }) => {
+test("a row opens the note in its own sheet and the back arrow returns to the list", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/?ref=portfolio")
+  const folder = page.getByRole("button", { name: "Open writings folder" })
+  await folder.click()
+  const entry = popup(page).getByRole("button", { name: "Designing Matcha", exact: true })
+  await entry.click()
+  // The sheet takes the note's address; the list's popup goes with the URL.
+  await expect(page).toHaveURL(/\/notes\/designing-matcha\/\?ref=portfolio$/)
+  await expect(sheet(page)).toBeVisible()
+  await expect(popup(page)).toBeHidden()
+  await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
+  await expect(sheet(page).locator(".writings-toolbar")).toHaveText("Notes")
+  await expect(sheet(page).locator(".writing-reader-date time")).toHaveText("March 2, 2026")
+  await expect(sheet(page).getByRole("img", { name: "Matcha discovery homepage with token search and market overview" })).toBeVisible()
+  // The sheet is the one surface with a back arrow, and it never collapses:
+  // there is always the list to go back to.
+  const back = sheet(page).getByRole("button", { name: "Go back to Notes", exact: true })
+  await expect(back).toBeVisible()
+  const arrow = (await back.boundingBox())!
+  const title = (await sheet(page).getByRole("heading", { name: "Notes", exact: true }).boundingBox())!
+  // On a sheet this wide the arrow hangs in the left gutter, clear of the title.
+  expect(arrow.x + arrow.width).toBeLessThanOrEqual(title.x)
+  await expect(sheet(page).getByRole("button", { name: "Next note", exact: true })).toBeVisible()
+  await expect(sheet(page).getByRole("button", { name: "Next preview", exact: true })).toHaveCount(0)
+
+  await back.click()
+  await expect(sheet(page)).toBeHidden()
+  await expect(page).toHaveURL(/\/notes\/\?ref=portfolio$/)
+  await expect(popup(page)).toBeVisible()
+  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 14")
+  // The row the sheet was opened from is back, and focus is in the list's
+  // popup rather than stranded on the tile behind it.
+  await expect(entry).toBeVisible()
+  await expect.poll(() => page.evaluate(() => document.activeElement?.closest(".preview-gallery-popup") !== null)).toBe(true)
+
+  // Escape from a note is the same move as back: one level, to the list.
+  await entry.click()
+  await expect(sheet(page)).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(sheet(page)).toBeHidden()
+  await expect(popup(page)).toBeVisible()
+  await expect(page).toHaveURL(/\/notes\/\?ref=portfolio$/)
+  await page.keyboard.press("Escape")
+  await expect(popup(page)).toBeHidden()
+  await expect(page).toHaveURL(/\/\?ref=portfolio$/)
+  await expect(folder).toBeFocused()
+})
+
+for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 768 }]) {
+  test(`a note's sheet hangs from the preview's line and keeps its box at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/notes/designing-matcha/")
+    const dialog = sheet(page)
+    const waitForSettledDialog = () => expect.poll(() => dialog.evaluate((element) => {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
+      return Math.abs(matrix.a - 1) < 0.001 && Math.abs(matrix.d - 1) < 0.001
+    })).toBe(true)
+    await waitForSettledDialog()
+    const reading = (await dialog.boundingBox())!
+    // The sheet hangs from the line a project preview opens on -- 8vh, and
+    // 5vh from 1320px where the preview goes wide -- over a 1rem bottom gutter.
+    const top = viewport.height * (viewport.width >= 1320 ? 0.05 : 0.08)
+    const room = viewport.height - top - 16
+    expect(reading.y).toBeCloseTo(top, 0)
+    // An article is taller than the room, so the sheet takes all of it.
+    expect(reading.height).toBeCloseTo(room, 0)
+    expect(await dialog.evaluate((element) => getComputedStyle(element).borderRadius)).toBe("24px")
+    // Growing is the only sizing there is: no expand control.
+    await expect(dialog.getByRole("button", { name: /Expand modal|Restore modal size/ })).toHaveCount(0)
+    const reader = dialog.locator(".writings-scroll")
+    await reader.evaluate((element) => element.scrollTo(0, 400))
+    expect(await dialog.boundingBox()).toEqual(reading)
+    expect((await dialog.getByRole("heading", { name: "Notes", exact: true }).boundingBox())!.y).toBeLessThan(reading.y + 80)
+    await expect(dialog.getByRole("button", { name: "Next note" })).toBeInViewport()
+    await expect.poll(() => reader.evaluate((element) => element.scrollTop)).toBe(400)
+    await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toHaveCount(1)
+    // Back puts the list forward; the row reopens the same sheet in the same box.
+    await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
+    await expect(dialog).toBeHidden()
+    await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
+    await waitForSettledDialog()
+    expect(await dialog.boundingBox()).toEqual(reading)
+  })
+}
+
+test("the notes sheet flies out of the folder tile and back into it", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/")
@@ -105,7 +187,10 @@ test("the notes sheet flies out of the control that opened it and back into it",
   // back to the stylesheet, so whatever is measured next is its resting box.
   const flight = () => page.evaluate(() => {
     const { flights } = window as unknown as { flights: Animation[] }
-    const animation = flights[flights.length - 1]
+    // The gallery flies too, so the sheet's flight is the last one on the sheet.
+    const animation = [...flights].reverse().find((flight) =>
+      (flight.effect as KeyframeEffect).target instanceof Element &&
+      ((flight.effect as KeyframeEffect).target as Element).classList.contains("writings-dialog"))!
     const frames = animation.effect!.getKeyframes()
     const pose = (transform: unknown) => {
       const [, x, y, scale] = String(transform)
@@ -124,17 +209,20 @@ test("the notes sheet flies out of the control that opened it and back into it",
   await folder.scrollIntoViewIfNeeded()
   const tile = (await folder.boundingBox())!
   await folder.click()
-  const dialog = page.getByRole("dialog")
+  await expect(popup(page)).toBeVisible()
+  await page.evaluate(() => (window as unknown as { flights: Animation[] }).flights.forEach((flight) => flight.finish()))
+  await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  const dialog = sheet(page)
   await expect(dialog).toBeVisible()
   const open = await flight()
-  const sheet = (await dialog.boundingBox())!
+  const sheetBox = (await dialog.boundingBox())!
   // The sheet's own pose is flat while the flight owns it: a running transition
   // outranks an animation, so any scale left in CSS would overwrite the travel.
   await expect(dialog).toHaveCSS("transform", "none")
 
   const bearing = {
-    x: tile.x + tile.width / 2 - (sheet.x + sheet.width / 2),
-    y: tile.y + tile.height / 2 - (sheet.y + sheet.height / 2),
+    x: tile.x + tile.width / 2 - (sheetBox.x + sheetBox.width / 2),
+    y: tile.y + tile.height / 2 - (sheetBox.y + sheetBox.height / 2),
   }
   expect(open.duration).toBe(200)
   // Direction, not distance: the travel is capped, so a tile anywhere on screen
@@ -159,58 +247,42 @@ test("the notes sheet flies out of the control that opened it and back into it",
 test("the phone sheet moves navigation onto the title line", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
-  const dialog = page.getByRole("dialog")
+  await page.goto("/notes/designing-matcha/")
+  const dialog = sheet(page)
   expect(await dialog.boundingBox()).toEqual({ x: 8, y: 8, width: 304, height: 552 })
   const titleRow = (await dialog.locator(".writings-toolbar-leading").boundingBox())!
-  const close = (await dialog.getByRole("button", { name: "Close writings" }).boundingBox())!
+  const close = (await dialog.getByRole("button", { name: "Close note" }).boundingBox())!
   expect(close.y).toBe(titleRow.y)
   expect(close.x + close.width).toBe(292)
-  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
   const prev = (await dialog.getByRole("button", { name: "Previous note" }).boundingBox())!
   const title = (await dialog.getByRole("heading", { name: "Notes", exact: true }).boundingBox())!
   expect(prev.y).toBe(titleRow.y)
   expect(prev.x).toBeGreaterThanOrEqual(title.x + title.width)
-  // Reading and browsing leave the close button where the list put it.
-  expect(await dialog.getByRole("button", { name: "Close writings" }).boundingBox()).toEqual(close)
   // No bottom bar: the article scrolls to the foot of the sheet.
-  const reader = (await dialog.locator('[data-page-id="2"]').boundingBox())!
+  const reader = (await dialog.locator(".writings-scroll").boundingBox())!
   expect(reader.y + reader.height).toBe(560)
+  // The sheet fits, and Tab never leaves it.
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press("Tab")
+    await expect.poll(() => dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+  }
 })
 
-test("the toolbar divider appears only once a page has scrolled", async ({ page }) => {
-  // Short enough that the archive itself overflows, not just a note.
+test("the toolbar divider appears only once the article has scrolled", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 520 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
-  const dialog = page.getByRole("dialog")
+  await page.goto("/notes/designing-matcha/")
+  const dialog = sheet(page)
   const toolbar = dialog.locator(".writings-toolbar")
   const shadow = () => toolbar.evaluate((element) => getComputedStyle(element).boxShadow)
-  // The line and its shadow are both fully transparent while a page rests at its top.
+  // The line and its shadow are both fully transparent while the article rests at its top.
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0)")
-
-  const archive = dialog.locator('[data-page-id="1"]')
-  // The list is eight rows of --text-sm, so its overflow is shorter than the
-  // request: take the offset the browser actually settles on and assert on that.
-  await archive.evaluate((element) => element.scrollTo(0, 200))
-  const archiveOffset = await archive.evaluate((element) => element.scrollTop)
-  expect(archiveOffset).toBeGreaterThan(0)
-  await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
-
-  // Opening a note resets the reader to the top, so the divider goes with it.
-  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
-  await expect.poll(shadow).toContain("rgba(0, 0, 0, 0)")
-  const reader = dialog.locator('[data-page-id="2"]')
+  const reader = dialog.locator(".writings-scroll")
   await reader.evaluate((element) => element.scrollTo(0, 400))
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
-
-  // Back on the list the divider follows the archive's retained offset, not the reader's.
-  await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
-  await expect.poll(() => archive.evaluate((element) => element.scrollTop)).toBe(archiveOffset)
-  await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
-  await archive.evaluate((element) => element.scrollTo(0, 0))
+  // Turning to the next note resets the reader to the top, so the divider goes with it.
+  await dialog.getByRole("button", { name: "Next note", exact: true }).click()
+  await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeVisible()
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0)")
 })
 
@@ -232,124 +304,16 @@ test("archive orders years and dates newest first without assigning dates to und
   expect(groupWritingsByYear([])).toEqual([])
 })
 
-test("notes stay in the larger modal and the back button restores the simple list", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  const folder = page.getByRole("button", { name: "Open writings folder" })
-  await expect(folder.locator(".writings-tile-label")).toHaveText("Writings & notes")
-  await expect(folder.locator(".writings-tile-caption")).toHaveCount(0)
-  await folder.click()
-  const dialog = page.getByRole("dialog")
-  await expect(dialog.getByRole("searchbox")).toHaveCount(0)
-  await expect(dialog.getByText("Project notes", { exact: true })).toHaveCount(0)
-  const before = (await dialog.boundingBox())!
-  expect(before.width).toBeGreaterThan(700)
-  expect(before.width).toBeLessThan(1000)
-  const entry = dialog.getByRole("button", { name: "Designing Matcha", exact: true })
-  await entry.click()
-  await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
-  // The article is taller than the list, so the sheet grows to hold it. Only
-  // the height moves -- the column is the same width on both pages.
-  const after = (await dialog.boundingBox())!
-  expect(after.width).toBe(before.width)
-  expect(after.height).toBeGreaterThan(before.height)
-  const toolbar = dialog.locator(".writings-toolbar")
-  await expect(toolbar).toHaveText("Notes")
-  await expect(dialog.getByRole("heading", { name: "A system has to survive the awkward states", exact: true })).toBeVisible()
-  const image = dialog.getByRole("img", { name: "Matcha homepage", exact: true })
-  await image.scrollIntoViewIfNeeded()
-  await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
-  expect(await dialog.locator('.writings-scroll[data-page-id="2"]').evaluate((element) => element.scrollHeight > element.clientHeight * 3)).toBe(true)
-  await expect(toolbar).toBeInViewport()
-  await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
-  await expect(entry).toBeFocused()
-  await expect(dialog.locator(".writings-year > h3")).toHaveText(["2026", "2025"])
-  // Going back returns the sheet to the archive's height.
-  expect((await dialog.boundingBox())!.height).toBe(before.height)
-  await page.keyboard.press("Escape")
-  await expect(dialog).not.toBeVisible()
-  await expect(folder).toBeFocused()
-})
-
-test("notes fit mobile, preserve keyboard access, and reopen on the list", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 568 })
-  await page.goto("/")
-  const folder = page.getByRole("button", { name: "Open writings folder" })
-  await folder.click()
-  const dialog = page.getByRole("dialog")
-  await expect(dialog).toBeVisible()
-  await dialog.getByRole("button", { name: "From quote to confirmation", exact: true }).click()
-  await expect(dialog.getByRole("heading", { name: "Give the numbers a clear meaning", exact: true })).toBeVisible()
-  await expect.poll(() => dialog.evaluate((element) => {
-    const rect = element.getBoundingClientRect()
-    return rect.left > 0 && rect.right < innerWidth && rect.top > 0 && rect.bottom < innerHeight
-  })).toBe(true)
-  for (let i = 0; i < 6; i++) {
-    await page.keyboard.press("Tab")
-    await expect.poll(() => dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true)
-  }
-  await dialog.getByRole("button", { name: "Close writings" }).click()
-  await expect(dialog).not.toBeVisible()
-  await folder.click()
-  await expect(dialog.getByRole("button", { name: "From quote to confirmation", exact: true })).toBeVisible()
-  await page.mouse.click(1, 1)
-  await expect(dialog).not.toBeVisible()
-})
-
-
-test("a back button leads the title and returns to the list", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
-  const dialog = page.getByRole("dialog")
-  const title = dialog.getByRole("heading", { name: "Notes", exact: true })
-  const entry = dialog.getByRole("button", { name: "Designing Matcha", exact: true })
-  await dialog.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
-  // The list has nowhere to go back to, so the control collapses out of the
-  // accessibility tree and the title rests on the column's left edge.
-  await expect(dialog.getByRole("button", { name: "Go back to Notes", exact: true })).toHaveCount(0)
-  const anchor = (await title.boundingBox())!
-  await entry.click()
-  await expect(dialog.locator(".writing-reader-date time")).toHaveText("March 2, 2026")
-  await expect(dialog.locator(".writing-reader-date time")).toHaveAttribute("datetime", "2026-03-02")
-  const reader = dialog.locator('[data-page-id="2"]')
-  await expect(reader).toHaveAttribute("aria-hidden", "false")
-  await expect(dialog.locator('[data-page-id="1"]')).toHaveAttribute("inert", "")
-  await expect(dialog.getByRole("img", { name: "Matcha discovery homepage with token search and market overview" })).toBeVisible()
-  // Reading swaps the year crumb for a back arrow that leads the title.
-  await expect(dialog.locator(".writings-toolbar")).toHaveText("Notes")
-  const back = dialog.getByRole("button", { name: "Go back to Notes", exact: true })
-  await expect(back).toBeVisible()
-  // On a sheet this wide the arrow hangs in the left gutter, so the title holds
-  // the column edge it had on the list instead of being pushed across.
-  await expect.poll(async () => (await back.boundingBox())!.width).toBeGreaterThan(0)
-  const arrow = (await back.boundingBox())!
-  expect((await title.boundingBox())!.x).toBe(anchor.x)
-  expect(arrow.x + arrow.width).toBeLessThanOrEqual(anchor.x)
-  await back.click()
-  await expect(entry).toBeFocused()
-  await expect.poll(async () => (await title.boundingBox())!.x).toBe(anchor.x)
-  await entry.click()
-  await back.click()
-  await dialog.getByRole("button", { name: "From quote to confirmation", exact: true }).click()
-  await back.click()
-  await expect(dialog.getByRole("button", { name: "From quote to confirmation", exact: true })).toBeFocused()
-  await expect(reader).toHaveAttribute("inert", "")
-})
-
 test("note navigation follows the archive and resets the reader scroll", async ({ page }) => {
   await page.setViewportSize({ width: 2283, height: 1239 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
-  const dialog = page.getByRole("dialog")
-  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
-  await dialog.locator('[data-page-id="2"]').evaluate((element) => element.scrollTo(0, 800))
+  await page.goto("/notes/designing-matcha/")
+  const dialog = sheet(page)
+  await dialog.locator(".writings-scroll").evaluate((element) => element.scrollTo(0, 800))
   await dialog.getByRole("button", { name: "Next note", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Next note", exact: true })).toBeFocused()
-  await expect.poll(() => dialog.locator('[data-page-id="2"]').evaluate((element) => element.scrollTop)).toBe(0)
+  await expect.poll(() => dialog.locator(".writings-scroll").evaluate((element) => element.scrollTop)).toBe(0)
   await dialog.getByRole("button", { name: "Previous note", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Previous note", exact: true })).toBeFocused()
@@ -358,10 +322,10 @@ test("note navigation follows the archive and resets the reader scroll", async (
   await expect(dialog.getByRole("button", { name: "Previous note", exact: true })).toBeFocused()
   await page.keyboard.press("ArrowRight")
   await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
-  await dialog.locator('[data-page-id="2"]').evaluate((element) => element.scrollTo(0, 800))
+  await dialog.locator(".writings-scroll").evaluate((element) => element.scrollTo(0, 800))
   await page.keyboard.press("ArrowRight")
   await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeFocused()
-  await expect.poll(() => dialog.locator('[data-page-id="2"]').evaluate((element) => element.scrollTop)).toBe(0)
+  await expect.poll(() => dialog.locator(".writings-scroll").evaluate((element) => element.scrollTop)).toBe(0)
   await page.keyboard.press("ArrowDown")
   await page.keyboard.press("ArrowUp")
   await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeFocused()
@@ -369,17 +333,21 @@ test("note navigation follows the archive and resets the reader scroll", async (
   await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
   await page.keyboard.press("ArrowLeft")
   await expect(dialog.getByRole("heading", { name: "A song we all know", exact: true })).toBeFocused()
+  // Back puts the list's slide forward; a row of it opens the next sheet.
   await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
-  await expect(dialog.getByRole("button", { name: "A song we all know", exact: true })).toBeFocused()
-  await page.keyboard.press("ArrowRight")
-  await expect(dialog).toHaveAttribute("data-reading", "false")
-  await dialog.getByRole("button", { name: "My project context is moving into Markdown", exact: true }).click()
+  await expect(dialog).toBeHidden()
+  await popup(page).getByRole("button", { name: "My project context is moving into Markdown", exact: true }).click()
+  await expect(dialog.getByRole("heading", { name: "My project context is moving into Markdown", exact: true })).toBeFocused()
   await page.keyboard.press("ArrowLeft")
   await expect(dialog.getByRole("heading", { name: "From quote to confirmation", exact: true })).toBeFocused()
   await page.keyboard.press("ArrowRight")
   await expect(dialog.getByRole("heading", { name: "My project context is moving into Markdown", exact: true })).toBeFocused()
 })
 
+// The folder holds a place in the preview's sequence like any other tile, so
+// the archive's two arrows are the sequence's rather than the list's: they step
+// out to the tiles either side of the folder, and the preview's arrows step in.
+// Inside a note the same two arrows turn its pages.
 test("margin notes hang in the gutters without widening the reader", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   // 1440 is the sheet at its full width; 1000 is where the gutters first open
@@ -388,10 +356,10 @@ test("margin notes hang in the gutters without widening the reader", async ({ pa
   // column leaves over precisely so both hold.
   for (const width of [1440, 1000]) {
     await page.setViewportSize({ width, height: 1000 })
-    await page.goto("/?writing=ai-design-needs-control")
-    const dialog = page.getByRole("dialog")
+    await page.goto("/notes/ai-design-needs-control/")
+    const dialog = sheet(page)
     await expect(dialog.getByRole("heading", { name: "AI design needs more control", exact: true })).toBeVisible()
-    const reader = dialog.locator('.writings-scroll[data-page-id="2"]')
+    const reader = dialog.locator(".writings-scroll")
     // A gutter note is absolutely positioned outside the reading column, so the
     // one thing that can go wrong quietly is a sideways scrollbar on the reader.
     await expect.poll(() => reader.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
@@ -414,21 +382,19 @@ test("margin notes hang in the gutters without widening the reader", async ({ pa
   }
 })
 
-test("archive drawings stay in the gutters and leave the list at narrow widths", async ({ page }) => {
+test("the list's drawings stay in the card's gutters and leave at narrow widths", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
-  const dialog = page.getByRole("dialog")
-  const archive = dialog.locator('.writings-scroll[data-page-id="1"]')
-  await expect(dialog.getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
-  const drawings = dialog.locator(".writings-drawing")
+  await page.goto("/notes/")
+  const card = popup(page).locator(".preview-gallery-card")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  const drawings = popup(page).locator(".writings-drawing")
   expect(await drawings.count()).toBeGreaterThan(0)
-  // The drawings hang outside the reading column, so the failure to catch is a
-  // sideways scrollbar on the archive rather than a drawing that looks wrong.
-  await expect.poll(() => archive.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
-  const bounds = (await archive.boundingBox())!
-  const rows = (await dialog.locator(".writings-year li").first().boundingBox())!
+  // The drawings hang outside the list's column, so the failure to catch is a
+  // sideways scrollbar on the card rather than a drawing that looks wrong.
+  await expect.poll(() => card.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
+  const bounds = (await card.boundingBox())!
+  const rows = (await popup(page).locator(".writings-year li").first().boundingBox())!
   let sides = 0
   for (const box of await drawings.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect()))) {
     expect(box.left).toBeGreaterThanOrEqual(bounds.x)
@@ -439,16 +405,20 @@ test("archive drawings stay in the gutters and leave the list at narrow widths",
   }
   expect(sides).toBe(3)
 
-  // Below the width the margin notes move out at there is no gutter to draw in.
-  await page.setViewportSize({ width: 820, height: 1000 })
+  // Below 1320px the card opens at its compact width, and there is no gutter
+  // to draw in however wide the window is. The width is latched when the
+  // card opens, so this is a fresh visit rather than a resize.
+  await page.setViewportSize({ width: 1200, height: 1000 })
+  await page.goto("/notes/")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
   await expect(drawings.first()).toBeHidden()
 })
 
 test("margin notes fold into the column when the gutters are gone", async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/?writing=ai-design-needs-control")
-  const dialog = page.getByRole("dialog")
+  await page.goto("/notes/ai-design-needs-control/")
+  const dialog = sheet(page)
   await expect(dialog.getByRole("heading", { name: "AI design needs more control", exact: true })).toBeVisible()
   const prose = dialog.locator(".writing-reader-prose > p").first()
   const note = dialog.locator(".writing-margin-note").first()
@@ -463,8 +433,8 @@ test("margin notes fold into the column when the gutters are gone", async ({ pag
 test("an article closes with its acknowledgements above More articles", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/?writing=designing-matcha")
-  const dialog = page.getByRole("dialog")
+  await page.goto("/notes/designing-matcha/")
+  const dialog = sheet(page)
   const credits = dialog.getByRole("region", { name: "Acknowledgements" })
   await expect(credits).toContainText("0x Project")
   const creditsBox = (await credits.boundingBox())!
@@ -475,11 +445,9 @@ test("an article closes with its acknowledgements above More articles", async ({
 test("keeps marginalia to two notes an article, one in each gutter", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  const folder = page.getByRole("button", { name: "Open writings folder" })
-  await folder.click()
-  const dialog = page.getByRole("dialog")
-  const entries = dialog.locator(".writings-year li button")
+  await page.goto("/notes/")
+  const dialog = sheet(page)
+  const entries = popup(page).locator(".writings-year li button")
   await expect(entries.first()).toBeVisible()
   const count = await entries.count()
   expect(count).toBeGreaterThan(0)
@@ -497,14 +465,15 @@ test("keeps marginalia to two notes an article, one in each gutter", async ({ pa
     // The interjections that used to drop between paragraphs are gone with them.
     await expect(dialog.locator(".writing-aside")).toHaveCount(0)
     await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
+    await expect(dialog).toBeHidden()
   }
 })
 
 test("prints a highlighted Markdown sample without a sideways read", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/?writing=project-context-in-markdown")
-  const dialog = page.getByRole("dialog")
+  await page.goto("/notes/project-context-in-markdown/")
+  const dialog = sheet(page)
   const block = dialog.locator(".writing-code-block")
   await expect(block).toBeVisible()
   await expect(dialog.locator(".writing-code-figure figcaption")).toHaveText("PROJECT_STATUS.md, halfway through a week.")
@@ -540,7 +509,7 @@ test("prints a highlighted Markdown sample without a sideways read", async ({ pa
   // The sample is written to the measure, so it never scrolls sideways -- and
   // it must never push the reader itself sideways either.
   await expect.poll(() => block.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
-  const reader = dialog.locator('.writings-scroll[data-page-id="2"]')
+  const reader = dialog.locator(".writings-scroll")
   await expect.poll(() => reader.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
 
   // A phone is narrower than the longest line, so there the lines wrap instead.

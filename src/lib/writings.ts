@@ -1,13 +1,14 @@
-import type { Writing } from "../data/writings"
+/** Anything the archive can list under a year: a summary or a whole article. */
+type Dated = { publishedAt?: string; archiveYear?: number }
 
-export function writingYear(writing?: Writing) {
+export function writingYear(writing?: Dated) {
   return writing?.publishedAt?.slice(0, 4) || writing?.archiveYear?.toString() || "Undated"
 }
 
 /** Publication dates or archive years sort newest first; undated notes go last. */
-export function groupWritingsByYear(writings: readonly Writing[]) {
-  const groups = new Map<string, Writing[]>()
-  const sortDate = (writing: Writing) => writing.publishedAt ?? writing.archiveYear?.toString() ?? ""
+export function groupWritingsByYear<T extends Dated>(writings: readonly T[]) {
+  const groups = new Map<string, T[]>()
+  const sortDate = (writing: T) => writing.publishedAt ?? writing.archiveYear?.toString() ?? ""
   const sorted = [...writings].sort((a, b) => sortDate(b).localeCompare(sortDate(a)))
   for (const writing of sorted) {
     const year = writingYear(writing)
