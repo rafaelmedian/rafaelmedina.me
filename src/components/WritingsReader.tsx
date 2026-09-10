@@ -1,86 +1,21 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ArrowUpRight, ChevronLeft, ChevronRight, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type RefObject } from "react"
 
 
-import { writings, type Writing, type WritingAnnotation, type WritingCode, type WritingImage } from "../data/writings"
+import { writings, type Writing } from "../data/writings"
 import { backSound, nextSound, openSound } from "../lib/sounds"
-import { groupWritingsByYear } from "../lib/writings"
+import { groupWritingsByYear, noteHash, pickFrom } from "../lib/writings"
 import { usePortfolioItemUrl } from "../lib/portfolioUrl"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useOriginTravel, visibleOriginRect } from "../lib/originMotion"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
-import { LikeButton } from "./LikeButton"
+import { WritingArticle } from "./WritingArticle"
 
 
-// A note is written as plain strings, and backticks are the one piece of markup
-// they carry: file names and paths, which read quieter than the sentence holding
-// them. The lightweight folder uses the same inline markup convention.
 // The deferred reader measures its sheet before it paints on the client.
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
-
-function inlineProse(text: string) {
-  return text.split(/`([^`]+)`/).map((part, index) => (index % 2 ? <code className="writing-code" key={index}>{part}</code> : part))
-}
-
-// The reader's pencil marks are pictures, not paths. A bezier written by hand
-// draws one clean stroke of even weight, which is the one thing a pencil never
-// does; these are rendered with Rough.js in scripts/build-writing-marks.mjs,
-// which retraces every line with randomised bowing, and shipped as PNGs from
-// public/writings/marks. They are black on transparent and used as masks, so
-// they still take their colour from the text they sit beside.
-const MARK_VARIANTS = ["a", "b", "c"]
-
-// Everything about a note that varies -- which mark it wears, how far it drops,
-// which rail it sits on, how far it tilts -- comes off this. It is a hash of
-// the note's own text rather than a random number, because the page is
-// prerendered: the server and the browser have to agree, and a note should keep
-// the place it had the last time someone read it.
-function noteHash(text: string) {
-  let hash = 0
-  for (let index = 0; index < text.length; index += 1) hash = (Math.imul(hash, 31) + text.charCodeAt(index)) | 0
-  return Math.abs(hash)
-}
-
-const pickFrom = <T,>(choices: readonly T[], hash: number, digit: number) =>
-  choices[Math.floor(hash / 7 ** digit) % choices.length]
-
-// How far a note drops into its paragraph, which rail it sits on, and how far
-// it leans. Notes that shared one offset drew a second column down each edge;
-// spread over these they read as written into the gutter at different moments.
-// The lift stays under three lines so a note cannot fall past the paragraph it
-// belongs to and land against the next one's.
-const NOTE_LIFTS = ["0em", "0.5em", "1.1em", "1.7em", "2.3em", "2.9em"]
-const NOTE_GAPS = ["0.45rem", "0.6rem", "0.75rem", "0.9rem", "1.05rem"]
-const NOTE_TILTS = ["-2.4deg", "-1.6deg", "-0.9deg", "0.9deg", "1.6deg", "2.4deg"]
-// A bracket is drawn at the height of the note it holds, so the mask is never
-// stretched by more than the line the estimate missed by. About twenty
-// characters fit a 122px gutter line at --text-xs, which is the gutter from
-// 1320px up; below that the gutter narrows and a long note runs a line past
-// this, which is the miss the mask is sized to absorb.
-const NOTE_CHARS_PER_LINE = 20
-
-// A gutter note: a drawn bracket holding the passage, and the handwriting
-// beside it. It is absolutely positioned next to its paragraph once the modal
-// is wide enough to have gutters, so it lives inside the paragraph and reads
-// after it rather than interrupting the sentence.
-function MarginNote({ annotation }: { annotation: WritingAnnotation }) {
-  const hash = noteHash(annotation.text)
-  const lines = Math.min(4, Math.max(1, Math.ceil(annotation.text.length / NOTE_CHARS_PER_LINE)))
-  const mark = `bracket-${lines}-${pickFrom(MARK_VARIANTS, hash, 0)}`
-  return (
-    <span className="writing-margin-note" data-place={annotation.place ?? "right"} style={{
-      "--writing-mark": `url("/writings/marks/${mark}.png")`,
-      "--writing-note-lift": pickFrom(NOTE_LIFTS, hash, 1),
-      "--writing-note-gap": pickFrom(NOTE_GAPS, hash, 2),
-      "--writing-note-tilt": pickFrom(NOTE_TILTS, hash, 3),
-    } as CSSProperties}>
-      <span className="writing-margin-note-bracket" aria-hidden="true" />
-      <span className="writing-margin-note-label">{annotation.text}</span>
-    </span>
-  )
-}
 
 // The archive leaves the same two gutters empty that the reader hangs its
 // marginalia in. Objects go into them down the list, in the same pencil the
@@ -174,86 +109,9 @@ function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
   )
 }
 
-// The one code sample in the reader, and it is Markdown, which the article it
-// sits in is about. That is narrow enough to tokenise here rather than pull in
-// a highlighter: the grammar below is the part of Markdown a note actually
-// uses, and everything it does not recognise falls through as plain text.
-//
-// Five token kinds, and the stylesheet gives each one a hue: a code block is
-// the one place on this site that carries colour, because a reader arrives at
-// one already knowing what coloured code means and reads the structure faster
-// for it than they would from weight alone.
-type CodeToken = { text: string; kind?: "mark" | "strong" | "literal" | "link" }
-
-// Backticked spans, bold, and links. Each alternative keeps its delimiters in
-// its own group so they can be dimmed away from the content they wrap.
-const INLINE_MARKDOWN = /(`)([^`]+)(`)|(\*\*)([^*]+)(\*\*)|(\[)([^\]]+)(\]\()([^)]+)(\))/g
-
-function inlineMarkdown(text: string): CodeToken[] {
-  const tokens: CodeToken[] = []
-  let last = 0
-  for (const match of text.matchAll(INLINE_MARKDOWN)) {
-    if (match.index > last) tokens.push({ text: text.slice(last, match.index) })
-    const [, tick, code, tickEnd, stars, bold, starsEnd, open, label, middle, href, close] = match
-    if (tick) tokens.push({ text: tick, kind: "mark" }, { text: code, kind: "literal" }, { text: tickEnd, kind: "mark" })
-    else if (stars) tokens.push({ text: stars, kind: "mark" }, { text: bold, kind: "strong" }, { text: starsEnd, kind: "mark" })
-    else tokens.push({ text: open, kind: "mark" }, { text: label, kind: "literal" },
-      { text: middle, kind: "mark" }, { text: href, kind: "link" }, { text: close, kind: "mark" })
-    last = match.index + match[0].length
-  }
-  if (last < text.length) tokens.push({ text: text.slice(last) })
-  return tokens
-}
-
-// A heading is emphasis for its whole line; a bullet or a quote only marks its
-// opening, and what follows is ordinary inline Markdown.
-function markdownTokens(line: string): CodeToken[] {
-  const heading = /^(#{1,6} )(.*)$/.exec(line)
-  if (heading) return [{ text: heading[1], kind: "mark" }, { text: heading[2], kind: "strong" }]
-  const led = /^(\s*(?:[-*+] |\d+\. |> ))(.*)$/.exec(line)
-  if (led) return [{ text: led[1], kind: "mark" }, ...inlineMarkdown(led[2])]
-  return inlineMarkdown(line)
-}
-
-// The newline rides inside each line's span rather than the span being a block:
-// `white-space: pre` is what breaks the lines, so a blank entry still gets a
-// line box, and selecting the sample copies it back out with its breaks.
-function NoteCode({ code }: { code: WritingCode }) {
-  return (
-    <figure className="writing-code-figure">
-      <pre className="writing-code-block"><code>
-        {code.lines.map((line, index) => (
-          <span className="writing-code-line" key={index}>
-            {markdownTokens(line).map((token, position) => (
-              <span data-code={token.kind} key={position}>{token.text}</span>
-            ))}
-            {"\n"}
-          </span>
-        ))}
-      </code></pre>
-      {code.caption ? <figcaption>{code.caption}</figcaption> : null}
-    </figure>
-  )
-}
-
-// Prose plus its marginalia. Paragraph order is unchanged: a note rides inside
-// the paragraph it belongs to and hangs in the gutter beside it, so nothing
-// ever comes between one paragraph and the next.
-function NoteProse({ paragraphs, annotations }: { paragraphs: string[]; annotations?: WritingAnnotation[] }) {
-  return paragraphs.map((paragraph, index) => (
-    <p key={index}>
-      {inlineProse(paragraph)}
-      {annotations?.filter((annotation) => annotation.at === index).map((annotation) => (
-        <MarginNote annotation={annotation} key={annotation.text} />
-      ))}
-    </p>
-  ))
-}
-
 // Dates are stored as plain YYYY-MM-DD, so they are read at UTC midnight rather
 // than in the reader's zone, where a western offset would roll them back a day.
 const noteDate = (publishedAt: string) => new Date(`${publishedAt}T00:00:00Z`)
-const fullDateFormat = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })
 // A list row sits under its own year heading, so it only carries day and month.
 const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", timeZone: "UTC" })
 
@@ -273,15 +131,6 @@ function WritingEntry({ writing, ref, onClick }: { writing: Writing; ref?: (node
         <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{dayMonthFormat.format(noteDate(writing.publishedAt))}</time>
       ) : null}
     </button>
-  )
-}
-
-function NoteImage({ image }: { image: WritingImage }) {
-  return (
-    <figure className="writing-reader-figure">
-      <img src={image.src} alt={image.alt} width={image.width} height={image.height} loading="lazy" decoding="async" />
-      {image.caption ? <figcaption>{image.caption}</figcaption> : null}
-    </figure>
   )
 }
 
@@ -338,7 +187,6 @@ export function WritingsReader({ onOpenChange, ref, triggerRef }: { onOpenChange
   const groups = groupWritingsByYear(writings)
   const orderedWritings = groups.flatMap(({ entries }) => entries)
   const drawings = archiveDrawings(orderedWritings)
-  const moreWritings = orderedWritings.filter((writing) => writing.id !== selectedId).slice(0, 3)
 
   useEffect(() => {
     // History can close or replace a note without going through a dialog control.
@@ -530,48 +378,8 @@ export function WritingsReader({ onOpenChange, ref, triggerRef }: { onOpenChange
             <div className="writings-scroll t-page" data-page-id="2" ref={readerRef} aria-hidden={!reading} inert={!reading}
               onScroll={(event) => { if (reading) setScrolled(event.currentTarget.scrollTop > 0) }}>
               {selected ? (
-              <article className="writing-reader" key={selected.id}>
-                <header className="writing-reader-header">
-                  <div className="writing-reader-date">
-                    {selected.publishedAt ? (
-                      <time dateTime={selected.publishedAt}>{fullDateFormat.format(noteDate(selected.publishedAt))}</time>
-                    ) : <span>{selected.archiveYear ? `Archive · ${selected.archiveYear}` : "Undated"}</span>}
-                  </div>
-                  <h2 ref={titleRef} tabIndex={-1} className="writings-page-title">{selected.title}</h2>
-                  {open && reading && import.meta.env.VITE_LIKES_API_URL ? <LikeButton key={selected.id} collection="notes" itemId={selected.id} /> : null}
-                </header>
-                {selected.cover ? <NoteImage image={selected.cover} /> : null}
-                <div className="writing-reader-prose">
-                  <NoteProse paragraphs={selected.paragraphs} annotations={selected.annotations} />
-                  {selected.code ? <NoteCode code={selected.code} /> : null}
-                  {selected.image ? <NoteImage image={selected.image} /> : null}
-                  {selected.sections?.map((section) => (
-                    <section className="writing-reader-section" key={section.heading}>
-                      <h3>{section.heading}</h3>
-                      <NoteProse paragraphs={section.paragraphs} annotations={section.annotations} />
-                      {section.code ? <NoteCode code={section.code} /> : null}
-                      {section.image ? <NoteImage image={section.image} /> : null}
-                    </section>
-                  ))}
-                  {selected.href ? <a href={selected.href} target="_blank" rel="noreferrer">Read original article <ArrowUpRight size={16} aria-hidden="true" /></a> : null}
-                </div>
-                {selected.acknowledgements ? (
-                  <section className="writing-acknowledgements" aria-label="Acknowledgements">
-                    <h3>Acknowledgements</h3>
-                    <p>{inlineProse(selected.acknowledgements)}</p>
-                  </section>
-                ) : null}
-                {moreWritings.length > 0 ? (
-                  <section className="writing-more" aria-label="More articles">
-                    <h3>More articles</h3>
-                    <ul>{moreWritings.map((writing) => (
-                      <li key={writing.id}>
-                        <WritingEntry writing={writing} onClick={() => readWriting(writing.id)} />
-                      </li>
-                    ))}</ul>
-                  </section>
-                ) : null}
-              </article>
+                <WritingArticle key={selected.id} writing={selected} titleRef={titleRef}
+                  showLikes={open && reading} onSelectWriting={readWriting} />
               ) : null}
             </div>
             <div className="writings-scroll t-page" data-page-id="1" ref={archiveRef} aria-hidden={reading} inert={reading}
