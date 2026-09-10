@@ -120,14 +120,16 @@ activation with the generated files.
 
 ## Speaking preview and minimal replies
 
-The development teaser uses a two-second speaking clip of Pedro Pascal from
-[this Tenor interview GIF](https://tenor.com/view/pedro-pascal-palta-avocado-gif-16406806577894432292).
-It is a temporary placeholder, not Rafael. The script crops the face above the
-original subtitles and produces a 144px, 8fps GIF (about 112 KB) plus a still.
-Rebuild with `node scripts/build-about-intro-placeholder.mjs [original.gif]`;
-without an argument it downloads the documented source. These files stay in
-`tests/fixtures/`, and the production widget remains disabled. The separate
-five-second color-bar recording still exercises playback and captions.
+The development preview uses a five-second excerpt from Marcus Aurelius’s
+[bedroom vlog on Pexels](https://www.pexels.com/video/a-woman-vlogging-while-in-bed-9780901/),
+under the [Pexels license](https://www.pexels.com/license/). The stock subject is
+not Rafael. The source is silent: no speech or test tone has been added.
+The recording and preview share a square face crop: a 720px MP4 (226 KB),
+a two-second 160px/8fps GIF (127 KB), and a WebP poster (5 KB).
+Rebuild with `node scripts/build-about-intro-placeholder.mjs [original.mp4]`;
+without an argument it downloads the documented source. Outputs are checked
+against the media budgets before replacing the fixtures. These files stay in
+`tests/fixtures/`, and the production widget remains disabled.
 
 Hover or focus the portrait to reveal play in its center and two small reply
 controls beside it: Email and Text. Touch users tap the portrait to reveal them.

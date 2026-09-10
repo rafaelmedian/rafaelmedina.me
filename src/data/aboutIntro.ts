@@ -21,7 +21,7 @@ export function getAboutIntro(): AboutIntroMedia | null {
     return {
       placeholder: true,
       duration: 5,
-      transcript: "Synthetic video for testing the introduction player.",
+      transcript: "Silent bedroom vlog stock footage for testing the introduction player.",
       assets: {
         recording: `${base}/recording.mp4`,
         teaser: `${base}/teaser.gif`,
