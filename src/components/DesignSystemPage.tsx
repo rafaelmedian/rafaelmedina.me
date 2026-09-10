@@ -317,7 +317,7 @@ const RADII_ENTRIES = [
   },
   {
     value: "--radius-lg",
-    use: "Work tiles, quote cards, dialog media and bottom corners",
+    use: "Work tiles, quote cards, dialog media and bottom corners, expanded About introduction",
     css: "--radius-lg",
   },
   { value: "--radius-full", use: "Pills, dots, avatars, nav buttons, the skip link", css: "--radius-full" },
@@ -420,7 +420,7 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the work-history popover, and the takeover close. Also gallery and note paging." },
   { value: "240ms", use: "The live-time label roll only; hover-card and work-history entrances use --duration-base." },
   { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
-  { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening on hover or focus, and the sheet rewinding before close (--photo-rewind-duration)." },
+  { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening on hover or focus, the About introduction expanding from its circle, and the sheet rewinding before close (--photo-rewind-duration)." },
   { value: "200ms", use: "Personal-photo sheet: --photo-open-duration and --photo-close-duration both alias --duration-base. Every flight, its caption, and the backdrop share one beat in either direction, with no stagger and no delay — the whole hand leaves together and comes home together. Reduced motion removes the transitions and flights." },
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },
@@ -2145,6 +2145,26 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   scroll position to the top, holding preview playback until the return settles so video compositing
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
+                </li>
+                <li data-ds-terms={terms("about introduction video teaser circle 96px 56px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion")}>
+                  <strong>The optional introduction grows from its own circle.</strong> A 96px desktop circle
+                  sits at the bottom-left on <code>--z-corner</code>, expanding to 240px with
+                  <code> --radius-lg</code> corners, <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
+                  Below 700px a 56px circle shares the centered TOC row with a 12px gap on
+                  <code> --z-social</code>; the player grows above that row, capped at 256px and the viewport.
+                  Width, height, corner radius and vertical position use <code>--duration-slow</code> to expand,
+                  <code> --duration-quick</code> to collapse, and <code>--ease-smooth</code> throughout.
+                  The white control surface uses the existing #e9e9e9 hover fill, 44px buttons and seek target,
+                  <code> --text-xs</code> tabular time, and <code>--text-sm</code> captions and desktop invitation.
+                  The play disc is 44px on desktop and 32px inside the mobile circle, whose entire 56px
+                  surface is the button. Keyboard focus outlines that inner disc to avoid clipping.
+                  Media waits until within 200px of About; only a press requests the spoken recording.
+                  Reduced motion and lightweight connections use the poster instead of the silent teaser.
+                  Reduced motion removes the morph and press feedback. Captions start enabled, and
+                  leaving About, hiding the tab or opening a dialog pauses sound. Preview the synthetic
+                  fixture on the <a href="/#about-panel">development homepage</a> (a short video and matching GIF,
+                  labeled Placeholder); <code>?intro=off</code> hides it for development comparisons. Production stays
+                  disabled until the real recording is ready.
                 </li>
                 <li data-ds-terms={terms("about reading surface 36rem process how i work services pricing faq common questions stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
                   <strong>About is one continuous reading surface.</strong> The introduction, the worked-with wall,

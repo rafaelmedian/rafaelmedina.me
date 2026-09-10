@@ -11,6 +11,7 @@ and the global reduced-motion policy last.
 - `navigation.css`: corner links, takeover close button, and mobile contents.
 - `local-time.css`: local time, map, and résumé preview.
 - `about.css`: About content and résumé layout.
+- `about-intro.css`: deferred introduction video, circle-to-player morph, and shared mobile TOC dock.
 - `work-history.css`: work-history popovers and inline company links.
 - `contact.css`: contact pills, the booking pill, and social hover cards.
 - `work-grid.css`: project rows, captions, media, and About takeover choreography.
