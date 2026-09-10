@@ -1,17 +1,25 @@
 import { type PortfolioCard } from "../data/portfolio"
-import { resumeItemId } from "./projectMetadata"
+import { resumeItemId, writingsItemId } from "./projectMetadata"
 
 /**
  * What the preview gallery pages through. The grid is not all projects -- the
- * folded CV sheet sits in the portraits group among them -- and a visitor arrowing across the
- * gallery expects to meet whatever the grid has, in the order the grid has it.
- * So the sequence is items rather than cards, and the résumé is one of them.
+ * folded CV sheet sits in the portraits group among them, and the notes folder
+ * on the first row -- and a visitor arrowing across the gallery expects to meet
+ * whatever the grid has, in the order the grid has it. So the sequence is items
+ * rather than cards, and the résumé and the folder are among them.
+ *
+ * The folder's slide is the list of notes. A note itself is not a slide: it
+ * opens in the reader's own sheet over the list, with the hearts, the copy
+ * link and the note-to-note arrows that sheet has, and its back arrow returns
+ * to this slide.
  */
 export type GalleryItem =
   | { kind: "project"; id: string; card: PortfolioCard }
   | { kind: "resume"; id: typeof resumeItemId }
+  | { kind: "writings"; id: typeof writingsItemId }
 
 export const resumeGalleryItem = { kind: "resume", id: resumeItemId } as const
+export const writingsGalleryItem = { kind: "writings", id: writingsItemId } as const
 
 export function projectGalleryItem(card: PortfolioCard): GalleryItem {
   return { kind: "project", id: card.id, card }
@@ -20,6 +28,11 @@ export function projectGalleryItem(card: PortfolioCard): GalleryItem {
 /** The reader's heading, and the accessible name of its slide. */
 export const resumeItemTitle = "Work history"
 
+/** The list's heading, and the accessible name of its slide. */
+export const writingsItemTitle = "Notes"
+
 export function galleryItemTitle(item: GalleryItem) {
-  return item.kind === "resume" ? resumeItemTitle : item.card.title
+  if (item.kind === "resume") return resumeItemTitle
+  if (item.kind === "writings") return writingsItemTitle
+  return item.card.title
 }

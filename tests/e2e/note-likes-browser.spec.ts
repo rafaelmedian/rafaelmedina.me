@@ -3,9 +3,9 @@ import { maxLikesPerVisitor } from "../../src/data/likeLimits"
 import { likesApiUrl } from "./likesApi"
 
 async function openNote(page: import("@playwright/test").Page, title = "Designing Matcha") {
-  await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
-  await page.getByRole("button", { name: title, exact: true }).click()
+  await page.goto("/notes/")
+  await page.locator(".preview-gallery-popup").getByRole("button", { name: title, exact: true }).click()
+  await expect(page.locator(".writings-dialog")).toBeVisible()
 }
 
 test("spam clicks all count, batch into one write, and survive a reload", async ({ page }) => {

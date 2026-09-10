@@ -7,11 +7,13 @@ import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from 
 import { isVideoSource } from "../lib/media"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
-import { resumeItemTitle, type GalleryItem } from "../lib/galleryItems"
+import { galleryItemTitle, resumeItemTitle, writingsItemTitle, type GalleryItem } from "../lib/galleryItems"
 import { originCloseEasePoints, originOpenEasePoints, toCssEasing, useOriginTravel } from "../lib/originMotion"
 import { LikeButton } from "./LikeButton"
 import { PreviewMedia } from "./PreviewMedia"
 import { ResumeContent } from "./ResumeContent"
+import { WritingsArchive } from "./WritingsArchive"
+import type { WritingsReaderStatus } from "./WritingsFolder"
 import { backSound, closeSound, nextSound, openSound } from "../lib/sounds"
 
 type PreviewGalleryDialogProps = {
@@ -24,6 +26,12 @@ type PreviewGalleryDialogProps = {
   onOpenChange: (open: boolean) => void
   onSelectedIndexChange: (index: number) => void
   getOriginRect?: (index: number) => DOMRect | null
+  /** Where focus lands on close when the control that opened this is gone. */
+  finalFocus?: React.ComponentProps<typeof Dialog.Popup>["finalFocus"]
+  /** A row of the notes slide was pressed: open that note in its own sheet. */
+  onSelectWriting?: (id: string) => void
+  /** What the notes slide says while that sheet is on its way. */
+  notesStatus?: WritingsReaderStatus
 }
 
 type PreviewSwitchDirection = "prev" | "next"
@@ -89,6 +97,9 @@ export function PreviewGalleryDialog({
   onOpenChange,
   onSelectedIndexChange,
   getOriginRect,
+  finalFocus,
+  onSelectWriting,
+  notesStatus,
 }: PreviewGalleryDialogProps) {
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
   // This dialog is lazily mounted, so its first open is always the mount: `open`
@@ -116,6 +127,10 @@ export function PreviewGalleryDialog({
   const activeItem = items[safeIndex]
   const activeCard = activeItem?.kind === "project" ? activeItem.card : undefined
   const isResumeSlide = activeItem?.kind === "resume"
+  // The résumé and the notes list are both pages of prose in a card taller
+  // than the window, so both give the vertical arrows back to scrolling and
+  // page on the horizontal pair alone.
+  const isReaderSlide = isResumeSlide || activeItem?.kind === "writings"
   const activeMediaSource = activeCard?.image ?? ""
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
@@ -313,7 +328,7 @@ export function PreviewGalleryDialog({
       // going unrecorded.
       trackEvent("work_preview_open", {
         preview_id: nextItem.id,
-        preview_title: nextItem.kind === "resume" ? resumeItemTitle : nextItem.card.title,
+        preview_title: galleryItemTitle(nextItem),
         preview_index: nextIndex + 1,
         preview_placement: "resume_reader",
       })
@@ -340,7 +355,7 @@ export function PreviewGalleryDialog({
       // scrolling cannot reach the résumé from a focused paging/close button.
       // Forward those keys without moving focus away from the controls.
       const card = cardRef.current
-      if (isResumeSlide && card && target instanceof Element &&
+      if (isReaderSlide && card && target instanceof Element &&
         target.closest(".preview-gallery-toolbar") && !event.altKey && !event.metaKey) {
         const scrollSteps: Record<string, number> = {
           ArrowDown: 40,
@@ -361,10 +376,10 @@ export function PreviewGalleryDialog({
       // The résumé slide is a document taller than the card that holds it, so
       // there the vertical pair scrolls it and only the horizontal pair pages.
       // On a preview, where there is nothing to scroll, both pairs page.
-      if (event.key === "ArrowLeft" || (!isResumeSlide && event.key === "ArrowUp")) {
+      if (event.key === "ArrowLeft" || (!isReaderSlide && event.key === "ArrowUp")) {
         event.preventDefault()
         moveBy(-1)
-      } else if (event.key === "ArrowRight" || (!isResumeSlide && event.key === "ArrowDown")) {
+      } else if (event.key === "ArrowRight" || (!isReaderSlide && event.key === "ArrowDown")) {
         event.preventDefault()
         moveBy(1)
       } else if (event.key === "Escape") {
@@ -375,7 +390,7 @@ export function PreviewGalleryDialog({
 
     window.addEventListener("keydown", onKeyDown, { capture: true })
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true })
-  }, [handleOpenChange, isResumeSlide, moveBy, open])
+  }, [handleOpenChange, isReaderSlide, moveBy, open])
 
   if (!activeItem) return null
 
@@ -385,8 +400,8 @@ export function PreviewGalleryDialog({
     : undefined
   const switchClassName =
     switchPhase === "idle" ? "" : ` preview-gallery-card-switch-${switchPhase}-${switchDirection}`
-  const prevKeyshortcuts = isResumeSlide ? "ArrowLeft" : "ArrowUp ArrowLeft"
-  const nextKeyshortcuts = isResumeSlide ? "ArrowRight" : "ArrowDown ArrowRight"
+  const prevKeyshortcuts = isReaderSlide ? "ArrowLeft" : "ArrowUp ArrowLeft"
+  const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -417,6 +432,7 @@ export function PreviewGalleryDialog({
               className="preview-gallery-popup"
               ref={popupRef}
               initialFocus={cardRef}
+              finalFocus={finalFocus}
               data-preview-kind={activeItem.kind}
               data-preview-media={activeCard ? (activeMediaIsVideo ? "video" : "image") : undefined}
               data-preview-crop={activeCard?.previewCropped ? "true" : undefined}
@@ -469,7 +485,7 @@ export function PreviewGalleryDialog({
                     control a thumb reaching for "next" could hit by mistake. */}
                 <Dialog.Close
                   className="preview-gallery-nav preview-gallery-close"
-                  aria-label={activeItem.kind === "resume" ? "Close résumé" : "Close preview"}
+                  aria-label={activeItem.kind === "resume" ? "Close résumé" : activeItem.kind === "writings" ? "Close notes" : "Close preview"}
                 >
                   <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
                 </Dialog.Close>
@@ -566,6 +582,20 @@ export function PreviewGalleryDialog({
                         ) : null}
                       </div>
                     </>
+                  ) : activeItem.kind === "writings" ? (
+                    /* The folder's slide: every note by year, with the pencil
+                       objects in the gutters the card leaves either side of the
+                       list. A row opens the note in the reader's own sheet. */
+                    <div className="preview-gallery-notes writings-surface">
+                      <Dialog.Title className="preview-gallery-title preview-gallery-notes-title">
+                        {writingsItemTitle}
+                      </Dialog.Title>
+                      <Dialog.Description className="sr-only">
+                        Rafael Medina's notes, grouped by year. Choose one to read it.
+                      </Dialog.Description>
+                      <WritingsArchive onSelectWriting={onSelectWriting}
+                        pendingId={notesStatus?.pendingId} status={notesStatus?.status} />
+                    </div>
                   ) : (
                     <div className="preview-gallery-resume">
                       <Dialog.Title className="preview-gallery-title preview-gallery-resume-title">

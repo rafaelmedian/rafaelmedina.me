@@ -1,4 +1,5 @@
 import { writingPreviews } from "./writingPreviews"
+import { writingFields } from "./writingIndex"
 import type { WritingId } from "./writingIds"
 import { portfolioCards } from "./portfolio"
 
@@ -80,7 +81,6 @@ function projectImage(id: string): WritingImage | undefined {
 export const writings: Writing[] = [
   {
     ...writingPreviews[0],
-    publishedAt: "2026-09-07",
     acknowledgements: "Expanded from my own draft. The file names are this site's: `PROJECT_STATUS.md` and `DESIGN_QA.md` are the two I actually keep.",
     // Source: supplied draft screenshot, 01.19.00; PROJECT_STATUS.md and DESIGN_QA.md.
     annotations: [
@@ -139,7 +139,6 @@ export const writings: Writing[] = [
   },
   {
     ...writingPreviews[1],
-    publishedAt: "2026-07-29",
     acknowledgements: "Expanded from two posts of mine on X and a draft written alongside them. The Figma-to-code workflow described here is my own; nothing in it is a claim about how anyone else works.",
     // Sources: supplied draft screenshot, 01.18.48, and Rafael's public posts:
     // https://x.com/rafaelmedian/status/2020873645401276488
@@ -179,7 +178,6 @@ export const writings: Writing[] = [
   },
   {
     ...writingPreviews[2],
-    publishedAt: "2026-06-16",
     acknowledgements: "Expanded from a reply I drafted about tokens, time, and running costs. The accounting is mine, and it changes every time the tools do.",
     // Source: supplied draft screenshot, 01.19.00; reply about tokens, time, and running costs.
     annotations: [
@@ -216,9 +214,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "room-to-figure-it-out",
-    title: "Room to figure it out",
-    publishedAt: "2026-05-21",
+    ...writingFields("room-to-figure-it-out"),
     acknowledgements: "Expanded from a draft about family, distance, and independence. It is written from my own experience and the conversations behind it, not as a description of anyone else's family.",
     // Source: supplied draft screenshot, 01.19.00; reflection on family and independence.
     paragraphs: [
@@ -260,9 +256,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "a-song-we-all-know",
-    title: "A song we all know",
-    publishedAt: "2026-04-08",
+    ...writingFields("a-song-we-all-know"),
     acknowledgements: "Expanded from a post of mine on X about the song of the summer. Thanks to everyone who has sent me a track since; it is still the better way to hear one.",
     // Source: https://x.com/rafaelmedian/status/1940027633594458581
     paragraphs: [
@@ -304,9 +298,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "designing-matcha",
-    title: "Designing Matcha",
-    publishedAt: "2026-03-02",
+    ...writingFields("designing-matcha"),
     acknowledgements: "Matcha was designed at the 0x Project, with its product, engineering, and research teams. The screens here are theirs as much as mine; the reading of them is my own.",
     cover: { src: "/Projects/shot-small-16-poster.webp", alt: "Matcha discovery homepage with token search and market overview", width: 640, height: 480 },
     paragraphs: [
@@ -355,9 +347,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "designing-for-active-traders",
-    title: "Designing for active traders",
-    publishedAt: "2026-02-10",
+    ...writingFields("designing-for-active-traders"),
     acknowledgements: "Matcha Pro was designed at the 0x Project, alongside the product and engineering teams who built and shipped it.",
     paragraphs: [
       "There's a version of interface simplicity that photographs very well: one action, a few numbers, plenty of empty space. It's useful for a focused task. It becomes less convincing when the task involves repeatedly checking a chart, an order, a balance, and a live quote.",
@@ -396,9 +386,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "quote-to-confirmation",
-    title: "From quote to confirmation",
-    publishedAt: "2025-11-12",
+    ...writingFields("quote-to-confirmation"),
     acknowledgements: "The trade module was designed at the 0x Project with its product and engineering teams. The token checks shown here use GoPlus data.",
     cover: { src: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg", alt: "Matcha trade module showing the quote, review, and confirmation interface", width: 1600, height: 1200 },
     paragraphs: [

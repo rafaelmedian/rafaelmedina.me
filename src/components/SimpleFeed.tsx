@@ -14,7 +14,7 @@ import {
 import { ExternalLink, X } from "lucide-react"
 
 import { AboutPanel } from "./AboutPanel"
-import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
+import { WritingsFolder, type WritingsFolderHandle, type WritingsReaderStatus } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { ProfileEmailCopy } from "./ProfileEmailCopy"
 import { ProfileLocation } from "./ProfileLocation"
@@ -36,8 +36,8 @@ import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
 import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl } from "../lib/portfolioUrl"
-import { projectPath } from "../lib/projectMetadata"
-import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, type GalleryItem } from "../lib/galleryItems"
+import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
+import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
 type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
@@ -447,7 +447,7 @@ function SectionCorner({
   resumeHref,
 }: {
   onSelect: (href: string) => void
-  onNotes: (opener: HTMLElement) => void
+  onNotes: () => void
   onNotesIntent: () => void
   resumeHref: string
 }) {
@@ -537,7 +537,7 @@ function SectionCorner({
           folder the mosaic tile does, so this is a button, not a link. It hands
           itself over as the opener, so the sheet flies out of this corner
           rather than out of a tile that may be pages down. */}
-      <button type="button" className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent} onClick={(event) => onNotes(event.currentTarget)}>
+      <button type="button" className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent} onClick={onNotes}>
         Notes
       </button>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
@@ -639,6 +639,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   // Keyed by gallery index, and the résumé tile is one of the keys: the sheet
   // grows out of whichever tile the slide belongs to.
   const previewCardNodesRef = useRef(new Map<number, HTMLElement>())
+  const writingsFolderTileRef = useRef<HTMLButtonElement | null>(null)
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
@@ -647,6 +648,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   )
   const [writingsOpen, setWritingsOpen] = useState(false)
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
+  // Where the gallery hands focus back when the control that opened it is gone.
+  // The reader's back arrow is the case: the sheet closes as the notes slide
+  // comes forward, so without this the slide's close would drop focus on the
+  // body instead of on the tile the notes are filed in. State, not a ref,
+  // because the prop has to be absent on every other open -- naming an anchor
+  // at all changes how insistently the dialog returns focus, and a preview
+  // opened from a tile already returns to it.
+  const [galleryFallbackFocus, setGalleryFallbackFocus] = useState<HTMLElement | null>(null)
+  // What the notes slide says while a reader is on its way or failed to come.
+  const [notesStatus, setNotesStatus] = useState<WritingsReaderStatus>({ status: null, pendingId: null })
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
   const handleGalleryLoadError = useCallback(() => {
@@ -668,6 +679,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         // declares: the sequence the arrow keys walk has to be the one the grid
         // shows, or they page through tiles a visitor cannot see.
         if (item.kind === "resume") return { ...item, previewIndex: previewIndex++ }
+        // The folder opens a slide too -- the list of notes -- so it draws a
+        // number from the same counter as the résumé does.
+        if (item.kind === "writings") return { ...item, previewIndex: previewIndex++ }
         if (item.kind !== "project") return item
         const card = cards.find(candidate => candidate.id === item.cardId)
         if (!card) throw new Error(`Missing home project: ${item.cardId}`)
@@ -684,7 +698,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
             ? [projectGalleryItem(item.card)]
             : item.kind === "resume"
               ? [resumeGalleryItem]
-              : [],
+              : item.kind === "writings"
+                ? [writingsGalleryItem]
+                : [],
         ),
       ),
     [groupsRender],
@@ -702,11 +718,36 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     const item = galleryItems[index]
     if (item) selectGalleryItem(item.id, galleryItemId !== null)
   }
+  const notesIndex = galleryItems.findIndex((item) => item.kind === "writings")
 
-  const openGalleryItem = (item: GalleryItem, index: number) => {
+  const openGalleryItem = (item: GalleryItem, index: number, fallbackFocus: HTMLElement | null = null) => {
     setOpenedByGesture(true)
+    setGalleryFallbackFocus(fallbackFocus)
     openPreview(item, index, setSelectedWorkPreviewIndex)
   }
+
+  // The tile and the header's Notes link both open the gallery on the list.
+  const openNotes = () => {
+    if (notesIndex < 0) return
+    openGalleryItem(galleryItems[notesIndex], notesIndex)
+  }
+
+  // The reader's back arrow. The note has given its URL up by now: if that
+  // uncovered the notes slide it came from, the gallery is already reopening
+  // on it; a note arrived at by a shared link has nothing underneath, so the
+  // slide is put forward for it. Either way the sheet closed with the row
+  // that was focused, so the folder tile stands in.
+  const returnToNotes = () => {
+    setGalleryFallbackFocus(writingsFolderTileRef.current)
+    if (isNotesPath(window.location.pathname) || notesIndex < 0) return
+    setOpenedByGesture(false)
+    selectGalleryItem(writingsItemId, false)
+  }
+
+  // Warm the reader while the list it opens from is on screen.
+  useEffect(() => {
+    if (galleryItemId === writingsItemId) writingsFolderRef.current?.preload()
+  }, [galleryItemId])
 
   // The gallery grows out of (and shrinks back into) the card it represents, so
   // it needs that card's live geometry at open and close time.
@@ -927,8 +968,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     <section className="mosaic-shell">
       <SectionCorner
         onSelect={openAbout}
-        onNotes={(opener) => writingsFolderRef.current?.openFolder(opener)}
-        onNotesIntent={() => writingsFolderRef.current?.preload()}
+        onNotes={openNotes}
+        onNotesIntent={prefetchPreviewGallery}
         resumeHref={links.resumePdf}
       />
       <SocialCorner email={links.email} />
@@ -1069,7 +1110,20 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           )
                           if (item.kind === "writings") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
-                              <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
+                              <WritingsFolder
+                                ref={writingsFolderRef}
+                                onOpen={openNotes}
+                                onPrefetch={prefetchPreviewGallery}
+                                onBack={returnToNotes}
+                                onOpenChange={setWritingsOpen}
+                                onStatusChange={setNotesStatus}
+                                tileRef={(node) => {
+                                  writingsFolderTileRef.current = node
+                                  const nodes = previewCardNodesRef.current
+                                  if (node) nodes.set(item.previewIndex, node)
+                                  else nodes.delete(item.previewIndex)
+                                }}
+                              />
                             </div>
                           )
                           if (item.kind === "photos") return (
@@ -1195,6 +1249,15 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                     }
                   }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}
+                  onSelectWriting={(id) => {
+                    // The sheet takes the URL and this closes behind it. Naming
+                    // an anchor makes the close insist on focusing it, over
+                    // the sheet's own title, so the one Back set is dropped.
+                    setGalleryFallbackFocus(null)
+                    writingsFolderRef.current?.openWriting(id)
+                  }}
+                  notesStatus={notesStatus}
+                  finalFocus={galleryFallbackFocus ? { current: galleryFallbackFocus } : undefined}
                 />
               </Suspense>
             </GalleryLoadBoundary>

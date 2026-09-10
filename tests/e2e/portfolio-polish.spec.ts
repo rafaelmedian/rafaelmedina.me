@@ -3595,7 +3595,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
   })
   // The counter is a screen-reader label on this layout rather than a pill, so
   // the swipe is confirmed by what it says and not by whether it is drawn.
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -3659,7 +3659,7 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
       animations: 0,
     })
   }
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   // Paging holds the leading edge and leaving holds the trailing one, with the
   // corner between them empty.
@@ -3696,7 +3696,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 13")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 14")
   await context.close()
 })
 
@@ -3733,7 +3733,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 13")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 14")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -3743,7 +3743,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 14")
   await context.close()
 })
 
@@ -4094,15 +4094,16 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   // The span between the two controls belongs to the card, not the group.
   await expect(rail).toHaveCSS("pointer-events", "none")
 
+  // One hop, not two: the stop after the homepage is the notes folder, which
+  // closes this preview and opens the folder's own sheet.
   await next.click()
-  await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   // A taller or shorter preview must not move them.
   expect(await placement()).toEqual(initial)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
 })
 
 // The rail's affordance is a left and a right chevron, and the card already
@@ -4170,7 +4171,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(forward.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(forward.at(-1)!.from).toBeGreaterThan(8)
   expect(Math.max(...forward.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   const back = await poses(".preview-gallery-rail .preview-gallery-nav-prev")
   expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(8)
@@ -4178,7 +4179,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(back.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(back.at(-1)!.from).toBeLessThan(-8)
   expect(Math.max(...back.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
 })
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
@@ -4959,10 +4960,10 @@ test("puts unlabelled credits below the description without a site link", async 
   const [first, total] = (await counter.innerText()).split("/").map((part) => Number(part.trim()))
   for (let step = 0; step < total; step += 1) {
     await expect(counter).toHaveText(`${((first - 1 + step) % total) + 1} / ${total}`)
-    if (page.url().endsWith("/resume/")) {
-      // The résumé rides in the same sequence as a reader rather than a
-      // preview, so it carries no prose and no credits and the claims below
-      // are not about it.
+    if (page.url().endsWith("/resume/") || page.url().endsWith("/notes/")) {
+      // The résumé and the list of notes ride in the same sequence as readers
+      // rather than previews, so they carry no prose and no credits and the
+      // claims below are not about them.
       await expect(description).toHaveCount(0)
     } else {
       await expect(description).not.toBeEmpty()

@@ -5,10 +5,15 @@ test("keeps reader chunks off the initial load and opens them on demand", async 
   page.on("request", request => { if (request.resourceType() === "script") scripts.push(request.url()) })
   await page.goto("/")
   await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
-  expect(scripts.some(url => /WritingsReader|PersonalPhotosSheet/.test(url))).toBe(false)
+  // WritingArticle carries 34KB of prose that only a note's own reader or its
+  // own page needs, so it is checked alongside the readers that pull it in.
+  expect(scripts.some(url => /WritingsReader|WritingArticle|PersonalPhotosSheet/.test(url))).toBe(false)
+  // The tile opens the gallery on the list of notes; the reader is warmed
+  // while that list is on screen, so a row opens without a wait.
   await page.getByRole("button", { name: "Open writings folder" }).click()
-  await expect(page.getByRole("dialog")).toBeVisible()
-  expect(scripts.some(url => url.includes("WritingsReader"))).toBe(true)
+  await expect(page.locator(".preview-gallery-popup")).toBeVisible()
+  await expect.poll(() => scripts.some(url => url.includes("WritingsReader"))).toBe(true)
+  await expect.poll(() => scripts.some(url => url.includes("WritingArticle"))).toBe(true)
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()
   await page.getByRole("button", { name: "Personal life" }).click()
@@ -25,7 +30,6 @@ test("opens a directly linked note without requiring the folder first", async ({
 })
 
 for (const { chunk, triggerName, dialogName, retryLabel } of [
-  { chunk: "WritingsReader", triggerName: "Open writings folder", dialogName: "Notes", retryLabel: "Try opening notes again" },
   { chunk: "PersonalPhotosSheet", triggerName: "Personal life", dialogName: "Personal photos", retryLabel: "Try opening photos again" },
 ]) {
   test(`${chunk} can be cancelled while its download is pending`, async ({ page }) => {
@@ -57,8 +61,8 @@ for (const { chunk, triggerName, dialogName, retryLabel } of [
         await page.locator(".mosaic-row-card").first().click()
         await expect(page.locator(".preview-gallery-popup")).toBeVisible()
       } else {
-        await page.getByRole("button", { name: chunk === "WritingsReader" ? "Personal life" : "Open writings folder", exact: true }).click()
-        await expect(page.getByRole("dialog", { name: chunk === "WritingsReader" ? "Personal photos" : "Notes", exact: true })).toBeVisible()
+        await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
+        await expect(page.locator(".preview-gallery-popup")).toBeVisible()
       }
       release()
       await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
@@ -85,44 +89,140 @@ for (const { chunk, triggerName, dialogName, retryLabel } of [
   })
 }
 
+
+/* The reader is fetched by a row of the notes list, which is a slide of the
+   gallery, so its cases are their own: the trigger is a row, the busy state is
+   on that row, and the retry labels are printed under the list's heading. */
+const notesRow = (page: import("@playwright/test").Page, title = "Designing Matcha") =>
+  page.locator(".preview-gallery-popup").getByRole("button", { name: title, exact: true })
+const openNotesList = async (page: import("@playwright/test").Page) => {
+  await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
+  await expect(page.locator(".preview-gallery-popup")).toBeVisible()
+}
+
+test("WritingsReader can be cancelled while its download is pending", async ({ page }) => {
+  let release!: () => void
+  const held = new Promise<void>(resolve => { release = resolve })
+  await page.route("**/WritingsReader-*.js*", async route => { await held; await route.continue() })
+  await page.goto("/")
+  await openNotesList(page)
+  await notesRow(page).click()
+  await expect(notesRow(page)).toHaveAttribute("aria-busy", "true")
+  // Closing the list retires the request; the download still lands, unused.
+  await page.keyboard.press("Escape")
+  await expect(page.locator(".preview-gallery-popup")).toBeHidden()
+  release()
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
+  await expect(page.locator(".writings-dialog")).toHaveCount(0)
+  await expect(page).toHaveURL(/\/$/)
+  // A later press uses the loaded module and still opens normally.
+  await openNotesList(page)
+  await notesRow(page).click()
+  await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+})
+
+for (const destination of ["project", "other reader"]) {
+  test(`WritingsReader ignores a pending open after selecting ${destination}`, async ({ page }) => {
+    let release!: () => void
+    const held = new Promise<void>(resolve => { release = resolve })
+    await page.route("**/WritingsReader-*.js*", async route => { await held; await route.continue() })
+    await page.goto("/")
+    await openNotesList(page)
+    await notesRow(page).click()
+    await expect(notesRow(page)).toHaveAttribute("aria-busy", "true")
+    if (destination === "project") {
+      // Paging the gallery is a selection of its own.
+      await page.keyboard.press("ArrowRight")
+      await expect(page).toHaveURL(/\/work\/popparazi-v1\/$/)
+    } else {
+      await page.keyboard.press("Escape")
+      await expect(page.locator(".preview-gallery-popup")).toBeHidden()
+      await page.getByRole("button", { name: "Personal life", exact: true }).click()
+      await expect(page.getByRole("dialog", { name: "Personal photos", exact: true })).toBeVisible()
+    }
+    release()
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
+    await expect(page.locator(".writings-dialog")).toHaveCount(0)
+    await expect(page.locator('[role="dialog"]:visible')).toHaveCount(1)
+    await page.keyboard.press("Escape")
+    await expect(page.locator('[role="dialog"]:visible')).toHaveCount(0)
+    await openNotesList(page)
+    await notesRow(page).click()
+    await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  })
+}
+
+test("WritingsReader retries a failed download without losing the list", async ({ page }) => {
+  let fail = true
+  await page.route("**/WritingsReader-*.js*", route => fail ? route.abort("failed") : route.continue())
+  await page.goto("/")
+  await openNotesList(page)
+  await notesRow(page).click()
+  await expect(page.locator(".preview-gallery-popup").getByText("Try opening notes again", { exact: true })).toBeVisible()
+  await expect(page.locator(".writings-dialog")).toHaveCount(0)
+  fail = false
+  await notesRow(page).click()
+  await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+})
+
 /* A chunk a reader needs but does not own. Retrying cannot recover it -- the
    module registry keeps the rejection -- so the reader offers a reload instead.
 
-   The name is whatever Rollup emits for the imports two lazy readers have in
-   common, not something this repo authors: the notes entry here was `sounds`
-   until the like pill became the second module the notes reader and the preview
-   gallery both pull in, and the shared chunk took the pill's name. So the route
-   counts what it stopped, and the test fails on a pattern that has gone stale
-   rather than quietly blocking nothing and reporting a missing error message. */
-for (const { dependency, triggerName, retryLabel, reloadLabel, dialogName } of [
-  { dependency: "LikeButton", triggerName: "Open writings folder", retryLabel: "Try opening notes again", reloadLabel: "Reload to try notes again", dialogName: "Notes" },
-  { dependency: "DialogTitle", triggerName: "Personal life", retryLabel: "Try opening photos again", reloadLabel: "Reload to try photos again", dialogName: "Personal photos" },
-]) {
-  test(`offers a reload when a cached ${dependency} dependency cannot be retried`, async ({ page }) => {
-    let fail = true
-    let blocked = 0
-    await page.route(`**/${dependency}-*.js*`, route => {
-      if (!fail) return route.continue()
-      blocked++
-      return route.abort("failed")
-    })
-    await page.goto("/")
-    await page.getByRole("button", { name: triggerName, exact: true }).click()
-    await expect(page.getByText(retryLabel, { exact: true })).toBeVisible()
-    expect(blocked).toBeGreaterThan(0)
-    fail = false
-    const retryName = triggerName === "Personal life" ? retryLabel : triggerName
-    await page.getByRole("button", { name: retryName, exact: true }).click()
-    await expect(page.getByText(reloadLabel, { exact: true })).toBeVisible()
-    const reloadName = triggerName === "Personal life" ? reloadLabel : triggerName
-    await Promise.all([
-      page.waitForEvent("load"),
-      page.getByRole("button", { name: reloadName, exact: true }).click(),
-    ])
-    await page.getByRole("button", { name: triggerName, exact: true }).click()
-    await expect(page.getByRole("dialog", { name: dialogName, exact: true })).toBeVisible()
+   The name is whatever Rollup emits for the imports two lazy modules have in
+   common, not something this repo authors: the notes entry here is the article
+   the reader shares with a note's own page, and the photos entry took the name
+   of the dialog title both sheets pull in. So the route counts what it
+   stopped, and the test fails on a pattern that has gone stale rather than
+   quietly blocking nothing and reporting a missing error message. */
+test("offers a reload when a cached WritingArticle dependency cannot be retried", async ({ page }) => {
+  let fail = true
+  let blocked = 0
+  await page.route("**/WritingArticle-*.js*", route => {
+    if (!fail) return route.continue()
+    blocked++
+    return route.abort("failed")
   })
-}
+  await page.goto("/")
+  await openNotesList(page)
+  const list = page.locator(".preview-gallery-popup")
+  await notesRow(page).click()
+  await expect(list.getByText("Try opening notes again", { exact: true })).toBeVisible()
+  expect(blocked).toBeGreaterThan(0)
+  fail = false
+  await notesRow(page).click()
+  await expect(list.getByText("Reload to try notes again", { exact: true })).toBeVisible()
+  await Promise.all([
+    page.waitForEvent("load"),
+    notesRow(page).click(),
+  ])
+  // The reload lands on the list's own address, so the list is back on screen.
+  await expect(page.locator(".preview-gallery-popup")).toBeVisible()
+  await notesRow(page).click()
+  await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+})
+
+test("offers a reload when a cached DialogTitle dependency cannot be retried", async ({ page }) => {
+  let fail = true
+  let blocked = 0
+  await page.route("**/DialogTitle-*.js*", route => {
+    if (!fail) return route.continue()
+    blocked++
+    return route.abort("failed")
+  })
+  await page.goto("/")
+  await page.getByRole("button", { name: "Personal life", exact: true }).click()
+  await expect(page.getByText("Try opening photos again", { exact: true })).toBeVisible()
+  expect(blocked).toBeGreaterThan(0)
+  fail = false
+  await page.getByRole("button", { name: "Try opening photos again", exact: true }).click()
+  await expect(page.getByText("Reload to try photos again", { exact: true })).toBeVisible()
+  await Promise.all([
+    page.waitForEvent("load"),
+    page.getByRole("button", { name: "Reload to try photos again", exact: true }).click(),
+  ])
+  await page.getByRole("button", { name: "Personal life", exact: true }).click()
+  await expect(page.getByRole("dialog", { name: "Personal photos", exact: true })).toBeVisible()
+})
 
 for (const destination of ["project", "photos"]) {
   test(`a pending directly linked note yields to ${destination}`, async ({ page }) => {
@@ -147,7 +247,6 @@ for (const destination of ["project", "photos"]) {
 }
 
 for (const { chunk, triggerName } of [
-  { chunk: "WritingsReader", triggerName: "Open writings folder" },
   { chunk: "PersonalPhotosSheet", triggerName: "Personal life" },
 ]) {
   test(`${chunk} yields to a project opened through browser Forward`, async ({ page }) => {
@@ -176,7 +275,9 @@ test("retrying a directly linked note preserves the selected article", async ({ 
   await page.goto("/?writing=designing-matcha")
   await expect(page.getByText("Try opening notes again", { exact: true })).toBeVisible()
   fail = false
+  // The tile wears the failure and retries the note rather than opening the
+  // list: opening the list would drop the note the link was for.
   await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
-  await expect(page.getByRole("dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
   await expect(page).toHaveURL(/writing=designing-matcha/)
 })

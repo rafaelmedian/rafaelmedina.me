@@ -1,13 +1,19 @@
 import { beginDialogIntent } from "./dialogIntent"
 import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { portfolioCards } from "../data/portfolio"
+import { writingSummaries } from "../data/writingIndex"
 import {
+  isNotesPath,
   isResumePath,
+  notesPath,
   projectAtPath,
   projectPath,
   resumeItemId,
   resumePath,
   updatePageMetadata,
+  writingAtPath,
+  writingPath,
+  writingsItemId,
 } from "./projectMetadata"
 
 const portfolioUrlEvent = "portfolio-item-url"
@@ -18,9 +24,8 @@ type PortfolioEntry = "about" | PortfolioItem
 let pendingPortfolioClose: PortfolioEntry | null = null
 let queuedSelection: { entry: PortfolioItem; id: string } | null = null
 
-// Every gallery item -- each project and the résumé -- has a prerendered page of
-// its own, so it owns the path. Writings open over the feed with no static
-// destination and stay a query parameter.
+// Every project, the résumé, and every note has a prerendered page of its own,
+// so each one owns its path.
 type ItemLocation = {
   read: () => string | null
   set: (url: URL, id: string) => void
@@ -31,28 +36,48 @@ const itemLocations: Record<PortfolioItem, ItemLocation> = {
   gallery: {
     read: () => {
       if (isResumePath(window.location.pathname)) return resumeItemId
+      if (isNotesPath(window.location.pathname)) return writingsItemId
       return projectAtPath(window.location.pathname)?.id ?? new URLSearchParams(window.location.search).get("project")
     },
     set: (url, id) => {
+      url.searchParams.delete("project")
+      // A note the reader never opened -- an id nothing matches -- has no
+      // business outliving the selection of something else.
+      url.searchParams.delete("writing")
       if (id === resumeItemId) {
         url.pathname = resumePath
-        url.searchParams.delete("project")
+        return
+      }
+      if (id === writingsItemId) {
+        url.pathname = notesPath
         return
       }
       const card = portfolioCards.find(card => card.id === id)
       if (!card) return
       url.pathname = projectPath(card)
-      url.searchParams.delete("project")
     },
     clear: url => {
       url.searchParams.delete("project")
-      if (projectAtPath(url.pathname) || isResumePath(url.pathname)) url.pathname = "/"
+      if (projectAtPath(url.pathname) || isResumePath(url.pathname) || isNotesPath(url.pathname)) url.pathname = "/"
     },
   },
   writing: {
-    read: () => new URLSearchParams(window.location.search).get("writing"),
-    set: (url, id) => url.searchParams.set("writing", id),
-    clear: url => url.searchParams.delete("writing"),
+    read: () =>
+      // `?writing=<id>` is where a note lived before it had a page of its own.
+      // Links to one are out in the world, so the parameter still opens the
+      // reader; the next selection writes the path over it.
+      writingAtPath(window.location.pathname)?.id
+        ?? new URLSearchParams(window.location.search).get("writing"),
+    set: (url, id) => {
+      const writing = writingSummaries.find(writing => writing.id === id)
+      if (!writing) return
+      url.pathname = writingPath(writing)
+      url.searchParams.delete("writing")
+    },
+    clear: url => {
+      url.searchParams.delete("writing")
+      if (writingAtPath(url.pathname)) url.pathname = "/"
+    },
   },
 }
 
@@ -143,12 +168,16 @@ export function usePortfolioItemUrl(entry: PortfolioItem) {
     window.dispatchEvent(new Event(portfolioUrlEvent))
   }, [entry, location])
 
-  const clearItem = useCallback(() => {
+  // `onClosed` runs once the URL has actually given the item up. That is a
+  // later tick when history has to be traversed, and the popstate it arrives
+  // on retires every dialog intent opened before it -- so anything that opens
+  // in this item's place has to wait for it rather than go first.
+  const clearItem = useCallback((onClosed?: () => void) => {
     const url = new URL(window.location.href)
     location.clear(url)
     // Pop entries created by this portfolio, but close direct bookmarks in
     // place so an external previous entry cannot take the visitor off-site.
-    closePortfolioUrl(url, entry)
+    closePortfolioUrl(url, entry, onClosed)
     window.dispatchEvent(new Event(portfolioUrlEvent))
   }, [entry, location])
 
@@ -166,15 +195,26 @@ export function usePortfolioItemUrl(entry: PortfolioItem) {
 
 export function useGalleryUrl() {
   const { itemId, selectItem, clearItem } = usePortfolioItemUrl("gallery")
+  // The note reader owns a path of its own, and its head has to be kept in step
+  // with the same destinations. Both are read here rather than in each dialog
+  // because only one of the two can describe the document at a time: whichever
+  // one wrote it last would otherwise be overwritten by the other resetting to
+  // the portfolio's own metadata.
+  const { itemId: writingId } = usePortfolioItemUrl("writing")
 
-  // Keep an enhanced gallery visit's head in step with its static destination.
+  // Keep an enhanced visit's head in step with its static destination.
   useEffect(() => {
-    if (itemId === resumeItemId) {
-      updatePageMetadata(resumeItemId)
+    const writing = writingSummaries.find(writing => writing.id === writingId)
+    if (writing) {
+      updatePageMetadata(writing)
+      return
+    }
+    if (itemId === resumeItemId || itemId === writingsItemId) {
+      updatePageMetadata(itemId)
       return
     }
     updatePageMetadata(portfolioCards.find(card => card.id === itemId))
-  }, [itemId])
+  }, [itemId, writingId])
 
   return { itemId, selectItem, clearItem }
 }
