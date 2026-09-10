@@ -103,26 +103,28 @@ const openNotesList = async (page: import("@playwright/test").Page) => {
   await expect(page.locator(".preview-gallery-popup")).toBeVisible()
 }
 
-test("WritingsReader can be cancelled while its download is pending", async ({ page }) => {
-  let release!: () => void
-  const held = new Promise<void>(resolve => { release = resolve })
-  await page.route("**/WritingsReader-*.js*", async route => { await held; await route.continue() })
-  await page.goto("/")
-  await openNotesList(page)
-  await notesRow(page).click()
-  await expect(notesRow(page)).toHaveAttribute("aria-busy", "true")
-  // Closing the list retires the request; the download still lands, unused.
-  await page.keyboard.press("Escape")
-  await expect(page.locator(".preview-gallery-popup")).toBeHidden()
-  release()
-  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
-  await expect(page.locator(".writings-dialog")).toHaveCount(0)
-  await expect(page).toHaveURL(/\/$/)
-  // A later press uses the loaded module and still opens normally.
-  await openNotesList(page)
-  await notesRow(page).click()
-  await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
-})
+for (const entry of ["tile", "direct"] as const) {
+  test(`WritingsReader can be cancelled while its download is pending from ${entry}`, async ({ page }) => {
+    let release!: () => void
+    const held = new Promise<void>(resolve => { release = resolve })
+    await page.route("**/WritingsReader-*.js*", async route => { await held; await route.continue() })
+    await page.goto(entry === "direct" ? "/notes/" : "/")
+    if (entry === "tile") await openNotesList(page)
+    await notesRow(page).click()
+    await expect(notesRow(page)).toHaveAttribute("aria-busy", "true")
+    // Closing the list retires the request; the download still lands, unused.
+    await page.keyboard.press("Escape")
+    await expect(page.locator(".preview-gallery-popup")).toBeHidden()
+    release()
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
+    await expect(page.locator(".writings-dialog")).toHaveCount(0)
+    await expect(page).toHaveURL(/\/$/)
+    // A later press uses the loaded module and still opens normally.
+    await openNotesList(page)
+    await notesRow(page).click()
+    await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  })
+}
 
 for (const destination of ["project", "other reader"]) {
   test(`WritingsReader ignores a pending open after selecting ${destination}`, async ({ page }) => {

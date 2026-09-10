@@ -12,6 +12,8 @@ const loadReader = createModuleLoader(() => import("./WritingsReader"), "Writing
 export type WritingsFolderHandle = {
   /** Fetch and select a nested note without replacing the gallery dialog. */
   openWriting: (id: string) => void
+  /** Retire a row request when its list is dismissed, even without history traversal. */
+  cancelPending: () => void
   /** Warm the reader's chunk ahead of a row being pressed. */
   preload: () => void
   retry: () => void
@@ -53,7 +55,12 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
     setRequest({ id, isCurrent: beginDialogIntent("writing") })
     if (!Reader) void load()
   }
-  useImperativeHandle(ref, () => ({ openWriting, preload: warm, retry: () => { void load() } }))
+  useImperativeHandle(ref, () => ({
+    openWriting,
+    cancelPending: () => setRequest(null),
+    preload: warm,
+    retry: () => { void load() },
+  }))
 
   // A row was pressed and the reader is here: put the note in the URL, which
   // is what selects the nested article. Only the most recent activation gets to -- a

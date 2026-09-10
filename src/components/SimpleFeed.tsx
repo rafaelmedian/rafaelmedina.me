@@ -1235,7 +1235,12 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   selectedIndex={selectedWorkPreviewIndex}
                   prefersReducedMotion={prefersReducedMotion}
                   getOriginRect={getPreviewOriginRect}
-                  onOpenChange={(nextOpen) => { if (!nextOpen) clearGalleryItem() }}
+                  onOpenChange={(nextOpen) => {
+                    if (!nextOpen) {
+                      writingsFolderRef.current?.cancelPending()
+                      clearGalleryItem()
+                    }
+                  }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}
                   onSelectWriting={(id) => writingsFolderRef.current?.openWriting(id)}
                   writingId={writingId}
