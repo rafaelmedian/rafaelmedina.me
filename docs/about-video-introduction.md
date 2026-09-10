@@ -120,16 +120,20 @@ activation with the generated files.
 
 ## Speaking preview and minimal replies
 
-The development preview uses a five-second excerpt from Marcus Aurelius’s
-[bedroom vlog on Pexels](https://www.pexels.com/video/a-woman-vlogging-while-in-bed-9780901/),
-under the [Pexels license](https://www.pexels.com/license/). The stock subject is
-not Rafael. The source is silent: no speech or test tone has been added.
-The recording and preview share a square face crop: a 720px MP4 (226 KB),
-a two-second 160px/8fps GIF (127 KB), and a WebP poster (5 KB).
-Rebuild with `node scripts/build-about-intro-placeholder.mjs [original.mp4]`;
-without an argument it downloads the documented source. Outputs are checked
-against the media budgets before replacing the fixtures. These files stay in
-`tests/fixtures/`, and the production widget remains disabled.
+The development preview uses the user-supplied recording
+`CleanShot 2026-09-10 at 19.33.10-converted.mp4`. Its full 50.6 seconds are
+preserved. The source contains no audio track, so the optimized video is silent.
+A centered square crop keeps the face and removes the captured player controls.
+The 624px MP4 is 3.84 MB; the matching two-second 160px/8fps GIF is 136 KB,
+and its 360px WebP poster is 13 KB.
+
+Rebuild with `node scripts/build-about-intro-placeholder.mjs <original.mp4>`.
+The original is a local input, never downloaded from a stock provider. The
+script generates `src/data/aboutIntroPreview.ts` with the encoded duration and
+asset paths so the hover duration cannot drift from the recording. It keeps
+the largest GIF that fits the 150 KB budget and checks both media sizes before
+replacing the fixtures. These files stay in `tests/fixtures/`, and production
+remains disabled until the introduction is ready to publish.
 
 Hover or focus the portrait to reveal play in its center and two small reply
 controls beside it: Email and Text. Touch users tap the portrait to reveal them.

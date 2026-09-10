@@ -2162,7 +2162,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Close has a 36%-black backing for contrast; hovered controls use 16% white.
                   Expand grows the square to 480px, constrained
                   by the viewport and the mobile TOC. Captions remain enabled for real recordings and
-                  can be toggled with C; the silent stock recording starts without its descriptive captions.
+                  can be toggled with C; the silent uploaded preview starts without its descriptive captions.
                   The speaking portrait reveals a centered 24px white play triangle on hover, keyboard focus or tap.
                   A 20%-black overlay darkens the portrait only while those actions are shown, fading over
                   <code> --duration-quick</code>. The triangle has no disc or colored background.
@@ -2198,7 +2198,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   In a dialog, the same player joins that dialog’s focus scope and uses a manual popover
                   in the browser top layer, keeping it above transformed content without a new z-index.
                   On mobile this floating player sits centered, 80px above the safe-area bottom edge.
-                  Closing it returns focus to the dialog. Preview the matching bedroom GIF and silent recording
+                  Closing it returns focus to the dialog. Preview the matching uploaded GIF and full silent recording
                   fixture on the <a href="/#about-panel">development homepage</a> (a speaking GIF and
                   test recording); <code>?intro=off</code> hides it for development comparisons. Production stays
                   disabled until the real recording is ready.

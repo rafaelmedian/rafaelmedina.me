@@ -1,3 +1,5 @@
+import { aboutIntroPreview } from "./aboutIntroPreview"
+
 export type AboutIntroMedia = {
   placeholder?: boolean
   duration: number
@@ -17,18 +19,7 @@ export const aboutIntro: AboutIntroMedia | null = null
 export function getAboutIntro(): AboutIntroMedia | null {
   if (import.meta.env.DEV && typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("intro") !== "off") {
-    const base = "/tests/fixtures/about-intro"
-    return {
-      placeholder: true,
-      duration: 5,
-      transcript: "Silent bedroom vlog stock footage for testing the introduction player.",
-      assets: {
-        recording: `${base}/recording.mp4`,
-        teaser: `${base}/teaser.gif`,
-        poster: `${base}/poster.webp`,
-        captions: `${base}/captions.vtt`,
-      },
-    }
+    return aboutIntroPreview
   }
   return aboutIntro
 }
