@@ -1,0 +1,10 @@
+{
+  "duration": 5,
+  "transcript": "Synthetic five-second media fixture. Color bars and a test tone; no person appears.",
+  "assets": {
+    "recording": "/tests/fixtures/about-intro/recording.mp4",
+    "teaser": "/tests/fixtures/about-intro/teaser.gif",
+    "poster": "/tests/fixtures/about-intro/poster.webp",
+    "captions": "/tests/fixtures/about-intro/captions.vtt"
+  }
+}
