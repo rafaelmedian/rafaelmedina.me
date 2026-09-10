@@ -2,7 +2,7 @@
 import sharp from "sharp"
 import ffmpegPath from "ffmpeg-static"
 import { spawnSync } from "node:child_process"
-import { mkdtemp, rm } from "node:fs/promises"
+import { access, mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { fileURLToPath } from "node:url"
 import path from "node:path"
@@ -14,6 +14,14 @@ for (const photo of personalPhotoItems) {
   for (const width of [400, 800]) {
     await sharp(`${stem}.webp`).resize({ width, withoutEnlargement: true })
       .webp({ quality: 82, effort: 6 }).toFile(`${stem}-${width}w.webp`)
+  }
+  // The fan's prints and the flights' first frame. The first eleven thumbs
+  // predate this step and no setting reproduces them byte for byte, so only a
+  // missing one is written and a rerun leaves the committed ones alone.
+  const thumb = `${stem}-thumb.webp`
+  if (!(await access(thumb).then(() => true, () => false))) {
+    await sharp(`${stem}.webp`).resize({ width: 300, height: 400, fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 72, effort: 6 }).toFile(thumb)
   }
 }
 
