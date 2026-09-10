@@ -1,9 +1,10 @@
-import { ArrowUpRight } from "lucide-react"
-import type { CSSProperties, ElementType, RefObject } from "react"
+import { ArrowUpRight, Check, Link2 } from "lucide-react"
+import { useEffect, useRef, useState, type CSSProperties, type ElementType, type RefObject } from "react"
 
 import { writingSummaries } from "../data/writingIndex"
 import type { Writing, WritingAnnotation, WritingCode, WritingImage } from "../data/writings"
 import { noteHash, pickFrom } from "../lib/writings"
+import { siteOrigin, writingPath } from "../lib/projectMetadata"
 import { LikeButton } from "./LikeButton"
 
 function inlineProse(text: string) {
@@ -144,6 +145,59 @@ function NoteImage({ image }: { image: WritingImage }) {
   )
 }
 
+/** How long a copied link stays confirmed, matching the address chip's window. */
+const COPY_CONFIRMATION_MS = 1600
+
+/**
+ * The note's own address, offered rather than left in the URL bar. A note has a
+ * page of its own -- `/notes/<id>/`, prerendered like a project's -- and the
+ * reader is showing it, but a visitor reading inside a sheet has no reason to
+ * look up there, and the one thing they might want to do with a note they
+ * liked is send it to someone. The absolute URL is built rather than read off
+ * `location` so a copy made from a preview server or a local build still pastes
+ * as the public link.
+ */
+function CopyNoteLink({ writing }: { writing: Writing }) {
+  const [copied, setCopied] = useState(false)
+  const resetRef = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(resetRef.current), [])
+  const href = `${siteOrigin}${writingPath(writing)}`
+
+  return (
+    <>
+      {/* An ordinary link underneath -- for the context menu, for a browser with
+          no clipboard, for a middle-click -- and a plain press copies instead,
+          the way the address in the About sheet does. */}
+      <a className="writing-copy-link" href={href} data-copied={copied ? "true" : undefined}
+        onClick={(event) => {
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+          event.preventDefault()
+          void navigator.clipboard?.writeText(href).then(() => {
+            setCopied(true)
+            // Restart the window on every copy so a second press gets its own
+            // full confirmation instead of the tail of the first.
+            window.clearTimeout(resetRef.current)
+            resetRef.current = window.setTimeout(() => setCopied(false), COPY_CONFIRMATION_MS)
+          }, () => undefined)
+        }}>
+        {copied
+          ? <Check className="writing-copy-link-icon" size={14} aria-hidden="true" />
+          : <Link2 className="writing-copy-link-icon" size={14} aria-hidden="true" />}
+        <span aria-hidden="true">{copied ? "Link copied" : "Copy link"}</span>
+        {/* The name says what the control does and stays saying it: the label
+            beside the icon is the confirmation, and a name that changed with it
+            would leave a screen reader hunting for the button it just used. */}
+        <span className="sr-only">Copy a link to this note</span>
+      </a>
+      {/* Outside the link, so the confirmation is announced without joining the
+          control's accessible name. */}
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {copied ? "Link to this note copied to clipboard" : ""}
+      </span>
+    </>
+  )
+}
+
 type WritingArticleProps = {
   writing: Writing
   /** The reader focuses the title when a note comes forward. */
@@ -152,14 +206,15 @@ type WritingArticleProps = {
   heading?: ElementType
   /** Whether the like pill should mount and read its count. */
   showLikes?: boolean
-  /** Open another note from the list the article closes with. */
+  /** Open another note. The static page has no reader to move, so it links. */
   onSelectWriting?: (id: string) => void
 }
 
 /**
- * One note, wherever it is being read. The reader is the only surface today,
- * but the article is about to be what a shared link renders as a plain document
- * too, so it lives here rather than inside the folder's sheet.
+ * One note, wherever it is being read: the reader's second page, and the
+ * `/notes/<id>/` a crawler or a visitor without JavaScript gets instead. The
+ * article is the part the two surfaces share, so it lives here and neither owns
+ * the other's markup.
  */
 export function WritingArticle({ writing, titleRef, heading: Heading = "h2", showLikes, onSelectWriting }: WritingArticleProps) {
   // Three neighbours, in the order the archive lists them, minus this one.
@@ -174,7 +229,12 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
           ) : <span>{writing.archiveYear ? `Archive · ${writing.archiveYear}` : "Undated"}</span>}
         </div>
         <Heading ref={titleRef} tabIndex={-1} className="writings-page-title">{writing.title}</Heading>
-        {showLikes && import.meta.env.VITE_LIKES_API_URL ? <LikeButton key={writing.id} collection="notes" itemId={writing.id} /> : null}
+        {/* Both are things to do with the note rather than part of it, and a
+            note is worth sending on for the same reason it is worth liking. */}
+        <div className="writing-reader-actions">
+          {showLikes && import.meta.env.VITE_LIKES_API_URL ? <LikeButton key={writing.id} collection="notes" itemId={writing.id} /> : null}
+          <CopyNoteLink writing={writing} />
+        </div>
       </header>
       {writing.cover ? <NoteImage image={writing.cover} /> : null}
       <div className="writing-reader-prose">
@@ -202,9 +262,17 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
           <h3>More articles</h3>
           <ul>{moreWritings.map((entry) => (
             <li key={entry.id}>
-              <button type="button" className="writing-entry-trigger" onClick={() => onSelectWriting?.(entry.id)}>
-                <span className="writing-entry-title">{entry.title}</span>
-              </button>
+              {/* The reader turns to its neighbour; the static page has no
+                  reader to turn, so it goes to the note's own address. */}
+              {onSelectWriting ? (
+                <button type="button" className="writing-entry-trigger" onClick={() => onSelectWriting(entry.id)}>
+                  <span className="writing-entry-title">{entry.title}</span>
+                </button>
+              ) : (
+                <a className="writing-entry-trigger" href={writingPath(entry)}>
+                  <span className="writing-entry-title">{entry.title}</span>
+                </a>
+              )}
             </li>
           ))}</ul>
         </section>

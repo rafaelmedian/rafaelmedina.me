@@ -3,9 +3,11 @@ import { lazy, Suspense, useState, useSyncExternalStore } from "react"
 import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
 import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
-import { isResumePath, projectAtPath } from "./lib/projectMetadata"
+import { isResumePath, projectAtPath, writingAtPath } from "./lib/projectMetadata"
 import { ProjectPage } from "./components/ProjectPage"
 import { ResumePage } from "./components/ResumePage"
+import { DeferredWritingPage } from "./components/DeferredWritingPage"
+import { getWritingPage } from "./lib/writingPageSlot"
 
 // Dev-only. In production `/design-system` is served by public/404.html — shipping the chunk would
 // be dead weight. The page's CSS rides the same lazy chunk, so none of it
@@ -40,15 +42,17 @@ function App({ pathname }: { pathname?: string }) {
   // Select the document at mount. History changes within the homepage keep its
   // enhanced gallery mounted.
   const [currentPath] = useState(() => normalizePath(pathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)))
-  // Every gallery item's path -- each project and the résumé -- is prerendered
+  // Every project, the résumé, and every note is prerendered
   // as a standalone article, so a crawler or a visitor without JavaScript reads
   // the whole thing from the HTML. Once React is running the same URL belongs in
-  // the gallery it was shared from: hand the feed the path and `useGalleryUrl`
-  // opens that item over it. The article still renders on the first client pass,
+  // the dialog it was shared from -- the gallery for a project or the résumé,
+  // the notes reader for a note: hand the feed the path and the dialog opens
+  // that item over it. The article still renders on the first client pass,
   // so hydration matches the prerendered markup before the swap.
   const isHydrated = useIsHydrated()
   const standaloneProject = isHydrated ? undefined : projectAtPath(currentPath)
   const standaloneResume = !isHydrated && isResumePath(currentPath)
+  const standaloneWriting = isHydrated ? undefined : writingAtPath(currentPath)
   const isDesignSystemPage = DesignSystemPage !== null && DESIGN_SYSTEM_PATHS.has(currentPath)
   const isTuningEdge = ElasticEdgeTuner !== null && !isDesignSystemPage
     && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tune") === "edge"
@@ -65,7 +69,9 @@ function App({ pathname }: { pathname?: string }) {
         ) : (
           <>
             <main id="main-content" tabIndex={-1} className="relative z-dock">
-              {standaloneProject ? <ProjectPage card={standaloneProject} /> : standaloneResume ? <ResumePage /> : (
+              {standaloneProject ? <ProjectPage card={standaloneProject} /> : standaloneResume ? <ResumePage /> : standaloneWriting && getWritingPage() ? (
+                <DeferredWritingPage writing={standaloneWriting} />
+              ) : (
                 <>
                   <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
                   <BottomOverscrollEffect />

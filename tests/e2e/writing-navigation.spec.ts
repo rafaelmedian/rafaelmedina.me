@@ -10,12 +10,15 @@ test("writing URLs follow selection and browser Back and Forward", async ({ page
   await folder.click()
   const dialog = page.getByRole("dialog")
   await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
-  await expect(page).toHaveURL(/\?ref=portfolio&writing=designing-matcha$/)
+  await expect(page).toHaveURL(/\/notes\/designing-matcha\/\?ref=portfolio$/)
+  await expect(page).toHaveTitle("Designing Matcha — Rafael Medina")
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/notes/designing-matcha/")
   await dialog.getByRole("button", { name: "Next note", exact: true }).click()
-  await expect(page).toHaveURL(/writing=designing-for-active-traders$/)
+  await expect(page).toHaveURL(/\/notes\/designing-for-active-traders\/\?ref=portfolio$/)
   await page.goBack()
   await expect(dialog).toBeHidden()
   await expect(page).toHaveURL(/\?ref=portfolio$/)
+  await expect(page).toHaveTitle("Rafael Medina — Senior Product Designer")
   await expect(folder).toBeFocused()
   await page.goForward()
   await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeVisible()
@@ -27,7 +30,7 @@ test("writing URLs follow selection and browser Back and Forward", async ({ page
 test("a shared writing opens after hydration and refresh and closes locally", async ({ page }) => {
   const errors: string[] = []
   page.on("pageerror", error => errors.push(error.message))
-  await page.goto("/?ref=shared&writing=designing-matcha")
+  await page.goto("/notes/designing-matcha/?ref=shared")
   const title = page.getByRole("heading", { name: "Designing Matcha", exact: true })
   await expect(title).toBeVisible()
   await page.reload()
@@ -52,7 +55,7 @@ test("returning to notes clears the writing URL and closing consumes its history
   await expect(page).toHaveURL(/\?ref=portfolio$/)
   await expect(entry).toBeFocused()
   await entry.click()
-  await expect(page).toHaveURL(/writing=designing-matcha$/)
+  await expect(page).toHaveURL(/\/notes\/designing-matcha\/\?ref=portfolio$/)
   await page.keyboard.press("Escape")
   await expect(dialog).toBeHidden()
   await expect(page).toHaveURL(/\?ref=portfolio$/)
@@ -65,10 +68,40 @@ test("an unknown writing leaves the folder usable", async ({ page }) => {
   await expect(page.getByRole("dialog")).toHaveCount(0)
   await page.getByRole("button", { name: "Open writings folder" }).click()
   await page.getByRole("button", { name: "Designing Matcha", exact: true }).click()
-  await expect(page).toHaveURL(/writing=designing-matcha$/)
+  await expect(page).toHaveURL(/\/notes\/designing-matcha\/$/)
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()
   await expect(page).toHaveURL(/\/$/)
+})
+
+// A note was a query parameter before it had a page of its own. Links to one
+// are out in the world, so the parameter still opens the reader, and the first
+// selection made from there writes the note's real path over it.
+test("a legacy ?writing= link still opens the reader", async ({ page }) => {
+  await page.goto("/?writing=designing-matcha")
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  await dialog.getByRole("button", { name: "Next note", exact: true }).click()
+  await expect(page).toHaveURL(/\/notes\/designing-for-active-traders\/$/)
+})
+
+test("a note's own address is offered inside the reader", async ({ page }) => {
+  await page.goto("/notes/a-song-we-all-know/")
+  const dialog = page.getByRole("dialog")
+  const copy = dialog.getByRole("link", { name: "Copy a link to this note" })
+  await expect(copy).toHaveAttribute("href", "https://rafaelmedina.me/notes/a-song-we-all-know/")
+  // The clipboard is unavailable off the front tab in a parallel run, so the
+  // write is stubbed and the confirmation is what is being checked here.
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: (text: string) => { (window as unknown as { copied?: string }).copied = text; return Promise.resolve() } },
+    })
+  })
+  await copy.click()
+  await expect(copy).toHaveAttribute("data-copied", "true")
+  expect(await page.evaluate(() => (window as unknown as { copied?: string }).copied))
+    .toBe("https://rafaelmedina.me/notes/a-song-we-all-know/")
 })
 
 for (const [key, sign, nextTitle] of [
@@ -78,7 +111,7 @@ for (const [key, sign, nextTitle] of [
   test(`notes slide in the project gallery direction for ${key}`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" })
     await page.setViewportSize({ width: 2554, height: 1239 })
-    await page.goto(`/?writing=${key === "ArrowRight" ? "designing-matcha" : "designing-for-active-traders"}`)
+    await page.goto(`/notes/${key === "ArrowRight" ? "designing-matcha" : "designing-for-active-traders"}/`)
     const dialog = page.getByRole("dialog")
     await expect(dialog).toHaveCSS("opacity", "1")
     // A cold reader chunk can mount between paints. Wait for its initial
@@ -127,7 +160,7 @@ for (const [key, sign, nextTitle] of [
 
 test("closing during a note switch cancels the pending selection", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" })
-  await page.goto("/?writing=designing-matcha")
+  await page.goto("/notes/designing-matcha/")
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveCSS("opacity", "1")
   await dialog.evaluate(element => {

@@ -1277,7 +1277,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder /></div>
               <p className="ds-caption">
@@ -1296,7 +1296,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Each row carries its title and, on the right, the day and month it was published as tabular --muted figures; the year heading above
                 supplies the year, and a note kept only as an archive year leaves that column empty. The date is hidden from assistive technology so a row
                 is still named by its title alone; the reader's own header carries the full date.
-                The like control below the date is a 32px pill with a 44px hit area, --text-xs type, and the shared control shadows.
+                Under the date sit the two things to do with a note rather than in it: the like control and the note's own address.
+                The like control is a 32px pill with a 44px hit area, --text-xs type, and the shared control shadows.
                 The project preview wears the same control on the overlay tier; everything below is shared by both.
                 Its 14px heart starts filled #b6b6ba; the heart and tabular, weight-600 count turn #e5352b after a tap.
                 The pill hugs the count, whose width follows its digit count in ch over --duration-quick with --ease-standard.
@@ -1305,6 +1306,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Three particles are softened with a 2px blur; all use --radius-full.
                 At the cap, another tap shakes the pill up to 4px over 320ms with ease-out.
                 These component-specific motion exceptions stop under reduced motion; the count remains a polite live status.
+                Beside it, “Copy link” is an ordinary link to the note's public address at the same 32px height on an 8% black
+                hairline, --text-xs on --muted, so it reads as a note about the note rather than a second action competing with the
+                heart. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
+                check and the label for “Link copied” on --ink; its accessible name stays “Copy a link to this note” throughout and
+                the confirmation is announced from a live region beside it. Modified and secondary presses are left to the browser.
+                Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
+                canonical, and listed in the sitemap, the way a project owns `/work/&lt;slug&gt;/`.
                 Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s rows.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
                 The top bar carries one title, Notes, with no year crumb, search, document count, author byline, or subtitle.

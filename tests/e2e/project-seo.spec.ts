@@ -76,6 +76,56 @@ test("the resume page ships its own metadata and the whole history without JavaS
   await context.close()
 })
 
+// A note has a page for the same reason: it is the one long-form thing on the
+// site, and a link to one has to answer for itself in HTML rather than depend
+// on the folder's reader having loaded.
+test("note pages ship their own metadata and the whole article without JavaScript", async ({ browser, request, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
+  const page = await context.newPage()
+  const sitemap = await (await request.get("/sitemap.xml")).text()
+
+  for (const [id, title, image] of [
+    // One with a cover of its own, and one that falls back to the site's card.
+    ["designing-matcha", "Designing Matcha", "https://rafaelmedina.me/Projects/shot-small-16-poster.webp"],
+    ["a-song-we-all-know", "A song we all know", "https://rafaelmedina.me/og-image.png"],
+  ]) {
+    const path = `/notes/${id}/`
+    await page.goto(path)
+    await expect(page).toHaveTitle(`${title} — Rafael Medina`)
+    await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible()
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://rafaelmedina.me${path}`)
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", `https://rafaelmedina.me${path}`)
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", image)
+    expect((await request.get(new URL(image).pathname)).ok()).toBe(true)
+    const description = await page.locator('meta[name="description"]').getAttribute("content")
+    expect(description!.length).toBeGreaterThan(60)
+    // The whole article, not a stub: prose, the marginalia, and the way out.
+    expect(await page.locator(".writing-reader-prose p").count()).toBeGreaterThan(2)
+    expect(await page.locator(".writing-margin-note").count()).toBeGreaterThan(0)
+    await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")
+    // Without JavaScript "More articles" is a set of ordinary links.
+    await expect(page.locator(".writing-more a").first()).toHaveAttribute("href", /^\/notes\//)
+    await expect(page.getByRole("link", { name: "Copy a link to this note" }))
+      .toHaveAttribute("href", `https://rafaelmedina.me${path}`)
+    expect(sitemap).toContain(`https://rafaelmedina.me${path}`)
+  }
+  await context.close()
+})
+
+// The note's page and its reader are the same article, so the swap at hydration
+// has nothing to reconcile: no mismatch, and the reader opens over the URL.
+test("a note page hydrates into the reader without replacing its article", async ({ page }) => {
+  const errors: string[] = []
+  page.on("pageerror", error => errors.push(error.message))
+  await page.goto("/notes/designing-matcha/")
+  await expect(page.getByRole("dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  await expect(page).toHaveURL(/\/notes\/designing-matcha\/$/)
+  await expect(page).toHaveTitle("Designing Matcha — Rafael Medina")
+  await page.reload()
+  await expect(page.getByRole("dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 test("project pages hydrate into the gallery after reload and index navigation", async ({ page }) => {
   const errors: string[] = []
   page.on("pageerror", error => errors.push(error.message))

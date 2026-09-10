@@ -108,6 +108,25 @@ React is running. Adding another non-project tile to the sequence means adding a
 kind to `src/lib/galleryItems.ts` and a location to `src/lib/portfolioUrl.ts`;
 the gallery itself only knows about items.
 
+## Notes
+
+A note owns `/notes/<id>/` the way a project owns `/work/<slug>/`: prerendered
+by `scripts/prerender.mjs`, listed in the sitemap, rendered as `WritingPage` for
+a crawler or a visitor without JavaScript, and swapped for the folder's reader
+once React is running. `?writing=<id>` was the old address and still opens the
+reader, so links already shared keep working.
+
+The article itself is `WritingArticle`, shared by the reader and that static
+page — including the "Copy link" control, which puts the public address on the
+clipboard rather than leaving it in the URL bar.
+
+Two modules hold a note, and which one a change belongs in matters.
+`src/data/writingIndex.ts` is the eager half: id, title, date, blurb, and the
+social card. `src/data/writings.ts` is the prose, and it is 34KB — it stays out
+of the main bundle, so the standalone page is fetched before hydration by
+`src/lib/writingPageSlot.ts` rather than imported. Add a note to the index and
+`writings.ts` will spread its fields; a title or a date is written once.
+
 ## The last-updated clause and its GitHub card
 
 Two different things with two different lifecycles sit behind the hero's

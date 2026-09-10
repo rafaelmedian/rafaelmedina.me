@@ -639,3 +639,42 @@
 @media (prefers-reduced-motion: reduce) {
   .writings-back, .writing-like, .writing-like svg { transition: none; }
 }
+
+/* ------------------------------------------------- a note's own address --- */
+
+/* The link, offered as a control beside the heart rather than left in the URL
+   bar. Both are things to do with the note rather than part of it, so they
+   share a line under the title; the reserved height there is load-bearing,
+   because the like count arrives asynchronously and the article would shift
+   down under it. */
+.writing-reader-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+.writing-reader-actions .like-row { margin-top: 0; }
+/* Sized and inked as the archive's dates are, so it reads as a note about the
+   note rather than as a second action competing with the heart. It wears the
+   like pill's height and radius, because they sit on one line. */
+.writing-copy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 32px;
+  padding: 0 0.7rem;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+}
+.writing-copy-link:hover { background: var(--mosaic-card-surface); }
+/* Confirmed rather than announced: the label and the icon both change, and the
+   ink steps up to the heading's, so the swap reads without a colour of its own. */
+.writing-copy-link[data-copied="true"] { color: var(--ink); }
+.writing-copy-link-icon { flex-shrink: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .writing-copy-link { transition: none; }
+}

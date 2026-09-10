@@ -5,10 +5,13 @@ test("keeps reader chunks off the initial load and opens them on demand", async 
   page.on("request", request => { if (request.resourceType() === "script") scripts.push(request.url()) })
   await page.goto("/")
   await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
-  expect(scripts.some(url => /WritingsReader|PersonalPhotosSheet/.test(url))).toBe(false)
+  // WritingArticle carries 34KB of prose that only a note's own reader or its
+  // own page needs, so it is checked alongside the readers that pull it in.
+  expect(scripts.some(url => /WritingsReader|WritingArticle|PersonalPhotosSheet/.test(url))).toBe(false)
   await page.getByRole("button", { name: "Open writings folder" }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
   expect(scripts.some(url => url.includes("WritingsReader"))).toBe(true)
+  expect(scripts.some(url => url.includes("WritingArticle"))).toBe(true)
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()
   await page.getByRole("button", { name: "Personal life" }).click()
