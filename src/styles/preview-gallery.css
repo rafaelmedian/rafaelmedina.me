@@ -991,13 +991,24 @@
   flex-direction: column;
   padding-bottom: 0;
 }
+/* The heading's bottom edge is the edge the text scrolls under, and it runs
+   through the card's padding to both sides, so the divider that appears on
+   scroll spans the card rather than underlining the title. The 2rem between
+   the title and the first line is split across that edge. Raised because the
+   page is a later positioned sibling and would paint over the shadow. */
 .notes-gallery-heading {
   position: relative;
+  z-index: 1;
   flex: none;
-  width: min(100%, var(--writings-measure));
-  margin: 0 auto 2rem;
+  margin-inline: calc(-1 * var(--preview-gallery-card-padding));
+  padding: 0 var(--preview-gallery-card-padding) 1.5rem;
   box-shadow: 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
   transition: box-shadow var(--duration-quick) var(--ease-standard);
+}
+.notes-gallery-heading-column {
+  position: relative;
+  width: min(100%, var(--writings-measure));
+  margin: 0 auto;
 }
 .notes-gallery-heading .preview-gallery-notes-title {
   width: auto;
@@ -1028,7 +1039,7 @@
   flex: 1 1 auto;
   min-height: 0;
   margin-inline: -0.5rem;
-  padding-inline: 0.5rem;
+  padding: 0.5rem 0.5rem 0;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;

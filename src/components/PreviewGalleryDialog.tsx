@@ -171,12 +171,12 @@ export function PreviewGalleryDialog({
     if (!list) return
     const measure = () => {
       const card = cardRef.current
-      const heading = notesTitleRef.current?.parentElement
-      if (!card || !heading) return
+      const heading = notesTitleRef.current?.closest("header")
+      const scroller = notesScrollRef.current
+      if (!card || !heading || !scroller) return
       const styles = getComputedStyle(card)
-      const headingStyles = getComputedStyle(heading)
       setListHeight(list.scrollHeight + heading.offsetHeight +
-        Number.parseFloat(headingStyles.marginBottom) +
+        Number.parseFloat(getComputedStyle(scroller).paddingTop) +
         Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom))
     }
     measure()
@@ -687,14 +687,16 @@ export function PreviewGalleryDialog({
                   ) : activeItem.kind === "writings" ? (
                     <div className="preview-gallery-notes writings-surface" data-reading={readingNote ? "true" : undefined}>
                       <header className="notes-gallery-heading writings-toolbar">
-                        <button type="button" className="preview-gallery-nav notes-gallery-back"
-                          aria-label="Go back to Notes" aria-hidden={!readingNote} tabIndex={readingNote ? 0 : -1}
-                          onClick={() => handleOpenChange(false)}>
-                          <ChevronLeft className="preview-gallery-nav-icon" aria-hidden="true" />
-                        </button>
-                        <Dialog.Title ref={notesTitleRef} className="preview-gallery-title preview-gallery-notes-title">
-                          {writingsItemTitle}
-                        </Dialog.Title>
+                        <div className="notes-gallery-heading-column">
+                          <button type="button" className="preview-gallery-nav notes-gallery-back"
+                            aria-label="Go back to Notes" aria-hidden={!readingNote} tabIndex={readingNote ? 0 : -1}
+                            onClick={() => handleOpenChange(false)}>
+                            <ChevronLeft className="preview-gallery-nav-icon" aria-hidden="true" />
+                          </button>
+                          <Dialog.Title ref={notesTitleRef} className="preview-gallery-title preview-gallery-notes-title">
+                            {writingsItemTitle}
+                          </Dialog.Title>
+                        </div>
                       </header>
                       <Dialog.Description className="sr-only">
                         {readingNote ? "Read this note. Use Back to return to Notes, or the left and right arrows to browse notes."
