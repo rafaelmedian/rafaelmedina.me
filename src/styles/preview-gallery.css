@@ -235,13 +235,13 @@
 .preview-gallery-card-switch-out-next,
 .preview-gallery-card-switch-in-prev {
   opacity: 0;
-  transform: translateX(-1.4rem) scale(0.985);
+  transform: translateX(-1.4rem) scale(var(--pg-switch-scale, 0.985));
 }
 
 .preview-gallery-card-switch-out-prev,
 .preview-gallery-card-switch-in-next {
   opacity: 0;
-  transform: translateX(1.4rem) scale(0.985);
+  transform: translateX(1.4rem) scale(var(--pg-switch-scale, 0.985));
 }
 
 /* The incoming pose is a placement, not a move: it has to be installed without
@@ -1035,6 +1035,9 @@
   scrollbar-width: none;
 }
 .notes-gallery-page {
+  /* Scaling a long article around its centre produces a visible vertical dip.
+     Notes only translate sideways; work cards retain their subtle scale. */
+  --pg-switch-scale: 1;
   position: relative;
   transition:
     opacity var(--pg-switch-ms) ease-out,

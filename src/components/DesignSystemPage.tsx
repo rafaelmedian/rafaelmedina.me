@@ -1323,7 +1323,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The back button enters from the left over 200ms and returns to the list, as do Escape and dismiss.
                 Its 44px hit area hangs in the gutter from a 48rem Notes container; below that, the title shifts
                 horizontally to make room inside the card. The heading and backdrop stay mounted throughout.
-                Next sends outgoing content 1.4rem left at scale(0.985), fading over 200ms; previous reverses it.
+                Next sends outgoing content 1.4rem left, fading over 200ms; previous reverses it.
+                Notes sets --pg-switch-scale to 1: scaling a long article around its centre would make it dip
+                vertically. Work cards retain their 0.985 scale; note content only travels sideways.
                 Incoming content arrives from the opposite side over 200ms, sharing the work gallery's standard transform
                 easing and ease-out opacity. The card stays opaque during nested transitions.
                 The list retains its scroll position and measurements while hidden and inert. Back restores it and focuses

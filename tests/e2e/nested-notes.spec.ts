@@ -2,6 +2,45 @@ import { expect, test } from "@playwright/test"
 import { writingSummaries } from "../../src/data/writingIndex"
 import { groupWritingsByYear } from "../../src/lib/writings"
 
+for (const width of [1440, 390]) {
+  test(`note paging stays horizontal without a vertical dip at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: "no-preference" })
+    await page.goto("/notes/designing-matcha/")
+    const popup = page.locator(".preview-gallery-popup")
+    await expect(popup.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+    await expect(popup).toHaveCSS("opacity", "1")
+    await popup.evaluate(element => element.closest(".preview-gallery-shell")!.getAnimations({ subtree: true })
+      .forEach(animation => animation.finish()))
+
+    for (const key of ["ArrowRight", "ArrowLeft"]) {
+      const frames = await popup.locator(".notes-gallery-page").evaluate(async (element, arrow) => {
+        const original = element.getBoundingClientRect()
+        const card = element.closest(".preview-gallery-card")!
+        const originalCard = card.getBoundingClientRect()
+        const samples: Array<{ x: number; y: number; cardY: number; cardHeight: number }> = []
+        element.dispatchEvent(new KeyboardEvent("keydown", { key: arrow, bubbles: true }))
+        const end = performance.now() + 650
+        await new Promise<void>(resolve => {
+          const sample = () => {
+            const box = element.getBoundingClientRect()
+            const cardBox = card.getBoundingClientRect()
+            samples.push({ x: box.x - original.x, y: box.y - original.y,
+              cardY: cardBox.y - originalCard.y, cardHeight: cardBox.height - originalCard.height })
+            if (performance.now() < end) requestAnimationFrame(sample)
+            else resolve()
+          }
+          requestAnimationFrame(sample)
+        })
+        return samples
+      }, key)
+      expect(frames.some(frame => Math.abs(frame.x) > 5)).toBe(true)
+      expect(Math.max(...frames.map(frame => Math.abs(frame.y)))).toBeLessThan(1)
+      expect(frames.every(frame => Math.abs(frame.cardY) < 1 && Math.abs(frame.cardHeight) < 1)).toBe(true)
+    }
+  })
+}
+
 test("nested page turns keep one opaque frame and bring Back in horizontally", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
