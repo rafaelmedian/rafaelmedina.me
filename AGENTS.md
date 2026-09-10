@@ -197,7 +197,9 @@ and the card takes its shape from the `width`/`height` you give it.
 The photo sheet uses generated 400/800 px WebP siblings in
 `public/images/personal/`. Add originals and their dimensions to
 `src/data/personalPhotos.ts`, then run `node scripts/optimize-personal-media.mjs`
-with Node 22.18 or newer. Commit the generated variants. The original stays in
+with Node 22.18 or newer. It also writes a `-thumb.webp` (300×400 box) for any
+photo that lacks one, which the fan and the flights start from; it never rewrites
+an existing thumb. Commit the generated variants. The original stays in
 `srcSet` for large/high-density displays; `sizes` mirrors the sheet's columns,
 gutters, gaps, and print padding in `src/styles/personal-photos.css`.
 

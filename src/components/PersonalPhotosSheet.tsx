@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type Ref, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
@@ -8,7 +8,24 @@ import type { OpenPhoto } from "./PersonalPhotosPreview"
 import { usePreviewCount, useSheetColumns } from "../lib/photoLayout"
 
 export type PersonalPhotosSheetHandle = { openPhoto: OpenPhoto }
-const sheetPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2 - 1rem), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3 - 2rem)"
+const sheetPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2 - 1.125rem), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3 - 1.375rem)"
+
+/** How a caption was written across the bottom of its print, as units the
+    stylesheet scales: how far into the lean range it tips (0-1) and which way,
+    where along the band it lands (0 left, 1 right), and how far it rises or
+    drops (-1-1). Hashed from the photo's id (FNV-1a) rather than random, so a
+    caption keeps its hand from one visit to the next. */
+function captionHand(id: string) {
+  let hash = 2166136261
+  for (const char of id) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619)
+  const unit = (shift: number) => ((hash >>> shift) & 0xff) / 255
+  return {
+    "--caption-lean": unit(0).toFixed(3),
+    "--caption-sign": hash & 0x100 ? 1 : -1,
+    "--caption-place": unit(16).toFixed(3),
+    "--caption-rise": ((unit(24) - 0.5) * 2).toFixed(3),
+  } as CSSProperties
+}
 
 /** Glides a scrolled sheet back to its first row, where the prints were
     dealt, so they fly home from the same slots they flew to. */
@@ -79,6 +96,10 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   }
 
   const onOpenChange = (nextOpen: boolean, details: Dialog.Root.ChangeEventDetails) => {
+    // The dev tuner's panel sits outside the sheet; working its dials is not a
+    // press on the page behind.
+    if (import.meta.env.DEV && !nextOpen && details.reason === "outside-press"
+      && details.event.target instanceof Element && details.event.target.closest(".dialkit-root")) return
     if (!nextOpen) {
       const sheet = sheetRef.current
       // At the first row the close is immediate: the prints fly home and the
@@ -153,9 +174,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                         height={photo.height}
                         decoding="async"
                         draggable={false}
-                        style={{ backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
+                        style={{ aspectRatio: `${photo.width} / ${photo.height}`, backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
                       />
-                      <figcaption>{photo.caption}</figcaption>
+                      <figcaption style={captionHand(photo.id)}><span>{photo.caption}</span></figcaption>
                     </figure>
                   ))}
                 </div>
