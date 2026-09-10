@@ -187,14 +187,17 @@
    The fill is the hero's: the name's own line box with 0.375rem of side padding
    cancelled by an equal negative margin, so it grows around the name without
    moving it off the caption's left edge or opening a gap above it. No underline
-   -- nothing else in this card or the hero rules a line under a name. */
+   -- nothing else in this card or the hero rules a line under a name. The cap
+   counts that padding back in: at 100% the border box was held to the column
+   the name itself sized, which left the name 0.75rem short and broke it over
+   two lines. */
 .mosaic-quote-profile-link {
   appearance: none;
   position: relative;
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  max-width: 100%;
+  max-width: calc(100% + 0.75rem);
   margin-inline: -0.375rem;
   padding: 0 0.375rem;
   border: 0;
@@ -419,6 +422,18 @@
 
 .mosaic-quote[data-dragging="true"] .mosaic-quote-next {
   cursor: grabbing;
+}
+
+/* The advance button is the card, so the card wears its ring -- the work
+   tiles' one. On the button itself the card's overflow clipped the ring to its
+   bottom edge, a dark rule drawn across the card above the dots. */
+.mosaic-quote-next:focus-visible {
+  outline: none;
+}
+
+.mosaic-quote:has(> .mosaic-quote-next:focus-visible) {
+  outline: 2px solid var(--focus-ring-soft);
+  outline-offset: 3px;
 }
 
 .mosaic-quote-dots {
