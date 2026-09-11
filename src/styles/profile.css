@@ -195,6 +195,20 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   -webkit-backface-visibility: hidden;
 }
 
+/* The quote portraits' 12% hairline, so the pale edges of the photo keep a
+   line against the canvas. It rides on the frame rather than the portrait:
+   the portrait zooms under the pointer, and a ring on it would grow with it
+   and be cut off by this crop. Laid over the image because an inset
+   box-shadow on the frame would paint beneath it. */
+.mosaic-avatar-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  pointer-events: none;
+}
+
 .mosaic-avatar-face-back {
   transform: rotateY(180deg) scaleX(-1);
 }
