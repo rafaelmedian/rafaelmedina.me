@@ -2218,7 +2218,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
                   The message textarea starts 88px high with 16px text and grows with each line up to seven lines
                   (188px), or 30% of the viewport on short screens, before scrolling; the history gives up the room. The history uses the available space above the dock with a 12px top clearance, accounting for the
-                  actual form height; only short viewports scroll. The composer stays below it. Focus deepens
+                  actual form height; only short viewports scroll. Neither the history nor the growing message draws
+                  a scrollbar, so a bubble’s entrance rise no longer flashes one. The composer stays below it. Focus deepens
                   the overlay shadow to <code>--shadow-overlay-hover</code> instead of drawing a stroke. The arrow starts gray,
                   turning blue for a valid email or nonempty optional message. Final submission posts to the contact
                   Worker, with sending, sent and retry states. No address is sent when advancing to the message step.

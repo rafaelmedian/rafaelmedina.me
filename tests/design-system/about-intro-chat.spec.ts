@@ -35,6 +35,9 @@ for (const width of [320, 1440]) {
     const history = chat.locator('.about-intro-chat-history')
     // The follow-up's 8px entrance rise overflows for ~100ms; only the resting history must not scroll.
     await expect.poll(() => history.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
+    // Neither the history nor the growing reply ever draws a scrollbar.
+    await expect(history).toHaveCSS('scrollbar-width', 'none')
+    await expect(message).toHaveCSS('scrollbar-width', 'none')
     // Measure the resting alignment, after the portrait's hover scale settles.
     await page.mouse.move(width / 2, 100)
     await expect.poll(async () => {
