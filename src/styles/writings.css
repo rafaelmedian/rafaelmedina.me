@@ -214,7 +214,7 @@
    The hairline is the row's only container, so it stays part of the page rather
    than becoming a second floating surface inside the reader. */
 .writing-contents {
-  --toc-swap-duration: var(--duration-quick);
+  --toc-swap-duration: var(--duration-slow);
   --writing-contents-gutter: max(0px, calc((100cqi - var(--writings-measure)) / 2));
   --writing-contents-offset: calc(var(--preview-gallery-card-padding, 0px) + var(--writing-contents-gutter));
   position: sticky;
@@ -227,9 +227,9 @@
   border-bottom: 1px solid rgb(0 0 0 / 0.06);
   background: var(--canvas);
   transition:
-    width var(--duration-base) var(--ease-smooth),
-    margin-left var(--duration-base) var(--ease-smooth),
-    padding-inline var(--duration-base) var(--ease-smooth);
+    width var(--duration-slow) var(--ease-smooth),
+    margin-left var(--duration-slow) var(--ease-smooth),
+    padding-inline var(--duration-slow) var(--ease-smooth);
 }
 .writing-contents::before {
   content: "";
@@ -238,7 +238,7 @@
   pointer-events: none;
   box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
   opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-slow) var(--ease-standard);
 }
 .writing-contents[data-stuck="true"]::before { opacity: 1; }
 .writing-contents-sentinel { display: block; height: 0; }
@@ -363,7 +363,7 @@
   letter-spacing: -0.00563rem;
   white-space: nowrap;
   pointer-events: none;
-  animation: mosaic-toc-label-exit var(--duration-fast) var(--ease-exit) both;
+  animation: mosaic-toc-label-exit var(--toc-swap-duration) var(--ease-exit) both;
 }
 /* The one code sample in the reader. It sits on the card surface the rest of
    the site uses for a held object, at the caption step: it is a quotation from
