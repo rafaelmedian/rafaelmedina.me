@@ -196,6 +196,17 @@ export function PreviewGalleryDialog({
         `[data-writing-id="${notesPage.displayed}"]`,
       ) ?? returnRow.current
       if (focusNoteTitle.current) noteTitleRef.current?.focus({ preventScroll: true })
+      // Hydration replaces the standalone article, including its native
+      // fragment scroll. Restore that destination in the mounted reader.
+      let fragment = window.location.hash.slice(1)
+      try { fragment = decodeURIComponent(fragment) } catch { /* An invalid escape cannot name a section. */ }
+      const section = fragment ? scroller.querySelector<HTMLElement>(
+        `.writing-reader-section h3#${CSS.escape(fragment)}`,
+      ) : null
+      if (section) {
+        section.focus({ preventScroll: true })
+        section.scrollIntoView({ block: "start", behavior: "instant" })
+      }
     } else {
       scroller.scrollTop = listScrollTop.current
       const row = returnRow.current

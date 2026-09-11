@@ -272,13 +272,13 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-xs",
     sample: "Punta Cana · Local time",
-    where: "Map attribution, count pills, avatar initials, compact project captions, mobile table-of-contents numbers, and the notes reader's secondary lines — its date, year headings, like pill, image captions, and acknowledgements",
+    where: "Map attribution, count pills, avatar initials, compact project captions, mobile table-of-contents numbers, and the notes reader's secondary lines — its date, year headings, contents label, like pill, image captions, and acknowledgements",
     style: { fontSize: "var(--text-xs)", lineHeight: 1.25 },
   },
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
+    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, contents rows, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
@@ -1394,7 +1394,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 height and -0.00563rem tracking, and the column is the measure, so paragraphs carry none of their own.
                 Paragraphs are separated by 16px. Section headings sit on the reading step at 600 weight with 1.45 line
                 height and -0.00563rem tracking, 48px above and 12px below, so the space does the grouping the size no
-                longer does; nothing is drawn in that break. List entries use --text-sm, 1.5 line height, -0.00563rem tracking, and pretty wrapping.
+                longer does. A 1px 6% black rule, the shared hairline weight, runs from 16px after the heading to the
+                column's edge, level with the middle of the line; a heading long enough to wrap has no width left
+                over and goes without one rather than leave a stub at the far edge. List entries use --text-sm, 1.5 line height, -0.00563rem tracking, and pretty wrapping.
                 The reader date uses --text-xs, 1.5 line height, and no tracking, 4px above the title; row dates sit on the entry's own --text-sm.
                 Year headings use --text-xs. Font kerning is enabled throughout the dialog.
                 Inline images retain their intrinsic

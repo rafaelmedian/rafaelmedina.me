@@ -2,7 +2,7 @@ import { ArrowUpRight, Check, Link2 } from "lucide-react"
 import { useEffect, useRef, useState, type CSSProperties, type ElementType, type RefObject } from "react"
 
 import { writingSummaries } from "../data/writingIndex"
-import type { Writing, WritingAnnotation, WritingCode, WritingImage } from "../data/writings"
+import type { Writing, WritingAnnotation, WritingCode, WritingImage, WritingSection } from "../data/writings"
 import { noteHash, pickFrom } from "../lib/writings"
 import { siteOrigin, writingPath } from "../lib/projectMetadata"
 import { LikeButton } from "./LikeButton"
@@ -145,6 +145,101 @@ function NoteImage({ image }: { image: WritingImage }) {
   )
 }
 
+// A section's anchor, from its heading: lower case, punctuation dropped, words
+// joined by hyphens, so /notes/<id>/#i-want-both-speeds reads as the heading.
+const sectionSlug = (heading: string) => heading.toLowerCase().replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-")
+
+// The nearest ancestor that scrolls: the gallery card's viewport in the
+// reader, nothing on the standalone page, where the window does.
+function scrollParent(element: HTMLElement) {
+  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
+    if (/auto|scroll/.test(getComputedStyle(node).overflowY)) return node
+  }
+  return null
+}
+
+/**
+ * The section being read, for the contents to mark. A section is current once
+ * its heading has climbed into the top third of whatever scrolls the note --
+ * a jump lands a heading well inside that -- and the last one takes over at
+ * the very end, where a short closing section may never climb that far. Until
+ * the first heading arrives the reader is in the introduction, which the
+ * contents do not list, so nothing is marked.
+ */
+function useCurrentSection(navRef: RefObject<HTMLElement | null>, sections: WritingSection[]) {
+  const [current, setCurrent] = useState<string | null>(null)
+  useEffect(() => {
+    const article = navRef.current?.closest("article")
+    if (!article) return
+    const headings = sections
+      .map((section) => article.querySelector<HTMLElement>(`#${CSS.escape(sectionSlug(section.heading))}`))
+      .filter((heading) => heading !== null)
+    const scroller = scrollParent(article)
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const top = scroller ? scroller.getBoundingClientRect().top : 0
+      const height = scroller ? scroller.clientHeight : window.innerHeight
+      const atEnd = scroller
+        ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1
+        : window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1
+      let active: string | null = null
+      for (const heading of headings) if (heading.getBoundingClientRect().top <= top + height / 3) active = heading.id
+      if (atEnd && active) active = headings[headings.length - 1].id
+      setCurrent(active)
+    }
+    // Once a frame however fast the wheel is: the check is a few rects.
+    const schedule = () => { frame ||= requestAnimationFrame(update) }
+    const target = scroller ?? window
+    update()
+    target.addEventListener("scroll", schedule, { passive: true })
+    window.addEventListener("resize", schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      target.removeEventListener("scroll", schedule)
+      window.removeEventListener("resize", schedule)
+    }
+  }, [navRef, sections])
+  return current
+}
+
+/**
+ * The sections, so a reader can see how the note is laid out and go straight
+ * to the part they came for. They sit above the prose where there is no room
+ * beside it, and float in the reader's left gutter where there is. Each row is
+ * a real fragment link, which is all the static page needs. In the reader a
+ * press scrolls the card itself instead: a fragment navigation would push a
+ * history entry of its own, and the gallery closes a note by stepping back
+ * through history, so Back would land on the fragment rather than leave it.
+ */
+function NoteContents({ sections }: { sections: WritingSection[] }) {
+  const navRef = useRef<HTMLElement>(null)
+  const current = useCurrentSection(navRef, sections)
+  return (
+    <nav ref={navRef} className="writing-contents" aria-label="Contents">
+      <h3>Contents</h3>
+      <ol>{sections.map((section) => {
+        const slug = sectionSlug(section.heading)
+        return (
+          <li key={slug}>
+            <a href={`#${slug}`} aria-current={slug === current ? "location" : undefined} onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+              const target = event.currentTarget.closest("article")?.querySelector<HTMLElement>(`#${CSS.escape(slug)}`)
+              if (!target) return
+              event.preventDefault()
+              // Focus follows the jump, as it does for a native fragment, so
+              // Tab carries on from the section rather than from the list.
+              target.focus({ preventScroll: true })
+              const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              target.scrollIntoView({ block: "start", behavior: reduce ? "instant" : "smooth" })
+            }}>{section.heading}</a>
+          </li>
+        )
+      })}</ol>
+    </nav>
+  )
+}
+
 /** How long a copied link stays confirmed, matching the address chip's window. */
 const COPY_CONFIRMATION_MS = 1600
 
@@ -236,20 +331,27 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
           <CopyNoteLink writing={writing} />
         </div>
       </header>
-      {writing.cover ? <NoteImage image={writing.cover} /> : null}
-      <div className="writing-reader-prose">
-        <NoteProse paragraphs={writing.paragraphs} annotations={writing.annotations} />
-        {writing.code ? <NoteCode code={writing.code} /> : null}
-        {writing.image ? <NoteImage image={writing.image} /> : null}
-        {writing.sections?.map((section) => (
-          <section className="writing-reader-section" key={section.heading}>
-            <h3>{section.heading}</h3>
-            <NoteProse paragraphs={section.paragraphs} annotations={section.annotations} />
-            {section.code ? <NoteCode code={section.code} /> : null}
-            {section.image ? <NoteImage image={section.image} /> : null}
-          </section>
-        ))}
-        {writing.href ? <a href={writing.href} target="_blank" rel="noreferrer">Read original article <ArrowUpRight size={16} aria-hidden="true" /></a> : null}
+      {/* The body is what the contents float beside in the reader, so they
+          stop following once the prose ends rather than riding down past the
+          acknowledgements and More articles. */}
+      <div className="writing-reader-body">
+        {/* One section is not an outline, so a note needs two to list them. */}
+        {writing.sections && writing.sections.length > 1 ? <NoteContents sections={writing.sections} /> : null}
+        {writing.cover ? <NoteImage image={writing.cover} /> : null}
+        <div className="writing-reader-prose">
+          <NoteProse paragraphs={writing.paragraphs} annotations={writing.annotations} />
+          {writing.code ? <NoteCode code={writing.code} /> : null}
+          {writing.image ? <NoteImage image={writing.image} /> : null}
+          {writing.sections?.map((section) => (
+            <section className="writing-reader-section" key={section.heading}>
+              <h3 id={sectionSlug(section.heading)} tabIndex={-1}>{section.heading}</h3>
+              <NoteProse paragraphs={section.paragraphs} annotations={section.annotations} />
+              {section.code ? <NoteCode code={section.code} /> : null}
+              {section.image ? <NoteImage image={section.image} /> : null}
+            </section>
+          ))}
+          {writing.href ? <a href={writing.href} target="_blank" rel="noreferrer">Read original article <ArrowUpRight size={16} aria-hidden="true" /></a> : null}
+        </div>
       </div>
       {writing.acknowledgements ? (
         <section className="writing-acknowledgements" aria-label="Acknowledgements">

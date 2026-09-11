@@ -385,6 +385,131 @@ test("margin notes fold into the column when the gutters are gone", async ({ pag
   expect(await prose.textContent()).toContain("And I still typed three paragraphs describing it")
 })
 
+test("the contents jump to a section without leaving a history entry", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/designing-matcha/")
+  const dialog = sheet(page)
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  await expect(contents.getByRole("link")).toHaveText([
+    "Different reasons to arrive",
+    "The space around the trade",
+    "A system has to survive the awkward states",
+    "What the screens can tell you",
+  ])
+  // A real fragment underneath, so the static page and a copied link work
+  // without the reader.
+  const row = contents.getByRole("link", { name: "A system has to survive the awkward states" })
+  await expect(row).toHaveAttribute("href", "#a-system-has-to-survive-the-awkward-states")
+
+  // The introduction is not a listed section, so nothing is marked at the top.
+  const currentRows = contents.locator("a[aria-current]")
+  await expect(currentRows).toHaveCount(0)
+
+  const historyLength = await page.evaluate(() => history.length)
+  await row.click()
+  const heading = dialog.getByRole("heading", { name: "A system has to survive the awkward states" })
+  await expect(heading).toBeFocused()
+  // The section it landed on is the one marked, and only by its ink.
+  await expect(currentRows).toHaveText(["A system has to survive the awkward states"])
+  // Off the row, so its ink is the mark's rather than the hover's.
+  await page.mouse.move(0, 0)
+  const ink = (element: Element) => getComputedStyle(element).color
+  expect(await row.evaluate(ink)).not.toBe(await contents.getByRole("link").first().evaluate(ink))
+  expect(await row.evaluate((element) => getComputedStyle(element).fontWeight))
+    .toBe(await contents.getByRole("link").first().evaluate((element) => getComputedStyle(element).fontWeight))
+  // The card scrolls, not the page, and the heading lands just under its top.
+  const reader = dialog.locator(".writings-scroll")
+  await expect.poll(async () => {
+    const [headingBox, readerBox] = await Promise.all([heading.boundingBox(), reader.boundingBox()])
+    return Math.round(headingBox!.y - readerBox!.y)
+  }).toBe(24)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  await expect(page).toHaveURL(/\/notes\/designing-matcha\/$/)
+  expect(await page.evaluate(() => history.length)).toBe(historyLength)
+
+  // A sheet this wide has gutters, so the contents float in the left one,
+  // clear of the column, and are still pinned level with the heading after
+  // the jump rather than left behind at the top of the note.
+  const column = (await dialog.locator(".writing-reader").boundingBox())!
+  const [contentsBox, headingBox, readerBox] = await Promise.all([contents.boundingBox(), heading.boundingBox(), reader.boundingBox()])
+  expect(contentsBox!.x).toBeGreaterThanOrEqual(readerBox!.x)
+  expect(contentsBox!.x + contentsBox!.width).toBeLessThanOrEqual(column.x)
+  expect(Math.round(contentsBox!.y)).toBe(Math.round(headingBox!.y))
+
+  // A short last section may never climb into the top third, so the end of
+  // the note hands the mark to it.
+  await reader.evaluate((element) => element.scrollTo(0, element.scrollHeight))
+  await expect(currentRows).toHaveText(["What the screens can tell you"])
+
+  // The gallery closes a note by stepping back through history, so one Back
+  // still leaves the note after a jump.
+  await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await expect(dialog).toBeHidden()
+})
+
+test("a shared section link survives the handoff to the reader", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/designing-matcha/#a-system-has-to-survive-the-awkward-states")
+  const dialog = sheet(page)
+  const heading = dialog.getByRole("heading", { name: "A system has to survive the awkward states" })
+  await expect(heading).toBeVisible()
+  const reader = dialog.locator(".writings-scroll")
+  await expect.poll(async () => {
+    const [headingBox, readerBox] = await Promise.all([heading.boundingBox(), reader.boundingBox()])
+    return Math.round(headingBox!.y - readerBox!.y)
+  }).toBe(24)
+  await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
+  await expect(page).toHaveURL(/\/notes\/$/)
+})
+
+test("floating contents take the left gutter and margin notes give it up", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/")
+  const dialog = sheet(page)
+  const entries = popup(page).locator(".writings-year li button")
+  await expect(entries.first()).toBeVisible()
+  const count = await entries.count()
+  for (let index = 0; index < count; index += 1) {
+    const id = await entries.nth(index).locator(".writing-entry-title").innerText()
+    await entries.nth(index).click()
+    await expect(dialog.locator(".writing-reader")).toBeVisible()
+    const contents = dialog.getByRole("navigation", { name: "Contents" })
+    if (await contents.count()) {
+      const column = (await dialog.locator(".writing-reader").boundingBox())!
+      const contentsBox = (await contents.boundingBox())!
+      expect(contentsBox.x + contentsBox.width, id).toBeLessThanOrEqual(column.x)
+      // Whatever side a note was written for, it hangs right of the column,
+      // and the two that end up there never meet.
+      const notes = await dialog.locator(".writing-margin-note")
+        .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON() as DOMRect))
+      for (const note of notes) expect(note.left, id).toBeGreaterThanOrEqual(column.x + column.width)
+      for (let a = 0; a < notes.length; a += 1) {
+        for (let b = a + 1; b < notes.length; b += 1) {
+          expect(notes[a].bottom <= notes[b].top || notes[b].bottom <= notes[a].top, id).toBe(true)
+        }
+      }
+    }
+    await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
+    await expect(dialog).toBeHidden()
+  }
+
+  // The compact card has no gutter to float in, so the contents sit above the
+  // prose again, in the column.
+  await page.setViewportSize({ width: 1200, height: 900 })
+  await page.goto("/notes/designing-matcha/")
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  await expect(contents).toBeVisible()
+  const column = (await dialog.locator(".writing-reader").boundingBox())!
+  const contentsBox = (await contents.boundingBox())!
+  const prose = (await dialog.locator(".writing-reader-prose").boundingBox())!
+  expect(Math.round(contentsBox.x)).toBe(Math.round(column.x))
+  expect(contentsBox.y + contentsBox.height).toBeLessThanOrEqual(prose.y)
+})
+
 test("an article closes with its acknowledgements above More articles", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -413,8 +538,9 @@ test("keeps marginalia to two notes an article, one in each gutter", async ({ pa
     const places = await dialog.locator(".writing-reader-prose .writing-margin-note")
       .evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.place))
     // Marginalia is an aside, not a second column: past a couple an article a
-    // reader stops reading the page and starts reading the margin. One goes in
-    // each gutter, so neither edge ever grows a stack.
+    // reader stops reading the page and starts reading the margin. One is
+    // written for each gutter, so neither edge ever grows a stack; where the
+    // contents float in the left one, both hang right, one early, one late.
     expect(places.length, id).toBeLessThanOrEqual(2)
     expect(new Set(places).size, id).toBe(places.length)
     // The interjections that used to drop between paragraphs are gone with them.

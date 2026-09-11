@@ -150,7 +150,7 @@
    them, so the full measure goes to the titles. The rows keep their -0.5rem
    bleed, which puts the title text back on the heading's line while the hover
    fill still reaches past it. */
-.writings-year h3, .writing-more h3 { margin: 0 0 0.25rem; font-size: var(--text-xs); font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.writings-year h3, .writing-more h3, .writing-contents h3 { margin: 0 0 0.25rem; font-size: var(--text-xs); font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
 .writings-year ul, .writing-more ul { list-style: none; padding: 0; margin: 0 -0.5rem; }
 .writing-more { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgb(0 0 0 / 0.08); }
 .writing-entry-trigger { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; width: 100%; min-height: 44px; padding: 0.75rem 0.5rem; border-radius: var(--radius-sm); text-align: left; font-size: var(--text-sm); font-weight: 500; line-height: 1.5; letter-spacing: -0.00563rem; text-wrap: pretty; overflow-wrap: anywhere; transition: background-color var(--duration-quick) var(--ease-standard); }
@@ -181,7 +181,93 @@
 /* A section heading is the same size as the copy under it and separates by
    weight, so the space has to do the grouping: 48px above it, 12px below. */
 .writing-reader-section { margin-top: 3rem; }
-.writing-reader-section h3 { margin: 0 0 0.75rem; color: var(--ink); font-size: var(--text-sm); font-weight: 600; line-height: 1.45; letter-spacing: -0.00563rem; }
+.writing-reader-section h3 {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.00563rem;
+  /* A jump from the contents lands the heading just under the top of whatever
+     scrolls it. The site-wide 5rem clears the home page's header, which
+     neither the notes card nor the standalone page has. */
+  scroll-margin-top: 1.5rem;
+  /* A hairline runs from the heading to the measure's edge, so each section
+     reads as a new stretch without a rule strong enough to box it off. */
+  display: flex;
+  gap: 1rem;
+}
+/* The rule takes only the width the heading leaves over. A heading long enough
+   to wrap leaves none, so it goes without rather than strand a stub at the far
+   edge: a wrapped text box is as wide as the measure, not as its longest line,
+   so the stub would float well clear of the words. */
+.writing-reader-section h3::after {
+  content: "";
+  flex: 1 1 0;
+  align-self: center;
+  height: 1px;
+  background: rgb(0 0 0 / 0.06);
+}
+/* The contents sit between the header and the prose, labelled like More
+   articles and inked like the date: they describe the note rather than begin
+   it, so they stay a step behind the copy until a row is pointed at. */
+.writing-contents { margin-bottom: 2rem; }
+.writing-contents ol { list-style: none; padding: 0; margin: 0; }
+.writing-contents a {
+  display: inline-block;
+  padding-block: 0.25rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  letter-spacing: -0.00563rem;
+  text-decoration: none;
+  text-wrap: pretty;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+/* The section being read steps up to the heading ink and nothing else: no
+   weight, fill, or rule, so the list keeps its shape as the mark moves down
+   it and the colour change is the whole signal. */
+.writing-contents a:hover,
+.writing-contents a[aria-current] { color: var(--ink); }
+/* Once the reader has gutters the contents leave the column for the left one
+   and ride down beside the prose, so the outline is still in reach from the
+   middle of a long section. A float that is sticky rather than an absolute
+   box: it keeps its own height, so it stops at the end of the body instead of
+   running on past it, and its margins cancel its width, so the prose never
+   wraps around it. It lines up with the headings a jump lands, 1.5rem under
+   the top of the card's scroll: sticking is measured inside the scroll's
+   0.5rem padding, and a scroll margin is not, so the top here is 1rem. */
+@container writings (min-width: 48rem) {
+  .writings-dialog .writing-contents {
+    --writing-contents-gap: 1.25rem;
+    --writing-contents-width: calc((100cqi - var(--writings-measure)) / 2 - var(--writing-contents-gap));
+    position: sticky;
+    top: 1rem;
+    float: left;
+    width: var(--writing-contents-width);
+    margin: 0 var(--writing-contents-gap) 0 calc(-1 * (var(--writing-contents-width) + var(--writing-contents-gap)));
+  }
+  /* A gutter is about a hundred pixels, so the rows drop to the caption step
+     the margin notes use there, and wrap rather than run under the column. */
+  .writings-dialog .writing-contents a {
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
+  /* The left gutter is the contents' now, so a margin note written for it
+     hangs in the right one. Notes are pinned one early and one late, so the
+     two never meet on that side. */
+  .writings-dialog .writing-reader:has(.writing-contents) .writing-margin-note[data-place="left"] {
+    right: auto;
+    left: calc(100% + var(--writing-note-gap));
+    padding-inline: 1.5rem 0;
+    text-align: left;
+  }
+  .writings-dialog .writing-reader:has(.writing-contents) .writing-margin-note[data-place="left"] .writing-margin-note-bracket {
+    inset-inline: 0 auto;
+    scale: none;
+  }
+}
 /* The one code sample in the reader. It sits on the card surface the rest of
    the site uses for a held object, at the caption step: it is a quotation from
    a file rather than the article's own voice, and the monospace face is wider
@@ -397,5 +483,5 @@
 .writing-copy-link-icon { flex-shrink: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .writing-copy-link { transition: none; }
+  .writing-copy-link, .writing-contents a { transition: none; }
 }
