@@ -1158,7 +1158,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px 50%")}
+                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px résumé notes")}
               >
                 <strong>Nested corners are concentric, and they are derived — not a fifth step.</strong>
                 <p>
@@ -1180,8 +1180,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   ratio, under the same cap the media carries (<code>min(367px, 42vh)</code>, and{" "}
                   <code>min(684px, 72vh)</code> in the wide view). It is fixed per
                   layout rather than measured per preview, so a taller or shorter image never slides the pair out from
-                  under the pointer, and it stops at half the popup so a card taller than the viewport still keeps
-                  paging reachable without scrolling back up. The
+                  under the pointer — and it is the same on the résumé and the notes, which have no artwork, so paging
+                  into or out of a page of prose leaves the pair where it was. The
                   shell adds that clearance to its own gutter wherever the pair is shown, since it hides horizontal
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
