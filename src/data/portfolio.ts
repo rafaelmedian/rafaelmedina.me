@@ -194,7 +194,7 @@ export const homeGroups: HomeGroup[] = [
 
 export const siteProfile = {
   name: "Rafael Medina",
-  title: "Senior Product Designer, Freelance",
+  title: "Senior Product Designer",
   photo: profilePhoto,
 }
 
