@@ -1,5 +1,6 @@
 import profilePhoto from "../assets/profile-photo.webp"
 import type { ProjectId } from "./projectIds"
+import { projectCaseStudies } from "./projectCaseStudies"
 
 export type PortfolioCard = {
   /** Registered in `projectIds`, so the likes API knows every project by name. */
@@ -55,17 +56,12 @@ export type ProjectCaseStudySection = {
   media?: PortfolioImage[]
 }
 
-export type ProjectCaseStudyHighlightGroup = {
-  heading: string
-  items: string[]
-}
-
 export type ProjectCaseStudy = {
+  showSignatures?: boolean
   label: string
   period: string
   title: string
-  introduction: string
-  highlights: ProjectCaseStudyHighlightGroup[]
+  introduction: string[]
   sections: ProjectCaseStudySection[]
 }
 
@@ -261,96 +257,13 @@ export const linkedinHoverMedia: HoverMedia = {
   height: 280,
 }
 
-const matchaCaseStudy: ProjectCaseStudy = {
-  label: "Case study",
-  period: "2021 - 2026",
-  title: "Designing Matcha end to end",
-  introduction:
-    "A swap fits inside a small rectangle; the product around it does not. I redesigned Matcha across discovery, research, wallets, trading, mobile, and the visual system that holds those journeys together.",
-  highlights: [
-    {
-      heading: "Product",
-      items: [
-        "Redesigned Matcha.xyz end to end across discovery, research, wallets, and trading.",
-        "Led the structure and interaction design for the homepage, token pages, trade flows, mobile experience, and Matcha Pro.",
-        "Introduced monetization flows that generated sustainable revenue.",
-      ],
-    },
-    {
-      heading: "Design",
-      items: [
-        "Defined the visual system and dark theme across components, charts, and dense trading surfaces.",
-        "Designed loading, empty, error, warning, review, and confirmation states alongside the primary journeys.",
-        "Worked with product, engineering, and research from early direction through shipped implementation.",
-      ],
-    },
-  ],
-  sections: [
-    {
-      heading: "Different reasons to arrive",
-      paragraphs: [
-        "The homepage gives search, market browsing, wallet connection, and trading distinct ways in. A person with a token in mind should not have to browse a showcase first, while someone who is still looking around needs more than an empty trade form.",
-        "The token page carries that discovery into research. Market data, charts, trade controls, and order history live together so someone can review a token and begin a trade without changing context.",
-      ],
-      media: [
-        { source: "/Projects/shot-small-16-poster.webp", label: "Matcha homepage for token discovery and market browsing", width: 640, height: 480 },
-        { source: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg", label: "Matcha token research and trading page", width: 1600, height: 1200 },
-      ],
-    },
-    {
-      heading: "Keep the trade intact",
-      paragraphs: [
-        "The main trading workspace brings the quote, chart, balances, open orders, and history into one hierarchy. In the trade module, costs, routes, and received amounts stay available before a transaction is signed.",
-        "The multiwallet flow applies the same idea to account changes. People can switch wallets while keeping the quote and inputs they already entered, so changing the account does not mean starting the trade again.",
-      ],
-      media: [
-        { source: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg", label: "Matcha trading workspace", width: 1600, height: 1200 },
-        { source: "/Projects/shot-small-9-poster.webp", label: "Matcha multiwallet menu and switching flow", width: 640, height: 480 },
-      ],
-    },
-    {
-      heading: "One system, many contexts",
-      paragraphs: [
-        "The interface had to remain recognizable as its surroundings changed. I defined the dark theme across components, charts, and dense trading surfaces rather than recoloring screens one at a time.",
-        "On mobile, the same journey needed a different order because research, the trade form, review, and confirmation could no longer sit side by side. Layout and emphasis changed while the meaning of each action stayed intact.",
-      ],
-      media: [
-        { source: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg", label: "Matcha dark theme across trading surfaces", width: 1600, height: 1200 },
-        { source: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg", label: "Matcha mobile research and trade journey", width: 1600, height: 1200 },
-      ],
-    },
-    {
-      heading: "Density and confidence",
-      paragraphs: [
-        "Matcha Pro gives active traders a stable, denser workspace for live charts, token signals, transactions, and order management. The goal was not to make every panel loud, but to give changing information a familiar place.",
-        "Confidence also depends on the awkward states. The GoPlus integration distinguishes loading, pending, warning, and result states so a check that has not returned cannot read like a reassuring result.",
-      ],
-      media: [
-        { source: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg", label: "Matcha Pro workspace for active traders", width: 1600, height: 1200 },
-        { source: "/Projects/shot-small-20-poster.webp", label: "Token security checks inside the Matcha trade flow", width: 640, height: 480 },
-      ],
-    },
-    {
-      heading: "A product beyond the interface",
-      paragraphs: [
-        "The same system extended into the rewards program. I created a key visual that could carry the leaderboard, prizes, trades, referrals, and points across launch posts, weekly countdowns, and link previews.",
-      ],
-      media: [
-        { source: "/Projects/matcha-rewards-link-preview.webp", label: "Matcha Rewards link preview", width: 805, height: 480 },
-        { source: "/Projects/matcha-rewards-countdown.webp", label: "Matcha Rewards countdown post", width: 805, height: 480 },
-      ],
-    },
-  ],
-}
-
 const matchaMeta = {
   product: "Matcha - DEX Aggregator by 0x",
   industry: "DeFi / Web3 / Fintech",
   ctaHref: "https://matcha.xyz",
-  caseStudy: matchaCaseStudy,
 }
 
-export const portfolioCards: PortfolioCard[] = [
+const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-9",
     slug: "matcha-multiwallet-flow",
@@ -411,7 +324,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-protector",
     slug: "protector-booking",
-    category: "Preview",
+    category: "Case study",
     title: "Protector booking",
     summary: "",
     detail:
@@ -628,3 +541,8 @@ export const portfolioCards: PortfolioCard[] = [
     previewAspectRatio: 1540 / 1325,
   },
 ]
+
+export const portfolioCards: PortfolioCard[] = portfolioCardEntries.map((card) => ({
+  ...card,
+  caseStudy: projectCaseStudies[card.slug as keyof typeof projectCaseStudies],
+}))

@@ -99,39 +99,63 @@ test("a shared project path opens over the gallery and closes into it", async ({
   expect(errors).toEqual([])
 })
 
-test("Matcha case studies pair scannable highlights with full-width screenshots", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
+test("Matcha contents appears after the first section and keeps author credits distinct from signatures", async ({ page }) => {
+  await page.setViewportSize({ width: 2394, height: 400 })
   await page.goto("/work/matcha-homepage/")
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveAccessibleName("Matcha homepage")
-  await expect(dialog.getByRole("heading", { name: "Designing Matcha end to end" })).toBeVisible()
-  await expect(dialog.getByText("Case study", { exact: true })).toBeVisible()
-  const highlights = dialog.locator(".project-case-study-highlights")
-  await expect(highlights.getByRole("heading", { name: "Product", exact: true })).toBeVisible()
-  await expect(highlights.getByRole("heading", { name: "Design", exact: true })).toBeVisible()
-  await expect(highlights.getByRole("listitem")).toHaveCount(6)
-  expect(await highlights.getByRole("listitem").first()
-    .evaluate((element) => getComputedStyle(element).listStyleType)).toBe("disc")
-  await expect(dialog.locator(".project-case-study-section")).toHaveCount(5)
-  await expect(dialog.locator(".project-case-study-media img")).toHaveCount(10)
+  await expect(dialog.getByRole("heading", { name: "Helping people find their next token" })).toBeVisible()
+  await expect(dialog.locator(".project-case-study-kicker")).toHaveCount(0)
+  const contents = dialog.locator('.writing-contents[aria-label="Case study contents"]')
+  await expect(contents).toBeHidden()
+  await expect(contents.locator(".article-contents-title")).toHaveCount(0)
+  await expect(dialog.locator(".project-case-study-introduction li")).toHaveCount(2)
+  await expect(dialog.locator(".preview-gallery-team")).toBeVisible()
+  const cardSurface = dialog.locator(".preview-gallery-card")
+  await cardSurface.evaluate((element) => {
+    const second = element.querySelectorAll(".project-case-study-section")[1]
+    element.scrollTop += second.getBoundingClientRect().top - element.getBoundingClientRect().top - 44
+  })
+  await expect(contents).toBeVisible()
+  await expect(contents.getByRole("button")).toHaveText("Discovery before a decision")
+  await expect(contents.locator('[aria-current="location"]')).toHaveText("Discovery before a decision")
+  await contents.getByRole("button").click()
+  await expect(contents.getByRole("link")).toHaveCount(3)
+  const originalUrl = page.url()
+  await contents.getByRole("link", { name: "Discovery before a decision", exact: true }).click()
+  await expect(page).toHaveURL(originalUrl)
+  await expect(contents.getByRole("button")).toHaveAttribute("aria-expanded", "false")
+  await expect(contents).toHaveCSS("position", "sticky")
+  const stickyTop = (await contents.boundingBox())?.y
+  expect(stickyTop).toBeCloseTo((await cardSurface.boundingBox())!.y, 0)
+  expect((await contents.boundingBox())!.width).toBeCloseTo((await cardSurface.boundingBox())!.width, 0)
+  await cardSurface.evaluate((element) => (element as HTMLElement).scrollBy({ top: 320, behavior: "instant" }))
+  await expect(contents.getByRole("button")).toHaveText("Finding the next step")
+  expect((await contents.boundingBox())?.y).toBeCloseTo(stickyTop ?? 0, 0)
+  await expect(dialog.locator(".project-case-study-section")).toHaveCount(3)
+  await expect(dialog.locator(".preview-gallery-media-frame")).toHaveCount(1)
+  await expect(dialog.locator(".project-case-study-media")).toHaveCount(0)
 
-  const desktopFigures = await dialog.locator(".project-case-study-media").first()
-    .locator("figure").evaluateAll((elements) => elements.map((element) => {
-      const rect = element.getBoundingClientRect()
-      return { top: rect.top, bottom: rect.bottom }
-    }))
-  expect(desktopFigures[1].top).toBeGreaterThan(desktopFigures[0].bottom)
+  const bodySizes = await dialog.locator(".project-case-study-list li, .preview-gallery-description")
+    .evaluateAll((elements) => [...new Set(elements.map((element) => getComputedStyle(element).fontSize))])
+  expect(bodySizes).toEqual(["14px"])
+
+  const signatures = dialog.locator(".project-case-study-signatures")
+  await expect(signatures).toHaveCount(0)
+  await expect(dialog.locator(".project-case-study-copy p")).toHaveCount(0)
+  await expect(dialog.locator(".project-case-study-copy li")).toHaveCount(5)
+
+  await cardSurface.evaluate(element => { element.scrollTop = 0 })
+  await expect(contents).toBeHidden()
+  await expect(contents.locator(".writing-contents-current")).toHaveText("Contents")
+  await expect(contents.locator('[aria-current="location"]')).toHaveCount(0)
 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.reload()
-  const figures = await page.getByRole("dialog").locator(".project-case-study-media").first()
-    .locator("figure").evaluateAll((elements) => elements.map((element) => {
-      const rect = element.getBoundingClientRect()
-      return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right }
-    }))
-  expect(figures[1].top).toBeGreaterThan(figures[0].bottom)
-  expect(figures.every(figure => figure.left >= 0 && figure.right <= 390)).toBe(true)
+  const story = page.getByRole("dialog").locator(".project-case-study-body")
+  await expect(story).toBeVisible()
+  expect(await story.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
 })
 
 test("an unknown project URL keeps the portfolio usable", async ({ page }) => {

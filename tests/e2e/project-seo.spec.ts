@@ -48,12 +48,16 @@ test("Matcha case studies ship their complete narrative without JavaScript", asy
   const page = await context.newPage()
 
   await page.goto("/work/matcha-homepage/")
-  await expect(page.getByRole("heading", { level: 2, name: "Designing Matcha end to end" })).toBeVisible()
-  await expect(page.locator(".project-case-study-section")).toHaveCount(5)
-  await expect(page.locator(".project-case-study-media img")).toHaveCount(10)
+  await expect(page.getByRole("heading", { level: 2, name: "Helping people find their next token" })).toBeVisible()
+  await expect(page.locator(".project-case-study-section")).toHaveCount(3)
+  await expect(page.locator(".standalone-media")).toHaveCount(1)
+  await expect(page.locator(".project-case-study-media")).toHaveCount(0)
+  await expect(page.locator(".project-case-study-introduction li")).toHaveCount(2)
+  await expect(page.locator(".project-case-study-signatures")).toHaveCount(0)
 
   await page.goto("/work/protector-booking/")
-  await expect(page.locator(".project-case-study")).toHaveCount(0)
+  await expect(page.getByRole("heading", { level: 2, name: "Making a personal-security booking clear" })).toBeVisible()
+  await expect(page.locator(".project-case-study-section")).toHaveCount(3)
   await context.close()
 })
 
