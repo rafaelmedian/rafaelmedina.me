@@ -82,7 +82,8 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
 
   return <section ref={chatRef} className="about-intro-chat" data-active={active} data-step={confirmed ? "message" : "email"}
     inert={!active} aria-hidden={!active} aria-label="Chat with Rafa">
-    <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions">
+    {/* Hidden live regions can make modal isolation hide the neighboring player. */}
+    <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={active ? "polite" : undefined} aria-relevant="additions">
       {greeting.slice(0, Math.min(shown, 3)).map((text, index) => <p key={text}
         className={`about-intro-chat-bubble about-intro-chat-new${index === 2 && !confirmed ? " about-intro-chat-tail" : ""}`}>{text}</p>)}
       {confirmed && <>
