@@ -473,6 +473,8 @@
    or the columns to its right paint over it. */
 .personal-photos-masonry .personal-photos-slide {
   --photo-frame: 100cqi;
+  --photo-padding: calc(var(--photo-frame) * 0.035);
+  --photo-radius: var(--radius-md);
   position: relative;
   width: 100%;
   cursor: pointer;
@@ -485,6 +487,8 @@
   }
 }
 .personal-photos-masonry .personal-photos-slide[data-held] {
+  --photo-padding: calc(var(--photo-frame) * 0.035 / var(--hold-scale, 1));
+  --photo-radius: calc(var(--radius-lg) / var(--hold-scale, 1));
   z-index: 2;
   scale: 1;
   transform: translate(var(--hold-dx, 0px), var(--hold-dy, 0px)) scale(var(--hold-scale, 1)) perspective(1000px) rotateX(var(--grid-tilt-x, 0deg)) rotateY(var(--grid-tilt-y, 0deg));
@@ -552,6 +556,7 @@
   z-index: var(--sphere-depth, 0);
   width: var(--sphere-card);
   --photo-frame: var(--sphere-card);
+  padding: calc(var(--photo-frame) * var(--sphere-frame-share, 0.035));
   opacity: var(--sphere-fade, 1);
   will-change: transform;
   cursor: pointer;
@@ -561,6 +566,13 @@
    The selected print can repaint at full resolution while the other tiles
    keep their transform hint for the turning globe. */
 .personal-photos-sphere .personal-photos-slide[data-sphere-held] { will-change: auto; }
+.personal-photos-sphere .personal-photos-slide[data-sphere-held]::after {
+  background:
+    radial-gradient(circle at var(--sphere-gloss-x, 32%) var(--sphere-gloss-y, 24%), rgb(255 255 255 / 0.36), rgb(255 255 255 / 0.08) 24%, transparent 52%),
+    linear-gradient(135deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.035) 28%, transparent 52%);
+  mix-blend-mode: screen;
+  opacity: calc(var(--sphere-zoom, 0) * 0.48);
+}
 .personal-photos-sphere .personal-photos-slide[data-sphere-hidden] { display: none; }
 /* A photo on the face of the globe can be clicked, and says so. The far side
    is behind the face, so it lets presses through to the stage rather than
@@ -620,8 +632,8 @@
    A flight morphs one frame into the other, border and all. */
 .personal-photos-slide {
   margin: 0;
-  padding: calc(var(--photo-frame, 12rem) * 0.035);
-  border-radius: 4px;
+  padding: var(--photo-padding, calc(var(--photo-frame, 12rem) * 0.035));
+  border-radius: var(--photo-radius, 4px);
   background: var(--canvas);
   color: var(--ink);
   box-shadow: var(--shadow-ring), var(--shadow-control-hover);
@@ -649,10 +661,13 @@
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 1px;
+  border-radius: max(1px, calc(var(--photo-radius, 4px) - var(--photo-padding, 0px)));
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
+}
+.personal-photos-sphere .personal-photos-slide img {
+  border-radius: max(1px, calc(var(--sphere-corner-radius, var(--radius-md)) - var(--photo-frame) * var(--sphere-frame-share, 0.035)));
 }
 /* A print carries no caption on its face; it stays for assistive tech,
    and the held photo's is written out under it instead. */

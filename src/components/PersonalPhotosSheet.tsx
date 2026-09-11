@@ -23,7 +23,18 @@ export type PersonalPhotosSheetHandle = {
     and carrying no photo id, so no print mistakes one for its own. */
 const sphereCoverageTarget = 54
 const sphereCopies = Math.max(3, Math.round(sphereCoverageTarget / photos.length))
-const sphereTiles = Array.from({ length: sphereCopies }, (_, copy) => photos.map((photo, index) => ({ photo, index, copy }))).flat()
+/** Rotate the repeated hands before assigning them to the Fibonacci spiral.
+    The first hand stays in photo order for the opening flights. At the
+    current three-copy density, the two offsets maximize the shortest chord
+    between copies instead of letting the same picture occupy nearby points. */
+const sphereCopyTurns = [0, 7 / 9, 5 / 9]
+const sphereTiles = Array.from({ length: sphereCopies }, (_, copy) => {
+  const shift = Math.round(photos.length * (sphereCopyTurns[copy] ?? copy / sphereCopies))
+  return photos.map((_, position) => {
+    const index = (position + shift) % photos.length
+    return { photo: photos[index], index, copy }
+  })
+}).flat()
 // A slide's width, which is its size at the front of the globe: a share of
 // --sphere-size in personal-photos.css.
 /** Each tile's width as a share of the globe, at the front. The square-root
@@ -161,15 +172,19 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     const width = slide.offsetWidth
     const height = slide.offsetHeight
     const scale = Math.min(gridHoldShare * sheet.clientWidth / width, gridHoldShare * sheet.clientHeight / height)
+    // Keep the preview mat's drawn thickness. Account for the changed padding
+    // before centring, so portrait and landscape photos keep their ratio.
+    const padding = parseFloat(getComputedStyle(slide).paddingTop) / scale
+    const framedHeight = (width - padding * 2) * photo.height / photo.width + padding * 2
     const heldWidth = width * scale
-    const heldHeight = height * scale
+    const heldHeight = framedHeight * scale
     const left = stage.left + (sheet.clientWidth - heldWidth) / 2
     const top = stage.top + (sheet.clientHeight - heldHeight) / 2
     heldRef.current = {
       id: photo.id,
       caption: photo.caption,
       dx: stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2),
-      dy: stage.top + sheet.clientHeight / 2 - (rect.top + rect.height / 2),
+      dy: stage.top + sheet.clientHeight / 2 - (rect.top + framedHeight / 2),
       scale,
       left,
       top,
