@@ -231,3 +231,8 @@ confirmation uses the same treatment. Fields appear only after their question;
 their space stays reserved to keep the portrait steady. Hidden chats and tabs
 pause the sequence, returning keeps completed messages, and reduced motion
 skips the dots and delay. Clicking elsewhere cancels delayed input focus.
+
+The selected B email field is now 44px high and capped at 256px wide, with
+the same 14px type as the messages. Its center aligns with the portrait and
+the conversation grows above that row. The optional message keeps its larger
+textarea and 16px input type.

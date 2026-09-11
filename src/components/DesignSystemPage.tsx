@@ -2198,8 +2198,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   message field after 160ms. Hidden fields retain their layout space but stay inert. Timers
                   pause when the chat or tab is hidden, completed messages stay visible on return, and
                   reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
-                  The message textarea is 88px high. The face sits 68px above the input baseline initially and
-                  132px above it in the message step. The history scrolls within 88–256px, constrained by the
+                  The email field caps at 256px by 44px and matches the bubbles’ 14px text. Its center
+                  aligns with the 64px face, moving the conversation above that row. The portrait stays
+                  68px above the dock baseline initially and 132px above it in the message step.
+                  The message textarea remains 88px high with 16px text. The history scrolls within 88–256px, constrained by the
                   viewport minus 260px; the composer stays below it. Final submission opens an email draft,
                   with a visible explanation. No address is sent or stored when advancing to the message step.
                   B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
@@ -2207,7 +2209,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   stages, with contained 64px portraits and 240px players (320px when enlarged). It stacks its
                   cards below 1100px. Only one recording can play at a time; its styles load with that page alone.
                   There is no corner dismiss button.
-                  Both forms cap at 320px, use the page fill and shared hairline ring, and <code>--text-md</code> input text
+                  The A/C reply forms cap at 320px, use the page fill and shared hairline ring, and <code>--text-md</code> input text
                   to prevent Safari focus zoom. Escape closes the composer and returns focus;
                   clicking outside restores the labeled button without stealing focus. That button stays visible
                   until the next About visit or playback, retaining the mobile row above the TOC so
