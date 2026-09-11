@@ -1672,9 +1672,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-caption">
                 All three use a 2.125rem fine-pointer height and <code>--radius-full</code>; below 700px, touch inputs keep a
                 44px target. They share the same physical build: an outer shadow, a{" "}
-                <code>::before</code> specular highlight across the top with two radial glints that brighten on hover
-                or keyboard focus over <code>--duration-quick</code>, and a <code>::after</code> ring of inset shadows
-                for the bottom bevel. Labels are trimmed with{" "}
+                <code>::before</code> white gradient pill inside the top edge: B’s fully expanded shine at rest,
+                growing into C’s fuller glow on hover or keyboard focus over <code>--duration-quick</code> with
+                <code>--ease-standard</code>. Both states use 1.12 horizontal scale; height grows from 22px to 28px.
+                The dark shell’s blur grows from 2px to 4px and its effective white opacity from 0.48 to 0.6.
+                A <code>::after</code> ring of inset shadows provides the bottom bevel.
+                Labels are trimmed with{" "}
                 <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
                 low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
                 carries the press.

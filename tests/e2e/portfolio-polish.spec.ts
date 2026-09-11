@@ -651,7 +651,7 @@ test("offers LinkedIn and X actions beside booking", async ({ page }) => {
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
 })
 
-test("brightens the contact pills' internal lights on hover", async ({ page }) => {
+test("expands the contact pills' internal shine on hover and focus", async ({ page }) => {
   await page.goto("/")
 
   const actions = page.getByRole("group", { name: "Profile contact actions" })
@@ -663,15 +663,14 @@ test("brightens the contact pills' internal lights on hover", async ({ page }) =
     const rest = await pill.evaluate((element) => {
       const highlight = getComputedStyle(element, "::before")
       return {
-        backgroundImage: highlight.backgroundImage,
+        height: Number.parseFloat(highlight.height),
         opacity: Number.parseFloat(highlight.opacity),
         transitionProperty: highlight.transitionProperty,
       }
     })
 
-    expect(rest.backgroundImage.match(/radial-gradient/g) ?? []).toHaveLength(2)
-    expect(rest.opacity).toBeLessThan(1)
-    expect(rest.transitionProperty).toBe("opacity")
+    expect(rest.height).toBe(22)
+    expect(rest.transitionProperty).toContain("height")
 
     await pill.hover()
 
@@ -680,6 +679,16 @@ test("brightens the contact pills' internal lights on hover", async ({ page }) =
         pill.evaluate((element) => Number.parseFloat(getComputedStyle(element, "::before").opacity)),
       )
       .toBe(1)
+
+    const shineHeight = () => pill.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element, "::before").height),
+    )
+    await expect.poll(shineHeight).toBe(28)
+    await page.mouse.move(0, 0)
+    await expect.poll(shineHeight).toBe(rest.height)
+    await pill.focus()
+    await expect.poll(shineHeight).toBe(28)
+    await pill.evaluate((element) => (element as HTMLElement).blur())
   }
 })
 
