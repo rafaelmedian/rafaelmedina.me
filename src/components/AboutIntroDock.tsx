@@ -4,9 +4,8 @@ import { getAboutIntro } from "../data/aboutIntro"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { AboutIntroLayer } from "./AboutIntroLayer"
 
-import type { IntroOption } from "./AboutIntroOptions"
+import type { IntroOption } from "../data/aboutIntro"
 
-const AboutIntroOptions = import.meta.env.DEV ? lazy(() => import("./AboutIntroOptions")) : null
 const AboutIntro = lazy(() => import("./AboutIntro"))
 
 // An optional introduction chunk must never take the rest of the page down
@@ -23,10 +22,10 @@ export function AboutIntroDock(props: {
   onServices: () => void
 }) {
   const [media] = useState(getAboutIntro)
-  const [option, setOption] = useState<IntroOption>(() => {
+  const [option] = useState<IntroOption>(() => {
     const requested = import.meta.env.DEV && typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("introStyle") : null
-    return requested === "b" || requested === "c" ? requested : "a"
+    return requested === "a" || requested === "c" ? requested : "b"
   })
   const dockRef = useRef<HTMLDivElement>(null)
   const [approached, setApproached] = useState(false)
@@ -34,13 +33,6 @@ export function AboutIntroDock(props: {
   const [obscured, setObscured] = useState(false)
   const [open, setOpen] = useState(false)
   const [tocOpen, setTocOpen] = useState(false)
-  const changeOption = (next: IntroOption) => {
-    setOpen(false)
-    setOption(next)
-    const url = new URL(window.location.href)
-    url.searchParams.set("introStyle", next)
-    window.history.replaceState(window.history.state, "", url)
-  }
   const handleTocOpen = useCallback((next: boolean) => {
     setTocOpen(next)
     if (next) setOpen(false)
@@ -116,9 +108,6 @@ export function AboutIntroDock(props: {
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
       data-intro-visible={Boolean(media && approached && visible)} data-toc-open={tocOpen}>
-      {AboutIntroOptions && media && approached && active && !obscured && !tocOpen && !open && (
-        <Suspense fallback={null}><AboutIntroOptions value={option} onChange={changeOption} /></Suspense>
-      )}
       <MobileTableOfContents {...props} onOpenChange={handleTocOpen} />
       {media && approached && (
         <IntroBoundary>

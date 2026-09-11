@@ -12,11 +12,6 @@ for (const variant of ['c']) {
       const text = intro.getByRole('button', { name: 'Text me', exact: true })
       await expect(email).toBeVisible()
       await expect(text).toBeVisible()
-      const selector = page.getByRole('complementary', { name: 'Introduction design options' })
-      const selectorBox = await selector.boundingBox()
-      expect(selectorBox!.y).toBeLessThan(20)
-      expect(selectorBox!.x).toBeGreaterThanOrEqual(12)
-      expect(selectorBox!.x + selectorBox!.width).toBeLessThanOrEqual(width - 12)
       const actions = intro.locator('.about-intro-actions')
       const box = await actions.boundingBox()
       expect(box!.x).toBeGreaterThanOrEqual(12)
@@ -41,16 +36,11 @@ for (const variant of ['c']) {
   }
 }
 
-test('switches between A B and C and keeps the selection in the URL', async ({ page }) => {
+test('uses B by default without a design switcher', async ({ page }) => {
   await page.goto('/')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
-  const selector = page.getByRole('group', { name: 'Choose introduction style' })
-  for (const [letter, name] of [['b', 'Chat bubble'], ['c', 'Stacked buttons'], ['a', 'Compact pill']]) {
-    const button = selector.getByRole('button', { name: `${letter.toUpperCase()}: ${name}` })
-    await button.click()
-    await expect(button).toHaveAttribute('aria-pressed', 'true')
-    await expect(intro).toHaveAttribute('data-variant', letter)
-    await expect(page).toHaveURL(new RegExp(`introStyle=${letter}`))
-  }
+  await expect(intro).toHaveAttribute('data-variant', 'b')
+  await expect(intro.getByRole('region', { name: 'Chat with Rafa' })).toBeVisible()
+  await expect(page.getByRole('complementary', { name: 'Introduction design options' })).toHaveCount(0)
 })

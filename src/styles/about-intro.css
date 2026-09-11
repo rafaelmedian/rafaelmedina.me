@@ -855,44 +855,6 @@
   gap: 4px;
 }
 
-.about-intro-options {
-  position: fixed;
-  top: max(12px, env(safe-area-inset-top));
-  left: 50%;
-  z-index: var(--z-corner);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 16px 4px 4px;
-  border-radius: var(--radius-full);
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
-  font-family: var(--font-ui);
-  font-size: var(--text-xs);
-  white-space: nowrap;
-  transform: translateX(-50%);
-}
-
-.about-intro-options [role="group"] {
-  display: flex;
-}
-
-.about-intro-options button {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  transition: background-color var(--duration-quick) var(--ease-standard), color var(--duration-quick) var(--ease-standard);
-}
-
-.about-intro-options button[aria-pressed="true"] {
-  color: var(--canvas);
-  background: var(--ink);
-}
-
 .about-intro[data-variant="c"] .about-intro-actions[data-reply="none"] {
   width: 184px;
   height: 100px;
@@ -927,18 +889,6 @@
 .about-intro[data-variant="c"] .about-intro-label {
   display: none;
 }
-
-@media (max-width: 699.98px) {
-  .about-intro-options {
-    gap: 0;
-    padding: 4px;
-  }
-
-  .about-intro-options > span {
-    display: none;
-  }
-
-  }
 
 @media (prefers-reduced-motion: reduce) {
   .about-intro-send::before {

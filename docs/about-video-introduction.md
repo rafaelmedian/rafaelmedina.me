@@ -187,10 +187,11 @@ Opening the TOC still collapses it, and background tabs still pause playback.
 
 ## Development design options
 
-The A/B/C selector appears when About is active in development. It changes the
-widget in place; the selected option is also saved in the URL as `introStyle`.
+B is the selected default on the main page. The A/B/C switcher has been removed;
+the development comparison page and explicit `?introStyle=a` / `c` links remain
+available for reference. Production still waits for the final personal recording.
 
-- **A — Compact pill:** the current hover-expanding icon buttons.
+- **A — Compact pill:** the alternative hover-expanding icon buttons.
 - **B — Chat bubble:** a staggered greeting, then an email field. Confirming the
   address reveals an optional message field while keeping the conversation visible.
 - **C — Stacked buttons:** separate “Your email” and “Text me” pills beside
@@ -198,14 +199,13 @@ widget in place; the selected option is also saved in the URL as `introStyle`.
 
 All three use the same video and email-draft delivery. B uses a conversational
 email-first flow; A and C keep the compact reply forms.
-Switching options closes playback. B and C stack comfortably above the mobile
-TOC. Use the existing feedback toolbar to annotate an option; include its letter.
-The selector is development-only and can be removed after choosing a direction.
+B and C stack comfortably above the mobile TOC. Use the existing feedback
+toolbar to annotate an option; include its letter.
 
 Open `/intro-options` in development to compare A, B, and C on one page.
 The cards contain the real widgets, including playback and reply forms; starting
 one video pauses the others. Cards sit side by side on wide screens and stack
-on narrow screens. The homepage selector also links to this comparison.
+on narrow screens. This remains a development-only reference page.
 
 B now follows the supplied Messages reference: a shared gray surface, rounded
 corners and a curved tail toward the portrait, followed by an email-first conversation.

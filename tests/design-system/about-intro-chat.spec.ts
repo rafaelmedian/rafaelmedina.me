@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 for (const width of [320, 1440]) {
   test(`B reveals a conversation and advances from email to an optional message at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })
-    await page.goto('/?introStyle=b')
+    await page.goto('/')
     await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toHaveCount(0)
     await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
     const chat = page.getByRole('region', { name: 'Chat with Rafa' })
@@ -56,7 +56,7 @@ test('starts the comparison chat when its card comes into view and respects redu
 
 test('shows three typing dots before each greeting and pauses the sequence in a hidden tab', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/?introStyle=b')
+  await page.goto('/')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   const typing = chat.getByRole('status', { name: 'Rafa is typing' })

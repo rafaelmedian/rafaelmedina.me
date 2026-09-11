@@ -45,7 +45,7 @@ test("defers introduction assets until About and recording until play", async ({
   await expect(intro(page).getByRole("button", { name: "Resume introduction", exact: true })).toBeFocused()
 })
 
-test("keeps the mobile bubble beside the TOC and expanded video above it", async ({ page }) => {
+test("keeps the mobile conversation and expanded video above the TOC", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
   await page.goto("/?intro=preview")
   await openAbout(page)
@@ -53,7 +53,8 @@ test("keeps the mobile bubble beside the TOC and expanded video above it", async
   const bubble = intro(page).getByRole("button", { name: "Play introduction", exact: true })
   const tocBox = await toc.boundingBox()
   const bubbleBox = await intro(page).getByRole("button", { name: "Show introduction actions" }).boundingBox()
-  expect(bubbleBox!.x - (tocBox!.x + tocBox!.width)).toBeCloseTo(12, 0)
+  expect(bubbleBox!.x).toBeGreaterThanOrEqual(12)
+  expect(bubbleBox!.y + bubbleBox!.height).toBeLessThanOrEqual(tocBox!.y - 8)
   expect(bubbleBox!.x + bubbleBox!.width).toBeLessThanOrEqual(308)
   await bubble.click()
   await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()

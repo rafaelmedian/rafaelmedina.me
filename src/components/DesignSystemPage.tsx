@@ -2202,8 +2202,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   132px above it in the message step. The history scrolls within 88–256px, constrained by the
                   viewport minus 260px; the composer stays below it. Final submission opens an email draft,
                   with a visible explanation. No address is sent or stored when advancing to the message step.
-                  The development-only A/B/C selector sits 12px from the top safe area on the corner layer with
-                  44px targets; share an option using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
+                  B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
                   The <a href="/intro-options">comparison page</a> shows all three together in separate 440px
                   stages, with contained 64px portraits and 240px players (320px when enlarged). It stacks its
                   cards below 1100px. Only one recording can play at a time; its styles load with that page alone.

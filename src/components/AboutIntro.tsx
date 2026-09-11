@@ -15,7 +15,7 @@ import VolumeMute01Icon from "@hugeicons/core-free-icons/VolumeMute01Icon"
 import AboutIntroReply from "./AboutIntroReply"
 import AboutIntroChat from "./AboutIntroChat"
 
-import type { IntroOption } from "./AboutIntroOptions"
+import type { IntroOption } from "../data/aboutIntro"
 import type { AboutIntroMedia } from "../data/aboutIntro"
 import { useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
@@ -37,7 +37,7 @@ const subscribeVisibility = (listener: () => void) => {
 const pageIsHidden = () => document.hidden
 const hiddenOnServer = () => true
 
-export default function AboutIntro({ media, visible, open, onOpenChange, repliesAvailable = true, variant = "a" }: {
+export default function AboutIntro({ media, visible, open, onOpenChange, repliesAvailable = true, variant = "b" }: {
   variant?: IntroOption
   media: AboutIntroMedia
   repliesAvailable?: boolean

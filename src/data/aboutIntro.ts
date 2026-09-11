@@ -1,5 +1,7 @@
 import { aboutIntroPreview } from "./aboutIntroPreview"
 
+export type IntroOption = "a" | "b" | "c"
+
 export type AboutIntroMedia = {
   placeholder?: boolean
   duration: number

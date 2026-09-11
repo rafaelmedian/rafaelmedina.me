@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import AboutIntro from "./AboutIntro"
 import { aboutIntroPreview } from "../data/aboutIntroPreview"
-import type { IntroOption } from "./AboutIntroOptions"
+import type { IntroOption } from "../data/aboutIntro"
 import "./about-intro-comparison.css"
 
 const options = [
