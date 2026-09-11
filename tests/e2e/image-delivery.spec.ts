@@ -59,10 +59,11 @@ for (const width of [390, 1440]) {
     test(`sizes contained previews at ${width}px and ${deviceScaleFactor}x density`, async ({ browser }) => {
       const page = await browser.newPage({ viewport: { width, height: 1000 }, deviceScaleFactor, reducedMotion: "reduce" })
       await page.goto("/")
-      // Pre-optimization artwork widths: smaller downloads must not shrink the layout.
+      // Intended artwork widths: smaller downloads must not shrink the layout.
+      // Dealership uses the extra height freed by removing its bottom inset.
       const fixtures = width === 390
         ? [["Popparazi V1", 84], ["Shared family stories", 177], ["Dealership lead hub", 165]] as const
-        : [["Popparazi V1", 130], ["Shared family stories", 565], ["Dealership lead hub", 383]] as const
+        : [["Popparazi V1", 130], ["Shared family stories", 565], ["Dealership lead hub", 403]] as const
       for (const [name, originalWidth] of fixtures) {
         const image = page.getByAltText(name, { exact: true }).and(page.locator("img.mosaic-row-media"))
         await image.scrollIntoViewIfNeeded()

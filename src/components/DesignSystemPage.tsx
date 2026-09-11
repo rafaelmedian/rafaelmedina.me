@@ -2116,8 +2116,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 16px radius;
                   desktop tiles use 24px. Contained artwork letterboxes inside the card: the card's grid
                   and its inner artwork clip each get one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
-                  height to resolve against, and the inset drops to <code>0.375rem</code>. Nine compositions remove the
-                  pale mat entirely: Family Stories, Matcha Rewards, Matcha Token, Matcha Pro, Matcha trade page,
+                  height to resolve against, and the inset drops to <code>0.375rem</code>. The dealership dashboard
+                  keeps that inset above and on its sides but removes it below, letting the tall interface continue
+                  into the card&rsquo;s lower edge rather than ending against an inner grey strip. Nine compositions
+                  remove the pale mat entirely: Family Stories, Matcha Rewards, Matcha Token, Matcha Pro, Matcha trade page,
                   Matcha on mobile, Wallet, Homepage, and
                   Security. Family Stories anchors to <code>center bottom</code> so its devices meet the lower edge.
                   Rewards positions its two complete banners independently — diagonal on desktop and stacked below

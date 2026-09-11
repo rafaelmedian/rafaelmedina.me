@@ -190,3 +190,20 @@ test("separates Rewards artwork and extends Matcha product backgrounds", async (
     proCardBox!.y + proCardBox!.height - 2,
   )
 })
+
+test("lets the dealership preview bleed through the card's bottom edge", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+
+  const card = page.getByRole("link", { name: /Open Dealership lead hub/ })
+  await card.scrollIntoViewIfNeeded()
+
+  const [cardBox, mediaBox] = await Promise.all([
+    card.boundingBox(),
+    card.locator("img.mosaic-row-media").boundingBox(),
+  ])
+  expect(cardBox).not.toBeNull()
+  expect(mediaBox).not.toBeNull()
+  expect(mediaBox!.y + mediaBox!.height).toBeCloseTo(cardBox!.y + cardBox!.height - 1, 0)
+})
