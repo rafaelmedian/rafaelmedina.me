@@ -54,6 +54,14 @@ test("does not mount the retired corner tuner on development pages", async ({ pa
   }
 })
 
+test("uses the About heading step for the case-study title", async ({ page }) => {
+  await page.setViewportSize({ width: 2394, height: 1223 })
+  await page.goto("/work/matcha-multiwallet-flow/")
+
+  const title = page.getByRole("heading", { level: 2, name: "Designing Matcha end to end" })
+  await expect(title).toHaveCSS("font-size", "16px")
+})
+
 const customPropertyPattern = /^--[\w-]+$/
 const cssVariablePattern = /var\((--[\w-]+)/g
 

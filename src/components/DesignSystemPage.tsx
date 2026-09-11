@@ -1208,6 +1208,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   maximum width with 1.5rem of padding on all four sides, and 1.25rem side padding below 700px.
                   The notes reader keeps a narrower column of its own, because it is read rather than scanned.
                   The dialog has no project-site link, metadata table, or row dividers.
+                  A case study&rsquo;s title uses the same <code>--text-md</code> heading step as the About section.
                 </p>
               </div>
             </div>
