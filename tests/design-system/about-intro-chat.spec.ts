@@ -101,6 +101,45 @@ test('starts the comparison chat when its card comes into view and respects redu
   await expect(chat.getByRole('textbox', { name: 'Your email' })).not.toBeFocused()
 })
 
+test('lets visitors react to each of Rafa’s messages', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  await expect(chat.getByText('Tap a message to react — I’ll see what lands.')).toBeVisible()
+
+  const greeting = chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' })
+  await greeting.click()
+  const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  await expect(picker).toBeVisible()
+  await expect(picker.getByRole('menuitemradio')).toHaveCount(4)
+  const pickerBox = await picker.boundingBox()
+  expect(pickerBox!.x).toBeGreaterThanOrEqual(12)
+  expect(pickerBox!.x + pickerBox!.width).toBeLessThanOrEqual(308)
+  await picker.getByRole('menuitemradio', { name: 'Love' }).click()
+
+  await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toBeVisible()
+  await expect(chat.getByRole('status')).toHaveText('Got it — I’ll see your ❤️.')
+  await expect(picker).toHaveCount(0)
+
+  await greeting.click()
+  const changedPicker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  await expect(changedPicker.getByRole('menuitemradio', { name: 'Love' })).toHaveAttribute('aria-checked', 'true')
+  await changedPicker.getByRole('menuitemradio', { name: 'Laugh' }).click()
+  await expect(page.getByRole('img', { name: 'You laughed at “Hey, I’m Rafa.”' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toHaveCount(0)
+
+  await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  const followup = chat.getByRole('button', { name: 'React to “Want to share anything else?”' })
+  await followup.click()
+  await page.getByRole('menu', { name: 'React to “Want to share anything else?”' })
+    .getByRole('menuitemradio', { name: 'Fire' }).click()
+  await expect(page.getByRole('img', { name: 'You sent fire to “Want to share anything else?”' })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+})
+
 test('shows three typing dots before each greeting and pauses the sequence in a hidden tab', async ({ page }) => {
   await page.clock.install()
   await page.goto('/')

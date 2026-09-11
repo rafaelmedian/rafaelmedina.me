@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useId, useRef, useState, type CSSProperties, type FormEvent } from "react"
+import { Menu } from "@base-ui/react/menu"
 import { ArrowUp } from "./NavigationIcons"
+import { trackEvent } from "../lib/analytics"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
 import { sendContact, type ContactMessage } from "../lib/sendContact"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
@@ -10,6 +12,13 @@ const typingDuration = 900
 // the bubble's corner, then he starts typing. Each delay is a stage: the tapback
 // lands, then the follow-up typing starts.
 const reactionDelays = [900, 700]
+const visitorReactions = [
+  { id: "love", label: "Love", emoji: "❤️", announcement: "loved" },
+  { id: "laugh", label: "Laugh", emoji: "😂", announcement: "laughed at" },
+  { id: "fire", label: "Fire", emoji: "🔥", announcement: "sent fire to" },
+  { id: "applause", label: "Applaud", emoji: "👏", announcement: "applauded" },
+] as const
+type VisitorReactionId = typeof visitorReactions[number]["id"]
 const heartPath = "M12 20.7C6.1 16.6 2.5 13.3 2.5 9.2c0-2.8 2.2-4.9 4.9-4.9 1.9 0 3.6 1 4.6 2.6 1-1.6 2.7-2.6 4.6-2.6 2.7 0 4.9 2.1 4.9 4.9 0 4.1-3.6 7.4-9.5 11.5Z"
 // Drawn twice, as the canvas ring and then the fill, so no ring cuts a neighbour.
 const tapbackShape = <>
@@ -30,6 +39,37 @@ const puffDots = Array.from({ length: 24 }, (_, index) => {
   return { x, y, dx: Math.min(6, (x - 60) * 0.4), dy: (y - 50) * 0.3 - 10, size: 3 + (index * 7) % 4, delay: (index * 23) % 70 }
 })
 
+function ReactableMessage({ followup = false, messageIndex, onReaction, reactionId, text }: {
+  followup?: boolean
+  messageIndex: number
+  onReaction: (messageIndex: number, reactionId: VisitorReactionId) => void
+  reactionId?: VisitorReactionId
+  text: string
+}) {
+  const selected = visitorReactions.find(item => item.id === reactionId)
+  return <Menu.Root orientation="horizontal" modal={false}>
+    <span className="about-intro-chat-received about-intro-chat-new" data-followup={followup || undefined}>
+      <Menu.Trigger className="about-intro-chat-bubble" aria-label={`React to “${text}”`}>{text}</Menu.Trigger>
+      {selected && <span className="about-intro-chat-visitor-reaction" role="img"
+        aria-label={`You ${selected.announcement} “${text}”`}>{selected.emoji}</span>}
+    </span>
+    <Menu.Portal>
+      <Menu.Positioner className="about-intro-chat-reaction-positioner" positionMethod="fixed"
+        side="top" align="start" sideOffset={8} collisionPadding={12}>
+        <Menu.Popup className="about-intro-chat-reaction-picker" aria-label={`React to “${text}”`}>
+          <Menu.RadioGroup value={reactionId ?? ""}
+            onValueChange={value => onReaction(messageIndex, value as VisitorReactionId)}>
+            {visitorReactions.map(choice => <Menu.RadioItem key={choice.id} value={choice.id} label={choice.label}
+              closeOnClick className="about-intro-chat-reaction-choice" aria-label={choice.label}>
+              <span aria-hidden="true">{choice.emoji}</span>
+            </Menu.RadioItem>)}
+          </Menu.RadioGroup>
+        </Menu.Popup>
+      </Menu.Positioner>
+    </Menu.Portal>
+  </Menu.Root>
+}
+
 export default function AboutIntroChat({ active }: { active: boolean }) {
   const id = useId()
   const chatRef = useRef<HTMLElement>(null)
@@ -49,6 +89,8 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   const locked = delivery === "sending" || delivery === "sent"
   const [revealed, setRevealed] = useState(0)
   const [reaction, setReaction] = useState(0)
+  const [visitorReaction, setVisitorReaction] = useState<Partial<Record<number, VisitorReactionId>>>({})
+  const [reactionFeedback, setReactionFeedback] = useState("Tap a message to react — I’ll see what lands.")
   const sentRef = useRef<HTMLDivElement>(null)
   // The unsent bubble's box within the history, where its dots scatter from.
   const [puff, setPuff] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
@@ -159,6 +201,14 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     setPuff({ top: sent?.offsetTop ?? 0, left: sent?.offsetLeft ?? 0, width: sent?.offsetWidth ?? 0, height: sent?.offsetHeight ?? 0 })
   }
 
+  const reactToMessage = (messageIndex: number, reactionId: VisitorReactionId) => {
+    const choice = visitorReactions.find(item => item.id === reactionId)
+    if (!choice) return
+    setVisitorReaction(current => ({ ...current, [messageIndex]: reactionId }))
+    setReactionFeedback(`Got it — I’ll see your ${choice.emoji}.`)
+    trackEvent("about_intro_reaction", { message_index: messageIndex, reaction: reactionId })
+  }
+
   useEffect(() => {
     if (!puffing) return
     const timer = window.setTimeout(() => {
@@ -196,8 +246,11 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     inert={!active} aria-hidden={!active} aria-label="Chat with Rafa">
     {/* Hidden live regions can make modal isolation hide the neighboring player. */}
     <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={active ? "polite" : undefined} aria-relevant="additions">
+      {emailReady && <p className="about-intro-chat-reaction-hint" role="status" aria-live={active ? "polite" : undefined}>{reactionFeedback}</p>}
       {/* Only the typing bubble has a tail on Rafa's side; once a question lands, the visitor's field below it carries one on the right. */}
-      {greeting.slice(0, Math.min(shown, 3)).map(text => <p key={text} className="about-intro-chat-bubble about-intro-chat-new">{text}</p>)}
+      {greeting.slice(0, Math.min(shown, 3)).map((text, messageIndex) =>
+        <ReactableMessage key={text} text={text} messageIndex={messageIndex}
+          reactionId={visitorReaction[messageIndex]} onReaction={reactToMessage} />)}
       {confirmed && <>
         <div ref={sentRef} className="about-intro-chat-sent about-intro-chat-new" data-reacted={reactionShown} data-puff={puffing}>
           <button type="button" className="about-intro-chat-outgoing" onClick={puffing ? undefined : editEmail}
@@ -218,7 +271,8 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
             "--puff-x": `${dx}px`, "--puff-y": `${dy}px`, animationDelay: `${delay}ms`,
           } as CSSProperties} />)}
         </span>}
-        {messageReady && <p className="about-intro-chat-bubble about-intro-chat-new" data-followup>Want to share anything else?</p>}
+        {messageReady && <ReactableMessage text="Want to share anything else?" messageIndex={3} followup
+          reactionId={visitorReaction[3]} onReaction={reactToMessage} />}
       </>}
       {typing && <div key={`typing-${shown}`} className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-typing about-intro-chat-new"
         role="status" aria-label="Rafa is typing">

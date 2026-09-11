@@ -194,6 +194,7 @@ available for reference. Production still waits for the final personal recording
 - **A — Compact pill:** the alternative hover-expanding icon buttons.
 - **B — Chat bubble:** a staggered greeting, then an email field. Confirming the
   address reveals an optional message field while keeping the conversation visible.
+  Any incoming message can also take a visitor reaction.
 - **C — Stacked buttons:** separate “Your email” and “Text me” pills beside
   the portrait, without the introductory copy.
 
@@ -219,11 +220,21 @@ and “Wanna share your email with me so I can reach out to you?” The email fi
 follows. The short stagger uses 80/120/160/240ms entry delays, an 8px rise, 2px
 blur and the shared 360ms surface easing; reduced motion shows it immediately.
 
+Each delivered message is a button. Activating it opens a four-choice reaction
+picker above the bubble, with love, laugh, fire, and applause in 44px targets.
+The picker uses Base UI menu semantics, left/right arrow navigation, viewport
+collision handling, and the shared white overlay surface. A chosen emoji pops
+onto the message's top-right corner over the 200ms interaction duration and the
+hint confirms that it landed. A later choice replaces it. Reduced motion shows
+both picker and reaction at rest.
+When analytics is configured, the site records only the message index and
+reaction name; it does not attach the visitor's email or message.
+
 Confirming the email only advances local UI state. It appears as an editable
 reply bubble, followed by “Want to share anything else?” and an optional message
-field. Nothing is transmitted until the visitor reviews and sends the final
-email draft in their email app. The face stays beside the latest incoming bubble;
-the history scrolls when necessary while the input remains below it.
+field. The address and optional message are not transmitted until the visitor
+sends the final form. The face stays beside the latest incoming bubble; the
+history scrolls when necessary while the input remains below it.
 
 Before each incoming message, B now shows a three-dot typing bubble for 900ms.
 The 8px dots gently pulse and rise 4px, offset by 120ms. The follow-up after email

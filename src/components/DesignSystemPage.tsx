@@ -2205,6 +2205,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
+                  Each delivered gray message is a reaction trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint invites the visitor to tap;
+                  doing so opens a fixed-positioned white pill above the bubble with the shared ring and overlay shadow,
+                  kept 12px inside the viewport. Its four 24px emoji choices — love, laugh, fire and applause — occupy 44px targets and use horizontal
+                  arrow-key navigation. The picker grows from 0.97 scale over <code>--duration-base</code>, then exits
+                  from 0.99 over <code>--duration-quick</code>; reduced motion removes both transforms. Choosing one
+                  pops a 32px white tapback onto the message’s top-right corner over <code>--duration-base</code> with the existing pop spring, swaps
+                  the hint for a polite “Got it” confirmation, and records only the message index and reaction name
+                  through the existing anonymous analytics path. A later choice replaces the earlier one.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
                   Messages blue with white text and a mirrored tail on the right, which rises out of the field
                   from 20px below at 0.92 scale, anchored at its tail. At 900ms Rafa hearts it the way a received

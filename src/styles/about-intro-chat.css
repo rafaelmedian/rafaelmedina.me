@@ -94,6 +94,120 @@
   text-wrap: pretty;
 }
 
+/* Rafa's messages are the reaction triggers. The wrapper owns the entrance and
+   leaves a little room for the visitor's tapback without changing the bubble's
+   familiar shape. */
+.about-intro-chat-received {
+  position: relative;
+  flex: 0 0 auto;
+  max-width: calc(100% - 24px);
+}
+
+.about-intro-chat-received .about-intro-chat-bubble {
+  display: block;
+  border: 0;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.about-intro-chat-received .about-intro-chat-bubble:is(:hover, [data-popup-open]) {
+  background: #e4e4e6;
+}
+
+.about-intro-chat-received .about-intro-chat-bubble:active {
+  transform: scale(0.96);
+}
+
+/* A visitor reaction mirrors Rafa's automatic tapback across the conversation:
+   white on the received bubble's top-right corner, with a compact emoji signal. */
+.about-intro-chat-visitor-reaction {
+  position: absolute;
+  right: -18px;
+  top: -16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+  font-size: var(--text-lg);
+  line-height: 1;
+  pointer-events: none;
+  animation: intro-grow var(--duration-base) var(--intro-spring-pop) both;
+}
+
+.about-intro-chat-reaction-positioner {
+  z-index: var(--z-overlay);
+}
+
+.about-intro-chat-reaction-picker {
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  outline: none;
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: var(--transform-origin);
+  transition: opacity var(--duration-base) var(--ease-smooth), transform var(--duration-base) var(--ease-smooth);
+}
+
+.about-intro-chat-reaction-picker[data-starting-style] {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.about-intro-chat-reaction-picker[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.99);
+  transition: opacity var(--duration-quick) var(--ease-exit), transform var(--duration-quick) var(--ease-exit);
+}
+
+.about-intro-chat-reaction-picker [role="group"] {
+  display: flex;
+}
+
+.about-intro-chat-reaction-choice {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  outline: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.about-intro-chat-reaction-choice:is(:hover, [data-highlighted], [data-checked]) {
+  background: var(--mosaic-card-surface);
+}
+
+.about-intro-chat-reaction-choice:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.about-intro-chat-reaction-choice:active {
+  transform: scale(0.96);
+}
+
+.about-intro-chat .about-intro-chat-reaction-hint {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-self: flex-start;
+  margin: 0 4px;
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
 .about-intro-chat-tail::before {
   content: "";
   position: absolute;
@@ -398,6 +512,15 @@
 
 @media (prefers-reduced-motion: reduce) {
   .about-intro-chat-history { transition: none; }
+
+  .about-intro-chat-received .about-intro-chat-bubble,
+  .about-intro-chat-reaction-picker,
+  .about-intro-chat-reaction-choice {
+    transition: none;
+    transform: none;
+  }
+
+  .about-intro-chat-visitor-reaction { animation: none; }
 
   .about-intro-chat-enter,
   .about-intro-chat-new {
