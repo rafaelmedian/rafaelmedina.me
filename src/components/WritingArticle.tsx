@@ -1,8 +1,9 @@
 import { ArrowUpRight, Check, Link2 } from "lucide-react"
-import { useEffect, useRef, useState, type CSSProperties, type ElementType, type RefObject } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ElementType, type RefObject } from "react"
 
 import { writingSummaries } from "../data/writingIndex"
 import type { Writing, WritingAnnotation, WritingCode, WritingImage } from "../data/writings"
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { noteHash, pickFrom } from "../lib/writings"
 import { siteOrigin, writingPath } from "../lib/projectMetadata"
 import { LikeButton } from "./LikeButton"
@@ -161,31 +162,57 @@ const COPY_CONFIRMATION_MS = 1600
 function CopyNoteLink({ writing }: { writing: Writing }) {
   const [copied, setCopied] = useState(false)
   const resetRef = useRef<number | undefined>(undefined)
+  const linkRef = useRef<HTMLAnchorElement>(null)
+  const fromWidthRef = useRef(0)
+  const resizeRef = useRef<Animation | null>(null)
   useEffect(() => () => window.clearTimeout(resetRef.current), [])
   const href = `${siteOrigin}${writingPath(writing)}`
+
+  // Read the width the pill is showing -- mid-resize, if a press lands during
+  // one -- before the label changes, so the next resize starts from there.
+  function showCopied(next: boolean) {
+    fromWidthRef.current = linkRef.current?.offsetWidth ?? 0
+    setCopied(next)
+  }
+
+  // The pill hugs whichever label it wears, the way the like pill hugs its
+  // count, and eases between the two widths rather than jumping.
+  useLayoutEffect(() => {
+    const link = linkRef.current
+    const from = fromWidthRef.current
+    if (!link || !from) return
+    resizeRef.current?.cancel()
+    const to = link.offsetWidth
+    if (from === to || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const style = getComputedStyle(link)
+    resizeRef.current = link.animate([{ width: `${from}px` }, { width: `${to}px` }], {
+      duration: cssTimeToMilliseconds(style.getPropertyValue("--duration-quick")),
+      easing: style.getPropertyValue("--ease-standard").trim() || "ease",
+    })
+  }, [copied])
 
   return (
     <>
       {/* An ordinary link underneath -- for the context menu, for a browser with
           no clipboard, for a middle-click -- and a plain press copies instead,
           the way the address in the About sheet does. */}
-      <a className="writing-copy-link" href={href} data-copied={copied ? "true" : undefined}
+      <a ref={linkRef} className="writing-copy-link" href={href} data-copied={copied ? "true" : undefined}
         onClick={(event) => {
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
           event.preventDefault()
           void navigator.clipboard?.writeText(href).then(() => {
-            setCopied(true)
+            showCopied(true)
             // Restart the window on every copy so a second press gets its own
             // full confirmation instead of the tail of the first.
             window.clearTimeout(resetRef.current)
-            resetRef.current = window.setTimeout(() => setCopied(false), COPY_CONFIRMATION_MS)
+            resetRef.current = window.setTimeout(() => showCopied(false), COPY_CONFIRMATION_MS)
           }, () => undefined)
         }}>
         {copied
           ? <Check className="writing-copy-link-icon" size={14} aria-hidden="true" />
           : <Link2 className="writing-copy-link-icon" size={14} aria-hidden="true" />}
         <span aria-hidden="true">
-          <InlineSwap value={copied ? "Link copied" : "Copy link"} direction={copied ? "up" : "down"} reserve="Link copied" />
+          <InlineSwap value={copied ? "Link copied" : "Copy link"} direction={copied ? "up" : "down"} />
         </span>
         {/* The name says what the control does and stays saying it: the label
             beside the icon is the confirmation, and a name that changed with it

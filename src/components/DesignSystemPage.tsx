@@ -1310,12 +1310,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Three particles are softened with a 2px blur; all use --radius-full.
                 At the cap, another tap shakes the pill up to 4px over 320ms with ease-out.
                 These component-specific motion exceptions stop under reduced motion; the count remains a polite live status.
-                Beside it, “Copy link” is an ordinary link to the note's public address at the same 32px height on an 8% black
-                hairline, --text-xs on --muted, so it reads as a note about the note rather than a second action competing with the
-                heart. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
+                Beside it, “Copy link” is an ordinary link to the note's public address wearing the like pill's chrome: 32px,
+                the #dedee0 hairline on --canvas, weight-500 --text-xs on --muted at line-height 1, and the shared control shadows,
+                hover lift and 0.96 press. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
                 check and the label for “Link copied” on --ink. The label uses the TOC's 4px slide and
                 --blur-reveal, with a 120ms exit and 160ms entrance; confirmation travels up and reset travels down.
-                The longer label reserves the width, so the control stays still. Reduced motion swaps instantly;
+                The pill hugs whichever label it wears and eases between the two widths over --duration-quick with
+                --ease-standard, clipping the longer label while it grows. Reduced motion swaps and resizes instantly;
                 its accessible name stays “Copy a link to this note” throughout and
                 the confirmation is announced from a live region beside it. Modified and secondary presses are left to the browser.
                 Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
