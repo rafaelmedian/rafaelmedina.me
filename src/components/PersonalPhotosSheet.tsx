@@ -1,3 +1,4 @@
+import type { OpenPhoto } from "./PersonalPhotosPreview"
 import { Dialog } from "@base-ui/react/dialog"
 import { Globe, LayoutGrid } from "lucide-react"
 import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
@@ -12,7 +13,7 @@ import { readSheetLayout, saveSheetLayout, usePreviewCount, useSheetColumns, typ
 export type PersonalPhotosSheetHandle = {
   /** Opens the sheet; on the globe, with a photo id, holds that photo at the
       centre once the prints have landed. */
-  openPhoto: (opener: HTMLElement, photoId?: string) => void
+  openPhoto: OpenPhoto
 }
 /** A dozen photos make a scatter, not a globe: the sphere only reads as one
     when it is covered, and it is covered at about three dozen tiles. Every
