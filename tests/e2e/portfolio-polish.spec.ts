@@ -4241,6 +4241,8 @@ test("shows work-history company links without underlines", async ({ page }) => 
 
 test("aligns work locations with their roles", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
+  // Measure settled layout rather than different frames of the opening travel.
+  await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
