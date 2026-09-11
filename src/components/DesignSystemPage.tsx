@@ -2038,10 +2038,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
                   them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
-                  The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity, ink text,
-                  and a 16px close icon. The collapsed row shows an upward chevron instead.
-                  Icons fade over 160ms; the chevron rotates 90 degrees while the close icon scales from 0.8 to 1.
-                  Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
+                  The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity and ink text,
+                  with no close icon. The collapsed row shows a 16px upward chevron, which fades out over 160ms
+                  on opening. Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
                   label. Other rows are inert and
                   hidden from assistive technology when closed; keyboard focus rings sit 2px inside the row.
                   Selection, outside click, Escape, or focus leaving the control closes it. Resizing preserves its open state.
