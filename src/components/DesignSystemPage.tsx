@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react"
-import { Check, Copy, Search, X } from "lucide-react"
+import { Check, Copy, Search } from "lucide-react"
+import { X } from "./NavigationIcons"
 
 import { linkedinHoverMedia, xProfilePreview, type SiteLinks } from "../data/portfolio"
 import { SiteLastUpdated } from "./SiteLastUpdated"
@@ -244,7 +245,7 @@ const NON_TEXT_ENTRIES = [
     token: "--accent",
     kind: "non-text",
     name: "Copied",
-    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. The same address set in the About sheet's prose has no icon slot to light, so it takes the green under itself instead: the link's underline, for the same window. A graphic only, in both places; the confirmation itself is spoken in the tooltip and read out to screen readers.",
+    note: "--accent, on the check the hero address swaps its copy icon for. The address empties its hover card to white for that moment so the check is graded on the surface above: the same green is 2.7:1 on the #e9e9e9 fill. The same address set in the About sheet's prose has no icon slot to light, so it takes the green under itself instead: the link's underline, for the same window. The About introduction also uses this green behind its dark play icon, and an 18% mix with white for its reply actions. A graphic only, in the copy confirmations; the confirmation itself is spoken in the tooltip and read out to screen readers.",
   },
   {
     token: "--focus-ring-soft",
@@ -317,7 +318,7 @@ const RADII_ENTRIES = [
   },
   {
     value: "--radius-lg",
-    use: "Work tiles, quote cards, dialog media and bottom corners",
+    use: "Work tiles, quote cards, dialog media and bottom corners, expanded About introduction",
     css: "--radius-lg",
   },
   { value: "--radius-full", use: "Pills, dots, avatars, nav buttons, the skip link", css: "--radius-full" },
@@ -426,7 +427,7 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the work-history popover, and the takeover close. Also gallery and note paging." },
   { value: "240ms", use: "The live-time label roll only; hover-card and work-history entrances use --duration-base." },
   { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
-  { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening under a moving pointer, and the sheet rewinding before close (--photo-rewind-duration)." },
+  { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening under a moving pointer, the About introduction expanding from its circle, and the sheet rewinding before close (--photo-rewind-duration)." },
   { value: "200ms", use: "Personal-photo sheet: --photo-open-duration and --photo-close-duration both alias --duration-base. Every flight, its caption, and the backdrop share one beat in either direction, with no stagger and no delay — the whole hand leaves together and comes home together. Reduced motion removes the transitions and flights." },
   { value: "60ms", use: "--card-caption-delay: how long a work tile's caption, tint, and blur ramp wait before fading in or out. While a tile's video loops, Chrome runs an otherwise idle page at 30fps, and a fade that started on the hover's first frame jumped instead of easing. The page-entrance and About stagger also step by 60ms." },
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
@@ -2129,6 +2130,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
                   them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
+                  Close crosses, navigation chevrons, external-link arrows and reply arrows share
+                  <code> NavigationIcons.tsx</code>: a 24-unit viewBox with rounded 2.5-unit strokes
+                  and joins, scaled to each control’s existing icon size. The close cross matches
+                  the intro player’s iOS-style mark; all wrappers and hit targets keep their own surface styles.
                   The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity and ink text,
                   with no close icon. The collapsed row shows a 16px upward chevron, which fades out over 160ms
                   on opening. Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
@@ -2208,7 +2213,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   ramping from 0.35 opacity to full across the crossing, so the sheet reads as passing in front of the
                   gallery rather than butting against it. Above that, a scroll cue: two 17px bars hinged at the joint
                   they share, opening to a 22° chevron and squeezing flat as the sheet climbs. Rotations rather than a
-                  scaled chevron, so the stroke keeps its weight all the way down to the line. Every layer is anchored
+                  scaled chevron, so the rounded 2.5px stroke keeps its weight all the way down to the line. Every layer is anchored
                   to the runway, never to the sheet, and animates only opacity and transform — and because the runway
                   stops at the 1560px reading measure, the cast and the hairline break back out to <code>100dvw</code>{" "}
                   so the seam ends where the full-bleed sheet does. Without scroll-driven animations, or under reduced
@@ -2242,6 +2247,165 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   scroll position to the top, holding preview playback until the return settles so video compositing
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
+                </li>
+                <li data-ds-terms={terms("about introduction profile photo message prompt video teaser circle 112px 64px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion pip transitions.dev")}>
+                  <strong>The message prompt is anchored by Rafael&rsquo;s profile photo.</strong> The main site uses the
+                  self-hosted profile image without mounting a teaser, recording, playback control or media request.
+                  It anchors the visible desktop conversation and opens the modal conversation when tapped at compact
+                  sizes. The preserved video prototype is available only through the explicit development preview.
+                  Its 112px desktop circle
+                  sits at the bottom-left on <code>--z-corner</code>, expanding to 240px with
+                  <code> --radius-lg</code> corners, <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
+                  Below 700px a 64px circle shares the centered TOC row with a 12px gap on
+                  <code> --z-social</code>; the player grows above that row, capped at 256px and the viewport.
+                  Width, height, corner radius and vertical position use <code>--duration-slow</code> to expand,
+                  <code> --duration-quick</code> to collapse, and <code>--ease-smooth</code> throughout.
+                  Video fills the square edge to edge, fading in over <code>--duration-base</code> once ready.
+                  A dark glass pill sits 8px inside the bottom edge with equal 2px padding,
+                  <code> --radius-full</code> corners, a 36%-black tint, 16px backdrop blur, a 16%-white inset hairline and the shared control shadow.
+                  Solid 18px iOS-inspired media silhouettes occupy 44px targets: play/pause left, mute right, and a
+                  4px rounded seek bar between them. Its white fill tracks playback over a
+                  36%-white rail without a visible thumb or time counter; the native range
+                  retains keyboard seeking and announces elapsed and total time.
+                  Playback controls appear on hover or keyboard focus; touch users tap the video to toggle them.
+                  The close X sits 8px inside the player’s top-right corner in a 44px circular target, appearing with the playback controls on hover or keyboard focus (tap to toggle on touch screens).
+                  Its 18px iOS-style white cross uses rounded 2.5px strokes and <code>--canvas</code> over the same dark glass tint, blur,
+                  inset hairline and control shadow as the playback pill. Media stays clipped in its own rounded wrapper.
+                  Hovered playback controls use 16% white. Captions remain enabled for real recordings and
+                  can be toggled with C; the sample recording starts without its descriptive captions.
+                  The speaking portrait reveals a centered 24px white play triangle on hover, keyboard focus or tap.
+                  A 20%-black overlay darkens the portrait only while those actions are shown, fading over
+                  <code> --duration-quick</code>. The triangle has no disc or colored background.
+                  A 100px white pill to the right holds separate 44px email and text actions,
+                  with the shared ring and overlay shadows, without backdrop blur. Hover or keyboard focus
+                  grows one action from 44px to 128px and the pill to 184px, revealing “Your email” or
+                  “Text me” inside the button. The label enters after 80ms with an 8px slide; width uses
+                  the same slow-open, quick-close surface motion.
+                  Controls use Hugeicons rounded strokes at 1.5px; email and text are 24px
+                  dark icons on transparent buttons. The focused play triangle uses a white outline.
+                  The desktop “A quick hello” and duration tooltip is hidden until hover or focus.
+                  Fine-pointer hover scales the portrait to 1.04. The action pill settles from an 8px horizontal offset and 0.97 scale over
+                  <code> --duration-quick</code>. The hello tooltip uses an 80ms intent delay only on entry,
+                  and the hello label settles from 0.98 scale. Reduced motion removes the movement.
+                  The same white surface expands to a 320px-wide, 52px-high email field, 12px to the
+                  right of the portrait, using <code>--duration-slow</code> to open and
+                  <code>--duration-quick</code> to collapse with <code>--ease-smooth</code>.
+                  Its input and 44px arrow enter after 80ms with an 8px slide, 0.97 scale and 2px cross-blur;
+                  exiting content stays mounted, inert and hidden from assistive technology while it fades.
+                  Text grows that surface upward to
+                  172px with <code>--radius-lg</code> corners. On mobile, the 64px speaking portrait stays fixed
+                  12px from the left edge while the TOC remains centred. Through the compact breakpoint at
+                  899.98px, Rafa’s greeting runs behind an 18px red notification circle tucked 1px into the
+                  portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
+                  15%-black hairline, 2px canvas-white halo and the shared control shadow. The badge enters
+                  with the TOC’s 6px rise and blur; each previous number exits 4px upward while its replacement
+                  enters from below over the shared quick duration.
+                  Tapping the portrait or count fades in the shared 42%-black dialog backdrop over
+                  <code>--duration-slow</code>, hides the TOC and grows the portrait from 64px to 80px. The
+                  conversation remains 12px from both viewport edges; its email composer expands to 320px
+                  toward the left and stays 12px above the enlarged portrait.
+                  Development offers three comparison options: A keeps the compact pill; C separates the actions
+                  into two 184px pills with a 12px gap. A and C keep their mobile reply row 80px above the safe-area edge to clear the TOC. B becomes a conversation anchored to a 64px portrait.
+                  Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
+                  curved tail extends 8px toward the face. Only the typing bubble carries it; the questions have none.
+                  The fields that follow them are the visitor’s side instead: right-aligned with the chat’s edge where the
+                  sent address lands and rising from their bottom-right corner. The email field stays a clean circular pill;
+                  only the submitted blue address gains the mirrored tail on the right. Each incoming message is preceded by a 900ms typing bubble with three 8px muted dots,
+                  spaced 4px apart. They pulse and rise 4px in a 900ms cycle, staggered by 120ms.
+                  Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
+                  0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
+                  the greeting; comparison previews observe their own stage. No field takes focus on arrival.
+                  Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint invites the visitor to tap.
+                  The fixed-positioned picker uses Apple’s six classic choices — heart, thumbs up, thumbs down,
+                  laughter, exclamation points and a question mark — as 18px glyphs in adjacent 40px targets
+                  inside a 4px-padded white pill with the shared ring and overlay shadow. The heart is pink;
+                  stacked HA HA, !! and ? use sculpted text treatments with blue (#8eeaff to #009bdf),
+                  coral (#ffb59e to #f34b40) and purple (#dbbaff to #8a4ddd) gradients. These are local
+                  approximations of the supplied Messages references, not shared interface colours.
+                  It stays 12px inside the viewport and retains horizontal arrow-key navigation. The picker
+                  springs from 0.75 horizontal / 0.6 vertical scale and an 8px offset over 580ms; choices
+                  follow 24ms apart on the snappy spring. Choosing one swells its glyph to 1.14 over a 32px
+                  selection disc and fades the picker toward the bubble by 8px at 0.92 scale over 280ms.
+                  The chosen 14px glyph grows into a 27px blue, canvas-ringed disc with a two-dot trail,
+                  mirrored onto the gray bubble’s top-right corner. Its 580ms snappy entrance follows the disc
+                  by 80ms. The wrapper gains 12px above it so the
+                  Tapback does not cover the prior message. A later choice replaces the earlier one; choosing the
+                  current Tapback again removes it. Reduced motion shows both surfaces at rest. The hint gives a
+                  polite applied or removed confirmation, and only applied reactions record the message index and
+                  reaction name through the existing anonymous analytics path.
+                  Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
+                  Messages blue with white text and a mirrored tail on the right, which rises out of the field
+                  from 20px below at 0.92 scale, anchored at its tail. At 900ms Rafa hearts it the way a received
+                  tapback arrives: a 36px blue disc on the bubble’s top-left corner, with a pink #ff5f8f heart and
+                  two trailing dots, ringed 2px in canvas white. The disc springs out of a point, a ripple spreads
+                  from its edge to 1.8 scale as it fades, the trail bubbles out 80ms and 140ms behind, and the heart
+                  grows in at 120ms, then beats twice (1.24, a 0.96 rebound, 1.14) over 900ms. As it lands, the
+                  bubble’s top margin grows from 8px to 28px, shifting the conversation up to make room. Typing for
+                  the follow-up waits a further 700ms. The motion runs on two component springs sampled into
+                  <code>linear()</code> from SwiftUI’s duration and bounce model, each run for the time it takes to
+                  settle: snappy (0.45s, 0.2 bounce; 580ms, 1.5% overshoot) for the bubble and the shift, and pop
+                  (0.35s, 0.5; 680ms, 16%) for the tapback. Reduced motion shows the tapback at rest, without its
+                  ripple. The bubble stays 24px clear of the history’s left edge for the tapback’s trail. The chat then
+                  shows the same typing bubble before “Want to share anything else?” and reveals the optional
+                  message field after 160ms. Hidden fields stay inert; their measured height offsets the history
+                  so the typing bubble’s bottom edge rests level with the avatar’s. The history moves into its reply position
+                  over 360ms with the shared smooth curve as the field enters. Clicking the sent address unsends it
+                  with a puff: the bubble and its tapback blur 6px and grow to 1.08 as they fade over 240ms, while 24
+                  dots of the bubble’s blue, 3–6px, pop in and drift up to 25px up and out over 420ms, staggered
+                  within 70ms. At 480ms the email field returns with the address and takes focus; typing timers hold
+                  during the puff. Reduced motion skips it. Timers
+                  pause when the chat or tab is hidden, completed messages stay visible on return, and
+                  reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
+                  The email field caps at 256px by 44px and matches the bubbles’ 14px text. It sits at the chat’s
+                  right edge and its center aligns vertically with the 64px face, moving the conversation above that row. Both composers use the white
+                  canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
+                  8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
+                  The message textarea starts 88px high with 16px text and grows with each line up to seven lines
+                  (188px), or 30% of the viewport on short screens, before scrolling; the history gives up the room. The history uses the available space above the dock with a 12px top clearance, accounting for the
+                  actual form height; only short viewports scroll. Neither the history nor the growing message draws
+                  a scrollbar, so a bubble’s entrance rise no longer flashes one. The composer stays below it. Focus deepens
+                  the overlay shadow to <code>--shadow-overlay-hover</code> instead of drawing a stroke. The arrow starts gray,
+                  turning blue for a valid email or nonempty optional message. Each send posts one email to the contact
+                  Worker and moves the text into a blue outgoing bubble that rises from the field on the snappy spring,
+                  clearing the field and keeping its focus so the visitor can keep writing; an empty first send delivers
+                  the address as “Hi Rafa, I’d like to keep in touch.” and later empty sends are disabled. A run of
+                  outgoing bubbles sits 2px apart and only the last keeps its tail. A 12px muted receipt under the latest
+                  one reads Sending… then Delivered. A failed send keeps its bubble with a 20px #e5352b “!” disc on its
+                  left and the error as its receipt; tapping the bubble retries with the same idempotency key. Once
+                  anything is sent the address can no longer be unsent. No address is sent when advancing to the message step.
+                  B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
+                  The <a href="/intro-options">comparison page</a> shows all three together in separate 440px
+                  stages, with contained 64px portraits and 240px players. It stacks its
+                  cards below 1100px. Only one recording can play at a time; its styles load with that page alone.
+                  There is no corner dismiss button.
+                  The A/C reply forms cap at 320px, use the page fill and shared hairline ring, and <code>--text-md</code> input text
+                  to prevent Safari focus zoom. Escape closes the composer and returns focus;
+                  clicking outside restores the labeled button without stealing focus. That button stays visible
+                  until the next About visit or playback, retaining the mobile row above the TOC so
+                  the form can shrink in place. The composer uses a Messages-style upward arrow: a 36px
+                  disc inside a 44px target, with a 24px white navigation arrow at 2.5px stroke. Its component-specific
+                  blue is #0071e3, deepened from Messages’ #007aff so white text on the sent bubble clears 4.5:1
+                  (4.7:1); the disabled disc uses muted-soft at 40% opacity. The arrow is hidden when
+                  empty, disabled gray for an invalid email, and enabled blue when native email validation
+                  passes. The reserved target prevents text shifting. A focused email input uses one outer 1px
+                  focus-ring-soft ring, avoiding a second pill outline inside the field. The placeholder is hello@example.com.
+                  The arrow opens an email draft
+                  for the visitor to review and send. The website does not collect the address.
+                  In the explicit video preview, media waits until within 200px of About; only a press requests the spoken recording.
+                  Reduced motion and lightweight connections use the poster instead of the silent teaser.
+                  The transitions.dev icon-swap recipe keeps play/pause and volume glyphs
+                  stacked in one cell: <code>--icon-swap-dur</code> (250ms), <code>--icon-swap-blur</code> (2px),
+                  <code>--icon-swap-start-scale</code> (0.25) and <code>--icon-swap-ease</code> (ease-in-out).
+                  Reduced motion removes the morph, swaps and press feedback. Real captions start enabled.
+                  An open player stays visible through scrolling and playback end until explicitly closed;
+                  hiding the tab still pauses it. Opening the TOC collapses it to keep navigation clear.
+                  In a dialog, the same player joins that dialog’s focus scope and uses a manual popover
+                  in the browser top layer, keeping it above transformed content without a new z-index.
+                  On mobile this floating player sits centered, 80px above the safe-area bottom edge.
+                  Closing it returns focus to the dialog. Append <code>?intro=preview</code> to the
+                  <a href="/?intro=preview#about-panel"> development homepage</a> to exercise the matching silent GIF,
+                  full recording and original-audio fixture. Ordinary development and production visits keep the
+                  profile-photo message prompt; the dormant video path remains available for the future recording.
                 </li>
                 <li data-ds-terms={terms("bottom fade progressive blur backdrop-filter 1.25rem gradient --canvas clamp(3rem, 8vh, 4.5rem) 3rem sticky safe area seam sheet notes card mask rounded clip")}>
                   <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet and the notes card

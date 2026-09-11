@@ -1,0 +1,243 @@
+import { expect, test, type Page } from "@playwright/test"
+
+const intro = (page: Page) => page.getByRole("region", { name: "A quick hello from Rafael" })
+const openAbout = async (page: Page) => {
+  await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
+  await expect(intro(page)).toBeVisible()
+  await intro(page).locator(".about-intro-portrait-trigger").focus()
+}
+
+test("defers introduction assets until About and recording until play", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const requests: string[] = []
+  page.on("request", request => {
+    if (request.url().includes("/tests/fixtures/about-intro/")) requests.push(request.url())
+  })
+  await page.goto("/?intro=preview&tune=off")
+  await expect(page.locator("#about-panel")).toBeAttached()
+  expect(requests).toEqual([])
+  await openAbout(page)
+  await expect.poll(() => requests.some(url => url.endsWith("teaser.gif"))).toBe(true)
+  expect(requests.some(url => url.endsWith("recording.mp4"))).toBe(false)
+  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).focus()
+  await expect(intro(page).locator(".about-intro-play-mark")).toHaveCSS("outline-style", "solid")
+  await expect(intro(page).locator(".about-intro-play-mark")).toHaveCSS("outline-width", "2px")
+  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+  const recording = intro(page).locator("video[data-recording]")
+  await expect.poll(() => recording.evaluate(video => !(video as HTMLVideoElement).paused)).toBe(true)
+  await intro(page).getByRole("button", { name: "Pause introduction" }).click()
+  await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).paused)).toBe(true)
+  await intro(page).getByRole("slider", { name: "Seek introduction" }).fill("2")
+  await expect.poll(() => recording.evaluate(video => Math.round((video as HTMLVideoElement).currentTime))).toBe(2)
+  await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).textTracks[0]?.mode)).toBe("disabled")
+  await intro(page).getByRole("button", { name: "Resume introduction", exact: true }).focus()
+  await page.keyboard.press("c")
+  await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).textTracks[0]?.mode)).toBe("showing")
+  await page.keyboard.press("c")
+  await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).textTracks[0]?.mode)).toBe("disabled")
+  await intro(page).getByRole("button", { name: "Mute introduction" }).click()
+  await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).muted)).toBe(true)
+  await intro(page).getByRole("button", { name: "Close introduction" }).click()
+  await expect(intro(page).getByRole("button", { name: "Resume introduction", exact: true })).toBeFocused()
+  await intro(page).getByRole("button", { name: "Resume introduction", exact: true }).click()
+  await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).currentTime)).toBeGreaterThan(2)
+  await page.keyboard.press("Escape")
+  await expect(intro(page).getByRole("button", { name: "Resume introduction", exact: true })).toBeFocused()
+})
+
+for (const preference of ["reduced motion", "data saving"] as const) {
+  test(`${preference} keeps a poster but permits explicit recording playback`, async ({ page }) => {
+    if (preference === "reduced motion") await page.emulateMedia({ reducedMotion: "reduce" })
+    else await page.addInitScript(() => Object.defineProperty(navigator, "connection", {
+      value: Object.assign(new EventTarget(), { saveData: true, effectiveType: "4g" }),
+    }))
+    const media: string[] = []
+    page.on("request", request => {
+      if (/about-intro\/.*\.(mp4|gif)/.test(request.url())) media.push(request.url())
+    })
+    await page.goto("/?intro=preview&tune=off")
+    await openAbout(page)
+    await expect(intro(page).locator("img")).toBeVisible()
+    expect(media).toEqual([])
+    await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+    await expect.poll(() => intro(page).locator("video[data-recording]").evaluate(video => !(video as HTMLVideoElement).paused)).toBe(true)
+    expect(media.some(url => url.endsWith("teaser.gif"))).toBe(false)
+  })
+}
+
+test("keeps the player open and playing above About until explicitly closed", async ({ page }) => {
+  await page.goto("/?intro=preview&tune=off")
+  await openAbout(page)
+  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+  const video = intro(page).locator("video[data-recording]")
+  await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }))
+  await expect(page.locator(".about-intro-dock")).toHaveAttribute("data-about-active", "false")
+  await expect(intro(page)).toBeVisible()
+  await expect(intro(page)).toHaveAttribute("data-open", "true")
+  await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
+  await expect.poll(() => video.evaluate(node => Number.isFinite((node as HTMLVideoElement).duration))).toBe(true)
+  await video.evaluate(node => { (node as HTMLVideoElement).currentTime = (node as HTMLVideoElement).duration - 0.2 })
+  await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).ended)).toBe(true)
+  await expect(intro(page)).toHaveAttribute("data-open", "true")
+  await intro(page).hover()
+  await intro(page).getByRole("button", { name: "Replay introduction", exact: true }).click()
+  await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
+  await intro(page).getByRole("button", { name: "Close introduction" }).click()
+  await expect(intro(page)).toBeHidden()
+  await openAbout(page)
+  await expect(intro(page)).toHaveAttribute("data-open", "false")
+  expect(await video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(true)
+})
+
+test("keeps the poster and recovers after a media error", async ({ page }) => {
+  await page.route("**/about-intro/recording.mp4", route => route.abort("failed"))
+  await page.goto("/?intro=preview&tune=off")
+  await openAbout(page)
+  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+  await expect(intro(page).getByRole("button", { name: "Retry introduction" })).toBeVisible()
+  await expect(intro(page).locator("img")).toBeVisible()
+  await page.unroute("**/about-intro/recording.mp4")
+  await intro(page).getByRole("button", { name: "Retry introduction" }).click()
+  await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
+})
+
+test("plays again from the beginning after the recording ends", async ({ page }) => {
+  await page.goto("/?intro=preview&tune=off")
+  await openAbout(page)
+  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+  await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
+  const duration = await intro(page).locator("video[data-recording]").evaluate(node => (node as HTMLVideoElement).duration)
+  // Audio can give the container a fractional duration beyond the slider's 0.1s step.
+  await intro(page).getByRole("slider", { name: "Seek introduction" }).fill((duration - 0.2).toFixed(1))
+  await expect(intro(page).getByRole("button", { name: "Replay introduction" })).toBeVisible()
+  await intro(page).getByRole("button", { name: "Replay introduction" }).click()
+  const video = intro(page).locator("video[data-recording]")
+  await expect.poll(() => video.evaluate(node => !(node as HTMLVideoElement).paused)).toBe(true)
+  expect(await video.evaluate(node => (node as HTMLVideoElement).currentTime)).toBeLessThan(2)
+})
+
+test("offers play again when the browser blocks the first playback request", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = HTMLMediaElement.prototype.play
+    let blocked = false
+    HTMLMediaElement.prototype.play = function () {
+      if (this.hasAttribute("data-recording") && !blocked) {
+        blocked = true
+        return Promise.reject(new DOMException("User gesture required", "NotAllowedError"))
+      }
+      return original.call(this)
+    }
+  })
+  await page.goto("/?intro=preview&tune=off")
+  await openAbout(page)
+  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+  await expect(intro(page).getByRole("status")).toBeHidden()
+  await intro(page).getByRole("button", { name: "Resume introduction", exact: true }).click()
+  await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
+})
+
+test("pauses when the tab is hidden and does not restart sound on return", async ({ page }) => {
+  await page.goto("/?intro=preview&tune=off")
+  await openAbout(page)
+  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+  const video = intro(page).locator("video[data-recording]")
+  await expect.poll(() => video.evaluate(node => !(node as HTMLVideoElement).paused)).toBe(true)
+  // Headless contexts do not model tab visibility. Exercise the browser event
+  // with a controlled visibility getter while keeping actual media playback.
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => true })
+    document.dispatchEvent(new Event("visibilitychange"))
+  })
+  await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(true)
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => false })
+    document.dispatchEvent(new Event("visibilitychange"))
+  })
+  await expect(intro(page).getByRole("button", { name: "Resume introduction", exact: true })).toBeVisible()
+  expect(await video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(true)
+})
+
+for (const width of [1440]) {
+  test(`keeps the player interactive over a booking dialog at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto("/?intro=preview&tune=off")
+    await page.locator("#about-panel-services").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
+    await expect(intro(page)).toBeVisible()
+    await intro(page).getByRole("button", { name: "Play introduction", exact: true }).focus()
+    await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+    const video = intro(page).locator("video[data-recording]")
+    await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
+    await video.evaluate(node => { node.dataset.persistent = "true" })
+    const booking = page.getByRole("button", { name: "book a 30-minute call", exact: true })
+    await booking.focus()
+    await page.keyboard.press("Enter")
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
+    await expect(intro(page)).toBeVisible()
+    await expect(intro(page)).toHaveAttribute("data-open", "true")
+    await expect(video).toHaveAttribute("data-persistent", "true")
+    await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
+    await video.evaluate(node => { (node as HTMLVideoElement).currentTime = 0 })
+    await dialog.focus()
+    await page.keyboard.press("Escape")
+    await expect(dialog).toBeHidden()
+    await expect(intro(page)).toBeVisible()
+    await expect(video).toHaveAttribute("data-persistent", "true")
+    await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
+    await booking.focus()
+    await page.keyboard.press("Enter")
+    await expect(dialog).toBeVisible()
+    const box = await intro(page).locator(".about-intro-surface").boundingBox()
+    expect(box!.x).toBeGreaterThanOrEqual(0)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(width)
+    await intro(page).locator(".about-intro-surface").hover()
+    await intro(page).getByRole("button", { name: "Pause introduction" }).click()
+    await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(true)
+    await expect(dialog).toBeVisible()
+    await intro(page).getByRole("button", { name: "Resume introduction", exact: true }).focus()
+    await page.keyboard.press("Space")
+    await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
+    await page.keyboard.press("Escape")
+    await expect(intro(page)).toBeHidden()
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toBeFocused()
+    await page.keyboard.press("Escape")
+    await expect(dialog).toBeHidden()
+    await expect(intro(page)).toBeVisible()
+    expect(await video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(true)
+  })
+}
+
+test("keeps a poster while the recording download is pending", async ({ page }) => {
+  let release = () => {}
+  const held = new Promise<void>(resolve => { release = resolve })
+  await page.route("**/about-intro/recording.mp4", async route => {
+    await held
+    await route.continue()
+  })
+  await page.goto("/?intro=preview&tune=off")
+  await openAbout(page)
+  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
+  await expect(intro(page).getByRole("status")).toHaveText("Loading introduction…")
+  await expect(intro(page).locator("img")).toBeVisible()
+  release()
+  await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
+})
+
+test("keeps the message prompt when the development video is off", async ({ page }) => {
+  await page.goto("/?intro=off&tune=off")
+  await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
+  await expect(intro(page)).toBeVisible()
+  await expect(intro(page).locator("img.about-intro-poster")).toHaveAttribute("src", /profile-photo.*\.webp$/)
+  await expect(intro(page).locator("video")).toHaveCount(0)
+})
+
+test("uses the profile-photo message prompt on ordinary development visits", async ({ page }) => {
+  await page.goto("/?tune=off")
+  await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
+  await expect(intro(page)).toBeVisible()
+  await expect(intro(page).locator("img.about-intro-poster")).toHaveAttribute("src", /profile-photo.*\.webp$/)
+  await expect(intro(page).locator("video")).toHaveCount(0)
+  await expect(intro(page).getByRole("button", { name: /introduction/i })).toHaveCount(0)
+})

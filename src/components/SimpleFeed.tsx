@@ -11,7 +11,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react"
-import { ExternalLink, X } from "lucide-react"
+import { ExternalLink, X } from "./NavigationIcons"
 
 import { AboutPanel } from "./AboutPanel"
 import { WritingsFolder, type WritingsFolderHandle, type WritingsReaderStatus } from "./WritingsFolder"
@@ -19,7 +19,7 @@ import { ContactActionRow } from "./ContactActionRow"
 import { ProfileEmailCopy } from "./ProfileEmailCopy"
 import { ProfileLocation } from "./ProfileLocation"
 import { SiteLastUpdated } from "./SiteLastUpdated"
-import { MobileTableOfContents } from "./MobileTableOfContents"
+import { AboutIntroDock } from "./AboutIntroDock"
 import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
 import { ResumeTile } from "./ResumeTile"
@@ -535,7 +535,6 @@ function SectionCorner({
           <ExternalLink
             className="mosaic-social-link-external-icon"
             size={12}
-            strokeWidth={1.75}
             aria-hidden="true"
           />
         </a>
@@ -950,7 +949,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         resumeHref={links.resumePdf}
       />
       <SocialCorner email={links.email} />
-      <MobileTableOfContents
+      <AboutIntroDock
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
         onServices={() => scrollToSection("toc_services", "about-panel-services")}

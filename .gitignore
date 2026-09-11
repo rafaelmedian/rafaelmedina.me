@@ -42,3 +42,6 @@ playwright-report
 
 # Local Cloudflare database and build state
 .wrangler
+
+# Local email-provider credentials
+.dev.vars

@@ -16,10 +16,16 @@
     "likes:migrate:local": "wrangler d1 migrations apply DB --local --config workers/likes/wrangler.jsonc",
     "likes:migrate:remote": "wrangler d1 migrations apply DB --remote --config workers/likes/wrangler.jsonc",
     "likes:deploy": "wrangler deploy --config workers/likes/wrangler.jsonc",
-    "likes:check": "tsc -p workers/likes/tsconfig.json"
+    "likes:check": "tsc -p workers/likes/tsconfig.json",
+    "contact:dev": "wrangler dev --config workers/contact/wrangler.jsonc --port 8788",
+    "contact:deploy": "wrangler deploy --config workers/contact/wrangler.jsonc",
+    "contact:check": "tsc -p workers/contact/tsconfig.json",
+    "contact:test": "node --experimental-strip-types --test workers/contact/index.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@hugeicons/core-free-icons": "^4.3.2",
+    "@hugeicons/react": "^1.1.10",
     "@web-kits/audio": "^0.2.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.41.0",

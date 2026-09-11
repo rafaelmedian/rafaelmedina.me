@@ -1,0 +1,835 @@
+/* B: a quiet conversation anchored to the speaking portrait. */
+.about-intro[data-variant="b"] {
+  --intro-size: 64px;
+  --intro-chat-face-bottom: 0px;
+}
+
+.about-intro[data-variant="b"]:not([data-open="true"]) .about-intro-surface {
+  bottom: var(--intro-chat-face-bottom);
+}
+
+.about-intro-chat-backdrop,
+.about-intro-chat-notification {
+  display: none;
+}
+
+/* Springs for the chat and its portaled Tapback picker, sampled into linear()
+   from SwiftUI's duration/bounce model so they overshoot and settle like UIKit's. */
+.about-intro-chat,
+.about-intro-chat-reaction-positioner {
+  --intro-spring-snappy: linear(0, 0.022, 0.078, 0.156, 0.245, 0.339, 0.432, 0.521, 0.603, 0.677, 0.742, 0.799, 0.847, 0.886, 0.919, 0.945, 0.966, 0.982, 0.994, 1.002, 1.008, 1.012, 1.014, 1.015, 1.015, 1.014, 1.013, 1.012, 1.011, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1);
+}
+
+.about-intro-chat {
+  --intro-chat-bottom: 0px;
+  --intro-spring-pop: linear(0, 0.051, 0.18, 0.351, 0.536, 0.713, 0.866, 0.989, 1.077, 1.132, 1.159, 1.162, 1.149, 1.125, 1.096, 1.066, 1.038, 1.015, 0.996, 0.984, 0.977, 0.974, 0.974, 0.977, 0.981, 0.986, 0.991, 0.995, 0.999, 1.001, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1);
+  --intro-reply-height: 44px;
+  position: absolute;
+  left: calc(100% + 12px);
+  bottom: var(--intro-chat-bottom);
+  width: 320px;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-quick) var(--ease-standard), visibility var(--duration-quick);
+}
+
+/* Center the compact email field on the portrait; history grows above it. */
+.about-intro-chat[data-step="email"] {
+  --intro-chat-bottom: calc(var(--intro-chat-face-bottom) + (var(--intro-size) - 44px) / 2);
+}
+
+/* Right-aligned where the sent address will land, clear of Rafa's side. */
+.about-intro-chat[data-step="email"] > .about-intro-chat-composer {
+  width: min(256px, 100%);
+  margin-left: auto;
+  padding: 0;
+}
+
+.about-intro-chat[data-active="true"] {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.about-intro-chat-history {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-height: var(--intro-history-height, calc(100dvh - 260px));
+  padding: 4px 8px;
+  margin: 0 -8px 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+/* Each new bubble's entrance rise overflows for a moment, which flashed an
+   overlay scrollbar on every message; a growing reply did the same. Both still
+   scroll by wheel, touch, and keyboard, just without drawing a bar. */
+.about-intro-chat-history::-webkit-scrollbar,
+.about-intro-chat-message textarea::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.about-intro-chat[data-typing="true"] .about-intro-chat-history {
+  /* Rest the final typing bubble on the portrait's bottom edge, across both forms. */
+  transform: translateY(calc(var(--intro-reply-height) + 8px + var(--intro-chat-bottom) - var(--intro-chat-face-bottom)));
+}
+
+.about-intro-chat .about-intro-chat-bubble {
+  position: relative;
+  isolation: isolate;
+  flex: 0 0 auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  background: var(--mosaic-card-surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Rafa's messages are the reaction triggers. The wrapper owns the entrance and
+   leaves a little room for the visitor's tapback without changing the bubble's
+   familiar shape. */
+.about-intro-chat-received {
+  position: relative;
+  flex: 0 0 auto;
+  max-width: calc(100% - 24px);
+  transition: margin-top 580ms var(--intro-spring-snappy);
+}
+
+.about-intro-chat-received[data-reacted="true"] {
+  margin-top: 12px;
+}
+
+.about-intro-chat-received .about-intro-chat-bubble {
+  display: block;
+  border: 0;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.about-intro-chat-received .about-intro-chat-bubble:is(:hover, [data-popup-open]) {
+  background: #e4e4e6;
+}
+
+.about-intro-chat-received .about-intro-chat-bubble:active {
+  transform: scale(0.96);
+}
+
+/* Visitor Tapbacks mirror Rafa's existing Messages treatment onto the opposite
+   corner: a blue disc, its two thought-bubble dots, and the chosen glyph. */
+.about-intro-chat-visitor-tapback {
+  position: absolute;
+  right: -22px;
+  top: -20px;
+  width: 39px;
+  height: 37.5px;
+  color: var(--intro-blue);
+  pointer-events: none;
+}
+
+.about-intro-chat-visitor-tapback svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.about-intro-chat-visitor-tapback :is(circle, .about-intro-chat-visitor-tapback-glyph) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.about-intro-chat-visitor-tapback-glyph {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: var(--text-sm);
+  line-height: 1;
+  translate: -50% -50%;
+  animation: intro-grow 580ms var(--intro-spring-snappy) 80ms both;
+}
+
+.about-intro-chat-visitor-tapback .about-intro-chat-tapback-disc,
+.about-intro-chat-visitor-tapback .about-intro-chat-tapback-trail {
+  animation-duration: 580ms;
+  animation-timing-function: var(--intro-spring-snappy);
+}
+
+/* Messages uses sculpted symbols for these three Tapbacks, not face emoji. */
+.about-intro-tapback-symbol {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 1.2em;
+  font-weight: 900;
+  line-height: 1;
+  color: transparent;
+  background: linear-gradient(#ffb59e, #f34b40);
+  background-clip: text;
+  -webkit-text-stroke: 0.4px rgb(0 0 0 / 0.12);
+}
+
+.about-intro-tapback-symbol[data-symbol="laugh"] {
+  font-size: 0.62em;
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  background-image: linear-gradient(#8eeaff, #009bdf);
+}
+
+.about-intro-tapback-symbol[data-symbol="question"] {
+  background-image: linear-gradient(#dbbaff, #8a4ddd);
+}
+
+.about-intro-chat-reaction-positioner {
+  z-index: var(--z-overlay);
+}
+
+.about-intro-chat-reaction-picker {
+  display: flex;
+  gap: 0;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  outline: none;
+  transform-origin: var(--transform-origin);
+  animation:
+    intro-picker-open 580ms var(--intro-spring-snappy) both,
+    intro-fade-in var(--duration-quick) var(--ease-standard) both;
+}
+
+.about-intro-chat-reaction-picker[data-ending-style] {
+  animation: intro-picker-fold 280ms var(--ease-exit) forwards;
+}
+
+.about-intro-chat-reaction-choice {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  outline: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  animation: intro-pick-in 580ms var(--intro-spring-snappy) both;
+  transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.about-intro-chat-reaction-choice:nth-child(2) { animation-delay: 24ms; }
+.about-intro-chat-reaction-choice:nth-child(3) { animation-delay: 48ms; }
+.about-intro-chat-reaction-choice:nth-child(4) { animation-delay: 72ms; }
+.about-intro-chat-reaction-choice:nth-child(5) { animation-delay: 96ms; }
+.about-intro-chat-reaction-choice:nth-child(6) { animation-delay: 120ms; }
+
+.about-intro-chat-reaction-choice:is(:hover, [data-highlighted]) {
+  background: var(--mosaic-card-surface);
+}
+
+.about-intro-chat-reaction-choice[data-checked]::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border-radius: var(--radius-full);
+  background: var(--intro-blue);
+}
+
+.about-intro-chat-reaction-choice[data-checked] > span {
+  animation: intro-pick-press 700ms linear both;
+}
+
+.about-intro-chat-reaction-choice:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.about-intro-chat-reaction-choice:active {
+  transform: scale(0.96);
+}
+
+@keyframes intro-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes intro-picker-open {
+  from { transform: translateY(8px) scale(0.75, 0.6); }
+  to { transform: none; }
+}
+
+@keyframes intro-picker-fold {
+  to { opacity: 0; transform: translateY(8px) scale(0.92); }
+}
+
+@keyframes intro-pick-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.3); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes intro-pick-press {
+  0% { transform: scale(1); animation-timing-function: var(--ease-standard); }
+  30% { transform: scale(1.14); animation-timing-function: var(--intro-spring-snappy); }
+  100% { transform: scale(1); }
+}
+
+.about-intro-chat .about-intro-chat-reaction-hint {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-self: flex-start;
+  margin: 0 4px;
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.about-intro-chat-tail::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  bottom: 0;
+  z-index: -1;
+  /* 32px so the square covers the whole 24px corner radius, not just 16px of it. */
+  width: 32px;
+  height: 24px;
+  background: inherit;
+  clip-path: path("M 8 0 H 32 V 24 H 0 C 6 21 8 16 8 8 Z");
+  pointer-events: none;
+}
+
+/* The sent address keeps 24px clear on its left for Rafa's tapback. It rises
+   out of the field below on the snappy spring, anchored at its tail. When the
+   tapback lands, its top margin grows from 8px to 28px, shifting the
+   conversation up to make room. */
+.about-intro-chat-sent {
+  position: relative;
+  align-self: flex-end;
+  flex: 0 0 auto;
+  display: flex;
+  max-width: calc(100% - 24px);
+  margin: 8px 0;
+  transform-origin: right bottom;
+}
+
+.about-intro-chat-history .about-intro-chat-sent {
+  transition: opacity var(--duration-slow) var(--ease-smooth), transform 580ms var(--intro-spring-snappy), filter var(--duration-slow) var(--ease-smooth), margin-top 580ms var(--intro-spring-snappy);
+}
+
+@starting-style {
+  .about-intro-chat-history .about-intro-chat-sent {
+    transform: translateY(20px) scale(0.92);
+  }
+}
+
+.about-intro-chat-sent[data-reacted="true"] {
+  margin-top: 28px;
+}
+
+.about-intro-chat-outgoing {
+  position: relative;
+  isolation: isolate;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--intro-blue);
+  color: var(--canvas);
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.about-intro-chat-outgoing:disabled {
+  cursor: default;
+}
+
+.about-intro-chat-outgoing::before {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: 0;
+  z-index: -1;
+  width: 32px;
+  height: 24px;
+  background: inherit;
+  clip-path: path("M 24 0 H 0 V 24 H 32 C 26 21 24 16 24 8 Z");
+  pointer-events: none;
+}
+
+/* Rafa's tapback pops onto the bubble's top-left corner the way a received
+   reaction arrives: the disc springs out of a point with a ripple spreading
+   from its edge, its trail of two dots bubbles out after it, and the heart
+   grows in and then beats twice. */
+.about-intro-chat-reaction {
+  position: absolute;
+  left: -30px;
+  top: -26px;
+  color: var(--intro-blue);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.about-intro-chat-reaction :is(circle, .about-intro-chat-tapback-heart) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.about-intro-chat-heart {
+  fill: #ff5f8f;
+}
+
+.about-intro-chat-tapback-disc { animation: intro-grow 680ms var(--intro-spring-pop) both; }
+.about-intro-chat-tapback-trail { animation: intro-grow 680ms var(--intro-spring-pop) 80ms both; }
+.about-intro-chat-tapback-trail[data-far] { animation-delay: 140ms; }
+.about-intro-chat-tapback-heart { animation: intro-grow 680ms var(--intro-spring-pop) 120ms both; }
+.about-intro-chat-reaction .about-intro-chat-heart { animation: intro-heart-beat 900ms linear 640ms; }
+
+.about-intro-chat-tapback-ripple {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  opacity: 0;
+  animation: intro-tapback-ripple 600ms var(--ease-smooth) 160ms forwards;
+}
+
+@keyframes intro-grow {
+  from { transform: scale(0); }
+  to { transform: none; }
+}
+
+@keyframes intro-tapback-ripple {
+  from { opacity: 0.5; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.8); }
+}
+
+/* A double thump: up, a slight rebound, a smaller second beat, then the spring. */
+@keyframes intro-heart-beat {
+  0% { transform: scale(1); animation-timing-function: var(--ease-standard); }
+  16% { transform: scale(1.24); animation-timing-function: var(--ease-standard); }
+  34% { transform: scale(0.96); animation-timing-function: var(--ease-standard); }
+  48% { transform: scale(1.14); animation-timing-function: var(--intro-spring-pop); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-intro-chat-history .about-intro-chat-sent { transition: none; }
+
+  .about-intro-chat-reaction *,
+  .about-intro-chat-reaction .about-intro-chat-heart { animation: none; }
+
+  .about-intro-chat-tapback-ripple { display: none; }
+}
+
+/* Unsend puff: the address and its tapback blur out as one, while dots of the
+   bubble's blue scatter from where it sat. Reduced motion skips straight back
+   to the email field and never renders the dots. */
+.about-intro-chat-sent[data-puff="true"] {
+  transform-origin: center;
+  animation: intro-puff 240ms var(--ease-standard) forwards;
+}
+
+.about-intro-chat-puff {
+  position: absolute;
+  pointer-events: none;
+}
+
+.about-intro-chat-puff i {
+  position: absolute;
+  translate: -50% -50%;
+  border-radius: var(--radius-full);
+  background: var(--intro-blue);
+  opacity: 0;
+  animation: intro-puff-dot 420ms var(--ease-smooth) forwards;
+}
+
+@keyframes intro-puff {
+  to { opacity: 0; transform: scale(1.08); filter: blur(6px); }
+}
+
+@keyframes intro-puff-dot {
+  0% { opacity: 0; transform: scale(0.4); }
+  25% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: translate(var(--puff-x), var(--puff-y)) scale(0.2); }
+}
+
+/* Each message the visitor sends moves out of the field into a blue bubble on
+   their side, rising on the same spring as the address. As in Messages, a run
+   of bubbles sits 2px apart and only the last keeps its tail. */
+.about-intro-chat-sent-message {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-end;
+  max-width: calc(100% - 24px);
+  transform-origin: right bottom;
+  transition: transform 580ms var(--intro-spring-snappy);
+}
+
+@starting-style {
+  .about-intro-chat-sent-message {
+    transform: translateY(20px) scale(0.92);
+  }
+}
+
+.about-intro-chat-sent-message + .about-intro-chat-sent-message {
+  margin-top: -6px;
+}
+
+.about-intro-chat-sent-message:has(+ .about-intro-chat-sent-message) .about-intro-chat-outgoing::before {
+  display: none;
+}
+
+.about-intro-chat-sent-message .about-intro-chat-outgoing {
+  white-space: pre-wrap;
+}
+
+.about-intro-chat-sent-message p.about-intro-chat-outgoing {
+  cursor: auto;
+}
+
+/* A failed send keeps its bubble, marked the way Messages marks one, and the
+   bubble itself retries. */
+.about-intro-chat-sent-message[data-status="failed"] .about-intro-chat-outgoing::after {
+  content: "!";
+  position: absolute;
+  top: 50%;
+  left: -28px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: #e5352b;
+  color: var(--canvas);
+  font: 700 13px / 1 var(--font-ui);
+  translate: 0 -50%;
+}
+
+.about-intro-chat .about-intro-chat-receipt {
+  margin: 4px 4px 0 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  text-align: end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-intro-chat-sent-message { transition: none; }
+}
+
+.about-intro-chat-composer {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+}
+
+/* Focus lifts the field rather than outlining it; the caret marks the rest. */
+.about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
+  box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
+}
+
+.about-intro-chat-composer :is(input, textarea) {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.about-intro-chat-composer :is(input, textarea):focus-visible {
+  outline: none;
+}
+
+.about-intro-chat-composer :is(input, textarea)::placeholder {
+  color: var(--muted-soft);
+  opacity: 1;
+}
+
+.about-intro-chat-message .about-intro-chat-composer {
+  border-radius: var(--radius-lg);
+}
+
+/* Grows with the text (sized in AboutIntroChat) up to seven lines, or less on
+   short screens, then scrolls. The history above gives up the room. */
+.about-intro-chat-message textarea {
+  min-height: 88px;
+  max-height: min(188px, 30dvh);
+  overflow-y: auto;
+  scrollbar-width: none;
+  font-size: var(--text-md);
+  resize: none;
+}
+
+.about-intro-chat .about-intro-chat-hint {
+  margin: 8px 4px 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.about-intro-chat-enter {
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  filter: blur(2px);
+  /* The email field is its only user; it rises from the portrait-side corner. */
+  transform-origin: right bottom;
+  transition: opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
+}
+
+.about-intro-chat[data-active="true"] .about-intro-chat-enter {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.about-intro-chat[data-active="true"] [data-order="4"] { transition-delay: 240ms; }
+
+.about-intro-chat-new {
+  transition: opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
+}
+
+.about-intro-chat-new[data-followup] { transition-delay: 80ms; }
+.about-intro-chat-message {
+  transform-origin: right bottom;
+  transition-delay: 160ms;
+}
+
+@starting-style {
+  .about-intro-chat[data-active="true"] .about-intro-chat-enter,
+  .about-intro-chat-new {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    filter: blur(2px);
+  }
+}
+
+@media (max-width: 899.98px) {
+  body:has(.about-intro[data-chat-open="true"]) .mosaic-mobile-toc {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 0.375rem);
+    transition-delay: 0s, 0s, var(--duration-quick);
+  }
+
+  .about-intro-dock .about-intro[data-chat-open="true"] {
+    --intro-size: 80px;
+  }
+
+  .about-intro-dock .about-intro[data-chat-open="true"] .about-intro-surface {
+    transition-duration: var(--duration-base);
+  }
+
+  .about-intro-dock .about-intro-chat-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: rgb(18 18 18 / 0.42);
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-slow) var(--ease-standard), visibility 0s var(--duration-slow);
+  }
+
+  .about-intro-dock .about-intro[data-chat-open="true"] .about-intro-chat-backdrop {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+
+  .about-intro-dock .about-intro-chat-notification {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    background: #e5352b;
+    color: var(--canvas);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15), 0 0 0 3px var(--canvas), var(--shadow-control);
+    font: 700 11px / 1 var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    animation: intro-notification-enter var(--duration-base) var(--ease-smooth) both;
+  }
+
+  .about-intro-chat-notification-number,
+  .about-intro-chat-notification-ghost {
+    grid-area: 1 / 1;
+  }
+
+  .about-intro-chat-notification-number {
+    animation: intro-notification-number-enter var(--duration-quick) var(--ease-standard) both;
+  }
+
+  .about-intro-chat-notification-ghost {
+    animation: intro-notification-number-exit var(--duration-fast) var(--ease-exit) both;
+  }
+
+  .about-intro-dock .about-intro[data-chat-open="true"] :is(.about-intro-surface, .about-intro-chat) {
+    z-index: 2;
+  }
+
+  .about-intro-dock .about-intro-chat {
+    position: fixed;
+    right: 12px;
+    bottom: calc(104px + env(safe-area-inset-bottom));
+    left: 12px;
+    z-index: 2;
+    width: auto;
+  }
+
+  .about-intro-chat {
+    width: min(320px, calc(100vw - 100px));
+  }
+
+  .about-intro-dock .about-intro-chat[data-step="email"] > .about-intro-chat-composer {
+    width: min(320px, 100%);
+  }
+}
+
+@keyframes intro-notification-enter {
+  from {
+    transform: translateY(6px);
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
+@keyframes intro-notification-number-enter {
+  from {
+    transform: translateY(4px);
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
+@keyframes intro-notification-number-exit {
+  to {
+    transform: translateY(-4px);
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-intro-chat-backdrop,
+  .about-intro-chat-notification,
+  .about-intro-chat-notification-number,
+  .about-intro-chat-notification-ghost {
+    animation: none;
+    transition: none;
+  }
+
+  .about-intro-chat-history { transition: none; }
+
+  .about-intro-chat-received .about-intro-chat-bubble,
+  .about-intro-chat-reaction-picker,
+  .about-intro-chat-reaction-choice {
+    transition: none;
+    transform: none;
+  }
+
+  .about-intro-chat-received { transition: none; }
+
+  .about-intro-chat-reaction-picker,
+  .about-intro-chat-reaction-choice,
+  .about-intro-chat-reaction-choice > span,
+  .about-intro-chat-visitor-tapback * { animation: none; }
+
+  .about-intro-chat-enter,
+  .about-intro-chat-new {
+    transition: none;
+    transform: none;
+    filter: none;
+  }
+}
+
+.about-intro[data-variant="b"] .about-intro-label {
+  display: none;
+}
+
+.about-intro-chat[data-active="true"] [data-pending="true"] {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.about-intro-chat .about-intro-chat-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+}
+
+.about-intro-chat-typing span {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--muted-soft);
+  animation: intro-typing-dot 900ms var(--ease-standard) infinite;
+}
+
+.about-intro-chat[data-active="false"] .about-intro-chat-typing span { animation-play-state: paused; }
+
+.about-intro-chat-typing span:nth-child(2) { animation-delay: 120ms; }
+.about-intro-chat-typing span:nth-child(3) { animation-delay: 240ms; }
+
+@keyframes intro-typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-intro-chat-typing span { animation: none; }
+}
+
+.about-intro-chat .about-intro-send[data-muted="true"]::before {
+  background: var(--muted-soft);
+  opacity: 0.4;
+}

@@ -49,6 +49,7 @@ jobs:
       # tree-shaken away and nothing is tracked.
       - run: npm run build
         env:
+          VITE_CONTACT_API_URL: ${{ vars.VITE_CONTACT_API_URL }}
           VITE_LIKES_API_URL: ${{ vars.VITE_LIKES_API_URL }}
           VITE_GA_MEASUREMENT_ID: ${{ vars.VITE_GA_MEASUREMENT_ID }}
 
