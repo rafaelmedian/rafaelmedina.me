@@ -279,6 +279,7 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--mosaic-card-surface);
   object-fit: cover;
   /* Portraits with pale edges dissolve into the card surface, so they carry
@@ -452,6 +453,7 @@
   padding: 0;
   border: 0;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: transparent;
   cursor: pointer;
   /* The tap target is four times the dot it draws; the dot filling in says
@@ -468,6 +470,7 @@
   width: 6px;
   height: 6px;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--muted-soft);
   opacity: 0.3;
   transition: opacity var(--duration-quick) var(--ease-standard);
@@ -708,6 +711,7 @@
     width: 17px;
     height: 1.5px;
     border-radius: var(--radius-full);
+    corner-shape: round;
     background: currentColor;
   }
 
@@ -1162,6 +1166,7 @@
   inset: 0;
   z-index: 0;
   border-radius: inherit;
+  corner-shape: inherit;
   background: linear-gradient(
     105deg,
     var(--card-skeleton-base) 0%,

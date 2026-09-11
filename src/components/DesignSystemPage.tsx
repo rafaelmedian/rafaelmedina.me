@@ -1111,8 +1111,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-section-heading">
               <h2>Space &amp; radius</h2>
               <p>
-                Spacing is a short ladder in rem. Radius is four tokens, and anything nested is derived from one of them
-                rather than added to them.
+                Spacing is a short ladder in rem. Radius is four tokens on one continuous squircle curve, and anything
+                nested is derived from one of them rather than added to them.
               </p>
             </div>
 
@@ -1143,10 +1143,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 {RADII.map((entry) => (
                   <SpecCard
                     key={entry.value}
-                    terms={terms(entry.value, entry.css, entry.use, "radius corner border-radius")}
+                    terms={terms(entry.value, entry.css, entry.use, "radius corner border-radius squircle superellipse continuous")}
                     proof={
                       <div
                         className="ds-radius-proof"
+                        data-corner-shape={entry.value.startsWith("--radius-full") ? "round" : undefined}
                         style={{ borderRadius: `${entry.css} ${entry.css} 0 0` }}
                         aria-hidden="true"
                       />
@@ -1157,6 +1158,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   />
                 ))}
               </div>
+              <p className="ds-caption">
+                Rounded rectangular surfaces use <code>--corner-curve: squircle</code>, the exact{" "}
+                <code>superellipse(2)</code> curve from CSS Borders Level 4. Browsers that do not support{" "}
+                <code>corner-shape</code> fall back to the same four circular radii without changing layout. Pills,
+                dots, and avatars remain geometrically round.
+              </p>
               <div
                 className="ds-rule"
                 data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px résumé notes")}

@@ -21,6 +21,16 @@ test("documents the caption dropping out where there is no hover", async ({ page
   await expect(captionRule).not.toContainText("rgb(20 20 20 / 0.82)")
 })
 
+test("uses continuous corners without reshaping circles and pills", async ({ page }) => {
+  await page.goto("/")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(2)")
+  await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
+  await expect(page.locator(".mosaic-profile-actions a").first()).toHaveCSS("corner-shape", "superellipse(1)")
+
+  await openDesignSystem(page)
+  await expect(page.locator("#space")).toContainText("superellipse(2)")
+})
+
 const customPropertyPattern = /^--[\w-]+$/
 const cssVariablePattern = /var\((--[\w-]+)/g
 

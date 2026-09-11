@@ -121,10 +121,12 @@
   --text-sm: 0.875rem; /* 14px -- the whole hero and corner nav, pill labels, body copy, detail rows, the notes reader, the About sheet */
   --text-md: 1rem; /* 16px -- card titles, overlay card headings, the Notes toolbar title, About section headings */
   --text-lg: 1.125rem; /* 18px -- short quotes, a note's title in the reader, standalone-page headings, the handwriting faces */
-  /* Radius. Four steps. Anything nested is derived from one of them by the
-     concentric rule (outer = inner + the padding between them) rather than
-     becoming a fifth value -- that is why the hover-card media uses a
-     calc() expression rather than a new token. */
+  /* Corners use the CSS superellipse's exact squircle curve. Browsers without
+     corner-shape keep the same circular border-radius fallback. Radius remains
+     four steps; anything nested is derived from one of them by the concentric
+     rule (outer = inner + the padding between them) rather than becoming a
+     fifth value -- that is why hover-card media uses calc(), not a new token. */
+  --corner-curve: squircle;
   --radius-sm: 8px; /* chips, nav targets, focus rings */
   --radius-md: 16px; /* hover cards, popovers, the local-time card */
   --radius-lg: 24px; /* work tiles, dialog media and corners */
@@ -141,6 +143,7 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  corner-shape: var(--corner-curve);
 }
 
 body {
@@ -165,6 +168,7 @@ body {
   z-index: var(--z-skip-link);
   transform: translateY(-160%);
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--ink);
   color: var(--canvas);
   padding: 0.6rem 0.9rem;

@@ -655,6 +655,7 @@
   display: inline-flex;
   align-items: center;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: #f4f4f4;
   padding: 0 0.65rem;
   color: var(--muted);
@@ -731,6 +732,7 @@
   margin: -0.2rem -0.4rem;
   padding: 0.2rem 0.4rem;
   border-radius: var(--radius-full);
+  corner-shape: round;
   color: var(--ink);
   text-decoration: none;
   transition: background-color var(--duration-quick) var(--ease-standard);
@@ -746,6 +748,7 @@
   width: 22px;
   height: 22px;
   border-radius: var(--radius-full);
+  corner-shape: round;
   object-fit: cover;
   background: #ececec;
   color: var(--muted);
@@ -769,6 +772,7 @@
   min-width: var(--preview-gallery-nav-size);
   min-height: var(--preview-gallery-nav-size);
   border-radius: var(--radius-full);
+  corner-shape: round;
   border: 1px solid rgb(0 0 0 / 0.08);
   background: rgb(255 255 255 / 0.92);
   color: var(--ink);

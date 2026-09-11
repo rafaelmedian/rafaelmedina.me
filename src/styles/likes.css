@@ -13,6 +13,7 @@
   padding: 0 0.75rem;
   border: 1px solid #dedee0;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--canvas);
   color: var(--muted);
   font-size: var(--text-xs);
@@ -21,7 +22,7 @@
   box-shadow: var(--shadow-control);
   transition: box-shadow var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-standard);
 }
-.like-button::before { content: ""; position: absolute; inset: -6px 0; border-radius: inherit; }
+.like-button::before { content: ""; position: absolute; inset: -6px 0; border-radius: inherit; corner-shape: inherit; }
 @media (hover: hover) {
   .like-button:hover { box-shadow: var(--shadow-control-hover); }
 }
@@ -35,5 +36,5 @@
 .like-button[data-liked] .like-count { color: #e5352b; }
 /* Particles fly past the pill's edge, so the layer only positions them. */
 .like-burst { position: absolute; inset: 0; pointer-events: none; }
-.like-particle { position: absolute; border-radius: var(--radius-full); background: #e5352b; }
+.like-particle { position: absolute; border-radius: var(--radius-full); corner-shape: round; background: #e5352b; }
 .like-particle[data-soft] { filter: blur(2px); opacity: 0.6; }
