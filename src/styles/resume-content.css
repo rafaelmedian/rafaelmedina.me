@@ -114,9 +114,25 @@
   text-decoration-line: none;
 }
 
-.mosaic-about-body .resume-experience-role {
+.resume-experience-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
   margin-top: 0.25rem;
+}
+
+.mosaic-about-body .resume-experience-meta .resume-experience-role,
+.mosaic-about-body .resume-experience-meta .mosaic-about-resume-location {
+  margin-top: 0;
+}
+
+.mosaic-about-body .resume-experience-role {
   color: var(--muted);
+}
+
+.resume-experience-meta-separator {
+  color: var(--muted-soft);
 }
 
 /* An entry that carries two points stays a list for screen readers, but reads

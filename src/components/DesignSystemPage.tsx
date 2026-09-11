@@ -1591,6 +1591,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 badges keep <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
                 Company names, dates, locations, and descriptions reuse the shared résumé styles in
                 <code>about.css</code>: <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
+                Each role and location share one wrapping metadata row, separated by a muted middle dot.
                 Four selected Matcha screenshots sit below the description as loose photo prints. They are sized by
                 image height — <code>clamp(2.8rem, 12vw, 4.4rem)</code>, so the row shrinks to fit a phone — and each
                 width follows its own 4:3 crop, which is what keeps the pile on the sheet&rsquo;s measure at every

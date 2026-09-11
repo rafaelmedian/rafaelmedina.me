@@ -4225,6 +4225,28 @@ test("shows work-history company links without underlines", async ({ page }) => 
   await expect(companyLink).toHaveCSS("text-decoration-line", "none")
 })
 
+test("aligns work locations with their roles", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const jobs = page
+    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("list", { name: "Work history" })
+    .locator(":scope > li")
+
+  for (const index of [0, 1]) {
+    const [roleBox, locationBox] = await Promise.all([
+      jobs.nth(index).locator(".resume-experience-role").boundingBox(),
+      jobs.nth(index).locator(".mosaic-about-resume-location").boundingBox(),
+    ])
+
+    expect(roleBox).not.toBeNull()
+    expect(locationBox).not.toBeNull()
+    expect(Math.abs(roleBox!.y - locationBox!.y)).toBeLessThan(1)
+  }
+})
+
 test("opens a work-history company website from its name", async ({ page }) => {
   await page.context().route("https://0x.org/**", (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>0x</title>" }),
