@@ -16,7 +16,8 @@ import { groupWritingsByYear, noteHash, pickFrom } from "../lib/writings"
 // detail in the path fixed it. They go through the Rough.js pass the marks do
 // in scripts/build-writing-marks.mjs and ship as PNGs from
 // public/writings/marks, black on transparent and used as masks, so they still
-// take their colour from the list beside them.
+// take their colour from the list beside them. Each file is a strip of frames
+// the drawing boils through while its row is hovered; writings.css steps them.
 const ARCHIVE_DRAWINGS = ["sheet", "pencil", "cup"]
 
 // Rows a drawing is pinned to, counted across the whole list rather than within

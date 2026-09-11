@@ -426,6 +426,33 @@ test("the list's drawings stay in the card's gutters and leave at narrow widths"
   await expect(drawings.first()).toBeHidden()
 })
 
+test("a hovered row boils its drawing through its frames", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/notes/")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page)).toHaveCSS("opacity", "1")
+
+  // At rest the drawing shows the first frame of its strip and holds still.
+  const owner = popup(page).locator(".writings-year li").filter({ has: page.locator(".writings-drawing") }).first()
+  const drawing = owner.locator(".writings-drawing")
+  await expect(drawing).toHaveCSS("animation-name", "none")
+  await expect(drawing).toHaveCSS("mask-position", "0px 0px")
+  // Its row wakes it, and it steps through the other frames rather than
+  // sliding between them.
+  const row = (await owner.locator(".writing-entry-trigger").boundingBox())!
+  await page.mouse.move(row.x + 40, row.y + row.height / 2, { steps: 4 })
+  await expect(drawing).toHaveCSS("animation-name", "writings-drawing-boil")
+  const frames = new Set<string>()
+  await expect.poll(async () => {
+    frames.add(await drawing.evaluate((element) => getComputedStyle(element).maskPosition))
+    return frames.size
+  }, { intervals: [40] }).toBe(3)
+  expect([...frames].sort()).toEqual(["0px 0px", "100% 0px", "50% 0px"])
+  await page.mouse.move(4, 4, { steps: 4 })
+  await expect(drawing).toHaveCSS("animation-name", "none")
+  await expect(drawing).toHaveCSS("mask-position", "0px 0px")
+})
+
 test("margin notes fold into the column when the gutters are gone", async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })

@@ -1274,7 +1274,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup boil stop-motion frames hover 375ms handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onReaderReady={() => {}} /></div>
               <p className="ds-caption">
@@ -1375,6 +1375,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 -5 and 7 degrees. The three objects cycle, so the archive passes ten notes before one repeats. They
                 are decorative and hidden from assistive technology, absolutely positioned so they never enter the
                 content height the card measures, and they leave below the same 48rem container threshold.
+                Each ships as a strip of three frames — the resting drawing and two retracings on fresh seeds, set down
+                up to 0.6px and 1.1 degrees off — so hovering a row, or the drawing itself, makes it boil like a
+                stop-motion drawing: it steps through the frames at about eight a second, 375ms a loop, held on each
+                with steps() rather than tweened, and snaps back to rest when the pointer leaves. Only on a fine
+                hover pointer; reduced motion keeps it still.
                 An article can print a fenced sample: monospace from the system stack at --text-xs on
                 --mosaic-card-surface, --radius-md with the same 5% inset hairline the reader's figures take, over a
                 --text-xs grey caption. There is one such sample and it is Markdown, so the highlighter is thirty lines
