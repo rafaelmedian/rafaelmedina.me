@@ -224,14 +224,6 @@ function useCurrentSection(navRef: RefObject<HTMLElement | null>, sections: Writ
  * history entry of its own, and the gallery closes a note by stepping back
  * through history, so Back would land on the fragment rather than leave it.
  */
-const readDuration = (element: Element, property: string, fallback: number) => {
-  const value = getComputedStyle(element).getPropertyValue(property).trim()
-  if (!value) return fallback
-  const amount = parseFloat(value)
-  if (Number.isNaN(amount)) return fallback
-  return amount * (value.endsWith("ms") ? 1 : 1000)
-}
-
 function NoteContents({ sections }: { sections: WritingSection[] }) {
   const panelId = useId()
   const sentinelRef = useRef<HTMLSpanElement>(null)
@@ -240,26 +232,8 @@ function NoteContents({ sections }: { sections: WritingSection[] }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isStuck, setIsStuck] = useState(false)
   const current = useCurrentSection(navRef, sections)
-  const previous = useRef(current)
-  const [leaving, setLeaving] = useState<{ slug: string | null; direction: "up" | "down" }>()
   const currentSection = sections.find((section) => sectionSlug(section.heading) === current)
   const currentLabel = currentSection?.heading ?? "Contents"
-
-  useLayoutEffect(() => {
-    const from = previous.current
-    previous.current = current
-    const root = navRef.current
-    if (from === current || !root) return
-    const order = (slug: string | null) => slug === null
-      ? -1
-      : sections.findIndex((section) => sectionSlug(section.heading) === slug)
-    setLeaving({ slug: from, direction: order(current) > order(from) ? "up" : "down" })
-    const timer = window.setTimeout(
-      () => setLeaving(undefined),
-      readDuration(root, "--toc-swap-duration", 160),
-    )
-    return () => window.clearTimeout(timer)
-  }, [current, sections])
 
   useEffect(() => {
     if (!isOpen) return
@@ -303,10 +277,6 @@ function NoteContents({ sections }: { sections: WritingSection[] }) {
     }
   }, [])
 
-  const leavingLabel = leaving?.slug === null
-    ? "Contents"
-    : sections.find((section) => sectionSlug(section.heading) === leaving?.slug)?.heading
-
   const navigate = (event: MouseEvent<HTMLAnchorElement>, slug: string) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
     const target = event.currentTarget.closest("article")?.querySelector<HTMLElement>(`#${CSS.escape(slug)}`)
@@ -335,14 +305,13 @@ function NoteContents({ sections }: { sections: WritingSection[] }) {
     <>
       <span ref={sentinelRef} className="writing-contents-sentinel" aria-hidden="true" />
       <nav ref={navRef} className="writing-contents" aria-label="Contents" data-open={isOpen}
-        data-stuck={isStuck} data-swap={leaving?.direction} onBlur={(event) => {
+        data-stuck={isStuck} onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false)
         }}>
         <button ref={triggerRef} type="button" className="writing-contents-trigger" aria-expanded={isOpen}
           aria-controls={panelId} aria-label={`Contents: ${currentSection?.heading ?? "Introduction"}`}
           onClick={() => setIsOpen((open) => !open)}>
-          <span key={current ?? "introduction"} className="writing-contents-current">{currentLabel}</span>
-          {leavingLabel && !isOpen ? <span key={`leaving-${current}`} className="writing-contents-ghost" aria-hidden="true">{leavingLabel}</span> : null}
+          <span className="writing-contents-current">{currentLabel}</span>
           <ChevronDown className="writing-contents-chevron" size={16} strokeWidth={1.75} aria-hidden="true" />
         </button>
         <div id={panelId} className="writing-contents-panel" inert={!isOpen} aria-hidden={!isOpen}>

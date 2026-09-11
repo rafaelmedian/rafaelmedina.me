@@ -230,11 +230,10 @@
 }
 /* One horizontal contents row sits between the article header and its prose.
    It begins as "Contents", then carries the section being read in the same
-   directional blur-and-slide used by the site's floating table of contents.
+   text position, updating immediately when the section changes.
    The hairline is the row's only container, so it stays part of the page rather
    than becoming a second floating surface inside the reader. */
 .writing-contents {
-  --toc-swap-duration: var(--duration-slow);
   --writing-contents-gutter: max(0px, calc((100cqi - var(--writings-measure)) / 2));
   --writing-contents-offset: calc(var(--preview-gallery-card-padding, 0px) + var(--writing-contents-gutter));
   position: sticky;
@@ -362,29 +361,6 @@
 .writing-contents a[aria-current] { color: var(--ink); }
 .writing-contents a:focus-visible { outline-offset: -2px; }
 
-/* Scrolling farther into the note sends the old section up and the next one in
-   from below; scrolling back reverses the two. The mobile TOC owns these
-   keyframes, and sharing them makes the two controls move as one system. */
-.writing-contents[data-swap="up"] { --toc-swap-direction: 1; }
-.writing-contents[data-swap="down"] { --toc-swap-direction: -1; }
-.writing-contents[data-swap][data-open="false"] .writing-contents-current {
-  animation: mosaic-toc-label-enter var(--toc-swap-duration) var(--ease-standard) both;
-}
-.writing-contents-ghost {
-  position: absolute;
-  inset: 0 2rem auto 0;
-  height: var(--writing-contents-height);
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  letter-spacing: -0.00563rem;
-  white-space: nowrap;
-  pointer-events: none;
-  animation: mosaic-toc-label-exit var(--toc-swap-duration) var(--ease-exit) both;
-}
 /* The one code sample in the reader. It sits on the card surface the rest of
    the site uses for a held object, at the caption step: it is a quotation from
    a file rather than the article's own voice, and the monospace face is wider

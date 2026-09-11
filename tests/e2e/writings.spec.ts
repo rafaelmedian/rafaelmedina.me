@@ -443,8 +443,7 @@ test("a hovered row boils its drawing through its frames", async ({ page }) => {
   await expect(drawing).toHaveCSS("mask-position", "0px 0px")
   // Its row wakes it, and it steps through the other frames rather than
   // sliding between them.
-  const row = (await owner.locator(".writing-entry-trigger").boundingBox())!
-  await page.mouse.move(row.x + 40, row.y + row.height / 2, { steps: 4 })
+  await owner.locator(".writing-entry-trigger").hover()
   await expect(drawing).toHaveCSS("animation-name", "writings-drawing-boil")
   const frames = new Set<string>()
   await expect.poll(async () => {
@@ -589,35 +588,26 @@ test("the contents open from one horizontal row and jump without adding history"
   await expect(dialog).toBeHidden()
 })
 
-test("the compact contents label uses the site TOC's directional swap", async ({ page }) => {
+test("the compact contents label changes without animation", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/notes/room-to-figure-it-out/")
   const dialog = sheet(page)
   const contents = dialog.getByRole("navigation", { name: "Contents" })
-  // Hold the state long enough to inspect the motion deterministically.
-  await contents.evaluate((element) => (element as HTMLElement).style.setProperty("--toc-swap-duration", "2s"))
   const heading = dialog.getByRole("heading", { name: "Everyday decisions are practice" })
   await heading.evaluate((element) => element.scrollIntoView({ block: "start", behavior: "instant" }))
   await expect(contents).toHaveAttribute("data-stuck", "true")
   await dialog.locator(".writings-scroll").evaluate((element) => element.scrollBy(0, 24))
   await expect(contents.locator(".writing-contents-current")).toHaveText("Everyday decisions are practice")
-  await expect(contents.locator(".writing-contents-current")).toHaveCSS("animation-name", "mosaic-toc-label-enter")
-  await expect(contents.locator(".writing-contents-ghost")).toHaveCSS("animation-name", "mosaic-toc-label-exit")
-  await expect(contents).toHaveAttribute("data-swap", "up")
-  const originDifference = await contents.evaluate((element) =>
-    element.querySelector(".writing-contents-ghost")!.getBoundingClientRect().x
-    - element.querySelector(".writing-contents-current")!.getBoundingClientRect().x)
-  expect(Math.abs(originDifference)).toBeLessThan(1)
-  const firstLabel = await contents.locator(".writing-contents-current").elementHandle()
+  await expect(contents.locator(".writing-contents-current")).toHaveCSS("animation-name", "none")
+  await expect(contents.locator(".writing-contents-current")).toHaveCSS("filter", "none")
   await dialog.getByRole("heading", { name: "Leaving is not equally available to everyone", exact: true })
     .evaluate((element) => {
       element.scrollIntoView({ block: "start", behavior: "instant" })
       element.closest(".writings-scroll")!.scrollTop += 30
     })
   await expect(contents.locator(".writing-contents-current")).toHaveText("Leaving is not equally available to everyone")
-  expect(await firstLabel!.evaluate((element) => element.isConnected)).toBe(false)
-  expect(await contents.locator(".writing-contents-current").evaluate((element) => element.getAnimations().length)).toBeGreaterThan(0)
+  expect(await contents.locator(".writing-contents-current").evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 
 test("the contents label changes only as section headings cross the pinned row", async ({ page }) => {
@@ -741,11 +731,13 @@ test("inline contents leave both marginalia gutters available", async ({ page })
   await page.goto("/notes/designing-matcha/")
   const contents = dialog.getByRole("navigation", { name: "Contents" })
   await expect(contents).toBeVisible()
-  const column = (await dialog.locator(".writing-reader").boundingBox())!
-  const contentsBox = (await contents.boundingBox())!
-  const prose = (await dialog.locator(".writing-reader-prose").boundingBox())!
-  expect(Math.round(contentsBox.x)).toBe(Math.round(column.x))
-  expect(contentsBox.y + contentsBox.height).toBeLessThanOrEqual(prose.y)
+  await expect.poll(() => dialog.locator(".writing-reader").evaluate((reader) => {
+    const column = reader.getBoundingClientRect()
+    const contentsBox = reader.querySelector(".writing-contents")!.getBoundingClientRect()
+    const prose = reader.querySelector(".writing-reader-prose")!.getBoundingClientRect()
+    return Math.round(contentsBox.x) === Math.round(column.x)
+      && contentsBox.bottom <= prose.y
+  })).toBe(true)
 })
 
 test("More articles show the archive dates beside their titles", async ({ page }) => {
