@@ -3509,6 +3509,28 @@ for (const width of [1440, 390]) {
   })
 }
 
+test("keeps resume margin drawings clear of the reading column", async ({ page }) => {
+  await page.setViewportSize({ width: 2394, height: 1279 })
+  await page.goto("/resume/")
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const clearances = await dialog.locator(".resume-margin-drawing").evaluateAll((drawings) => {
+    const content = document.querySelector(".resume-content")!.getBoundingClientRect()
+
+    return drawings.map((drawing) => {
+      const box = drawing.getBoundingClientRect()
+      const side = drawing.getAttribute("data-place")
+      return {
+        side,
+        gap: side === "left" ? content.left - box.right : box.left - content.right,
+      }
+    })
+  })
+
+  expect(clearances.filter(({ side }) => side === "left").every(({ gap }) => gap >= 40)).toBe(true)
+  expect(clearances.filter(({ side }) => side === "right").every(({ gap }) => gap >= 32)).toBe(true)
+})
+
 test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -3563,6 +3585,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   const pdf = dialog.getByRole("link", { name: "View resume PDF" })
   await expect(pdf).toHaveAttribute("href", "/rafael-medina-resume.pdf")
   await expect(pdf).toHaveAttribute("target", "_blank")
+  await expect(dialog.locator(".preview-gallery-resume-heading").getByRole("link", { name: "View resume PDF" })).toBeVisible()
 })
 
 // On a phone the sheet fills the viewport, so there is no backdrop to aim at and
@@ -4167,14 +4190,6 @@ test("adds breathing room above the about hobbies", async ({ page }) => {
   await expect(page.locator(".mosaic-about-hobbies")).toHaveCSS("margin-top", "8px")
 })
 
-test("starts the education section without a top hairline", async ({ page }) => {
-  await page.goto("/")
-  await page.getByRole("link", { name: "Open résumé" }).click()
-
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
-  await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "0px")
-})
-
 test("gives the Chainlink work a fuller description", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
@@ -4259,6 +4274,56 @@ test("links each work-history company name to its primary website", async ({ pag
     await expect(companyLink).toHaveAttribute("href", project.href)
     await expect(companyLink).toHaveAttribute("target", "_blank")
   }
+})
+
+test("shows work-history company links without underlines", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const companyLink = page
+    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("link", { name: "0x Project", exact: true })
+
+  await expect(companyLink).toHaveCSS("text-decoration-line", "none")
+})
+
+test("aligns work locations with their roles", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  // Measure settled layout rather than different frames of the opening travel.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const jobs = page
+    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("list", { name: "Work history" })
+    .locator(":scope > li")
+
+  for (const index of [0, 1]) {
+    const [roleBox, locationBox] = await Promise.all([
+      jobs.nth(index).locator(".resume-experience-role").boundingBox(),
+      jobs.nth(index).locator(".mosaic-about-resume-location").boundingBox(),
+    ])
+
+    expect(roleBox).not.toBeNull()
+    expect(locationBox).not.toBeNull()
+    const overlap = Math.min(roleBox!.y + roleBox!.height, locationBox!.y + locationBox!.height)
+      - Math.max(roleBox!.y, locationBox!.y)
+    expect(overlap).toBeGreaterThan(Math.min(roleBox!.height, locationBox!.height) * 0.75)
+  }
+})
+
+test("uses one hairline between work history and education", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const jobs = dialog
+    .getByRole("list", { name: "Work history" })
+    .locator(":scope > li")
+
+  await expect(jobs.nth(1)).toHaveCSS("border-top-width", "0px")
+  await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "1px")
 })
 
 test("opens a work-history company website from its name", async ({ page }) => {

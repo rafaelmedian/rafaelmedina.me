@@ -613,9 +613,20 @@
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
 }
 
-.preview-gallery-resume-heading .preview-gallery-resume-title {
+.preview-gallery-resume-heading-inner {
   width: min(100%, 34rem);
   margin-inline: auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.preview-gallery-resume-heading .mosaic-about-resume-download {
+  flex: none;
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
 }
 
 .preview-gallery-resume-body {

@@ -108,8 +108,11 @@ function IllustratedExperience({ job, level, drawing, onSelectProject }: { job: 
           </div>
           <p className="mosaic-about-resume-dates">{job.dates}</p>
         </div>
-        <p className="resume-experience-role">{job.role}</p>
-        <p className="mosaic-about-resume-location">{job.location}</p>
+        <div className="resume-experience-meta">
+          <p className="resume-experience-role">{job.role}</p>
+          <span className="resume-experience-meta-separator" aria-hidden="true">·</span>
+          <p className="mosaic-about-resume-location">{job.location}</p>
+        </div>
         {Array.isArray(job.highlight) ? (
           <ul className="mosaic-about-resume-description resume-experience-points">
             {job.highlight.map((point) => (
