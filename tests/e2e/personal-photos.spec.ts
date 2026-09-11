@@ -342,6 +342,70 @@ test("the fan is dealt with a wobble, opens as a hand, and lifts the one print u
   await expect.poll(turns).toEqual([false, false, false, false, false])
 })
 
+/** Records each print's beat the moment the deal starts. The whole deal is
+    over in a second, which a poll can miss under a full parallel run. */
+async function recordDealBeats(page: Page) {
+  await page.locator(".personal-photos-stack").evaluate((stack: HTMLElement) => {
+    new MutationObserver((_, observer) => {
+      if (stack.dataset.deal !== "dealing") return
+      observer.disconnect()
+      stack.dataset.testBeats = Array.from(stack.querySelectorAll(".personal-photos-print"), (print) => getComputedStyle(print).animationDelay).join()
+    }).observe(stack, { attributes: true, attributeFilter: ["data-deal"] })
+  })
+}
+
+test("the fan deals in from the middle out the first time it scrolls into view", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  const stack = page.locator(".personal-photos-stack")
+  const prints = stack.locator(".personal-photos-print")
+  // Below the fold the hand is held back, not dealt where nobody sees it.
+  await expect(stack).toHaveAttribute("data-deal", "pending")
+  await expect(prints.first()).toHaveCSS("opacity", "0")
+
+  await recordDealBeats(page)
+  await stack.scrollIntoViewIfNeeded()
+  // The front print first, then 100ms later for each step out to the ends.
+  await expect(stack).toHaveAttribute("data-test-beats", "0.2s,0.1s,0s,0.1s,0.2s")
+  // Once the last print lands the deal retires, and every print is at rest.
+  await expect(stack).not.toHaveAttribute("data-deal")
+  expect(await prints.evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element)
+    return `${style.opacity} ${style.translate}`
+  }))).toEqual(Array(5).fill("1 none"))
+
+  // It is dealt once per visit: scrolled away and back, the hand stays put.
+  await page.evaluate(() => scrollTo(0, 0))
+  await stack.scrollIntoViewIfNeeded()
+  await expect(stack).not.toHaveAttribute("data-deal")
+})
+
+test("opening the sheet mid-deal snaps the hand to rest before the flights measure it", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  const stack = page.locator(".personal-photos-stack")
+  // Freeze the deal a quarter of the way in, with every print still low.
+  await stack.evaluate((element: HTMLElement) => {
+    new MutationObserver((_, observer) => {
+      if (element.dataset.deal !== "dealing") return
+      observer.disconnect()
+      element.getAnimations({ subtree: true }).forEach((animation) => {
+        animation.pause()
+        animation.currentTime = 200
+      })
+      element.dataset.testFrozen = ""
+    }).observe(element, { attributes: true, attributeFilter: ["data-deal"] })
+  })
+  await stack.scrollIntoViewIfNeeded()
+  await expect(stack).toHaveAttribute("data-test-frozen")
+  expect(await stack.locator(".personal-photos-print").first().evaluate((element) => getComputedStyle(element).translate)).not.toBe("none")
+
+  await page.locator(".personal-photos-label").click()
+  await expect(dialog(page)).toBeVisible()
+  await expect(stack).not.toHaveAttribute("data-deal")
+  expect(await stack.locator(".personal-photos-print").evaluateAll((elements) => elements.map((element) => getComputedStyle(element).translate))).toEqual(Array(5).fill("none"))
+})
+
 /** The budget for anything that waits on the globe's own motion. A turn
     takes 360ms and the zoom settles in about a third of a second, but the
     globe advances by at most 50ms of motion per frame, so under a full
