@@ -422,6 +422,7 @@ const DURATIONS_ENTRIES = [
   { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
   { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening on hover or focus, and the sheet rewinding before close (--photo-rewind-duration)." },
   { value: "200ms", use: "Personal-photo sheet: --photo-open-duration and --photo-close-duration both alias --duration-base. Every flight, its caption, and the backdrop share one beat in either direction, with no stagger and no delay — the whole hand leaves together and comes home together. Reduced motion removes the transitions and flights." },
+  { value: "60ms", use: "--card-caption-delay: how long a work tile's caption, tint, and blur ramp wait before fading in or out. While a tile's video loops, Chrome runs an otherwise idle page at 30fps, and a fade that started on the hover's first frame jumped instead of easing. The page-entrance and About stagger also step by 60ms." },
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },
   { value: "1100ms / 1200ms / 240ms", use: "The avatar coin. One whole turn under the pointer over 1100ms, and a click adds another over 1200ms, then hands over to the About scroll 240ms in — long enough that the spin is what started the scroll, short enough that the click still feels answered. Both are slow on purpose: a coin this small has to turn lazily to read as turning at all. JavaScript reads all three numbers from the coin's own custom properties." },
@@ -1158,7 +1159,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px 50%")}
+                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px résumé notes")}
               >
                 <strong>Nested corners are concentric, and they are derived — not a fifth step.</strong>
                 <p>
@@ -1180,13 +1181,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   ratio, under the same cap the media carries (<code>min(367px, 42vh)</code>, and{" "}
                   <code>min(684px, 72vh)</code> in the wide view). It is fixed per
                   layout rather than measured per preview, so a taller or shorter image never slides the pair out from
-                  under the pointer, and it stops at half the popup so a card taller than the viewport still keeps
-                  paging reachable without scrolling back up. The
+                  under the pointer — and it is the same on the résumé and the notes, which have no artwork, so paging
+                  into or out of a page of prose leaves the pair where it was. The
                   shell adds that clearance to its own gutter wherever the pair is shown, since it hides horizontal
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
-                  header at z-index 1.
+                  header at z-index 1. A compact position pill sits between the paging group and close,
+                  keeping both controls fixed. The current position swaps with the TOC's 4px slide and
+                  <code>--blur-reveal</code>: 120ms out on the exit curve, 160ms in on the standard curve.
+                  Next sends it up, Previous down, including when the sequence wraps. The total stays still,
+                  and the counter reserves enough digits for the full sequence. Reduced motion swaps instantly.
                   The like pill rides the line where the artwork stops: a zero-height row centres it on that
                   boundary, 1.25rem in from the card&rsquo;s right edge, half over the shot and half over the white
                   below it. It is the notes reader&rsquo;s control on the overlay tier instead of the control
@@ -1234,7 +1239,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="project-caption-visibility"
-                data-ds-terms={terms("--card-caption-blur 2.5rem --card-caption-tint --card-caption-weight scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 0.93 ink white 360ms eased compact desktop mobile touch no caption hidden aria-label")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem --card-caption-tint --card-caption-weight scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 0.93 ink white 360ms 60ms --card-caption-delay delay 30fps video eased compact desktop mobile touch no caption hidden aria-label")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1262,7 +1267,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   across the whole band instead of ending partway up: a linear ramp changes slope where it reaches
                   zero, and the eye reads that break as an edge. The two fade on separate clocks — the tint at the 160ms hover default alongside
                   the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
-                  illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
+                  illegible until four backdrop rasters were ready, and the whole effect read as a stall. Both clocks
+                  wait <code>--card-caption-delay: 60ms</code> before they start, in either direction: while a tile's
+                  loop plays, Chrome paces an otherwise idle page at the video's 30fps, and a fade that began on the
+                  hover's first frame arrived as a 32% jump, a held frame, and a second jump before it eased. The delay
+                  spends that ramp-up, so the first frame that moves is an ordinary step. It paints only
                   on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden
                   and so is the caption: with no hover to reveal it, a name would have to sit on every tile at once,
                   over artwork that already carries the project's own wordmark. The title still reaches assistive
@@ -1274,7 +1283,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup boil stop-motion frames hover key click keyboard sound 375ms handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onReaderReady={() => {}} /></div>
               <p className="ds-caption">
@@ -1298,15 +1307,22 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The project preview wears the same control on the overlay tier; everything below is shared by both.
                 Its 14px heart starts filled #b6b6ba; the heart and tabular, weight-600 count turn #e5352b after a tap.
                 The pill hugs the count, whose width follows its digit count in ch over --duration-quick with --ease-standard.
+                Numbers use the TOC's 4px slide and --blur-reveal, exiting over 120ms and arriving over 160ms.
+                Increments travel up; a corrected lower count travels down. Rapid taps replace the outgoing number
+                with the latest one, and reduced motion changes it instantly.
                 Each tap adds a like up to 16 per visitor, with a 360ms heart pop to scale(1.35) on cubic-bezier(0.34, 1.56, 0.64, 1)
                 and twelve red particles travelling 18–48px over 450–750ms on cubic-bezier(0.12, 0.84, 0.32, 1).
                 Three particles are softened with a 2px blur; all use --radius-full.
                 At the cap, another tap shakes the pill up to 4px over 320ms with ease-out.
                 These component-specific motion exceptions stop under reduced motion; the count remains a polite live status.
-                Beside it, “Copy link” is an ordinary link to the note's public address at the same 32px height on an 8% black
-                hairline, --text-xs on --muted, so it reads as a note about the note rather than a second action competing with the
-                heart. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
-                check and the label for “Link copied” on --ink; its accessible name stays “Copy a link to this note” throughout and
+                Beside it, “Copy link” is an ordinary link to the note's public address wearing the like pill's chrome: 32px,
+                the #dedee0 hairline on --canvas, weight-500 --text-xs on --muted at line-height 1, and the shared control shadows,
+                hover lift and 0.96 press. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
+                check and the label for “Link copied” on --ink. The label uses the TOC's 4px slide and
+                --blur-reveal, with a 120ms exit and 160ms entrance; confirmation travels up and reset travels down.
+                The pill hugs whichever label it wears and eases between the two widths over --duration-quick with
+                --ease-standard, clipping the longer label while it grows. Reduced motion swaps and resizes instantly;
+                its accessible name stays “Copy a link to this note” throughout and
                 the confirmation is announced from a live region beside it. Modified and secondary presses are left to the browser.
                 Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
                 canonical, and listed in the sitemap, the way a project owns `/work/&lt;slug&gt;/`.
@@ -1389,6 +1405,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 -5 and 7 degrees. The three objects cycle, so the archive passes ten notes before one repeats. They
                 are decorative and hidden from assistive technology, absolutely positioned so they never enter the
                 content height the card measures, and they leave below the same 48rem container threshold.
+                Each ships as a strip of three frames — the resting drawing and two retracings on fresh seeds, set down
+                up to 0.6px and 1.1 degrees off — so hovering a row, or the drawing itself, makes it boil like a
+                stop-motion drawing: it steps through the frames at about eight a second, 375ms a loop, held on each
+                with steps() rather than tweened, and snaps back to rest when the pointer leaves. Only on a fine
+                hover pointer; reduced motion keeps it still.
+                In the gallery, the mouse moving onto a row strikes a key: a 3-layer synthesized click — a white-noise
+                snap, a band-passed plate tick, and a low sine thock — about 11ms long at 0.15 volume, under the
+                gallery's own sounds. Three keys differ in pitch and brightness and never repeat back to back, keys
+                are at least 45ms apart, and a row scrolled under a still pointer stays silent. Touch, pen, reduced
+                motion, and a page not yet pressed play nothing.
                 An article can print a fenced sample: monospace from the system stack at --text-xs on
                 --mosaic-card-surface, --radius-md with the same 5% inset hairline the reader's figures take, over a
                 --text-xs grey caption. There is one such sample and it is Markdown, so the highlighter is thirty lines
@@ -1721,7 +1747,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>--ink</code>. Its copy icon leads the address, invisible at rest but holding its 0.875rem slot, the card's side
                 padding is cancelled by an equal negative margin, and its <code>1.7em</code> box is the line's own
                 line height, so neither the fill nor the icon can shift the centred line under the pointer. The icon turns to <code>--accent</code> as a check for 1.6s after a
-                copy, and stays lit for that window whether or not the pointer is still on the button; the card
+                copy, and stays lit for that window whether or not the pointer is still on the button. Copy and check
+                trade places with the TOC's 4px slide and <code>--blur-reveal</code>, over 120ms out and 160ms in;
+                confirmation goes up and reset goes down, inside the same icon slot. Reduced motion swaps instantly. The card
                 empties to <code>--canvas</code> behind the chips' own hairline for the same window, which both marks
                 the state change and puts the green on the surface it is graded against. Its hint is not type at all: a
                 200px <code>--canvas</code> card carrying a clip, one while the offer stands and another once the copy
@@ -2004,6 +2032,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   scroll, or viewport changes end it immediately. A failed portrait reveals the page, and
                   a four-second safeguard releases content if the bundle or image stalls. Without
                   JavaScript, prerendered content remains readable.
+                </p>
+              </div>
+
+              <div className="ds-rule" data-ds-terms={terms("shared link direct project resume notes note prerendered article gallery entry pending revealing fade opacity --duration-base dialog four-second safeguard")}>
+                <strong>A gallery address opens straight into its dialog.</strong>
+                <p>
+                  A project, the résumé, the notes, and a note each prerender an article of their own, which
+                  JavaScript swaps for the feed with the dialog open over it. The article is held back from first
+                  paint, and hydration waits for the dialog's chunk, so the canvas stays blank until the dialog
+                  presents. The page then fades in over <code>--duration-base</code>, the backdrop's own
+                  pace, under the dialog's usual entrance. A failed chunk shows the feed at once, the same
+                  four-second safeguard releases the article if the bundle stalls, and without JavaScript
+                  the article is the page.
                 </p>
               </div>
             </div>

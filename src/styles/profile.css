@@ -540,6 +540,12 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   height: 100%;
 }
 
+.mosaic-profile-email-icon .inline-swap,
+.mosaic-profile-email-icon .inline-swap-current {
+  width: 100%;
+  height: 100%;
+}
+
 .mosaic-profile-email:hover .mosaic-profile-email-icon,
 .mosaic-profile-email:focus-visible .mosaic-profile-email-icon {
   opacity: 1;

@@ -104,9 +104,12 @@ keys walk from a project into the résumé and out the other side. It owns
 `/resume/` the way a project owns `/work/<slug>/` — prerendered by
 `scripts/prerender.mjs`, listed in the sitemap, rendered as `ResumePage` for a
 crawler or a visitor without JavaScript, and swapped for the gallery slide once
-React is running. Adding another non-project tile to the sequence means adding a
-kind to `src/lib/galleryItems.ts` and a location to `src/lib/portfolioUrl.ts`;
-the gallery itself only knows about items.
+React is running. With JavaScript that article never paints: the head script in
+`index.html` holds every gallery address back until the dialog presents (see
+`src/lib/galleryEntry.ts`). Adding another non-project tile to the sequence means
+adding a kind to `src/lib/galleryItems.ts`, a location to
+`src/lib/portfolioUrl.ts`, and its path to that head script's pattern; the
+gallery itself only knows about items.
 
 ## Notes
 
@@ -227,6 +230,12 @@ same artwork instead of churning the diff.
 
 The PNGs are black on transparent and are used as CSS masks, so the reader still
 colours them with `currentColor` and one asset serves any ink.
+
+The archive's gutter drawings (`drawing-<object>-frames.png`) are strips of
+three frames side by side, which the list steps through on hover. The first
+frame keeps the seed the single drawing always had, so the resting artwork never
+changes; the frame count in the script and the `300%` mask size in
+`src/styles/writings.css` have to agree.
 
 ## Planning Mode Rules
 

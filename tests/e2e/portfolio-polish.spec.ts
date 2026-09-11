@@ -3640,6 +3640,33 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 
+// Hovering a tile fetches the gallery's chunk ahead of the press. Handed to
+// `lazy` through a promise it still suspended, and once a boundary has shown its
+// fallback React holds the content back for up to 300ms: the first preview of
+// a visit appeared 315ms after the press, against 15ms for every one after it.
+test("opens a prefetched gallery without passing through its loading state", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  const tile = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
+  const chunk = page.waitForResponse(/PreviewGalleryDialog-[\w-]+\.js/)
+  await tile.hover()
+  await chunk
+  // The module evaluates once its own imports are in; give it that turn.
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 100)))
+
+  const firstSurface = page.evaluate(() => new Promise<string>((resolve) => {
+    new MutationObserver((_, observer) => {
+      const surface = document.querySelector(".preview-gallery-pending, .preview-gallery-popup")
+      if (!surface) return
+      observer.disconnect()
+      resolve(surface.className)
+    }).observe(document.body, { childList: true, subtree: true })
+  }))
+  await tile.click()
+  expect(await firstSurface).toContain("preview-gallery-popup")
+})
+
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
@@ -3693,8 +3720,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  // The counter is a screen-reader label on this layout rather than a pill, so
-  // the swipe is confirmed by what it says and not by whether it is drawn.
+  // The position label follows the swipe after its outgoing number settles.
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
@@ -3761,8 +3787,7 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   }
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
-  // Paging holds the leading edge and leaving holds the trailing one, with the
-  // corner between them empty.
+  // The visible counter fits between paging and close without moving either.
   const [prevBox, nextBox, closeBox] = await Promise.all(
     ["Previous preview", "Next preview", "Close preview"].map((name) =>
       dialog.getByRole("button", { name }).boundingBox(),
@@ -3771,6 +3796,11 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(prevBox!.x).toBeLessThan(nextBox!.x)
   expect(nextBox!.x + nextBox!.width).toBeLessThan(mobileViewport.width / 2)
   expect(closeBox!.x).toBeGreaterThan(mobileViewport.width / 2)
+  const countBox = (await dialog.locator(".preview-gallery-count").boundingBox())!
+  expect(countBox.width).toBeGreaterThan(32)
+  expect(countBox.height).toBeGreaterThanOrEqual(32)
+  expect(countBox.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
+  expect(countBox.x + countBox.width).toBeLessThan(closeBox!.x)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
 })
@@ -4165,8 +4195,9 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   // One control per side, level with each other and 16px clear of the card.
   const placement = async () => {
     const dialogBox = (await dialog.boundingBox())!
-    const previousBox = (await previous.boundingBox())!
-    const nextBox = (await next.boundingBox())!
+    // By class rather than name: reading a note renames the pair.
+    const previousBox = (await rail.locator(".preview-gallery-nav-prev").boundingBox())!
+    const nextBox = (await rail.locator(".preview-gallery-nav-next").boundingBox())!
     return {
       dialogTop: dialogBox.y,
       previousGap: dialogBox.x - (previousBox.x + previousBox.width),
@@ -4204,6 +4235,30 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
 
   await previous.click()
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
+
+  // Nor may a slide with no artwork. The notes list is shorter than the
+  // artwork, an open note grows the card to the viewport's foot, and the
+  // résumé starts there: each used to take half its own card, so the pair
+  // jumped on every step into or out of them.
+  const railNext = rail.locator(".preview-gallery-nav-next")
+  await railNext.click()
+  await railNext.click()
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(dialog).toHaveAttribute("data-preview-kind", "writings")
+  await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
+  expect(await placement()).toEqual(initial)
+
+  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await expect(dialog).toHaveAttribute("data-reading-note", "true")
+  await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  expect(await placement()).toEqual(initial)
+
+  await page.keyboard.press("Escape")
+  await expect(dialog).not.toHaveAttribute("data-reading-note")
+  await railNext.click()
+  await railNext.click()
+  await expect(dialog).toHaveAttribute("data-preview-kind", "resume")
+  expect(await placement()).toEqual(initial)
 })
 
 // The rail's affordance is a left and a right chevron, and the card already
@@ -5131,13 +5186,19 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
 
   const content = await (await pdf.getPage(1)).getTextContent()
   // Non-empty items also prove the text is real and selectable, not an image.
-  const text = content.items.map((item) => ("str" in item ? item.str : "")).join("")
+  // Line ends are kept: joined flat, the address ran into the line above it and
+  // the address match found "Designerhey@..." instead.
+  const text = content.items.map((item) => ("str" in item ? item.str + (item.hasEOL ? "\n" : "") : "")).join("")
   expect(text.length).toBeGreaterThan(500)
 
   expect(text).toContain("Stealth fintech")
   expect(text).toContain("Co-founder")
-  expect(text).toContain("2026 - Present")
+  // The sheet sets a range over two lines, the dash closing the first.
+  expect(text).toMatch(/2026 –\s*Present/)
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)
+  // Each entry's copy precedes its dates in the text layer, and the bullets
+  // stay with their entry rather than being painted in a later pass.
+  expect(text).toMatch(/Stealth fintech[\s\S]*Building a mobile wallet[\s\S]*2026 –[\s\S]*0x Project/)
   // The old Figma export advertised an address the site had already moved off,
   // so the PDF must carry the site's current one and no other: naming the stale
   // address would only catch the drift that already happened.

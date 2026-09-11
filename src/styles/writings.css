@@ -128,14 +128,16 @@
     aspect-ratio: 1;
     opacity: 0.55;
     rotate: var(--writings-drawing-tilt);
-    pointer-events: none;
-    -webkit-mask: var(--writings-drawing-mark) center / 100% 100% no-repeat;
-    mask: var(--writings-drawing-mark) center / 100% 100% no-repeat;
+    /* The file is a strip of three frames, each as square as the box, so the
+       mask is three boxes wide and the position picks a frame: 0% the drawing
+       at rest, 50% and 100% the two it boils through on hover. */
+    -webkit-mask: var(--writings-drawing-mark) 0 0 / 300% 100% no-repeat;
+    mask: var(--writings-drawing-mark) 0 0 / 300% 100% no-repeat;
   }
   /* The ink goes on only where the mask can cut it out, as with the brackets:
      a browser that ignores mask-image would otherwise fill each gutter with a
      solid grey square. */
-  @supports (mask-image: url("/writings/marks/drawing-sheet.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet.png")) {
+  @supports (mask-image: url("/writings/marks/drawing-sheet-frames.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet-frames.png")) {
     .writings-drawing { background-color: var(--muted); }
   }
   /* Size, rail, drop, and tilt all arrive per mark from the component, hashed
@@ -145,6 +147,24 @@
      -0.5rem hover bleed. */
   .writings-drawing[data-place="left"] { right: calc(100% + var(--writings-drawing-rail)); }
   .writings-drawing[data-place="right"] { left: calc(100% + var(--writings-drawing-rail)); }
+  /* Hovered, a drawing boils: it steps through its frames the way a
+     stop-motion drawing does between exposures, held on each one rather than
+     tweened, since a slide between two tracings reads as the paper moving
+     rather than the pencil redrawing. It answers its own row as well as a
+     pointer on the drawing itself, because the pointer spends its time on the
+     titles and a drawing that only woke for a direct hit in the gutter would
+     rarely be seen doing it. About eight frames a second, which is where a
+     boil reads as hand-drawn; much faster and it becomes a flicker. The first
+     step leaves the resting frame at once, so the hover answers without a
+     beat of stillness first. */
+  @media (hover: hover) and (pointer: fine) {
+    .writings-year li:hover > .writings-drawing { animation: writings-drawing-boil 375ms steps(1, end) infinite; }
+  }
+}
+@keyframes writings-drawing-boil {
+  0% { -webkit-mask-position: 50% 0; mask-position: 50% 0; }
+  33.333% { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  66.667%, 100% { -webkit-mask-position: 0 0; mask-position: 0 0; }
 }
 /* A year sits above the notes it belongs to rather than in a gutter beside
    them, so the full measure goes to the titles. The rows keep their -0.5rem
@@ -553,27 +573,38 @@
    down under it. */
 .writing-reader-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
 .writing-reader-actions .like-row { margin-top: 0; }
-/* Sized and inked as the archive's dates are, so it reads as a note about the
-   note rather than as a second action competing with the heart. It wears the
-   like pill's height and radius, because they sit on one line. */
+/* The like pill's twin: the same 32px chrome, type, and control shadows, so the
+   two read as one row of things to do with the note. It hugs its label and
+   eases between widths when the label swaps (WritingArticle animates it); the
+   clip keeps the longer label inside the pill while it grows. */
 .writing-copy-link {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 0.35rem;
-  min-height: 32px;
-  padding: 0 0.7rem;
-  border: 1px solid rgb(0 0 0 / 0.08);
-  border-radius: 999px;
+  gap: 0.375rem;
+  height: 32px;
+  padding: 0 0.75rem;
+  overflow: clip;
+  border: 1px solid #dedee0;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
   color: var(--muted);
   font-size: var(--text-xs);
-  line-height: 1.5;
+  font-weight: 500;
+  line-height: 1;
   letter-spacing: 0;
+  white-space: nowrap;
   text-decoration: none;
+  box-shadow: var(--shadow-control);
   transition:
-    background-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard),
     color var(--duration-quick) var(--ease-standard);
 }
-.writing-copy-link:hover { background: var(--mosaic-card-surface); }
+@media (hover: hover) {
+  .writing-copy-link:hover { box-shadow: var(--shadow-control-hover); }
+}
+.writing-copy-link:active { transform: scale(0.96); box-shadow: var(--shadow-control-pressed); }
 /* Confirmed rather than announced: the label and the icon both change, and the
    ink steps up to the heading's, so the swap reads without a colour of its own. */
 .writing-copy-link[data-copied="true"] { color: var(--ink); }

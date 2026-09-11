@@ -131,6 +131,60 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   await expect(folder).toBeFocused()
 })
 
+test("a press outside a note closes the gallery once, with the note still on it", async ({ page }) => {
+  // Back is a single tone and the close is a noise transient over one. A press
+  // outside used to be two dismissals -- Back on mousedown, then Base UI closing
+  // the list on the click -- and played both.
+  await page.addInitScript(() => {
+    const sounds = { tones: 0, noise: 0 }
+    Object.assign(window, { __sounds: sounds })
+    const { createOscillator, createBufferSource } = BaseAudioContext.prototype
+    BaseAudioContext.prototype.createOscillator = function () { sounds.tones += 1; return createOscillator.call(this) }
+    BaseAudioContext.prototype.createBufferSource = function () { sounds.noise += 1; return createBufferSource.call(this) }
+  })
+  const sounds = () => page.evaluate(() => ({ ...(window as unknown as { __sounds: { tones: number; noise: number } }).__sounds }))
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+  const folder = page.getByRole("button", { name: "Open writings folder" })
+  await folder.click()
+  await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
+  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
+  const before = await sounds()
+
+  // The note stays on the card while it shrinks: turning back to the list on
+  // the way out is the second dismissal this replaced.
+  const frames = popup(page).evaluate(element => new Promise<string[]>(resolve => {
+    const samples: string[] = []
+    const end = performance.now() + 1500
+    const sample = () => {
+      if (!element.isConnected || performance.now() > end) return resolve(samples)
+      samples.push(element.querySelector(".writing-reader") ? "note" : "list")
+      requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  }))
+  // Twice: the second press lands during the exit, while the note's address is
+  // still being given up, and must not close it a second time.
+  await page.mouse.dblclick(8, 500)
+  expect(await frames).not.toContain("list")
+  await expect(popup(page)).toBeHidden()
+  // Both addresses are given up, so the visit is back where it began.
+  await expect(page).toHaveURL(/\/$/)
+  await expect(folder).toBeFocused()
+  const after = await sounds()
+  expect({ tones: after.tones - before.tones, noise: after.noise - before.noise }).toEqual({ tones: 1, noise: 1 })
+
+  // A shared note has no list or opener behind it, and closes to the page.
+  await page.goto("/notes/designing-matcha/")
+  await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
+  await page.mouse.click(8, 500)
+  await expect(popup(page)).toBeHidden()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(folder).toBeFocused()
+})
+
 for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 768 }]) {
   test(`a note's sheet hangs from the preview's line and keeps its box at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport)
@@ -208,6 +262,9 @@ test("the phone reader keeps the gallery's full-height frame and reachable contr
   await page.goto("/notes/designing-matcha/")
   const dialog = sheet(page)
   await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  // Visibility includes the opening pose, even with reduced motion. Measure
+  // the viewport frame only once the dialog has finished appearing.
+  await expect(dialog).toHaveCSS("opacity", "1")
   expect(await dialog.boundingBox()).toEqual({ x: 0, y: 0, width: 320, height: 568 })
   for (const name of ["Previous note", "Next note", "Close note", "Go back to Notes"]) {
     await expect(dialog.getByRole("button", { name, exact: true })).toBeInViewport()
@@ -373,12 +430,85 @@ test("the list's drawings stay in the card's gutters and leave at narrow widths"
   await expect(drawings.first()).toBeHidden()
 })
 
+test("a hovered row boils its drawing through its frames", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/notes/")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page)).toHaveCSS("opacity", "1")
+
+  // At rest the drawing shows the first frame of its strip and holds still.
+  const owner = popup(page).locator(".writings-year li").filter({ has: page.locator(".writings-drawing") }).first()
+  const drawing = owner.locator(".writings-drawing")
+  await expect(drawing).toHaveCSS("animation-name", "none")
+  await expect(drawing).toHaveCSS("mask-position", "0px 0px")
+  // Its row wakes it, and it steps through the other frames rather than
+  // sliding between them.
+  const row = (await owner.locator(".writing-entry-trigger").boundingBox())!
+  await page.mouse.move(row.x + 40, row.y + row.height / 2, { steps: 4 })
+  await expect(drawing).toHaveCSS("animation-name", "writings-drawing-boil")
+  const frames = new Set<string>()
+  await expect.poll(async () => {
+    frames.add(await drawing.evaluate((element) => getComputedStyle(element).maskPosition))
+    return frames.size
+  }, { intervals: [40] }).toBe(3)
+  expect([...frames].sort()).toEqual(["0px 0px", "100% 0px", "50% 0px"])
+  await page.mouse.move(4, 4, { steps: 4 })
+  await expect(drawing).toHaveCSS("animation-name", "none")
+  await expect(drawing).toHaveCSS("mask-position", "0px 0px")
+})
+
+test("the mouse moving onto a notes row strikes one key", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  // Every key click starts one oscillator, its thock, so counting them counts
+  // keys. Reduced motion is left off: the sound library mutes under it.
+  await page.addInitScript(() => {
+    const counted = window as typeof window & { keyClicks: number }
+    counted.keyClicks = 0
+    const create = AudioContext.prototype.createOscillator
+    AudioContext.prototype.createOscillator = function (this: AudioContext) {
+      counted.keyClicks++
+      return create.call(this)
+    }
+  })
+  await page.goto("/notes/")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page)).toHaveCSS("opacity", "1")
+  // The popup reaches full opacity before its origin wrapper finishes moving.
+  // Measure rows only after that travel lands, or these coordinates can point
+  // at the next row by the time the mouse gets there.
+  await page.locator(".preview-gallery-origin-wrap").evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  )
+  const keyClicks = () => page.evaluate(() => (window as typeof window & { keyClicks: number }).keyClicks)
+
+  // One key per row the mouse moves onto: not one per movement inside a row,
+  // and none for rows a scroll carries under a still pointer.
+  const rows = popup(page).locator(".writing-entry-trigger")
+  await page.evaluate(() => { (window as typeof window & { keyClicks: number }).keyClicks = 0 })
+  for (let index = 0; index < 4; index++) {
+    const box = (await rows.nth(index).boundingBox())!
+    await page.mouse.move(box.x + 40, box.y + box.height / 2, { steps: 3 })
+    await page.waitForTimeout(100)
+  }
+  expect(await keyClicks()).toBe(4)
+  const last = (await rows.nth(3).boundingBox())!
+  for (let step = 1; step <= 5; step++) await page.mouse.move(last.x + 40 + step * 12, last.y + last.height / 2)
+  await page.mouse.wheel(0, 240)
+  await page.waitForTimeout(300)
+  await page.mouse.wheel(0, -240)
+  await page.waitForTimeout(300)
+  expect(await keyClicks()).toBe(4)
+})
+
 test("margin notes fold into the column when the gutters are gone", async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/ai-design-needs-control/")
   const dialog = sheet(page)
   await expect(dialog.getByRole("heading", { name: "AI design needs more control", exact: true })).toBeVisible()
+  // Both boxes must belong to the settled dialog, not opposite sides of its
+  // opening scale transition.
+  await expect(dialog).toHaveCSS("opacity", "1")
   const prose = dialog.locator(".writing-reader-prose > p").first()
   const note = dialog.locator(".writing-margin-note").first()
   const proseBox = (await prose.boundingBox())!
