@@ -23,7 +23,18 @@ export type PersonalPhotosSheetHandle = {
     and carrying no photo id, so no print mistakes one for its own. */
 const sphereCoverageTarget = 54
 const sphereCopies = Math.max(3, Math.round(sphereCoverageTarget / photos.length))
-const sphereTiles = Array.from({ length: sphereCopies }, (_, copy) => photos.map((photo, index) => ({ photo, index, copy }))).flat()
+/** Rotate the repeated hands before assigning them to the Fibonacci spiral.
+    The first hand stays in photo order for the opening flights. At the
+    current three-copy density, the two offsets maximize the shortest chord
+    between copies instead of letting the same picture occupy nearby points. */
+const sphereCopyTurns = [0, 7 / 9, 5 / 9]
+const sphereTiles = Array.from({ length: sphereCopies }, (_, copy) => {
+  const shift = Math.round(photos.length * (sphereCopyTurns[copy] ?? copy / sphereCopies))
+  return photos.map((_, position) => {
+    const index = (position + shift) % photos.length
+    return { photo: photos[index], index, copy }
+  })
+}).flat()
 // A slide's width, which is its size at the front of the globe: a share of
 // --sphere-size in personal-photos.css.
 /** Each tile's width as a share of the globe, at the front. The square-root
@@ -40,7 +51,7 @@ const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
     the move and growth that carry it there from where it lies. */
-type GridHold = { id: string; caption: string; dx: number; dy: number; scale: number; left: number; top: number; width: number; height: number; captionTop: number; scrollTop: number }
+type GridHold = { id: string; caption: string; dx: number; dy: number; scale: number; layoutGap: number; left: number; top: number; width: number; height: number; captionTop: number; scrollTop: number }
 /** How much of the stage a held grid photo fills, on its longer side. */
 const gridHoldShare = 0.7
 
@@ -158,19 +169,26 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     resetGridTilt()
     const rect = slide.getBoundingClientRect()
     const stage = sheet.getBoundingClientRect()
-    const width = slide.offsetWidth
-    const height = slide.offsetHeight
+    const frame = getComputedStyle(slide)
+    const width = parseFloat(frame.width)
+    const height = parseFloat(frame.height)
     const scale = Math.min(gridHoldShare * sheet.clientWidth / width, gridHoldShare * sheet.clientHeight / height)
+    // Keep the preview mat's drawn thickness. Account for the changed padding
+    // before centring, so portrait and landscape photos keep their ratio.
+    const padding = parseFloat(frame.paddingTop) / scale
+    const framedHeight = (width - padding * 2) * photo.height / photo.width + padding * 2
     const heldWidth = width * scale
-    const heldHeight = height * scale
+    const heldHeight = framedHeight * scale
     const left = stage.left + (sheet.clientWidth - heldWidth) / 2
     const top = stage.top + (sheet.clientHeight - heldHeight) / 2
     heldRef.current = {
       id: photo.id,
       caption: photo.caption,
       dx: stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2),
-      dy: stage.top + sheet.clientHeight / 2 - (rect.top + rect.height / 2),
+      dy: stage.top + sheet.clientHeight / 2 - (rect.top + framedHeight / 2),
       scale,
+      // Preserve the column height so scroll anchoring cannot release the hold.
+      layoutGap: height - framedHeight,
       left,
       top,
       width: heldWidth,
@@ -441,7 +459,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                           data-photo-id={photo.id}
                           data-photo-retained={index < previewCount ? "" : undefined}
                           data-held={held?.id === photo.id ? "" : undefined}
-                          style={held?.id === photo.id ? { "--hold-dx": `${held.dx.toFixed(1)}px`, "--hold-dy": `${held.dy.toFixed(1)}px`, "--hold-scale": held.scale.toFixed(4) } as CSSProperties : undefined}
+                          style={held?.id === photo.id ? { "--hold-dx": `${held.dx.toFixed(1)}px`, "--hold-dy": `${held.dy.toFixed(1)}px`, "--hold-scale": held.scale.toFixed(4), "--hold-layout-gap": `${held.layoutGap.toFixed(3)}px` } as CSSProperties : undefined}
                           key={photo.id}
                           role="group"
                           aria-label={`${index + 1} of ${photos.length}`}

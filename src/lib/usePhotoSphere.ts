@@ -301,6 +301,15 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // smoothly when the hold changes hands.
         const zoom = zooms[index]
         const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + zoom * (photoSphereHoldGrowth - 1)) * (1 - recede * zoomRecede * (1 - zoom))
+        // Keep the growing print's paper edge near its resting visual weight,
+        // and land its drawn corner on the house's 24px media radius. These
+        // values compensate for the transform scale: without that, the frame
+        // and radius are enlarged along with the photo.
+        slide.style.setProperty("--sphere-frame-share", (0.035 - zoom * 0.022).toFixed(4))
+        const cornerRadius = `calc(var(--radius-md) * ${(1 - zoom).toFixed(4)} + var(--radius-lg) * ${(zoom / scale).toFixed(4)})`
+        slide.style.setProperty("--sphere-corner-radius", cornerRadius)
+        slide.style.borderRadius = cornerRadius
+        slide.style.setProperty("--sphere-zoom", zoom.toFixed(4))
         // Chrome otherwise keeps enlarging the compositor layer it made for
         // the small globe tile, leaving a held photo soft even when its
         // srcset candidate has enough pixels. Let the selected print repaint
@@ -309,6 +318,13 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         slide.style.transform = `translate3d(${(x * radius * perspective).toFixed(2)}px, ${(-y * radius * perspective).toFixed(2)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(4)})`
         const tiltX = tiltXs[index]
         const tiltY = tiltYs[index]
+        if (held === index) {
+          slide.style.setProperty("--sphere-gloss-x", `${(32 - tiltX * 11).toFixed(1)}%`)
+          slide.style.setProperty("--sphere-gloss-y", `${(24 - tiltY * 9).toFixed(1)}%`)
+        } else {
+          slide.style.removeProperty("--sphere-gloss-x")
+          slide.style.removeProperty("--sphere-gloss-y")
+        }
         const tiltLength = Math.hypot(tiltX, tiltY)
         slide.style.rotate = tiltLength < 0.001 ? "none" : `${(-tiltY).toFixed(3)} ${tiltX.toFixed(3)} 0 ${(tiltLength * hoverTilt).toFixed(2)}deg`
         if (index === captioned) captionBox = { x: stageSize.width / 2 + x * radius * perspective, y: stageSize.height / 2 - y * radius * perspective, halfHeight: boxes[index].height * scale / 2 }
