@@ -2241,9 +2241,57 @@ test("frames the calendar without chrome and still says what it is", async ({ pa
   expect(titleBox!.width).toBeLessThanOrEqual(1)
   expect(titleBox!.height).toBeLessThanOrEqual(1)
 
+  // Cal.com supplies the neutral field above and below its calendar. The host
+  // extends that same field evenly along both sides instead of letting the
+  // dense three-column calendar run directly into the dialog edge.
+  const frame = dialog.locator(".booking-frame")
+  const iframe = frame.locator(".booking-iframe")
+  const [frameBox, iframeBox, frameBackground] = await Promise.all([
+    frame.boundingBox(),
+    iframe.boundingBox(),
+    frame.evaluate((element) => getComputedStyle(element).backgroundColor),
+  ])
+  const leftGutter = iframeBox!.x - frameBox!.x
+  const rightGutter = frameBox!.x + frameBox!.width - iframeBox!.x - iframeBox!.width
+  expect(leftGutter).toBeCloseTo(32, 0)
+  expect(rightGutter).toBeCloseTo(leftGutter, 5)
+  expect(frameBackground).toBe("rgb(250, 250, 250)")
+
   // Escape is not the only way out, which matters on a phone with no Escape key.
   await page.mouse.click(5, 5)
   await expect(dialog).toBeHidden()
+})
+
+test("shows a calendar skeleton until the embedded calendar is ready", async ({ page }) => {
+  let finishCalendarRequest: (() => void) | undefined
+  await page.route("https://cal.com/**", async (route) => {
+    await new Promise<void>((resolve) => {
+      finishCalendarRequest = resolve
+    })
+    await route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" })
+  })
+  await page.goto("/")
+  await settleAvatarIntro(page)
+  await page.locator(".mosaic-booking-pill").click()
+
+  const frame = page.getByRole("dialog").locator(".booking-frame")
+  const skeleton = frame.locator(".booking-skeleton")
+  await expect(skeleton).toBeVisible()
+  await expect(skeleton).toHaveAttribute("aria-hidden", "true")
+  await expect(skeleton.locator(".booking-skeleton-day")).toHaveCount(35)
+  await expect(skeleton).toHaveCSS("opacity", "1")
+  await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "0")
+  const skeletonPanel = await skeleton.locator(".booking-skeleton-panel").boundingBox()
+  const iframe = await frame.locator(".booking-iframe").boundingBox()
+  expect(skeletonPanel!.width).toBeCloseTo(760, 0)
+  expect(iframe!.width).toBeCloseTo(1040, 0)
+  expect(skeletonPanel!.x + skeletonPanel!.width / 2).toBeCloseTo(iframe!.x + iframe!.width / 2, 5)
+
+  expect(finishCalendarRequest).toBeDefined()
+  finishCalendarRequest!()
+  await expect(frame).toHaveAttribute("data-ready", "true")
+  await expect(skeleton).toHaveCSS("opacity", "0")
+  await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "1")
 })
 
 // A blocked third-party frame never fires onError, so the only signal that the
