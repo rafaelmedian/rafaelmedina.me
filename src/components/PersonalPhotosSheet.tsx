@@ -174,14 +174,19 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     event.preventDefault()
     toggleHold(event.currentTarget, photo)
   }
-  // A scroll lets a held photo go: it was placed against the screen, and
-  // the grid has moved under it. A scroll that has already happened by the
+  // Scrolling or resizing lets a held photo go: its placement belongs to
+  // the previous viewport and grid. A scroll that has already happened by the
   // time of the click — its event arrives a frame late — moved nothing.
   useEffect(() => {
     if (!sheetNode || layout !== "grid") return
     const onScroll = () => { if (heldRef.current && sheetNode.scrollTop !== heldRef.current.scrollTop) releaseHeld() }
+    const onResize = () => { releaseHeld() }
     sheetNode.addEventListener("scroll", onScroll, { passive: true })
-    return () => sheetNode.removeEventListener("scroll", onScroll)
+    window.addEventListener("resize", onResize)
+    return () => {
+      sheetNode.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onResize)
+    }
   }, [sheetNode, layout, releaseHeld])
 
   const chooseLayout = (next: PhotoSheetLayout) => {
