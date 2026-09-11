@@ -57,7 +57,7 @@ test('opens a minimal email input with an arrow and returns focus on escape', as
   await expect(email).toBeFocused()
   await email.fill('hello@example.com')
   await expect(arrow).toBeEnabled()
-  await expect.poll(() => arrow.evaluate(node => getComputedStyle(node, '::before').backgroundColor)).toBe('rgb(0, 122, 255)')
+  await expect.poll(() => arrow.evaluate(node => getComputedStyle(node, '::before').backgroundColor)).toBe('rgb(0, 113, 227)')
   await page.keyboard.press('Escape')
   await expect(intro.getByRole('button', { name: 'Your email', exact: true })).toBeFocused()
   await expect(intro.locator('video[data-recording]')).not.toHaveAttribute('src')

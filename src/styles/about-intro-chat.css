@@ -102,6 +102,8 @@
 }
 
 .about-intro-chat-outgoing {
+  position: relative;
+  isolation: isolate;
   align-self: flex-end;
   flex: 0 0 auto;
   max-width: 100%;
@@ -110,12 +112,29 @@
   padding: 12px 16px;
   border: 0;
   border-radius: var(--radius-lg);
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring);
-  color: var(--ink);
+  background: var(--intro-blue);
+  color: var(--canvas);
   font: inherit;
+  text-align: start;
   overflow-wrap: anywhere;
   cursor: pointer;
+}
+
+.about-intro-chat-outgoing:disabled {
+  cursor: default;
+}
+
+.about-intro-chat-outgoing::before {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: 0;
+  z-index: -1;
+  width: 32px;
+  height: 24px;
+  background: inherit;
+  clip-path: path("M 24 0 H 0 V 24 H 32 C 26 21 24 16 24 8 Z");
+  pointer-events: none;
 }
 
 .about-intro-chat-composer {

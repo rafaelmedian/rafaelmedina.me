@@ -2206,6 +2206,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
+                  Messages blue with white text and a mirrored tail on the right, then
                   shows the same typing bubble before “Want to share anything else?” and reveals the optional
                   message field after 160ms. Hidden fields stay inert; their measured height offsets the history
                   so the typing bubble’s bottom edge rests level with the avatar’s. The history moves into its reply position
@@ -2234,7 +2235,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   until the next About visit or playback, retaining the mobile row above the TOC so
                   the form can shrink in place. The composer uses a Messages-style upward arrow: a 36px
                   disc inside a 44px target, with a 24px white navigation arrow at 2.5px stroke. Its component-specific
-                  blue is #007aff; the disabled disc uses muted-soft at 40% opacity. The arrow is hidden when
+                  blue is #0071e3, deepened from Messages’ #007aff so white text on the sent bubble clears 4.5:1
+                  (4.7:1); the disabled disc uses muted-soft at 40% opacity. The arrow is hidden when
                   empty, disabled gray for an invalid email, and enabled blue when native email validation
                   passes. The reserved target prevents text shifting. A focused email input uses one outer 1px
                   focus-ring-soft ring, avoiding a second pill outline inside the field. The placeholder is hello@example.com.

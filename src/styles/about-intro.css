@@ -35,6 +35,8 @@
 .about-intro {
   --intro-size: 112px;
   --intro-open-size: 240px;
+  /* Messages blue, deepened from #007aff so white 14px text clears 4.5:1. */
+  --intro-blue: #0071e3;
   position: fixed;
   left: max(1.5rem, env(safe-area-inset-left));
   bottom: calc(1.5rem + env(safe-area-inset-bottom));
@@ -748,7 +750,7 @@
   inset: 4px;
   z-index: -1;
   border-radius: var(--radius-full);
-  background: #007aff;
+  background: var(--intro-blue);
   transition: background-color var(--duration-quick) var(--ease-standard);
 }
 
