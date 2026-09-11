@@ -3515,6 +3515,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   const pdf = dialog.getByRole("link", { name: "View resume PDF" })
   await expect(pdf).toHaveAttribute("href", "/rafael-medina-resume.pdf")
   await expect(pdf).toHaveAttribute("target", "_blank")
+  await expect(dialog.locator(".preview-gallery-resume-heading").getByRole("link", { name: "View resume PDF" })).toBeVisible()
 })
 
 // On a phone the sheet fills the viewport, so there is no backdrop to aim at and

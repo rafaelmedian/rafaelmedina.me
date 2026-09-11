@@ -1577,8 +1577,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Notes toolbar once content passes beneath it. Its opaque background extends through the card&rsquo;s
                 top padding so scrolling content cannot reappear above the title; Education uses weight 600. A project print pages the
                 gallery to that project rather than leaving for its page.
-                “View resume PDF” opens the canonical PDF in a new tab and closes the reader rather than heading it:
-                it sits below Education, 3rem after it.
+                “View resume PDF” opens the canonical PDF in a new tab and sits at the right of the sticky résumé
+                heading, so it remains available while the document scrolls.
                 Education follows the same institution-and-date heading, credential, location, and description
                 structure as the work entries. About no longer carries a résumé at all — the sheet keeps its
                 introduction and Services, and this reader is the only place the history is set.

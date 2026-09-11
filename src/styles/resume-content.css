@@ -1,9 +1,8 @@
 /* Company-led entries in the reader; About keeps its compact date column. The
    reader is the gallery's résumé slide and the prerendered /resume/ page, and
    the rules below are shared by both -- only the surface around them differs. */
-/* The PDF link closes the reader rather than heading it, so it sits under
-   education with the gap the entries keep between each other. */
-.preview-gallery-resume-body .mosaic-about-resume-download,
+/* The standalone page keeps the PDF link after the document; the gallery puts
+   it in the sticky heading where it remains available while the sheet scrolls. */
 .standalone-resume-body .mosaic-about-resume-download {
   margin-top: 3rem;
   margin-bottom: 0;
@@ -24,7 +23,7 @@
 }
 
 /* Icon and label on one line, whichever surface the link sits on. */
-.preview-gallery-resume-body .mosaic-about-resume-download a,
+.preview-gallery-resume-heading .mosaic-about-resume-download a,
 .standalone-resume-body .mosaic-about-resume-download a {
   display: inline-flex;
   align-items: center;
