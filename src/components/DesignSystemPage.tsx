@@ -1301,6 +1301,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The project preview wears the same control on the overlay tier; everything below is shared by both.
                 Its 14px heart starts filled #b6b6ba; the heart and tabular, weight-600 count turn #e5352b after a tap.
                 The pill hugs the count, whose width follows its digit count in ch over --duration-quick with --ease-standard.
+                Numbers use the TOC's 4px slide and --blur-reveal, exiting over 120ms and arriving over 160ms.
+                Increments travel up; a corrected lower count travels down. Rapid taps replace the outgoing number
+                with the latest one, and reduced motion changes it instantly.
                 Each tap adds a like up to 16 per visitor, with a 360ms heart pop to scale(1.35) on cubic-bezier(0.34, 1.56, 0.64, 1)
                 and twelve red particles travelling 18–48px over 450–750ms on cubic-bezier(0.12, 0.84, 0.32, 1).
                 Three particles are softened with a 2px blur; all use --radius-full.
@@ -1711,7 +1714,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>--ink</code>. Its copy icon leads the address, invisible at rest but holding its 0.875rem slot, the card's side
                 padding is cancelled by an equal negative margin, and its <code>1.7em</code> box is the line's own
                 line height, so neither the fill nor the icon can shift the centred line under the pointer. The icon turns to <code>--accent</code> as a check for 1.6s after a
-                copy, and stays lit for that window whether or not the pointer is still on the button; the card
+                copy, and stays lit for that window whether or not the pointer is still on the button. Copy and check
+                trade places with the TOC's 4px slide and <code>--blur-reveal</code>, over 120ms out and 160ms in;
+                confirmation goes up and reset goes down, inside the same icon slot. Reduced motion swaps instantly. The card
                 empties to <code>--canvas</code> behind the chips' own hairline for the same window, which both marks
                 the state change and puts the green on the surface it is graded against. Its hint is not type at all: a
                 200px <code>--canvas</code> card carrying a clip, one while the offer stands and another once the copy
