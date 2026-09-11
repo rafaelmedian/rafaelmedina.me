@@ -1186,7 +1186,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
-                  header at z-index 1.
+                  header at z-index 1. A compact position pill sits between the paging group and close,
+                  keeping both controls fixed. The current position swaps with the TOC's 4px slide and
+                  <code>--blur-reveal</code>: 120ms out on the exit curve, 160ms in on the standard curve.
+                  Next sends it up, Previous down, including when the sequence wraps. The total stays still,
+                  and the counter reserves enough digits for the full sequence. Reduced motion swaps instantly.
                   The like pill rides the line where the artwork stops: a zero-height row centres it on that
                   boundary, 1.25rem in from the card&rsquo;s right edge, half over the shot and half over the white
                   below it. It is the notes reader&rsquo;s control on the overlay tier instead of the control
@@ -1298,15 +1302,22 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The project preview wears the same control on the overlay tier; everything below is shared by both.
                 Its 14px heart starts filled #b6b6ba; the heart and tabular, weight-600 count turn #e5352b after a tap.
                 The pill hugs the count, whose width follows its digit count in ch over --duration-quick with --ease-standard.
+                Numbers use the TOC's 4px slide and --blur-reveal, exiting over 120ms and arriving over 160ms.
+                Increments travel up; a corrected lower count travels down. Rapid taps replace the outgoing number
+                with the latest one, and reduced motion changes it instantly.
                 Each tap adds a like up to 16 per visitor, with a 360ms heart pop to scale(1.35) on cubic-bezier(0.34, 1.56, 0.64, 1)
                 and twelve red particles travelling 18–48px over 450–750ms on cubic-bezier(0.12, 0.84, 0.32, 1).
                 Three particles are softened with a 2px blur; all use --radius-full.
                 At the cap, another tap shakes the pill up to 4px over 320ms with ease-out.
                 These component-specific motion exceptions stop under reduced motion; the count remains a polite live status.
-                Beside it, “Copy link” is an ordinary link to the note's public address at the same 32px height on an 8% black
-                hairline, --text-xs on --muted, so it reads as a note about the note rather than a second action competing with the
-                heart. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
-                check and the label for “Link copied” on --ink; its accessible name stays “Copy a link to this note” throughout and
+                Beside it, “Copy link” is an ordinary link to the note's public address wearing the like pill's chrome: 32px,
+                the #dedee0 hairline on --canvas, weight-500 --text-xs on --muted at line-height 1, and the shared control shadows,
+                hover lift and 0.96 press. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
+                check and the label for “Link copied” on --ink. The label uses the TOC's 4px slide and
+                --blur-reveal, with a 120ms exit and 160ms entrance; confirmation travels up and reset travels down.
+                The pill hugs whichever label it wears and eases between the two widths over --duration-quick with
+                --ease-standard, clipping the longer label while it grows. Reduced motion swaps and resizes instantly;
+                its accessible name stays “Copy a link to this note” throughout and
                 the confirmation is announced from a live region beside it. Modified and secondary presses are left to the browser.
                 Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
                 canonical, and listed in the sitemap, the way a project owns `/work/&lt;slug&gt;/`.
@@ -1705,7 +1716,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>--ink</code>. Its copy icon leads the address, invisible at rest but holding its 0.875rem slot, the card's side
                 padding is cancelled by an equal negative margin, and its <code>1.7em</code> box is the line's own
                 line height, so neither the fill nor the icon can shift the centred line under the pointer. The icon turns to <code>--accent</code> as a check for 1.6s after a
-                copy, and stays lit for that window whether or not the pointer is still on the button; the card
+                copy, and stays lit for that window whether or not the pointer is still on the button. Copy and check
+                trade places with the TOC's 4px slide and <code>--blur-reveal</code>, over 120ms out and 160ms in;
+                confirmation goes up and reset goes down, inside the same icon slot. Reduced motion swaps instantly. The card
                 empties to <code>--canvas</code> behind the chips' own hairline for the same window, which both marks
                 the state change and puts the green on the surface it is graded against. Its hint is not type at all: a
                 200px <code>--canvas</code> card carrying a clip, one while the offer stands and another once the copy

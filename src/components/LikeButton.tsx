@@ -2,6 +2,7 @@ import { Heart } from "lucide-react"
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { maxLikesPerVisitor } from "../data/likeLimits"
 import { requestLikes, type LikeCollection, type LikeCounts } from "../lib/likes"
+import { InlineSwap } from "./InlineSwap"
 
 /* Clicks land instantly on screen and drain to the API in one batched write
    shortly after the tapping stops, so spamming the heart costs one request. */
@@ -217,7 +218,7 @@ export function LikeButton({ collection, itemId, className }: LikeButtonProps) {
         <span ref={heartRef} className="like-heart" aria-hidden="true"><Heart size={14} /></span>
         <span className="like-count" aria-hidden="true"
           style={displayCount === null ? undefined : { width: `${String(displayCount).length}ch` }}>
-          {displayCount ?? "…"}
+          <InlineSwap value={displayCount ?? "…"} />
         </span>
         <span ref={burstRef} className="like-burst" aria-hidden="true" />
       </button>

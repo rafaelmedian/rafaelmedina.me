@@ -5,6 +5,7 @@ import { useId } from "react"
 import { useEmailCopy } from "../lib/useEmailCopy"
 import { EMAIL_COPY_CONFIRMATION, EMAIL_COPY_INVITATION } from "./emailCopyReactions"
 import { ReactionCard } from "./ReactionCard"
+import { InlineSwap } from "./InlineSwap"
 
 type ProfileEmailCopyProps = {
   email: string
@@ -33,7 +34,9 @@ export function ProfileEmailCopy({ email, side = "top" }: ProfileEmailCopyProps)
           onClick={() => void copy()}
         >
           <span className="mosaic-profile-email-icon" aria-hidden="true">
-            {isCopied ? <Check strokeWidth={2.25} /> : <Copy strokeWidth={2} />}
+            <InlineSwap value={isCopied ? "copied" : "copy"} direction={isCopied ? "up" : "down"}>
+              {isCopied ? <Check strokeWidth={2.25} /> : <Copy strokeWidth={2} />}
+            </InlineSwap>
           </span>
           <span className="mosaic-profile-email-label">{email}</span>
         </Tooltip.Trigger>

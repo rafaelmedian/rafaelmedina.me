@@ -370,27 +370,38 @@
    down under it. */
 .writing-reader-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
 .writing-reader-actions .like-row { margin-top: 0; }
-/* Sized and inked as the archive's dates are, so it reads as a note about the
-   note rather than as a second action competing with the heart. It wears the
-   like pill's height and radius, because they sit on one line. */
+/* The like pill's twin: the same 32px chrome, type, and control shadows, so the
+   two read as one row of things to do with the note. It hugs its label and
+   eases between widths when the label swaps (WritingArticle animates it); the
+   clip keeps the longer label inside the pill while it grows. */
 .writing-copy-link {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 0.35rem;
-  min-height: 32px;
-  padding: 0 0.7rem;
-  border: 1px solid rgb(0 0 0 / 0.08);
-  border-radius: 999px;
+  gap: 0.375rem;
+  height: 32px;
+  padding: 0 0.75rem;
+  overflow: clip;
+  border: 1px solid #dedee0;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
   color: var(--muted);
   font-size: var(--text-xs);
-  line-height: 1.5;
+  font-weight: 500;
+  line-height: 1;
   letter-spacing: 0;
+  white-space: nowrap;
   text-decoration: none;
+  box-shadow: var(--shadow-control);
   transition:
-    background-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard),
     color var(--duration-quick) var(--ease-standard);
 }
-.writing-copy-link:hover { background: var(--mosaic-card-surface); }
+@media (hover: hover) {
+  .writing-copy-link:hover { box-shadow: var(--shadow-control-hover); }
+}
+.writing-copy-link:active { transform: scale(0.96); box-shadow: var(--shadow-control-pressed); }
 /* Confirmed rather than announced: the label and the icon both change, and the
    ink steps up to the heading's, so the swap reads without a colour of its own. */
 .writing-copy-link[data-copied="true"] { color: var(--ink); }

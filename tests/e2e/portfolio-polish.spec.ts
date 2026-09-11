@@ -3620,8 +3620,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  // The counter is a screen-reader label on this layout rather than a pill, so
-  // the swipe is confirmed by what it says and not by whether it is drawn.
+  // The position label follows the swipe after its outgoing number settles.
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
@@ -3688,8 +3687,7 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   }
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
-  // Paging holds the leading edge and leaving holds the trailing one, with the
-  // corner between them empty.
+  // The visible counter fits between paging and close without moving either.
   const [prevBox, nextBox, closeBox] = await Promise.all(
     ["Previous preview", "Next preview", "Close preview"].map((name) =>
       dialog.getByRole("button", { name }).boundingBox(),
@@ -3698,6 +3696,11 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(prevBox!.x).toBeLessThan(nextBox!.x)
   expect(nextBox!.x + nextBox!.width).toBeLessThan(mobileViewport.width / 2)
   expect(closeBox!.x).toBeGreaterThan(mobileViewport.width / 2)
+  const countBox = (await dialog.locator(".preview-gallery-count").boundingBox())!
+  expect(countBox.width).toBeGreaterThan(32)
+  expect(countBox.height).toBeGreaterThanOrEqual(32)
+  expect(countBox.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
+  expect(countBox.x + countBox.width).toBeLessThan(closeBox!.x)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
 })

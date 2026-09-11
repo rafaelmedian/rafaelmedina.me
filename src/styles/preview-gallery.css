@@ -661,6 +661,7 @@
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  white-space: pre;
 }
 
 .preview-gallery-details {
@@ -886,25 +887,28 @@
 
   .preview-gallery-toolbar {
     flex: none;
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     padding: var(--preview-gallery-card-padding);
     background: var(--canvas);
   }
 
-  /* The count is the toolbar's third item on paper and its label in practice:
-     the chevrons hold one end of the bar and the close the other, and a pill
-     between them only crowded the corner the close now has to itself. It is
-     kept for a screen reader, where "5 / 13" is the one place the position in
-     the set is not already legible from the artwork. */
+  /* The count occupies the space between the paging group and close. Its
+     reserved digit width keeps both controls fixed while the number swaps. */
   .preview-gallery-count {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    min-height: 0;
-    overflow: hidden;
-    padding: 0;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+  }
+
+  .preview-gallery-controls {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .preview-gallery-close {
+    grid-column: 3;
+    grid-row: 1;
   }
 
   /* The compact gallery still shows the full composition even though the
