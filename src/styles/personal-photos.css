@@ -288,7 +288,9 @@
 .personal-photos-dialog {
   pointer-events: none;
   /* A photo clicked or reached with Tab turns to the front of the globe
-     over this; the arrow keys step it round on the same beat. */
+     on a critically damped spring that has settled to 95% in this time,
+     and its growth, the globe's recede and its lean ride the same spring;
+     the arrow keys step it round on the same beat. */
   --sphere-focus-duration: var(--duration-slow);
   --photo-gutter: clamp(1.25rem, 4vw, 5rem);
   --photo-column-gap: 1.5rem;

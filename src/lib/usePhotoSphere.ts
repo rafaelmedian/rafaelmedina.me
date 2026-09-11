@@ -85,6 +85,24 @@ function spherePlacement(count: number, front: number): Vector[] {
 
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3
 
+/** One step of a critically damped spring: `x` is the distance still to go
+    and `v` its speed, `w` the spring's rate. Exact for any step, so a
+    starved frame (dt is capped at 50ms) never overshoots or blows up. The
+    spring starts from rest — an exponential approach starts at full speed,
+    which is the jolt a click used to give — and carries its speed through a
+    change of target, so a hold let go or handed over half-way turns round
+    rather than stopping first. */
+function springStep(x: number, v: number, w: number, dt: number): [number, number] {
+  const e = Math.exp(-w * dt)
+  const a = v + w * x
+  const next: [number, number] = [(x + a * dt) * e, (v - a * w * dt) * e]
+  return Math.abs(next[0]) < 0.001 && Math.abs(next[1]) < 0.01 ? [0, 0] : next
+}
+/** The rate at which a critically damped spring has settled to 95%, as a
+    share of the duration it is asked to take: (1 + w t) e^{-w t} = 0.05
+    at w t = 4.74. */
+const springSettle = 4.74
+
 /** Screen-space radians per pixel of drag. */
 const dragGain = 0.006
 /** Idle spin, in radians per second: a full turn in about 40s. */
@@ -108,18 +126,17 @@ const pebbleLean = 0.4
 const zoomGrowth = 2.4
 /** How much a photo under the pointer grows, to say it can be clicked. */
 const hoverGrowth = 1.08
+/** The hover is the first stretch of the same growth a hold makes, so a
+    click carries on from it instead of dropping it while the hold begins. */
+const hoverShare = (hoverGrowth - 1) / (zoomGrowth - 1)
 /** How much the rest of the globe shrinks back while one photo is held. */
 const zoomRecede = 0.22
-/** The zoom's ease: it settles in about a third of a second, and a change
-    of mind mid-way turns round smoothly rather than snapping. */
-const zoomRate = 9
 /** How far the held photo leans towards the pointer, in radians: about
     eleven degrees at the edge of the stage. The study leaned four, which
     read as barely a lean at this size. It is the lean rather than the photo
     that moves, so the glint on the shoulder travels with the hand while the
     photo holds its place. */
 const parallaxLean = 0.2
-const parallaxRate = 12
 
 type Tween = { from: Matrix; axis: Vector; angle: number; start: number; duration: number }
 
@@ -176,6 +193,9 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     const tokens = getComputedStyle(sphere)
     const openHold = cssTimeToMilliseconds(tokens.getPropertyValue("--photo-open-duration"))
     const focusDuration = cssTimeToMilliseconds(tokens.getPropertyValue("--sphere-focus-duration"))
+    /** Every spring on the globe — the turn to the front, the growth, the
+        recede, the lean — settles to 95% in --sphere-focus-duration. */
+    const springRate = springSettle / (focusDuration / 1000)
 
     // Every visit opens square to the viewer, so the prints fly out to the
     // face of the sphere however far it was turned last time.
@@ -237,17 +257,25 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     let held: number | null = null
     /** A hold asked for before the open flight has landed; taken up once it has. */
     let pendingHold: string | null = null
-    /** Each photo's share of the way to its held size, eased every frame,
-        and the globe's share of the way to its receded size. */
+    /** Each photo's share of the way to its held size, on a spring: the
+        hover takes it the first --hoverShare-- of the way, a hold the rest.
+        One value drives the growth, the restacking, the pebble squaring up
+        and the caption, so they land together. */
     const zooms = new Float32Array(slides.length)
+    const zoomSpeeds = new Float32Array(slides.length)
+    /** The globe's share of the way to its receded size: derived from the
+        zooms past their hover share, so two photos handing the hold over —
+        one growing as the other shrinks — leave the rest of the globe still. */
     let recede = 0
-    /** Each photo's share of the way to its hovered size, eased every frame:
-        a photo under the pointer grows a little, to say it can be clicked. */
-    const lifts = new Float32Array(slides.length)
     /** Where the pointer last was over the stage, -1..1 from the centre, and
-        the held photo's eased lean towards it. */
+        the lean towards it, on the same spring; the held photo's zoom is what
+        brings the lean in, so it arrives with the growth. */
     let pointer = { x: 0, y: 0 }
     let parallax = { x: 0, y: 0 }
+    let parallaxSpeed = { x: 0, y: 0 }
+    /** The photo being turned to the front, and the turn's angular speed. */
+    let turnTarget: number | null = null
+    let turnSpeed = 0
 
     const render = () => {
       const m = orientation.current
@@ -277,13 +305,14 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // half-way to either state is drawn half-way, so the two moves cross
         // smoothly when the hold changes hands.
         const zoom = zooms[index]
-        const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + zoom * (zoomGrowth - 1)) * (1 - recede * zoomRecede * (1 - zoom)) * (1 + lifts[index] * (hoverGrowth - 1))
+        const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + zoom * (zoomGrowth - 1)) * (1 - recede * zoomRecede * (1 - zoom))
         slide.style.transform = `translate3d(${(x * radius * perspective).toFixed(2)}px, ${(-y * radius * perspective).toFixed(2)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(4)})`
         // A held photo stacks above everything, however far its slot has
         // turned from the front while it grew.
         // A hovered photo comes forward of its neighbours too, so the part
-        // of it that grows is not cut off by the photo beside it.
-        slide.style.setProperty("--sphere-depth", String(Math.round(depth * 1000 + zoom * 1000 + lifts[index] * 500)))
+        // of it that grows is not cut off by the photo beside it: forward by
+        // the time its hover growth is complete, and steadily, not in a step.
+        slide.style.setProperty("--sphere-depth", String(Math.round(depth * 1000 + zoom * 1000 + Math.min(1, zoom / hoverShare) * 500)))
         slide.style.setProperty("--sphere-shade", ((1 - depth) ** 1.6 * 0.72).toFixed(3))
         // The globe is a dome: photos fade as they pass round the rim and are
         // gone behind it, the way the far side of a ball is. Shown, the far
@@ -310,7 +339,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
             x: stageSize.width / 2 + x * radius * perspective,
             y: stageSize.height / 2 - y * radius * perspective,
             halfWidth: boxes[index].width * scale / 2,
-            depth: z * radius + zoom * radius * 2 + lifts[index] * radius,
+            depth: z * radius + zoom * radius * 2 + Math.min(1, zoom / hoverShare) * radius,
             // The lean the surface has at this point: up or down by its
             // height, round by its longitude, held short of edge-on. A held
             // photo squares up as it grows.
@@ -343,13 +372,17 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       const unit: Vector = length < 1e-6 ? [0, 1, 0] : [axis[0] / length, axis[1] / length, 0]
       velocity = { pitch: 0, yaw: 0 }
       spin = 0
+      tween = null
       restUntil = performance.now() + focusDuration + frontDwell
       if (reducedMotion) {
         orientation.current = multiply(rotation(unit, angle), orientation.current)
         render()
         return
       }
-      tween = { from: orientation.current, axis: unit, angle, start: performance.now(), duration: focusDuration }
+      // The turn is a spring on the angle still to go, re-aimed every frame
+      // (see `advance`), so a hold handed over mid-turn keeps its speed and
+      // simply bends towards the new photo.
+      turnTarget = index
     }
 
     /** Holds a photo at the centre, or lets the held one go if it is asked
@@ -395,6 +428,8 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     const turnBy = (pitch: number, yaw: number) => {
       const angle = Math.hypot(pitch, yaw)
       velocity = { pitch: 0, yaw: 0 }
+      turnTarget = null
+      turnSpeed = 0
       if (reducedMotion) {
         orientation.current = multiply(screenTurn(pitch, yaw), orientation.current)
         render()
@@ -421,46 +456,66 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       render()
     }
     let lastKey = ""
+    /** Moves `value` towards `target` on the spring, keeping its speed in
+        `speeds[index]`; reduced motion takes it there in one step. */
+    const spring = (value: number, target: number, speeds: Float32Array | number[], index: number, dt: number) => {
+      if (reducedMotion) {
+        speeds[index] = 0
+        return target
+      }
+      const [gap, speed] = springStep(value - target, speeds[index], springRate, dt)
+      speeds[index] = speed
+      return target + gap
+    }
     const advance = (now: number, dt: number) => {
       orientation.current = orthonormalize(orientation.current)
       if (pendingHold !== null && now >= restUntil) holdById(pendingHold)
-      // The zooms ease towards their targets; reduced motion takes them there
-      // in one step.
-      const ease = reducedMotion ? 1 : 1 - Math.exp(-dt * zoomRate)
-      const settle = (value: number, target: number) => {
-        const next = value + (target - value) * ease
-        return Math.abs(next - target) < 0.002 ? target : next
-      }
+      let zoomed = 0
       for (let index = 0; index < zooms.length; index++) {
-        const next = settle(zooms[index], held === index ? 1 : 0)
+        // The hover grows only a photo that can be clicked — not one out on
+        // the rim — and a hold carries on from wherever the hover has got to.
+        const target = held === index ? 1 : hovered === slides[index] && !slides[index].hasAttribute("data-sphere-far") ? hoverShare : 0
+        const next = spring(zooms[index], target, zoomSpeeds, index, dt)
         if (next !== zooms[index]) {
           zooms[index] = next
           dirty = true
         }
-        // The hover grows only a photo that can be clicked: not the held one,
-        // which is as large as it gets, and not one out on the rim.
-        const hoverTarget = hovered === slides[index] && held !== index && !slides[index].hasAttribute("data-sphere-far") ? 1 : 0
-        const nextLift = settle(lifts[index], hoverTarget)
-        if (nextLift !== lifts[index]) {
-          lifts[index] = nextLift
-          dirty = true
-        }
+        zoomed += Math.max(0, zooms[index] - hoverShare)
       }
-      const nextRecede = settle(recede, held === null ? 0 : 1)
+      const nextRecede = Math.min(1, zoomed / (1 - hoverShare))
       if (nextRecede !== recede) {
         recede = nextRecede
         dirty = true
       }
-      // The held photo follows the pointer's side of the stage, and squares
-      // up again when it is let go.
-      const leanEase = reducedMotion ? 1 : 1 - Math.exp(-dt * parallaxRate)
-      const target = held === null || reducedMotion ? { x: 0, y: 0 } : { x: -pointer.y * parallaxLean, y: pointer.x * parallaxLean }
-      const nextParallax = { x: parallax.x + (target.x - parallax.x) * leanEase, y: parallax.y + (target.y - parallax.y) * leanEase }
-      if (Math.abs(nextParallax.x - parallax.x) > 1e-5 || Math.abs(nextParallax.y - parallax.y) > 1e-5) {
+      // The lean follows the pointer's side of the stage whenever the pointer
+      // is over it; the held photo's zoom is what shows it.
+      const lean = [-pointer.y * parallaxLean, pointer.x * parallaxLean]
+      const speeds = [parallaxSpeed.x, parallaxSpeed.y]
+      const nextParallax = { x: spring(parallax.x, lean[0], speeds, 0, dt), y: spring(parallax.y, lean[1], speeds, 1, dt) }
+      parallaxSpeed = { x: speeds[0], y: speeds[1] }
+      if (nextParallax.x !== parallax.x || nextParallax.y !== parallax.y) {
         parallax = nextParallax
         dirty = true
       }
-      if (tween) {
+      if (turnTarget !== null) {
+        // Re-aimed every frame from where the globe is now: the axis square
+        // to the photo's point and the view, by the angle between them.
+        const [x, y, z] = transform(orientation.current, points[turnTarget])
+        const angle = Math.acos(Math.max(-1, Math.min(1, z)))
+        const length = Math.hypot(y, x)
+        if (angle < 1e-3 || length < 1e-6) {
+          turnTarget = null
+          turnSpeed = 0
+        } else {
+          const [left, speed] = springStep(angle, turnSpeed, springRate, dt)
+          turnSpeed = speed
+          orientation.current = multiply(rotation([y / length, -x / length, 0], angle - left), orientation.current)
+          if (left === 0) {
+            turnTarget = null
+            turnSpeed = 0
+          }
+        }
+      } else if (tween) {
         const t = Math.min(1, (now - tween.start) / tween.duration)
         orientation.current = multiply(rotation(tween.axis, tween.angle * easeOutCubic(t)), tween.from)
         if (t >= 1) tween = null
@@ -486,6 +541,8 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       press = { id: event.pointerId, x: event.clientX, y: event.clientY, lastX: event.clientX, lastY: event.clientY, lastTime: event.timeStamp, moved: false, slide, onStage: event.target === stage }
       stage.setPointerCapture(event.pointerId)
       tween = null
+      turnTarget = null
+      turnSpeed = 0
       velocity = { pitch: 0, yaw: 0 }
     }
     const onPointerMove = (event: PointerEvent) => {
@@ -547,6 +604,8 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       // near a pixel's worth each.
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1
       tween = null
+      turnTarget = null
+      turnSpeed = 0
       release()
       orientation.current = multiply(screenTurn(-event.deltaY * unit * dragGain * 0.5, -event.deltaX * unit * dragGain * 0.5), orientation.current)
     }
