@@ -402,3 +402,27 @@ test("on a phone the grid keeps two columns and the toggle clears the first row"
   expect(toggleBottom).toBeLessThan(firstRowTop)
   expect(sideways).toBeLessThanOrEqual(0)
 })
+
+for (const reducedMotion of ["reduce", "no-preference"] as const) {
+  test(`holding a bottom-row photo preserves the grid's scroll position (${reducedMotion})`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion })
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await preferGrid(page)
+    await openHome(page)
+    await openFromLabel(page)
+    const sheet = grid(page)
+    const photo = sheet.locator('[data-photo-id="beach"]')
+    await photo.scrollIntoViewIfNeeded()
+    // Let the scroll event arrive before selecting the photo.
+    await page.waitForTimeout(100)
+    const before = await sheet.evaluate((element) => ({ top: element.scrollTop, height: element.scrollHeight }))
+    await photo.click()
+    await expect(photo).toHaveAttribute("data-held", "")
+    // Scroll anchoring is delivered after layout; check beyond the hold glide.
+    await page.waitForTimeout(500)
+    await expect(photo).toHaveAttribute("data-held", "")
+    expect(await sheet.evaluate((element) => ({ top: element.scrollTop, height: element.scrollHeight }))).toEqual(before)
+    await sheet.evaluate((element) => { element.scrollTop -= 100 })
+    await expect(photo).not.toHaveAttribute("data-held", "")
+  })
+}

@@ -489,6 +489,9 @@
 .personal-photos-masonry .personal-photos-slide[data-held] {
   --photo-padding: calc(var(--photo-frame) * 0.035 / var(--hold-scale, 1));
   --photo-radius: calc(var(--radius-lg) / var(--hold-scale, 1));
+  /* Offset the new frame height without moving the following prints or
+     changing the scroll range when the last print is held. */
+  margin-bottom: var(--hold-layout-gap, 0px);
   z-index: 2;
   scale: 1;
   transform: translate(var(--hold-dx, 0px), var(--hold-dy, 0px)) scale(var(--hold-scale, 1)) perspective(1000px) rotateX(var(--grid-tilt-x, 0deg)) rotateY(var(--grid-tilt-y, 0deg));
