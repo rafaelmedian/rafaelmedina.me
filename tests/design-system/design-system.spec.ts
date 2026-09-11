@@ -22,7 +22,7 @@ test("documents the caption dropping out where there is no hover", async ({ page
 })
 
 test("uses continuous corners without reshaping circles and pills", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/?tune=off")
   await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(2)")
   await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
   await expect(page.locator(".mosaic-profile-actions a").first()).toHaveCSS("corner-shape", "superellipse(1)")
@@ -35,7 +35,8 @@ test("corner tuner changes rounded surfaces without reshaping circles", async ({
   await page.goto("/")
   const curve = page.getByRole("slider", { name: "Exponent" })
   await expect(curve).toBeVisible()
-  await expect(curve).toHaveAttribute("aria-valuenow", "2")
+  await expect(curve).toHaveAttribute("aria-valuenow", "1.2")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.2)")
 
   await curve.press("End")
   await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(4)")

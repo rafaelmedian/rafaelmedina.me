@@ -8,7 +8,7 @@ import "dialkit/styles.css"
     the tuner removes its inline override and restores --corner-curve. */
 export default function CornerCurveTuner() {
   const { exponent } = useDialKit("Continuous corners", {
-    exponent: [2, 1, 4, 0.05],
+    exponent: [1.2, 1, 4, 0.05],
   })
 
   useEffect(() => {
