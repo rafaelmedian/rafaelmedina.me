@@ -668,6 +668,13 @@ export function PreviewGalleryDialog({
                   "--notes-list-height": `${listHeight}px`,
                 } as CSSProperties : undefined}
                 tabIndex={-1}
+                onScroll={(event) => {
+                  if (activeItem.kind !== "resume") return
+                  event.currentTarget.querySelector(".preview-gallery-resume")?.setAttribute(
+                    "data-scrolled",
+                    event.currentTarget.scrollTop > 0 ? "true" : "false",
+                  )
+                }}
                 onTouchStart={(event) => {
                   // A horizontal drag on the video is the seek bar, not a swipe.
                   if (event.target instanceof Element && event.target.closest("video")) {
@@ -799,9 +806,11 @@ export function PreviewGalleryDialog({
                     </div>
                   ) : (
                     <div className="preview-gallery-resume">
-                      <Dialog.Title className="preview-gallery-title preview-gallery-resume-title">
-                        {resumeItemTitle}
-                      </Dialog.Title>
+                      <header className="preview-gallery-resume-heading">
+                        <Dialog.Title className="preview-gallery-title preview-gallery-resume-title">
+                          {resumeItemTitle}
+                        </Dialog.Title>
+                      </header>
                       <Dialog.Description className="sr-only">
                         Rafael Medina's work history and education, with a link to the PDF résumé.
                       </Dialog.Description>
