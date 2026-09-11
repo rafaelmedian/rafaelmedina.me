@@ -250,9 +250,9 @@ test('unsends the address with a puff before reopening the email field', async (
 })
 
 
-test('sends from the website, preserves failed messages and reuses the retry key', async ({ page }) => {
+test('sends each message as a bubble, keeps failed ones and reuses the retry key', async ({ page }) => {
   const payloads: { email: string; message: string; requestId: string }[] = []
-  await page.route('http://127.0.0.1:8788/contact', async route => {
+  await page.route('**/contact', async route => {
     payloads.push(route.request().postDataJSON())
     const success = payloads.length > 1
     await route.fulfill({ status: success ? 202 : 502, contentType: 'application/json',
@@ -270,15 +270,48 @@ test('sends from the website, preserves failed messages and reuses the retry key
   await expect(chat.getByRole('img', { name: 'Loved by Rafa' })).toBeVisible()
   await expect(chat.locator('.about-intro-chat-tapback-ripple')).toBeHidden()
   const message = chat.getByRole('textbox', { name: 'Your message (optional)' })
+  const send = chat.getByRole('button', { name: 'Send message' })
   await message.fill('Let’s build something')
-  await chat.getByRole('button', { name: 'Send message' }).click()
+  await send.click()
+  // The message leaves the field for the conversation at once; a failure keeps it there to retry.
+  await expect(message).toHaveValue('')
+  await expect(message).toBeFocused()
   await expect(chat.getByText('Couldn’t send. Please retry.')).toBeVisible()
-  await expect(message).toHaveValue('Let’s build something')
-  await chat.getByRole('button', { name: 'Retry message' }).click()
-  await expect(chat.getByText('Sent. Thanks for saying hello!')).toBeVisible()
-  await expect(chat.getByRole('button', { name: 'Send message' })).toBeDisabled()
-  expect(payloads).toHaveLength(2)
+  await expect(chat.getByRole('button', { name: 'Edit email address: visitor@example.com' })).toBeDisabled()
+  await chat.getByRole('button', { name: 'Retry message: Let’s build something' }).click()
+  await expect(chat.getByText('Delivered')).toBeVisible()
+  await expect(chat.locator('.about-intro-chat-sent-message p', { hasText: 'Let’s build something' })).toBeVisible()
+  // An empty field can't send again, but the visitor can keep writing.
+  await expect(send).toBeDisabled()
+  await message.fill('One more thing')
+  await send.click()
+  await expect(chat.locator('.about-intro-chat-sent-message')).toHaveCount(2)
+  // Only the latest send carries the receipt.
+  await expect(chat.locator('.about-intro-chat-receipt')).toHaveCount(1)
+  await expect(chat.locator('.about-intro-chat-sent-message').last().getByText('Delivered')).toBeVisible()
+  expect(payloads).toHaveLength(3)
   expect(payloads[0]).toEqual(payloads[1])
+  expect(payloads[2].requestId).not.toBe(payloads[0].requestId)
+  expect(payloads.map(payload => payload.message)).toEqual(['Let’s build something', 'Let’s build something', 'One more thing'])
   expect(payloads[0].email).toBe('visitor@example.com')
   expect(new URL(page.url()).pathname).toBe('/')
+})
+
+test('an empty first send delivers the address with a keep-in-touch bubble', async ({ page }) => {
+  const payloads: { message: string }[] = []
+  await page.route('**/contact', async route => {
+    payloads.push(route.request().postDataJSON())
+    await route.fulfill({ status: 202, contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ sent: true }) })
+  })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  await chat.getByRole('button', { name: 'Send message' }).click()
+  await expect(chat.locator('.about-intro-chat-sent-message p', { hasText: 'Hi Rafa, I’d like to keep in touch.' })).toBeVisible()
+  await expect(chat.getByText('Delivered')).toBeVisible()
+  expect(payloads.map(payload => payload.message)).toEqual(['Hi Rafa, I’d like to keep in touch.'])
 })

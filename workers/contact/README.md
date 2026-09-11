@@ -46,11 +46,14 @@ override the dev UI posts to `http://127.0.0.1:8788/contact`. The API returns 50
 until secrets are provided; do not treat a local preview as a successful send.
 
 `npm run contact:test` stubs the provider and sends no email. Browser tests stub
-the Worker endpoint and verify error preservation and retry IDs. Production
-provider acceptance is reported as sent; downstream inbox delivery is asynchronous.
+any `/contact` endpoint, so they never reach this Worker even when `.env.local`
+points at it, and verify failed-message preservation and retry IDs. Production
+provider acceptance is reported as "Delivered"; downstream inbox delivery is
+asynchronous.
 
-Retries share a [Resend idempotency key](https://resend.com/docs/dashboard/emails/idempotency-keys)
-for identical content during the page session. The anonymous form permits five
+Each chat message is its own email. Retrying a failed one reuses its
+[Resend idempotency key](https://resend.com/docs/dashboard/emails/idempotency-keys),
+so a retry after a lost response cannot deliver twice. The anonymous form permits five
 attempts per minute per IP using [Cloudflare's rate-limit binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
 Rate limits are per Cloudflare location; shared IPs share a quota. There is no
 visitor database or email auto-reply.

@@ -473,6 +473,72 @@
   100% { opacity: 0; transform: translate(var(--puff-x), var(--puff-y)) scale(0.2); }
 }
 
+/* Each message the visitor sends moves out of the field into a blue bubble on
+   their side, rising on the same spring as the address. As in Messages, a run
+   of bubbles sits 2px apart and only the last keeps its tail. */
+.about-intro-chat-sent-message {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-end;
+  max-width: calc(100% - 24px);
+  transform-origin: right bottom;
+  transition: transform 580ms var(--intro-spring-snappy);
+}
+
+@starting-style {
+  .about-intro-chat-sent-message {
+    transform: translateY(20px) scale(0.92);
+  }
+}
+
+.about-intro-chat-sent-message + .about-intro-chat-sent-message {
+  margin-top: -6px;
+}
+
+.about-intro-chat-sent-message:has(+ .about-intro-chat-sent-message) .about-intro-chat-outgoing::before {
+  display: none;
+}
+
+.about-intro-chat-sent-message .about-intro-chat-outgoing {
+  white-space: pre-wrap;
+}
+
+.about-intro-chat-sent-message p.about-intro-chat-outgoing {
+  cursor: auto;
+}
+
+/* A failed send keeps its bubble, marked the way Messages marks one, and the
+   bubble itself retries. */
+.about-intro-chat-sent-message[data-status="failed"] .about-intro-chat-outgoing::after {
+  content: "!";
+  position: absolute;
+  top: 50%;
+  left: -28px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: #e5352b;
+  color: var(--canvas);
+  font: 700 13px / 1 var(--font-ui);
+  translate: 0 -50%;
+}
+
+.about-intro-chat .about-intro-chat-receipt {
+  margin: 4px 4px 0 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  text-align: end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-intro-chat-sent-message { transition: none; }
+}
+
 .about-intro-chat-composer {
   position: relative;
   isolation: isolate;

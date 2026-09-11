@@ -2255,8 +2255,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   actual form height; only short viewports scroll. Neither the history nor the growing message draws
                   a scrollbar, so a bubble’s entrance rise no longer flashes one. The composer stays below it. Focus deepens
                   the overlay shadow to <code>--shadow-overlay-hover</code> instead of drawing a stroke. The arrow starts gray,
-                  turning blue for a valid email or nonempty optional message. Final submission posts to the contact
-                  Worker, with sending, sent and retry states. No address is sent when advancing to the message step.
+                  turning blue for a valid email or nonempty optional message. Each send posts one email to the contact
+                  Worker and moves the text into a blue outgoing bubble that rises from the field on the snappy spring,
+                  clearing the field and keeping its focus so the visitor can keep writing; an empty first send delivers
+                  the address as “Hi Rafa, I’d like to keep in touch.” and later empty sends are disabled. A run of
+                  outgoing bubbles sits 2px apart and only the last keeps its tail. A 12px muted receipt under the latest
+                  one reads Sending… then Delivered. A failed send keeps its bubble with a 20px #e5352b “!” disc on its
+                  left and the error as its receipt; tapping the bubble retries with the same idempotency key. Once
+                  anything is sent the address can no longer be unsent. No address is sent when advancing to the message step.
                   B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
                   The <a href="/intro-options">comparison page</a> shows all three together in separate 440px
                   stages, with contained 64px portraits and 240px players. It stacks its

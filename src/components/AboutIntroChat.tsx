@@ -7,6 +7,8 @@ import { sendContact, type ContactMessage } from "../lib/sendContact"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
 const greeting = ["Hey, I’m Rafa.", "How are you doing?", "Wanna share your email with me so I can reach out to you?"]
+// An empty first send still delivers the address; the bubble shows what arrives.
+const keepInTouch = "Hi Rafa, I’d like to keep in touch."
 const typingDuration = 900
 // Rafa hearts the sent address the way a received tapback arrives: it pops onto
 // the bubble's corner, then he starts typing. Each delay is a stage: the tapback
@@ -98,11 +100,10 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   const [valid, setValid] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [message, setMessage] = useState("")
-  const [delivery, setDelivery] = useState<"idle" | "sending" | "sent" | "error">("idle")
-  const [deliveryError, setDeliveryError] = useState("")
-  const sending = useRef(false)
-  const lastSubmission = useRef<ContactMessage | null>(null)
-  const locked = delivery === "sending" || delivery === "sent"
+  // Each send is its own email and its own bubble; a retry reuses its request ID.
+  const [outbox, setOutbox] = useState<(ContactMessage & { status: "sending" | "delivered" | "failed"; error?: string })[]>([])
+  // Once anything has gone out under this address, it can no longer be unsent.
+  const locked = outbox.length > 0
   const [revealed, setRevealed] = useState(0)
   const [reaction, setReaction] = useState(0)
   const [visitorReaction, setVisitorReaction] = useState<Partial<Record<number, VisitorReactionId>>>({})
@@ -204,7 +205,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     if (active && historyRef.current) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight
     }
-  }, [active, confirmed, reactionShown, shown])
+  }, [active, confirmed, reactionShown, shown, outbox])
 
   const confirmEmail = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -232,32 +233,35 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
       setPuff(null)
       setConfirmed(false)
       setReaction(0)
-      setDelivery("idle")
       requestAnimationFrame(() => emailRef.current?.focus({ preventScroll: true }))
     }, skipTyping ? 0 : puffDuration)
     return () => window.clearTimeout(timer)
   }, [puffing, skipTyping])
 
-  const submitMessage = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (sending.current || delivery === "sent" || !valid) return
-    const previous = lastSubmission.current
-    const payload = previous?.email === email.trim() && previous.message === message.trim()
-      ? previous : { email: email.trim(), message: message.trim(), requestId: crypto.randomUUID() }
-    lastSubmission.current = payload
-    sending.current = true
-    setDelivery("sending")
-    setDeliveryError("")
+  const deliver = async ({ email, message, requestId }: ContactMessage) => {
+    const update = (change: Partial<typeof outbox[number]>) =>
+      setOutbox(list => list.map(item => item.requestId === requestId ? { ...item, ...change } : item))
+    update({ status: "sending", error: undefined })
     try {
-      await sendContact(payload)
-      setDelivery("sent")
+      await sendContact({ email, message, requestId })
+      update({ status: "delivered" })
     } catch (error) {
-      setDeliveryError(error instanceof Error ? error.message : "Couldn't send. Please retry.")
-      setDelivery("error")
-    } finally {
-      sending.current = false
+      update({ status: "failed", error: error instanceof Error ? error.message : "Couldn't send. Please retry." })
     }
   }
+
+  const submitMessage = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const text = message.trim()
+    if (!valid || (!text && outbox.length)) return
+    const payload = { email: email.trim(), message: text || keepInTouch, requestId: crypto.randomUUID() }
+    // The message moves into the conversation and the field clears for the next one.
+    setOutbox(list => [...list, { ...payload, status: "sending" }])
+    setMessage("")
+    messageRef.current?.focus({ preventScroll: true })
+    void deliver(payload)
+  }
+  const lastSent = outbox.at(-1)
 
   return <section ref={chatRef} className="about-intro-chat" data-active={active} data-typing={pending} data-step={confirmed ? "message" : "email"}
     inert={!active} aria-hidden={!active} aria-label="Chat with Rafa">
@@ -290,6 +294,19 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
         </span>}
         {messageReady && <ReactableMessage text="Want to share anything else?" messageIndex={3} followup
           reactionId={visitorReaction[3]} onReaction={reactToMessage} />}
+        {outbox.map(item => <div key={item.requestId} className="about-intro-chat-sent-message" data-status={item.status}>
+          {item.status === "failed"
+            ? <button type="button" className="about-intro-chat-outgoing" onClick={() => {
+                messageRef.current?.focus({ preventScroll: true })
+                void deliver(item)
+              }}
+              aria-label={`Retry message: ${item.message}`}>{item.message}</button>
+            : <p className="about-intro-chat-outgoing">{item.message}</p>}
+          {/* Like Messages, only the latest send carries its receipt; a failure keeps its own. */}
+          {(item === lastSent || item.status === "failed") && <p className="about-intro-chat-receipt" role="status">
+            {item.status === "sending" ? "Sending…" : item.status === "delivered" ? "Delivered" : item.error}
+          </p>}
+        </div>)}
       </>}
       {typing && <div key={`typing-${shown}`} className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-typing about-intro-chat-new"
         role="status" aria-label="Rafa is typing">
@@ -306,17 +323,16 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
         disabled={!valid}>
         <ArrowUp size={24} aria-hidden="true" />
       </button>
-    </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={submitMessage} aria-busy={delivery === "sending"}>
+    </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={submitMessage}>
       <div className="about-intro-chat-composer">
         <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${id}-delivery`} maxLength={2000}
-          rows={2} {...ignorePasswordManagers} placeholder="Anything on your mind?" value={message} readOnly={locked} onChange={event => { setMessage(event.target.value); setDelivery("idle") }} />
-        <button type="submit" className="about-intro-send" aria-label={delivery === "error" ? "Retry message" : "Send message"} disabled={locked} data-muted={!message.trim()}>
+          rows={2} {...ignorePasswordManagers} placeholder={locked ? "Anything else?" : "Anything on your mind?"} value={message} onChange={event => setMessage(event.target.value)} />
+        <button type="submit" className="about-intro-send" aria-label="Send message" disabled={locked && !message.trim()} data-muted={!message.trim()}>
           <ArrowUp size={24} aria-hidden="true" />
         </button>
       </div>
-      <p id={`${id}-delivery`} className="about-intro-chat-hint" role="status" aria-live={active ? "polite" : undefined}>
-        {delivery === "sending" ? "Sending…" : delivery === "sent" ? "Sent. Thanks for saying hello!" :
-          delivery === "error" ? deliveryError : "Optional. Send straight to my inbox."}
+      <p id={`${id}-delivery`} className="about-intro-chat-hint">
+        {locked ? "Each message goes straight to my inbox." : "Optional. Send straight to my inbox."}
       </p>
     </form>}
   </section>
