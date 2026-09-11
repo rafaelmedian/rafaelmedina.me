@@ -19,10 +19,10 @@
     "likes:check": "tsc -p workers/likes/tsconfig.json"
   },
   "dependencies": {
-    "@base-ui/react": "^1.1.0",
-    "@web-kits/audio": "^0.1.0",
+    "@base-ui/react": "^1.8.0",
+    "@web-kits/audio": "^0.2.0",
     "leaflet": "^1.9.4",
-    "lucide-react": "^1.8.0",
+    "lucide-react": "^1.41.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
