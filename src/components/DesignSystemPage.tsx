@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react"
-import { Check, Copy, Search, X } from "lucide-react"
+import { Check, Copy, Search } from "lucide-react"
+import { X } from "./NavigationIcons"
 
 import { linkedinHoverMedia, xProfilePreview, type SiteLinks } from "../data/portfolio"
 import { SiteLastUpdated } from "./SiteLastUpdated"
@@ -2035,6 +2036,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
                   The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity, ink text,
                   and a 16px close icon. The collapsed row shows an upward chevron instead.
+                  Close crosses, navigation chevrons, external-link arrows and reply arrows share
+                  <code> NavigationIcons.tsx</code>: a 24-unit viewBox with rounded 2.5-unit strokes
+                  and joins, scaled to each control’s existing icon size. The close cross matches
+                  the intro player’s iOS-style mark; all wrappers and hit targets keep their own surface styles.
                   Icons fade over 160ms; the chevron rotates 90 degrees while the close icon scales from 0.8 to 1.
                   Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
                   label. Other rows are inert and
@@ -2110,7 +2115,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   ramping from 0.35 opacity to full across the crossing, so the sheet reads as passing in front of the
                   gallery rather than butting against it. Above that, a scroll cue: two 17px bars hinged at the joint
                   they share, opening to a 22° chevron and squeezing flat as the sheet climbs. Rotations rather than a
-                  scaled chevron, so the stroke keeps its weight all the way down to the line. Every layer is anchored
+                  scaled chevron, so the rounded 2.5px stroke keeps its weight all the way down to the line. Every layer is anchored
                   to the runway, never to the sheet, and animates only opacity and transform — and because the runway
                   stops at the 1560px reading measure, the cast and the hairline break back out to <code>100dvw</code>{" "}
                   so the seam ends where the full-bleed sheet does. Without scroll-driven animations, or under reduced
@@ -2223,7 +2228,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   clicking outside restores the labeled button without stealing focus. That button stays visible
                   until the next About visit or playback, retaining the mobile row above the TOC so
                   the form can shrink in place. The composer uses a Messages-style upward arrow: a 36px
-                  disc inside a 44px target, with a 24px white Hugeicon at 2.5px stroke. Its component-specific
+                  disc inside a 44px target, with a 24px white navigation arrow at 2.5px stroke. Its component-specific
                   blue is #007aff; the disabled disc uses muted-soft at 40% opacity. The arrow is hidden when
                   empty, disabled gray for an invalid email, and enabled blue when native email validation
                   passes. The reserved target prevents text shifting. A focused email input uses one outer 1px

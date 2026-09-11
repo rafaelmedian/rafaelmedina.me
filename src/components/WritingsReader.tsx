@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ArrowUpRight, ChevronLeft, ChevronRight, X } from "lucide-react"
+import { ArrowUpRight, ChevronLeft, ChevronRight, X } from "./NavigationIcons"
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type RefObject } from "react"
 
 

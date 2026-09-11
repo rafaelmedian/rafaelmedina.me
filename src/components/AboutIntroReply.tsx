@@ -1,6 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import ArrowUp02Icon from "@hugeicons/core-free-icons/ArrowUp02Icon"
+import { ArrowUp } from "./NavigationIcons"
 
 import { siteLinks } from "../data/portfolio"
 
@@ -48,7 +47,7 @@ export default function AboutIntroReply({ mode, active, onClose }: {
               setEmailValid(event.currentTarget.validity.valid)
             }} placeholder="hello@example.com" />
           <button type="submit" className="about-intro-send" data-empty={!email} disabled={!emailValid} aria-hidden={!email} aria-label="Open email draft" aria-describedby={`${id}-hint`}
-            title="Review and send in your email app"><HugeiconsIcon icon={ArrowUp02Icon} strokeWidth={2.5} size={24} aria-hidden="true" /></button>
+            title="Review and send in your email app"><ArrowUp size={24} aria-hidden="true" /></button>
         </div>
       </form>
       <span id={`${id}-hint`} className="sr-only">Review and send in your email app.</span>

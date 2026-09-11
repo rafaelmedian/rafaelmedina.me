@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ArrowUpRight, ChevronRight, ChevronLeft, X } from "lucide-react"
+import { ArrowUpRight, ChevronRight, ChevronLeft, X } from "./NavigationIcons"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from "../data/portfolio"
@@ -448,7 +448,7 @@ export function PreviewGalleryDialog({
                     onClick={() => moveBy(-1)}
                     disabled={items.length <= 1}
                   >
-                    <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
+                    <ChevronLeft aria-hidden="true" className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
                   </button>
 
                   <button
@@ -459,7 +459,7 @@ export function PreviewGalleryDialog({
                     onClick={() => moveBy(1)}
                     disabled={items.length <= 1}
                   >
-                    <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
+                    <ChevronRight aria-hidden="true" className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                   </button>
                 </div>
 
@@ -471,7 +471,7 @@ export function PreviewGalleryDialog({
                   className="preview-gallery-nav preview-gallery-close"
                   aria-label={activeItem.kind === "resume" ? "Close résumé" : "Close preview"}
                 >
-                  <X aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon" />
+                  <X aria-hidden="true" className="preview-gallery-nav-icon" />
                 </Dialog.Close>
               </div>
 
@@ -608,7 +608,7 @@ export function PreviewGalleryDialog({
                   onClick={() => moveBy(-1)}
                   disabled={items.length <= 1}
                 >
-                  <ChevronLeft aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
+                  <ChevronLeft aria-hidden="true" className="preview-gallery-nav-icon preview-gallery-nav-icon-prev" />
                 </button>
 
                 <button
@@ -619,7 +619,7 @@ export function PreviewGalleryDialog({
                   onClick={() => moveBy(1)}
                   disabled={items.length <= 1}
                 >
-                  <ChevronRight aria-hidden="true" strokeWidth={2} className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
+                  <ChevronRight aria-hidden="true" className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                 </button>
               </div>
             </Dialog.Popup>

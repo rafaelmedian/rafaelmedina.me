@@ -11,7 +11,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react"
-import { ExternalLink, X } from "lucide-react"
+import { ExternalLink, X } from "./NavigationIcons"
 
 import { AboutPanel } from "./AboutPanel"
 import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
@@ -558,7 +558,6 @@ function SectionCorner({
           <ExternalLink
             className="mosaic-social-link-external-icon"
             size={12}
-            strokeWidth={1.75}
             aria-hidden="true"
           />
         </a>

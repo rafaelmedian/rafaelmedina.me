@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useId, useRef, useState, type FormEvent } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import ArrowUp02Icon from "@hugeicons/core-free-icons/ArrowUp02Icon"
+import { ArrowUp } from "./NavigationIcons"
 import { sendContact, type ContactMessage } from "../lib/sendContact"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
@@ -153,14 +152,14 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
         }} />
       <button type="submit" className="about-intro-send" aria-label="Continue with email"
         disabled={!valid}>
-        <HugeiconsIcon icon={ArrowUp02Icon} size={24} strokeWidth={2.5} aria-hidden="true" />
+        <ArrowUp size={24} aria-hidden="true" />
       </button>
     </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={submitMessage} aria-busy={delivery === "sending"}>
       <div className="about-intro-chat-composer">
         <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${id}-delivery`} maxLength={2000}
           rows={2} placeholder="Anything on your mind?" value={message} readOnly={locked} onChange={event => { setMessage(event.target.value); setDelivery("idle") }} />
         <button type="submit" className="about-intro-send" aria-label={delivery === "error" ? "Retry message" : "Send message"} disabled={locked} data-muted={!message.trim()}>
-          <HugeiconsIcon icon={ArrowUp02Icon} size={24} strokeWidth={2.5} aria-hidden="true" />
+          <ArrowUp size={24} aria-hidden="true" />
         </button>
       </div>
       <p id={`${id}-delivery`} className="about-intro-chat-hint" role="status" aria-live={active ? "polite" : undefined}>

@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react"
-import { ChevronUp, X } from "lucide-react"
+import { ChevronUp, X } from "./NavigationIcons"
 
 const SECTIONS = [
   { id: "work", number: "01", label: "Work", href: "#work" },
@@ -194,8 +194,8 @@ export function MobileTableOfContents({
                 </span>
                 {isCurrent && (
                   <span className="mosaic-mobile-toc-icon" aria-hidden="true">
-                    <ChevronUp className="mosaic-mobile-toc-chevron" size={16} strokeWidth={1.75} />
-                    <X className="mosaic-mobile-toc-close" size={16} strokeWidth={1.75} />
+                    <ChevronUp className="mosaic-mobile-toc-chevron" size={16} />
+                    <X className="mosaic-mobile-toc-close" size={16} />
                   </span>
                 )}
               </span>
