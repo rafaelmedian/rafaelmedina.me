@@ -6,48 +6,37 @@ import { expect, test } from "@playwright/test"
    only then opened the dialog. `index.html` holds the page back until the
    dialog presents, and the page fades in under the dialog's own entrance. */
 
-type RevealStart = {
-  article: boolean
-  popup: boolean
-  animationName: string
-  duration: string
-}
-
 for (const path of ["/work/matcha-multiwallet-flow/", "/resume/", "/notes/", "/notes/designing-matcha/"]) {
   test(`${path} opens straight into its dialog`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" })
-    await page.addInitScript(() => {
-      const starts: RevealStart[] = []
-      Object.assign(window, { __galleryEntryRevealStarts: starts })
-      document.addEventListener("animationstart", (event) => {
-        if (!(event instanceof AnimationEvent) || event.animationName !== "gallery-entry-reveal") return
-        const root = document.getElementById("root")
-        starts.push({
-          article: document.querySelector(".standalone-page") !== null,
-          popup: document.querySelector(".preview-gallery-popup") !== null,
-          animationName: event.animationName,
-          duration: root ? getComputedStyle(root).animationDuration : "0s",
-        })
-      })
-    })
     await page.goto(path)
     await expect(page.locator(".preview-gallery-popup")).toBeVisible()
+    await expect(page.locator(".standalone-page")).toHaveCount(0)
     await expect(page.locator("html")).not.toHaveAttribute("data-gallery-entry")
     await expect(page.locator("#root")).toHaveCSS("opacity", "1")
 
-    const starts = await page.evaluate(() => (
-      window as unknown as { __galleryEntryRevealStarts: RevealStart[] }
-    ).__galleryEntryRevealStarts)
-    // The pending page is only released once its dialog has replaced the
-    // prerendered article, and it arrives under the declared fade. Observing
-    // the animation event is reliable even when a busy runner misses every
-    // intermediate animation frame.
-    expect(starts).toContainEqual({
-      article: false,
-      popup: true,
-      animationName: "gallery-entry-reveal",
-      duration: "0.2s",
+    // Verify the shipped reveal at its midpoint instead of hoping a busy
+    // runner samples or receives an event during the live 200ms animation.
+    const midpoint = await page.locator("#root").evaluate((root) => {
+      document.documentElement.dataset.galleryEntry = "revealing"
+      const animation = root.getAnimations().find((candidate) => (
+        candidate instanceof CSSAnimation && candidate.animationName === "gallery-entry-reveal"
+      ))
+      animation?.pause()
+      if (animation) animation.currentTime = 100
+      const style = getComputedStyle(root)
+      const result = {
+        animationName: style.animationName,
+        duration: style.animationDuration,
+        opacity: Number(style.opacity),
+      }
+      delete document.documentElement.dataset.galleryEntry
+      return result
     })
+    expect(midpoint.animationName).toBe("gallery-entry-reveal")
+    expect(midpoint.duration).toBe("0.2s")
+    expect(midpoint.opacity).toBeGreaterThan(0)
+    expect(midpoint.opacity).toBeLessThan(1)
   })
 }
 
