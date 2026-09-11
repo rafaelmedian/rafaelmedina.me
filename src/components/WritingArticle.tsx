@@ -135,6 +135,7 @@ function NoteProse({ paragraphs, annotations }: { paragraphs: string[]; annotati
 // than in the reader's zone, where a western offset would roll them back a day.
 const noteDate = (publishedAt: string) => new Date(`${publishedAt}T00:00:00Z`)
 const fullDateFormat = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })
+const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", timeZone: "UTC" })
 
 function NoteImage({ image }: { image: WritingImage }) {
   return (
@@ -369,10 +370,16 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
               {onSelectWriting ? (
                 <button type="button" className="writing-entry-trigger" onClick={() => onSelectWriting(entry.id)}>
                   <span className="writing-entry-title">{entry.title}</span>
+                  {entry.publishedAt ? <time className="writing-entry-date" dateTime={entry.publishedAt} aria-hidden="true">
+                    {dayMonthFormat.format(noteDate(entry.publishedAt))}
+                  </time> : null}
                 </button>
               ) : (
                 <a className="writing-entry-trigger" href={writingPath(entry)}>
                   <span className="writing-entry-title">{entry.title}</span>
+                  {entry.publishedAt ? <time className="writing-entry-date" dateTime={entry.publishedAt} aria-hidden="true">
+                    {dayMonthFormat.format(noteDate(entry.publishedAt))}
+                  </time> : null}
                 </a>
               )}
             </li>

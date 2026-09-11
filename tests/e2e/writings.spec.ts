@@ -510,6 +510,15 @@ test("floating contents take the left gutter and margin notes give it up", async
   expect(contentsBox.y + contentsBox.height).toBeLessThanOrEqual(prose.y)
 })
 
+test("More articles show the archive dates beside their titles", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/room-to-figure-it-out/")
+  const more = sheet(page).getByRole("region", { name: "More articles" })
+  await expect(more.locator("time")).toHaveText(["07/09", "29/07", "16/06"])
+  await expect(more.locator("time").first()).toHaveAttribute("aria-hidden", "true")
+})
+
 test("an article closes with its acknowledgements above More articles", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
