@@ -86,6 +86,28 @@ test("a shared project path opens over the gallery and closes into it", async ({
   expect(errors).toEqual([])
 })
 
+test("Matcha previews open as long-form case studies", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/work/matcha-homepage/")
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toHaveAccessibleName("Matcha homepage")
+  await expect(dialog.getByRole("heading", { name: "Designing Matcha end to end" })).toBeVisible()
+  await expect(dialog.getByText("Case study", { exact: true })).toBeVisible()
+  await expect(dialog.locator(".project-case-study-section")).toHaveCount(5)
+  await expect(dialog.locator(".project-case-study-media img")).toHaveCount(10)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.reload()
+  const figures = await page.getByRole("dialog").locator(".project-case-study-media").first()
+    .locator("figure").evaluateAll((elements) => elements.map((element) => {
+      const rect = element.getBoundingClientRect()
+      return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right }
+    }))
+  expect(figures[1].top).toBeGreaterThan(figures[0].bottom)
+  expect(figures.every(figure => figure.left >= 0 && figure.right <= 390)).toBe(true)
+})
+
 test("an unknown project URL keeps the portfolio usable", async ({ page }) => {
   await page.goto("/?project=missing")
   await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeVisible()

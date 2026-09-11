@@ -43,6 +43,20 @@ test("project pages ship distinct metadata and readable content without JavaScri
   await context.close()
 })
 
+test("Matcha case studies ship their complete narrative without JavaScript", async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
+  const page = await context.newPage()
+
+  await page.goto("/work/matcha-homepage/")
+  await expect(page.getByRole("heading", { level: 2, name: "Designing Matcha end to end" })).toBeVisible()
+  await expect(page.locator(".project-case-study-section")).toHaveCount(5)
+  await expect(page.locator(".project-case-study-media img")).toHaveCount(10)
+
+  await page.goto("/work/protector-booking/")
+  await expect(page.locator(".project-case-study")).toHaveCount(0)
+  await context.close()
+})
+
 // The résumé is a gallery item like a project, so it has a page of its own for
 // the same reasons: a shared link has to answer for itself in HTML.
 test("the resume page ships its own metadata and the whole history without JavaScript", async ({ browser, request, baseURL }) => {
