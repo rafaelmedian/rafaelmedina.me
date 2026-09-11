@@ -103,7 +103,7 @@ test("note pages ship their own metadata and the whole article without JavaScrip
     expect(await page.locator(".writing-reader-prose p").count()).toBeGreaterThan(2)
     expect(await page.locator(".writing-margin-note").count()).toBeGreaterThan(0)
     await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")
-    // Without JavaScript "More articles" is a set of ordinary links.
+    // Without JavaScript the same-category recommendations are ordinary links.
     await expect(page.locator(".writing-more a").first()).toHaveAttribute("href", /^\/notes\//)
     await expect(page.getByRole("link", { name: "Copy a link to this note" }))
       .toHaveAttribute("href", `https://rafaelmedina.me${path}`)
@@ -142,10 +142,10 @@ test("the notes list ships its own page with a link to every note", async ({ bro
   await expect(page).toHaveTitle("Notes — Rafael Medina")
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Notes")
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/notes/")
-  // Every note, newest first, each an ordinary link to its own page.
-  const rows = page.locator(".writings-year a.writing-entry-trigger")
-  await expect(rows).toHaveCount(8)
-  await expect(rows.first()).toHaveAttribute("href", "/notes/project-context-in-markdown/")
+  // Tools lead the category order, then notes; dates sort within each shelf.
+  const rows = page.locator(".writings-category a.writing-entry-trigger")
+  await expect(rows).toHaveCount(9)
+  await expect(rows.first()).toHaveAttribute("href", "/notes/review-ready-pull-requests/")
   await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")
   expect(await (await request.get("/sitemap.xml")).text()).toContain("https://rafaelmedina.me/notes/")
   await context.close()

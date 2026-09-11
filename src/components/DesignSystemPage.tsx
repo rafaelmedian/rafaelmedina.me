@@ -272,7 +272,7 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-xs",
     sample: "Punta Cana · Local time",
-    where: "Map attribution, count pills, avatar initials, compact project captions, mobile table-of-contents numbers, and the notes reader's secondary lines — its date, year headings, like pill, image captions, and acknowledgements",
+    where: "Map attribution, count pills, avatar initials, compact project captions, mobile table-of-contents numbers, and the notes reader's secondary lines — its date, archive headings, like pill, image captions, and acknowledgements",
     style: { fontSize: "var(--text-xs)", lineHeight: 1.25 },
   },
   {
@@ -1299,11 +1299,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup boil stop-motion frames hover key click keyboard sound 375ms handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes tools categories dates install skill copy command source modal back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup boil stop-motion frames hover key click keyboard sound 375ms handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onReaderReady={() => {}} /></div>
               <p className="ds-caption">
-                A tile on --mosaic-card-surface with 24px corners and one label, “Writings &amp; notes”.
+                A tile on --mosaic-card-surface with 24px corners and one label, “Notes &amp; tools”.
                 Below 900px the corners drop to 16px and the folder is zoomed to 0.7 so it and the
                 label both fit its compact portrait slot; the artwork is absolutely positioned at fixed offsets, so only a
                 layout-affecting scale keeps it off the label.
@@ -1312,11 +1312,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The reader is a sheet up to 56rem wide that hangs from the line a project preview opens on — 8vh
                 from the top of the viewport, 5vh from 1320px — and runs to 1rem above the bottom, with room for the navigation
                 rail, white, overlay elevation, and 24px corners.
-                Rows are grouped by publication or archive year, newest first; eight writings are visible, with seven in 2026 and one in 2025.
-                The year labels a 5rem column on the left, on the first row's baseline, so the titles run as one list down the page; on a phone it goes back
-                over its rows, where the gutter would take a fifth of the measure.
-                Each row carries its title and, on the right, the day and month it was published as tabular --muted figures; the year heading above
-                supplies the year, and a note kept only as an archive year leaves that column empty. The date is hidden from assistive technology so a row
+                Rows are grouped under Tools, Notes, and, when it has entries, Misc; categories keep that order and dates sort newest first within each one.
+                Category labels sit above their rows so the titles keep the full measure, and empty categories do not render.
+                Each row carries its title and, on the right, a compact month, day, and two-digit year as tabular --muted figures; a note kept only as an
+                archive year leaves that column empty. The date is hidden from assistive technology so a row
                 is still named by its title alone; the reader's own header carries the full date.
                 Under the date sit the two things to do with a note rather than in it: the like control and the note's own address.
                 The like control is a 32px pill with a 44px hit area, --text-xs type, and the shared control shadows.
@@ -1340,14 +1339,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 --ease-standard, clipping the longer label while it grows. Reduced motion swaps and resizes instantly;
                 its accessible name stays “Copy a link to this note” throughout and
                 the confirmation is announced from a live region beside it. Modified and secondary presses are left to the browser.
+                Tool articles place an install card after their opening paragraphs: 20px padding on --mosaic-card-surface with --radius-md and the
+                shared 5% inset hairline. Its source link keeps a 40px target. The command sits in a white --radius-sm inset at --text-xs monospace;
+                the 40px copy control uses the archive surface, swaps Copy for Copied with InlineSwap, and announces confirmation separately while
+                keeping the accessible name “Copy install command”. On phones the heading and source link stack, then the command and copy control stack.
                 Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
                 canonical, and listed in the sitemap, the way a project owns `/work/&lt;slug&gt;/`.
                 The standalone article shares the reader's 34rem prose measure, but keeps annotations below their
                 paragraphs at every viewport width: its narrower page has no reserved margin-note gutters.
-                Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s rows and day/month dates.
+                Each reader ends with up to three entries from its own category, newest first, using the archive’s rows; a category with no sibling omits it.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
-                The top bar carries one title, Notes, with no year crumb, search, document count, author byline, or subtitle.
-                Notes uses --text-md, aligned with the archive's year column on the shared 34rem measure.
+                The top bar carries one title, Notes and tools, with no year crumb, search, document count, author byline, or subtitle.
+                The title uses --text-md, aligned with the archive's category labels on the shared 34rem measure.
                 Heading insets follow the gallery card's responsive padding.
                 Notes is a nested view of the same preview-gallery dialog: one backdrop, focus trap, and card.
                 The list remains at its tile's place in the outer sequence ("3 / 14"). Its arrows page work items;
@@ -1380,7 +1383,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The shadow fades on a separate layer, replacing the Notes toolbar shadow while pinned.
                 Reduced motion makes the disclosure and pinned transition immediate too.
                 The toolbar's own 5% black divider and short shadow appear only while scrolled, over 160ms.
-                The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes" title on the same column
+                The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes and tools" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
                 Every note carries marginalia in Handlee on --muted, authored per paragraph rather than generated: a
@@ -1410,13 +1413,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Notes are ordinary text in the reading order: a gutter note reads after its paragraph, and it is never
                 announced as a separate landmark or the only place a point is made.
                 The archive leaves the same two gutters empty, and draws into them instead: the things a note gets
-                written with rather than icons — a sheet with its corner turned down, a sharpened pencil and its
-                shavings, a cup on its saucer. They come from the same Rough.js pass and ship as 88px PNG masks beside
+                written with rather than icons. Tools begins with a page lifted from a folder while a pencil finishes
+                its line; the other rows cycle a sheet with its corner turned down, a sharpened pencil and its shavings,
+                and a cup on its saucer. They come from the same Rough.js pass and ship as 88px PNG masks beside
                 the brackets, on --muted at 0.55 so they read as pencil the list can look past. Drawn as vector
                 outlines they had one even stroke at every edge and read as traced; adding detail to the path did not
-                fix that, and retracing them did. One is pinned every third row counted across the whole list rather
-                than per year, alternating rails so no two face each other, on three lifts and three tilts between
-                -5 and 7 degrees. The three objects cycle, so the archive passes ten notes before one repeats. They
+                fix that, and retracing them did. One is pinned every few rows counted across the whole list rather
+                than per category, changing rails, lifts, and tilts so the marks do not form another ruled column.
+                The three general objects cycle, so the archive passes several notes before one repeats. They
                 are decorative and hidden from assistive technology, absolutely positioned so they never enter the
                 content height the card measures, and they leave below the same 48rem container threshold.
                 Each ships as a strip of three frames — the resting drawing and two retracings on fresh seeds, set down
@@ -1440,7 +1444,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 below 700px it wraps instead, because a phone is narrower than the longest line and a sideways scroll
                 inside a vertical read hides a third of the file.
                 Articles that credit a source or a team close with Acknowledgements: a --text-xs heading on --muted over
-                --text-xs grey copy, 48px below the article and above the More articles divider.
+                --text-xs grey copy, 48px below the article and above the same-category recommendations divider.
                 Personal essays are text-only; project writings reuse existing portfolio illustrations as covers or within their sections.
                 The date sits above the title in month, day, year format; sample articles use illustrative dates.
                 A note's own title uses --text-lg, 600 weight, 1.35 line height and -0.02rem tracking; the toolbar
@@ -1452,14 +1456,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 column's edge, level with the middle of the line; a heading long enough to wrap has no width left
                 over and goes without one rather than leave a stub at the far edge. List entries use --text-sm, 1.5 line height, -0.00563rem tracking, and pretty wrapping.
                 The reader date uses --text-xs, 1.5 line height, and no tracking, 4px above the title; row dates sit on the entry's own --text-sm.
-                Year headings use --text-xs. Font kerning is enabled throughout the dialog.
+                Category headings use --text-xs. Font kerning is enabled throughout the dialog.
                 Inline images retain their intrinsic
                 aspect ratio, fill the reading column, load lazily, and use 16px corners. Optional image captions are --text-xs.
                 The gallery supplies padding around a 34rem (544px) reading measure, about 68 characters
                 on the 14px step. Prose uses #2d2d2d, dark enough to hold at that size; secondary text uses --muted.
                 Archive and reader begin 32px below the heading; the article ends with 48px of breathing room.
-                More articles is separated from the article by a 1px black divider at 8% opacity, with 48px above the line and 24px below.
-                Rows have 12px vertical padding, year headings sit 4px above their entries, and groups are separated by 48px on desktop or 32px on mobile.
+                Same-category recommendations are separated from the article by a 1px black divider at 8% opacity, with 48px above the line and 24px below.
+                Rows have 12px vertical padding, category headings sit 4px above their entries, and groups are separated by 48px on desktop or 32px on mobile.
                 Reader headers have a 24px bottom margin. Side padding follows the gallery in each responsive layout.
                 The outer gallery opens in 200ms and closes in 160ms, including for a direct note link.
                 A visible tile supplies its origin: scale 0.92 and travel capped at 44px; an offscreen tile falls

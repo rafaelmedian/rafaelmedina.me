@@ -28,7 +28,7 @@ export function projectGalleryItem(card: PortfolioCard): GalleryItem {
 export const resumeItemTitle = "Work history"
 
 /** The list's heading, and the accessible name of its slide. */
-export const writingsItemTitle = "Notes"
+export const writingsItemTitle = "Notes and tools"
 
 export function galleryItemTitle(item: GalleryItem) {
   if (item.kind === "resume") return resumeItemTitle

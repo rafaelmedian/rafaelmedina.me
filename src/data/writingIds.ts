@@ -1,5 +1,6 @@
 // Shared by the article data and likes API; keep IDs stable to preserve saved likes.
 export const writingIds = [
+  "review-ready-pull-requests",
   "project-context-in-markdown",
   "ai-design-needs-control",
   "building-it-yourself-isnt-free",

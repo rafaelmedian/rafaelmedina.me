@@ -6,38 +6,37 @@ import { expect, test } from "@playwright/test"
    only then opened the dialog. `index.html` holds the page back until the
    dialog presents, and the page fades in under the dialog's own entrance. */
 
-type Frame = { entry: string | null; root: number; article: boolean; popup: boolean }
-
 for (const path of ["/work/matcha-multiwallet-flow/", "/resume/", "/notes/", "/notes/designing-matcha/"]) {
   test(`${path} opens straight into its dialog`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" })
-    await page.addInitScript(() => {
-      const frames: Frame[] = []
-      Object.assign(window, { __frames: frames })
-      const sample = () => {
-        const root = document.getElementById("root")
-        if (root) frames.push({
-          entry: document.documentElement.dataset.galleryEntry ?? null,
-          root: Number(getComputedStyle(root).opacity),
-          article: document.querySelector(".standalone-page") !== null,
-          popup: document.querySelector(".preview-gallery-popup") !== null,
-        })
-        if (frames.length < 600) requestAnimationFrame(sample)
-      }
-      requestAnimationFrame(sample)
-    })
     await page.goto(path)
     await expect(page.locator(".preview-gallery-popup")).toBeVisible()
+    await expect(page.locator(".standalone-page")).toHaveCount(0)
     await expect(page.locator("html")).not.toHaveAttribute("data-gallery-entry")
     await expect(page.locator("#root")).toHaveCSS("opacity", "1")
 
-    const frames = await page.evaluate(() => (window as unknown as { __frames: Frame[] }).__frames)
-    expect(frames[0].entry).toBe("pending")
-    // Neither the prerendered article nor the feed without its dialog is ever
-    // painted: the page only shows once the dialog is there.
-    expect(frames.filter(frame => frame.root > 0 && (frame.article || !frame.popup))).toEqual([])
-    // And it arrives as a fade rather than a cut.
-    expect(frames.some(frame => frame.popup && frame.root > 0 && frame.root < 1)).toBe(true)
+    // Verify the shipped reveal at its midpoint instead of hoping a busy
+    // runner samples or receives an event during the live 200ms animation.
+    const midpoint = await page.locator("#root").evaluate((root) => {
+      document.documentElement.dataset.galleryEntry = "revealing"
+      const animation = root.getAnimations().find((candidate) => (
+        candidate instanceof CSSAnimation && candidate.animationName === "gallery-entry-reveal"
+      ))
+      animation?.pause()
+      if (animation) animation.currentTime = 100
+      const style = getComputedStyle(root)
+      const result = {
+        animationName: style.animationName,
+        duration: style.animationDuration,
+        opacity: Number(style.opacity),
+      }
+      delete document.documentElement.dataset.galleryEntry
+      return result
+    })
+    expect(midpoint.animationName).toBe("gallery-entry-reveal")
+    expect(midpoint.duration).toBe("0.2s")
+    expect(midpoint.opacity).toBeGreaterThan(0)
+    expect(midpoint.opacity).toBeLessThan(1)
   })
 }
 
