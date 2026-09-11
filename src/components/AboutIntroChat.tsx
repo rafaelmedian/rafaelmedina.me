@@ -23,6 +23,10 @@ const visitorReactions = [
   { id: "laugh", label: "Laugh", emoji: "😂", announcement: "laughed at" },
   { id: "emphasize", label: "Emphasize", emoji: "‼️", announcement: "emphasized" },
   { id: "question", label: "Question", emoji: "❓", announcement: "questioned" },
+  { id: "fire", label: "Fire", emoji: "🔥", announcement: "reacted with fire to" },
+  { id: "applause", label: "Applause", emoji: "👏", announcement: "applauded" },
+  { id: "celebrate", label: "Celebrate", emoji: "🎉", announcement: "celebrated" },
+  { id: "thinking", label: "Thinking", emoji: "🤔", announcement: "thought about" },
 ] as const
 type VisitorReactionId = typeof visitorReactions[number]["id"]
 

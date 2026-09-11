@@ -207,7 +207,11 @@
 .about-intro-chat-reaction-picker {
   display: flex;
   gap: 0;
-  padding: 4px;
+  max-width: min(252px, calc(100vw - 24px));
+  padding: 2px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
   border-radius: var(--radius-full);
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
@@ -216,6 +220,10 @@
   animation:
     intro-picker-open 580ms var(--intro-spring-snappy) both,
     intro-fade-in var(--duration-quick) var(--ease-standard) both;
+}
+
+.about-intro-chat-reaction-picker::-webkit-scrollbar {
+  display: none;
 }
 
 .about-intro-chat-reaction-picker[data-ending-style] {
@@ -229,9 +237,11 @@
   place-items: center;
   width: 40px;
   height: 40px;
+  flex: 0 0 40px;
   border-radius: var(--radius-full);
   outline: none;
-  font-size: 18px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  font-size: 17px;
   line-height: 1;
   cursor: pointer;
   animation: intro-pick-in 580ms var(--intro-spring-snappy) both;

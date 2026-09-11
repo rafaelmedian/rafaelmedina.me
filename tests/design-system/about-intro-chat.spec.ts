@@ -178,7 +178,7 @@ test('starts the comparison chat when its card comes into view and respects redu
   await expect(chat.getByRole('textbox', { name: 'Your email' })).not.toBeFocused()
 })
 
-test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ page }) => {
+test('offers a compact, horizontally scrollable Apple-style reaction row', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?tune=off')
@@ -191,13 +191,19 @@ test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ pa
   await greeting.click()
   const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
   await expect(picker).toBeVisible()
-  await expect(picker.getByRole('menuitemcheckbox')).toHaveCount(6)
-  for (const label of ['Love', 'Like', 'Dislike', 'Laugh', 'Emphasize', 'Question']) {
-    await expect(picker.getByRole('menuitemcheckbox', { name: label, exact: true })).toBeVisible()
+  await expect(picker.getByRole('menuitemcheckbox')).toHaveCount(10)
+  for (const label of ['Love', 'Like', 'Dislike', 'Laugh', 'Emphasize', 'Question', 'Fire', 'Applause', 'Celebrate', 'Thinking']) {
+    await expect(picker.getByRole('menuitemcheckbox', { name: label, exact: true })).toBeAttached()
   }
+  await expect(picker).toHaveCSS('overflow-x', 'auto')
+  expect(await picker.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true)
   const pickerBox = await picker.boundingBox()
   expect(pickerBox!.x).toBeGreaterThanOrEqual(12)
   expect(pickerBox!.x + pickerBox!.width).toBeLessThanOrEqual(308)
+  expect(pickerBox!.height).toBeLessThanOrEqual(44)
+  await picker.evaluate(node => { node.scrollLeft = node.scrollWidth })
+  await expect(picker.getByRole('menuitemcheckbox', { name: 'Thinking' })).toBeVisible()
+  await picker.evaluate(node => { node.scrollLeft = 0 })
   await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
 
   await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toBeVisible()
@@ -242,7 +248,7 @@ test('opens the Tapback picker from the right with staggered, tactile choices', 
   const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
   await expect(picker).toHaveCSS('animation-name', 'intro-picker-open, intro-fade-in')
   const choices = picker.getByRole('menuitemcheckbox')
-  await expect(choices.first()).toHaveCSS('animation-delay', '0.12s')
+  await expect(choices.first()).toHaveCSS('animation-delay', '0.216s')
   await expect(choices.last()).toHaveCSS('animation-delay', '0s')
   await choices.first().hover()
   await expect(choices.first()).toHaveCSS('translate', '0px -2px')
