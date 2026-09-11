@@ -6,6 +6,7 @@ import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOr
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 import type { OpenPhoto } from "./PersonalPhotosPreview"
 import { usePreviewCount, useSheetColumns } from "../lib/photoLayout"
+import { isTuningCornerCurve } from "../lib/developmentTuning"
 
 export type PersonalPhotosSheetHandle = { openPhoto: OpenPhoto }
 const sheetPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2 - 1.125rem), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3 - 1.375rem)"
@@ -49,6 +50,7 @@ function rewindSheet(sheet: HTMLDivElement, halt: { cancelled: boolean }) {
 export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<PersonalPhotosSheetHandle>; onPreviewImagesChange: (images: Record<string, string>) => void }) {
   const [open, setOpen] = useState(false)
   const previewCount = usePreviewCount()
+  const tuningCornerCurve = isTuningCornerCurve()
   const columnCount = useSheetColumns()
   // The first photos are the prints, so dealing them round-robin puts them
   // across the top of the sheet rather than down its left-hand column.
@@ -137,7 +139,8 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange} actionsRef={dialogActions}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange} actionsRef={dialogActions}
+      modal={!tuningCornerCurve} disablePointerDismissal={tuningCornerCurve}>
       <Dialog.Portal>
         <Dialog.Backdrop className="personal-photos-backdrop" />
         <Dialog.Popup initialFocus={sheetRef} finalFocus={() => opener} className="personal-photos-dialog">

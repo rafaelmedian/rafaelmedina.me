@@ -31,6 +31,21 @@ test("uses continuous corners without reshaping circles and pills", async ({ pag
   await expect(page.locator("#space")).toContainText("superellipse(2)")
 })
 
+test("corner tuner changes rounded surfaces without reshaping circles", async ({ page }) => {
+  await page.goto("/?tune=corners")
+  const curve = page.getByRole("slider", { name: "Exponent" })
+  await expect(curve).toBeVisible()
+  await expect(curve).toHaveAttribute("aria-valuenow", "2")
+
+  await curve.press("End")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(4)")
+  await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
+
+  await page.locator(".mosaic-row-card").first().click()
+  await expect(page.locator(".preview-gallery-card")).toHaveCSS("corner-shape", "superellipse(4)")
+  await expect(curve).toBeVisible()
+})
+
 const customPropertyPattern = /^--[\w-]+$/
 const cssVariablePattern = /var\((--[\w-]+)/g
 

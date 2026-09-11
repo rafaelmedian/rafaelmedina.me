@@ -29,6 +29,9 @@ const ElasticEdgeTuner = import.meta.env.DEV
 const PhotoPrintTuner = import.meta.env.DEV
   ? lazy(() => import("./components/PhotoPrintTuner"))
   : null
+const CornerCurveTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/CornerCurveTuner"))
+  : null
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -62,6 +65,7 @@ function App({ pathname }: { pathname?: string }) {
   const tuning = !isDesignSystemPage && typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tune") : null
   const isTuningEdge = ElasticEdgeTuner !== null && tuning === "edge"
   const isTuningPhotos = PhotoPrintTuner !== null && tuning === "photos"
+  const isTuningCorners = CornerCurveTuner !== null && tuning === "corners"
 
   return (
     <div className="relative isolate min-h-dvh overflow-x-clip bg-canvas text-ink">
@@ -99,6 +103,11 @@ function App({ pathname }: { pathname?: string }) {
         {isTuningPhotos && PhotoPrintTuner ? (
           <Suspense fallback={null}>
             <PhotoPrintTuner />
+          </Suspense>
+        ) : null}
+        {isTuningCorners && CornerCurveTuner ? (
+          <Suspense fallback={null}>
+            <CornerCurveTuner />
           </Suspense>
         ) : null}
     </div>
