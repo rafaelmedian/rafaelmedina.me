@@ -144,6 +144,9 @@ for (const destination of ["project", "other reader"]) {
       await expect(page.locator(".preview-gallery-popup")).toBeHidden()
       await page.getByRole("button", { name: "Personal life", exact: true }).click()
       await expect(page.getByRole("dialog", { name: "Personal photos", exact: true })).toBeVisible()
+      // Visibility precedes the modal's focus handoff. Send Escape only once
+      // the replacement reader owns keyboard input.
+      await expect(page.getByRole("region", { name: "Photo globe" })).toBeFocused()
     }
     release()
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
