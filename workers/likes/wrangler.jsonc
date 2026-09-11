@@ -6,6 +6,9 @@
   "vars": {
     "ALLOWED_ORIGINS": "https://rafaelmedina.me,https://www.rafaelmedina.me,http://localhost:5173,http://127.0.0.1:5173,http://127.0.0.1:4174,http://127.0.0.1:4175"
   },
+  "ai": {
+    "binding": "AI"
+  },
   "d1_databases": [{
     "binding": "DB",
     "database_name": "rafaelmedina-note-likes",
