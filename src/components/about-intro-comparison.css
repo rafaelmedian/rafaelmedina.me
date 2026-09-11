@@ -1,0 +1,145 @@
+/* Dev-only comparison. Contain the real widgets inside independent stages. */
+.intro-comparison {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  font-family: var(--font-ui);
+}
+
+.intro-comparison-header {
+  max-width: 720px;
+  margin-bottom: 32px;
+}
+
+.intro-comparison a {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-underline-offset: 4px;
+}
+
+.intro-comparison h1 {
+  margin: 24px 0 12px;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.intro-comparison p {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.intro-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.intro-comparison-card {
+  min-width: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+}
+
+.intro-comparison-card > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 112px;
+  padding: 24px 24px 0;
+}
+
+.intro-comparison-letter {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: var(--ink);
+  color: var(--canvas);
+  font-size: var(--text-sm);
+}
+
+.intro-comparison h2 {
+  margin: 0 0 4px;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.intro-comparison-stage {
+  position: relative;
+  container-type: inline-size;
+  height: 360px;
+  isolation: isolate;
+}
+
+.intro-comparison-stage .about-intro {
+  --intro-size: 64px;
+  --intro-open-size: min(240px, calc(100cqw - 24px));
+  position: absolute;
+  left: 12px;
+  right: auto;
+  bottom: 24px;
+  z-index: auto;
+}
+
+.intro-comparison-stage .about-intro[data-enlarged="true"] {
+  --intro-open-size: min(320px, calc(100cqw - 24px));
+}
+
+.intro-comparison-stage .about-intro .about-intro-surface {
+  left: 0;
+  right: auto;
+  bottom: 0;
+}
+
+.intro-comparison-stage .about-intro .about-intro-actions {
+  top: auto;
+  bottom: calc((var(--intro-size) - 52px) / 2);
+  left: calc(100% + 12px);
+  right: auto;
+}
+
+.intro-comparison-stage .about-intro[data-reply-open="true"] .about-intro-actions,
+.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-actions[data-reply="none"] {
+  width: min(320px, calc(100cqw - 100px));
+}
+
+.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-actions[data-reply="none"] {
+  height: 216px;
+}
+
+.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-choices {
+  flex-direction: column;
+}
+
+.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-reply-action {
+  flex: 0 0 44px;
+  width: 100%;
+}
+
+.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-greeting strong {
+  font-size: var(--text-md);
+}
+
+.intro-comparison-context {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0 24px 12px;
+}
+
+.intro-comparison-note {
+  margin-top: 24px;
+}
+
+@media (max-width: 1099.98px) {
+  .intro-comparison {
+    padding: 24px 12px;
+  }
+
+  .intro-comparison-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 480px;
+  }
+}

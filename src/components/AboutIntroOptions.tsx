@@ -20,6 +20,6 @@ export default function AboutIntroOptions({ value, onChange }: {
         {option.value.toUpperCase()}
       </button>)}
     </div>
-    <span>{options.find(option => option.value === value)?.name}</span>
+    <span><a href="/intro-options">Compare all</a></span>
   </aside>, document.body)
 }

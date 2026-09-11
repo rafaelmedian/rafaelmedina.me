@@ -200,3 +200,8 @@ All three use the same video, deferred media, reply form and email-draft flow.
 Switching options closes playback. B and C stack comfortably above the mobile
 TOC. Use the existing feedback toolbar to annotate an option; include its letter.
 The selector is development-only and can be removed after choosing a direction.
+
+Open `/intro-options` in development to compare A, B, and C on one page.
+The cards contain the real widgets, including playback and reply forms; starting
+one video pauses the others. Cards sit side by side on wide screens and stack
+on narrow screens. The homepage selector also links to this comparison.

@@ -2194,7 +2194,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   choices visible beside the portrait above the TOC. The development-only A/B/C selector
                   sits 12px from the top safe area on the corner layer with 44px targets; share an option
                   using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>. All options share playback
-                  and reply forms, and use the existing feedback toolbar for review.
+                  and reply forms, and use the existing feedback toolbar for review. The development-only
+                  <a href="/intro-options"> comparison page</a> shows all three together in separate 360px stages,
+                  with contained 64px portraits and 240px players (320px when enlarged). It uses the shared
+                  type, radius and shadow tokens and stacks its cards below 1100px. Only one recording
+                  can play at a time; its styles load with that page alone.
                   There is no corner dismiss button.
                   Both cap at 320px, use shared overlay shadows and <code>--text-md</code> input text
                   to prevent Safari focus zoom. Escape closes the composer and returns focus;
