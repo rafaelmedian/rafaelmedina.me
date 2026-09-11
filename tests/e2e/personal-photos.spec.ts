@@ -167,15 +167,7 @@ test("a click on a print opens the globe holding that photo; Enter opens it as i
   await trigger.scrollIntoViewIfNeeded()
   const print = trigger.locator(".personal-photos-print").nth(3)
   const photoId = await print.getAttribute("data-photo-id")
-  // The slide drawn largest, and so furthest forward: the held photo grows at
-  // the centre while the rest of the globe steps back.
-  const largest = () => page.evaluate(() => {
-    const slides = Array.from(document.querySelectorAll<HTMLElement>(".personal-photos-sphere .personal-photos-slide"))
-    const widths = slides.map((slide) => slide.getBoundingClientRect().width)
-    const widest = widths.indexOf(Math.max(...widths))
-    const runnerUp = Math.max(...widths.filter((_, index) => index !== widest))
-    return { id: slides[widest].dataset.photoId, lead: widths[widest] / runnerUp }
-  })
+  const largest = () => largestSlide(page)
 
   // The part of the print the middle one leaves showing, as a visitor would.
   const box = (await print.boundingBox())!
@@ -202,7 +194,56 @@ test("a click on a print opens the globe holding that photo; Enter opens it as i
   expect((await largest()).lead).toBeLessThan(1.5)
 })
 
+test("a print pulled from the fan follows the pointer with resistance and opens on release", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  await trigger.scrollIntoViewIfNeeded()
+  await expect(page.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
+  // By class, not through the trigger's role: the open sheet hides the tile
+  // from the accessibility tree, and the print is read again behind it.
+  const prints = page.locator(".personal-photos-print")
+  const print = prints.nth(3)
+  const photoId = await print.getAttribute("data-photo-id")
+  const box = (await print.boundingBox())!
+  const start = { x: box.x + box.width * 0.8, y: box.y + box.height / 2 }
+  await page.mouse.move(start.x, start.y)
+  await page.mouse.down()
+  for (let step = 1; step <= 8; step++) await page.mouse.move(start.x + 25 * step, start.y)
+  // A 200px pull moves the print about 39px — p x 48 / (48 + p) — and turns
+  // it; the rest of the hand stays where it was dealt.
+  const pull = () => print.evaluate((element) => parseFloat(getComputedStyle(element).translate))
+  await expect.poll(pull).toBeGreaterThan(34)
+  expect(await pull()).toBeLessThan(44)
+  await expect(print).toHaveAttribute("data-print-drag", "")
+  expect(await print.evaluate((element) => getComputedStyle(element).rotate)).not.toBe("none")
+  expect(await prints.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).translate).filter((_, index) => index !== 3))).toEqual(["none", "none", "none", "none"])
+
+  // Let go: the click it was opens the globe holding that photo, and the
+  // print springs back into the hand behind the sheet.
+  await page.mouse.up()
+  await expect(dialog(page)).toBeVisible()
+  await expect.poll(async () => {
+    const { id, lead } = await largestSlide(page)
+    return id === photoId && lead > 1.5
+  }, { timeout: 15_000 }).toBe(true)
+  await expect.poll(() => print.evaluate((element) => getComputedStyle(element).translate)).toBe("none")
+  await page.keyboard.press("Escape")
+  await page.keyboard.press("Escape")
+  await expect(dialog(page)).toBeHidden()
+})
+
 const dialog = (page: Page) => page.getByRole("dialog", { name: "Personal photos" })
+
+/** The slide drawn largest, and so furthest forward: the held photo grows at
+    the centre while the rest of the globe steps back. */
+const largestSlide = (page: Page) => page.evaluate(() => {
+  const slides = Array.from(document.querySelectorAll<HTMLElement>(".personal-photos-sphere .personal-photos-slide"))
+  const widths = slides.map((slide) => slide.getBoundingClientRect().width)
+  const widest = widths.indexOf(Math.max(...widths))
+  const runnerUp = Math.max(...widths.filter((_, index) => index !== widest))
+  return { id: slides[widest].dataset.photoId, lead: widths[widest] / runnerUp }
+})
 
 
 /** Pause every flight at its first frame so the deal can be inspected. */

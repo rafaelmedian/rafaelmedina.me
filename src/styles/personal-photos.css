@@ -155,6 +155,19 @@
     position: absolute;
     inset: 0 0 var(--print-lift, -11%);
   }
+  /* A pressed print is pulled: it follows the pointer with a rubber band's
+     resistance, on the same `translate` as the lift with the pull on top,
+     and turns further as it goes (the tilt rule below, given more reach).
+     Neither waits on a transition while the press lasts, and the lean and
+     the drop snap too, so the reset before a flight still measures the hand
+     at rest in one frame. Let go, the print springs back into the hand:
+     usePhotoStackTilt animates the way home itself, since the print becomes
+     the flight's placeholder a beat later and the placeholder has no
+     transition to carry it. */
+  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-drag] {
+    translate: var(--print-drag-x, 0px) calc(var(--print-lift, -11%) + var(--print-drag-y, 0px));
+    transition: translate 0s, rotate 0s;
+  }
 }
 
 .personal-photos-print:first-child { margin-left: 0; }

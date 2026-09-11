@@ -150,6 +150,9 @@ export function usePhotoOriginTransition(
       opener.focus({ preventScroll: true })
       void opener.offsetWidth
     }
+    // A print let go a moment before the close is still springing back
+    // into the hand; the return is aimed at where it will rest.
+    if (!open) opener.querySelectorAll(".personal-photos-print").forEach((print) => print.getAnimations().forEach((animation) => animation.finish()))
     const sources = open ? origins : measurePhotoOrigins(opener)
     if (!sources.length) return
     const tokens = getComputedStyle(strip)
