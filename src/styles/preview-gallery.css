@@ -547,18 +547,6 @@
   margin-top: 2rem;
 }
 
-/* Nothing above them to be level with: the chevrons page a page of prose, so
-   they take the middle of whatever of the sheet is on screen rather than the
-   middle of an artwork that is not there. The notes list is the same case. */
-.preview-gallery-popup[data-preview-kind="resume"] .preview-gallery-rail,
-.preview-gallery-popup[data-preview-kind="resume"][data-wide="true"] .preview-gallery-rail,
-.preview-gallery-popup[data-preview-kind="writings"] .preview-gallery-rail,
-.preview-gallery-popup[data-preview-kind="writings"][data-wide="true"] .preview-gallery-rail {
-  --preview-gallery-rail-anchor: 50%;
-}
-
-
-
 .preview-gallery-controls {
   display: inline-flex;
   align-items: center;
@@ -581,10 +569,14 @@
    between clicks is worse than one sitting a little off centre on the two
    previews whose artwork is not the common ratio.
 
-   `min(..., 50%)` is the short-window case, and it is why this is not simply a
-   larger fixed number: the card is capped at the viewport and scrolls
-   internally, so half the popup is always the middle of what can actually be
-   seen, and paging stays reachable without scrolling back up.
+   That holds on the résumé and the notes too, which have no artwork to be
+   level with. They used to take half their own card instead, and the pair
+   jumped on every step into or out of them -- at 2560x1323, 280px lower on
+   the résumé, whose sheet runs to the viewport's foot, and 15px higher on the
+   notes list, which is shorter than the artwork, then down again as a note
+   grew the card. The anchor is a fraction of the media cap, which is itself a
+   fraction of the viewport, so it lands inside the card however short the
+   window is.
 
    Spanning the card is the only way one group can hold both edges, so the span
    between them gives the pointer back to the card underneath. */
@@ -598,7 +590,7 @@
   --preview-gallery-rail-anchor: calc(min(367px, var(--preview-gallery-media-cap)) / 2);
   position: absolute;
   z-index: 1;
-  top: min(var(--preview-gallery-rail-anchor), 50%);
+  top: var(--preview-gallery-rail-anchor);
   right: var(--preview-gallery-rail-inset);
   left: var(--preview-gallery-rail-inset);
   display: flex;
