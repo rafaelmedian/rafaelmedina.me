@@ -651,6 +651,47 @@ test("offers LinkedIn and X actions beside booking", async ({ page }) => {
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
 })
 
+test("expands the contact pills' internal shine on hover and focus", async ({ page }) => {
+  await page.goto("/")
+
+  const actions = page.getByRole("group", { name: "Profile contact actions" })
+  const pills = actions.locator(".mosaic-contact-pill")
+  await expect(pills).toHaveCount(3)
+
+  for (let index = 0; index < 3; index += 1) {
+    const pill = pills.nth(index)
+    const rest = await pill.evaluate((element) => {
+      const highlight = getComputedStyle(element, "::before")
+      return {
+        height: Number.parseFloat(highlight.height),
+        opacity: Number.parseFloat(highlight.opacity),
+        transitionProperty: highlight.transitionProperty,
+      }
+    })
+
+    expect(rest.height).toBe(22)
+    expect(rest.transitionProperty).toContain("height")
+
+    await pill.hover()
+
+    await expect
+      .poll(() =>
+        pill.evaluate((element) => Number.parseFloat(getComputedStyle(element, "::before").opacity)),
+      )
+      .toBe(1)
+
+    const shineHeight = () => pill.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element, "::before").height),
+    )
+    await expect.poll(shineHeight).toBe(28)
+    await page.mouse.move(0, 0)
+    await expect.poll(shineHeight).toBe(rest.height)
+    await pill.focus()
+    await expect.poll(shineHeight).toBe(28)
+    await pill.evaluate((element) => (element as HTMLElement).blur())
+  }
+})
+
 test("leads the contact row with the booking pill", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
