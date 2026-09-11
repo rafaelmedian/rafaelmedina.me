@@ -2155,14 +2155,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Width, height, corner radius and vertical position use <code>--duration-slow</code> to expand,
                   <code> --duration-quick</code> to collapse, and <code>--ease-smooth</code> throughout.
                   Video fills the square edge to edge, fading in over <code>--duration-base</code> once ready.
-                  A dark <code>--ink</code> pill sits 8px inside the bottom edge with
-                  <code> --radius-full</code> corners and the shared ring and control shadows.
-                  White 18px icons occupy 44px targets: play/pause left, mute right, and a
+                  A dark glass pill sits 8px inside the bottom edge with equal 2px padding,
+                  <code> --radius-full</code> corners, a 36%-black tint, 16px backdrop blur, a 16%-white inset hairline and the shared control shadow.
+                  Solid 18px iOS-inspired media silhouettes occupy 44px targets: play/pause left, mute right, and a
                   4px rounded seek bar between them. Its white fill tracks playback over a
                   36%-white rail without a visible thumb or time counter; the native range
                   retains keyboard seeking and announces elapsed and total time.
                   Playback controls appear on hover or keyboard focus; touch users tap the video to toggle them.
-                  The close X stays visible 8px above the card in a 44px white circular target,
+                  The close X stays visible 12px above and 8px beyond the card’s right edge in a 44px white circular target,
                   using <code>--canvas</code>, <code>--ink</code>, <code>--shadow-ring</code> and
                   <code> --shadow-overlay</code> (overlay-hover on hover). Media is clipped in its own
                   rounded wrapper so the close target remains outside the image throughout the resize.

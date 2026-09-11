@@ -1,14 +1,10 @@
 import { type CSSProperties, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 // Direct imports keep the deferred development chunk free of the full icon catalog.
-import ArrowReloadHorizontalIcon from "@hugeicons/core-free-icons/ArrowReloadHorizontalIcon"
 import BubbleChatIcon from "@hugeicons/core-free-icons/BubbleChatIcon"
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon"
 import Mail01Icon from "@hugeicons/core-free-icons/Mail01Icon"
-import PauseIcon from "@hugeicons/core-free-icons/PauseIcon"
 import PlayIcon from "@hugeicons/core-free-icons/PlayIcon"
-import VolumeHighIcon from "@hugeicons/core-free-icons/VolumeHighIcon"
-import VolumeMute01Icon from "@hugeicons/core-free-icons/VolumeMute01Icon"
 
 import AboutIntroReply from "./AboutIntroReply"
 import AboutIntroChat from "./AboutIntroChat"
@@ -17,6 +13,23 @@ import type { IntroOption } from "../data/aboutIntro"
 import type { AboutIntroMedia } from "../data/aboutIntro"
 import { useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+
+// Solid, compact media silhouettes inspired by native iOS playback controls.
+function PlaybackIcon({ kind }: { kind: "play" | "pause" | "volume" | "muted" }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      {kind === "play" ? <path d="M6 4.7c0-1 .9-1.5 1.7-1l12 7.3c.8.5.8 1.5 0 2l-12 7.3c-.8.5-1.7 0-1.7-1Z" />
+        : kind === "pause" ? <><rect x="5" y="3" width="5" height="18" rx="1.2" /><rect x="14" y="3" width="5" height="18" rx="1.2" /></>
+          : <>
+            <path d={kind === "muted"
+              ? "M12.5 3.8v8.1L6.7 6.1l4.2-3.2c.7-.5 1.6 0 1.6.9ZM3 8h1.1l8.4 8.4v3.8c0 .9-.9 1.4-1.6.9L5 16.5H3c-1 0-1.5-.5-1.5-1.5V9.5C1.5 8.5 2 8 3 8Z"
+              : "M3 8h2l5.9-4.6c.7-.5 1.6 0 1.6.9v15.4c0 .9-.9 1.4-1.6.9L5 16H3c-1 0-1.5-.5-1.5-1.5v-5C1.5 8.5 2 8 3 8Z"} />
+            <path d={kind === "muted" ? "M2 2 22 22" : "M16 8a6 6 0 0 1 0 8M19 4.5a10.5 10.5 0 0 1 0 15"}
+              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </>}
+    </svg>
+  )
+}
 
 const timeLabel = (seconds: number) => {
   const whole = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0))
@@ -255,8 +268,8 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
                 aria-label={playing ? "Pause introduction" : action}
                 onClick={() => { if (playing) videoRef.current?.pause(); else play() }}>
                 <span className="t-icon-swap" data-state={playing ? "b" : "a"} aria-hidden="true">
-                  <span className="t-icon" data-icon="a"><HugeiconsIcon icon={ended || error ? ArrowReloadHorizontalIcon : PlayIcon} fill={ended || error ? "none" : "currentColor"} strokeWidth={1.5} size={18} /></span>
-                  <span className="t-icon" data-icon="b"><HugeiconsIcon icon={PauseIcon} fill="currentColor" strokeWidth={1.5} size={18} /></span>
+                  <span className="t-icon" data-icon="a"><PlaybackIcon kind="play" /></span>
+                  <span className="t-icon" data-icon="b"><PlaybackIcon kind="pause" /></span>
                 </span>
               </button>
               <div className="about-intro-progress" style={{ "--intro-progress": `${duration > 0 ? Math.min(100, position / duration * 100) : 0}%` } as CSSProperties}>
@@ -275,8 +288,8 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
                   setMuted(!muted)
                 }}>
                 <span className="t-icon-swap" data-state={muted ? "b" : "a"} aria-hidden="true">
-                  <span className="t-icon" data-icon="a"><HugeiconsIcon icon={VolumeHighIcon} strokeWidth={1.5} size={18} /></span>
-                  <span className="t-icon" data-icon="b"><HugeiconsIcon icon={VolumeMute01Icon} strokeWidth={1.5} size={18} /></span>
+                  <span className="t-icon" data-icon="a"><PlaybackIcon kind="volume" /></span>
+                  <span className="t-icon" data-icon="b"><PlaybackIcon kind="muted" /></span>
                 </span>
               </button>
             </div>
