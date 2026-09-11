@@ -166,10 +166,20 @@ test("a switch flies every photo from where one layout left it to where the othe
   await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
   await page.mouse.move(5, 5)
   // Park the globe: a photo brought to the front from the keyboard holds it
-  // still for seconds, so the positions read here are the ones the switch
-  // will find, however long the click takes to land.
+  // still for seconds once the turn has settled, so the positions read here
+  // are the ones the switch will find, however long the click takes to
+  // land. The turn is a spring advanced by frame time, so under a starved
+  // run it takes longer than its nominal beat: wait for two reads to agree
+  // rather than for a fixed time.
   await page.keyboard.press("Tab")
-  await page.waitForTimeout(700)
+  const centres = (root: Locator) => root.evaluate((element) => Object.fromEntries(Array.from(element.querySelectorAll<HTMLElement>(".personal-photos-slide[data-photo-id]"))
+    .filter((slide) => slide.getBoundingClientRect().width)
+    .map((slide) => { const rect = slide.getBoundingClientRect(); return [slide.dataset.photoId!, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, width: rect.width }] })))
+  await expect.poll(async () => {
+    const first = JSON.stringify(await centres(globe(page)))
+    await page.waitForTimeout(150)
+    return first === JSON.stringify(await centres(globe(page)))
+  }, { timeout: 10_000 }).toBe(true)
   // Hold the switch's flights at their first frame as they are built, so
   // both ends can be read.
   await page.evaluate(() => {
@@ -183,9 +193,6 @@ test("a switch flies every photo from where one layout left it to where the othe
       return animation
     }
   })
-  const centres = (root: Locator) => root.evaluate((element) => Object.fromEntries(Array.from(element.querySelectorAll<HTMLElement>(".personal-photos-slide[data-photo-id]"))
-    .filter((slide) => slide.getBoundingClientRect().width)
-    .map((slide) => { const rect = slide.getBoundingClientRect(); return [slide.dataset.photoId!, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, width: rect.width }] })))
   const before = await centres(globe(page))
 
   await toggle(page, "Grid").click()
