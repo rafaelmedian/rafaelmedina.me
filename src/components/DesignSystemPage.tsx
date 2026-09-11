@@ -1280,8 +1280,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   wait <code>--card-caption-delay: 60ms</code> before they start, in either direction: while a tile's
                   loop plays, Chrome paces an otherwise idle page at the video's 30fps, and a fade that began on the
                   hover's first frame arrived as a 32% jump, a held frame, and a second jump before it eased. The delay
-                  spends that ramp-up, so the first frame that moves is an ordinary step. It paints only
-                  on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden
+                  spends that ramp-up, so the first frame that moves is an ordinary step. The artwork is clipped by an
+                  inner layer carrying the tile's radius and squircle; the blur is its sibling, because Chromium
+                  flattens a masked backdrop filter inside a squircle overflow clip into an opaque rectangle. It paints
+                  only on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden
                   and so is the caption: with no hover to reveal it, a name would have to sit on every tile at once,
                   over artwork that already carries the project's own wordmark. The title still reaches assistive
                   technology and crawlers through the link's accessible name and its prerendered description.
@@ -2113,7 +2115,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   to 899px the gap is 10px and the grid provides 32px total horizontal inset; below 700px
                   the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 16px radius;
                   desktop tiles use 24px. Contained artwork letterboxes inside the card: the card's grid
-                  gets one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
+                  and its inner artwork clip each get one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
                   height to resolve against, and the inset drops to <code>0.375rem</code>. Nine compositions remove the
                   pale mat entirely: Family Stories, Matcha Rewards, Matcha Token, Matcha Pro, Matcha trade page,
                   Matcha on mobile, Wallet, Homepage, and

@@ -1152,7 +1152,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${galleryItems.length}`}
                                 aria-describedby={`${itemKey}-description`}
                               >
-                                {media}
+                                <span className="mosaic-row-card-media-clip">
+                                  {media}
+                                </span>
                                 <span className="mosaic-row-card-scrim" aria-hidden="true">
                                   <span /><span /><span /><span />
                                 </span>

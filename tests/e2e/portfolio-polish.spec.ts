@@ -4826,7 +4826,7 @@ test("clips the Protector artwork to its full-width card on mobile", async ({ pa
   const [cardBox, mediaBox] = await Promise.all([protectorCard.boundingBox(), protectorMedia.boundingBox()])
 
   await expect(protectorMedia).toHaveCSS("object-fit", "cover")
-  await expect(protectorCard).toHaveCSS("overflow", "hidden")
+  await expect(protectorCard.locator(".mosaic-row-card-media-clip")).toHaveCSS("overflow", "hidden")
   expect(cardBox).not.toBeNull()
   expect(mediaBox).not.toBeNull()
   expect(cardBox!.x).toBe(8)

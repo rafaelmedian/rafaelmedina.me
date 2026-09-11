@@ -31,6 +31,20 @@ test("uses continuous corners without reshaping circles and pills", async ({ pag
   await expect(page.locator("#space")).toContainText("superellipse(2)")
 })
 
+test("keeps the caption blur outside the card's squircle clip", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/?tune=off")
+
+  const card = page.getByRole("link", { name: /Open Protector booking preview/ })
+  const mediaClip = card.locator(".mosaic-row-card-media-clip")
+
+  await expect(card).toHaveCSS("corner-shape", "superellipse(2)")
+  await expect(card).toHaveCSS("overflow", "visible")
+  await expect(mediaClip).toHaveCSS("corner-shape", "superellipse(2)")
+  await expect(mediaClip).toHaveCSS("overflow", "hidden")
+  await expect(card.locator(":scope > .mosaic-row-card-scrim")).toHaveCount(1)
+})
+
 test("corner tuner changes rounded surfaces without reshaping circles", async ({ page }) => {
   await page.goto("/")
   const curve = page.getByRole("slider", { name: "Exponent" })
