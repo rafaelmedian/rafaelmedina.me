@@ -11,11 +11,16 @@
 // public/, and a build should not need a browser to produce it. Run this after
 // editing the résumé content below or src/data/cv.ts, then commit the result.
 //
-// Work history, dates, and education mirror src/data/cv.ts; the per-role bullets
-// are the longer form carried over from the previous PDF. The contact address is
-// siteLinks.email in src/data/portfolio.ts — keep all three in step.
+// Work history, dates, and education mirror src/data/cv.ts. The contact address
+// is siteLinks.email in src/data/portfolio.ts — keep all three in step.
+//
+// The sheet is set the way the site reads: Inter, one size, two weights, the
+// site's greys. Every bullet is written to fit a single line of the measure,
+// and the script refuses to write if one wraps or the content spills past the
+// first page -- a résumé that wraps or runs long is a regression, not a variant.
 
 import { mkdtemp, writeFile, rm } from "node:fs/promises"
+import { createRequire } from "node:module"
 import { tmpdir } from "node:os"
 import { join, resolve, dirname } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -25,15 +30,22 @@ const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const outputPath = join(rootDir, "public", "rafael-medina-resume.pdf")
 const previewPath = join(rootDir, "public", "rafael-medina-resume-preview.png")
 
+// The site's own stack leads with Inter but never loads it; the PDF embeds the
+// variable face from the package so the sheet prints the same everywhere.
+const require = createRequire(import.meta.url)
+const fontUrl = pathToFileURL(require.resolve("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")).href
+
 const profile = {
   name: "Rafael Medina",
   title: "Senior Product Designer",
   email: "hey@rafaelmedina.me",
-  phone: "+1 (829) 786 9580",
   location: "NYC / Santo Domingo",
 }
 
-const links = ["rafaelmedina.me", "dribbble.com/rafaelmedian", "linkedin.com/in/rafaelmedian"]
+const links = [
+  { label: "rafaelmedina.me", href: "https://rafaelmedina.me" },
+  { label: "linkedin.com/in/rafaelmedian", href: "https://www.linkedin.com/in/rafaelmedian" },
+]
 
 const work = [
   {
@@ -41,9 +53,7 @@ const work = [
     place: "Remote",
     dates: "2026 - Present",
     role: "Co-founder",
-    bullets: [
-      "Building a mobile wallet for colmados, helping neighborhood store owners in the Dominican Republic manage payments and day-to-day finances from their phones.",
-    ],
+    bullets: ["Building a mobile wallet for colmados, the corner stores of the Dominican Republic."],
   },
   {
     company: "0x Project",
@@ -51,19 +61,19 @@ const work = [
     dates: "Dec 2021 - March 2026",
     role: "Senior Product Designer",
     bullets: [
-      "Redesigned Matcha.xyz DEX aggregator from scratch, introducing monetization flows that generated sustainable revenue.",
-      "Designed and shipped the 0x API dashboard in 5 weeks; directly contributed to scaling API revenue to $100K+/month.",
-      "Led marketing design strategy for 12 months: campaigns, video content, and web experiences that increased developer adoption.",
+      "Redesigned Matcha.xyz from scratch, adding monetization flows that generated revenue.",
+      "Shipped the 0x API dashboard in 5 weeks; helped scale API revenue to $100K+/month.",
+      "Led marketing design for a year: campaigns, video, and web that grew adoption.",
     ],
   },
   {
     company: "BoldVoice",
     place: "Remote, NYC",
-    dates: "July 2021 - December 2021",
+    dates: "July 2021 - Dec 2021",
     role: "Product Designer (Contract)",
     bullets: [
-      "Sole designer for an accent-training mobile app with 50K+ users; partnered directly with a single developer to ship growth experiments.",
-      "Prioritized high-ROI feature improvements over a full redesign, maximizing impact with limited resources.",
+      "Sole designer for an accent-training app with 50K+ users, pairing with one developer.",
+      "Prioritized high-ROI improvements over a full redesign to maximize impact.",
     ],
   },
   {
@@ -72,29 +82,27 @@ const work = [
     dates: "Jan 2021 - July 2021",
     role: "Product Designer (Contract)",
     bullets: [
-      "Redesigned financial-analysis tools for institutional analysts, improving data discovery and workflow efficiency.",
-      "Shaped UX for company profiles and government entity features used by thousands of financial professionals.",
+      "Redesigned financial-analysis tools for institutional analysts, improving data discovery.",
+      "Shaped UX for company profiles and government entities used by thousands of analysts.",
     ],
   },
   {
-    company: "TM [Chainlink & Twilio]",
+    company: "TM (Chainlink & Twilio)",
     place: "Remote, Los Angeles",
     dates: "Dec 2018 - Dec 2020",
     role: "Product Designer & Frontend Developer",
     bullets: [
-      "Chainlink: collaborated with the Design Director on internal tools and the brand system for a leading blockchain oracle network.",
-      "Twilio: led a complete redesign of the developer tools platform; conducted user interviews and UX research to inform decisions.",
-      "Onit: rebuilt the drag-and-drop logic builder with React, improving usability for legal workflow automation.",
+      "Chainlink: partnered with the Design Director on internal tools and the brand system.",
+      "Twilio: led a full redesign of the developer tools platform, grounded in user interviews.",
+      "Onit: rebuilt the logic builder in React. Design engineering, before AI took over.",
     ],
   },
   {
-    company: "Incubeta [Google]",
+    company: "Incubeta (Google)",
     place: "Remote, NYC",
     dates: "Jan 2018 - May 2018",
     role: "Product Designer & Developer (Contract)",
-    bullets: [
-      "Designed Google Edu Directory (edudirectory.withgoogle.com), connecting schools globally with certified Google trainers.",
-    ],
+    bullets: ["Designed Google Edu Directory, connecting schools with certified Google trainers."],
   },
 ]
 
@@ -102,58 +110,67 @@ const education = [
   {
     school: "CCI Program - NOVA Community College",
     place: "Washington, DC",
-    detail: "Computer Science · 2016 - 2018",
-    note: "U.S. State Dept. scholarship recipient (1 of 5 from the Dominican Republic).",
+    dates: "2016 - 2018",
+    note: "Computer Science · U.S. State Department scholarship recipient",
   },
   {
     school: "ITLA - Las Américas Institute of Technology",
     place: "Dominican Republic",
-    detail: "Associate's, Computer Science · 2015",
-    note: "GPA 3.8, Full Scholarship.",
+    dates: "2015",
+    note: "Associate's, Computer Science · GPA 3.8, full scholarship",
   },
 ]
 
-const skills = {
-  Design: ["Web3/DeFi products", "Figma", "Prototyping", "Web/Mobile", "Animation with Jitter, Rive"],
-  Development: ["TypeScript, React", "Webflow, Framer", "AI-assisted development (Cursor, Claude Code, Codex)"],
-}
+const skills = [
+  { group: "Design", items: ["Web3/DeFi products", "Figma", "Prototyping", "Web/Mobile", "Animation with Jitter, Rive"] },
+  { group: "Development", items: ["TypeScript, React", "Webflow, Framer", "Claude Code, Conductor, Codex Cloud"] },
+]
 
 const escapeHtml = (value) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 
+// "Dec 2021 - March 2026" is set over two lines, the dash closing the first.
+const datesHtml = (range) => {
+  const [from, to] = range.split(" - ")
+  return to ? `<p>${escapeHtml(from)} –</p><p>${escapeHtml(to)}</p>` : `<p>${escapeHtml(from)}</p>`
+}
+
+// Each entry writes its copy before its dates: the grid paints the dates in
+// the left column, but the company leads the entry in the PDF's text layer
+// and for a screen reader.
 const workHtml = work
   .map(
     (job) => `
-      <article class="entry">
-        <div class="entry-head">
-          <h3>${escapeHtml(job.company)} <span class="place">(${escapeHtml(job.place)})</span></h3>
-          <span class="dates">${escapeHtml(job.dates)}</span>
+      <li>
+        <div class="body">
+          <h3 class="company">${escapeHtml(job.company)} <span class="place">· ${escapeHtml(job.place)}</span></h3>
+          <p class="role">${escapeHtml(job.role)}</p>
+          <ul class="points">${job.bullets.map((bullet) => `<li class="one-line">${escapeHtml(bullet)}</li>`).join("")}</ul>
         </div>
-        <p class="role">${escapeHtml(job.role)}</p>
-        <ul>${job.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}</ul>
-      </article>`,
+        <div class="rail">${datesHtml(job.dates)}</div>
+      </li>`,
   )
   .join("")
 
 const educationHtml = education
   .map(
     (item) => `
-      <article class="entry">
-        <div class="entry-head">
-          <h3>${escapeHtml(item.school)} <span class="place">(${escapeHtml(item.place)})</span></h3>
-          <span class="dates">${escapeHtml(item.detail)}</span>
+      <li>
+        <div class="body">
+          <h3 class="company">${escapeHtml(item.school)} <span class="place">· ${escapeHtml(item.place)}</span></h3>
+          <p class="one-line">${escapeHtml(item.note)}</p>
         </div>
-        <p class="note">${escapeHtml(item.note)}</p>
-      </article>`,
+        <div class="rail">${datesHtml(item.dates)}</div>
+      </li>`,
   )
   .join("")
 
-const skillsHtml = Object.entries(skills)
+const skillsHtml = skills
   .map(
-    ([group, items]) => `
-      <div class="skill-group">
-        <h3>${escapeHtml(group)}</h3>
-        <p>${items.map(escapeHtml).join(" · ")}</p>
+    ({ group, items }) => `
+      <div>
+        <h3 class="rail group">${escapeHtml(group)}</h3>
+        <p class="body one-line">${items.map(escapeHtml).join(" · ")}</p>
       </div>`,
   )
   .join("")
@@ -164,77 +181,99 @@ const html = `<!doctype html>
     <meta charset="utf-8" />
     <title>Rafael Medina — Product Designer — Résumé</title>
     <style>
+      @font-face {
+        font-family: "Inter Variable";
+        src: url("${fontUrl}") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+      }
       @page { size: letter; margin: 0; }
+      /* The site's inks: --ink, the About sheet's title grey and body grey,
+         --muted-soft, and its hairline. */
+      :root {
+        --title: #2d2d2d;
+        --body: #545454;
+        --muted: #6b6b6b;
+        --muted-soft: #757575;
+        --hairline: rgb(0 0 0 / 0.08);
+      }
       * { box-sizing: border-box; }
+      html, body { margin: 0; }
       body {
-        margin: 0;
-        padding: 14mm 15mm 12mm;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        font-size: 8.7pt;
-        line-height: 1.35;
-        color: #171717;
+        width: 816px;
+        height: 1056px;
+        overflow: hidden;
+        padding: 56px 60px 52px;
+        font-family: "Inter Variable", sans-serif;
+        /* One size for the whole sheet: the site's --text-xs on its 1.5 leading. */
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--body);
         -webkit-font-smoothing: antialiased;
+        /* Inter's contextual alternates print as glyphs with no Unicode mapping,
+           so the PDF's text layer would lose the hyphen in "2026 - Present". */
+        font-feature-settings: "calt" 0;
       }
       a { color: inherit; text-decoration: none; }
-      header { display: flex; align-items: baseline; justify-content: space-between; gap: 12pt; }
-      h1 { margin: 0; font-size: 16pt; letter-spacing: -0.01em; }
-      h1 span { font-weight: 400; color: #575757; }
-      .contact { text-align: right; color: #575757; font-size: 8.6pt; line-height: 1.5; }
-      .contact strong { color: #171717; font-weight: 600; }
-      hr { border: 0; border-top: 1px solid #e0e0e0; margin: 10pt 0 8pt; }
-      h2 {
-        margin: 0 0 6pt;
-        font-size: 7.9pt;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: #575757;
-        font-weight: 600;
-      }
-      .entry { margin: 0 0 8pt; break-inside: avoid; }
-      .entry:last-child { margin-bottom: 0; }
-      .entry-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10pt; }
-      .entry-head h3 { margin: 0; font-size: 9.4pt; font-weight: 600; }
-      .place { font-weight: 400; color: #575757; }
-      .dates { flex: none; color: #575757; font-size: 8.6pt; white-space: nowrap; }
-      .role { margin: 1pt 0 3pt; color: #383838; font-style: italic; }
-      ul { margin: 0; padding-left: 12pt; }
-      li { margin: 0 0 2pt; text-wrap: pretty; }
-      .note { margin: 1pt 0 0; color: #575757; text-wrap: pretty; }
-      .skills { display: flex; gap: 18pt; }
-      .skill-group { flex: 1; }
-      .skill-group h3 { margin: 0 0 3pt; font-size: 8.8pt; font-weight: 600; }
-      .skill-group p { margin: 0; color: #383838; text-wrap: pretty; }
-      footer { margin-top: 10pt; padding-top: 6pt; border-top: 1px solid #e0e0e0; color: #575757; font-size: 8.2pt; }
+      h1, h2, h3, p, ul, ol { margin: 0; padding: 0; font-size: inherit; font-weight: inherit; }
+      ul, ol { list-style: none; }
+      p, li, h3 { text-wrap: pretty; }
+      /* Two weights: the company, the school, and the skill group carry 600. */
+      .company, .group { font-weight: 600; }
+
+      /* The header is set light throughout: one weight, one grey, the name only
+         a step darker. The work below is what should carry the weight. */
+      header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--hairline); }
+      header, .contact a { color: var(--muted-soft); }
+      h1 { color: var(--title); }
+      .contact { text-align: right; }
+
+      section { padding-top: 26px; }
+      section + section { margin-top: 26px; border-top: 1px solid var(--hairline); }
+
+      /* Dates hang alone in a column of their own, the range broken over two
+         lines, so the copy never shares a line with them. */
+      .entries { display: grid; gap: 24px; }
+      .entries > li, .skills > div { display: grid; grid-template-columns: 96px 1fr; column-gap: 24px; }
+      .rail { grid-column: 1; grid-row: 1; color: var(--muted-soft); }
+      .body { grid-column: 2; grid-row: 1; }
+      .place { color: var(--muted-soft); font-weight: 400; }
+      .company { color: var(--title); }
+      .role { color: var(--muted); }
+      .points { margin-top: 6px; display: grid; gap: 3px; }
+      .points li { padding-left: 14px; }
+      /* A mark just strong enough to show where a line starts. It sits in the
+         line rather than being positioned: a positioned item is painted in a
+         later pass, which put every bullet after the skills in the text layer. */
+      .points li::before { content: ""; display: inline-block; width: 3px; height: 3px; margin: 0 10px 0.18em -13px; border-radius: 50%; background: #d9d9d9; vertical-align: baseline; }
+
+      .skills { display: grid; gap: 8px; }
+      .group { color: var(--title); }
     </style>
   </head>
   <body>
     <header>
-      <h1>${escapeHtml(profile.name)} <span>· ${escapeHtml(profile.title)}</span></h1>
+      <div>
+        <h1>${escapeHtml(profile.name)}</h1>
+        <p>${escapeHtml(profile.title)}</p>
+      </div>
       <div class="contact">
-        <div><strong>${escapeHtml(profile.email)}</strong></div>
-        <div>${escapeHtml(profile.phone)} · ${escapeHtml(profile.location)}</div>
+        <p><a href="mailto:${escapeHtml(profile.email)}">${escapeHtml(profile.email)}</a> · ${escapeHtml(profile.location)}</p>
+        <p>${links.map((link) => `<a href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`).join(" · ")}</p>
       </div>
     </header>
 
-    <hr />
     <section>
-      <h2>Work</h2>
-      ${workHtml}
+      <ol class="entries" aria-label="Work">${workHtml}</ol>
     </section>
 
-    <hr />
     <section>
-      <h2>Education</h2>
-      ${educationHtml}
+      <ul class="entries" aria-label="Education">${educationHtml}</ul>
     </section>
 
-    <hr />
     <section>
-      <h2>Skills</h2>
-      <div class="skills">${skillsHtml}</div>
+      <div class="skills" aria-label="Skills">${skillsHtml}</div>
     </section>
-
-    <footer>${[profile.email, ...links].map(escapeHtml).join(" · ")}</footer>
   </body>
 </html>`
 
@@ -247,6 +286,29 @@ try {
   const page = await browser.newPage({ viewport: { width: 816, height: 1056 } })
   await page.emulateMedia({ media: "print" })
   await page.goto(pathToFileURL(htmlPath).href, { waitUntil: "load" })
+  await page.evaluate(() => document.fonts.ready)
+
+  // Every `.one-line` was written to fit the measure; measure it rather than
+  // trust it, and find the lowest painted text so the page can't quietly clip.
+  const { wrapped, bottom } = await page.evaluate(() => {
+    const lineHeight = parseFloat(getComputedStyle(document.body).lineHeight)
+    const wrapped = [...document.querySelectorAll(".one-line")]
+      .filter((el) => el.getBoundingClientRect().height > lineHeight * 1.5)
+      .map((el) => el.textContent.trim())
+    let bottom = 0
+    for (const el of document.body.querySelectorAll("*")) {
+      const rect = el.getBoundingClientRect()
+      if (rect.height > 0 && el.children.length === 0) bottom = Math.max(bottom, rect.bottom)
+    }
+    return { wrapped, bottom }
+  })
+  if (wrapped.length > 0) {
+    throw new Error(`These lines wrap; shorten them:\n  ${wrapped.join("\n  ")}`)
+  }
+  const pageBottom = 1056 - 52
+  if (bottom > pageBottom) {
+    throw new Error(`Content reaches ${Math.round(bottom)}px, past the ${pageBottom}px bottom margin. Tighten the spacing or the copy.`)
+  }
 
   // `tagged` keeps the structure tree, so the résumé stays screen-reader
   // navigable the way the previous PDF/UA export from Figma was.
@@ -268,7 +330,7 @@ try {
   // Letter at 96dpi, using the same print styles and content as the PDF.
   await page.screenshot({ path: previewPath })
 
-  console.log(`Wrote ${outputPath} (${(pdf.length / 1024).toFixed(0)} KB, ${pageCount} page)`)
+  console.log(`Wrote ${outputPath} (${(pdf.length / 1024).toFixed(0)} KB, ${pageCount} page, text to ${Math.round(bottom)}px)`)
 } finally {
   await browser.close()
   await rm(workDir, { recursive: true, force: true })

@@ -5083,13 +5083,19 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
 
   const content = await (await pdf.getPage(1)).getTextContent()
   // Non-empty items also prove the text is real and selectable, not an image.
-  const text = content.items.map((item) => ("str" in item ? item.str : "")).join("")
+  // Line ends are kept: joined flat, the address ran into the line above it and
+  // the address match found "Designerhey@..." instead.
+  const text = content.items.map((item) => ("str" in item ? item.str + (item.hasEOL ? "\n" : "") : "")).join("")
   expect(text.length).toBeGreaterThan(500)
 
   expect(text).toContain("Stealth fintech")
   expect(text).toContain("Co-founder")
-  expect(text).toContain("2026 - Present")
+  // The sheet sets a range over two lines, the dash closing the first.
+  expect(text).toMatch(/2026 –\s*Present/)
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)
+  // Each entry's copy precedes its dates in the text layer, and the bullets
+  // stay with their entry rather than being painted in a later pass.
+  expect(text).toMatch(/Stealth fintech[\s\S]*Building a mobile wallet[\s\S]*2026 –[\s\S]*0x Project/)
   // The old Figma export advertised an address the site had already moved off,
   // so the PDF must carry the site's current one and no other: naming the stale
   // address would only catch the drift that already happened.
