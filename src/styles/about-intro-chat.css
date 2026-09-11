@@ -73,6 +73,7 @@
 
 .about-intro-chat .about-intro-chat-bubble {
   position: relative;
+  isolation: isolate;
   flex: 0 0 auto;
   max-width: 100%;
   margin: 0;
@@ -91,10 +92,12 @@
   position: absolute;
   left: -8px;
   bottom: 0;
-  width: 24px;
+  z-index: -1;
+  /* 32px so the square covers the whole 24px corner radius, not just 16px of it. */
+  width: 32px;
   height: 24px;
   background: inherit;
-  clip-path: path("M 8 0 H 24 V 24 H 0 C 6 21 8 16 8 8 Z");
+  clip-path: path("M 8 0 H 32 V 24 H 0 C 6 21 8 16 8 8 Z");
   pointer-events: none;
 }
 
