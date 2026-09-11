@@ -10,6 +10,22 @@ const personalPhotoItems = [
   { id: "golden-gate", name: "golden-gate", width: 1084, height: 1600, caption: "Golden Gate", alt: "Rafael on a boat with the Golden Gate Bridge in the background" },
   { id: "golden-gate-view", name: "golden-gate-view", width: 1200, height: 1200, caption: "Across the Golden Gate", alt: "Golden Gate Bridge viewed from the Marin Headlands in warm evening light" },
   { id: "golden-gate-waves", name: "golden-gate-waves", width: 1200, height: 800, caption: "Pacific coast", alt: "Waves rolling onto a sandy beach beneath the Golden Gate Bridge and coastal cliffs" },
+  { id: "night-portrait", name: "night-portrait", width: 1200, height: 846, caption: "After dark", alt: "Portrait at night, the face lit low against blurred headlights and street lamps" },
+  { id: "street-artist", name: "street-artist", width: 1200, height: 1203, caption: "Street painter", alt: "A street artist spray-painting a canvas on a folding table as a yellow cab passes" },
+  { id: "hiking", name: "hiking", width: 1200, height: 1462, caption: "On the trail", alt: "Rafael on a rocky forest trail under a tangle of branches, trekking pole in hand" },
+  { id: "surfing", name: "surfing", width: 1200, height: 1324, caption: "Surf day", alt: "Rafael on the beach holding a blue surfboard upright, waves breaking behind him" },
+  { id: "jungle-guitar", name: "jungle-guitar", width: 1200, height: 1499, caption: "Jungle, live", alt: "A guitarist mid-kick on a smoky stage, silhouetted in front of the band's glowing Jungle sign" },
+  { id: "subway-door", name: "subway-door", width: 1200, height: 1500, caption: "Doors closing", alt: "A commuter in a denim shirt reading his phone, framed by the gap of a closing subway door" },
+  { id: "dandelion", name: "dandelion", width: 1071, height: 827, caption: "Spring", alt: "A yellow dandelion in sunlit grass, shot from close to the ground" },
+  { id: "akihabara", name: "akihabara", width: 1199, height: 1600, caption: "Akihabara", alt: "Rafael at a crossing in Akihabara, Tokyo, beneath a tower of red karaoke signs" },
+  { id: "rush-hour", name: "rush-hour", width: 1200, height: 1500, caption: "Rush hour", alt: "Commuters packed into a subway car, an older woman in a white hoodie with a blue suitcase by the door" },
+  { id: "karting", name: "karting", width: 1200, height: 1454, caption: "Race day", alt: "A helmeted driver giving a thumbs up from go-kart number 20, a second driver lined up behind" },
+  { id: "pier-sunset", name: "pier-sunset", width: 1200, height: 1500, caption: "Last light", alt: "A pier silhouetted against an orange sunset over the ocean, its lamps just lit" },
+  { id: "scuba", name: "scuba", width: 1200, height: 1469, caption: "Underwater", alt: "A scuba diver descending over a coral reef, a column of bubbles rising behind them" },
+  { id: "jungle-stage", name: "jungle-stage", width: 1200, height: 1499, caption: "From the crowd", alt: "Jungle playing behind keyboards in haze and violet backlight, seen over the heads of the crowd" },
+  { id: "antelope-canyon", name: "antelope-canyon", width: 1200, height: 1503, caption: "Antelope Canyon", alt: "Light falling through the curved orange sandstone walls of a slot canyon" },
+  { id: "mountain-bike", name: "mountain-bike", width: 1200, height: 1502, caption: "Trail ride", alt: "Rafael buckling his helmet astride a mountain bike on a sandy shore under mangroves" },
+  { id: "rainy-night", name: "rainy-night", width: 1067, height: 1600, caption: "Rainy night", alt: "Two people walking arm in arm under a blue cloud-print umbrella down a wet city sidewalk, towers lost in fog above" },
 ]
 
 export { personalPhotoItems }
