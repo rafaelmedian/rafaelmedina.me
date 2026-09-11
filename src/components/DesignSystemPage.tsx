@@ -1585,8 +1585,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </p>
               <p>
                 In the reader, company logos sit inline with each company title in 2rem circular white badges with 0.45rem
-                padding, overlapping by 0.26rem like the work-history popover&rsquo;s logo group. Work entries are
-                separated by the established 8% hairline and 2.5rem spacing step, making dates and roles easier to scan without adding cards.
+                padding, overlapping by 0.26rem like the work-history popover&rsquo;s logo group. Work entries keep the
+                2.5rem spacing step without individual hairlines; one established 8% hairline separates the complete
+                work history from Education.
                 Company names retain their external links but omit the prose-link underline in the résumé; the logo
                 badges keep <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
                 Company names, dates, locations, and descriptions reuse the shared résumé styles in

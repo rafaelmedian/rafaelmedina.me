@@ -4247,6 +4247,19 @@ test("aligns work locations with their roles", async ({ page }) => {
   }
 })
 
+test("uses one hairline between work history and education", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const jobs = dialog
+    .getByRole("list", { name: "Work history" })
+    .locator(":scope > li")
+
+  await expect(jobs.nth(1)).toHaveCSS("border-top-width", "0px")
+  await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "1px")
+})
+
 test("opens a work-history company website from its name", async ({ page }) => {
   await page.context().route("https://0x.org/**", (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>0x</title>" }),

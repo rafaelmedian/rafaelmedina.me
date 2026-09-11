@@ -48,12 +48,16 @@
 
 .resume-experience-list > .resume-experience {
   padding-block: 2.5rem;
-  border-top: 1px solid rgb(0 0 0 / 0.08);
 }
 
 .resume-experience-list > .resume-experience:first-child {
   padding-top: 0;
-  border-top: 0;
+}
+
+.resume-content > .mosaic-about-resume-education {
+  margin-top: 0;
+  padding-top: 4rem;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
 }
 
 .resume-experience-logos {
