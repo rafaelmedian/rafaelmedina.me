@@ -26,6 +26,9 @@ const Agentation = import.meta.env.DEV
 const ElasticEdgeTuner = import.meta.env.DEV
   ? lazy(() => import("./components/ElasticEdgeTuner"))
   : null
+const PhotoPrintTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/PhotoPrintTuner"))
+  : null
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -56,8 +59,9 @@ function App({ pathname }: { pathname?: string }) {
   const standaloneWriting = isHydrated ? undefined : writingAtPath(currentPath)
   const standaloneNotes = !isHydrated && isNotesPath(currentPath)
   const isDesignSystemPage = DesignSystemPage !== null && DESIGN_SYSTEM_PATHS.has(currentPath)
-  const isTuningEdge = ElasticEdgeTuner !== null && !isDesignSystemPage
-    && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tune") === "edge"
+  const tuning = !isDesignSystemPage && typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tune") : null
+  const isTuningEdge = ElasticEdgeTuner !== null && tuning === "edge"
+  const isTuningPhotos = PhotoPrintTuner !== null && tuning === "photos"
 
   return (
     <div className="relative isolate min-h-dvh overflow-x-clip bg-canvas text-ink">
@@ -90,6 +94,11 @@ function App({ pathname }: { pathname?: string }) {
         {isTuningEdge && ElasticEdgeTuner ? (
           <Suspense fallback={null}>
             <ElasticEdgeTuner />
+          </Suspense>
+        ) : null}
+        {isTuningPhotos && PhotoPrintTuner ? (
+          <Suspense fallback={null}>
+            <PhotoPrintTuner />
           </Suspense>
         ) : null}
     </div>

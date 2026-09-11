@@ -54,7 +54,7 @@ export type Collaborator = {
 }
 
 export const collaborators = {
-  // Listed first on every project so my own involvement reads at a glance.
+  // The gallery always includes this credit, after any project teammates.
   rafael: { name: "Rafael Medina", href: "https://www.linkedin.com/in/rafaelmedian", photo: profilePhoto },
   nick: { name: "Nick Sarath", href: "https://www.linkedin.com/in/nicksarath", photo: "/people/nick.jpg" },
   simon: { name: "Simon Rico", href: "https://www.linkedin.com/in/simonrico/", photo: "/people/simon.jpg" },

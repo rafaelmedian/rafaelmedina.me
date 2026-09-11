@@ -30,60 +30,36 @@ import { formatAvailability } from "../lib/availability"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { useHoverCard } from "../lib/hoverCard"
 import { visibleOriginRect } from "../lib/originMotion"
+import { revealGalleryEntry } from "../lib/galleryEntry"
+import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
-import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl } from "../lib/portfolioUrl"
+import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl, usePortfolioItemUrl } from "../lib/portfolioUrl"
 import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
 import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
-type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
-
-let galleryModulePromise: Promise<PreviewGalleryModule> | null = null
-// Browsers cache failed module imports for the page lifetime. Keep the emitted
-// chunk URL so a later interaction can retry it under a fresh module-map key.
-let failedGalleryModuleUrl: string | null = null
-let galleryRetryAttempt = 0
-
-function findGalleryModuleUrl() {
-  if (typeof performance === "undefined") return null
-  const entries = performance.getEntriesByType("resource")
-  for (let index = entries.length - 1; index >= 0; index -= 1) {
-    const url = entries[index]?.name
-    if (url?.includes("PreviewGalleryDialog")) return url
-  }
-  return null
-}
-
-function loadPreviewGallery() {
-  if (galleryModulePromise) return galleryModulePromise
-
-  let modulePromise: Promise<PreviewGalleryModule>
-  if (failedGalleryModuleUrl) {
-    const retryUrl = new URL(failedGalleryModuleUrl)
-    retryUrl.searchParams.set("retry", String(++galleryRetryAttempt))
-    failedGalleryModuleUrl = null
-    modulePromise = import(/* @vite-ignore */ retryUrl.href) as Promise<PreviewGalleryModule>
-  } else {
-    modulePromise = import("./PreviewGalleryDialog")
-  }
-
-  galleryModulePromise = modulePromise.catch((error: unknown) => {
-    galleryModulePromise = null
-    failedGalleryModuleUrl = findGalleryModuleUrl()
-    throw error
-  })
-  return galleryModulePromise
-}
+type PreviewGalleryComponent = typeof import("./PreviewGalleryDialog").PreviewGalleryDialog
 
 // React caches a lazy component's rejection forever, so a retry needs a fresh
 // component identity — each call hands back a new one over the same
 // loadPreviewGallery, whose own bookkeeping cache-busts the failed chunk URL.
+//
+// A chunk that has already arrived -- hover prefetched it, or a shared link
+// fetched it during hydration -- is handed over synchronously, which `lazy`
+// takes as resolved. Through a promise it suspends even when warm, and React
+// holds a boundary's content back for up to 300ms once its fallback has shown:
+// the first preview of a visit took 315ms to appear against 15ms for the next.
 function createPreviewGalleryComponent() {
-  return lazy(() => loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })))
+  return lazy(() => {
+    const loaded = loadedPreviewGallery()
+    if (!loaded) return loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog }))
+    const resolved = { then: (resolve: (module: { default: PreviewGalleryComponent }) => void) => resolve({ default: loaded.PreviewGalleryDialog }) }
+    return resolved as unknown as Promise<{ default: PreviewGalleryComponent }>
+  })
 }
 
 type GalleryLoadBoundaryProps = {
@@ -646,15 +622,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [availabilityLabel, setAvailabilityLabel] = useState(() =>
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
-  const [writingsOpen, setWritingsOpen] = useState(false)
+  const [readerModule, setReaderModule] = useState<typeof import("./WritingsReader") | null>(null)
+  const { itemId: writingId, selectItem: selectWriting, clearItem: clearWriting } = usePortfolioItemUrl("writing")
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
-  // Where the gallery hands focus back when the control that opened it is gone.
-  // The reader's back arrow is the case: the sheet closes as the notes slide
-  // comes forward, so without this the slide's close would drop focus on the
-  // body instead of on the tile the notes are filed in. State, not a ref,
-  // because the prop has to be absent on every other open -- naming an anchor
-  // at all changes how insistently the dialog returns focus, and a preview
-  // opened from a tile already returns to it.
+  // Direct note links have no opener to restore when the gallery finally
+  // closes. Returning to their list establishes the folder as that fallback.
   const [galleryFallbackFocus, setGalleryFallbackFocus] = useState<HTMLElement | null>(null)
   // What the notes slide says while a reader is on its way or failed to come.
   const [notesStatus, setNotesStatus] = useState<WritingsReaderStatus>({ status: null, pendingId: null })
@@ -732,17 +704,20 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     openGalleryItem(galleryItems[notesIndex], notesIndex)
   }
 
-  // The reader's back arrow. The note has given its URL up by now: if that
-  // uncovered the notes slide it came from, the gallery is already reopening
-  // on it; a note arrived at by a shared link has nothing underneath, so the
-  // slide is put forward for it. Either way the sheet closed with the row
-  // that was focused, so the folder tile stands in.
+  // Back stays inside the same dialog. Canonical note paths already clear to
+  // /notes/; a legacy query link also needs that parent address installed.
   const returnToNotes = () => {
     setGalleryFallbackFocus(writingsFolderTileRef.current)
     if (isNotesPath(window.location.pathname) || notesIndex < 0) return
     setOpenedByGesture(false)
     selectGalleryItem(writingsItemId, false)
   }
+
+  // A gallery address with no dialog to open after all -- its chunk failed, or
+  // it was cleared before presenting -- still owes the visitor the page.
+  useEffect(() => {
+    if (activeWorkPreviewIndex === null) revealGalleryEntry()
+  }, [activeWorkPreviewIndex])
 
   // Warm the reader while the list it opens from is on screen.
   useEffect(() => {
@@ -777,7 +752,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null}
         />
       )
     }
@@ -1114,8 +1089,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 ref={writingsFolderRef}
                                 onOpen={openNotes}
                                 onPrefetch={prefetchPreviewGallery}
-                                onBack={returnToNotes}
-                                onOpenChange={setWritingsOpen}
+                                onReaderReady={setReaderModule}
                                 onStatusChange={setNotesStatus}
                                 tileRef={(node) => {
                                   writingsFolderTileRef.current = node
@@ -1244,18 +1218,26 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   prefersReducedMotion={prefersReducedMotion}
                   getOriginRect={getPreviewOriginRect}
                   onOpenChange={(nextOpen) => {
-                    if (!nextOpen) {
+                    if (nextOpen) return
+                    writingsFolderRef.current?.cancelPending()
+                    if (!writingId) {
                       clearGalleryItem()
+                      return
                     }
+                    // A press outside a note closes the gallery with it. The
+                    // note gives up its address first and the list its own
+                    // after, so history lands where the visit began rather
+                    // than on a /notes/ entry nothing is showing any more.
+                    if (!openedByGesture) setGalleryFallbackFocus(writingsFolderTileRef.current)
+                    clearWriting(() => clearGalleryItem())
                   }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}
-                  onSelectWriting={(id) => {
-                    // The sheet takes the URL and this closes behind it. Naming
-                    // an anchor makes the close insist on focusing it, over
-                    // the sheet's own title, so the one Back set is dropped.
-                    setGalleryFallbackFocus(null)
-                    writingsFolderRef.current?.openWriting(id)
-                  }}
+                  onSelectWriting={(id) => writingsFolderRef.current?.openWriting(id)}
+                  writingId={writingId}
+                  WritingReader={readerModule?.WritingsReader}
+                  onPageWriting={(id) => selectWriting(id, true)}
+                  onRetryWriting={() => writingsFolderRef.current?.retry()}
+                  onBackFromWriting={() => clearWriting(returnToNotes)}
                   notesStatus={notesStatus}
                   finalFocus={galleryFallbackFocus ? { current: galleryFallbackFocus } : undefined}
                 />

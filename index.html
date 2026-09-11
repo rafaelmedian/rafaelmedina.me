@@ -19,6 +19,17 @@
           }
         }, 4000);
       }
+      // A project, the résumé, the notes, or a note: the prerendered article is
+      // for crawlers and a visit without JavaScript. Hold it back so a shared
+      // link opens straight into its dialog; see src/lib/galleryEntry.ts.
+      if (/^\/(?:work\/[^/]+|resume|notes(?:\/[^/]+)?)\/?$/.test(location.pathname)) {
+        document.documentElement.dataset.galleryEntry = "pending";
+        setTimeout(() => {
+          if (document.documentElement.dataset.galleryEntry === "pending") {
+            delete document.documentElement.dataset.galleryEntry;
+          }
+        }, 4000);
+      }
     </script>
     <title>Rafael Medina — Senior Product Designer</title>
     <meta name="application-name" content="Rafael Medina" />

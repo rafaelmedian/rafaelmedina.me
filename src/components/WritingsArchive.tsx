@@ -1,7 +1,9 @@
-import { type CSSProperties } from "react"
+import { useSound } from "@web-kits/audio/react"
+import { useRef, type CSSProperties, type PointerEvent } from "react"
 
 import { writingSummaries, type WritingSummary } from "../data/writingIndex"
 import { writingPath } from "../lib/projectMetadata"
+import { keyClickSounds } from "../lib/sounds"
 import { groupWritingsByYear, noteHash, pickFrom } from "../lib/writings"
 
 // The archive leaves the same two gutters empty that the reader hangs its
@@ -16,7 +18,8 @@ import { groupWritingsByYear, noteHash, pickFrom } from "../lib/writings"
 // detail in the path fixed it. They go through the Rough.js pass the marks do
 // in scripts/build-writing-marks.mjs and ship as PNGs from
 // public/writings/marks, black on transparent and used as masks, so they still
-// take their colour from the list beside them.
+// take their colour from the list beside them. Each file is a strip of frames
+// the drawing boils through while its row is hovered; writings.css steps them.
 const ARCHIVE_DRAWINGS = ["sheet", "pencil", "cup"]
 
 // Rows a drawing is pinned to, counted across the whole list rather than within
@@ -87,7 +90,7 @@ function archiveDrawings(rows: readonly WritingSummary[]) {
 function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
   return (
     <span className="writings-drawing" data-place={drawing.place} aria-hidden="true" style={{
-      "--writings-drawing-mark": `url("/writings/marks/drawing-${drawing.object}.png")`,
+      "--writings-drawing-mark": `url("/writings/marks/drawing-${drawing.object}-frames.png")`,
       "--writings-drawing-size": drawing.size,
       "--writings-drawing-pull": drawing.pull,
       "--writings-drawing-drop": drawing.drop,
@@ -99,8 +102,8 @@ function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
 // Dates are stored as plain YYYY-MM-DD, so they are read at UTC midnight rather
 // than in the reader's zone, where a western offset would roll them back a day.
 const noteDate = (publishedAt: string) => new Date(`${publishedAt}T00:00:00Z`)
-// A list row sits under its own year heading, so it only carries day and month.
-const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", timeZone: "UTC" })
+// A list row sits under its own year heading, so it only carries month and day.
+const monthDayFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
 
 // One row of either list: the title, and the date it was written on the right.
 // Notes kept only as an archive year have nothing to put there, and the year
@@ -108,11 +111,15 @@ const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month:
 //
 // The date is a scanning aid rather than part of the entry's name, so it stays
 // out of the accessible name: "Designing Matcha, button" beats reading a row as
-// "Designing Matcha oh one slash oh nine", and the note's own header announces
+// "Designing Matcha Sep 1", and the note's own header announces
 // the full date the moment it opens.
-function WritingEntry({ writing, busy, onClick }: { writing: WritingSummary; busy?: boolean; onClick?: () => void }) {
+function WritingEntry({ writing, busy, onClick }: {
+  writing: WritingSummary
+  busy?: boolean
+  onClick?: (trigger: HTMLButtonElement) => void
+}) {
   const date = writing.publishedAt ? (
-    <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{dayMonthFormat.format(noteDate(writing.publishedAt))}</time>
+    <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{monthDayFormat.format(noteDate(writing.publishedAt))}</time>
   ) : null
   if (!onClick) {
     return (
@@ -123,21 +130,62 @@ function WritingEntry({ writing, busy, onClick }: { writing: WritingSummary; bus
     )
   }
   return (
-    <button type="button" className="writing-entry-trigger" onClick={onClick} aria-busy={busy || undefined}>
+    <button type="button" className="writing-entry-trigger" data-writing-id={writing.id}
+      onClick={(event) => onClick?.(event.currentTarget)} aria-busy={busy || undefined}>
       <span className="writing-entry-title">{writing.title}</span>
       {date}
     </button>
   )
 }
 
+// Under the gallery's open sound (0.3) and its paging (0.26): this one plays
+// on every row the pointer crosses.
+const KEY_CLICK_VOLUME = { volume: 0.15 }
+// The shortest gap between two keys. A fast sweep down the list crosses a row
+// every 20ms or so, and at that rate the clicks fuse into a buzz; held apart
+// by this much it still reads as someone typing quickly.
+const KEY_CLICK_GAP_MS = 45
+
+/**
+ * A key click for each row the mouse moves onto. It listens to movement rather
+ * than to rows being entered, because a list scrolled under a still pointer
+ * enters rows too, and a wheel through the archive would otherwise rattle off
+ * a key per title it passed. A touch or pen press already answers with the
+ * note opening, so only a mouse plays. Before the visitor has pressed anything
+ * the page may not start audio at all, so nothing is asked of it until then --
+ * a shared /notes/ link opens this list with no press behind it.
+ */
+function useRowKeyClicks() {
+  const plays = [
+    useSound(keyClickSounds[0], KEY_CLICK_VOLUME),
+    useSound(keyClickSounds[1], KEY_CLICK_VOLUME),
+    useSound(keyClickSounds[2], KEY_CLICK_VOLUME),
+  ]
+  const hovered = useRef<Element | null>(null)
+  const last = useRef({ at: -Infinity, key: 0 })
+
+  const onPointerMove = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse" || (event.movementX === 0 && event.movementY === 0)) return
+    const row = event.target instanceof Element ? event.target.closest(".writing-entry-trigger") : null
+    if (row === hovered.current) return
+    hovered.current = row
+    if (!row || event.timeStamp - last.current.at < KEY_CLICK_GAP_MS) return
+    if (navigator.userActivation?.hasBeenActive === false) return
+    // Any key but the one just struck, so two rows in a row never sound alike.
+    const key = (last.current.key + 1 + Math.floor(Math.random() * (plays.length - 1))) % plays.length
+    last.current = { at: event.timeStamp, key }
+    plays[key]()
+  }
+  const onPointerLeave = () => { hovered.current = null }
+  return { onPointerMove, onPointerLeave }
+}
 
 type WritingsArchiveProps = {
   /**
-   * Open a note. On the gallery's slide this hands the id up and the reader's
-   * sheet opens over the list; the static `/notes/` page has no sheet, so its
+   * Open a nested note within the gallery; the static `/notes/` page has no dialog, so its
    * rows are ordinary links to each note's own address.
    */
-  onSelectWriting?: (id: string) => void
+  onSelectWriting?: (id: string, trigger: HTMLButtonElement) => void
   /** The note whose reader is on its way, while its chunk downloads. */
   pendingId?: string | null
   /** What to say under the heading while a reader fails to arrive. */
@@ -154,11 +202,14 @@ export function WritingsArchive({ onSelectWriting, pendingId, status }: Writings
   const groups = groupWritingsByYear(writingSummaries)
   const orderedWritings = groups.flatMap(({ entries }) => entries)
   const drawings = archiveDrawings(orderedWritings)
+  // Only the gallery's list types: the standalone page is what a crawler, or
+  // a visitor without JavaScript, reads.
+  const keyClicks = useRowKeyClicks()
 
   return (
     <div className="writings-archive">
       {status ? <p className="writings-status" role="status">{status}</p> : null}
-      <div className="writings-list">
+      <div className="writings-list" {...(onSelectWriting ? keyClicks : null)}>
         {groups.map(({ year, entries }) => (
           <section className="writings-year" key={year} aria-label={year}>
             <h3>{year}</h3>
@@ -168,7 +219,7 @@ export function WritingsArchive({ onSelectWriting, pendingId, status }: Writings
                 <li key={writing.id}>
                   {drawing ? <ArchiveDrawing drawing={drawing} /> : null}
                   <WritingEntry writing={writing} busy={pendingId === writing.id}
-                    onClick={onSelectWriting ? () => onSelectWriting(writing.id) : undefined} />
+                    onClick={onSelectWriting ? (trigger) => onSelectWriting(writing.id, trigger) : undefined} />
                 </li>
               )
             })}</ul>

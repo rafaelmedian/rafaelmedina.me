@@ -75,6 +75,12 @@ npm run preview    # Serve the production build
 npm run test:e2e   # Build and run Playwright tests
 ```
 
+To run tests alongside another workspace, select unused preview and API ports:
+
+```sh
+E2E_PORT=4184 LIKES_API_URL=http://127.0.0.1:8799 npm run test:e2e
+```
+
 The [runbook](docs/operations.md) covers test setup, environment variables,
 asset generation, and likes deployment. [AGENTS.md](AGENTS.md) holds the repo’s
 working conventions.

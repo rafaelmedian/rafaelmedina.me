@@ -133,9 +133,8 @@
 .resume-project:nth-child(3) { transform: translateY(-0.35rem) rotate(-2deg); }
 .resume-project:nth-child(4) { transform: translateY(0.2rem) rotate(-5deg); }
 
-/* A tilted print overlaps the one after it, so whichever is hovered or focused
-   has to come up out of the stack to be readable and clickable. */
-.resume-project:hover,
+/* Hovering straightens a print where it lies, so the pile keeps its order. Only
+   keyboard focus lifts one out, since the next print would cover its ring. */
 .resume-project:focus-visible {
   z-index: 1;
 }

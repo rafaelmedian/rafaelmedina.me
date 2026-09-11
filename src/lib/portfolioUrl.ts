@@ -36,7 +36,8 @@ const itemLocations: Record<PortfolioItem, ItemLocation> = {
   gallery: {
     read: () => {
       if (isResumePath(window.location.pathname)) return resumeItemId
-      if (isNotesPath(window.location.pathname)) return writingsItemId
+      if (isNotesPath(window.location.pathname) || writingAtPath(window.location.pathname) ||
+        writingSummaries.some(writing => writing.id === new URLSearchParams(window.location.search).get("writing"))) return writingsItemId
       return projectAtPath(window.location.pathname)?.id ?? new URLSearchParams(window.location.search).get("project")
     },
     set: (url, id) => {
@@ -73,10 +74,12 @@ const itemLocations: Record<PortfolioItem, ItemLocation> = {
       if (!writing) return
       url.pathname = writingPath(writing)
       url.searchParams.delete("writing")
+      url.hash = ""
     },
     clear: url => {
       url.searchParams.delete("writing")
-      if (writingAtPath(url.pathname)) url.pathname = "/"
+      url.hash = ""
+      if (writingAtPath(url.pathname)) url.pathname = notesPath
     },
   },
 }
@@ -186,9 +189,12 @@ export function usePortfolioItemUrl(entry: PortfolioItem) {
   const discardItem = useCallback(() => {
     const url = new URL(window.location.href)
     location.clear(url)
+    // Superseding a pending note is not Back into its parent list. Leave the
+    // new dialog in charge instead of opening Notes behind it.
+    if (entry === "writing" && isNotesPath(url.pathname)) url.pathname = "/"
     window.history.replaceState(window.history.state, "", url)
     window.dispatchEvent(new Event(portfolioUrlEvent))
-  }, [location])
+  }, [entry, location])
 
   return { itemId, selectItem, clearItem, discardItem }
 }

@@ -250,7 +250,7 @@ const NON_TEXT_ENTRIES = [
     token: "--focus-ring-soft",
     kind: "non-text",
     name: "Tile focus",
-    note: "--focus-ring one step lighter, for the work tiles only. Around 500px of artwork the darker ink reads as a frame rather than a selection; this still clears the 3:1 floor.",
+    note: "--focus-ring one step lighter, for the work tiles only, the quote card among them. Around 500px of artwork the darker ink reads as a frame rather than a selection; this still clears the 3:1 floor.",
   },
 ] satisfies ReadonlyArray<{ hex?: string; token?: string; kind: ContrastKind; name: string; note: string }>
 
@@ -278,7 +278,7 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
+    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, contents rows, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
@@ -348,7 +348,7 @@ const ELEVATION = [
   {
     name: "Hairline",
     shadow: "inset 0 0 0 1px rgb(0 0 0 / 0.05)",
-    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content.",
+    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits and the header avatar at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content; the header avatar's portrait zooms inside its crop, so its ring is an inset shadow on a layer over the photo instead.",
   },
   {
     name: "Resting control — --shadow-control",
@@ -428,6 +428,7 @@ const DURATIONS_ENTRIES = [
   { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
   { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening under a moving pointer, and the sheet rewinding before close (--photo-rewind-duration)." },
   { value: "200ms", use: "Personal-photo sheet: --photo-open-duration and --photo-close-duration both alias --duration-base. Every flight, its caption, and the backdrop share one beat in either direction, with no stagger and no delay — the whole hand leaves together and comes home together. Reduced motion removes the transitions and flights." },
+  { value: "60ms", use: "--card-caption-delay: how long a work tile's caption, tint, and blur ramp wait before fading in or out. While a tile's video loops, Chrome runs an otherwise idle page at 30fps, and a fade that started on the hover's first frame jumped instead of easing. The page-entrance and About stagger also step by 60ms." },
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },
   { value: "410ms", use: "The personal-photo fan springing out of its pile the first time it scrolls into view, every print at once on the card-stack overshoot (see Easing). Taken whole from transitions.dev’s card stack hover, the fan-out beat there. --photo-deal-duration on the stack." },
@@ -457,7 +458,7 @@ const STACKING_ENTRIES = [
     name: "--z-dock / --z-chrome",
     note: "The page and main content wrapper (Tailwind's z-dock maps onto the token). The bottom scroll edge sits inside main at --z-chrome, below the table of contents at --z-social.",
   },
-  { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
+  { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side. Inside it, the sticky bottom fade takes z 1 of its own, above the intro column." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
   {
     z: "--z-corner",
@@ -1144,7 +1145,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px 50%")}
+                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px résumé notes")}
               >
                 <strong>Nested corners are concentric, and they are derived — not a fifth step.</strong>
                 <p>
@@ -1166,13 +1167,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   ratio, under the same cap the media carries (<code>min(367px, 42vh)</code>, and{" "}
                   <code>min(684px, 72vh)</code> in the wide view). It is fixed per
                   layout rather than measured per preview, so a taller or shorter image never slides the pair out from
-                  under the pointer, and it stops at half the popup so a card taller than the viewport still keeps
-                  paging reachable without scrolling back up. The
+                  under the pointer — and it is the same on the résumé and the notes, which have no artwork, so paging
+                  into or out of a page of prose leaves the pair where it was. The
                   shell adds that clearance to its own gutter wherever the pair is shown, since it hides horizontal
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
-                  header at z-index 1.
+                  header at z-index 1. A compact position pill sits between the paging group and close,
+                  keeping both controls fixed. The current position swaps with the TOC's 4px slide and
+                  <code>--blur-reveal</code>: 120ms out on the exit curve, 160ms in on the standard curve.
+                  Next sends it up, Previous down, including when the sequence wraps. The total stays still,
+                  and the counter reserves enough digits for the full sequence. Reduced motion swaps instantly.
                   The like pill rides the line where the artwork stops: a zero-height row centres it on that
                   boundary, 1.25rem in from the card&rsquo;s right edge, half over the shot and half over the white
                   below it. It is the notes reader&rsquo;s control on the overlay tier instead of the control
@@ -1181,8 +1186,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   photograph rather than sitting on a page. Taking no room in the flow is the point: a row of its own
                   under the title would push every description down whether or not anyone ever taps it.
                   Below the artwork, the project title and a single description cover the product, contribution,
-                  and result. Left-aligned collaborator avatar links follow the description without a visible label,
-                  starting with mine on every project so a solo shot is credited rather than unattributed.
+                  and result. On fine-pointer desktop layouts, a 3.5rem white wash fades over the card&rsquo;s bottom
+                  edge only while more project content remains below it, making a short laptop viewport&rsquo;s hidden
+                  overflow visible without adding a scrollbar. The wash shares the card&rsquo;s paging motion so it
+                  never remains over the backdrop between slides. Left-aligned collaborator avatar links follow the
+                  description without a visible label. Project teammates sit before mine, so a newly introduced
+                  person arrives from the left over <code>--duration-base</code> while my stable final credit stays
+                  put; reduced motion reveals them immediately, and a solo shot still reads as credited rather than unattributed.
                   The description uses <code>--text-md</code>, a 1.6 line height, the existing prose colour
                   <code>#545454</code>, and a 46rem maximum measure. Credits use <code>--text-sm</code>
                   with 1.5rem of space above them. The text column is a centered 48rem
@@ -1220,7 +1230,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="project-caption-visibility"
-                data-ds-terms={terms("--card-caption-blur 2.5rem --card-caption-tint --card-caption-weight scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 0.93 ink white 360ms eased compact desktop mobile touch no caption hidden aria-label")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem --card-caption-tint --card-caption-weight scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 0.93 ink white 360ms 60ms --card-caption-delay delay 30fps video eased compact desktop mobile touch no caption hidden aria-label")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1248,7 +1258,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   across the whole band instead of ending partway up: a linear ramp changes slope where it reaches
                   zero, and the eye reads that break as an edge. The two fade on separate clocks — the tint at the 160ms hover default alongside
                   the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
-                  illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
+                  illegible until four backdrop rasters were ready, and the whole effect read as a stall. Both clocks
+                  wait <code>--card-caption-delay: 60ms</code> before they start, in either direction: while a tile's
+                  loop plays, Chrome paces an otherwise idle page at the video's 30fps, and a fade that began on the
+                  hover's first frame arrived as a 32% jump, a held frame, and a second jump before it eased. The delay
+                  spends that ramp-up, so the first frame that moves is an ordinary step. It paints only
                   on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden
                   and so is the caption: with no hover to reveal it, a name would have to sit on every tile at once,
                   over artwork that already carries the project's own wordmark. The title still reaches assistive
@@ -1260,9 +1274,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
           {/* ------------------------------------------------- components -- */}
           <section id="components" className="ds-section">
-            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
+            <div className="ds-block" data-ds-terms={terms("writings folder notes modal years dates back button reader images annotations marginalia margin note bracket rough.js pencil mask archive drawings gutter objects sheet cup boil stop-motion frames hover key click keyboard sound 375ms handlee code block markdown syntax highlighting monospace acknowledgements copy link permalink /notes/ prerendered origin flight bearing 200ms 160ms 360ms 0.7 below 900px --mosaic-card-surface --radius-lg --radius-md --shadow-overlay")}>
               <p className="ds-subhead">Writings folder</p>
-              <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onBack={() => {}} /></div>
+              <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onReaderReady={() => {}} /></div>
               <p className="ds-caption">
                 A tile on --mosaic-card-surface with 24px corners and one label, “Writings &amp; notes”.
                 Below 900px the corners drop to 16px and the folder is zoomed to 0.7 so it and the
@@ -1284,48 +1298,63 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The project preview wears the same control on the overlay tier; everything below is shared by both.
                 Its 14px heart starts filled #b6b6ba; the heart and tabular, weight-600 count turn #e5352b after a tap.
                 The pill hugs the count, whose width follows its digit count in ch over --duration-quick with --ease-standard.
+                Numbers use the TOC's 4px slide and --blur-reveal, exiting over 120ms and arriving over 160ms.
+                Increments travel up; a corrected lower count travels down. Rapid taps replace the outgoing number
+                with the latest one, and reduced motion changes it instantly.
                 Each tap adds a like up to 16 per visitor, with a 360ms heart pop to scale(1.35) on cubic-bezier(0.34, 1.56, 0.64, 1)
                 and twelve red particles travelling 18–48px over 450–750ms on cubic-bezier(0.12, 0.84, 0.32, 1).
                 Three particles are softened with a 2px blur; all use --radius-full.
                 At the cap, another tap shakes the pill up to 4px over 320ms with ease-out.
                 These component-specific motion exceptions stop under reduced motion; the count remains a polite live status.
-                Beside it, “Copy link” is an ordinary link to the note's public address at the same 32px height on an 8% black
-                hairline, --text-xs on --muted, so it reads as a note about the note rather than a second action competing with the
-                heart. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
-                check and the label for “Link copied” on --ink; its accessible name stays “Copy a link to this note” throughout and
+                Beside it, “Copy link” is an ordinary link to the note's public address wearing the like pill's chrome: 32px,
+                the #dedee0 hairline on --canvas, weight-500 --text-xs on --muted at line-height 1, and the shared control shadows,
+                hover lift and 0.96 press. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
+                check and the label for “Link copied” on --ink. The label uses the TOC's 4px slide and
+                --blur-reveal, with a 120ms exit and 160ms entrance; confirmation travels up and reset travels down.
+                The pill hugs whichever label it wears and eases between the two widths over --duration-quick with
+                --ease-standard, clipping the longer label while it grows. Reduced motion swaps and resizes instantly;
+                its accessible name stays “Copy a link to this note” throughout and
                 the confirmation is announced from a live region beside it. Modified and secondary presses are left to the browser.
                 Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
                 canonical, and listed in the sitemap, the way a project owns `/work/&lt;slug&gt;/`.
                 The standalone article shares the reader's 34rem prose measure, but keeps annotations below their
                 paragraphs at every viewport width: its narrower page has no reserved margin-note gutters.
-                Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s rows.
+                Each reader ends with “More articles”, showing up to three other notes, newest first, with the archive’s rows and day/month dates.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
                 The top bar carries one title, Notes, with no year crumb, search, document count, author byline, or subtitle.
-                Notes uses --text-md, aligned with the archive's year column in the same 37rem column and shared side gutters when the list is open.
-                Toolbar top padding is 32px on desktop and 20px plus the safe area on mobile.
-                The toolbar carries no divider while the article rests at its top; once it scrolls, an 8% black hairline and a short shadow fade in over 160ms and fade back out at the top,
-                and turning to the next note resets the reader and clears it.
-                A back button leads the title, reusing the project gallery’s round chevron so it matches the previous/next controls;
-                from 900px it hangs in the left gutter so the title keeps the column edge, and below that it sits in the flow with a
-                12px margin. It is always there, because there is always the list to go back to.
-                Previous/next controls reuse the project gallery’s 44px round buttons, border, shadow and press state.
-                Previous/next controls sit outside the desktop reader and cycle through the notes in archive order, resetting scroll.
-                The list itself is not in the sheet: it is a slide of the preview gallery, at the tile's place in the sequence
-                ("3 / 14"), so the gallery's own arrows walk from the Matcha homepage into the notes and out to Popparazi, in the
-                same card and with the same page-turn as the résumé. A row opens the note in this sheet over the list, and the back
-                arrow and Escape close the sheet to the list; closing the list returns focus to the folder tile.
-                Switching notes pages the whole modal like project previews: next sends the current note 1.4rem left,
-                previous sends it right, fading to zero at scale(0.985) over 200ms. The new note arrives from the
-                opposite side over the same 200ms, using standard transform easing and ease-out opacity.
-                The old article remains visible until its exit completes; selection then updates the URL and resets scroll.
-                Arrow keys focus the new heading; pointer navigation retains control focus. Repeated navigation is ignored
-                during the switch, and closing or going back to Notes cancels pending selection. Reduced motion switches instantly.
-                The sheet keeps one width and no expand control, but it is only as tall as the article in it, up to the room
-                the viewport leaves, and content that resizes under the reader grows it over 200ms with smooth easing. It hangs
-                from its top edge throughout, so growing never moves the title. Reduced motion resizes instantly.
-                On mobile it keeps its 0.5rem margins and safe-area clearance.
-                The desktop header has no close icon; Escape and outside click dismiss it. On mobile, previous, next, and close ride the title line at the
-                top right instead of a bottom bar, which returns that bar's 68px of height to the article.
+                Notes uses --text-md, aligned with the archive's year column on the shared 34rem measure.
+                Heading insets follow the gallery card's responsive padding.
+                Notes is a nested view of the same preview-gallery dialog: one backdrop, focus trap, and card.
+                The list remains at its tile's place in the outer sequence ("3 / 14"). Its arrows page work items;
+                opening a row changes those same controls to browse notes in archive order, with wraparound.
+                The back button enters from the left over 200ms and returns to the list, as do Escape and dismiss.
+                Its 44px hit area hangs in the gutter from a 48rem Notes container; below that, the title shifts
+                horizontally to make room inside the card. The heading and backdrop stay mounted throughout.
+                Next sends outgoing content 1.4rem left, fading over 200ms; previous reverses it.
+                Notes sets --pg-switch-scale to 1: scaling a long article around its centre would make it dip
+                vertically. Work cards retain their 0.985 scale; note content only travels sideways.
+                Incoming content arrives from the opposite side over 200ms, sharing the work gallery's standard transform
+                easing and ease-out opacity. The card stays opaque during nested transitions.
+                The list retains its scroll position and measurements while hidden and inert. Back restores it and focuses
+                the selected row. Keyboard navigation focuses article headings; pointer navigation keeps control focus.
+                Rapid input cancels stale transitions and settles on the current URL; dismissal cannot reopen an old selection.
+                Opening an article grows the card downward over 200ms on smooth easing, preserving its width and top edge,
+                to 1rem above the viewport bottom or the safe-area inset, whichever is larger. All articles retain that height
+                and scroll internally; Back animates to the list's natural height. Mobile keeps the full-height gallery
+                frame and toolbar. Reduced motion changes state instantly.
+                Long notes place one 44px contents row below their title and actions, with a 6% hairline across the
+                reading measure. It begins as “Contents”; after the introduction, the section being read replaces that
+                label immediately as its heading crosses the pinned row, with no fade, blur, or slide;
+                crossing back above the first heading restores “Contents”, while the final section holds
+                through the article's end. A press discloses every section
+                in 44px rows over the prose without reflowing it; selection closes the list, focuses the heading, and
+                scrolls without adding history. Once its natural position passes the top of the reader, the row pins
+                directly beneath Notes, then eases through the gutters and card padding to the modal edges over
+                --duration-slow (360ms) with --ease-smooth while its 5% upper hairline and short lower shadow resolve over the
+                same beat. The scroll viewport reaches the card edges so it cannot clip the rail or its shadow.
+                The shadow fades on a separate layer, replacing the Notes toolbar shadow while pinned.
+                Reduced motion makes the disclosure and pinned transition immediate too.
+                The toolbar's own 5% black divider and short shadow appear only while scrolled, over 160ms.
                 The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
@@ -1350,9 +1379,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 page is prerendered and the two renders have to agree: each note drops 0 to 2.9em into its paragraph,
                 sits 7 to 17px outside the column, and leans up to 2.4 degrees either way. Notes sharing one offset drew
                 a second column down each edge, and a fixed cycle of three only moved that pattern rather than breaking it.
-                The gutters only exist once the modal is wide enough to leave them, so below 1000px a note folds into the
-                column under its paragraph, bracket first. Nothing else interrupts the column: the reader has no rules
-                and no interjections between paragraphs.
+                The gutters only exist from a 48rem Notes container; below that a note folds into the
+                column under its paragraph, bracket first. Nothing interrupts the prose itself: beyond the contents and
+                section-heading hairlines, the reader has no rules and no interjections between paragraphs.
                 Notes are ordinary text in the reading order: a gutter note reads after its paragraph, and it is never
                 announced as a separate landmark or the only place a point is made.
                 The archive leaves the same two gutters empty, and draws into them instead: the things a note gets
@@ -1364,7 +1393,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 than per year, alternating rails so no two face each other, on three lifts and three tilts between
                 -5 and 7 degrees. The three objects cycle, so the archive passes ten notes before one repeats. They
                 are decorative and hidden from assistive technology, absolutely positioned so they never enter the
-                content height the sheet measures, and they leave with the gutters below 1000px.
+                content height the card measures, and they leave below the same 48rem container threshold.
+                Each ships as a strip of three frames — the resting drawing and two retracings on fresh seeds, set down
+                up to 0.6px and 1.1 degrees off — so hovering a row, or the drawing itself, makes it boil like a
+                stop-motion drawing: it steps through the frames at about eight a second, 375ms a loop, held on each
+                with steps() rather than tweened, and snaps back to rest when the pointer leaves. Only on a fine
+                hover pointer; reduced motion keeps it still.
+                In the gallery, the mouse moving onto a row strikes a key: a 3-layer synthesized click — a white-noise
+                snap, a band-passed plate tick, and a low sine thock — about 11ms long at 0.15 volume, under the
+                gallery's own sounds. Three keys differ in pitch and brightness and never repeat back to back, keys
+                are at least 45ms apart, and a row scrolled under a still pointer stays silent. Touch, pen, reduced
+                motion, and a page not yet pressed play nothing.
                 An article can print a fenced sample: monospace from the system stack at --text-xs on
                 --mosaic-card-surface, --radius-md with the same 5% inset hairline the reader's figures take, over a
                 --text-xs grey caption. There is one such sample and it is Markdown, so the highlighter is thirty lines
@@ -1380,30 +1419,29 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Personal essays are text-only; project writings reuse existing portfolio illustrations as covers or within their sections.
                 The date sits above the title in month, day, year format; sample articles use illustrative dates.
                 A note's own title uses --text-lg, 600 weight, 1.35 line height and -0.02rem tracking; the toolbar
-                title above it is --text-md at 1.4. Prose stays --text-sm on desktop and mobile, with 1.5 line
+                title above it retains the gallery’s --text-md, 500 weight and 1.25 line height. Prose stays --text-sm on desktop and mobile, with 1.5 line
                 height and -0.00563rem tracking, and the column is the measure, so paragraphs carry none of their own.
                 Paragraphs are separated by 16px. Section headings sit on the reading step at 600 weight with 1.45 line
                 height and -0.00563rem tracking, 48px above and 12px below, so the space does the grouping the size no
-                longer does; nothing is drawn in that break. List entries use --text-sm, 1.5 line height, -0.00563rem tracking, and pretty wrapping.
+                longer does. A 1px 6% black rule, the shared hairline weight, runs from 16px after the heading to the
+                column's edge, level with the middle of the line; a heading long enough to wrap has no width left
+                over and goes without one rather than leave a stub at the far edge. List entries use --text-sm, 1.5 line height, -0.00563rem tracking, and pretty wrapping.
                 The reader date uses --text-xs, 1.5 line height, and no tracking, 4px above the title; row dates sit on the entry's own --text-sm.
                 Year headings use --text-xs. Font kerning is enabled throughout the dialog.
                 Inline images retain their intrinsic
                 aspect ratio, fill the reading column, load lazily, and use 16px corners. Optional image captions are --text-xs.
-                The reading column is 37rem wide including its side padding — a 34rem (544px) measure, about 68 characters
+                The gallery supplies padding around a 34rem (544px) reading measure, about 68 characters
                 on the 14px step. Prose uses #2d2d2d, dark enough to hold at that size; secondary text uses --muted.
-                Archive and reader begin 24px below the toolbar and end with 48px of breathing room.
+                Archive and reader begin 32px below the heading; the article ends with 48px of breathing room.
                 More articles is separated from the article by a 1px black divider at 8% opacity, with 48px above the line and 24px below.
                 Rows have 12px vertical padding, year headings sit 4px above their entries, and groups are separated by 48px on desktop or 32px on mobile.
-                Reader headers have a 24px bottom margin. Desktop side padding is 24px; mobile side padding is 20px.
-                Open takes 200ms and close 160ms, origin-aware like a project preview: the sheet grows out of whatever
-                opened it — the mosaic tile, or the header's Notes button — from scale 0.92 along a bearing capped at
-                44px, on cubic-bezier(0.32, 0.8, 0.32, 1), and leaves on that same bearing with --ease-exit, so it
-                shrinks back into the control it came from rather than in place. Travel and scale are one Web
-                Animations flight on the sheet, measured at its resting size at both ends; the fade stays in CSS on
-                smooth easing. With nothing on screen to fly from — a bookmarked note, or a tile scrolled away — it
-                falls back to a 20px lift at scale 0.96. Reduced motion removes transitions and the paper fan. Control hit areas are at least 44px; the dialog traps focus, closes on Escape or outside click,
-                and returns focus to the folder. Notes receives focus on open; opening an article focuses its heading,
-                and returning through the back button restores focus to the selected row. Reduced motion disables the panel and back-button transitions.
+                Reader headers have a 24px bottom margin. Side padding follows the gallery in each responsive layout.
+                The outer gallery opens in 200ms and closes in 160ms, including for a direct note link.
+                A visible tile supplies its origin: scale 0.92 and travel capped at 44px; an offscreen tile falls
+                back to the existing 20px lift at scale 0.96. Nested Notes navigation only turns content and resizes
+                the card. URLs remain /notes/ and /notes/&lt;id&gt;/, and article code and prose remain deferred.
+                Pending rows keep the list visible and support cancellation and retry. Reduced motion removes page,
+                resize, and back-button transitions. Controls keep their 44px targets.
               </p>
             </div>
             <div className="ds-section-heading">
@@ -1540,8 +1578,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 -5 degree tilts. Each print carries a 0.25rem white mat in <code>--canvas</code>, with
                 <code>--radius-sm</code> outer corners and an inner image radius of
                 <code>calc(var(--radius-sm) - 0.25rem)</code>. The mat carries <code>--shadow-ring</code> and
-                <code>--shadow-control-hover</code>. A hovered or focused print raises above the one lapping over it,
-                so it is readable and clickable; with a fine pointer, hover also lifts it 0.25rem and straightens it
+                <code>--shadow-control-hover</code>. Keyboard focus raises a print above its neighbours to keep
+                its focus ring visible; hover keeps the pile&rsquo;s stacking order, lifts it 0.25rem, and straightens it
                 to 0 degrees over <code>--duration-quick</code>, which reduced motion removes.
                 They load the same <code>-480w</code>/<code>-960w</code> variants the grid tiles do, declared against
                 that rendered width rather than a full-width slot.
@@ -1700,7 +1738,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>--ink</code>. Its copy icon leads the address, invisible at rest but holding its 0.875rem slot, the card's side
                 padding is cancelled by an equal negative margin, and its <code>1.7em</code> box is the line's own
                 line height, so neither the fill nor the icon can shift the centred line under the pointer. The icon turns to <code>--accent</code> as a check for 1.6s after a
-                copy, and stays lit for that window whether or not the pointer is still on the button; the card
+                copy, and stays lit for that window whether or not the pointer is still on the button. Copy and check
+                trade places with the TOC's 4px slide and <code>--blur-reveal</code>, over 120ms out and 160ms in;
+                confirmation goes up and reset goes down, inside the same icon slot. Reduced motion swaps instantly. The card
                 empties to <code>--canvas</code> behind the chips' own hairline for the same window, which both marks
                 the state change and puts the green on the surface it is graded against. Its hint is not type at all: a
                 200px <code>--canvas</code> card carrying a clip, one while the offer stands and another once the copy
@@ -1985,6 +2025,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   JavaScript, prerendered content remains readable.
                 </p>
               </div>
+
+              <div className="ds-rule" data-ds-terms={terms("shared link direct project resume notes note prerendered article gallery entry pending revealing fade opacity --duration-base dialog four-second safeguard")}>
+                <strong>A gallery address opens straight into its dialog.</strong>
+                <p>
+                  A project, the résumé, the notes, and a note each prerender an article of their own, which
+                  JavaScript swaps for the feed with the dialog open over it. The article is held back from first
+                  paint, and hydration waits for the dialog's chunk, so the canvas stays blank until the dialog
+                  presents. The page then fades in over <code>--duration-base</code>, the backdrop's own
+                  pace, under the dialog's usual entrance. A failed chunk shows the feed at once, the same
+                  four-second safeguard releases the article if the bundle stalls, and without JavaScript
+                  the article is the page.
+                </p>
+              </div>
             </div>
           </section>
 
@@ -2031,10 +2084,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
                   them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
-                  The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity, ink text,
-                  and a 16px close icon. The collapsed row shows an upward chevron instead.
-                  Icons fade over 160ms; the chevron rotates 90 degrees while the close icon scales from 0.8 to 1.
-                  Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
+                  The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity and ink text,
+                  with no close icon. The collapsed row shows a 16px upward chevron, which fades out over 160ms
+                  on opening. Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
                   label. Other rows are inert and
                   hidden from assistive technology when closed; keyboard focus rings sit 2px inside the row.
                   Selection, outside click, Escape, or focus leaving the control closes it. Resizing preserves its open state.
@@ -2144,6 +2196,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
+                <li data-ds-terms={terms("bottom fade progressive blur backdrop-filter 1.25rem gradient --canvas clamp(3rem, 8vh, 4.5rem) 3rem sticky safe area seam sheet notes card mask rounded clip")}>
+                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet and the notes card
+                  soften their copy as it sinks, with the work tiles&rsquo; caption blur rescaled to the strip: four
+                  masked layers stepping the radius from 0.12 of <code>1.25rem</code> up to all of it, under an eased
+                  ramp into <code>--canvas</code>. The project grid and the previews do not fade. The sheet&rsquo;s
+                  fade covers the bottom <code>clamp(3rem, 8vh, 4.5rem)</code> of the viewport plus the safe-area
+                  inset, sticky to the viewport&rsquo;s foot. It is the sheet&rsquo;s last child and pulls itself back
+                  over the panel&rsquo;s bottom padding, so it adds no height, never paints outside the sheet&rsquo;s
+                  opaque layer, and arrives with the sheet rather than washing out the seam it crosses on. At the end
+                  of the page it rests on that padding, clear of the last line. The notes card&rsquo;s is 3rem and sits
+                  over the card as its next sibling in the popup, not inside it: Chrome ignores the layers&rsquo; masks
+                  inside a rounded overflow clip and blurs the whole strip at full strength. Its layers take the
+                  card&rsquo;s bottom corners themselves, and borrow the card&rsquo;s switch opacity when Notes pages
+                  to a project. Neither blur measurably changed scrolling frame times in Chrome.
+                </li>
                 <li data-ds-terms={terms("about reading surface 36rem process how i work services pricing faq common questions stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
                   <strong>About is one continuous reading surface.</strong> The introduction, the worked-with wall,
                   How I work, and Services share one left-aligned 36rem reading axis in normal document flow. The introduction
@@ -2244,8 +2311,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 light grey because 1.4.11 wants 3:1 against the adjacent surface. The work tiles are the one exception
                 to the colour, not to the shape: they take the same single ring in{" "}
                 <code>--focus-ring-soft</code> (<code>#8a8a8a</code>, 3.4:1 on the page background), because at tile
-                scale <code>#2d2d2d</code> frames the artwork instead of marking a selection. Nothing stacks a second
-                ring, a border darkening, or a halo behind the outline.
+                scale <code>#2d2d2d</code> frames the artwork instead of marking a selection. The quote card wears
+                that ring too, drawn on the card for the advance button that covers it, since the card's clip would
+                cut the button's own ring down to a line. Nothing stacks a second ring, a border darkening, or a halo
+                behind the outline.
               </li>
               <li data-ds-terms={terms("tabindex -1 landing container hash #work skip link outline none focus ring")}>
                 <strong>Landing containers take focus without taking a ring.</strong> Sections that receive focus

@@ -61,3 +61,47 @@ export const closeSound: SoundDefinition = {
     },
   ],
 }
+
+// A key going down, for the pointer passing over a row of the notes list: a
+// list of titles read like a line being typed. Three layers, as a switch has
+// them -- the bright snap of the leaf, the plate ticking under it a moment
+// later, and the cap bottoming out as a low, quick thock. Far shorter and
+// quieter than anything the gallery plays: it answers a hover, which happens
+// many times a second, so it has to sit under the room rather than in it.
+//
+// Three keys rather than one, differing in the thock's pitch and the snap's
+// brightness, because a run of rows played the same sample back and read as a
+// machine ticking rather than as fingers on a board.
+const keyClick = (thock: number, snap: number): SoundDefinition => ({
+  layers: [
+    {
+      source: { type: "noise", color: "white" },
+      envelope: { attack: 0.0005, decay: 0.006 },
+      filter: [
+        { type: "highpass", frequency: snap },
+        { type: "lowpass", frequency: 9000 },
+      ],
+      gain: 0.07,
+    },
+    {
+      source: { type: "noise", color: "pink" },
+      envelope: { attack: 0.001, decay: 0.016 },
+      filter: { type: "bandpass", frequency: thock * 5, resonance: 2.5 },
+      gain: 0.05,
+      delay: 0.002,
+    },
+    {
+      source: { type: "sine", frequency: { start: thock, end: thock * 0.6 } },
+      envelope: { attack: 0.001, decay: 0.028 },
+      filter: { type: "lowpass", frequency: 1200 },
+      gain: 0.12,
+      delay: 0.003,
+    },
+  ],
+})
+
+export const keyClickSounds: readonly SoundDefinition[] = [
+  keyClick(300, 2600),
+  keyClick(265, 3000),
+  keyClick(335, 2300),
+]

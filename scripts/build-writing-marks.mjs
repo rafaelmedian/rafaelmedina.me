@@ -49,6 +49,19 @@ const UNDERLINE = { width: 72, height: 10 }
 // the outline only; everything that makes them read as drawn rather than
 // traced happens on the way through Rough.js.
 const DRAWING_SIZE = 88
+// Each object ships as a strip of frames, side by side in one PNG. The first is
+// the drawing at rest; hovered, the archive steps through the rest the way a
+// stop-motion drawing boils between exposures. Every frame is the same outline
+// retraced by Rough.js on a seed of its own, then set back down a hair off
+// where the last one lay -- the wobble changes, the object does not. Moved by
+// more than a pixel or a degree and a frame reads as the object jumping rather
+// than as the line being redrawn. One file rather than one per frame, so the
+// frames arrive with the drawing and the first hover has nothing to wait on.
+const DRAWING_FRAMES = [
+  { dx: 0, dy: 0, turn: 0 },
+  { dx: 0.6, dy: -0.4, turn: -1.1 },
+  { dx: -0.5, dy: 0.35, turn: 0.9 },
+]
 const DRAWINGS = {
   // A written-on sheet with the corner turned down, a second page behind it,
   // and three strokes of shadow where it lifts off the desk.
@@ -134,13 +147,16 @@ async function main() {
   }
 
   for (const [index, [object, paths]] of Object.entries(DRAWINGS).entries()) {
-    const name = `drawing-${object}.png`
+    // Seeded off the name the single frame had, so the drawing at rest is the
+    // one the archive has always shown and only the hover frames are new.
+    const name = `drawing-${object}-frames.png`
     await draw(page, {
       width: DRAWING_SIZE,
       height: DRAWING_SIZE,
-      seed: seedFor(name, index),
+      seed: seedFor(`drawing-${object}.png`, index),
       shape: "drawing",
       paths,
+      frames: DRAWING_FRAMES,
     })
     await shoot(page, name)
     written.push(name)
@@ -152,12 +168,13 @@ async function main() {
 
 // Drawn inside the page so Rough.js runs against a real SVG element.
 async function draw(page, options) {
-  await page.evaluate(({ width, height, seed, shape, paths }) => {
+  await page.evaluate(({ width, height, seed, shape, paths, frames = [{ dx: 0, dy: 0, turn: 0 }] }) => {
     const svgNS = "http://www.w3.org/2000/svg"
     const svg = document.createElementNS(svgNS, "svg")
-    svg.setAttribute("width", String(width))
+    const stripWidth = width * frames.length
+    svg.setAttribute("width", String(stripWidth))
     svg.setAttribute("height", String(height))
-    svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
+    svg.setAttribute("viewBox", `0 0 ${stripWidth} ${height}`)
     const stage = document.getElementById("stage")
     stage.replaceChildren(svg)
 
@@ -202,11 +219,21 @@ async function draw(page, options) {
       if (shape === "drawing") {
         // One node per path, all under the pass's opacity: an object is a set
         // of separate strokes, not one figure, and Rough.js seeds each from
-        // the one it is given so no two lines wobble the same way.
-        for (const [index, d] of paths.entries()) {
-          const stroke = rc.path(d, { ...options, seed: (pass.seed + index * 17) % 2 ** 31 })
-          stroke.setAttribute("opacity", String(pass.opacity))
-          svg.appendChild(stroke)
+        // the one it is given so no two lines wobble the same way. Each frame
+        // takes its own cell of the strip, turned about the cell's centre;
+        // the first keeps the pass's own seeds, so it is the resting drawing.
+        for (const [frameIndex, frame] of frames.entries()) {
+          const cell = document.createElementNS(svgNS, "g")
+          cell.setAttribute(
+            "transform",
+            `translate(${frameIndex * width + frame.dx} ${frame.dy}) rotate(${frame.turn} ${width / 2} ${height / 2})`,
+          )
+          for (const [index, d] of paths.entries()) {
+            const stroke = rc.path(d, { ...options, seed: (pass.seed + index * 17 + frameIndex * 7919) % 2 ** 31 })
+            stroke.setAttribute("opacity", String(pass.opacity))
+            cell.appendChild(stroke)
+          }
+          svg.appendChild(cell)
         }
         continue
       }

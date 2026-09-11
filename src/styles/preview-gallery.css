@@ -217,6 +217,48 @@
   height: 0;
 }
 
+/* A short laptop viewport can cut the project story off below the card's
+   rounded edge while the hidden scrollbar gives no other clue. This wash is
+   measured from the real scroll state and disappears at the end; touch layouts
+   already devote the full screen to the native scroller, so they do not wear
+   the extra chrome. */
+.preview-gallery-scroll-cue-wrap {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  /* Match the card's bounds and motion so the wash cannot linger on the
+     backdrop when the surface pages away. The child owns the scroll fade. */
+  transform: translateX(0) scale(1);
+  transition:
+    opacity var(--pg-switch-ms, var(--duration-base)) ease-out,
+    transform var(--pg-switch-ms, var(--duration-base)) var(--ease-standard);
+}
+
+.preview-gallery-scroll-cue {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3.5rem;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff 88%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+.preview-gallery-scroll-cue[data-visible="true"] {
+  opacity: 1;
+}
+
+@media (min-width: 700px) and (hover: hover) and (pointer: fine) {
+  .preview-gallery-scroll-cue-wrap {
+    display: block;
+  }
+}
+
 /* Mid-flight the translated surface can overflow the shell, so clip it rather
    than flashing a scrollbar. */
 .preview-gallery-shell[data-origin-animating] .preview-gallery-card {
@@ -235,13 +277,13 @@
 .preview-gallery-card-switch-out-next,
 .preview-gallery-card-switch-in-prev {
   opacity: 0;
-  transform: translateX(-1.4rem) scale(0.985);
+  transform: translateX(-1.4rem) scale(var(--pg-switch-scale, 0.985));
 }
 
 .preview-gallery-card-switch-out-prev,
 .preview-gallery-card-switch-in-next {
   opacity: 0;
-  transform: translateX(1.4rem) scale(0.985);
+  transform: translateX(1.4rem) scale(var(--pg-switch-scale, 0.985));
 }
 
 /* The incoming pose is a placement, not a move: it has to be installed without
@@ -250,7 +292,8 @@
    turned round from wherever it had got to -- on a fast machine barely past
    where it left, so the new preview re-entered from the side the old one
    exited. The settle to zero is the only leg that animates. */
-.preview-gallery-card[class*="preview-gallery-card-switch-in-"] {
+.preview-gallery-card[class*="preview-gallery-card-switch-in-"],
+.preview-gallery-scroll-cue-wrap[class*="preview-gallery-card-switch-in-"] {
   transition: none;
 }
 
@@ -547,18 +590,6 @@
   margin-top: 2rem;
 }
 
-/* Nothing above them to be level with: the chevrons page a page of prose, so
-   they take the middle of whatever of the sheet is on screen rather than the
-   middle of an artwork that is not there. The notes list is the same case. */
-.preview-gallery-popup[data-preview-kind="resume"] .preview-gallery-rail,
-.preview-gallery-popup[data-preview-kind="resume"][data-wide="true"] .preview-gallery-rail,
-.preview-gallery-popup[data-preview-kind="writings"] .preview-gallery-rail,
-.preview-gallery-popup[data-preview-kind="writings"][data-wide="true"] .preview-gallery-rail {
-  --preview-gallery-rail-anchor: 50%;
-}
-
-
-
 .preview-gallery-controls {
   display: inline-flex;
   align-items: center;
@@ -581,10 +612,14 @@
    between clicks is worse than one sitting a little off centre on the two
    previews whose artwork is not the common ratio.
 
-   `min(..., 50%)` is the short-window case, and it is why this is not simply a
-   larger fixed number: the card is capped at the viewport and scrolls
-   internally, so half the popup is always the middle of what can actually be
-   seen, and paging stays reachable without scrolling back up.
+   That holds on the résumé and the notes too, which have no artwork to be
+   level with. They used to take half their own card instead, and the pair
+   jumped on every step into or out of them -- at 2560x1323, 280px lower on
+   the résumé, whose sheet runs to the viewport's foot, and 15px higher on the
+   notes list, which is shorter than the artwork, then down again as a note
+   grew the card. The anchor is a fraction of the media cap, which is itself a
+   fraction of the viewport, so it lands inside the card however short the
+   window is.
 
    Spanning the card is the only way one group can hold both edges, so the span
    between them gives the pointer back to the card underneath. */
@@ -598,7 +633,7 @@
   --preview-gallery-rail-anchor: calc(min(367px, var(--preview-gallery-media-cap)) / 2);
   position: absolute;
   z-index: 1;
-  top: min(var(--preview-gallery-rail-anchor), 50%);
+  top: var(--preview-gallery-rail-anchor);
   right: var(--preview-gallery-rail-inset);
   left: var(--preview-gallery-rail-inset);
   display: flex;
@@ -669,6 +704,7 @@
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  white-space: pre;
 }
 
 .preview-gallery-details {
@@ -727,6 +763,27 @@
   flex-wrap: wrap;
   justify-content: flex-start;
   gap: 0.5rem 1rem;
+}
+
+/* Rafael is the stable final credit. Project-specific teammates mount to his
+   left, so only the people newly introduced by a page turn get this one-shot
+   reveal; a teammate shared by adjacent projects keeps their place quietly. */
+.preview-gallery-people > li:not(:last-child) {
+  animation: preview-gallery-person-in var(--duration-base) var(--ease-smooth) both;
+}
+
+@keyframes preview-gallery-person-in {
+  from {
+    opacity: 0;
+    filter: blur(var(--blur-reveal));
+    transform: translateX(-0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    filter: none;
+    transform: translateX(0);
+  }
 }
 
 /* Team credits keep the existing avatar links, below the project prose. */
@@ -894,25 +951,28 @@
 
   .preview-gallery-toolbar {
     flex: none;
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     padding: var(--preview-gallery-card-padding);
     background: var(--canvas);
   }
 
-  /* The count is the toolbar's third item on paper and its label in practice:
-     the chevrons hold one end of the bar and the close the other, and a pill
-     between them only crowded the corner the close now has to itself. It is
-     kept for a screen reader, where "5 / 13" is the one place the position in
-     the set is not already legible from the artwork. */
+  /* The count occupies the space between the paging group and close. Its
+     reserved digit width keeps both controls fixed while the number swaps. */
   .preview-gallery-count {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    min-height: 0;
-    overflow: hidden;
-    padding: 0;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+  }
+
+  .preview-gallery-controls {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .preview-gallery-close {
+    grid-column: 3;
+    grid-row: 1;
   }
 
   /* The compact gallery still shows the full composition even though the
@@ -958,6 +1018,10 @@
   .preview-gallery-media[data-loaded] {
     filter: none;
   }
+
+  .preview-gallery-people > li:not(:last-child) {
+    animation: none;
+  }
 }
 
 @media (max-width: 699.98px) {
@@ -966,3 +1030,182 @@
   }
 }
 
+/* Notes is a nested view of this same card. Keep the chrome opaque while the
+   content uses the very same page-turn poses as the work cards. */
+.notes-gallery-card {
+  --notes-room: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
+  height: var(--notes-list-height, auto);
+  max-height: var(--notes-room);
+  overflow: hidden;
+  /* The viewport carries the bottom padding instead, so text scrolls to the
+     card's edge rather than being cut off a padding's height above it. */
+  padding-bottom: 0;
+  transition:
+    height var(--pg-switch-ms) var(--ease-smooth),
+    opacity var(--pg-switch-ms) ease-out,
+    transform var(--pg-switch-ms) var(--ease-standard);
+}
+.preview-gallery-popup[data-reading-note="true"] .notes-gallery-card {
+  height: var(--notes-room);
+}
+.notes-gallery-card .preview-gallery-card-inner,
+.notes-gallery-card .preview-gallery-notes {
+  height: 100%;
+  min-height: 0;
+}
+.notes-gallery-card .preview-gallery-notes {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+/* The copy dissolves into the card at its foot rather than being cut by it
+   (the blur and the ramp are in page-edge.css). The fade is the card's next
+   sibling in the popup rather than its child: inside the card's rounded
+   overflow clip, Chrome ignores the masks on the blur layers and blurs the
+   whole strip at full strength. The popup traces the card, so pinning the
+   fade to the popup's foot puts it on the card's bottom edge, and it rides that
+   edge while the card grows to an article and shrinks back. Its layers take the
+   card's bottom corners themselves; a clip here would bring the bug back.
+   At 3rem it fits inside the clearance under the last row and under an
+   article's More articles, so the end of either stays unfaded. */
+.notes-gallery-fade {
+  --bottom-fade-height: 3rem;
+
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.notes-gallery-fade > span,
+.notes-gallery-fade::after {
+  border-radius: inherit;
+  transition: opacity var(--pg-switch-ms) ease-out;
+}
+/* Outside the card it no longer rides the card's switch poses, so it borrows
+   their opacity: out with the card when Notes pages away, and installed at 0
+   with it on the way in, then settling back together. On the layers, not the
+   fade: opacity on the fade would make it the blur's backdrop root, and the
+   layers would have nothing to blur until the transition ended. */
+.preview-gallery-card[class*="preview-gallery-card-switch-"] + .notes-gallery-fade > span,
+.preview-gallery-card[class*="preview-gallery-card-switch-"] + .notes-gallery-fade::after {
+  opacity: 0;
+}
+.preview-gallery-card[class*="preview-gallery-card-switch-in-"] + .notes-gallery-fade > span,
+.preview-gallery-card[class*="preview-gallery-card-switch-in-"] + .notes-gallery-fade::after {
+  transition: none;
+}
+/* The heading's bottom edge is the edge the text scrolls under, and it runs
+   through the card's padding to both sides, so the divider that appears on
+   scroll spans the card rather than underlining the title. The 2rem between
+   the title and the first line is split across that edge. Raised because the
+   page is a later positioned sibling and would paint over the shadow. */
+.notes-gallery-heading {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  margin-inline: calc(-1 * var(--preview-gallery-card-padding));
+  padding: 0 var(--preview-gallery-card-padding) 1.5rem;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
+  transition: box-shadow var(--duration-quick) var(--ease-standard);
+}
+.notes-gallery-heading-column {
+  position: relative;
+  width: min(100%, var(--writings-measure));
+  margin: 0 auto;
+}
+.notes-gallery-heading .preview-gallery-notes-title {
+  width: auto;
+  margin: 0;
+  transition: transform var(--pg-switch-ms) var(--ease-standard);
+}
+.notes-gallery-back {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 0.75rem);
+  translate: 0 -50%;
+  border-color: transparent;
+  box-shadow: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(-1.4rem);
+  transition:
+    opacity var(--pg-switch-ms) ease-out,
+    transform var(--pg-switch-ms) var(--ease-standard),
+    visibility var(--pg-switch-ms);
+}
+.preview-gallery-notes[data-reading="true"] .notes-gallery-back {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(0);
+}
+.notes-gallery-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-inline: calc(-1 * var(--preview-gallery-card-padding));
+  padding: 0.5rem var(--preview-gallery-card-padding) var(--preview-gallery-card-padding);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.notes-gallery-page {
+  /* Scaling a long article around its centre produces a visible vertical dip.
+     Notes only translate sideways; work cards retain their subtle scale. */
+  --pg-switch-scale: 1;
+  position: relative;
+  transition:
+    opacity var(--pg-switch-ms) ease-out,
+    transform var(--pg-switch-ms) var(--ease-standard);
+}
+.notes-gallery-page[class*="preview-gallery-card-switch-in-"] {
+  transition: none;
+}
+/* The list still measures at the current width while an article is forward.
+   Hidden and inert keeps its rows out of focus and accessibility. */
+.notes-gallery-list[hidden] {
+  display: block;
+  position: absolute;
+  inset: 0 0 auto;
+  visibility: hidden;
+  pointer-events: none;
+}
+.notes-gallery-card .writing-reader {
+  --writing-note-width: calc((100cqi - var(--writings-measure)) / 2 - 1.05rem - 15px);
+  width: min(100%, var(--writings-measure));
+  padding: 0 0 3rem;
+}
+.preview-gallery-notes[data-scrolled="true"] .notes-gallery-heading {
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
+}
+.preview-gallery-notes:has(.writing-contents[data-stuck="true"]) .notes-gallery-heading {
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
+}
+@container writings (max-width: 47.99rem) {
+  .notes-gallery-back {
+    right: auto;
+    left: 0;
+  }
+  .preview-gallery-notes[data-reading="true"] .preview-gallery-notes-title {
+    transform: translateX(calc(var(--preview-gallery-nav-size) + 0.75rem));
+  }
+}
+@media (max-width: 699.98px), (hover: none), (pointer: coarse) {
+  .preview-gallery-popup .notes-gallery-card {
+    height: auto;
+    max-height: none;
+  }
+  /* The compact card is square-cornered and fills the popup's column. */
+  .notes-gallery-fade {
+    border-radius: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .notes-gallery-page,
+  .notes-gallery-back,
+  .notes-gallery-heading .preview-gallery-notes-title,
+  .notes-gallery-fade > span,
+  .notes-gallery-fade::after {
+    transition: none;
+  }
+}

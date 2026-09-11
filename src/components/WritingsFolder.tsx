@@ -10,25 +10,27 @@ import { openSound } from "../lib/sounds"
 const loadReader = createModuleLoader(() => import("./WritingsReader"), "WritingsReader")
 
 export type WritingsFolderHandle = {
-  /** Open a note in the reader's sheet, fetching the reader first if need be. */
+  /** Fetch and select a nested note without replacing the gallery dialog. */
   openWriting: (id: string) => void
+  /** Retire a row request when its list is dismissed, even without history traversal. */
+  cancelPending: () => void
   /** Warm the reader's chunk ahead of a row being pressed. */
   preload: () => void
+  retry: () => void
 }
 
 /** What the notes slide says while a reader is on its way, or failed to come. */
 export type WritingsReaderStatus = { status: string | null; pendingId: string | null }
+
 
 type WritingsFolderProps = {
   /** The tile was pressed: open the gallery on the notes slide. */
   onOpen: () => void
   /** The tile was hovered or focused: warm the gallery's chunk. */
   onPrefetch?: () => void
-  /** The reader's back arrow: put the notes slide forward. */
-  onBack: () => void
-  onOpenChange?: (open: boolean) => void
+  onReaderReady: (module: typeof import("./WritingsReader")) => void
   onStatusChange?: (status: WritingsReaderStatus) => void
-  /** The tile: what the notes slide and the reader's sheet both grow out of. */
+  /** The tile: the fallback origin when a reader has no list underneath it. */
   tileRef?: (node: HTMLButtonElement | null) => void
   ref?: Ref<WritingsFolderHandle>
 }
@@ -40,9 +42,10 @@ type WritingsFolderProps = {
  * fetched, cancelled, and retried. A shared link to a note fetches it the same
  * way, without the list first.
  */
-export function WritingsFolder({ onOpen, onPrefetch, onBack, onOpenChange, onStatusChange, tileRef, ref }: WritingsFolderProps) {
+export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChange, tileRef, ref }: WritingsFolderProps) {
   const { module, status, load, warm } = useDeferredModule(loadReader)
   const Reader = module?.WritingsReader
+  useEffect(() => { if (module) onReaderReady(module) }, [module, onReaderReady])
   const playOpen = useSound(openSound, { volume: 0.3 })
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [request, setRequest] = useState<{ id: string; isCurrent: () => boolean } | null>(null)
@@ -52,13 +55,18 @@ export function WritingsFolder({ onOpen, onPrefetch, onBack, onOpenChange, onSta
     setRequest({ id, isCurrent: beginDialogIntent("writing") })
     if (!Reader) void load()
   }
-  useImperativeHandle(ref, () => ({ openWriting, preload: warm }))
+  useImperativeHandle(ref, () => ({
+    openWriting,
+    cancelPending: () => setRequest(null),
+    preload: warm,
+    retry: () => { void load() },
+  }))
 
   // A row was pressed and the reader is here: put the note in the URL, which
-  // is what opens the sheet. Only the most recent activation gets to -- a
+  // is what selects the nested article. Only the most recent activation gets to -- a
   // download that lands after another dialog was chosen is kept but not shown.
   // The request is spent by the selection itself: once the note is in the URL
-  // the sheet is open, and a stale request is retired by its own intent.
+  // the article is selected, and a stale request is retired by its own intent.
   const served = useRef<typeof request>(null)
   useEffect(() => {
     if (!Reader || !request || served.current === request) return
@@ -80,6 +88,7 @@ export function WritingsFolder({ onOpen, onPrefetch, onBack, onOpenChange, onSta
     if (Reader || (!request && !writingId)) return
     const cancel = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return
+      served.current = null
       setRequest(null)
       if (writingId) clearItem()
     }
@@ -123,7 +132,6 @@ export function WritingsFolder({ onOpen, onPrefetch, onBack, onOpenChange, onSta
             with no list on screen to say what is happening. */}
         <span className="writings-tile-label" role="status">{statusLabel ?? "Writings & notes"}</span>
       </button>
-      {Reader ? <Reader triggerRef={triggerRef} onOpenChange={onOpenChange} onBack={onBack} /> : null}
     </>
   )
 }

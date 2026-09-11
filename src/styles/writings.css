@@ -1,14 +1,7 @@
 /* --------------------------------------------------------- writings folder --- */
-/* The feed tile, the list of notes, the sheet one note opens in, and the
-   .t-modal transition primitive that sheet is built from, which the résumé
-   reader shares.
-
-   The list is a slide of the preview gallery, at the place the tile occupies
-   on the grid, so the arrow keys walk from a project into the notes and out
-   the other side the way they walk into the résumé; its rules here are sized
-   against that card, and against `/notes/` for a crawler. The sheet only ever
-   shows an article: a note is read over the list, with a back arrow to it.
-   `.writings-` is the folder and its surfaces; `.writing-` is a note. */
+/* Folder artwork, shared archive/article typography, and the legacy .t-modal
+   primitive used by other readers. Notes lives inside the preview gallery;
+   preview-gallery.css owns its frame, navigation, and page transitions. */
 
 .writings-tile {
   position: relative;
@@ -66,223 +59,17 @@
   .writings-folder { zoom: 0.7; flex-shrink: 0; }
 }
 
-.writings-backdrop { position: fixed; inset: 0; z-index: var(--z-dialog-backdrop); background: rgb(18 18 18 / 0.46); transition: opacity var(--duration-base) var(--ease-standard); }
-.writings-backdrop[data-starting-style], .writings-backdrop[data-ending-style] { opacity: 0; }
-.writings-backdrop[data-ending-style] { transition-duration: var(--duration-quick); }
 .writings-dialog,
 .standalone-writing {
   font-kerning: normal;
-  /* The reading scale. This is the site's one long-form surface and it used to
-     be the only place with type the rest of the interface does not have: 18px
-     prose over a 720px measure, under a 40px title. Both were larger than
-     anything on the pages that link here. It now reads at the 14px step the
-     hero, the nav, and the cards already use, over a 544px measure -- about 68
-     characters, the width benji.org/drawesome sets its articles in -- under a
-     note title one step up at 18px. --writings-column
-     is the measure plus the 1.5rem of padding each side, so the toolbar, the
-     archive, and the reader all sit on one column edge. */
   --writings-measure: 34rem;
   --writings-column: calc(var(--writings-measure) + 3rem);
 }
 .writings-dialog {
-  /* The sheet runs wider than the reading column needs. That surplus is the
-     marginalia's: the column keeps its measure at every width and the extra
-     all lands in the two gutters, where the notes live. */
-  --writings-sheet: min(56rem, calc(100vw - 10rem));
-  /* Marginalia. Pencil, not pen: the notes are an aside to the article, so they
-     sit on --muted with the rest of the secondary copy rather than borrowing the
-     handwritten hints' red, which would read as a correction. A note takes the
-     whole gutter the reading column leaves over, less the widest gap a note
-     can be dealt (NOTE_GAPS tops out at 1.05rem) and the 15px of stable
-     scrollbar gutter the platforms that reserve one take off each edge.
-     Derived rather than fixed because the sheet stops growing at 56rem and
-     the gutters first open at 1000px, where there is less to give: one figure
-     cannot both fill the gutter here and stay inside the sheet there. */
   --writing-note-gap: 0.7rem;
-  --writing-note-width: calc((var(--writings-sheet) - var(--writings-column)) / 2 - 1.05rem - 15px);
-  --writings-switch-duration: var(--duration-base);
-  --modal-open-dur: var(--duration-base);
-  --modal-close-dur: var(--duration-quick);
-  --modal-scale: 0.96;
-  --modal-scale-close: 0.96;
-  --modal-ease: var(--ease-smooth);
-  /* Hangs from the same line a project preview opens on rather than sitting
-     centred, so the two modals share a top edge and the header does not jump
-     when a visitor goes from one to the other. Mirrors
-     `--preview-gallery-fixed-top`, including its wide-desktop step below. */
-  --writings-top: max(8vh, env(safe-area-inset-top));
-  --writings-bottom: max(1rem, env(safe-area-inset-bottom));
-  /* The room the viewport leaves the sheet. Both the sheet's cap and the
-     page's clamp are written against this one expression so 100dvh and the
-     safe-area insets stay declared in one place -- including the media
-     queries below, which move --writings-top and are picked up here because
-     custom properties substitute where they are used, not where they are
-     set. */
-  --writings-room: calc(100dvh - var(--writings-top) - var(--writings-bottom));
-  --writings-resize-dur: var(--duration-base);
-  position: fixed;
-  top: var(--writings-top);
-  left: 50%;
-  translate: -50% 0;
-  z-index: var(--z-dialog);
-  display: flex;
-  flex-direction: column;
-  width: var(--writings-sheet);
-  height: auto;
-  max-height: var(--writings-room);
-  padding: 0;
-  overflow: visible;
-  border-radius: var(--radius-lg);
-  background: var(--canvas);
-  color: var(--ink);
-  box-shadow: var(--shadow-overlay);
-  font-family: var(--font-ui);
 }
-.writings-dialog.t-modal {
-  transition-property: transform, opacity;
-  transition-duration: var(--modal-open-dur);
-  transition-timing-function: var(--modal-ease);
-}
-.writings-dialog.t-modal.is-closing {
-  transition-duration: var(--modal-close-dur);
-}
-/* Origin-aware open and close, as a project preview has: the sheet flies out of
-   the control that opened it and shrinks back into it, carried by one Web
-   Animations flight on this element (lib/originMotion). The flight owns the
-   whole pose, so the scale below goes flat while it is on and only the fade is
-   left to CSS -- a running transition outranks an animation in the cascade, so
-   leaving the pose in place would let it overwrite the travel. The note-switch
-   poses further down carry one more attribute each and still win. */
-.writings-dialog.t-modal[data-origin-motion],
-.writings-dialog.t-modal.is-open[data-origin-motion],
-.writings-dialog.t-modal.is-closing[data-origin-motion] {
-  transform: none;
-}
-/* A note switch closed part-way through leaves a transform transition running
-   towards that flat pose, and by the same cascade rule it would outrank the
-   flight for the whole exit -- the sheet would drift back to identity instead
-   of shrinking into its opener. Dropping transform from the closing
-   transition cancels the leftover and hands the exit back to the flight. */
-.writings-dialog.t-modal.is-closing[data-origin-motion] {
-  transition-property: opacity;
-}
-/* Page the whole reader with the same mirrored poses as project previews.
-   The incoming pose is installed without a transition while the note swaps. */
-.writings-dialog.t-modal.is-open[data-switch-phase]:not([data-switch-phase="idle"]) {
-  transition-duration: var(--writings-switch-duration);
-  transition-timing-function: var(--ease-standard), ease-out;
-}
-.writings-dialog.t-modal.is-open[data-switch-phase="out"][data-switch-direction="next"],
-.writings-dialog.t-modal.is-open[data-switch-phase="in"][data-switch-direction="prev"] {
-  opacity: 0;
-  transform: translateX(-1.4rem) scale(0.985);
-}
-.writings-dialog.t-modal.is-open[data-switch-phase="out"][data-switch-direction="prev"],
-.writings-dialog.t-modal.is-open[data-switch-phase="in"][data-switch-direction="next"] {
-  opacity: 0;
-  transform: translateX(1.4rem) scale(0.985);
-}
-.writings-dialog.t-modal.is-open[data-switch-phase="in"] {
-  transition: none;
-}
-/* Nothing separates the toolbar from a page resting at its top: the hairline
-   and its short shadow start transparent and only arrive once the page beneath
-   has scrolled away. The pages are a later sibling and would paint over that
-   divider, so the toolbar is raised above them -- but still under the
-   navigation, which rides this same line on a phone. */
-.writings-toolbar { position: relative; z-index: 1; flex-shrink: 0; padding: 2rem 0 1.25rem; overflow: hidden; scrollbar-gutter: stable both-edges; box-shadow: 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0); transition: box-shadow var(--duration-quick) var(--ease-standard); }
-.writings-dialog[data-scrolled="true"] .writings-toolbar { box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28); }
-.writings-toolbar-leading { position: relative; display: flex; align-items: center; min-height: 44px; width: min(100%, var(--writings-column)); margin: 0 auto; padding-inline: 1.5rem; }
-.writings-toolbar-title { min-width: 0; margin: 0; font-size: var(--text-md); font-weight: 600; line-height: 1.4; letter-spacing: -0.015rem; color: var(--ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-/* The back control is the same round chevron as the note nav, so it wears
-   `.preview-gallery-nav`. Unlike the note nav it never leaves the sheet, so it
-   drops the border and the shadow those rails need against the backdrop and
-   reads as a plain chevron on the toolbar; its box, not the chevron, aligns
-   with the title. */
-.writings-back {
-  flex: 0 0 auto;
-  border-color: transparent;
-  box-shadow: none;
-  margin: 0 0.75rem 0 0;
-  transition:
-    background-color var(--duration-quick) ease-out,
-    box-shadow var(--duration-quick) ease-out,
-    transform var(--duration-quick) ease-out;
-}
-.writings-back:hover:not(:disabled),
-.writings-back:focus-visible:not(:disabled) {
-  background: var(--mosaic-card-surface);
-  box-shadow: none;
-}
-/* Once the sheet is wide enough to have gutters, the control moves out of the
-   flow and hangs in the one on the left, a column's padding clear of the
-   title, so "Notes" sits on the column edge the article's date and heading
-   share. Below this width the column fills the sheet and there is no gutter
-   to hang in, so the control stays in the flow ahead of the title. */
-@media (min-width: 900px) {
-  .writings-back {
-    position: absolute;
-    top: 50%;
-    right: 100%;
-    margin: 0;
-    transform: translateY(-50%);
-  }
-  .writings-back:active:not(:disabled) { transform: translateY(-50%) scale(0.96); }
-}
-.writings-pages {
-  position: relative;
-  /* The sheet is as tall as the article in it. The component measures the
-     article into --writings-page-height and this clamps it against the room
-     left after the toolbar, so a short note stops at its last line instead of
-     leaving a screen of empty paper below it. The fallback is a full sheet, so
-     the frame before the first measurement is a full sheet rather than a
-     collapsed one. */
-  flex: 0 0 auto;
-  height: min(
-    var(--writings-page-height, 100vh),
-    calc(var(--writings-room) - var(--writings-chrome, 6rem))
-  );
-  min-height: 0;
-  overflow: hidden;
-}
-/* The opening sheet installs its first height without animating -- there is
-   nothing to grow from. The attribute arrives a frame later, so only a note
-   switch and content that resizes under the reader travel. */
-.writings-dialog[data-sized="true"] .writings-pages {
-  transition: height var(--writings-resize-dur) var(--ease-smooth);
-}
-/* The article's scroll box is the pages' box: the pages are given a height
-   above, and this fills it rather than growing to the article, which is what
-   makes the sheet scroll instead of the page behind it. */
-.writings-scroll { height: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable both-edges; }
 .writings-page-title { margin: 0; font-size: var(--text-lg); font-weight: 600; line-height: 1.35; letter-spacing: -0.02rem; overflow-wrap: anywhere; }
-/* The controls sit on rails just outside the two long edges of the dialog:
-   previous on the left, next on the right. The group itself is only a
-   positioning frame, so it lets pointer events through to the page
-   underneath. */
-.writings-navigation {
-  --writings-nav-rail: calc(100% + var(--preview-gallery-nav-gap));
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-.writings-navigation > * {
-  position: absolute;
-  pointer-events: auto;
-}
-/* On the rails these controls are read against the dimmed page rather than the
-   sheet. The shared 8%-black edge is lighter than the backdrop behind it, so it
-   disappears into the white pill; the ring only draws once it is darker than
-   both. */
-.writings-navigation .preview-gallery-nav { border-color: #c9c9cd; }
-.writings-note-nav { top: 50%; translate: 0 -50%; }
-.writings-note-nav-prev { right: var(--writings-nav-rail); }
-.writings-note-nav-next { left: var(--writings-nav-rail); }
-@media (min-width: 1320px) {
-  .writings-dialog { --writings-top: max(5vh, env(safe-area-inset-top)); }
-}
-.writings-mobile-close { display: none; }
+
 /* ------------------------------------------------------- the list of notes --- */
 /* The list takes the résumé's measure inside whatever holds it -- the gallery
    card, or the standalone page -- and hangs its drawings in whatever width that
@@ -341,14 +128,16 @@
     aspect-ratio: 1;
     opacity: 0.55;
     rotate: var(--writings-drawing-tilt);
-    pointer-events: none;
-    -webkit-mask: var(--writings-drawing-mark) center / 100% 100% no-repeat;
-    mask: var(--writings-drawing-mark) center / 100% 100% no-repeat;
+    /* The file is a strip of three frames, each as square as the box, so the
+       mask is three boxes wide and the position picks a frame: 0% the drawing
+       at rest, 50% and 100% the two it boils through on hover. */
+    -webkit-mask: var(--writings-drawing-mark) 0 0 / 300% 100% no-repeat;
+    mask: var(--writings-drawing-mark) 0 0 / 300% 100% no-repeat;
   }
   /* The ink goes on only where the mask can cut it out, as with the brackets:
      a browser that ignores mask-image would otherwise fill each gutter with a
      solid grey square. */
-  @supports (mask-image: url("/writings/marks/drawing-sheet.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet.png")) {
+  @supports (mask-image: url("/writings/marks/drawing-sheet-frames.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet-frames.png")) {
     .writings-drawing { background-color: var(--muted); }
   }
   /* Size, rail, drop, and tilt all arrive per mark from the component, hashed
@@ -358,6 +147,24 @@
      -0.5rem hover bleed. */
   .writings-drawing[data-place="left"] { right: calc(100% + var(--writings-drawing-rail)); }
   .writings-drawing[data-place="right"] { left: calc(100% + var(--writings-drawing-rail)); }
+  /* Hovered, a drawing boils: it steps through its frames the way a
+     stop-motion drawing does between exposures, held on each one rather than
+     tweened, since a slide between two tracings reads as the paper moving
+     rather than the pencil redrawing. It answers its own row as well as a
+     pointer on the drawing itself, because the pointer spends its time on the
+     titles and a drawing that only woke for a direct hit in the gutter would
+     rarely be seen doing it. About eight frames a second, which is where a
+     boil reads as hand-drawn; much faster and it becomes a flicker. The first
+     step leaves the resting frame at once, so the hover answers without a
+     beat of stillness first. */
+  @media (hover: hover) and (pointer: fine) {
+    .writings-year li:hover > .writings-drawing { animation: writings-drawing-boil 375ms steps(1, end) infinite; }
+  }
+}
+@keyframes writings-drawing-boil {
+  0% { -webkit-mask-position: 50% 0; mask-position: 50% 0; }
+  33.333% { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  66.667%, 100% { -webkit-mask-position: 0 0; mask-position: 0 0; }
 }
 /* A year sits above the notes it belongs to rather than in a gutter beside
    them, so the full measure goes to the titles. The rows keep their -0.5rem
@@ -374,7 +181,7 @@
 .writing-entry-trigger:hover { background: var(--mosaic-card-surface); }
 .writing-entry-trigger:focus-visible { outline-offset: -2px; }
 .writing-entry-trigger[aria-busy="true"] { background: var(--mosaic-card-surface); cursor: progress; }
-.writing-reader { width: min(100%, var(--writings-column)); margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+.writing-reader { --writing-contents-height: 44px; width: min(100%, var(--writings-column)); margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 .writing-reader-header { margin-bottom: 1.5rem; }
 .writing-reader-date { margin-bottom: 0.25rem; color: var(--muted); font-size: var(--text-xs); line-height: 1.5; letter-spacing: 0; }
 /* Sits under the title and date, so the reserved height is load-bearing: counts
@@ -394,7 +201,166 @@
 /* A section heading is the same size as the copy under it and separates by
    weight, so the space has to do the grouping: 48px above it, 12px below. */
 .writing-reader-section { margin-top: 3rem; }
-.writing-reader-section h3 { margin: 0 0 0.75rem; color: var(--ink); font-size: var(--text-sm); font-weight: 600; line-height: 1.45; letter-spacing: -0.00563rem; }
+.writing-reader-section h3 {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.00563rem;
+  /* A jump from the contents lands the heading just under the top of whatever
+     scrolls it. The site-wide 5rem clears the home page's header, which
+     neither the notes card nor the standalone page has. */
+  scroll-margin-top: calc(1.5rem + var(--writing-contents-height));
+  /* A hairline runs from the heading to the measure's edge, so each section
+     reads as a new stretch without a rule strong enough to box it off. */
+  display: flex;
+  gap: 1rem;
+}
+/* The rule takes only the width the heading leaves over. A heading long enough
+   to wrap leaves none, so it goes without rather than strand a stub at the far
+   edge: a wrapped text box is as wide as the measure, not as its longest line,
+   so the stub would float well clear of the words. */
+.writing-reader-section h3::after {
+  content: "";
+  flex: 1 1 0;
+  align-self: center;
+  height: 1px;
+  background: rgb(0 0 0 / 0.06);
+}
+/* One horizontal contents row sits between the article header and its prose.
+   It begins as "Contents", then carries the section being read in the same
+   text position, updating immediately when the section changes.
+   The hairline is the row's only container, so it stays part of the page rather
+   than becoming a second floating surface inside the reader. */
+.writing-contents {
+  --writing-contents-gutter: max(0px, calc((100cqi - var(--writings-measure)) / 2));
+  --writing-contents-offset: calc(var(--preview-gallery-card-padding, 0px) + var(--writing-contents-gutter));
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  width: 100%;
+  margin-left: 0;
+  margin-bottom: 2rem;
+  padding-inline: 0;
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  background: var(--canvas);
+  transition:
+    width var(--duration-slow) var(--ease-smooth),
+    margin-left var(--duration-slow) var(--ease-smooth),
+    padding-inline var(--duration-slow) var(--ease-smooth);
+}
+.writing-contents::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+.writing-contents[data-stuck="true"]::before { opacity: 1; }
+.writing-contents-sentinel { display: block; height: 0; }
+.writings-dialog .writing-contents { top: -0.5rem; }
+/* In the reading dialog, the pinned row reaches through the column gutters and
+   the card padding to the same edges as the Notes toolbar. Its contents keep
+   their place on the prose measure while the hairline and shadow span the
+   modal, joining the two pieces of persistent chrome. */
+.writings-dialog .writing-contents[data-stuck="true"] {
+  width: calc(100% + 2 * var(--writing-contents-offset));
+  margin-left: calc(-1 * var(--writing-contents-offset));
+  padding-inline: var(--writing-contents-offset);
+}
+.writing-contents-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: var(--writing-contents-height);
+  padding: 0.625rem 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  letter-spacing: -0.00563rem;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+.writing-contents-trigger:hover,
+.writing-contents-trigger:focus-visible { color: var(--ink); }
+.writing-contents-trigger:focus-visible { outline-offset: 2px; }
+.writing-contents-current {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.writing-contents-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  transition: transform var(--duration-base) var(--ease-smooth);
+}
+.writing-contents[data-open="true"] .writing-contents-chevron { transform: rotate(-180deg); }
+
+/* The disclosed rows grow from the compact line without introducing another
+   surface. The inner list owns the overflow so a zero grid track closes all
+   the way instead of leaving its padding behind. */
+.writing-contents-panel {
+  position: absolute;
+  z-index: 1;
+  top: 100%;
+  right: 0;
+  left: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  background: var(--canvas);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    grid-template-rows var(--duration-base) var(--ease-smooth),
+    opacity var(--duration-quick) var(--ease-standard);
+}
+.writing-contents[data-open="true"] .writing-contents-panel {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+.writing-contents ol {
+  width: min(100%, var(--writings-measure));
+  min-height: 0;
+  overflow: hidden;
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+}
+.writing-contents a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-inline: -0.5rem;
+  padding: 0.625rem 0.5rem;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  letter-spacing: -0.00563rem;
+  text-decoration: none;
+  text-wrap: pretty;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+}
+.writing-contents a:hover { background: var(--mosaic-card-surface); }
+.writing-contents a:hover,
+.writing-contents a[aria-current] { color: var(--ink); }
+.writing-contents a:focus-visible { outline-offset: -2px; }
+
 /* The one code sample in the reader. It sits on the card surface the rest of
    the site uses for a held object, at the caption step: it is a quotation from
    a file rather than the article's own voice, and the monospace face is wider
@@ -440,7 +406,7 @@
 .writing-reader-figure figcaption { margin-top: 0.5rem; font-size: var(--text-xs); line-height: 1.5; color: var(--muted); }
 /* Marginalia. The narrow layout is the base: a note folds into the column under
    its paragraph, keeping the bracket as a left-hand mark. It only moves out to a
-   gutter once the modal is wide enough to have one, from 1000px up. */
+   gutter once the Notes container is at least 48rem wide. */
 .writing-reader-prose p { position: relative; }
 .writing-margin-note {
   position: relative;
@@ -486,7 +452,7 @@
 @supports (mask-image: url("/writings/marks/bracket-1-a.png")) or (-webkit-mask-image: url("/writings/marks/bracket-1-a.png")) {
   .writing-margin-note-bracket { background-color: var(--muted-soft); }
 }
-@media (min-width: 1000px) {
+@container writings (min-width: 48rem) {
   .writings-dialog .writing-margin-note {
     position: absolute;
     /* Lift, rail, and tilt all arrive per note from the component, hashed off
@@ -528,31 +494,6 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
-  /* A phone has no room to hold a top edge in reserve: the sheet keeps its
-     half-rem margins all round. */
-  .writings-dialog {
-    --writings-toolbar-top: calc(1.25rem + env(safe-area-inset-top));
-    --writings-nav-gap: 0.45rem;
-    --writings-nav-width: calc(var(--preview-gallery-nav-size) * 3 + var(--writings-nav-gap) * 2);
-    --writings-top: max(0.5rem, env(safe-area-inset-top));
-    --writings-bottom: max(0.5rem, env(safe-area-inset-bottom));
-    width: calc(100vw - 1rem);
-  }
-  .writings-toolbar { padding: var(--writings-toolbar-top) 0 0.75rem; }
-  .writings-toolbar-leading { padding-inline: 1.25rem; padding-right: calc(1.25rem + 0.5rem + var(--writings-nav-width)); }
-  /* No room for side rails on a phone, so the controls ride the title line at
-     the top right instead of a bar along the bottom, which hands that row's
-     height back to the article. */
-  .writings-navigation {
-    inset: var(--writings-toolbar-top) 1.25rem auto auto;
-    display: flex;
-    align-items: center;
-    gap: var(--writings-nav-gap);
-    height: var(--preview-gallery-nav-size);
-    pointer-events: auto;
-  }
-  .writings-navigation > * { position: static; translate: none; }
-  .writings-mobile-close { display: grid; }
   .writings-archive, .writing-reader { padding: 1.5rem 1.25rem calc(3rem + env(safe-area-inset-bottom)); }
   .writings-archive { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
   .writings-year + .writings-year { margin-top: 2rem; }
@@ -608,32 +549,43 @@
    down under it. */
 .writing-reader-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
 .writing-reader-actions .like-row { margin-top: 0; }
-/* Sized and inked as the archive's dates are, so it reads as a note about the
-   note rather than as a second action competing with the heart. It wears the
-   like pill's height and radius, because they sit on one line. */
+/* The like pill's twin: the same 32px chrome, type, and control shadows, so the
+   two read as one row of things to do with the note. It hugs its label and
+   eases between widths when the label swaps (WritingArticle animates it); the
+   clip keeps the longer label inside the pill while it grows. */
 .writing-copy-link {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 0.35rem;
-  min-height: 32px;
-  padding: 0 0.7rem;
-  border: 1px solid rgb(0 0 0 / 0.08);
-  border-radius: 999px;
+  gap: 0.375rem;
+  height: 32px;
+  padding: 0 0.75rem;
+  overflow: clip;
+  border: 1px solid #dedee0;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
   color: var(--muted);
   font-size: var(--text-xs);
-  line-height: 1.5;
+  font-weight: 500;
+  line-height: 1;
   letter-spacing: 0;
+  white-space: nowrap;
   text-decoration: none;
+  box-shadow: var(--shadow-control);
   transition:
-    background-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard),
     color var(--duration-quick) var(--ease-standard);
 }
-.writing-copy-link:hover { background: var(--mosaic-card-surface); }
+@media (hover: hover) {
+  .writing-copy-link:hover { box-shadow: var(--shadow-control-hover); }
+}
+.writing-copy-link:active { transform: scale(0.96); box-shadow: var(--shadow-control-pressed); }
 /* Confirmed rather than announced: the label and the icon both change, and the
    ink steps up to the heading's, so the swap reads without a colour of its own. */
 .writing-copy-link[data-copied="true"] { color: var(--ink); }
 .writing-copy-link-icon { flex-shrink: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .writing-copy-link { transition: none; }
+  .writing-copy-link, .writing-contents a { transition: none; }
 }

@@ -104,9 +104,12 @@ keys walk from a project into the résumé and out the other side. It owns
 `/resume/` the way a project owns `/work/<slug>/` — prerendered by
 `scripts/prerender.mjs`, listed in the sitemap, rendered as `ResumePage` for a
 crawler or a visitor without JavaScript, and swapped for the gallery slide once
-React is running. Adding another non-project tile to the sequence means adding a
-kind to `src/lib/galleryItems.ts` and a location to `src/lib/portfolioUrl.ts`;
-the gallery itself only knows about items.
+React is running. With JavaScript that article never paints: the head script in
+`index.html` holds every gallery address back until the dialog presents (see
+`src/lib/galleryEntry.ts`). Adding another non-project tile to the sequence means
+adding a kind to `src/lib/galleryItems.ts`, a location to
+`src/lib/portfolioUrl.ts`, and its path to that head script's pattern; the
+gallery itself only knows about items.
 
 ## Notes
 
@@ -120,10 +123,11 @@ out the other side. It owns `/notes/` — prerendered, in the sitemap, rendered 
 open the gallery on it. `WritingsArchive` is the list itself, shared by the slide
 and that page.
 
-A **note** opens in the reader's own sheet over the list (`WritingsReader`), with
-the hearts, the copy link, and arrows that turn note to note; its back arrow and
-Escape return to the list. Each note owns `/notes/<id>/` the way a project owns
-`/work/<slug>/`, rendered as `WritingPage` for a crawler. `?writing=<id>` was the
+A **note** is a nested view inside the same preview-gallery dialog. Its deferred
+`WritingsReader` renders article content only; the gallery owns the backdrop,
+card, focus trap, and controls. Arrows browse notes while an article is forward;
+Back and Escape return to the list. Each note owns `/notes/<id>/`, rendered as
+`WritingPage` for a crawler. `?writing=<id>` was the
 old address and still opens the reader. `WritingArticle` is the article, shared
 by the sheet and that page.
 
@@ -136,9 +140,12 @@ date is written once.
 
 The reader chunk is fetched by a row of the list, not by the tile, and
 `WritingsFolder` is where it is fetched, cancelled, and retried; the list prints
-its status. The gallery closes behind a sheet that opens over it, so never hand
-the gallery an explicit `finalFocus` while a note is being opened — it would
-take focus back from the sheet's title.
+its status. The gallery stays on its Notes item for both /notes/ and a note URL.
+Only content turns horizontally: the card remains opaque and grows downward to
+the viewport's bottom gutter for articles, then shrinks to the list on Back.
+The list stays measured, hidden, and inert while reading so its scroll position
+and row focus can be restored. Do not reintroduce a second dialog, copied sheet
+geometry, or a separate backdrop for notes.
 
 ## The last-updated clause and its GitHub card
 
@@ -193,7 +200,9 @@ and the card takes its shape from the `width`/`height` you give it.
 The photo sheet uses generated 400/800 px WebP siblings in
 `public/images/personal/`. Add originals and their dimensions to
 `src/data/personalPhotos.ts`, then run `node scripts/optimize-personal-media.mjs`
-with Node 22.18 or newer. Commit the generated variants. The original stays in
+with Node 22.18 or newer. It also writes a `-thumb.webp` (300×400 box) for any
+photo that lacks one, which the fan and the flights start from; it never rewrites
+an existing thumb. Commit the generated variants. The original stays in
 `srcSet` for large/high-density displays; `sizes` mirrors the sheet's columns,
 gutters, gaps, and print padding in `src/styles/personal-photos.css`.
 
@@ -221,6 +230,12 @@ same artwork instead of churning the diff.
 
 The PNGs are black on transparent and are used as CSS masks, so the reader still
 colours them with `currentColor` and one asset serves any ink.
+
+The archive's gutter drawings (`drawing-<object>-frames.png`) are strips of
+three frames side by side, which the list steps through on hover. The first
+frame keeps the seed the single drawing always had, so the resting artwork never
+changes; the frame count in the script and the `300%` mask size in
+`src/styles/writings.css` have to agree.
 
 ## Planning Mode Rules
 

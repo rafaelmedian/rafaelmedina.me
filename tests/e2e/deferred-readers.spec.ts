@@ -25,6 +25,9 @@ test("opens a directly linked note without requiring the folder first", async ({
   await page.goto("/?writing=designing-matcha")
   await expect(page.getByRole("dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
   await page.keyboard.press("Escape")
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await expect(page.locator(".writings-dialog")).toBeHidden()
+  await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()
   await expect(page).not.toHaveURL(/writing=/)
 })
@@ -100,26 +103,28 @@ const openNotesList = async (page: import("@playwright/test").Page) => {
   await expect(page.locator(".preview-gallery-popup")).toBeVisible()
 }
 
-test("WritingsReader can be cancelled while its download is pending", async ({ page }) => {
-  let release!: () => void
-  const held = new Promise<void>(resolve => { release = resolve })
-  await page.route("**/WritingsReader-*.js*", async route => { await held; await route.continue() })
-  await page.goto("/")
-  await openNotesList(page)
-  await notesRow(page).click()
-  await expect(notesRow(page)).toHaveAttribute("aria-busy", "true")
-  // Closing the list retires the request; the download still lands, unused.
-  await page.keyboard.press("Escape")
-  await expect(page.locator(".preview-gallery-popup")).toBeHidden()
-  release()
-  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
-  await expect(page.locator(".writings-dialog")).toHaveCount(0)
-  await expect(page).toHaveURL(/\/$/)
-  // A later press uses the loaded module and still opens normally.
-  await openNotesList(page)
-  await notesRow(page).click()
-  await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
-})
+for (const entry of ["tile", "direct"] as const) {
+  test(`WritingsReader can be cancelled while its download is pending from ${entry}`, async ({ page }) => {
+    let release!: () => void
+    const held = new Promise<void>(resolve => { release = resolve })
+    await page.route("**/WritingsReader-*.js*", async route => { await held; await route.continue() })
+    await page.goto(entry === "direct" ? "/notes/" : "/")
+    if (entry === "tile") await openNotesList(page)
+    await notesRow(page).click()
+    await expect(notesRow(page)).toHaveAttribute("aria-busy", "true")
+    // Closing the list retires the request; the download still lands, unused.
+    await page.keyboard.press("Escape")
+    await expect(page.locator(".preview-gallery-popup")).toBeHidden()
+    release()
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
+    await expect(page.locator(".writings-dialog")).toHaveCount(0)
+    await expect(page).toHaveURL(/\/$/)
+    // A later press uses the loaded module and still opens normally.
+    await openNotesList(page)
+    await notesRow(page).click()
+    await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  })
+}
 
 for (const destination of ["project", "other reader"]) {
   test(`WritingsReader ignores a pending open after selecting ${destination}`, async ({ page }) => {
@@ -224,13 +229,23 @@ test("offers a reload when a cached DialogTitle dependency cannot be retried", a
   await expect(page.getByRole("dialog", { name: "Personal photos", exact: true })).toBeVisible()
 })
 
-for (const destination of ["project", "photos"]) {
-  test(`a pending directly linked note yields to ${destination}`, async ({ page }) => {
+for (const { destination, address } of [
+  { destination: "project", address: "/?writing=designing-matcha" },
+  { destination: "photos", address: "/?writing=designing-matcha" },
+  { destination: "project", address: "/notes/designing-matcha/" },
+  { destination: "photos", address: "/notes/designing-matcha/" },
+]) {
+  test(`a pending directly linked note at ${address} yields to ${destination}`, async ({ page }) => {
     let release!: () => void
     const held = new Promise<void>(resolve => { release = resolve })
     await page.route("**/WritingsReader-*.js*", async route => { await held; await route.continue() })
-    await page.goto("/?writing=designing-matcha")
+    const galleryLoaded = page.waitForResponse(response => /PreviewGalleryDialog-.*\.js/.test(response.url()))
+    await page.goto(address)
     await expect(page.locator('[aria-busy="true"]')).toBeVisible()
+    await (await galleryLoaded).finished()
+    await expect(page.locator(".preview-gallery-pending")).toHaveCount(0)
+    // A faster gallery chunk must not trap focus over the still-pending reader.
+    await expect(page.getByRole("dialog")).toHaveCount(0)
     if (destination === "project") {
       await page.locator(".mosaic-row-card").first().click()
       await expect(page.locator(".preview-gallery-popup")).toBeVisible()
@@ -243,6 +258,7 @@ for (const destination of ["project", "photos"]) {
     await expect(page.locator('[role="dialog"]:visible')).toHaveCount(1)
     await expect(page.locator(".writings-dialog")).toHaveCount(0)
     await expect(page).not.toHaveURL(/writing=/)
+    await expect(page).not.toHaveURL(/\/notes\//)
   })
 }
 
@@ -273,11 +289,10 @@ test("retrying a directly linked note preserves the selected article", async ({ 
   let fail = true
   await page.route("**/WritingsReader-*.js*", route => fail ? route.abort("failed") : route.continue())
   await page.goto("/?writing=designing-matcha")
-  await expect(page.getByText("Try opening notes again", { exact: true })).toBeVisible()
+  await expect(page.getByRole("dialog").getByRole("status")).toHaveText("Try opening notes again")
   fail = false
-  // The tile wears the failure and retries the note rather than opening the
-  // list: opening the list would drop the note the link was for.
-  await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
+  // Retry belongs inside the active dialog and preserves the requested URL.
+  await page.getByRole("button", { name: "Try again", exact: true }).click()
   await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
   await expect(page).toHaveURL(/writing=designing-matcha/)
 })

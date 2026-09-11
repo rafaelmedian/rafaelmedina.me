@@ -20,8 +20,8 @@
      to separate itself from and a shadow there just reads as a smudge. */
   text-shadow: var(--card-caption-ink-halo);
   transition:
-    opacity var(--duration-quick) ease-out,
-    transform var(--duration-quick) var(--ease-standard);
+    opacity var(--duration-quick) ease-out var(--card-caption-delay),
+    transform var(--duration-quick) var(--ease-standard) var(--card-caption-delay);
 }
 
 .mosaic-row-card:hover .mosaic-row-card-title,
@@ -187,14 +187,17 @@
    The fill is the hero's: the name's own line box with 0.375rem of side padding
    cancelled by an equal negative margin, so it grows around the name without
    moving it off the caption's left edge or opening a gap above it. No underline
-   -- nothing else in this card or the hero rules a line under a name. */
+   -- nothing else in this card or the hero rules a line under a name. The cap
+   counts that padding back in: at 100% the border box was held to the column
+   the name itself sized, which left the name 0.75rem short and broke it over
+   two lines. */
 .mosaic-quote-profile-link {
   appearance: none;
   position: relative;
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  max-width: 100%;
+  max-width: calc(100% + 0.75rem);
   margin-inline: -0.375rem;
   padding: 0 0.375rem;
   border: 0;
@@ -419,6 +422,18 @@
 
 .mosaic-quote[data-dragging="true"] .mosaic-quote-next {
   cursor: grabbing;
+}
+
+/* The advance button is the card, so the card wears its ring -- the work
+   tiles' one. On the button itself the card's overflow clipped the ring to its
+   bottom edge, a dark rule drawn across the card above the dots. */
+.mosaic-quote-next:focus-visible {
+  outline: none;
+}
+
+.mosaic-quote:has(> .mosaic-quote-next:focus-visible) {
+  outline: 2px solid var(--focus-ring-soft);
+  outline-offset: 3px;
 }
 
 .mosaic-quote-dots {
@@ -869,6 +884,19 @@
   --card-caption-weight: 1.5;
   --card-caption-ink: var(--ink);
   --card-caption-ink-halo: none;
+  /* How long the caption, its tint, and the blur ramp wait before fading, in
+     both directions. While a tile's loop plays and nothing else on the page
+     moves, Chrome paces the page at the video's 30fps. A hover from rest then
+     starts its transitions on a stale frame, and the first two frames that
+     move land 33ms and 67ms into them: the tint went 0 -> 32%, held a frame,
+     jumped to 59%, and only then eased. Each of those jumps is four ordinary
+     frames' worth of fade at once, which is what read as dropped frames. This
+     spends the 30fps ramp-up before the fade begins, so the first frame that
+     moves is 7ms in and no step exceeds the 8-9% of an ordinary 120Hz frame.
+     The first visible change lands 50-65ms after the hover instead of a jump
+     at 10-25ms. With no video on screen it is only a short hover intent. It is
+     the 60ms the page-entrance stagger already uses. */
+  --card-caption-delay: 60ms;
 
   appearance: none;
   position: relative;
@@ -984,7 +1012,7 @@
      same event -- a blur resolving -- so it borrows that value rather than
      adding one. It also means a raster that lands late lands mid-fade, which
      reads as softening rather than as a pop. */
-  transition: opacity var(--duration-slow) ease-out;
+  transition: opacity var(--duration-slow) ease-out var(--card-caption-delay);
 }
 
 .mosaic-row-card-scrim > span:nth-child(1) {
@@ -1054,7 +1082,7 @@
   opacity: 0;
   /* The scale's default for opacity on hover, and the same curve the caption
      itself uses -- tint and label arrive together, ahead of the blur. */
-  transition: opacity var(--duration-quick) ease-out;
+  transition: opacity var(--duration-quick) ease-out var(--card-caption-delay);
 }
 
 /* Where the backdrop cannot be sampled, fall back to the staggered ramps this

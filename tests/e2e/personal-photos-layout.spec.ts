@@ -113,7 +113,9 @@ test("on the grid a click holds a photo at the centre with its name under it; Es
   const heldBox = (await slide.boundingBox())!
   expect(Math.abs(heldBox.x + heldBox.width / 2 - (stage.x + stage.width / 2))).toBeLessThan(2)
   expect(Math.abs(heldBox.y + heldBox.height / 2 - (stage.y + stage.height / 2))).toBeLessThan(2)
-  expect(heldBox.width / resting.width).toBeGreaterThan(1.8)
+  // Growth depends on the photo's aspect ratio; the reordered collection
+  // puts a portrait here, which reaches the height cap before a square.
+  expect(heldBox.width / resting.width).toBeGreaterThan(1)
   expect(Math.max(heldBox.width / stage.width, heldBox.height / stage.height)).toBeCloseTo(0.7, 1)
   await expect(caption).toHaveText(await slide.locator("figcaption").innerText())
   await expect(caption).toHaveCSS("opacity", "1")

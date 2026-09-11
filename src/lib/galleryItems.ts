@@ -8,10 +8,9 @@ import { resumeItemId, writingsItemId } from "./projectMetadata"
  * whatever the grid has, in the order the grid has it. So the sequence is items
  * rather than cards, and the résumé and the folder are among them.
  *
- * The folder's slide is the list of notes. A note itself is not a slide: it
- * opens in the reader's own sheet over the list, with the hearts, the copy
- * link and the note-to-note arrows that sheet has, and its back arrow returns
- * to this slide.
+ * The folder's slide has a nested article view. Notes keep their own URLs,
+ * but share the gallery's dialog, backdrop and controls; Back returns to
+ * the list and restores outer-gallery paging.
  */
 export type GalleryItem =
   | { kind: "project"; id: string; card: PortfolioCard }

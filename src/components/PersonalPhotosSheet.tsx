@@ -298,6 +298,10 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   }
 
   const onOpenChange = (nextOpen: boolean, details: Dialog.Root.ChangeEventDetails) => {
+    // The dev tuner's panel sits outside the sheet; working its dials is not a
+    // press on the page behind.
+    if (import.meta.env.DEV && !nextOpen && details.reason === "outside-press"
+      && details.event.target instanceof Element && details.event.target.closest(".dialkit-root")) return
     if (!nextOpen) {
       // Escape lets a held photo go first; the next Escape closes.
       if (details.reason === "escape-key" && (sphere.current.release() || releaseHeld())) return
@@ -413,7 +417,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                         height={photo.height}
                         decoding="async"
                         draggable={false}
-                        style={{ backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
+                        style={{ aspectRatio: `${photo.width} / ${photo.height}`, backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
                       />
                       <figcaption>{photo.caption}</figcaption>
                     </figure>
