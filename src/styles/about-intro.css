@@ -441,12 +441,7 @@
   transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
-.about-intro[data-open="true"] .about-intro-collapse {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.about-intro[data-open="true"] .about-intro-surface:is(:hover, :has(:focus-visible)) .about-intro-controls {
+.about-intro[data-open="true"] .about-intro-surface:is(:hover, :has(:focus-visible)) :is(.about-intro-controls, .about-intro-collapse) {
   opacity: 1;
   pointer-events: auto;
 }
@@ -471,12 +466,12 @@
     background: transparent;
   }
 
-  .about-intro[data-touch-controls="false"] .about-intro-surface:not(:has(:focus-visible)) .about-intro-controls {
+  .about-intro[data-touch-controls="false"] .about-intro-surface:not(:has(:focus-visible)) :is(.about-intro-controls, .about-intro-collapse) {
     opacity: 0;
     pointer-events: none;
   }
 
-  .about-intro[data-open="true"][data-touch-controls="true"] .about-intro-controls {
+  .about-intro[data-open="true"][data-touch-controls="true"] :is(.about-intro-controls, .about-intro-collapse) {
     opacity: 1;
     pointer-events: auto;
   }

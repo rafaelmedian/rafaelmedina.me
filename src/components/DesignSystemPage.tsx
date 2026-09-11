@@ -2162,8 +2162,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   36%-white rail without a visible thumb or time counter; the native range
                   retains keyboard seeking and announces elapsed and total time.
                   Playback controls appear on hover or keyboard focus; touch users tap the video to toggle them.
-                  The close X stays visible 8px inside the player’s top-right corner in a 44px circular target.
-                  Its white icon uses <code>--canvas</code> over the same dark glass tint, blur,
+                  The close X sits 8px inside the player’s top-right corner in a 44px circular target, appearing with the playback controls on hover or keyboard focus (tap to toggle on touch screens).
+                  Its 18px iOS-style white cross uses rounded 2.5px strokes and <code>--canvas</code> over the same dark glass tint, blur,
                   inset hairline and control shadow as the playback pill. Media stays clipped in its own rounded wrapper.
                   Hovered playback controls use 16% white. Captions remain enabled for real recordings and
                   can be toggled with C; the sample recording starts without its descriptive captions.
