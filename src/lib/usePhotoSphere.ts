@@ -205,11 +205,22 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
 
     // Every visit opens square to the viewer, so the prints fly out to the
     // face of the sphere however far it was turned last time.
-    const orientation = { current: identity }
+    let orientation = identity
     let radius = 0
     let stageSize = { width: 0, height: 0 }
     let boxes: { width: number; height: number }[] = []
     let dirty = true
+    let frame = 0
+    let wakeTimer = 0
+    let last = performance.now()
+    const wake = () => {
+      clearTimeout(wakeTimer)
+      wakeTimer = 0
+      if (frame) return
+      last = performance.now()
+      frame = requestAnimationFrame(tick)
+    }
+    const invalidate = () => { dirty = true; wake() }
     const measure = () => {
       radius = sphere.offsetWidth * Number(tokens.getPropertyValue("--sphere-radius"))
       stageSize = { width: stage.clientWidth, height: stage.clientHeight }
@@ -240,10 +251,10 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     const dropPebbles = () => {
       pebbles = null
       slides.forEach((slide) => slide.removeAttribute("data-pebble"))
-      dirty = true
+      invalidate()
     }
     if (canvas) pebbles = createPebbleRenderer(canvas, dropPebbles)
-    const onImageLoad = () => { dirty = true }
+    const onImageLoad = invalidate
     images.forEach((image) => image.addEventListener("load", onImageLoad))
     measure()
 
@@ -287,7 +298,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     let captioned: number | null = null
 
     const render = () => {
-      const m = orientation.current
+      const m = orientation
       const draws: PebbleDraw[] = []
       if (held !== null) captioned = held
       let captionBox = { x: 0, y: 0, halfHeight: 0 }
@@ -386,7 +397,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     const turnToFront = (slide: HTMLElement) => {
       const index = slides.indexOf(slide)
       if (index < 0) return
-      const [x, y, z] = transform(orientation.current, points[index])
+      const [x, y, z] = transform(orientation, points[index])
       // The turn that carries this point straight to the front: about the
       // axis square to both (the point crossed with the view), by the angle
       // between them.
@@ -400,14 +411,15 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       tween = null
       restUntil = performance.now() + focusDuration + frontDwell
       if (reducedMotion) {
-        orientation.current = multiply(rotation(unit, angle), orientation.current)
-        render()
+        orientation = multiply(rotation(unit, angle), orientation)
+        invalidate()
         return
       }
       // The turn is a spring on the angle still to go, re-aimed every frame
       // (see `advance`), so a hold handed over mid-turn keeps its speed and
       // simply bends towards the new photo.
       turnTarget = index
+      wake()
     }
 
     /** Holds a photo at the centre, or lets the held one go if it is asked
@@ -421,17 +433,17 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         return
       }
       held = index
-      dirty = true
+      invalidate()
       turnToFront(slide)
     }
     const release = () => {
       if (held === null) return false
       held = null
-      dirty = true
+      invalidate()
       return true
     }
     controls.current.release = release
-    controls.current.rest = (milliseconds) => { restUntil = Math.max(restUntil, performance.now() + milliseconds) }
+    controls.current.rest = (milliseconds) => { restUntil = Math.max(restUntil, performance.now() + milliseconds); wake() }
     const holdById = (photoId: string) => {
       // The first copy of a photo is the one with the id; the rest are decoration.
       const slide = slides.find((candidate) => candidate.dataset.photoId === photoId)
@@ -440,16 +452,13 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // Turning the globe under the open flight would move the slots the
         // prints are flying to; the hold waits for them to land.
         pendingHold = photoId
+        wake()
         return
       }
       pendingHold = null
       if (held !== slides.indexOf(slide)) hold(slide)
     }
     controls.current.hold = holdById
-    if (requestedHold.current !== null) {
-      holdById(requestedHold.current)
-      requestedHold.current = null
-    }
 
     const turnBy = (pitch: number, yaw: number) => {
       const angle = Math.hypot(pitch, yaw)
@@ -457,31 +466,32 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       turnTarget = null
       turnSpeed = 0
       if (reducedMotion) {
-        orientation.current = multiply(screenTurn(pitch, yaw), orientation.current)
-        render()
+        orientation = multiply(screenTurn(pitch, yaw), orientation)
+        invalidate()
         return
       }
-      tween = { from: orientation.current, axis: [pitch / angle, yaw / angle, 0], angle, start: performance.now(), duration: focusDuration }
+      tween = { from: orientation, axis: [pitch / angle, yaw / angle, 0], angle, start: performance.now(), duration: focusDuration }
+      wake()
     }
 
-    let frame = 0
-    let last = performance.now()
+    const canSpin = () => !reducedMotion && !press && !hovered && !keyboardFocus && held === null
     const tick = (now: number) => {
-      frame = requestAnimationFrame(tick)
+      frame = 0
       const dt = Math.min(0.05, (now - last) / 1000)
       last = now
-      if (running.current) advance(now, dt)
-      // Only a frame that changed is drawn: the turn, a flight taking or
-      // handing back a slot, or anything that marked the globe dirty. While
-      // the dialog closes the turn is frozen but the flights still hand
-      // their slots over, so this keeps running until the sheet unmounts.
-      const key = orientation.current.map((value) => value.toFixed(5)).join() + slides.map((slide) => slide.style.opacity === "0" ? 1 : 0).join("")
-      if (!dirty && key === lastKey) return
-      dirty = false
-      lastKey = key
-      render()
+      const moving = running.current && advance(now, dt)
+      if (dirty) {
+        dirty = false
+        render()
+      }
+      if (moving) {
+        if (!frame) frame = requestAnimationFrame(tick)
+      } else if (!frame && running.current && restUntil > now && (pendingHold !== null || canSpin())) {
+        // A dwell needs one wake-up, not a frame of polling for every beat.
+        wakeTimer = window.setTimeout(wake, restUntil - now + 1)
+      }
     }
-    let lastKey = ""
+    let springsMoving = false
     /** Moves `value` towards `target` on the spring, keeping its speed in
         `speeds[index]`; reduced motion takes it there in one step. */
     const spring = (value: number, target: number, speeds: Float32Array | number[], index: number, dt: number) => {
@@ -491,10 +501,13 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       }
       const [gap, speed] = springStep(value - target, speeds[index], springRate, dt)
       speeds[index] = speed
+      if (gap !== 0 || speed !== 0) springsMoving = true
       return target + gap
     }
     const advance = (now: number, dt: number) => {
-      orientation.current = orthonormalize(orientation.current)
+      orientation = orthonormalize(orientation)
+      const previousOrientation = orientation
+      springsMoving = false
       if (pendingHold !== null && now >= restUntil) holdById(pendingHold)
       let zoomed = 0
       for (let index = 0; index < zooms.length; index++) {
@@ -502,7 +515,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // the rim — and a hold carries on from wherever the hover has got to.
         const target = held === index ? 1 : hovered === slides[index] && !slides[index].hasAttribute("data-sphere-far") ? hoverShare : 0
         const next = spring(zooms[index], target, zoomSpeeds, index, dt)
-        if (next !== zooms[index]) {
+        if (Math.fround(next) !== zooms[index]) {
           zooms[index] = next
           dirty = true
         }
@@ -526,7 +539,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       if (turnTarget !== null) {
         // Re-aimed every frame from where the globe is now: the axis square
         // to the photo's point and the view, by the angle between them.
-        const [x, y, z] = transform(orientation.current, points[turnTarget])
+        const [x, y, z] = transform(orientation, points[turnTarget])
         const angle = Math.acos(Math.max(-1, Math.min(1, z)))
         const length = Math.hypot(y, x)
         if (angle < 1e-3 || length < 1e-6) {
@@ -535,7 +548,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         } else {
           const [left, speed] = springStep(angle, turnSpeed, springRate, dt)
           turnSpeed = speed
-          orientation.current = multiply(rotation([y / length, -x / length, 0], angle - left), orientation.current)
+          orientation = multiply(rotation([y / length, -x / length, 0], angle - left), orientation)
           if (left === 0) {
             turnTarget = null
             turnSpeed = 0
@@ -543,7 +556,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         }
       } else if (tween) {
         const t = Math.min(1, (now - tween.start) / tween.duration)
-        orientation.current = multiply(rotation(tween.axis, tween.angle * easeOutCubic(t)), tween.from)
+        orientation = multiply(rotation(tween.axis, tween.angle * easeOutCubic(t)), tween.from)
         if (t >= 1) tween = null
       } else if (!press) {
         const turn = screenTurn(velocity.pitch * dt, velocity.yaw * dt)
@@ -553,10 +566,13 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // The spin eases in and out rather than switching: it stops under a
         // pointer resting on a photo so the photo can be looked at, and picks
         // up again once any momentum has run down.
-        const idle = !reducedMotion && !hovered && !keyboardFocus && held === null && now > restUntil && velocity.yaw === 0 && velocity.pitch === 0
+        const idle = canSpin() && now > restUntil && velocity.yaw === 0 && velocity.pitch === 0
         spin += ((idle ? idleSpin : 0) - spin) * (1 - Math.exp(-dt * 2.5))
-        orientation.current = multiply(screenTurn(0, spin * dt), multiply(turn, orientation.current))
+        if (!idle && Math.abs(spin) < 1e-5) spin = 0
+        if (turn !== identity || spin !== 0) orientation = multiply(screenTurn(0, spin * dt), multiply(turn, orientation))
       }
+      if (orientation !== previousOrientation) dirty = true
+      return springsMoving || turnTarget !== null || tween !== null || (!press && (spin !== 0 || velocity.pitch !== 0 || velocity.yaw !== 0 || (canSpin() && now >= restUntil)))
     }
 
     const slideFrom = (target: EventTarget | null) => (target as Element | null)?.closest<HTMLElement>(".personal-photos-slide") ?? null
@@ -570,8 +586,10 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       turnTarget = null
       turnSpeed = 0
       velocity = { pitch: 0, yaw: 0 }
+      wake()
     }
     const onPointerMove = (event: PointerEvent) => {
+      wake()
       if (event.pointerType === "mouse") {
         pointer = { x: (event.clientX / stage.clientWidth) * 2 - 1, y: (event.clientY / stage.clientHeight) * 2 - 1 }
       }
@@ -593,7 +611,8 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       if (!press.moved) return
       const pitch = dy * dragGain
       const yaw = dx * dragGain
-      orientation.current = multiply(screenTurn(pitch, yaw), orientation.current)
+      orientation = multiply(screenTurn(pitch, yaw), orientation)
+      dirty = true
       // Momentum is the speed of the last stretch of the drag, so a flick
       // spins on and a drag that comes to rest before release stays put.
       const elapsed = Math.max(1, event.timeStamp - press.lastTime) / 1000
@@ -606,6 +625,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       if (!press || event.pointerId !== press.id) return
       const ended = press
       press = null
+      wake()
       stage.removeAttribute("data-sphere-dragging")
       // A drag that stopped before release carries nothing on.
       if (event.timeStamp - ended.lastTime > 80) velocity = { pitch: 0, yaw: 0 }
@@ -622,7 +642,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     const onPointerLeave = () => {
       hovered = null
       pointer = { x: 0, y: 0 }
-      dirty = true
+      invalidate()
     }
     const onWheel = (event: WheelEvent) => {
       // A trackpad scroll turns the sphere under the fingers; the wheel's
@@ -633,7 +653,8 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       turnTarget = null
       turnSpeed = 0
       release()
-      orientation.current = multiply(screenTurn(-event.deltaY * unit * dragGain * 0.5, -event.deltaX * unit * dragGain * 0.5), orientation.current)
+      orientation = multiply(screenTurn(-event.deltaY * unit * dragGain * 0.5, -event.deltaX * unit * dragGain * 0.5), orientation)
+      invalidate()
     }
     const onKeyDown = (event: KeyboardEvent) => {
       // Enter or Space on a photo holds it, as a click does.
@@ -657,15 +678,34 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       // only if the press never became a drag.
       keyboardFocus = Boolean(slide?.matches(":focus-visible"))
       if (slide && keyboardFocus) turnToFront(slide)
+      wake()
     }
-    const onFocusOut = () => { keyboardFocus = false }
+    const onFocusOut = () => { keyboardFocus = false; wake() }
 
-    const resize = new ResizeObserver(() => { measure(); render() })
+    // Flights own inline opacity. Observe only handoffs, ignoring the
+    // transform/shade writes that this controller makes on the same nodes.
+    const flightOpacity = new Map(slides.map((slide) => [slide, slide.style.opacity]))
+    const flights = new MutationObserver((records) => {
+      for (const slide of new Set(records.map((record) => record.target as HTMLElement))) {
+        const opacity = slide.style.opacity
+        if (opacity === flightOpacity.get(slide)) continue
+        flightOpacity.set(slide, opacity)
+        invalidate()
+      }
+    })
+    slides.forEach((slide) => flights.observe(slide, { attributes: true, attributeFilter: ["style"] }))
+    const resize = new ResizeObserver(() => { measure(); wake() })
     resize.observe(sphere)
     // The canvas spans the stage, not the globe.
     resize.observe(stage)
+    // Synchronous placement is required before the open/layout flight measures.
+    dirty = false
     render()
-    frame = requestAnimationFrame(tick)
+    if (requestedHold.current !== null) {
+      holdById(requestedHold.current)
+      requestedHold.current = null
+    }
+    wake()
     stage.addEventListener("pointerdown", onPointerDown)
     stage.addEventListener("pointermove", onPointerMove)
     stage.addEventListener("pointerup", onPointerUp)
@@ -678,6 +718,8 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     return () => {
       controls.current = { release: () => false, rest: () => undefined, hold: (photoId) => { requestedHold.current = photoId } }
       cancelAnimationFrame(frame)
+      clearTimeout(wakeTimer)
+      flights.disconnect()
       resize.disconnect()
       images.forEach((image) => image.removeEventListener("load", onImageLoad))
       pebbles?.dispose()
