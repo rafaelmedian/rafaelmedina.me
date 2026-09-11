@@ -34,3 +34,22 @@ test("responsive source upgrades reach the globe's GPU textures", async ({ brows
     await context.close()
   }
 })
+
+test("scrolling to the fan fetches only its previews until opening intent", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 })
+  const requested = new Set<string>()
+  page.on("request", (request) => {
+    if (/\/images\/personal\/[^/]+-thumb\.webp$/.test(request.url())) requested.add(new URL(request.url()).pathname)
+  })
+  await openHome(page)
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  await trigger.scrollIntoViewIfNeeded()
+  const previewSources = await trigger.locator("img").evaluateAll((images) => images.map((image) => new URL(image.src).pathname))
+  await expect.poll(() => requested.size).toBeGreaterThanOrEqual(previewSources.length)
+  await page.waitForTimeout(500)
+  expect([...requested].sort()).toEqual(previewSources.sort())
+
+  await trigger.focus()
+  await expect.poll(() => requested.size).toBeGreaterThan(previewSources.length)
+  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
+})

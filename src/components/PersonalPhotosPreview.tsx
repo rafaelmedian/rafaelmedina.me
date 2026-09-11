@@ -1,5 +1,5 @@
 import { usePreviewCount } from "../lib/photoLayout"
-import { useEffect, useRef, type CSSProperties } from "react"
+import { useRef, type CSSProperties } from "react"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 import { usePhotoFanDeal } from "../lib/usePhotoFanDeal"
 import { usePhotoStackTilt } from "../lib/usePhotoStackTilt"
@@ -76,23 +76,20 @@ export function PersonalPhotosPreview({ onOpen, onIntent, status, className = ""
   const finishDeal = usePhotoFanDeal(previewRef)
   const count = usePreviewCount()
   const preview = items ?? initialPreview.slice(0, count)
-  useEffect(() => {
-    const element = previewRef.current
-    if (!element) return
-    // Warm the small bitmaps before opening so every flight can show its own
-    // photo from the first frame.
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return
+  const thumbnailsWarmed = useRef(false)
+  const warmPhotos = () => {
+    // The fan's images load natively. The remaining flight placeholders are
+    // only needed once a pointer, focus, or tap expresses opening intent.
+    if (!thumbnailsWarmed.current) {
+      thumbnailsWarmed.current = true
       photos.forEach((photo) => {
         const image = new Image()
         image.src = `/images/personal/${photo.name}-thumb.webp`
         void image.decode().catch(() => undefined)
       })
-      observer.disconnect()
-    }, { rootMargin: "200px" })
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
+    }
+    onIntent?.()
+  }
   // The middle print of the fan, which the arc is measured from. With an even
   // count it falls between two prints and both lean the same amount.
   const middle = (preview.length - 1) / 2
@@ -105,9 +102,10 @@ export function PersonalPhotosPreview({ onOpen, onIntent, status, className = ""
           globe itself lets the keyboard bring any photo to the front. The
           prints are always the first photos, and the close always brings
           those same photos back, so no visit reshuffles the stack. */}
-      <button type="button" className="personal-photos-trigger" aria-haspopup="dialog" aria-busy={status === "loading" || undefined} onPointerEnter={onIntent} onFocus={onIntent} onClick={(event) => {
+      <button type="button" className="personal-photos-trigger" aria-haspopup="dialog" aria-busy={status === "loading" || undefined} onPointerEnter={warmPhotos} onFocus={warmPhotos} onClick={(event) => {
         // A keyboard activation is a click with no pointer behind it.
         const print = event.detail ? (event.target as Element).closest<HTMLElement>(".personal-photos-print") : null
+        warmPhotos()
         resetStackTilt()
         finishDeal()
         onOpen(event.currentTarget, print?.dataset.photoId)
