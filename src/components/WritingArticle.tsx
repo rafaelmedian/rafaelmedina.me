@@ -1,5 +1,15 @@
-import { ArrowUpRight, Check, Link2 } from "lucide-react"
-import { useEffect, useRef, useState, type CSSProperties, type ElementType, type RefObject } from "react"
+import { ArrowUpRight, Check, ChevronDown, Link2 } from "lucide-react"
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ElementType,
+  type MouseEvent,
+  type RefObject,
+} from "react"
 
 import { writingSummaries } from "../data/writingIndex"
 import type { Writing, WritingAnnotation, WritingCode, WritingImage, WritingSection } from "../data/writings"
@@ -213,31 +223,140 @@ function useCurrentSection(navRef: RefObject<HTMLElement | null>, sections: Writ
  * history entry of its own, and the gallery closes a note by stepping back
  * through history, so Back would land on the fragment rather than leave it.
  */
+const readDuration = (element: Element, property: string, fallback: number) => {
+  const value = getComputedStyle(element).getPropertyValue(property).trim()
+  if (!value) return fallback
+  const amount = parseFloat(value)
+  if (Number.isNaN(amount)) return fallback
+  return amount * (value.endsWith("ms") ? 1 : 1000)
+}
+
 function NoteContents({ sections }: { sections: WritingSection[] }) {
+  const panelId = useId()
+  const sentinelRef = useRef<HTMLSpanElement>(null)
   const navRef = useRef<HTMLElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [isOpen, setIsOpen] = useState(false)
+  const [isStuck, setIsStuck] = useState(false)
   const current = useCurrentSection(navRef, sections)
+  const previous = useRef(current)
+  const [leaving, setLeaving] = useState<{ slug: string | null; direction: "up" | "down" }>()
+  const currentSection = sections.find((section) => sectionSlug(section.heading) === current)
+  const currentLabel = currentSection?.heading ?? "Contents"
+
+  useLayoutEffect(() => {
+    const from = previous.current
+    previous.current = current
+    const root = navRef.current
+    if (from === current || !root) return
+    const order = (slug: string | null) => slug === null
+      ? -1
+      : sections.findIndex((section) => sectionSlug(section.heading) === slug)
+    setLeaving({ slug: from, direction: order(current) > order(from) ? "up" : "down" })
+    const timer = window.setTimeout(
+      () => setLeaving(undefined),
+      readDuration(root, "--toc-swap-duration", 160),
+    )
+    return () => window.clearTimeout(timer)
+  }, [current, sections])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const dismissOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !navRef.current?.contains(event.target)) setIsOpen(false)
+    }
+    const dismissWithEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      event.preventDefault()
+      setIsOpen(false)
+      triggerRef.current?.focus({ preventScroll: true })
+    }
+    document.addEventListener("pointerdown", dismissOutside)
+    document.addEventListener("keydown", dismissWithEscape)
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside)
+      document.removeEventListener("keydown", dismissWithEscape)
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    const nav = navRef.current
+    const sentinel = sentinelRef.current
+    if (!nav || !sentinel) return
+    const scroller = scrollParent(nav)
+    const target = scroller ?? window
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const top = scroller ? scroller.getBoundingClientRect().top : 0
+      setIsStuck(sentinel.getBoundingClientRect().top < top)
+    }
+    const schedule = () => { frame ||= requestAnimationFrame(update) }
+    update()
+    target.addEventListener("scroll", schedule, { passive: true })
+    window.addEventListener("resize", schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      target.removeEventListener("scroll", schedule)
+      window.removeEventListener("resize", schedule)
+    }
+  }, [])
+
+  const leavingLabel = leaving?.slug === null
+    ? "Contents"
+    : sections.find((section) => sectionSlug(section.heading) === leaving?.slug)?.heading
+
+  const navigate = (event: MouseEvent<HTMLAnchorElement>, slug: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+    const target = event.currentTarget.closest("article")?.querySelector<HTMLElement>(`#${CSS.escape(slug)}`)
+    if (!target) return
+    event.preventDefault()
+    setIsOpen(false)
+    // Focus follows the jump, as it does for a native fragment, so Tab carries
+    // on from the section rather than from the disclosed list.
+    target.focus({ preventScroll: true })
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    // Let the disclosure close before measuring the destination. This keeps
+    // the anchored heading from inheriting the panel's open-state geometry.
+    requestAnimationFrame(() => {
+      const scroller = scrollParent(target)
+      if (scroller) {
+        const inset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0
+        const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - inset
+        scroller.scrollTo({ top, behavior: reduce ? "instant" : "smooth" })
+      } else {
+        target.scrollIntoView({ block: "start", behavior: reduce ? "instant" : "smooth" })
+      }
+    })
+  }
+
   return (
-    <nav ref={navRef} className="writing-contents" aria-label="Contents">
-      <h3>Contents</h3>
-      <ol>{sections.map((section) => {
-        const slug = sectionSlug(section.heading)
-        return (
-          <li key={slug}>
-            <a href={`#${slug}`} aria-current={slug === current ? "location" : undefined} onClick={(event) => {
-              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
-              const target = event.currentTarget.closest("article")?.querySelector<HTMLElement>(`#${CSS.escape(slug)}`)
-              if (!target) return
-              event.preventDefault()
-              // Focus follows the jump, as it does for a native fragment, so
-              // Tab carries on from the section rather than from the list.
-              target.focus({ preventScroll: true })
-              const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              target.scrollIntoView({ block: "start", behavior: reduce ? "instant" : "smooth" })
-            }}>{section.heading}</a>
-          </li>
-        )
-      })}</ol>
-    </nav>
+    <>
+      <span ref={sentinelRef} className="writing-contents-sentinel" aria-hidden="true" />
+      <nav ref={navRef} className="writing-contents" aria-label="Contents" data-open={isOpen}
+        data-stuck={isStuck} data-swap={leaving?.direction} onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false)
+        }}>
+        <button ref={triggerRef} type="button" className="writing-contents-trigger" aria-expanded={isOpen}
+          aria-controls={panelId} aria-label={`Contents: ${currentSection?.heading ?? "Introduction"}`}
+          onClick={() => setIsOpen((open) => !open)}>
+          <span className="writing-contents-current">{currentLabel}</span>
+          <ChevronDown className="writing-contents-chevron" size={16} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+        {leavingLabel && !isOpen ? <span className="writing-contents-ghost" aria-hidden="true">{leavingLabel}</span> : null}
+        <div id={panelId} className="writing-contents-panel" inert={!isOpen} aria-hidden={!isOpen}>
+          <ol>{sections.map((section) => {
+            const slug = sectionSlug(section.heading)
+            return (
+              <li key={slug}>
+                <a href={`#${slug}`} aria-current={slug === current ? "location" : undefined}
+                  onClick={(event) => navigate(event, slug)}>{section.heading}</a>
+              </li>
+            )
+          })}</ol>
+        </div>
+      </nav>
+    </>
   )
 }
 
@@ -332,12 +451,9 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
           <CopyNoteLink writing={writing} />
         </div>
       </header>
-      {/* The body is what the contents float beside in the reader, so they
-          stop following once the prose ends rather than riding down past the
-          acknowledgements and More articles. */}
+      {/* One section is not an outline, so a note needs two to list them. */}
+      {writing.sections && writing.sections.length > 1 ? <NoteContents sections={writing.sections} /> : null}
       <div className="writing-reader-body">
-        {/* One section is not an outline, so a note needs two to list them. */}
-        {writing.sections && writing.sections.length > 1 ? <NoteContents sections={writing.sections} /> : null}
         {writing.cover ? <NoteImage image={writing.cover} /> : null}
         <div className="writing-reader-prose">
           <NoteProse paragraphs={writing.paragraphs} annotations={writing.annotations} />

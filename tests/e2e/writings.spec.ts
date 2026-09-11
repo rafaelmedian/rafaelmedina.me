@@ -385,12 +385,29 @@ test("margin notes fold into the column when the gutters are gone", async ({ pag
   expect(await prose.textContent()).toContain("And I still typed three paragraphs describing it")
 })
 
-test("the contents jump to a section without leaving a history entry", async ({ page }) => {
+test("the contents open from one horizontal row and jump without adding history", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/designing-matcha/")
   const dialog = sheet(page)
   const contents = dialog.getByRole("navigation", { name: "Contents" })
+  const trigger = contents.locator(".writing-contents-trigger")
+  await expect(trigger).toHaveAccessibleName("Contents: Introduction")
+  await expect(trigger).toHaveText("Contents")
+  await expect(contents.getByRole("link")).toHaveCount(0)
+
+  // The compact control is one row between the article header and body, on
+  // the reading column rather than in either marginalia gutter.
+  const [contentsBox, header] = await Promise.all([
+    contents.boundingBox(),
+    dialog.locator(".writing-reader-header").boundingBox(),
+  ])
+  expect(Math.round(contentsBox!.x)).toBe(Math.round(header!.x))
+  expect(Math.round(contentsBox!.width)).toBe(Math.round(header!.width))
+  expect(contentsBox!.y).toBeGreaterThanOrEqual(header!.y + header!.height)
+  expect(await contents.evaluate((element) => getComputedStyle(element).borderBottomWidth)).toBe("1px")
+
+  await trigger.click()
   await expect(contents.getByRole("link")).toHaveText([
     "Different reasons to arrive",
     "The space around the trade",
@@ -410,43 +427,72 @@ test("the contents jump to a section without leaving a history entry", async ({ 
   await row.click()
   const heading = dialog.getByRole("heading", { name: "A system has to survive the awkward states" })
   await expect(heading).toBeFocused()
+  await expect(contents.getByRole("link")).toHaveCount(0)
+  await expect(trigger).toHaveText("A system has to survive the awkward states")
+  await expect(trigger).toHaveAccessibleName("Contents: A system has to survive the awkward states")
   // The section it landed on is the one marked, and only by its ink.
+  await trigger.click()
   await expect(currentRows).toHaveText(["A system has to survive the awkward states"])
-  // Off the row, so its ink is the mark's rather than the hover's.
-  await page.mouse.move(0, 0)
-  const ink = (element: Element) => getComputedStyle(element).color
-  expect(await row.evaluate(ink)).not.toBe(await contents.getByRole("link").first().evaluate(ink))
-  expect(await row.evaluate((element) => getComputedStyle(element).fontWeight))
-    .toBe(await contents.getByRole("link").first().evaluate((element) => getComputedStyle(element).fontWeight))
+  await trigger.click()
   // The card scrolls, not the page, and the heading lands just under its top.
   const reader = dialog.locator(".writings-scroll")
   await expect.poll(async () => {
     const [headingBox, readerBox] = await Promise.all([heading.boundingBox(), reader.boundingBox()])
     return Math.round(headingBox!.y - readerBox!.y)
-  }).toBe(24)
+  }).toBe(68)
   expect(await page.evaluate(() => window.scrollY)).toBe(0)
   await expect(page).toHaveURL(/\/notes\/designing-matcha\/$/)
   expect(await page.evaluate(() => history.length)).toBe(historyLength)
 
-  // A sheet this wide has gutters, so the contents float in the left one,
-  // clear of the column, and are still pinned level with the heading after
-  // the jump rather than left behind at the top of the note.
-  const column = (await dialog.locator(".writing-reader").boundingBox())!
-  const [contentsBox, headingBox, readerBox] = await Promise.all([contents.boundingBox(), heading.boundingBox(), reader.boundingBox()])
-  expect(contentsBox!.x).toBeGreaterThanOrEqual(readerBox!.x)
-  expect(contentsBox!.x + contentsBox!.width).toBeLessThanOrEqual(column.x)
-  expect(Math.round(contentsBox!.y)).toBe(Math.round(headingBox!.y))
-
   // A short last section may never climb into the top third, so the end of
   // the note hands the mark to it.
   await reader.evaluate((element) => element.scrollTo(0, element.scrollHeight))
-  await expect(currentRows).toHaveText(["What the screens can tell you"])
+  await expect(trigger).toHaveText("What the screens can tell you")
 
   // The gallery closes a note by stepping back through history, so one Back
   // still leaves the note after a jump.
   await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
   await expect(page).toHaveURL(/\/notes\/$/)
   await expect(dialog).toBeHidden()
+})
+
+test("the compact contents label uses the site TOC's directional swap", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/notes/room-to-figure-it-out/")
+  const dialog = sheet(page)
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  // Hold the state long enough to inspect the motion deterministically.
+  await contents.evaluate((element) => (element as HTMLElement).style.setProperty("--toc-swap-duration", "2s"))
+  await dialog.getByRole("heading", { name: "Everyday decisions are practice" })
+    .evaluate((element) => element.scrollIntoView({ block: "start", behavior: "instant" }))
+  await expect(contents.locator(".writing-contents-trigger")).toHaveText("Everyday decisions are practice")
+  await expect(contents.locator(".writing-contents-current")).toHaveCSS("animation-name", "mosaic-toc-label-enter")
+  await expect(contents.locator(".writing-contents-ghost")).toHaveCSS("animation-name", "mosaic-toc-label-exit")
+  await expect(contents).toHaveAttribute("data-swap", "up")
+})
+
+test("the contents row pins beneath Notes and spans the modal", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/room-to-figure-it-out/")
+  const dialog = sheet(page)
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  const scroller = dialog.locator(".writings-scroll")
+  await expect(contents).toHaveAttribute("data-stuck", "false")
+  await scroller.evaluate((element) => element.scrollTo(0, 320))
+  await expect(contents).toHaveAttribute("data-stuck", "true")
+
+  const [contentsBox, scrollerBox, toolbarBox] = await Promise.all([
+    contents.boundingBox(),
+    scroller.boundingBox(),
+    dialog.locator(".notes-gallery-heading").boundingBox(),
+  ])
+  expect(Math.round(contentsBox!.y)).toBe(Math.round(scrollerBox!.y))
+  expect(Math.round(contentsBox!.x)).toBe(Math.round(toolbarBox!.x))
+  expect(Math.round(contentsBox!.width)).toBe(Math.round(toolbarBox!.width))
+  expect(await contents.evaluate((element) => getComputedStyle(element).position)).toBe("sticky")
+  expect(await contents.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none")
 })
 
 test("a shared section link survives the handoff to the reader", async ({ page }) => {
@@ -460,12 +506,12 @@ test("a shared section link survives the handoff to the reader", async ({ page }
   await expect.poll(async () => {
     const [headingBox, readerBox] = await Promise.all([heading.boundingBox(), reader.boundingBox()])
     return Math.round(headingBox!.y - readerBox!.y)
-  }).toBe(24)
+  }).toBe(68)
   await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
   await expect(page).toHaveURL(/\/notes\/$/)
 })
 
-test("floating contents take the left gutter and margin notes give it up", async ({ page }) => {
+test("inline contents leave both marginalia gutters available", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/")
@@ -481,24 +527,20 @@ test("floating contents take the left gutter and margin notes give it up", async
     if (await contents.count()) {
       const column = (await dialog.locator(".writing-reader").boundingBox())!
       const contentsBox = (await contents.boundingBox())!
-      expect(contentsBox.x + contentsBox.width, id).toBeLessThanOrEqual(column.x)
-      // Whatever side a note was written for, it hangs right of the column,
-      // and the two that end up there never meet.
+      const header = (await dialog.locator(".writing-reader-header").boundingBox())!
+      expect(Math.round(contentsBox.x), id).toBe(Math.round(header.x))
+      expect(Math.round(contentsBox.x + contentsBox.width), id).toBe(Math.round(header.x + header.width))
+      // Removing the contents from the left gutter lets authored notes keep
+      // their own side instead of being rerouted to the right.
       const notes = await dialog.locator(".writing-margin-note")
         .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON() as DOMRect))
-      for (const note of notes) expect(note.left, id).toBeGreaterThanOrEqual(column.x + column.width)
-      for (let a = 0; a < notes.length; a += 1) {
-        for (let b = a + 1; b < notes.length; b += 1) {
-          expect(notes[a].bottom <= notes[b].top || notes[b].bottom <= notes[a].top, id).toBe(true)
-        }
-      }
+      for (const note of notes) expect(note.right <= column.x || note.left >= column.x + column.width, id).toBe(true)
     }
     await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
     await expect(dialog).toBeHidden()
   }
 
-  // The compact card has no gutter to float in, so the contents sit above the
-  // prose again, in the column.
+  // The same row stays in the column when the card becomes compact.
   await page.setViewportSize({ width: 1200, height: 900 })
   await page.goto("/notes/designing-matcha/")
   const contents = dialog.getByRole("navigation", { name: "Contents" })

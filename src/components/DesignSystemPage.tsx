@@ -272,7 +272,7 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-xs",
     sample: "Punta Cana · Local time",
-    where: "Map attribution, count pills, avatar initials, compact project captions, mobile table-of-contents numbers, and the notes reader's secondary lines — its date, year headings, contents label, like pill, image captions, and acknowledgements",
+    where: "Map attribution, count pills, avatar initials, compact project captions, mobile table-of-contents numbers, and the notes reader's secondary lines — its date, year headings, like pill, image captions, and acknowledgements",
     style: { fontSize: "var(--text-xs)", lineHeight: 1.25 },
   },
   {
@@ -1335,7 +1335,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 to 1rem above the viewport bottom or the safe-area inset, whichever is larger. All articles retain that height
                 and scroll internally; Back animates to the list's natural height. Mobile keeps the full-height gallery
                 frame and toolbar. Reduced motion changes state instantly.
-                The toolbar's 5% black divider and short shadow appear only while scrolled, over 160ms.
+                Long notes place one 44px contents row below their title and actions, with a 6% hairline across the
+                reading measure. It begins as “Contents”; after the introduction, the section being read replaces that
+                label with the floating table of contents' directional blur-and-slide. A press discloses every section
+                in 44px rows over the prose without reflowing it; selection closes the list, focuses the heading, and
+                scrolls without adding history. Once its natural position passes the top of the reader, the row pins
+                directly beneath Notes, reaches through the gutters and card padding to the modal edges, and draws a
+                5% hairline above itself with the toolbar's short shadow below. Reduced motion makes both the label swap
+                and disclosure immediate.
+                The toolbar's own 5% black divider and short shadow appear only while scrolled, over 160ms.
                 The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
@@ -1361,8 +1369,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 sits 7 to 17px outside the column, and leans up to 2.4 degrees either way. Notes sharing one offset drew
                 a second column down each edge, and a fixed cycle of three only moved that pattern rather than breaking it.
                 The gutters only exist from a 48rem Notes container; below that a note folds into the
-                column under its paragraph, bracket first. Nothing else interrupts the column: the reader has no rules
-                and no interjections between paragraphs.
+                column under its paragraph, bracket first. Nothing interrupts the prose itself: beyond the contents and
+                section-heading hairlines, the reader has no rules and no interjections between paragraphs.
                 Notes are ordinary text in the reading order: a gutter note reads after its paragraph, and it is never
                 announced as a separate landmark or the only place a point is made.
                 The archive leaves the same two gutters empty, and draws into them instead: the things a note gets
