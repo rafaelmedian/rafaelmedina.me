@@ -6,7 +6,8 @@ and the global reduced-motion policy last.
 
 - `base.css`: fonts, shared tokens, element defaults, and keyboard focus.
 - `inline-swap.css`: shared directional swaps for compact labels and icons.
-- `page-edge.css`: the bottom overscroll effect.
+- `page-edge.css`: the bottom-fade ramp shared by the About sheet and the notes
+  card (each places its own), and the bottom overscroll effect.
 - `profile.css`: page shell, hero, avatar, first-load intro, and profile metadata
   (including the location line's copy-to-clipboard address).
 - `navigation.css`: corner links, takeover close button, and mobile contents.

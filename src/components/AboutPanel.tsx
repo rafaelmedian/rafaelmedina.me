@@ -333,6 +333,11 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
           </section>
         </div>
       </div>
+      {/* A direct child of the sheet rather than of the panel: the panel clips
+          its overflow, which would make it the sticky scroller. */}
+      <div className="mosaic-about-fade" aria-hidden="true">
+        <span /><span /><span /><span />
+      </div>
     </article>
   )
 }
