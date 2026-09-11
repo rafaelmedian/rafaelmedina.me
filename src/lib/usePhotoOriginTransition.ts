@@ -197,16 +197,24 @@ export function usePhotoOriginTransition(
         return
       }
       if (own) returning.add(own.id)
+      // A slide can wear a scale of its own — the sphere shrinks the photos
+      // that sit back from its face — so the flight is built at the slide's
+      // layout size and carries that scale in its transform, just as it
+      // carries the print's at the other end. Read at the drawn size instead,
+      // the frame's padding and caption kept their full size inside a card
+      // that had shrunk around them.
+      const layoutWidth = slide.offsetWidth
+      const slideScale = target.width / layoutWidth
       const dx = source.rect.left + source.rect.width / 2 - (target.left + target.width / 2)
       const dy = source.rect.top + source.rect.height / 2 - (target.top + target.height / 2)
       const homeTransform = (scale: number) => `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${source.angle}deg) scale(${scale})`
-      const originTransform = homeTransform(source.width / target.width)
+      const originTransform = homeTransform(source.width / layoutWidth)
       // A photo with no print of its own has to come to rest inside the print
       // it borrowed, or it hangs out past the edges of the very card that is
       // meant to hide it. Its slot is the taller shape, so the print's height
       // is usually what it has to fit rather than the print's width.
-      const tuckedTransform = homeTransform(Math.min(source.width / target.width, source.height / target.height))
-      const restingTransform = "translate(-50%, -50%) rotate(0deg) scale(1)"
+      const tuckedTransform = homeTransform(Math.min(source.width / layoutWidth, source.height / slide.offsetHeight))
+      const restingTransform = `translate(-50%, -50%) rotate(0deg) scale(${slideScale})`
       const targetFrame = { ...readStyles(slide, frameProperties), transform: restingTransform }
       const slideImage = slide.querySelector("img")!
       const targetImage = readStyles(slideImage, imageProperties)
@@ -217,6 +225,9 @@ export function usePhotoOriginTransition(
       if (!previous) {
         clone.classList.add("personal-photos-flight")
         clone.setAttribute("aria-hidden", "true")
+        // A slide the keyboard can reach would leave a copy of that stop in
+        // the page for the length of the flight.
+        clone.removeAttribute("tabindex")
         // The fan is a pile, not a row: the middle print is in front and every
         // print behind it steps back. A flight that travelled on one flat tier
         // came down in DOM order instead, and the print beside it swallowed it
@@ -227,7 +238,7 @@ export function usePhotoOriginTransition(
         else clone.setAttribute("data-photo-trailing", "")
         Object.assign(clone.style, targetFrame, {
           left: `${target.left + target.width / 2}px`, top: `${target.top + target.height / 2}px`,
-          width: `${target.width}px`,
+          width: `${layoutWidth}px`,
         })
         Object.assign(image.style, targetImage)
         // Keep one bitmap for the entire flight: the sheet's full-size image
@@ -246,9 +257,9 @@ export function usePhotoOriginTransition(
 
       // The print's own frame and crop, expressed at the size the slide is now.
       const originFrame = (print: PhotoOrigin) => ({
-        ...scalePixels(print.frame, target.width / print.element.offsetWidth), transform: originTransform,
+        ...scalePixels(print.frame, layoutWidth / print.element.offsetWidth), transform: originTransform,
       })
-      const originImage = (print: PhotoOrigin) => scalePixels(print.imageStyles, target.width / print.element.offsetWidth)
+      const originImage = (print: PhotoOrigin) => scalePixels(print.imageStyles, layoutWidth / print.element.offsetWidth)
       const currentTransform = readFlightTransform(clone)
       const currentFrame = { ...readStyles(clone, frameProperties), transform: currentTransform }
       const currentImage = readStyles(image, imageProperties)
