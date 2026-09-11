@@ -8,13 +8,16 @@
   bottom: var(--intro-chat-face-bottom);
 }
 
-/* Springs for the sent bubble and Rafa's tapback, sampled into linear() from
-   SwiftUI's duration/bounce model so they overshoot and settle like UIKit's:
-   snappy (0.45s, 0.2 bounce) settles in 580ms with a 1.5% overshoot, and pop
-   (0.35s, 0.5) in 680ms with 16%. Each runs for the time it was sampled over. */
+/* Springs for the chat and its portaled Tapback picker, sampled into linear()
+   from SwiftUI's duration/bounce model so they overshoot and settle like UIKit's. */
+.about-intro-chat,
+.about-intro-chat-reaction-positioner {
+  --intro-spring-bouncy: linear(0, 0.033, 0.118, 0.235, 0.368, 0.503, 0.632, 0.749, 0.848, 0.929, 0.993, 1.039, 1.069, 1.087, 1.094, 1.094, 1.087, 1.077, 1.065, 1.052, 1.039, 1.028, 1.018, 1.009, 1.003, 0.998, 0.994, 0.992, 0.991, 0.991, 0.991, 0.992, 0.993, 0.995, 0.996, 0.997, 1);
+  --intro-spring-snappy: linear(0, 0.022, 0.078, 0.156, 0.245, 0.339, 0.432, 0.521, 0.603, 0.677, 0.742, 0.799, 0.847, 0.886, 0.919, 0.945, 0.966, 0.982, 0.994, 1.002, 1.008, 1.012, 1.014, 1.015, 1.015, 1.014, 1.013, 1.012, 1.011, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1);
+}
+
 .about-intro-chat {
   --intro-chat-bottom: 0px;
-  --intro-spring-snappy: linear(0, 0.022, 0.078, 0.156, 0.245, 0.339, 0.432, 0.521, 0.603, 0.677, 0.742, 0.799, 0.847, 0.886, 0.919, 0.945, 0.966, 0.982, 0.994, 1.002, 1.008, 1.012, 1.014, 1.015, 1.015, 1.014, 1.013, 1.012, 1.011, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1);
   --intro-spring-pop: linear(0, 0.051, 0.18, 0.351, 0.536, 0.713, 0.866, 0.989, 1.077, 1.132, 1.159, 1.162, 1.149, 1.125, 1.096, 1.066, 1.038, 1.015, 0.996, 0.984, 0.977, 0.974, 0.974, 0.977, 0.981, 0.986, 0.991, 0.995, 0.999, 1.001, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1);
   --intro-reply-height: 44px;
   position: absolute;
@@ -101,6 +104,11 @@
   position: relative;
   flex: 0 0 auto;
   max-width: calc(100% - 24px);
+  transition: margin-top 580ms var(--intro-spring-snappy);
+}
+
+.about-intro-chat-received[data-reacted="true"] {
+  margin-top: 20px;
 }
 
 .about-intro-chat-received .about-intro-chat-bubble {
@@ -120,23 +128,40 @@
   transform: scale(0.96);
 }
 
-/* A visitor reaction mirrors Rafa's automatic tapback across the conversation:
-   white on the received bubble's top-right corner, with a compact emoji signal. */
-.about-intro-chat-visitor-reaction {
+/* Visitor Tapbacks mirror Rafa's existing Messages treatment onto the opposite
+   corner: a blue disc, its two thought-bubble dots, and the chosen glyph. */
+.about-intro-chat-visitor-tapback {
   position: absolute;
-  right: -18px;
-  top: -16px;
+  right: -30px;
+  top: -26px;
+  width: 52px;
+  height: 50px;
+  color: var(--intro-blue);
+  pointer-events: none;
+}
+
+.about-intro-chat-visitor-tapback svg {
+  display: block;
+  overflow: visible;
+}
+
+.about-intro-chat-visitor-tapback :is(circle, .about-intro-chat-visitor-tapback-glyph) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.about-intro-chat-visitor-tapback-glyph {
+  position: absolute;
+  top: 20px;
+  left: 20px;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-control);
-  font-size: var(--text-lg);
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
   line-height: 1;
-  pointer-events: none;
-  animation: intro-grow var(--duration-base) var(--intro-spring-pop) both;
+  translate: -50% -50%;
+  animation: intro-grow 780ms var(--intro-spring-bouncy) 120ms both;
 }
 
 .about-intro-chat-reaction-positioner {
@@ -144,47 +169,60 @@
 }
 
 .about-intro-chat-reaction-picker {
+  display: flex;
+  gap: 2px;
   padding: 4px;
   border-radius: var(--radius-full);
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
   outline: none;
-  opacity: 1;
-  transform: scale(1);
   transform-origin: var(--transform-origin);
-  transition: opacity var(--duration-base) var(--ease-smooth), transform var(--duration-base) var(--ease-smooth);
-}
-
-.about-intro-chat-reaction-picker[data-starting-style] {
-  opacity: 0;
-  transform: scale(0.97);
+  animation:
+    intro-picker-open 580ms var(--intro-spring-snappy) both,
+    intro-fade-in var(--duration-quick) var(--ease-standard) both;
 }
 
 .about-intro-chat-reaction-picker[data-ending-style] {
-  opacity: 0;
-  transform: scale(0.99);
-  transition: opacity var(--duration-quick) var(--ease-exit), transform var(--duration-quick) var(--ease-exit);
-}
-
-.about-intro-chat-reaction-picker [role="group"] {
-  display: flex;
+  animation: intro-picker-fold 280ms var(--ease-exit) forwards;
 }
 
 .about-intro-chat-reaction-choice {
+  position: relative;
+  isolation: isolate;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
   outline: none;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
+  animation: intro-pick-in 780ms var(--intro-spring-bouncy) both;
   transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
 }
 
-.about-intro-chat-reaction-choice:is(:hover, [data-highlighted], [data-checked]) {
+.about-intro-chat-reaction-choice:nth-child(2) { animation-delay: 24ms; }
+.about-intro-chat-reaction-choice:nth-child(3) { animation-delay: 48ms; }
+.about-intro-chat-reaction-choice:nth-child(4) { animation-delay: 72ms; }
+.about-intro-chat-reaction-choice:nth-child(5) { animation-delay: 96ms; }
+.about-intro-chat-reaction-choice:nth-child(6) { animation-delay: 120ms; }
+
+.about-intro-chat-reaction-choice:is(:hover, [data-highlighted]) {
   background: var(--mosaic-card-surface);
+}
+
+.about-intro-chat-reaction-choice[data-checked]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-full);
+  background: var(--intro-blue);
+}
+
+.about-intro-chat-reaction-choice[data-checked] > span {
+  animation: intro-pick-press 700ms linear both;
 }
 
 .about-intro-chat-reaction-choice:focus-visible {
@@ -194,6 +232,31 @@
 
 .about-intro-chat-reaction-choice:active {
   transform: scale(0.96);
+}
+
+@keyframes intro-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes intro-picker-open {
+  from { transform: translateY(8px) scale(0.3); }
+  to { transform: none; }
+}
+
+@keyframes intro-picker-fold {
+  55% { opacity: 0; }
+  to { opacity: 0; transform: translateY(16px) scale(0.06); visibility: hidden; }
+}
+
+@keyframes intro-pick-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.3); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes intro-pick-press {
+  0% { transform: scale(1); animation-timing-function: var(--ease-standard); }
+  30% { transform: scale(1.32); animation-timing-function: var(--intro-spring-bouncy); }
+  100% { transform: scale(1); }
 }
 
 .about-intro-chat .about-intro-chat-reaction-hint {
@@ -520,7 +583,12 @@
     transform: none;
   }
 
-  .about-intro-chat-visitor-reaction { animation: none; }
+  .about-intro-chat-received { transition: none; }
+
+  .about-intro-chat-reaction-picker,
+  .about-intro-chat-reaction-choice,
+  .about-intro-chat-reaction-choice > span,
+  .about-intro-chat-visitor-tapback * { animation: none; }
 
   .about-intro-chat-enter,
   .about-intro-chat-new {

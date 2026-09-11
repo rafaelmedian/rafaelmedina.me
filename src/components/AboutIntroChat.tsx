@@ -14,9 +14,11 @@ const typingDuration = 900
 const reactionDelays = [900, 700]
 const visitorReactions = [
   { id: "love", label: "Love", emoji: "❤️", announcement: "loved" },
+  { id: "like", label: "Like", emoji: "👍", announcement: "liked" },
+  { id: "dislike", label: "Dislike", emoji: "👎", announcement: "disliked" },
   { id: "laugh", label: "Laugh", emoji: "😂", announcement: "laughed at" },
-  { id: "fire", label: "Fire", emoji: "🔥", announcement: "sent fire to" },
-  { id: "applause", label: "Applaud", emoji: "👏", announcement: "applauded" },
+  { id: "emphasize", label: "Emphasize", emoji: "‼️", announcement: "emphasized" },
+  { id: "question", label: "Question", emoji: "❓", announcement: "questioned" },
 ] as const
 type VisitorReactionId = typeof visitorReactions[number]["id"]
 const heartPath = "M12 20.7C6.1 16.6 2.5 13.3 2.5 9.2c0-2.8 2.2-4.9 4.9-4.9 1.9 0 3.6 1 4.6 2.6 1-1.6 2.7-2.6 4.6-2.6 2.7 0 4.9 2.1 4.9 4.9 0 4.1-3.6 7.4-9.5 11.5Z"
@@ -48,22 +50,29 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
 }) {
   const selected = visitorReactions.find(item => item.id === reactionId)
   return <Menu.Root orientation="horizontal" modal={false}>
-    <span className="about-intro-chat-received about-intro-chat-new" data-followup={followup || undefined}>
+    <span className="about-intro-chat-received about-intro-chat-new"
+      data-followup={followup || undefined} data-reacted={Boolean(selected) || undefined}>
       <Menu.Trigger className="about-intro-chat-bubble" aria-label={`React to “${text}”`}>{text}</Menu.Trigger>
-      {selected && <span className="about-intro-chat-visitor-reaction" role="img"
-        aria-label={`You ${selected.announcement} “${text}”`}>{selected.emoji}</span>}
+      {selected && <span key={selected.id} className="about-intro-chat-visitor-tapback" role="img"
+        aria-label={`You ${selected.announcement} “${text}”`}>
+        <svg viewBox="0 0 52 50" width="52" height="50" aria-hidden="true">
+          <g transform="translate(52 0) scale(-1 1)">
+            <g fill="var(--canvas)" stroke="var(--canvas)" strokeWidth="4">{tapbackShape}</g>
+            <g fill="currentColor">{tapbackShape}</g>
+          </g>
+        </svg>
+        <span className="about-intro-chat-visitor-tapback-glyph" aria-hidden="true">{selected.emoji}</span>
+      </span>}
     </span>
     <Menu.Portal>
       <Menu.Positioner className="about-intro-chat-reaction-positioner" positionMethod="fixed"
-        side="top" align="start" sideOffset={8} collisionPadding={12}>
+        side="top" align="end" sideOffset={4} collisionPadding={12}>
         <Menu.Popup className="about-intro-chat-reaction-picker" aria-label={`React to “${text}”`}>
-          <Menu.RadioGroup value={reactionId ?? ""}
-            onValueChange={value => onReaction(messageIndex, value as VisitorReactionId)}>
-            {visitorReactions.map(choice => <Menu.RadioItem key={choice.id} value={choice.id} label={choice.label}
+          {visitorReactions.map(choice => <Menu.CheckboxItem key={choice.id} label={choice.label}
+              checked={reactionId === choice.id} onCheckedChange={() => onReaction(messageIndex, choice.id)}
               closeOnClick className="about-intro-chat-reaction-choice" aria-label={choice.label}>
               <span aria-hidden="true">{choice.emoji}</span>
-            </Menu.RadioItem>)}
-          </Menu.RadioGroup>
+            </Menu.CheckboxItem>)}
         </Menu.Popup>
       </Menu.Positioner>
     </Menu.Portal>
@@ -204,9 +213,10 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   const reactToMessage = (messageIndex: number, reactionId: VisitorReactionId) => {
     const choice = visitorReactions.find(item => item.id === reactionId)
     if (!choice) return
-    setVisitorReaction(current => ({ ...current, [messageIndex]: reactionId }))
-    setReactionFeedback(`Got it — I’ll see your ${choice.emoji}.`)
-    trackEvent("about_intro_reaction", { message_index: messageIndex, reaction: reactionId })
+    const removing = visitorReaction[messageIndex] === reactionId
+    setVisitorReaction(current => ({ ...current, [messageIndex]: removing ? undefined : reactionId }))
+    setReactionFeedback(removing ? `Removed your ${choice.emoji}.` : `Got it — I’ll see your ${choice.emoji}.`)
+    if (!removing) trackEvent("about_intro_reaction", { message_index: messageIndex, reaction: reactionId })
   }
 
   useEffect(() => {

@@ -101,7 +101,7 @@ test('starts the comparison chat when its card comes into view and respects redu
   await expect(chat.getByRole('textbox', { name: 'Your email' })).not.toBeFocused()
 })
 
-test('lets visitors react to each of Rafa’s messages', async ({ page }) => {
+test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
@@ -113,31 +113,61 @@ test('lets visitors react to each of Rafa’s messages', async ({ page }) => {
   await greeting.click()
   const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
   await expect(picker).toBeVisible()
-  await expect(picker.getByRole('menuitemradio')).toHaveCount(4)
+  await expect(picker.getByRole('menuitemcheckbox')).toHaveCount(6)
+  for (const label of ['Love', 'Like', 'Dislike', 'Laugh', 'Emphasize', 'Question']) {
+    await expect(picker.getByRole('menuitemcheckbox', { name: label, exact: true })).toBeVisible()
+  }
   const pickerBox = await picker.boundingBox()
   expect(pickerBox!.x).toBeGreaterThanOrEqual(12)
   expect(pickerBox!.x + pickerBox!.width).toBeLessThanOrEqual(308)
-  await picker.getByRole('menuitemradio', { name: 'Love' }).click()
+  await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
 
   await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toBeVisible()
+  // The shape is drawn twice so its white outer ring cannot cut either blue trail dot.
+  await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-disc')).toHaveCount(2)
+  await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-trail')).toHaveCount(4)
   await expect(chat.getByRole('status')).toHaveText('Got it — I’ll see your ❤️.')
   await expect(picker).toHaveCount(0)
 
   await greeting.click()
   const changedPicker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
-  await expect(changedPicker.getByRole('menuitemradio', { name: 'Love' })).toHaveAttribute('aria-checked', 'true')
-  await changedPicker.getByRole('menuitemradio', { name: 'Laugh' }).click()
+  await expect(changedPicker.getByRole('menuitemcheckbox', { name: 'Love' })).toHaveAttribute('aria-checked', 'true')
+  await changedPicker.getByRole('menuitemcheckbox', { name: 'Laugh' }).click()
   await expect(page.getByRole('img', { name: 'You laughed at “Hey, I’m Rafa.”' })).toBeVisible()
   await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toHaveCount(0)
+
+  await greeting.click()
+  const removalPicker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  await removalPicker.getByRole('menuitemcheckbox', { name: 'Laugh' }).click()
+  await expect(page.getByRole('img', { name: 'You laughed at “Hey, I’m Rafa.”' })).toHaveCount(0)
+  await expect(chat.getByRole('status')).toHaveText('Removed your 😂.')
 
   await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
   await chat.getByRole('button', { name: 'Continue with email' }).click()
   const followup = chat.getByRole('button', { name: 'React to “Want to share anything else?”' })
   await followup.click()
   await page.getByRole('menu', { name: 'React to “Want to share anything else?”' })
-    .getByRole('menuitemradio', { name: 'Fire' }).click()
-  await expect(page.getByRole('img', { name: 'You sent fire to “Want to share anything else?”' })).toBeVisible()
+    .getByRole('menuitemcheckbox', { name: 'Emphasize' }).click()
+  await expect(page.getByRole('img', { name: 'You emphasized “Want to share anything else?”' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+})
+
+test('springs the Tapback picker open and folds it into the message', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  const greeting = chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' })
+  await greeting.click()
+
+  const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  await expect(picker).toHaveCSS('animation-name', 'intro-picker-open, intro-fade-in')
+  await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
+  expect(await picker.evaluate(node => getComputedStyle(node).animationName)).toBe('intro-picker-fold')
+
+  const tapback = page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })
+  await expect(tapback.locator('.about-intro-chat-visitor-tapback-glyph')).toHaveCSS('animation-name', 'intro-grow')
 })
 
 test('shows three typing dots before each greeting and pauses the sequence in a hidden tab', async ({ page }) => {

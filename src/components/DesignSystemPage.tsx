@@ -2205,14 +2205,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
-                  Each delivered gray message is a reaction trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint invites the visitor to tap;
-                  doing so opens a fixed-positioned white pill above the bubble with the shared ring and overlay shadow,
-                  kept 12px inside the viewport. Its four 24px emoji choices — love, laugh, fire and applause — occupy 44px targets and use horizontal
-                  arrow-key navigation. The picker grows from 0.97 scale over <code>--duration-base</code>, then exits
-                  from 0.99 over <code>--duration-quick</code>; reduced motion removes both transforms. Choosing one
-                  pops a 32px white tapback onto the message’s top-right corner over <code>--duration-base</code> with the existing pop spring, swaps
-                  the hint for a polite “Got it” confirmation, and records only the message index and reaction name
-                  through the existing anonymous analytics path. A later choice replaces the earlier one.
+                  Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint invites the visitor to tap.
+                  The fixed-positioned picker uses Apple’s six classic choices — heart, thumbs up, thumbs down,
+                  laughter, exclamation points and a question mark — as 22px glyphs in 40px targets, separated by
+                  2px inside a 4px-padded white pill with the shared ring and overlay shadow. It stays 12px inside
+                  the viewport and retains horizontal arrow-key navigation. The picker springs from 0.3 scale and
+                  an 8px offset over 580ms; its choices follow 24ms apart on the existing bouncy spring. Choosing
+                  one swells its glyph to 1.32, folds the picker toward the bubble over 280ms, and grows the chosen
+                  18px glyph into the same 36px blue, canvas-ringed disc and two-dot trail used by Rafa’s automatic
+                  Tapback, mirrored onto the gray bubble’s top-right corner. The wrapper gains 20px above it so the
+                  Tapback does not cover the prior message. A later choice replaces the earlier one; choosing the
+                  current Tapback again removes it. Reduced motion shows both surfaces at rest. The hint gives a
+                  polite applied or removed confirmation, and only applied reactions record the message index and
+                  reaction name through the existing anonymous analytics path.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
                   Messages blue with white text and a mirrored tail on the right, which rises out of the field
                   from 20px below at 0.92 scale, anchored at its tail. At 900ms Rafa hearts it the way a received

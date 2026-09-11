@@ -55,7 +55,7 @@ test("records the visitor reaction that lands on a chat message", async ({ page 
   const chat = page.getByRole("region", { name: "Chat with Rafa" })
   await chat.getByRole("button", { name: "React to “Hey, I’m Rafa.”" }).click()
   await page.getByRole("menu", { name: "React to “Hey, I’m Rafa.”" })
-    .getByRole("menuitemradio", { name: "Love" }).click()
+    .getByRole("menuitemcheckbox", { name: "Love" }).click()
 
   const reactionEvent = await page.evaluate(() =>
     window.dataLayer

@@ -220,13 +220,17 @@ and “Wanna share your email with me so I can reach out to you?” The email fi
 follows. The short stagger uses 80/120/160/240ms entry delays, an 8px rise, 2px
 blur and the shared 360ms surface easing; reduced motion shows it immediately.
 
-Each delivered message is a button. Activating it opens a four-choice reaction
-picker above the bubble, with love, laugh, fire, and applause in 44px targets.
-The picker uses Base UI menu semantics, left/right arrow navigation, viewport
-collision handling, and the shared white overlay surface. A chosen emoji pops
-onto the message's top-right corner over the 200ms interaction duration and the
-hint confirms that it landed. A later choice replaces it. Reduced motion shows
-both picker and reaction at rest.
+Each delivered message is a button. Activating it opens an Apple-style picker
+above the bubble with the six classic Tapbacks: heart, thumbs up, thumbs down,
+laughter, exclamation points, and a question mark. The picker uses Base UI menu
+semantics, left/right arrow navigation, 40px targets, viewport collision
+handling, and the shared white overlay surface. It springs open using the
+existing Messages motion from the earlier reaction exploration, staggers the
+six choices, and folds toward the bubble after a selection. The chosen glyph
+then grows into the same blue disc and two-dot trail used by Rafa's automatic
+heart, mirrored onto the message's top-right corner. A later choice replaces
+it; choosing the current Tapback again removes it. The hint confirms both
+actions, while reduced motion shows picker and Tapback at rest.
 When analytics is configured, the site records only the message index and
 reaction name; it does not attach the visitor's email or message.
 
