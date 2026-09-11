@@ -2203,11 +2203,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   The email field caps at 256px by 44px and matches the bubbles’ 14px text. Its center
                   aligns with the 64px face, moving the conversation above that row. Both composers use the white
                   canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
-                  8px above the input (4px history padding and 4px margin). The portrait stays
-                  68px above the dock baseline initially and 132px above it in the message step.
-                  The message textarea remains 88px high with 16px text. The history scrolls within 88–256px, constrained by the
-                  viewport minus 260px; the composer stays below it. Final submission opens an email draft,
-                  with a visible explanation. No address is sent or stored when advancing to the message step.
+                  8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
+                  The message textarea remains 88px high with 16px text. The history uses the available space above the dock with a 12px top clearance, accounting for the
+                  actual form height; only short viewports scroll. The composer stays below it. Focus uses an
+                  inset 1px shadow inside the field while preserving the outer elevation. The arrow starts gray,
+                  turning blue for a valid email or nonempty optional message. Final submission posts to the contact
+                  Worker, with sending, sent and retry states. No address is sent when advancing to the message step.
                   B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
                   The <a href="/intro-options">comparison page</a> shows all three together in separate 440px
                   stages, with contained 64px portraits and 240px players (320px when enlarged). It stacks its

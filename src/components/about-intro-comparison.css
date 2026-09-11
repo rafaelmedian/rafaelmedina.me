@@ -130,10 +130,7 @@
   width: min(320px, calc(100cqw - 100px));
 }
 
+/* B keeps its portrait beside the final input or delivery hint. */
 .intro-comparison-stage .about-intro[data-variant="b"]:not([data-open="true"]) .about-intro-surface {
-  bottom: 68px;
-}
-
-.intro-comparison-stage .about-intro[data-variant="b"]:not([data-open="true"]):has([data-step="message"]) .about-intro-surface {
-  bottom: 132px;
+  bottom: 0;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useId, useRef, useState, type FormEvent } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import ArrowUp02Icon from "@hugeicons/core-free-icons/ArrowUp02Icon"
-import { siteLinks } from "../data/portfolio"
+import { sendContact, type ContactMessage } from "../lib/sendContact"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
 const greeting = ["Hey, I’m Rafa.", "How are you doing?", "Wanna share your email with me so I can reach out to you?"]
@@ -19,7 +19,11 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   const [valid, setValid] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [message, setMessage] = useState("")
-  const [draftOpened, setDraftOpened] = useState(false)
+  const [delivery, setDelivery] = useState<"idle" | "sending" | "sent" | "error">("idle")
+  const [deliveryError, setDeliveryError] = useState("")
+  const sending = useRef(false)
+  const lastSubmission = useRef<ContactMessage | null>(null)
+  const locked = delivery === "sending" || delivery === "sent"
   const [revealed, setRevealed] = useState(0)
   const reducedMotion = usePrefersReducedMotion()
   const skipTyping = reducedMotion || (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -33,13 +37,32 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     const chat = chatRef.current
     const form = chat?.querySelector("form")
     if (!chat || !form) return
-    // The optional delivery hint wraps on mobile, so measure its reserved space.
-    const measure = () => chat.style.setProperty("--intro-reply-height", `${form.offsetHeight}px`)
+    const intro = chat.closest<HTMLElement>(".about-intro")
+    const stage = chat.closest<HTMLElement>(".intro-comparison-stage")
+    const measure = () => {
+      chat.style.setProperty("--intro-reply-height", `${form.offsetHeight}px`)
+      if (!intro) return
+      const ceiling = Math.max(12, stage?.getBoundingClientRect().top ?? 12)
+      const bottom = intro.getBoundingClientRect().bottom
+      const offset = Number.parseFloat(getComputedStyle(chat).bottom) || 0
+      chat.style.setProperty("--intro-history-height", `${Math.max(88, bottom - ceiling - offset - form.offsetHeight - 8)}px`)
+    }
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(form)
-    return () => observer.disconnect()
-  }, [confirmed])
+    let frame = 0
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; measure() }) }
+    window.addEventListener("resize", schedule)
+    window.addEventListener("scroll", schedule, { passive: true })
+    window.visualViewport?.addEventListener("resize", schedule)
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+      window.removeEventListener("resize", schedule)
+      window.removeEventListener("scroll", schedule)
+      window.visualViewport?.removeEventListener("resize", schedule)
+    }
+  }, [confirmed, active])
 
   useEffect(() => {
     if (!active || revealed >= target) return
@@ -82,14 +105,28 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   }
   const editEmail = () => {
     setConfirmed(false)
-    setDraftOpened(false)
+    setDelivery("idle")
     requestAnimationFrame(() => emailRef.current?.focus({ preventScroll: true }))
   }
-  const openDraft = (event: FormEvent<HTMLFormElement>) => {
+  const submitMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const body = `Reply to: ${email.trim()}\n\n${message.trim() || "Hi Rafa, I’d like to keep in touch."}`
-    window.location.href = `mailto:${siteLinks.email}?subject=${encodeURIComponent("A hello from your website")}&body=${encodeURIComponent(body)}`
-    setDraftOpened(true)
+    if (sending.current || delivery === "sent" || !valid) return
+    const previous = lastSubmission.current
+    const payload = previous?.email === email.trim() && previous.message === message.trim()
+      ? previous : { email: email.trim(), message: message.trim(), requestId: crypto.randomUUID() }
+    lastSubmission.current = payload
+    sending.current = true
+    setDelivery("sending")
+    setDeliveryError("")
+    try {
+      await sendContact(payload)
+      setDelivery("sent")
+    } catch (error) {
+      setDeliveryError(error instanceof Error ? error.message : "Couldn't send. Please retry.")
+      setDelivery("error")
+    } finally {
+      sending.current = false
+    }
   }
 
   return <section ref={chatRef} className="about-intro-chat" data-active={active} data-typing={typing} data-step={confirmed ? "message" : "email"}
@@ -100,7 +137,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
         className={`about-intro-chat-bubble about-intro-chat-new${index === 2 && !confirmed ? " about-intro-chat-tail" : ""}`}>{text}</p>)}
       {confirmed && <>
         <button type="button" className="about-intro-chat-outgoing about-intro-chat-new" onClick={editEmail}
-          aria-label={`Edit email address: ${email}`} title="Edit your email">{email}</button>
+          aria-label={`Edit email address: ${email}`} title="Edit your email" disabled={locked}>{email}</button>
         {messageReady && <p className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-new" data-followup>Want to share anything else?</p>}
       </>}
       {typing && <div key={`typing-${shown}`} className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-typing about-intro-chat-new"
@@ -114,20 +151,22 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
           setEmail(event.target.value)
           setValid(event.currentTarget.validity.valid)
         }} />
-      <button type="submit" className="about-intro-send" aria-label="Continue with email" data-empty={!email}
-        disabled={!valid} aria-hidden={!email}>
+      <button type="submit" className="about-intro-send" aria-label="Continue with email"
+        disabled={!valid}>
         <HugeiconsIcon icon={ArrowUp02Icon} size={24} strokeWidth={2.5} aria-hidden="true" />
       </button>
-    </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={openDraft}>
+    </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={submitMessage} aria-busy={delivery === "sending"}>
       <div className="about-intro-chat-composer">
         <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${id}-delivery`} maxLength={2000}
-          rows={2} placeholder="Anything on your mind?" value={message} onChange={event => setMessage(event.target.value)} />
-        <button type="submit" className="about-intro-send" aria-label="Open email draft" title="Review and send in your email app">
+          rows={2} placeholder="Anything on your mind?" value={message} readOnly={locked} onChange={event => { setMessage(event.target.value); setDelivery("idle") }} />
+        <button type="submit" className="about-intro-send" aria-label={delivery === "error" ? "Retry message" : "Send message"} disabled={locked} data-muted={!message.trim()}>
           <HugeiconsIcon icon={ArrowUp02Icon} size={24} strokeWidth={2.5} aria-hidden="true" />
         </button>
       </div>
-      <p id={`${id}-delivery`} className="about-intro-chat-hint">Optional. Review and send in your email app.</p>
+      <p id={`${id}-delivery`} className="about-intro-chat-hint" role="status" aria-live={active ? "polite" : undefined}>
+        {delivery === "sending" ? "Sending…" : delivery === "sent" ? "Sent. Thanks for saying hello!" :
+          delivery === "error" ? deliveryError : "Optional. Send straight to my inbox."}
+      </p>
     </form>}
-    {draftOpened && <p className="about-intro-chat-hint" role="status">Finish sending in your email app.</p>}
   </section>
 }

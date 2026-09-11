@@ -1,15 +1,11 @@
 /* B: a quiet conversation anchored to the speaking portrait. */
 .about-intro[data-variant="b"] {
   --intro-size: 64px;
-  --intro-chat-face-bottom: 68px;
+  --intro-chat-face-bottom: 0px;
 }
 
 .about-intro[data-variant="b"]:not([data-open="true"]) .about-intro-surface {
   bottom: var(--intro-chat-face-bottom);
-}
-
-.about-intro[data-variant="b"]:has([data-step="message"]) {
-  --intro-chat-face-bottom: 132px;
 }
 
 .about-intro-chat {
@@ -49,7 +45,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  max-height: max(88px, min(256px, calc(100dvh - 260px)));
+  max-height: var(--intro-history-height, calc(100dvh - 260px));
   padding: 4px 8px;
   margin: 0 -8px 4px;
   overflow-y: auto;
@@ -118,7 +114,7 @@
 }
 
 .about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
-  box-shadow: 0 0 0 1px var(--focus-ring-soft), var(--shadow-overlay);
+  box-shadow: inset 0 0 0 1px var(--focus-ring-soft), var(--shadow-overlay);
 }
 
 .about-intro-chat-composer :is(input, textarea) {
@@ -247,4 +243,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .about-intro-chat-typing span { animation: none; }
+}
+
+.about-intro-chat .about-intro-send[data-muted="true"]::before {
+  background: var(--muted-soft);
+  opacity: 0.4;
 }

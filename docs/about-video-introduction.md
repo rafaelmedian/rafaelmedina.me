@@ -242,3 +242,21 @@ The measured reserved form height accounts for the delivery hint wrapping on
 mobile. When the field appears, history shifts over the shared 360ms smooth
 transition. The white reply surface uses the shared hairline and overlay shadow,
 with an 8px visual gap below the last message. Reduced motion skips the shift.
+
+## Direct website replies
+
+B now submits to a contact Worker instead of opening an email app. The email
+step stays local; only the final Send message action transmits the email and
+optional message. Pending and sent states prevent duplicate clicks, retries
+reuse the same request ID, and failed messages remain in component state.
+The Worker uses a fixed recipient, validates the request, rate-limits anonymous
+submissions, and keeps the provider key on the server. It has no message database
+and does not log request bodies. The mail provider and inbox still process and
+retain email under their own settings; this is not a zero-storage email system.
+See [contact delivery setup](../workers/contact/README.md) for configuration.
+
+The portrait now stays at the dock baseline beside the final reply item,
+including the hint below the optional message. History uses the available
+viewport height rather than a fixed 256px crop. Arrows are initially gray;
+a valid email or nonempty message uses blue. Focus draws its 1px shadow inside
+the field, preserving the shared outer elevation.
