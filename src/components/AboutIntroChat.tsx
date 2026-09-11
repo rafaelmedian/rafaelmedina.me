@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from "react"
+import { useEffect, useLayoutEffect, useId, useRef, useState, type FormEvent } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import ArrowUp02Icon from "@hugeicons/core-free-icons/ArrowUp02Icon"
 import { siteLinks } from "../data/portfolio"
@@ -28,6 +28,18 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   const emailReady = shown >= 3
   const messageReady = shown >= 4
   const typing = shown < target
+
+  useLayoutEffect(() => {
+    const chat = chatRef.current
+    const form = chat?.querySelector("form")
+    if (!chat || !form) return
+    // The optional delivery hint wraps on mobile, so measure its reserved space.
+    const measure = () => chat.style.setProperty("--intro-reply-height", `${form.offsetHeight}px`)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(form)
+    return () => observer.disconnect()
+  }, [confirmed])
 
   useEffect(() => {
     if (!active || revealed >= target) return
@@ -80,7 +92,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     setDraftOpened(true)
   }
 
-  return <section ref={chatRef} className="about-intro-chat" data-active={active} data-step={confirmed ? "message" : "email"}
+  return <section ref={chatRef} className="about-intro-chat" data-active={active} data-typing={typing} data-step={confirmed ? "message" : "email"}
     inert={!active} aria-hidden={!active} aria-label="Chat with Rafa">
     {/* Hidden live regions can make modal isolation hide the neighboring player. */}
     <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={active ? "polite" : undefined} aria-relevant="additions">

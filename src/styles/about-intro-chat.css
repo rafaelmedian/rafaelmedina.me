@@ -1,20 +1,23 @@
 /* B: a quiet conversation anchored to the speaking portrait. */
 .about-intro[data-variant="b"] {
   --intro-size: 64px;
+  --intro-chat-face-bottom: 68px;
 }
 
 .about-intro[data-variant="b"]:not([data-open="true"]) .about-intro-surface {
-  bottom: 68px;
+  bottom: var(--intro-chat-face-bottom);
 }
 
-.about-intro[data-variant="b"]:not([data-open="true"]):has([data-step="message"]) .about-intro-surface {
-  bottom: 132px;
+.about-intro[data-variant="b"]:has([data-step="message"]) {
+  --intro-chat-face-bottom: 132px;
 }
 
 .about-intro-chat {
+  --intro-chat-bottom: 0px;
+  --intro-reply-height: 44px;
   position: absolute;
   left: calc(100% + 12px);
-  bottom: 0;
+  bottom: var(--intro-chat-bottom);
   width: 320px;
   color: var(--ink);
   font-family: var(--font-ui);
@@ -27,7 +30,7 @@
 
 /* Center the compact email field on the portrait; history grows above it. */
 .about-intro-chat[data-step="email"] {
-  bottom: calc(68px + (var(--intro-size) - 44px) / 2);
+  --intro-chat-bottom: calc(var(--intro-chat-face-bottom) + (var(--intro-size) - 44px) / 2);
 }
 
 .about-intro-chat[data-step="email"] > .about-intro-chat-composer {
@@ -48,10 +51,16 @@
   gap: 8px;
   max-height: max(88px, min(256px, calc(100dvh - 260px)));
   padding: 4px 8px;
-  margin: 0 -8px 16px;
+  margin: 0 -8px 4px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+.about-intro-chat[data-typing="true"] .about-intro-chat-history {
+  /* Keep the final 44px typing bubble centered on the portrait, across both forms. */
+  transform: translateY(calc(var(--intro-reply-height) + 8px + var(--intro-chat-bottom) - var(--intro-chat-face-bottom) - (var(--intro-size) - 44px) / 2));
 }
 
 .about-intro-chat .about-intro-chat-bubble {
@@ -104,12 +113,12 @@
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius-full);
-  background: var(--body-bg);
-  box-shadow: var(--shadow-ring);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
 }
 
 .about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
-  box-shadow: 0 0 0 1px var(--focus-ring-soft);
+  box-shadow: 0 0 0 1px var(--focus-ring-soft), var(--shadow-overlay);
 }
 
 .about-intro-chat-composer :is(input, textarea) {
@@ -191,6 +200,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .about-intro-chat-history { transition: none; }
+
   .about-intro-chat-enter,
   .about-intro-chat-new {
     transition: none;

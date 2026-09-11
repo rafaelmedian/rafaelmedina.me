@@ -2195,11 +2195,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
                   shows the same typing bubble before “Want to share anything else?” and reveals the optional
-                  message field after 160ms. Hidden fields retain their layout space but stay inert. Timers
+                  message field after 160ms. Hidden fields stay inert; their measured height offsets the history
+                  so the typing bubble stays centered on the avatar. The history moves into its reply position
+                  over 360ms with the shared smooth curve as the field enters. Timers
                   pause when the chat or tab is hidden, completed messages stay visible on return, and
                   reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
                   The email field caps at 256px by 44px and matches the bubbles’ 14px text. Its center
-                  aligns with the 64px face, moving the conversation above that row. The portrait stays
+                  aligns with the 64px face, moving the conversation above that row. Both composers use the white
+                  canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
+                  8px above the input (4px history padding and 4px margin). The portrait stays
                   68px above the dock baseline initially and 132px above it in the message step.
                   The message textarea remains 88px high with 16px text. The history scrolls within 88–256px, constrained by the
                   viewport minus 260px; the composer stays below it. Final submission opens an email draft,
