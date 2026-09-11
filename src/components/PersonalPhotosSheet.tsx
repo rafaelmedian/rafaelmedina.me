@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { Globe, LayoutGrid } from "lucide-react"
-import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
+import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
@@ -31,6 +31,12 @@ const spherePhotoSizes = `(max-width: 699.98px) calc(min(118vw, 72vh) * ${(spher
 // One column's width: the sheet less its gutters and the gaps between the
 // columns, as --photo-gutter and --photo-column-gap set them.
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3)"
+
+/** A grid photo held at the centre of the stage: the slide's own id, and
+    the move and growth that carry it there from where it lies. */
+type GridHold = { id: string; caption: string; dx: number; dy: number; scale: number; width: number; captionTop: number; scrollTop: number }
+/** How much of the stage a held grid photo fills, on its longer side. */
+const gridHoldShare = 0.7
 
 const layoutOptions = [
   { layout: "grid", label: "Grid", Icon: LayoutGrid },
@@ -66,6 +72,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const gridColumns = Array.from({ length: columnCount }, (_, column) =>
     photos.map((photo, index) => ({ photo, index })).filter(({ index }) => index % columnCount === column))
   const [opener, setOpener] = useState<HTMLElement | null>(null)
+  const [held, setHeld] = useState<GridHold | null>(null)
+  /** The hold as the handlers see it, ahead of the render. */
+  const heldRef = useRef<GridHold | null>(null)
   const [origins, setOrigins] = useState<ReturnType<typeof measurePhotoOrigins>>([])
   const sheetRef = useRef<HTMLDivElement>(null)
   const [sheetNode, setSheetNode] = useState<HTMLDivElement | null>(null)
@@ -107,10 +116,63 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   }, [open])
   usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
+  /** Holds a grid photo: it glides from where it lies to the centre of the
+      stage and grows to fill most of it, its caption under it. Measured
+      from the slide's layout box and its centre — the centre holds still
+      under the hover growth — against the stage's client box, so a photo
+      at an edge or below the fold comes to the middle of the screen rather
+      than growing in place off it. */
+  const holdSlide = (slide: HTMLElement, photo: typeof photos[number]) => {
+    const sheet = sheetRef.current
+    if (!sheet) return
+    const rect = slide.getBoundingClientRect()
+    const stage = sheet.getBoundingClientRect()
+    const width = slide.offsetWidth
+    const height = slide.offsetHeight
+    const scale = Math.min(gridHoldShare * sheet.clientWidth / width, gridHoldShare * sheet.clientHeight / height)
+    heldRef.current = {
+      id: photo.id,
+      caption: photo.caption,
+      dx: stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2),
+      dy: stage.top + sheet.clientHeight / 2 - (rect.top + rect.height / 2),
+      scale,
+      width: width * scale,
+      // In the sheet's own scrolled coordinates: it is the scroll container.
+      captionTop: sheet.scrollTop + sheet.clientHeight / 2 + height * scale / 2,
+      scrollTop: sheet.scrollTop,
+    }
+    setHeld(heldRef.current)
+  }
+  /** Lets a held grid photo go. True if one was held. */
+  const releaseHeld = useCallback(() => {
+    if (!heldRef.current) return false
+    heldRef.current = null
+    setHeld(null)
+    return true
+  }, [])
+  const toggleHold = (slide: HTMLElement, photo: typeof photos[number]) => {
+    if (!releaseHeld()) holdSlide(slide, photo)
+  }
+  const onSlideKeyDown = (event: ReactKeyboardEvent<HTMLElement>, photo: typeof photos[number]) => {
+    if (event.key !== "Enter" && event.key !== " ") return
+    event.preventDefault()
+    toggleHold(event.currentTarget, photo)
+  }
+  // A scroll lets a held photo go: it was placed against the screen, and
+  // the grid has moved under it. A scroll that has already happened by the
+  // time of the click — its event arrives a frame late — moved nothing.
+  useEffect(() => {
+    if (!sheetNode || layout !== "grid") return
+    const onScroll = () => { if (heldRef.current && sheetNode.scrollTop !== heldRef.current.scrollTop) releaseHeld() }
+    sheetNode.addEventListener("scroll", onScroll, { passive: true })
+    return () => sheetNode.removeEventListener("scroll", onScroll)
+  }, [sheetNode, layout, releaseHeld])
+
   const chooseLayout = (next: PhotoSheetLayout) => {
     if (next === layout) return
     if (rewinding.current) rewinding.current.cancelled = true
     rewinding.current = null
+    releaseHeld()
     switched.current = true
     saveSheetLayout(next)
     setLayout(next)
@@ -132,21 +194,31 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
 
   // The grid scrolls natively. Its own margin — the padding around the
   // masonry — dismisses on click; the prints and the gaps between them keep
-  // swallowing theirs, so browsing never closes by accident. The globe
-  // answers its own presses in usePhotoSphere.
+  // swallowing theirs, so browsing never closes by accident. While a photo
+  // is held the margin lets it go instead, as on the globe, and the next
+  // click closes. The globe answers its own presses in usePhotoSphere.
   const onPointerDown = (event: ReactPointerEvent) => {
     // A press and its click can land on different nodes; trust the press.
     pressedClearance.current = event.target === event.currentTarget
   }
   const onSheetClick = (event: ReactMouseEvent) => {
-    if (pressedClearance.current && event.target === event.currentTarget) dialogActions.current?.close()
+    if (!pressedClearance.current || event.target !== event.currentTarget) return
+    if (releaseHeld()) return
+    dialogActions.current?.close()
   }
 
   const onOpenChange = (nextOpen: boolean, details: Dialog.Root.ChangeEventDetails) => {
     if (!nextOpen) {
       // Escape lets a held photo go first; the next Escape closes.
-      if (details.reason === "escape-key" && sphere.current.release()) return
+      if (details.reason === "escape-key" && (sphere.current.release() || releaseHeld())) return
       const sheet = sheetRef.current
+      // A close asked for over a held photo — or inside its glide back —
+      // snaps the grid to rest first, so the flight measures the slides
+      // where they will stay.
+      if (sheet && layout === "grid") {
+        releaseHeld()
+        sheet.setAttribute("data-hold-snap", "")
+      }
       // At the grid's first row the close is immediate: the prints fly home
       // and the rest of the sheet goes with it. A scrolled grid first rewinds
       // to that row, then asks again; only the second request closes. The
@@ -190,7 +262,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
           <Dialog.Description className="sr-only">
             {layout === "sphere"
               ? "A few moments outside the portfolio, on a slowly turning globe of prints. Drag, scroll, or use the arrow keys to turn it; Tab brings each photo to the front. Escape or a click beside the globe returns to the page."
-              : "A few moments outside the portfolio, laid out on one sheet. Scroll to browse; Escape or a click on the margin returns to the page."}
+              : "A few moments outside the portfolio, laid out on one sheet. Scroll to browse; Enter or a click holds a photo large and lets it go again. Escape or a click on the margin returns to the page."}
           </Dialog.Description>
           {/* Outside the stage, which captures every press on the globe for
               the drag: a button inside it would never see its own click. */}
@@ -211,6 +283,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
             data-layout={layout}
             role="region"
             aria-label={layout === "sphere" ? "Photo globe" : "Photo sheet"}
+            data-held={layout === "grid" && held ? "" : undefined}
             tabIndex={0}
             onPointerDown={layout === "grid" ? onPointerDown : undefined}
             onClick={layout === "grid" ? onSheetClick : undefined}
@@ -260,36 +333,49 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                 <p className="personal-photos-stage-caption" aria-hidden="true" />
               </Fragment>
             ) : (
-              <div className="personal-photos-masonry" key="grid">
-                {gridColumns.map((column, columnIndex) => (
-                  <div className="personal-photos-column" key={columnIndex}>
-                    {column.map(({ photo, index }) => (
-                      <figure
-                        className="personal-photos-slide"
-                        data-photo-id={photo.id}
-                        data-photo-retained={index < previewCount ? "" : undefined}
-                        key={photo.id}
-                        role="group"
-                        aria-label={`${index + 1} of ${photos.length}`}
-                      >
-                        <img
-                          src={`/images/personal/${photo.name}.webp`}
-                          srcSet={`/images/personal/${photo.name}-400w.webp 400w, /images/personal/${photo.name}-800w.webp 800w, /images/personal/${photo.name}.webp ${photo.width}w`}
-                          sizes={gridPhotoSizes}
-                          loading={index < previewCount ? "eager" : "lazy"}
-                          alt={photo.alt}
-                          width={photo.width}
-                          height={photo.height}
-                          decoding="async"
-                          draggable={false}
-                          style={{ aspectRatio: `${photo.width} / ${photo.height}`, backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
-                        />
-                        <figcaption>{photo.caption}</figcaption>
-                      </figure>
-                    ))}
-                  </div>
-                ))}
-              </div>
+              <Fragment key="grid">
+                <div className="personal-photos-masonry">
+                  {gridColumns.map((column, columnIndex) => (
+                    <div className="personal-photos-column" key={columnIndex}>
+                      {column.map(({ photo, index }) => (
+                        <figure
+                          className="personal-photos-slide"
+                          data-photo-id={photo.id}
+                          data-photo-retained={index < previewCount ? "" : undefined}
+                          data-held={held?.id === photo.id ? "" : undefined}
+                          style={held?.id === photo.id ? { "--hold-dx": `${held.dx.toFixed(1)}px`, "--hold-dy": `${held.dy.toFixed(1)}px`, "--hold-scale": held.scale.toFixed(4) } as CSSProperties : undefined}
+                          key={photo.id}
+                          role="group"
+                          aria-label={`${index + 1} of ${photos.length}`}
+                          tabIndex={0}
+                          onClick={(event) => toggleHold(event.currentTarget, photo)}
+                          onKeyDown={(event) => onSlideKeyDown(event, photo)}
+                        >
+                          <img
+                            src={`/images/personal/${photo.name}.webp`}
+                            srcSet={`/images/personal/${photo.name}-400w.webp 400w, /images/personal/${photo.name}-800w.webp 800w, /images/personal/${photo.name}.webp ${photo.width}w`}
+                            // Held, the photo is drawn far larger than its
+                            // column: say so, and the browser fetches the
+                            // larger candidate for it.
+                            sizes={held?.id === photo.id ? `${Math.round(held.width)}px` : gridPhotoSizes}
+                            loading={index < previewCount ? "eager" : "lazy"}
+                            alt={photo.alt}
+                            width={photo.width}
+                            height={photo.height}
+                            decoding="async"
+                            draggable={false}
+                            style={{ aspectRatio: `${photo.width} / ${photo.height}`, backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
+                          />
+                          <figcaption>{photo.caption}</figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                {/* The held photo's name, under it, as on the globe; the
+                    figcaptions stay for assistive tech. */}
+                <p className="personal-photos-stage-caption" aria-hidden="true" style={held ? { "--stage-caption-y": `calc(${held.captionTop.toFixed(1)}px + var(--stage-caption-gap))`, "--stage-caption-opacity": 1 } as CSSProperties : undefined}>{held?.caption}</p>
+              </Fragment>
             )}
           </div>
         </Dialog.Popup>

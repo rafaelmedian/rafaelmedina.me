@@ -69,25 +69,83 @@ test("the toggle turns the open sheet between the globe and a grid, and the choi
   await expect(globe(page)).toBeVisible()
 })
 
-test("on the grid a print click holds nothing: one Escape closes, and the margin closes where a photo does not", async ({ page }) => {
+test("on the grid a click holds a photo at the centre with its name under it; Escape, the margin, and a scroll let it go before anything closes", async ({ page }) => {
   await preferGrid(page)
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
   const trigger = page.getByRole("button", { name: "Personal life", exact: true })
 
+  // Opened from a print, the grid holds nothing: the prints are the first
+  // photos, so they sit across the top row, and one Escape closes.
   await trigger.locator(".personal-photos-print").nth(3).click()
   await expect(grid(page)).toBeVisible()
-  // The prints are the first photos, so they sit across the top row.
   expect(await grid(page).evaluate((element) => element.scrollTop)).toBe(0)
+  await expect(grid(page).locator("[data-held]")).toHaveCount(0)
   await page.keyboard.press("Escape")
   await expect(dialog(page)).toBeHidden()
   await expect(trigger).toBeFocused()
 
+  // A click on a photo holds it: it comes to the centre of the stage, far
+  // larger, with its caption just under it. Captions are otherwise unseen.
   await page.keyboard.press("Enter")
   await expect(grid(page)).toBeVisible()
-  await grid(page).locator(".personal-photos-slide").first().click()
+  const slides = grid(page).locator(".personal-photos-slide")
+  const slide = slides.nth(4)
+  const caption = page.locator(".personal-photos-stage-caption")
+  await expect(caption).toHaveText("")
+  await expect(slide.locator("figcaption")).not.toBeInViewport()
+  const resting = (await slide.boundingBox())!
+  await slide.click()
+  await expect(slide).toHaveAttribute("data-held", "")
+  const stage = (await grid(page).boundingBox())!
+  await expect.poll(async () => {
+    const box = (await slide.boundingBox())!
+    return { dx: Math.round(box.x + box.width / 2 - (stage.x + stage.width / 2)), dy: Math.round(box.y + box.height / 2 - (stage.y + stage.height / 2)), grown: box.width / resting.width }
+  }).toEqual(expect.objectContaining({ dx: expect.any(Number), dy: expect.any(Number) }))
+  const heldBox = (await slide.boundingBox())!
+  expect(Math.abs(heldBox.x + heldBox.width / 2 - (stage.x + stage.width / 2))).toBeLessThan(2)
+  expect(Math.abs(heldBox.y + heldBox.height / 2 - (stage.y + stage.height / 2))).toBeLessThan(2)
+  expect(heldBox.width / resting.width).toBeGreaterThan(1.8)
+  expect(Math.max(heldBox.width / stage.width, heldBox.height / stage.height)).toBeCloseTo(0.7, 1)
+  await expect(caption).toHaveText(await slide.locator("figcaption").innerText())
+  await expect(caption).toHaveCSS("opacity", "1")
+  const captionBox = (await caption.boundingBox())!
+  expect(captionBox.y - (heldBox.y + heldBox.height)).toBeGreaterThan(4)
+  expect(captionBox.y - (heldBox.y + heldBox.height)).toBeLessThan(32)
+  // The photo over the top of it, at its held size, is still the slide the
+  // flights aim at: nothing else in the grid moved.
+  const neighbour = (await slides.nth(0).boundingBox())!
+  expect(neighbour.width).toBeCloseTo(resting.width, 0)
+
+  // Escape lets it go first; the next Escape closes.
+  await page.keyboard.press("Escape")
+  await expect(grid(page).locator("[data-held]")).toHaveCount(0)
+  await expect(caption).toHaveText("")
   await expect(dialog(page)).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(dialog(page)).toBeHidden()
+  await expect(trigger).toBeFocused()
+
+  // The margin lets a held photo go, and the next click on it closes; a
+  // scroll lets it go too. Enter and Space hold and release from the keyboard.
+  await page.keyboard.press("Enter")
+  await expect(grid(page)).toBeVisible()
+  await slides.first().click()
+  await expect(slides.first()).toHaveAttribute("data-held", "")
+  await page.mouse.click(10, 450)
+  await expect(grid(page).locator("[data-held]")).toHaveCount(0)
+  await expect(dialog(page)).toBeVisible()
+  await slides.first().click()
+  await expect(slides.first()).toHaveAttribute("data-held", "")
+  await grid(page).evaluate((element) => { element.scrollTop = 120 })
+  await expect(grid(page).locator("[data-held]")).toHaveCount(0)
+  await grid(page).evaluate((element) => { element.scrollTop = 0 })
+  await slides.nth(1).focus()
+  await page.keyboard.press("Enter")
+  await expect(slides.nth(1)).toHaveAttribute("data-held", "")
+  await page.keyboard.press(" ")
+  await expect(grid(page).locator("[data-held]")).toHaveCount(0)
   await page.mouse.click(10, 450)
   await expect(dialog(page)).toBeHidden()
   await expect(trigger).toBeFocused()

@@ -294,9 +294,11 @@
   --sphere-focus-duration: var(--duration-slow);
   --photo-gutter: clamp(1.25rem, 4vw, 5rem);
   --photo-column-gap: 1.5rem;
-  /* Each grid caption hangs below its photo, outside the slide's box, so the
-     flights land on the photo alone; the rows open up to make room for it. */
-  --photo-row-gap: 3rem;
+  /* The grid's captions are read out, not shown, until a photo is held, so
+     the rows sit as close as the columns. */
+  --photo-row-gap: var(--photo-column-gap);
+  /* The held photo's caption sits this far under it, in either layout. */
+  --stage-caption-gap: 0.75rem;
   /* A scrolled grid glides back to its first row before the prints fly
      home, so they leave from the slots they were dealt to. At the top the
      close is immediate. */
@@ -434,31 +436,40 @@
 
 /* The same pebble as the globe's, at a column's width. Its corner follows
    the globe's proportion up to the size of a photo at the globe's front, so
-   a wide column doesn't round its photos into lozenges. */
+   a wide column doesn't round its photos into lozenges. A photo under a fine
+   pointer grows 8%, as on the globe, to say it can be held; a click, Enter
+   or Space holds it: it glides to the centre of the stage and grows to fill
+   most of it (--hold-dx/--hold-dy/--hold-scale, measured by the component)
+   over the same beat as a hold on the globe, with its caption under it. Each
+   column is a container, and so a stacking context of its own, so the held
+   photo's column has to come forward as well or the columns to its right
+   paint over it. */
 .personal-photos-masonry .personal-photos-slide {
   --sphere-card: min(100cqi, 12rem);
   position: relative;
   width: 100%;
+  cursor: pointer;
+  transition: transform var(--sphere-focus-duration) var(--ease-smooth), scale var(--duration-base) var(--ease-smooth);
 }
-.personal-photos-masonry .personal-photos-slide figcaption {
-  position: absolute;
-  top: 100%;
-  inset-inline: 0;
-  width: auto;
-  height: auto;
-  padding-top: 0.625rem;
-  overflow: visible;
-  clip-path: none;
-  /* Out on the frosted backdrop, not on the photo: the dialog's light ink,
-     as the globe's caption wears, rather than the slide's dark one. */
-  color: var(--canvas);
-  font-family: "Handlee", cursive;
-  font-size: var(--text-lg);
-  line-height: 1.3;
-  text-align: center;
-  white-space: normal;
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .personal-photos-masonry .personal-photos-slide:hover:not([data-held]) {
+    z-index: 1;
+    scale: 1.08;
+  }
 }
-
+.personal-photos-masonry .personal-photos-slide[data-held] {
+  z-index: 2;
+  scale: 1;
+  transform: translate(var(--hold-dx, 0px), var(--hold-dy, 0px)) scale(var(--hold-scale, 1));
+}
+.personal-photos-column:has(> [data-held]) { z-index: 1; }
+/* A close asked for over a held photo, or inside its glide back, snaps the
+   grid to rest so the flight measures the slides where they will stay. */
+.personal-photos-sheet[data-hold-snap] .personal-photos-slide { transition: none; }
+.personal-photos-sheet .personal-photos-slide:focus-visible {
+  outline: 2px solid var(--canvas);
+  outline-offset: 4px;
+}
 /* The globe. `usePhotoSphere` places each slide from its point on a sphere
    of --sphere-radius (a share of this box's width) and writes its position,
    scale, stacking and shade every frame. The round corners are for the
@@ -499,10 +510,6 @@
    is behind the face, so it lets presses through to the stage rather than
    bringing round a photo nobody can see. */
 .personal-photos-sphere .personal-photos-slide[data-sphere-far] { pointer-events: none; }
-.personal-photos-sphere .personal-photos-slide:focus-visible {
-  outline: 2px solid var(--canvas);
-  outline-offset: 4px;
-}
 
 /* The pebbles' canvas lies over the globe and lets every press through to
    the slides under it. */
@@ -548,6 +555,15 @@
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   opacity: var(--stage-caption-opacity, 0);
   pointer-events: none;
+}
+/* On the grid the caption's fade is a transition rather than a frame-by-
+   frame value: in, once the photo is most of the way to the centre; out,
+   at once. */
+.personal-photos-sheet[data-layout="grid"] .personal-photos-stage-caption {
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+.personal-photos-sheet[data-layout="grid"][data-held] .personal-photos-stage-caption {
+  transition: opacity var(--duration-base) var(--ease-smooth) calc(var(--sphere-focus-duration) / 2);
 }
 
 /* A glass pebble, after the material study in this branch: no paper frame
@@ -697,11 +713,6 @@
   /* Two columns of the grid, and a caption a step smaller to fit them. */
   .personal-photos-dialog {
     --photo-column-gap: 1rem;
-    --photo-row-gap: 2.5rem;
-  }
-  .personal-photos-masonry .personal-photos-slide figcaption {
-    padding-top: 0.5rem;
-    font-size: var(--text-md);
   }
   .personal-photos-stage-caption { font-size: var(--text-sm); }
 }
@@ -711,6 +722,8 @@
   .personal-photos-stack,
   .personal-photos-backdrop,
   .personal-photos-dialog,
+  .personal-photos-masonry .personal-photos-slide,
+  .personal-photos-stage-caption,
   .personal-photos-layout::before { transition: none; }
 
   /* The global clamp shortens the deal but not its delays; a fan held back
