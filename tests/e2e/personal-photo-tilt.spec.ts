@@ -1,0 +1,56 @@
+import { expect, test } from "@playwright/test"
+
+test("the homepage photo stack follows the pointer and rests before a gallery flight", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  const stack = page.locator(".personal-photos-stack")
+  const tilt = page.locator(".personal-photos-stack-tilt")
+  await trigger.scrollIntoViewIfNeeded()
+  // Let the scroll event reset the previous pose before supplying a pointer.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  const bounds = await stack.boundingBox()
+  expect(bounds).not.toBeNull()
+  const position = bounds!
+  const readTilt = () => tilt.evaluate(element => {
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
+    return { x: matrix.m23, y: matrix.m13 }
+  })
+  await page.mouse.move(position.x + position.width * 0.15, position.y + position.height * 0.2)
+  await expect.poll(async () => (await readTilt()).y).toBeGreaterThan(0.01)
+  await expect.poll(async () => (await readTilt()).x).toBeGreaterThan(0.01)
+  await page.mouse.move(position.x + position.width * 0.85, position.y + position.height * 0.8)
+  await expect.poll(async () => (await readTilt()).y).toBeLessThan(-0.01)
+  await expect.poll(async () => (await readTilt()).x).toBeLessThan(-0.01)
+  const after = await stack.boundingBox()
+  expect(after).toEqual(position)
+
+  await trigger.click({ position: { x: 16, y: 16 } })
+  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
+  await expect.poll(async () => readTilt()).toEqual({ x: 0, y: 0 })
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+  await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
+  await expect.poll(async () => readTilt()).toEqual({ x: 0, y: 0 })
+  await page.mouse.move(position.x + position.width * 0.15, position.y + position.height * 0.2)
+  await expect.poll(async () => (await readTilt()).y).toBeGreaterThan(0.01)
+  await page.mouse.move(0, 0)
+  await expect.poll(async () => readTilt()).toEqual({ x: 0, y: 0 })
+})
+
+test("reduced motion and touch keep the photo stack still", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
+  await trigger.scrollIntoViewIfNeeded()
+  await trigger.hover()
+  const tilt = page.locator(".personal-photos-stack-tilt")
+  await expect(tilt).toHaveCSS("transform", "none")
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.mouse.move(0, 0)
+  await trigger.dispatchEvent("pointermove", { pointerType: "touch", clientX: 100, clientY: 100 })
+  await expect(tilt).toHaveCSS("transform", "none")
+  await expect(trigger).toHaveCSS("touch-action", "manipulation")
+})
