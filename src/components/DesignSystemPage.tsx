@@ -2162,10 +2162,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   36%-white rail without a visible thumb or time counter; the native range
                   retains keyboard seeking and announces elapsed and total time.
                   Playback controls appear on hover or keyboard focus; touch users tap the video to toggle them.
-                  The close X stays visible 12px above and 8px beyond the card’s right edge in a 44px white circular target,
-                  using <code>--canvas</code>, <code>--ink</code>, <code>--shadow-ring</code> and
-                  <code> --shadow-overlay</code> (overlay-hover on hover). Media is clipped in its own
-                  rounded wrapper so the close target remains outside the image throughout the resize.
+                  The close X stays visible 8px inside the player’s top-right corner in a 44px circular target.
+                  Its white icon uses <code>--canvas</code> over the same dark glass tint, blur,
+                  inset hairline and control shadow as the playback pill. Media stays clipped in its own rounded wrapper.
                   Hovered playback controls use 16% white. Captions remain enabled for real recordings and
                   can be toggled with C; the sample recording starts without its descriptive captions.
                   The speaking portrait reveals a centered 24px white play triangle on hover, keyboard focus or tap.

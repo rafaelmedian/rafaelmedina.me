@@ -76,8 +76,6 @@
   transition-duration: var(--duration-slow);
 }
 
-.about-intro-poster,
-.about-intro-teaser,
 .about-intro-media {
   position: absolute;
   inset: 0;
@@ -85,6 +83,8 @@
   border-radius: inherit;
 }
 
+.about-intro-poster,
+.about-intro-teaser,
 .about-intro-recording {
   position: absolute;
   inset: 0;
@@ -369,16 +369,9 @@
 
 .about-intro-collapse {
   position: absolute;
-  bottom: calc(100% + 12px);
-  right: -8px;
-  color: var(--ink);
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
-}
-
-.about-intro-collapse:hover {
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
+  top: 8px;
+  right: 8px;
+  color: var(--canvas);
 }
 
 .about-intro-controls {
@@ -390,17 +383,14 @@
   align-items: center;
   padding: 2px;
   border-radius: var(--radius-full);
-  background: rgb(0 0 0 / 0.36);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16), var(--shadow-control);
 }
 
+
 .about-intro-progress {
-  height: 44px;
-  padding-inline: 4px;
   flex: 1;
   min-width: 0;
+  height: 44px;
+  padding-inline: 4px;
 }
 
 .about-intro-progress input {
@@ -442,6 +432,10 @@
 
 .about-intro-controls,
 .about-intro-collapse {
+  background: rgb(0 0 0 / 0.36);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16), var(--shadow-control);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--duration-quick) var(--ease-standard);
@@ -457,6 +451,7 @@
   pointer-events: auto;
 }
 
+.about-intro-collapse:focus-visible,
 .about-intro-controls :focus-visible {
   outline-color: var(--canvas);
 }
