@@ -224,3 +224,10 @@ reply bubble, followed by “Want to share anything else?” and an optional mes
 field. Nothing is transmitted until the visitor reviews and sends the final
 email draft in their email app. The face stays beside the latest incoming bubble;
 the history scrolls when necessary while the input remains below it.
+
+Before each incoming message, B now shows a three-dot typing bubble for 900ms.
+The 8px dots gently pulse and rise 4px, offset by 120ms. The follow-up after email
+confirmation uses the same treatment. Fields appear only after their question;
+their space stays reserved to keep the portrait steady. Hidden chats and tabs
+pause the sequence, returning keeps completed messages, and reduced motion
+skips the dots and delay. Clicking elsewhere cancels delayed input focus.

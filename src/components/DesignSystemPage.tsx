@@ -2188,12 +2188,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
                   into two 184px pills with a 12px gap. B becomes a conversation anchored to a 64px portrait.
                   Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
-                  curved tail extends 8px toward the face. They enter after 80, 120 and 160ms, followed by the
-                  email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
+                  curved tail extends 8px toward the face. Each incoming message is preceded by a 900ms typing bubble with three 8px muted dots,
+                  spaced 4px apart. They pulse and rise 4px in a 900ms cycle, staggered by 120ms.
+                  Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
-                  asks “Want to share anything else?” after 80ms and reveals the optional message after 160ms.
+                  shows the same typing bubble before “Want to share anything else?” and reveals the optional
+                  message field after 160ms. Hidden fields retain their layout space but stay inert. Timers
+                  pause when the chat or tab is hidden, completed messages stay visible on return, and
+                  reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
                   The message textarea is 88px high. The face sits 68px above the input baseline initially and
                   132px above it in the message step. The history scrolls within 88–256px, constrained by the
                   viewport minus 260px; the composer stays below it. Final submission opens an email draft,
