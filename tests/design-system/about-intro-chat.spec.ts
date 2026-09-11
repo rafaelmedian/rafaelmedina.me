@@ -28,7 +28,8 @@ for (const width of [320, 1440]) {
     await expect(chat.getByRole('button', { name: 'Send message' })).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(chat.getByRole('button', { name: 'Send message' })).toHaveAttribute('data-muted', 'true')
     const history = chat.locator('.about-intro-chat-history')
-    expect(await history.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
+    // The follow-up's 8px entrance rise overflows for ~100ms; only the resting history must not scroll.
+    await expect.poll(() => history.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
     // Measure the resting alignment, after the portrait's hover scale settles.
     await page.mouse.move(width / 2, 100)
     await expect.poll(async () => {
