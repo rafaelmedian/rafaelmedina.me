@@ -165,7 +165,9 @@ test("a press outside a note closes the gallery once, with the note still on it"
     }
     requestAnimationFrame(sample)
   }))
-  await page.mouse.click(8, 500)
+  // Twice: the second press lands during the exit, while the note's address is
+  // still being given up, and must not close it a second time.
+  await page.mouse.dblclick(8, 500)
   expect(await frames).not.toContain("list")
   await expect(popup(page)).toBeHidden()
   // Both addresses are given up, so the visit is back where it began.

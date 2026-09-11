@@ -316,6 +316,9 @@ export function PreviewGalleryDialog({
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean, details?: Pick<Dialog.Root.ChangeEventDetails, "reason">) => {
+      // Already on its way out: a second press on the shell or an Escape during
+      // the exit would otherwise close it again while the URL catches up.
+      if (!nextOpen && leavingNote) return
       if (!nextOpen && writingId && details?.reason !== "outside-press") {
         playBack()
         onBackFromWriting()
@@ -337,7 +340,7 @@ export function PreviewGalleryDialog({
       }
       onOpenChange(nextOpen)
     },
-    [cancelSwitchTransition, onOpenChange, playClose, playBack, runOriginAnimation, writingId, onBackFromWriting, notesPage.displayed],
+    [cancelSwitchTransition, onOpenChange, playClose, playBack, runOriginAnimation, writingId, onBackFromWriting, notesPage.displayed, leavingNote],
   )
 
   // One step of the strip, in either direction, and the only way the selection
