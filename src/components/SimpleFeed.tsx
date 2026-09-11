@@ -30,6 +30,7 @@ import { formatAvailability } from "../lib/availability"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { useHoverCard } from "../lib/hoverCard"
 import { visibleOriginRect } from "../lib/originMotion"
+import { revealGalleryEntry } from "../lib/galleryEntry"
 import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
@@ -711,6 +712,12 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     setOpenedByGesture(false)
     selectGalleryItem(writingsItemId, false)
   }
+
+  // A gallery address with no dialog to open after all -- its chunk failed, or
+  // it was cleared before presenting -- still owes the visitor the page.
+  useEffect(() => {
+    if (activeWorkPreviewIndex === null) revealGalleryEntry()
+  }, [activeWorkPreviewIndex])
 
   // Warm the reader while the list it opens from is on screen.
   useEffect(() => {

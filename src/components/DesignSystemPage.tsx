@@ -1990,6 +1990,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   JavaScript, prerendered content remains readable.
                 </p>
               </div>
+
+              <div className="ds-rule" data-ds-terms={terms("shared link direct project resume notes note prerendered article gallery entry pending revealing fade opacity --duration-base dialog four-second safeguard")}>
+                <strong>A gallery address opens straight into its dialog.</strong>
+                <p>
+                  A project, the résumé, the notes, and a note each prerender an article of their own, which
+                  JavaScript swaps for the feed with the dialog open over it. The article is held back from first
+                  paint, and hydration waits for the dialog's chunk, so the canvas stays blank until the dialog
+                  presents. The page then fades in over <code>--duration-base</code>, the backdrop's own
+                  pace, under the dialog's usual entrance. A failed chunk shows the feed at once, the same
+                  four-second safeguard releases the article if the bundle stalls, and without JavaScript
+                  the article is the page.
+                </p>
+              </div>
             </div>
           </section>
 

@@ -1,4 +1,21 @@
 /* Static project pages and the 404 share the portfolio's tokens and controls. */
+
+/* With JavaScript the article is swapped for the feed and its dialog, so it is
+   held back from first paint; the feed then fades in under the dialog's
+   entrance at the backdrop's pace. `lib/galleryEntry` owns the flag. */
+html[data-gallery-entry="pending"] #root {
+  opacity: 0;
+}
+
+html[data-gallery-entry="revealing"] #root {
+  animation: gallery-entry-reveal var(--duration-base) ease-out;
+}
+
+@keyframes gallery-entry-reveal {
+  from {
+    opacity: 0;
+  }
+}
 .standalone-page {
   width: 100%;
   max-width: 46rem;

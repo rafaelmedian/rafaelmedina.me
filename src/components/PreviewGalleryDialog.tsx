@@ -7,6 +7,7 @@ import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from 
 import { isVideoSource } from "../lib/media"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
+import { revealGalleryEntry } from "../lib/galleryEntry"
 import { galleryItemTitle, resumeItemTitle, writingsItemTitle, type GalleryItem } from "../lib/galleryItems"
 import { originCloseEasePoints, originOpenEasePoints, toCssEasing, useOriginTravel } from "../lib/originMotion"
 import { writingSummaries } from "../data/writingIndex"
@@ -310,6 +311,7 @@ export function PreviewGalleryDialog({
   useIsomorphicLayoutEffect(() => {
     if (!open || !originWrapNode) return
     runOriginAnimation("open")
+    revealGalleryEntry()
   }, [open, originWrapNode, runOriginAnimation])
 
   const handleOpenChange = useCallback(
