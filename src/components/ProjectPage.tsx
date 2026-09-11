@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { collaborators, siteLinks, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
 import { updatePageMetadata } from "../lib/projectMetadata"
+import { ProjectCaseStudy } from "./ProjectCaseStudy"
 
 /** Direct project visits have useful HTML even without hydration or a modal. */
 export function ProjectPage({ card }: { card: PortfolioCard }) {
@@ -44,6 +45,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
           <div className="preview-gallery-detail-row"><dt>Link</dt><dd><a href={card.ctaHref}>{new URL(card.ctaHref).hostname}</a></dd></div>
         ) : null}
       </dl>
+      <ProjectCaseStudy card={card} />
     </article>
   )
 }

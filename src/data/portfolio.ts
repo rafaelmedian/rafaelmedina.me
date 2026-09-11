@@ -37,6 +37,9 @@ export type PortfolioCard = {
   /** Alternate artwork used only in the home mosaic. The project preview and
       social metadata continue to use `image` as their single hero source. */
   homeImages?: PortfolioImage[]
+  /** Long-form project narrative. Matcha tiles share one body because they are
+      chapters of the same end-to-end product redesign, not isolated shots. */
+  caseStudy?: ProjectCaseStudy
 }
 
 export type PortfolioImage = {
@@ -44,6 +47,20 @@ export type PortfolioImage = {
   label: string
   width: number
   height: number
+}
+
+export type ProjectCaseStudySection = {
+  heading: string
+  paragraphs: string[]
+  media?: PortfolioImage[]
+}
+
+export type ProjectCaseStudy = {
+  label: string
+  period: string
+  title: string
+  introduction: string
+  sections: ProjectCaseStudySection[]
 }
 
 export type Collaborator = {
@@ -238,17 +255,82 @@ export const linkedinHoverMedia: HoverMedia = {
   height: 280,
 }
 
+const matchaCaseStudy: ProjectCaseStudy = {
+  label: "Case study",
+  period: "2021 - 2026",
+  title: "Designing Matcha end to end",
+  introduction:
+    "A swap fits inside a small rectangle; the product around it does not. I redesigned Matcha across discovery, research, wallets, trading, mobile, and the visual system that holds those journeys together.",
+  sections: [
+    {
+      heading: "Different reasons to arrive",
+      paragraphs: [
+        "The homepage gives search, market browsing, wallet connection, and trading distinct ways in. A person with a token in mind should not have to browse a showcase first, while someone who is still looking around needs more than an empty trade form.",
+        "The token page carries that discovery into research. Market data, charts, trade controls, and order history live together so someone can review a token and begin a trade without changing context.",
+      ],
+      media: [
+        { source: "/Projects/shot-small-16-poster.webp", label: "Matcha homepage for token discovery and market browsing", width: 640, height: 480 },
+        { source: "/Projects/6842e949e1acb44abd669218_shot-small-21.jpg", label: "Matcha token research and trading page", width: 1600, height: 1200 },
+      ],
+    },
+    {
+      heading: "Keep the trade intact",
+      paragraphs: [
+        "The main trading workspace brings the quote, chart, balances, open orders, and history into one hierarchy. In the trade module, costs, routes, and received amounts stay available before a transaction is signed.",
+        "The multiwallet flow applies the same idea to account changes. People can switch wallets while keeping the quote and inputs they already entered, so changing the account does not mean starting the trade again.",
+      ],
+      media: [
+        { source: "/Projects/6842e9496471bc426ffe9cab_shot-small-1.jpg", label: "Matcha trading workspace", width: 1600, height: 1200 },
+        { source: "/Projects/shot-small-9-poster.webp", label: "Matcha multiwallet menu and switching flow", width: 640, height: 480 },
+      ],
+    },
+    {
+      heading: "One system, many contexts",
+      paragraphs: [
+        "The interface had to remain recognizable as its surroundings changed. I defined the dark theme across components, charts, and dense trading surfaces rather than recoloring screens one at a time.",
+        "On mobile, the same journey needed a different order because research, the trade form, review, and confirmation could no longer sit side by side. Layout and emphasis changed while the meaning of each action stayed intact.",
+      ],
+      media: [
+        { source: "/Projects/6842e94a9872b4967e6fc2a9_shot-small-22.jpg", label: "Matcha dark theme across trading surfaces", width: 1600, height: 1200 },
+        { source: "/Projects/6842e9492c24a449a9618900_shot-small-14.jpg", label: "Matcha mobile research and trade journey", width: 1600, height: 1200 },
+      ],
+    },
+    {
+      heading: "Density and confidence",
+      paragraphs: [
+        "Matcha Pro gives active traders a stable, denser workspace for live charts, token signals, transactions, and order management. The goal was not to make every panel loud, but to give changing information a familiar place.",
+        "Confidence also depends on the awkward states. The GoPlus integration distinguishes loading, pending, warning, and result states so a check that has not returned cannot read like a reassuring result.",
+      ],
+      media: [
+        { source: "/Projects/6842e9499838ce07a751244b_shot-small-23.jpg", label: "Matcha Pro workspace for active traders", width: 1600, height: 1200 },
+        { source: "/Projects/shot-small-20-poster.webp", label: "Token security checks inside the Matcha trade flow", width: 640, height: 480 },
+      ],
+    },
+    {
+      heading: "A product beyond the interface",
+      paragraphs: [
+        "The same system extended into the rewards program. I created a key visual that could carry the leaderboard, prizes, trades, referrals, and points across launch posts, weekly countdowns, and link previews.",
+      ],
+      media: [
+        { source: "/Projects/matcha-rewards-link-preview.webp", label: "Matcha Rewards link preview", width: 805, height: 480 },
+        { source: "/Projects/matcha-rewards-countdown.webp", label: "Matcha Rewards countdown post", width: 805, height: 480 },
+      ],
+    },
+  ],
+}
+
 const matchaMeta = {
   product: "Matcha - DEX Aggregator by 0x",
   industry: "DeFi / Web3 / Fintech",
   ctaHref: "https://matcha.xyz",
+  caseStudy: matchaCaseStudy,
 }
 
 export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-9",
     slug: "matcha-multiwallet-flow",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha multiwallet flow",
     summary: "",
     detail:
@@ -269,7 +351,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-22",
     slug: "matcha-dark-mode",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha dark mode",
     summary: "",
     detail:
@@ -286,7 +368,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-16",
     slug: "matcha-homepage",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha homepage",
     summary: "",
     detail:
@@ -347,7 +429,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-21",
     slug: "matcha-token-page",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha token page",
     summary: "",
     detail:
@@ -365,7 +447,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-1",
     slug: "matcha-trade-page",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha trade page",
     summary: "",
     detail:
@@ -382,7 +464,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-19",
     slug: "matcha-trade-module",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha trade module",
     summary: "",
     detail:
@@ -399,7 +481,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-14",
     slug: "matcha-on-mobile",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha on mobile",
     summary: "",
     detail:
@@ -416,7 +498,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-23",
     slug: "matcha-pro",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha Pro",
     summary: "",
     detail:
@@ -433,7 +515,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-20",
     slug: "matcha-security-audit",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha security audit",
     summary: "",
     detail:
@@ -489,7 +571,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-matcha-rewards",
     slug: "matcha-rewards",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha Rewards",
     summary: "",
     detail:

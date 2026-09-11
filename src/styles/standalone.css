@@ -72,6 +72,10 @@ html[data-gallery-entry="revealing"] #root {
   object-fit: contain;
 }
 
+.standalone-page > .project-case-study {
+  margin-top: 4rem;
+}
+
 /* The prerendered /resume/ page. Its body is the reader's, so it only has to
    hand the entries a measure and clear the header above them; the entry, print,
    and education rules are the ones the gallery slide uses. */

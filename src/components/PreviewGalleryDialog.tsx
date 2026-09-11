@@ -17,6 +17,7 @@ import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
 import { InlineSwap } from "./InlineSwap"
 import { PreviewMedia } from "./PreviewMedia"
+import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
 import type { WritingsReaderStatus } from "./WritingsFolder"
@@ -578,6 +579,7 @@ export function PreviewGalleryDialog({
           // derives. Set on the shell because the width is a custom property
           // the wrap and the popup both inherit.
           data-kind={activeItem.kind}
+          data-case-study={activeCard?.caseStudy ? "true" : undefined}
           data-wide={isWide ? "true" : undefined}
           data-reading-note={readingNote ? "true" : undefined}
           style={galleryMotionVars}
@@ -604,6 +606,7 @@ export function PreviewGalleryDialog({
               // Mirrors `mosaic-row-card-${id}` on the tile: a hook for the one
               // artwork whose framing the shared rules get wrong.
               data-preview-id={activeItem.id}
+              data-case-study={activeCard?.caseStudy ? "true" : undefined}
               data-origin-motion={originMotionEnabled ? "true" : undefined}
               data-wide={isWide ? "true" : undefined}
               // No aria-label here: it would override the aria-labelledby Base UI
@@ -750,6 +753,7 @@ export function PreviewGalleryDialog({
                             </ul>
                           </div>
                         ) : null}
+                        <ProjectCaseStudy card={activeCard} />
                       </div>
                     </>
                   ) : activeItem.kind === "writings" ? (
