@@ -5061,6 +5061,23 @@ test("reveals a new teammate from the left when paging from solo work", async ({
   expect(teammateMotion).toContainEqual({ name: "preview-gallery-person-in", firstTransform: "translate(-12px)" })
 })
 
+test("shows a bottom fade while a laptop preview has more content to scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 })
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha homepage/ }).click()
+
+  const card = page.getByRole("dialog").locator(".preview-gallery-card")
+  const cue = page.locator(".preview-gallery-scroll-cue")
+  await expect(cue).toHaveAttribute("data-visible", "true")
+  await expect(cue).toHaveCSS("opacity", "1")
+  expect(await cue.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain("linear-gradient")
+
+  await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
+  await expect(cue).not.toHaveAttribute("data-visible", "true")
+  await expect(cue).toHaveCSS("opacity", "0")
+})
+
 const expectPreviewContributionFits = async (page: Page, viewportHeight: number) => {
   const dialog = page.getByRole("dialog")
   const description = dialog.locator(".preview-gallery-description")

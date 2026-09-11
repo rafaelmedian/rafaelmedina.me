@@ -146,6 +146,7 @@ export function PreviewGalleryDialog({
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("next")
   const [isWide, setIsWide] = useState(shouldOpenPreviewWide)
+  const [showScrollCue, setShowScrollCue] = useState(false)
   const safeIndex = useMemo(() => wrapIndex(selectedIndex, items.length), [items.length, selectedIndex])
   const activeItem = items[safeIndex]
   const activeCard = activeItem?.kind === "project" ? activeItem.card : undefined
@@ -224,6 +225,38 @@ export function PreviewGalleryDialog({
   const activeMediaSource = activeCard?.image ?? ""
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
+
+  useEffect(() => {
+    const card = cardRef.current
+    if (!open || !activeCard || !card) {
+      setShowScrollCue(false)
+      return
+    }
+
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const remaining = card.scrollHeight - card.clientHeight - card.scrollTop
+      setShowScrollCue(card.scrollHeight > card.clientHeight + 1 && remaining > 1)
+    }
+    const scheduleUpdate = () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(update)
+    }
+
+    card.addEventListener("scroll", scheduleUpdate, { passive: true })
+    const observer = new ResizeObserver(scheduleUpdate)
+    observer.observe(card)
+    const inner = card.firstElementChild
+    if (inner) observer.observe(inner)
+    scheduleUpdate()
+
+    return () => {
+      card.removeEventListener("scroll", scheduleUpdate)
+      observer.disconnect()
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [activeCard, isWide, open, originWrapNode])
 
   const playOpen = useSound(openSound, { volume: 0.3 })
   const playClose = useSound(closeSound, { volume: 0.26 })
@@ -782,6 +815,15 @@ export function PreviewGalleryDialog({
                   )}
                 </div>
               </article>
+
+              {activeCard ? (
+                <div
+                  className={`preview-gallery-scroll-cue-wrap${switchClassName}`}
+                  aria-hidden="true"
+                >
+                  <div className="preview-gallery-scroll-cue" data-visible={showScrollCue ? "true" : undefined} />
+                </div>
+              ) : null}
 
               <div className="preview-gallery-rail" role="group" aria-label={readingNote ? "Note navigation" : "Preview navigation"}>
                 <button

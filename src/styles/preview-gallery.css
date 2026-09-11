@@ -217,6 +217,48 @@
   height: 0;
 }
 
+/* A short laptop viewport can cut the project story off below the card's
+   rounded edge while the hidden scrollbar gives no other clue. This wash is
+   measured from the real scroll state and disappears at the end; touch layouts
+   already devote the full screen to the native scroller, so they do not wear
+   the extra chrome. */
+.preview-gallery-scroll-cue-wrap {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  /* Match the card's bounds and motion so the wash cannot linger on the
+     backdrop when the surface pages away. The child owns the scroll fade. */
+  transform: translateX(0) scale(1);
+  transition:
+    opacity var(--pg-switch-ms, var(--duration-base)) ease-out,
+    transform var(--pg-switch-ms, var(--duration-base)) var(--ease-standard);
+}
+
+.preview-gallery-scroll-cue {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3.5rem;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff 88%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+.preview-gallery-scroll-cue[data-visible="true"] {
+  opacity: 1;
+}
+
+@media (min-width: 700px) and (hover: hover) and (pointer: fine) {
+  .preview-gallery-scroll-cue-wrap {
+    display: block;
+  }
+}
+
 /* Mid-flight the translated surface can overflow the shell, so clip it rather
    than flashing a scrollbar. */
 .preview-gallery-shell[data-origin-animating] .preview-gallery-card {
@@ -250,7 +292,8 @@
    turned round from wherever it had got to -- on a fast machine barely past
    where it left, so the new preview re-entered from the side the old one
    exited. The settle to zero is the only leg that animates. */
-.preview-gallery-card[class*="preview-gallery-card-switch-in-"] {
+.preview-gallery-card[class*="preview-gallery-card-switch-in-"],
+.preview-gallery-scroll-cue-wrap[class*="preview-gallery-card-switch-in-"] {
   transition: none;
 }
 
