@@ -78,6 +78,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const [origins, setOrigins] = useState<ReturnType<typeof measurePhotoOrigins>>([])
   const sheetRef = useRef<HTMLDivElement>(null)
   const [sheetNode, setSheetNode] = useState<HTMLDivElement | null>(null)
+  const [layoutNode, setLayoutNode] = useState<HTMLDivElement | null>(null)
   const dialogActions = useRef<Dialog.Root.Actions>(null)
   const finishPhotoClose = useCallback(() => dialogActions.current?.unmount(), [])
   const pressedClearance = useRef(false)
@@ -177,6 +178,22 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     saveSheetLayout(next)
     setLayout(next)
   }
+  // The toggle's thumb is sized and placed from the picked segment's own
+  // box, so each label hugs its own words; measured again whenever the group
+  // resizes, as it does when a webfont swaps in.
+  useLayoutEffect(() => {
+    if (!layoutNode) return
+    const place = () => {
+      const active = layoutNode.querySelector<HTMLElement>('[aria-pressed="true"]')
+      if (!active) return
+      layoutNode.style.setProperty("--thumb-x", `${active.offsetLeft}px`)
+      layoutNode.style.setProperty("--thumb-w", `${active.offsetWidth}px`)
+    }
+    place()
+    const observer = new ResizeObserver(place)
+    observer.observe(layoutNode)
+    return () => observer.disconnect()
+  }, [layoutNode, layout])
   // The new layout starts at its top and fades in over the old one's place;
   // the backdrop and the toggle stay put.
   useLayoutEffect(() => {
@@ -266,7 +283,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
           </Dialog.Description>
           {/* Outside the stage, which captures every press on the globe for
               the drag: a button inside it would never see its own click. */}
-          <div className="personal-photos-layout" role="group" aria-label="Layout" data-layout={layout}>
+          <div ref={setLayoutNode} className="personal-photos-layout" role="group" aria-label="Layout" data-layout={layout}>
             {layoutOptions.map(({ layout: option, label, Icon }) => (
               <button key={option} type="button" aria-pressed={layout === option} onClick={() => chooseLayout(option)}>
                 <Icon aria-hidden="true" />

@@ -33,6 +33,13 @@ test("the toggle turns the open sheet between the globe and a grid, and the choi
   // A press on the toggle is not a press on the stage: it neither closes the
   // dialog nor leaves the globe behind in the grid.
   await toggle(page, "Grid").click()
+  // The thumb is the picked segment's own box: as wide as its label and
+  // icon, and slid under them.
+  await expect.poll(() => dialog(page).getByRole("group", { name: "Layout" }).evaluate((group) => {
+    const active = group.querySelector<HTMLElement>('[aria-pressed="true"]')!
+    const thumb = getComputedStyle(group, "::before")
+    return { width: Math.round(parseFloat(thumb.width)) === active.offsetWidth, x: Math.round(parseFloat(thumb.translate)) === active.offsetLeft, label: active.textContent?.trim() }
+  })).toEqual({ width: true, x: true, label: "Grid" })
   await expect(dialog(page)).toBeVisible()
   await expect(grid(page)).toBeVisible()
   await expect(toggle(page, "Grid")).toHaveAttribute("aria-pressed", "true")
