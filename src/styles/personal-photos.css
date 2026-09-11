@@ -45,6 +45,9 @@
      dealing prints wider than a five-print one. A short count leaves the row
      narrower than the stack, so it centres rather than hanging off the left. */
   --photo-print-width: min(35%, calc(100% / (1 + (var(--photo-preview-count, 5) - 1) * 0.5)));
+  /* The deal in, below the prints' own rules. */
+  --photo-deal-duration: 800ms;
+  --photo-deal-stagger: 100ms;
   position: relative;
   display: flex;
   justify-content: center;
@@ -155,6 +158,29 @@
 }
 
 .personal-photos-print:first-child { margin-left: 0; }
+
+/* The hand deals itself in the first time the tile scrolls into view, after
+   the intro of 21st.dev's arc gallery hero: each print fades in as it rises a
+   tenth of its own height, 800ms on a plain ease-out, and the deal runs from
+   the middle of the fan out — the front print first, then 100ms later for
+   each step towards the ends (--print-deal-order, from `arcPlacement`).
+   `usePhotoFanDeal` holds a fan that is still below the fold back and lets it
+   go. The rise rides on `translate`, as the hover lift does, so each print is
+   already at its lean and its drop on the arc from the first frame; the
+   `backwards` fill hands `translate` back to the lift the moment a print
+   lands. */
+.personal-photos-stack[data-deal="pending"] .personal-photos-print { opacity: 0; }
+
+.personal-photos-stack[data-deal="dealing"] .personal-photos-print {
+  animation: personal-photos-deal var(--photo-deal-duration) ease-out calc(var(--print-deal-order, 0) * var(--photo-deal-stagger)) backwards;
+}
+
+@keyframes personal-photos-deal {
+  from {
+    opacity: 0;
+    translate: 0 10%;
+  }
+}
 
 /* Leave a quiet card-shaped marker where each expanded photo belongs. It
    holds still: the return flight is aimed at the rect this print has when the
@@ -657,4 +683,11 @@
   .personal-photos-backdrop,
   .personal-photos-dialog,
   .personal-photos-layout::before { transition: none; }
+
+  /* The global clamp shortens the deal but not its delays; a fan held back
+     before the preference changed shows at once. */
+  .personal-photos-stack[data-deal] .personal-photos-print {
+    opacity: 1;
+    animation: none;
+  }
 }

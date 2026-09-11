@@ -1,6 +1,7 @@
 import { usePreviewCount } from "../lib/photoLayout"
 import { useEffect, useRef, type CSSProperties } from "react"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
+import { usePhotoFanDeal } from "../lib/usePhotoFanDeal"
 import { usePhotoStackTilt } from "../lib/usePhotoStackTilt"
 
 /** Opens the globe from the tile. With a photo id, the globe opens holding
@@ -62,12 +63,17 @@ function arcPlacement(index: number, middle: number, count: number): CSSProperti
     // tenth of its height, a little more or less per print.
     "--print-lift": `${(-11 + wobble.lift).toFixed(2)}%`,
     "--print-depth": count - Math.round(Math.abs(index - middle) * 2),
+    // The deal runs from the middle out: the front print first, then each
+    // pair either side of it. With an even count the two middle prints
+    // share the first beat.
+    "--print-deal-order": Math.floor(Math.abs(index - middle)),
   } as CSSProperties
 }
 
 export function PersonalPhotosPreview({ onOpen, onIntent, status, className = "", items }: { onOpen: OpenPhoto; onIntent?: () => void; status?: "loading" | "error" | "reload"; className?: string; items?: PreviewPhoto[] }) {
   const previewRef = useRef<HTMLDivElement>(null)
   const resetStackTilt = usePhotoStackTilt(previewRef)
+  const finishDeal = usePhotoFanDeal(previewRef)
   const count = usePreviewCount()
   const preview = items ?? initialPreview.slice(0, count)
   useEffect(() => {
@@ -103,6 +109,7 @@ export function PersonalPhotosPreview({ onOpen, onIntent, status, className = ""
         // A keyboard activation is a click with no pointer behind it.
         const print = event.detail ? (event.target as Element).closest<HTMLElement>(".personal-photos-print") : null
         resetStackTilt()
+        finishDeal()
         onOpen(event.currentTarget, print?.dataset.photoId)
       }}>
         <span className="personal-photos-stack" aria-hidden="true" style={{ "--photo-preview-count": preview.length } as CSSProperties}>

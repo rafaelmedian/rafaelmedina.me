@@ -131,6 +131,8 @@ test("four or five photos stay in one overlapping row at each breakpoint", async
   for (const width of [1440, 900, 390, 320]) {
     await page.setViewportSize({ width, height: 900 })
     await trigger.scrollIntoViewIfNeeded()
+    // Reduced motion never holds the hand back for a deal.
+    await expect(page.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
     await expect(prints).toHaveCount(width >= 700 ? 5 : 4)
     const layout = await prints.evaluateAll((elements) => elements.map((element) => ({
       left: (element as HTMLElement).offsetLeft,
@@ -271,6 +273,8 @@ test("the fan is dealt with a wobble, opens as a hand, and lifts the one print u
 
   const preview = page.locator(".personal-photos")
   await preview.scrollIntoViewIfNeeded()
+  // The deal rides on `translate`, which the lift below reads.
+  await expect(preview.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
 
   const prints = preview.locator(".personal-photos-print")
   // A straight lean from one end of the row to the other, flat in the middle,
