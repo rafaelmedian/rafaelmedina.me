@@ -142,7 +142,13 @@ for (const destination of ["project", "other reader"]) {
     } else {
       await page.keyboard.press("Escape")
       await expect(page.locator(".preview-gallery-popup")).toBeHidden()
-      await page.getByRole("button", { name: "Personal life", exact: true }).click()
+      const personalLife = page.getByRole("button", { name: "Personal life", exact: true })
+      // A pointer click in the trigger's centre selects the middle print, so
+      // its first Escape releases that photo. Keyboard activation deliberately
+      // opens the globe without a selection and makes this close assertion
+      // independent of whether the opening flight has finished.
+      await personalLife.focus()
+      await page.keyboard.press("Enter")
       await expect(page.getByRole("dialog", { name: "Personal photos", exact: true })).toBeVisible()
     }
     release()

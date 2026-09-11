@@ -41,6 +41,7 @@ import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl, usePortfolioItemUrl
 import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
 import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
+import { ProfileChat } from "./ProfileChat"
 
 type PreviewGalleryComponent = typeof import("./PreviewGalleryDialog").PreviewGalleryDialog
 
@@ -602,6 +603,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const { gridRef, runwayRef } = useWorkGridHeight()
   const { avatarRef, active: introActive } = useAvatarIntro()
   const avatarSpinTimerRef = useRef<number | undefined>(undefined)
+  const [isProfileChatOpen, setIsProfileChatOpen] = useState(false)
   useEffect(() => () => window.clearTimeout(avatarSpinTimerRef.current), [])
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
@@ -892,8 +894,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   }
 
   // Clicking the avatar carries the turn the pointer already started round once
-  // more and then leaves for About, so the scroll reads as something the coin
-  // did rather than something that happened next to it.
+  // more and then opens the chat, so the new surface reads as something the
+  // coin revealed rather than something that happened next to it.
   //
   // The spin is a script animation composed onto whatever the hover transition
   // is doing at that instant: transitions outrank CSS animations, so a keyframe
@@ -901,10 +903,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   // animation would snap the coin back to zero before starting. Adding a whole
   // turn also means the animation ends on the angle its underlying value is
   // already at, so there is nothing to see when it hands the transform back.
-  const spinAvatarToAbout = () => {
+  const spinAvatarToChat = () => {
     const coin = avatarRef.current?.querySelector<HTMLElement>(".mosaic-avatar-coin-inner")
     if (!coin || prefersReducedMotion) {
-      scrollToSection("avatar")
+      setIsProfileChatOpen(true)
       return
     }
     const style = getComputedStyle(coin)
@@ -915,7 +917,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     })
     window.clearTimeout(avatarSpinTimerRef.current)
     avatarSpinTimerRef.current = window.setTimeout(
-      () => scrollToSection("avatar"),
+      () => setIsProfileChatOpen(true),
       cssTimeToMilliseconds(style.getPropertyValue("--avatar-spin-lead")),
     )
   }
@@ -953,6 +955,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         onAbout={() => scrollToSection("toc_about")}
         onServices={() => scrollToSection("toc_services", "about-panel-services")}
       />
+      <ProfileChat
+        open={isProfileChatOpen}
+        name={profile.name}
+        photo={profile.photo}
+        links={links}
+        onClose={() => {
+          setIsProfileChatOpen(false)
+          window.requestAnimationFrame(() => avatarRef.current?.focus())
+        }}
+      />
       <button
         type="button"
         className="mosaic-takeover-close"
@@ -972,8 +984,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               ref={avatarRef}
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
-              aria-label={`Read about ${profile.name}`}
-              onClick={spinAvatarToAbout}
+              aria-label={`Ask about ${profile.name}`}
+              aria-haspopup="dialog"
+              onClick={spinAvatarToChat}
             >
               <div className="mosaic-avatar-coin-inner">
                 <span className="mosaic-avatar-face mosaic-avatar-face-front">
@@ -998,7 +1011,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   <path d="M33 5C23 4 11 7 4 15" />
                   <path d="M4 15 10.8 13.4M4 15 6.5 8.5" />
                 </svg>
-                <span className="mosaic-avatar-hint-label">read about me</span>
+                <span className="mosaic-avatar-hint-label">ask about me</span>
               </span>
             </button>
             <div className="mosaic-profile-meta">

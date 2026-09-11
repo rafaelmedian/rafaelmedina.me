@@ -1938,7 +1938,7 @@ for (const width of [768, 1440]) {
 test("keeps the mobile profile and final content clear of the table of contents", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.goto("/")
-  const avatar = await page.getByRole("button", { name: "Read about Rafael Medina" }).boundingBox()
+  const avatar = await page.getByRole("button", { name: "Ask about Rafael Medina" }).boundingBox()
   expect(avatar!.y).toBeLessThan(96)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("03 Services")
@@ -2553,24 +2553,17 @@ test("left aligns the about introduction with the services reading axis", async 
   })
 })
 
-test("scrolls to and focuses the about section from the avatar button", async ({ page }) => {
-  // Reduced motion makes the scroll instant, so the assertion isn't racing a
-  // smooth-scroll animation.
+test("opens chat directly and focuses its email field from the avatar button", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   const trigger = page.locator(".mosaic-avatar-button")
 
-  await expect(trigger).toHaveAccessibleName("Read about Rafael Medina")
+  await expect(trigger).toHaveAccessibleName("Ask about Rafael Medina")
   await trigger.focus()
   await trigger.press("Enter")
 
-  const about = page.locator("#about-panel")
-  await expect(about).toBeInViewport()
-  await expect(about).toBeFocused()
-  // The section is a landing container, not a control: it takes focus so
-  // reading continues from there, and draws no ring. The browser's default one
-  // boxes the whole sheet, which reads as a selection.
-  await expect(about).toHaveCSS("outline-style", "none")
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(page.getByLabel("Your email")).toBeFocused()
 })
 
 test("keeps every project group together inside the takeover stage", async ({ page }) => {
@@ -3001,10 +2994,9 @@ test("gives the takeover cue a full tap target and its own name", async ({ page 
   const cueBottom = await cue.evaluate((element) => element.getBoundingClientRect().bottom)
   expect(cueBottom).toBeLessThanOrEqual(seam)
 
-  // Distinct from the avatar, which scrolls to the same place: two buttons
-  // reading "Read about Rafael Medina" would be ambiguous in a rotor list.
+  // Distinct from the avatar's chat action in a screen-reader rotor list.
   await expect(cue).toHaveAccessibleName("Continue to About")
-  await expect(page.getByRole("button", { name: "Read about Rafael Medina" })).toHaveCount(1)
+  await expect(page.getByRole("button", { name: "Ask about Rafael Medina" })).toHaveCount(1)
 })
 
 test("drops the takeover cue below the breakpoint that pins the gallery", async ({ page }) => {

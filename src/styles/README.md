@@ -10,6 +10,7 @@ and the global reduced-motion policy last.
   card (each places its own), and the bottom overscroll effect.
 - `profile.css`: page shell, hero, avatar, first-load intro, and profile metadata
   (including the location line's copy-to-clipboard address).
+- `profile-chat.css`: the avatar's full-screen email gate, conversation, and composer.
 - `navigation.css`: corner links, takeover close button, and mobile contents.
 - `local-time.css`: local time, map, and résumé preview.
 - `about.css`: About content and résumé layout.

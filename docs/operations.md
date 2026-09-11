@@ -27,7 +27,7 @@ the test build at it.
 | Variable | Effect |
 | --- | --- |
 | `VITE_GA_MEASUREMENT_ID` | Google Analytics. Unset means the code is tree-shaken away and nothing is tracked. In CI it comes from the repo variable of the same name. |
-| `VITE_LIKES_API_URL` | Public URL of the shared-likes Worker. Not a secret. |
+| `VITE_LIKES_API_URL` | Public URL of the shared likes and profile-chat Worker. Not a secret. |
 
 Both are inlined by Vite **at build time**, so they have to be set for the build,
 not for the server that serves it. `.env.example` has the shape of both.
@@ -53,7 +53,7 @@ drifting from the live site. The social card is a screenshot of the homepage, so
 it needs a fresh `npm run build` before it and a re-run after any change to the
 header or the first row of the work grid.
 
-## Shared likes, locally
+## Portfolio API, locally
 
 ```sh
 npm run likes:migrate:local
@@ -69,6 +69,14 @@ VITE_LIKES_API_URL=http://127.0.0.1:8787 npm run dev
 The local database persists under `.wrangler/` and is gitignored. Shared-like
 tests use the actual local D1 database, including independent browser sessions,
 batched increments, the per-visitor cap, and failed saves.
+
+The same Worker serves `POST /chat`. The avatar asks for an email before the
+first question, keeps the conversation in that browser, and sends only the
+email and latest ten messages to the Worker. D1 stores the email against the
+anonymous visitor ID for a 12-question daily cap; it does not store chat
+messages. Workers AI answers from a prompt assembled from `src/data/cv.ts`,
+`src/data/services.ts`, and `src/data/faq.ts`, plus a short selected-work
+summary in `src/data/profileChatContext.ts`.
 
 Notes and projects are separate collections — `/notes/<id>/likes` and
 `/projects/<id>/likes`, counted in `note_likes` and `project_likes`. The path
@@ -88,7 +96,7 @@ direct API tests call it:
 E2E_PORT=4184 LIKES_API_URL=http://127.0.0.1:8791 npm run test:e2e
 ```
 
-## Shared likes, publicly
+## Portfolio API, publicly
 
 Configured on 2026-09-09 and verified against the deployed service. What is in
 place:
@@ -107,14 +115,14 @@ deployment and leaves the previously published site in place. The step is gated 
 `VITE_LIKES_API_URL` being set; with the variable set but the secrets missing it
 fails loudly rather than silently skipping.
 
-Use **Cloudflare Workers Free**. As checked on 2026-09-09 it includes 100,000
-Worker requests/day, and D1 includes 5 million rows read/day, 100,000 rows
-written/day, and 5 GB of storage — account-wide limits, not a per-visitor
-allowance. Counting one note's likes scans that note's rows, so a single request
-can spend several row reads. Exhausting a daily quota on the Free plan returns
-errors until reset rather than billing overage. See
+Use **Cloudflare Workers Free**. As checked on 2026-09-11 it includes 200,000
+Worker requests/day, while Workers AI includes 10,000 free Neurons/day. D1 has
+its own included row and storage limits. These are account-wide limits, not a
+per-visitor allowance; the chat's 12-question cap protects the shared AI pool.
+Exhausting a daily Free-plan quota returns errors until reset rather than billing
+overage. See
 [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
-and [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/).
+and [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
 
 ### Redoing the setup from scratch
 
