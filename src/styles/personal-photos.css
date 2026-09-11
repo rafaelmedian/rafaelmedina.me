@@ -271,15 +271,14 @@
 }
 
 /* The globe floats over the work grid rather than covering it the way the
-   old sheet of prints did, so the page behind is frosted out of focus: left
-   sharp, its phones and dashboards read as more photos. */
+   old sheet of prints did. A solid scrim separates the two without a live
+   full-screen backdrop filter, which dropped compositor frames during the
+   open and close flights. */
 .personal-photos-backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog-backdrop);
   background: rgb(18 18 18 / 0.6);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
   transition: opacity var(--photo-open-duration) var(--photo-motion-ease);
 }
 
