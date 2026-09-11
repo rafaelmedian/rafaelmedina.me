@@ -426,6 +426,76 @@ test("the list's drawings stay in the card's gutters and leave at narrow widths"
   await expect(drawings.first()).toBeHidden()
 })
 
+test("a hovered row boils its drawing through its frames", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/notes/")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page)).toHaveCSS("opacity", "1")
+
+  // At rest the drawing shows the first frame of its strip and holds still.
+  const owner = popup(page).locator(".writings-year li").filter({ has: page.locator(".writings-drawing") }).first()
+  const drawing = owner.locator(".writings-drawing")
+  await expect(drawing).toHaveCSS("animation-name", "none")
+  await expect(drawing).toHaveCSS("mask-position", "0px 0px")
+  // Its row wakes it, and it steps through the other frames rather than
+  // sliding between them.
+  const row = (await owner.locator(".writing-entry-trigger").boundingBox())!
+  await page.mouse.move(row.x + 40, row.y + row.height / 2, { steps: 4 })
+  await expect(drawing).toHaveCSS("animation-name", "writings-drawing-boil")
+  const frames = new Set<string>()
+  await expect.poll(async () => {
+    frames.add(await drawing.evaluate((element) => getComputedStyle(element).maskPosition))
+    return frames.size
+  }, { intervals: [40] }).toBe(3)
+  expect([...frames].sort()).toEqual(["0px 0px", "100% 0px", "50% 0px"])
+  await page.mouse.move(4, 4, { steps: 4 })
+  await expect(drawing).toHaveCSS("animation-name", "none")
+  await expect(drawing).toHaveCSS("mask-position", "0px 0px")
+})
+
+test("the mouse moving onto a notes row strikes one key", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  // Every key click starts one oscillator, its thock, so counting them counts
+  // keys. Reduced motion is left off: the sound library mutes under it.
+  await page.addInitScript(() => {
+    const counted = window as typeof window & { keyClicks: number }
+    counted.keyClicks = 0
+    const create = AudioContext.prototype.createOscillator
+    AudioContext.prototype.createOscillator = function (this: AudioContext) {
+      counted.keyClicks++
+      return create.call(this)
+    }
+  })
+  await page.goto("/notes/")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page)).toHaveCSS("opacity", "1")
+  // The popup reaches full opacity before its origin wrapper finishes moving.
+  // Measure rows only after that travel lands, or these coordinates can point
+  // at the next row by the time the mouse gets there.
+  await page.locator(".preview-gallery-origin-wrap").evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  )
+  const keyClicks = () => page.evaluate(() => (window as typeof window & { keyClicks: number }).keyClicks)
+
+  // One key per row the mouse moves onto: not one per movement inside a row,
+  // and none for rows a scroll carries under a still pointer.
+  const rows = popup(page).locator(".writing-entry-trigger")
+  await page.evaluate(() => { (window as typeof window & { keyClicks: number }).keyClicks = 0 })
+  for (let index = 0; index < 4; index++) {
+    const box = (await rows.nth(index).boundingBox())!
+    await page.mouse.move(box.x + 40, box.y + box.height / 2, { steps: 3 })
+    await page.waitForTimeout(100)
+  }
+  expect(await keyClicks()).toBe(4)
+  const last = (await rows.nth(3).boundingBox())!
+  for (let step = 1; step <= 5; step++) await page.mouse.move(last.x + 40 + step * 12, last.y + last.height / 2)
+  await page.mouse.wheel(0, 240)
+  await page.waitForTimeout(300)
+  await page.mouse.wheel(0, -240)
+  await page.waitForTimeout(300)
+  expect(await keyClicks()).toBe(4)
+})
+
 test("margin notes fold into the column when the gutters are gone", async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
