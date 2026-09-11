@@ -262,6 +262,9 @@ test("the phone reader keeps the gallery's full-height frame and reachable contr
   await page.goto("/notes/designing-matcha/")
   const dialog = sheet(page)
   await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  // Visibility includes the opening pose, even with reduced motion. Measure
+  // the viewport frame only once the dialog has finished appearing.
+  await expect(dialog).toHaveCSS("opacity", "1")
   expect(await dialog.boundingBox()).toEqual({ x: 0, y: 0, width: 320, height: 568 })
   for (const name of ["Previous note", "Next note", "Close note", "Go back to Notes"]) {
     await expect(dialog.getByRole("button", { name, exact: true })).toBeInViewport()
@@ -429,6 +432,9 @@ test("margin notes fold into the column when the gutters are gone", async ({ pag
   await page.goto("/notes/ai-design-needs-control/")
   const dialog = sheet(page)
   await expect(dialog.getByRole("heading", { name: "AI design needs more control", exact: true })).toBeVisible()
+  // Both boxes must belong to the settled dialog, not opposite sides of its
+  // opening scale transition.
+  await expect(dialog).toHaveCSS("opacity", "1")
   const prose = dialog.locator(".writing-reader-prose > p").first()
   const note = dialog.locator(".writing-margin-note").first()
   const proseBox = (await prose.boundingBox())!
