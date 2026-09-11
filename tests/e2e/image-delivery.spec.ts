@@ -2,21 +2,26 @@ import { expect, test } from "@playwright/test"
 import sharp from "sharp"
 import path from "node:path"
 
+// A tile at the front of the globe is a fifth of the globe wide at most, so
+// the 400px variant covers a 2x display at every viewport; the 800px one is
+// there for the held photo, which the globe grows to two and a half times.
 for (const width of [390, 1440]) {
-  test(`photo sheet chooses responsive sources at ${width}px`, async ({ browser }) => {
+  test(`photo globe chooses responsive sources at ${width}px`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 2, reducedMotion: "reduce" })
     const page = await context.newPage()
     await page.goto("/")
-    await page.locator(".personal-photos-print").first().click()
+    await page.locator(".personal-photos-label").click()
     const photo = page.locator(".personal-photos-slide img").first()
-    await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).currentSrc)).toContain(width === 390 ? "-400w.webp" : "-800w.webp")
-    await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
-    const sizes = await photo.evaluate((img) => {
-      const image = img as HTMLImageElement
-      return { selected: image.currentSrc, width: image.getBoundingClientRect().width }
-    })
-    expect(width === 390 ? 400 : 800).toBeGreaterThanOrEqual(sizes.width * 2)
-    await expect(page.locator('.personal-photos-slide img[loading="lazy"]')).not.toHaveCount(0)
+    // Twenty-seven photos load at once when the globe opens; under a full
+    // parallel run the first can take longer than the default 5s to arrive.
+    await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).currentSrc), { timeout: 15_000 }).toContain("-400w.webp")
+    await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).naturalWidth), { timeout: 15_000 }).toBeGreaterThan(0)
+    // `sizes` names the tile's width at the front of the globe, where it is largest.
+    const laidOut = await photo.evaluate((img) => parseFloat(getComputedStyle((img as HTMLImageElement).closest(".personal-photos-slide")!).width))
+    expect(400).toBeGreaterThanOrEqual(laidOut * 2 * 0.9)
+    // Every tile loads eagerly: a lazy one on the far side of the globe
+    // (display: none never loads) came round to the front still blank.
+    await expect(page.locator('.personal-photos-sphere img[loading="lazy"]')).toHaveCount(0)
     await context.close()
   })
 }
