@@ -2,17 +2,18 @@ import { useCallback, useEffect, useRef, type RefObject } from "react"
 
 const isDeal = (animation: Animation) => animation instanceof CSSAnimation && animation.animationName === "personal-photos-deal"
 
-/** Deals the fan in the first time it scrolls into view: the middle print
-    first, then a beat later for each step out towards the ends (the deal
+/** Deals the fan in the first time it scrolls into view: the prints spring
+    out of one pile on the middle print to their places on the arc (the deal
     itself is `personal-photos-deal` in personal-photos.css).
 
-    The prints ship visible — the attribute is absent from the prerendered
+    The prints ship fanned — the attribute is absent from the prerendered
     markup, so nothing depends on JavaScript. On mount a fan still below the
-    fold is held back and released the first time it enters the viewport; a
-    fan already on screen, or above it, has been seen and stays put, as the
-    About sheet's copy does. Returns a finish that snaps the hand to rest, for
-    a click that opens the sheet mid-deal: the flights measure the prints, and
-    a print still rising would send its photo home to a frame below its own. */
+    fold is held in the pile and released the first time it enters the
+    viewport; a fan already on screen, or above it, has been seen and stays
+    put, as the About sheet's copy does. Returns a finish that snaps the hand
+    to rest, for a click that opens the sheet mid-deal: the flights measure
+    the prints, and a print still swinging out would send its photo home to a
+    frame beside its own. */
 export function usePhotoFanDeal(root: RefObject<HTMLDivElement | null>) {
   const finishRef = useRef<() => void>(() => {})
   const finishDeal = useCallback(() => finishRef.current(), [])

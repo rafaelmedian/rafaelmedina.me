@@ -33,8 +33,8 @@ test("the toggle turns the open sheet between the globe and a grid, and the choi
   // A press on the toggle is not a press on the stage: it neither closes the
   // dialog nor leaves the globe behind in the grid.
   await toggle(page, "Grid").click()
-  // The thumb is the picked segment's own box: as wide as its label and
-  // icon, and slid under them.
+  // The thumb is the picked segment's own box: as wide as its label, and
+  // slid under it.
   await expect.poll(() => dialog(page).getByRole("group", { name: "Layout" }).evaluate((group) => {
     const active = group.querySelector<HTMLElement>('[aria-pressed="true"]')!
     const thumb = getComputedStyle(group, "::before")
@@ -125,6 +125,16 @@ test("on the grid a click holds a photo at the centre with its name under it; Es
   const neighbour = (await slides.nth(0).boundingBox())!
   expect(neighbour.width).toBeCloseTo(resting.width, 0)
 
+  // Choosing another visible photo is one continuous handoff: the current
+  // one returns while the newly chosen photo takes its place. It must not
+  // leave the sheet with nothing held and require a second click.
+  const nextSlide = slides.first()
+  await nextSlide.click({ position: { x: 12, y: 12 } })
+  await expect(nextSlide).toHaveAttribute("data-held", "")
+  await expect(slide).not.toHaveAttribute("data-held", "")
+  await expect(grid(page).locator("[data-held]")).toHaveCount(1)
+  await expect(caption).toHaveText(await nextSlide.locator("figcaption").innerText())
+
   // Escape lets it go first; the next Escape closes.
   await page.keyboard.press("Escape")
   await expect(grid(page).locator("[data-held]")).toHaveCount(0)
@@ -134,10 +144,27 @@ test("on the grid a click holds a photo at the centre with its name under it; Es
   await expect(dialog(page)).toBeHidden()
   await expect(trigger).toBeFocused()
 
-  // The margin lets a held photo go, and the next click on it closes; a
-  // scroll lets it go too. Enter and Space hold and release from the keyboard.
+  // Empty space between grid photos and the outer margin both let a held photo
+  // go without closing; a scroll does too. Enter and Space hold and release
+  // from the keyboard.
   await page.keyboard.press("Enter")
   await expect(grid(page)).toBeVisible()
+  await slides.first().click()
+  await expect(slides.first()).toHaveAttribute("data-held", "")
+  const gap = await grid(page).evaluate((element) => {
+    const masonry = element.querySelector<HTMLElement>(".personal-photos-masonry")!
+    const bounds = masonry.getBoundingClientRect()
+    for (let y = Math.max(bounds.top, 0) + 2; y < Math.min(bounds.bottom, innerHeight) - 2; y += 4) {
+      for (let x = bounds.left + 2; x < bounds.right - 2; x += 4) {
+        const hit = document.elementFromPoint(x, y)
+        if (hit && masonry.contains(hit) && !hit.closest(".personal-photos-slide")) return { x, y }
+      }
+    }
+    throw new Error("No visible gap between grid photos")
+  })
+  await page.mouse.click(gap.x, gap.y)
+  await expect(grid(page).locator("[data-held]")).toHaveCount(0)
+  await expect(dialog(page)).toBeVisible()
   await slides.first().click()
   await expect(slides.first()).toHaveAttribute("data-held", "")
   await page.mouse.click(10, 450)
@@ -156,6 +183,79 @@ test("on the grid a click holds a photo at the centre with its name under it; Es
   await page.mouse.click(10, 450)
   await expect(dialog(page)).toBeHidden()
   await expect(trigger).toBeFocused()
+})
+
+test("hovering another grid photo while one is held only nudges its size and preserves its stack", async ({ page }) => {
+  await preferGrid(page)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  await openFromLabel(page)
+  await expect(grid(page)).toBeVisible()
+
+  const slides = grid(page).locator(".personal-photos-slide")
+  const held = slides.nth(4)
+  const neighbour = slides.first()
+  const resting = (await neighbour.boundingBox())!
+  await held.click()
+  await expect(held).toHaveAttribute("data-held", "")
+
+  await neighbour.hover({ position: { x: 12, y: 12 } })
+  expect(await neighbour.evaluate((element) => getComputedStyle(element).zIndex)).toBe("auto")
+  await expect.poll(async () => (await neighbour.boundingBox())!.width / resting.width).toBeGreaterThan(1.03)
+  const hovered = (await neighbour.boundingBox())!
+  expect(hovered.width / resting.width).toBeLessThan(1.06)
+})
+
+test("a held grid photo tilts under a fine pointer with a directional gloss", async ({ page }) => {
+  await preferGrid(page)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  await openFromLabel(page)
+
+  const sheet = grid(page)
+  const slide = sheet.locator(".personal-photos-slide").nth(4)
+  await slide.click()
+  await expect(slide).toHaveAttribute("data-held", "")
+  const stage = (await sheet.boundingBox())!
+  await expect.poll(async () => {
+    const box = (await slide.boundingBox())!
+    return Math.hypot(
+      box.x + box.width / 2 - (stage.x + stage.width / 2),
+      box.y + box.height / 2 - (stage.y + stage.height / 2),
+    )
+  }).toBeLessThan(2)
+
+  const readSurface = () => slide.evaluate((element) => {
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
+    const gloss = getComputedStyle(element, "::after")
+    return {
+      x: matrix.m13,
+      y: matrix.m23,
+      gloss: Number(gloss.opacity),
+      blend: gloss.mixBlendMode,
+    }
+  })
+  const held = (await slide.boundingBox())!
+  await page.mouse.move(held.x + held.width * 0.2, held.y + held.height * 0.2)
+  await expect.poll(async () => {
+    const surface = await readSurface()
+    return Math.abs(surface.x) + Math.abs(surface.y)
+  }).toBeGreaterThan(0.02)
+  const topLeft = await readSurface()
+  expect(topLeft.blend).toBe("screen")
+  expect(topLeft.gloss).toBeGreaterThan(0.35)
+
+  await page.mouse.move(held.x + held.width * 0.8, held.y + held.height * 0.8)
+  await expect.poll(async () => {
+    const next = await readSurface()
+    return Math.sign(next.x) === -Math.sign(topLeft.x) && Math.sign(next.y) === -Math.sign(topLeft.y)
+  }).toBe(true)
+
+  await page.mouse.move(5, 5)
+  await expect.poll(async () => {
+    const flat = await readSurface()
+    return Math.abs(flat.x) + Math.abs(flat.y)
+  }).toBeLessThan(0.005)
 })
 
 test("a switch flies every photo from where one layout left it to where the other puts it", async ({ page }) => {

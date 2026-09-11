@@ -41,7 +41,7 @@ test("sphere hover reacts quickly with a soft pointer tilt", async ({ page }) =>
   expect(Number(rotation.match(/([\d.]+)deg$/)?.[1])).toBeLessThanOrEqual(4)
 })
 
-test("a held sphere photo has enough bitmap pixels for a 2x display", async ({ browser }) => {
+test("a held sphere photo opens sharply at its full size", async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 })
   const page = await context.newPage()
   await openSphere(page)
@@ -51,6 +51,8 @@ test("a held sphere photo has enough bitmap pixels for a 2x display", async ({ b
   const box = (await target.boundingBox())!
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
   await expect.poll(async () => (await target.boundingBox())!.width / box.width).toBeGreaterThan(1.8)
+  const sphere = (await page.locator(".personal-photos-sphere").boundingBox())!
+  await expect.poll(async () => (await target.boundingBox())!.width / sphere.width).toBeGreaterThan(0.48)
   const pixels = await target.evaluate(async (slide) => {
     const image = slide.querySelector("img")!
     const probe = new Image()
@@ -63,9 +65,14 @@ test("a held sphere photo has enough bitmap pixels for a 2x display", async ({ b
     return {
       available: probe.naturalWidth,
       required: slide.getBoundingClientRect().width * devicePixelRatio,
+      willChange: getComputedStyle(slide).willChange,
     }
   })
 
   expect(pixels.available).toBeGreaterThanOrEqual(pixels.required)
+  expect(pixels.willChange).toBe("auto")
+  const caption = page.locator(".personal-photos-stage-caption")
+  await expect(caption).not.toHaveText("")
+  expect(await caption.evaluate((element) => getComputedStyle(element).textShadow.match(/rgba?\(/g)?.length ?? 0)).toBeGreaterThanOrEqual(2)
   await context.close()
 })

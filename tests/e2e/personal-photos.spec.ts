@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "@playwright/test"
 
 
 /** The grid now appears with the shared avatar intro. */
@@ -138,11 +138,25 @@ test("four or five photos stay in one overlapping row at each breakpoint", async
       left: (element as HTMLElement).offsetLeft,
       top: (element as HTMLElement).offsetTop,
       width: (element as HTMLElement).offsetWidth,
+      visualLeft: element.getBoundingClientRect().left,
+      visualTop: element.getBoundingClientRect().top,
+      visualWidth: element.getBoundingClientRect().width,
+      visualHeight: element.getBoundingClientRect().height,
     })))
     for (let index = 1; index < layout.length; index++) {
       expect(layout[index].top).toBe(layout[0].top)
       expect((layout[index].left - layout[index - 1].left) / layout[index - 1].width).toBeCloseTo(0.5, 1)
     }
+    const visualCenters = layout.map((print) => ({
+      x: print.visualLeft + print.visualWidth / 2,
+      y: print.visualTop + print.visualHeight / 2,
+    }))
+    const visualSteps = visualCenters.slice(1).map((center, index) => center.x - visualCenters[index].x)
+    // The underlying row stays regular for a reliable hit area, but the visible
+    // prints are nudged off that rhythm so they look placed by hand rather than
+    // plotted on one exact curve.
+    expect(Math.max(...visualSteps) - Math.min(...visualSteps)).toBeGreaterThan(layout[0].width * 0.01)
+    expect(Math.max(...visualCenters.map(({ y }) => y)) - Math.min(...visualCenters.map(({ y }) => y))).toBeLessThan(layout[0].width * 0.08)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   }
   await trigger.focus()
@@ -165,6 +179,9 @@ test("a click on a print opens the globe holding that photo; Enter opens it as i
   await openHome(page)
   const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   await trigger.scrollIntoViewIfNeeded()
+  // Scrolled in, the hand springs out of a pile on the middle print; measured
+  // before it lands, the click meant for this print lands on the middle one.
+  await expect(page.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
   const print = trigger.locator(".personal-photos-print").nth(3)
   const photoId = await print.getAttribute("data-photo-id")
   const largest = () => largestSlide(page)
@@ -318,10 +335,9 @@ test("the fan is dealt with a wobble, opens as a hand, and lifts the one print u
   await expect(preview.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
 
   const prints = preview.locator(".personal-photos-print")
-  // A straight lean from one end of the row to the other, flat in the middle,
-  // with each print's fixed wobble already in — a hand dealt by hand is never
-  // quite on its arc.
-  const rest = [-12, -4, 1, 4, 11]
+  // Almost flat: a few degrees at the ends of the row, with a little of each
+  // print's fixed wobble in — the lean is left for the pointer.
+  const rest = [-3, -1, 1, 0, 3]
   expect(await prints.evaluateAll(readAngles)).toEqual(rest)
   const restWidth = await preview.locator(".personal-photos-stack").evaluate((element) => {
     const boxes = Array.from(element.querySelectorAll(".personal-photos-print")).map((print) => print.getBoundingClientRect())
@@ -383,37 +399,69 @@ test("the fan is dealt with a wobble, opens as a hand, and lifts the one print u
   await expect.poll(turns).toEqual([false, false, false, false, false])
 })
 
-/** Records each print's beat the moment the deal starts. The whole deal is
-    over in a second, which a poll can miss under a full parallel run. */
-async function recordDealBeats(page: Page) {
+/** Records each print's centre, relative to the stack's, halfway through the
+    deal — where the overshoot peaks — by pausing it there for one read and
+    letting it run on. The whole deal is over in under half a second, which a
+    poll can miss under a full parallel run. */
+async function recordDealPeak(page: Page) {
   await page.locator(".personal-photos-stack").evaluate((stack: HTMLElement) => {
     new MutationObserver((_, observer) => {
       if (stack.dataset.deal !== "dealing") return
       observer.disconnect()
-      stack.dataset.testBeats = Array.from(stack.querySelectorAll(".personal-photos-print"), (print) => getComputedStyle(print).animationDelay).join()
+      const animations = stack.getAnimations({ subtree: true }).filter((animation) => animation instanceof CSSAnimation)
+      animations.forEach((animation) => {
+        animation.pause()
+        animation.currentTime = Number(animation.effect?.getComputedTiming().duration) / 2
+      })
+      const middle = stack.getBoundingClientRect().left + stack.getBoundingClientRect().width / 2
+      stack.dataset.testPeak = Array.from(stack.querySelectorAll(".personal-photos-print"), (print) => {
+        const rect = print.getBoundingClientRect()
+        return Math.round(rect.left + rect.width / 2 - middle)
+      }).join()
+      animations.forEach((animation) => animation.play())
     }).observe(stack, { attributes: true, attributeFilter: ["data-deal"] })
   })
 }
 
-test("the fan deals in from the middle out the first time it scrolls into view", async ({ page }) => {
+/** Each print's centre relative to the stack's, and its opacity. */
+const readPrintCentres = (stack: Locator) => stack.evaluate((element) => {
+  const middle = element.getBoundingClientRect().left + element.getBoundingClientRect().width / 2
+  return Array.from(element.querySelectorAll(".personal-photos-print"), (print) => {
+    const rect = print.getBoundingClientRect()
+    return { x: Math.round(rect.left + rect.width / 2 - middle), opacity: getComputedStyle(print).opacity }
+  })
+})
+
+test("the fan springs out of a pile the first time it scrolls into view", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
   const stack = page.locator(".personal-photos-stack")
   const prints = stack.locator(".personal-photos-print")
-  // Below the fold the hand is held back, not dealt where nobody sees it.
+  // Below the fold the hand waits in one pile on the middle print, the
+  // prints behind the front one at half opacity.
   await expect(stack).toHaveAttribute("data-deal", "pending")
-  await expect(prints.first()).toHaveCSS("opacity", "0")
+  const pile = await readPrintCentres(stack)
+  for (const { x } of pile) expect(Math.abs(x)).toBeLessThanOrEqual(2)
+  expect(pile.map(({ opacity }) => opacity)).toEqual(["0.5", "0.5", "1", "0.5", "0.5"])
 
-  await recordDealBeats(page)
+  await recordDealPeak(page)
   await stack.scrollIntoViewIfNeeded()
-  // The front print first, then 100ms later for each step out to the ends.
-  await expect(stack).toHaveAttribute("data-test-beats", "0.2s,0.1s,0s,0.1s,0.2s")
-  // Once the last print lands the deal retires, and every print is at rest.
+  await expect(stack).toHaveAttribute("data-test-peak")
+  // Once the prints land the deal retires, and every print is at rest.
   await expect(stack).not.toHaveAttribute("data-deal")
   expect(await prints.evaluateAll((elements) => elements.map((element) => {
     const style = getComputedStyle(element)
-    return `${style.opacity} ${style.translate}`
-  }))).toEqual(Array(5).fill("1 none"))
+    return `${style.opacity} ${style.translate} ${style.rotate}`
+  }))).toEqual(Array(5).fill("1 none none"))
+  // Halfway out, every print but the middle one had swung past its slot.
+  const rest = (await readPrintCentres(stack)).map(({ x }) => x)
+  const peak = (await stack.getAttribute("data-test-peak"))!.split(",").map(Number)
+  peak.forEach((x, index) => {
+    // The centre print now carries a sub-2px hand-placed nudge rather than
+    // landing on the stack's mathematical zero; it remains the pile's anchor.
+    if (Math.abs(rest[index]) <= 2) expect(Math.abs(x)).toBeLessThanOrEqual(2)
+    else expect(Math.abs(x)).toBeGreaterThan(Math.abs(rest[index]) + 4)
+  })
 
   // It is dealt once per visit: scrolled away and back, the hand stays put.
   await page.evaluate(() => scrollTo(0, 0))
@@ -425,7 +473,7 @@ test("opening the sheet mid-deal snaps the hand to rest before the flights measu
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
   const stack = page.locator(".personal-photos-stack")
-  // Freeze the deal a quarter of the way in, with every print still low.
+  // Freeze the deal halfway, with the outer prints swung past their slots.
   await stack.evaluate((element: HTMLElement) => {
     new MutationObserver((_, observer) => {
       if (element.dataset.deal !== "dealing") return
@@ -469,7 +517,7 @@ const readTiles = (page: Page) => shownTiles(page).evaluateAll((elements) => ele
 }))
 const frontTile = async (page: Page) => (await readTiles(page)).sort((a, b) => b.depth - a.depth)[0]
 
-test("the globe carries every photo at least twice, larger at the front than the rim, hides its far side, and turns on its own", async ({ page }) => {
+test("the globe carries every photo at least three times, larger at the front than the rim, hides its far side, and turns on its own", async ({ page }) => {
   test.slow()
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
@@ -481,7 +529,7 @@ test("the globe carries every photo at least twice, larger at the front than the
   expect(originals).toBeGreaterThan(10)
   // The copies are decoration: no id, no group, hidden from assistive tech
   // and from Tab.
-  expect(await tiles.count()).toBeGreaterThanOrEqual(originals * 2)
+  expect(await tiles.count()).toBeGreaterThanOrEqual(originals * 3)
   expect(await stage(page).locator('.personal-photos-slide:not([data-photo-id])[aria-hidden="true"][tabindex="-1"]').count()).toBe(await tiles.count() - originals)
   // The far side is a dome's: gone, not showing through.
   await expect.poll(() => stage(page).locator(".personal-photos-slide[data-sphere-hidden]").count(), motion).toBeGreaterThan(5)

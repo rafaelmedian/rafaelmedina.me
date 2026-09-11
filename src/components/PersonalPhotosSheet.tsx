@@ -1,11 +1,10 @@
 import type { OpenPhoto } from "./PersonalPhotosPreview"
 import { Dialog } from "@base-ui/react/dialog"
-import { Globe, LayoutGrid } from "lucide-react"
 import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
-import { usePhotoSphere } from "../lib/usePhotoSphere"
+import { photoSphereHoldGrowth, usePhotoSphere } from "../lib/usePhotoSphere"
 import { flyBetweenLayouts, snapshotSlides } from "../lib/photoLayoutSwitch"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 import { readSheetLayout, saveSheetLayout, usePreviewCount, useSheetColumns, type PhotoSheetLayout } from "../lib/photoLayout"
@@ -16,37 +15,37 @@ export type PersonalPhotosSheetHandle = {
   openPhoto: OpenPhoto
 }
 /** A dozen photos make a scatter, not a globe: the sphere only reads as one
-    when it is covered, and it is covered at about three dozen tiles. Every
-    photo appears at least twice — the repeats are what keep the globe full
-    all the way round — and more often while the set is small. The copies
+    when it is crowded. Every photo appears at least three times — the repeats
+    are spread as independent points in the Fibonacci spiral, keeping the
+    globe full all the way round without stacking twins together. The copies
     after the first are decoration: hidden from assistive tech and from Tab,
     and carrying no photo id, so no print mistakes one for its own. */
-const sphereCopies = Math.max(2, Math.round(36 / photos.length))
+const sphereCoverageTarget = 54
+const sphereCopies = Math.max(3, Math.round(sphereCoverageTarget / photos.length))
 const sphereTiles = Array.from({ length: sphereCopies }, (_, copy) => photos.map((photo, index) => ({ photo, index, copy }))).flat()
 // A slide's width, which is its size at the front of the globe: a share of
 // --sphere-size in personal-photos.css.
-/** Each tile's width as a share of the globe, at the front. Three dozen tiles
-    take 22.5% of the globe each; more tiles share the same surface, so the
-    width comes down by the square root of the count. */
-const sphereCardShare = 0.225 * Math.sqrt(36 / sphereTiles.length)
-/** The sphere controller can grow any print to 2.4x without a React render.
+/** Each tile's width as a share of the globe, at the front. The square-root
+    adjustment keeps the crowded set near the former cards' size instead of
+    cancelling the added density by making every repeat much smaller. */
+const sphereCardShare = 0.225 * Math.sqrt(sphereCoverageTarget / sphereTiles.length)
+/** The sphere controller can grow any print to 2.7x without a React render.
     Advertise that largest drawn size up front so a 2x screen does not keep
     the 400px candidate after the photo has been held. */
-const sphereHoldGrowth = 2.4
-const spherePhotoSizes = `(max-width: 699.98px) calc(min(136vw, 80vh) * ${(sphereCardShare * 1.3 * sphereHoldGrowth).toFixed(3)}), calc(min(96vw, 92vh, 60rem) * ${(sphereCardShare * sphereHoldGrowth).toFixed(3)})`
+const spherePhotoSizes = `(max-width: 699.98px) calc(min(136vw, 80vh) * ${(sphereCardShare * 1.3 * photoSphereHoldGrowth).toFixed(3)}), calc(min(96vw, 92vh, 60rem) * ${(sphereCardShare * photoSphereHoldGrowth).toFixed(3)})`
 // One column's width: the sheet less its gutters and the gaps between the
 // columns, as --photo-gutter and --photo-column-gap set them.
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
     the move and growth that carry it there from where it lies. */
-type GridHold = { id: string; caption: string; dx: number; dy: number; scale: number; width: number; captionTop: number; scrollTop: number }
+type GridHold = { id: string; caption: string; dx: number; dy: number; scale: number; left: number; top: number; width: number; height: number; captionTop: number; scrollTop: number }
 /** How much of the stage a held grid photo fills, on its longer side. */
 const gridHoldShare = 0.7
 
 const layoutOptions = [
-  { layout: "grid", label: "Grid", Icon: LayoutGrid },
-  { layout: "sphere", label: "Sphere", Icon: Globe },
+  { layout: "grid", label: "Grid" },
+  { layout: "sphere", label: "Sphere" },
 ] as const
 
 /** Glides a scrolled grid back to its first row, where the prints were
@@ -132,6 +131,19 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   }, [open])
   usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
+  /** Returns the selected grid print to its flat pose. The figure itself is
+      the stable hit area; only its composed transform turns, so its moving
+      edges never decide whether the pointer is still over it. */
+  const resetGridTilt = useCallback(() => {
+    const slide = sheetRef.current?.querySelector<HTMLElement>(".personal-photos-masonry .personal-photos-slide[data-grid-tilting]")
+    if (!slide) return
+    slide.removeAttribute("data-grid-tilting")
+    slide.style.removeProperty("--grid-tilt-x")
+    slide.style.removeProperty("--grid-tilt-y")
+    slide.style.removeProperty("--grid-gloss-x")
+    slide.style.removeProperty("--grid-gloss-y")
+  }, [])
+
   /** Holds a grid photo: it glides from where it lies to the centre of the
       stage and grows to fill most of it, its caption under it. Measured
       from the slide's layout box and its centre — the centre holds still
@@ -141,20 +153,28 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const holdSlide = (slide: HTMLElement, photo: typeof photos[number]) => {
     const sheet = sheetRef.current
     if (!sheet) return
+    resetGridTilt()
     const rect = slide.getBoundingClientRect()
     const stage = sheet.getBoundingClientRect()
     const width = slide.offsetWidth
     const height = slide.offsetHeight
     const scale = Math.min(gridHoldShare * sheet.clientWidth / width, gridHoldShare * sheet.clientHeight / height)
+    const heldWidth = width * scale
+    const heldHeight = height * scale
+    const left = stage.left + (sheet.clientWidth - heldWidth) / 2
+    const top = stage.top + (sheet.clientHeight - heldHeight) / 2
     heldRef.current = {
       id: photo.id,
       caption: photo.caption,
       dx: stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2),
       dy: stage.top + sheet.clientHeight / 2 - (rect.top + rect.height / 2),
       scale,
-      width: width * scale,
+      left,
+      top,
+      width: heldWidth,
+      height: heldHeight,
       // In the sheet's own scrolled coordinates: it is the scroll container.
-      captionTop: sheet.scrollTop + sheet.clientHeight / 2 + height * scale / 2,
+      captionTop: sheet.scrollTop + sheet.clientHeight / 2 + heldHeight / 2,
       scrollTop: sheet.scrollTop,
     }
     setHeld(heldRef.current)
@@ -162,12 +182,14 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   /** Lets a held grid photo go. True if one was held. */
   const releaseHeld = useCallback(() => {
     if (!heldRef.current) return false
+    resetGridTilt()
     heldRef.current = null
     setHeld(null)
     return true
-  }, [])
+  }, [resetGridTilt])
   const toggleHold = (slide: HTMLElement, photo: typeof photos[number]) => {
-    if (!releaseHeld()) holdSlide(slide, photo)
+    if (heldRef.current?.id === photo.id) releaseHeld()
+    else holdSlide(slide, photo)
   }
   const onSlideKeyDown = (event: ReactKeyboardEvent<HTMLElement>, photo: typeof photos[number]) => {
     if (event.key !== "Enter" && event.key !== " ") return
@@ -243,11 +265,35 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   // click closes. The globe answers its own presses in usePhotoSphere.
   const onPointerDown = (event: ReactPointerEvent) => {
     // A press and its click can land on different nodes; trust the press.
-    pressedClearance.current = event.target === event.currentTarget
+    const target = event.target as Element
+    const emptyGridSpace = Boolean(heldRef.current) && !target.closest(".personal-photos-slide")
+    pressedClearance.current = event.target === event.currentTarget || emptyGridSpace
+  }
+  const onGridPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const current = heldRef.current
+    const slide = (event.target as Element).closest<HTMLElement>(".personal-photos-slide[data-held]")
+    if (reducedMotion || event.pointerType !== "mouse" || !current || slide?.dataset.photoId !== current.id) {
+      resetGridTilt()
+      return
+    }
+    const x = Math.min(1, Math.max(0, (event.clientX - current.left) / current.width))
+    const y = Math.min(1, Math.max(0, (event.clientY - current.top) / current.height))
+    // Four degrees at an edge: enough to catch the light without making a
+    // large portrait feel loose. The highlight stays in the upper-left light
+    // field and shifts against the turn, as a reflection on glass would.
+    slide.style.setProperty("--grid-tilt-x", `${((0.5 - y) * 8).toFixed(2)}deg`)
+    slide.style.setProperty("--grid-tilt-y", `${((x - 0.5) * 8).toFixed(2)}deg`)
+    slide.style.setProperty("--grid-gloss-x", `${(32 - (x - 0.5) * 22).toFixed(1)}%`)
+    slide.style.setProperty("--grid-gloss-y", `${(24 - (y - 0.5) * 18).toFixed(1)}%`)
+    slide.setAttribute("data-grid-tilting", "")
   }
   const onSheetClick = (event: ReactMouseEvent) => {
-    if (!pressedClearance.current || event.target !== event.currentTarget) return
+    if (!pressedClearance.current) return
     if (releaseHeld()) return
+    // Empty gaps only answer while a photo is held. With the grid at rest,
+    // keep requiring the outer sheet margin so browsing between rows cannot
+    // close the gallery by accident.
+    if (event.target !== event.currentTarget) return
     dialogActions.current?.close()
   }
 
@@ -314,9 +360,8 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
           {/* Outside the stage, which captures every press on the globe for
               the drag: a button inside it would never see its own click. */}
           <div ref={setLayoutNode} className="personal-photos-layout" role="group" aria-label="Layout" data-layout={layout}>
-            {layoutOptions.map(({ layout: option, label, Icon }) => (
+            {layoutOptions.map(({ layout: option, label }) => (
               <button key={option} type="button" aria-pressed={layout === option} onClick={() => chooseLayout(option)}>
-                <Icon aria-hidden="true" />
                 {label}
               </button>
             ))}
@@ -333,6 +378,8 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
             data-held={layout === "grid" && held ? "" : undefined}
             tabIndex={0}
             onPointerDown={layout === "grid" ? onPointerDown : undefined}
+            onPointerMove={layout === "grid" ? onGridPointerMove : undefined}
+            onPointerLeave={layout === "grid" ? resetGridTilt : undefined}
             onClick={layout === "grid" ? onSheetClick : undefined}
           >
             {/* Keyed, so a switch builds the other layout afresh: an unkeyed

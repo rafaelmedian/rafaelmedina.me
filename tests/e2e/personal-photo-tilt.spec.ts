@@ -8,6 +8,9 @@ test("the homepage photo stack follows the pointer and rests before a gallery fl
   const stack = page.locator(".personal-photos-stack")
   const tilt = page.locator(".personal-photos-stack-tilt")
   await trigger.scrollIntoViewIfNeeded()
+  // The deal springs the prints out of a pile on `translate` and `rotate`,
+  // which the print measured and the turn read below both depend on.
+  await expect(stack).not.toHaveAttribute("data-deal")
   // Let the scroll event reset the previous pose before supplying a pointer.
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   const bounds = await stack.boundingBox()

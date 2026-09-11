@@ -114,8 +114,9 @@ const clickSlop = 6
 const keyStep = Math.PI / 6
 /** How long a photo brought to the front stays there before the spin takes it on. */
 const frontDwell = 4000
-/** How much a clicked photo grows, at the centre, over its size at the front. */
-const zoomGrowth = 2.4
+/** How much a clicked photo grows, at the centre, over its size at the front.
+    Exported so the responsive image hint advertises the same largest draw. */
+export const photoSphereHoldGrowth = 2.7
 /** How much a photo under the pointer grows, to say it can be clicked. */
 const hoverGrowth = 1.08
 /** A small lean at the card edge: enough to answer the pointer without
@@ -123,7 +124,7 @@ const hoverGrowth = 1.08
 const hoverTilt = 3
 /** The hover is the first stretch of the same growth a hold makes, so a
     click carries on from it instead of dropping it while the hold begins. */
-const hoverShare = (hoverGrowth - 1) / (zoomGrowth - 1)
+const hoverShare = (hoverGrowth - 1) / (photoSphereHoldGrowth - 1)
 /** How much the rest of the globe shrinks back while one photo is held. */
 const zoomRecede = 0.22
 /** The caption's distance below the held photo, and how far it rises as it
@@ -299,7 +300,12 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // half-way to either state is drawn half-way, so the two moves cross
         // smoothly when the hold changes hands.
         const zoom = zooms[index]
-        const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + zoom * (zoomGrowth - 1)) * (1 - recede * zoomRecede * (1 - zoom))
+        const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + zoom * (photoSphereHoldGrowth - 1)) * (1 - recede * zoomRecede * (1 - zoom))
+        // Chrome otherwise keeps enlarging the compositor layer it made for
+        // the small globe tile, leaving a held photo soft even when its
+        // srcset candidate has enough pixels. Let the selected print repaint
+        // at its full size; the rest keep their transform hint while turning.
+        slide.toggleAttribute("data-sphere-held", held === index)
         slide.style.transform = `translate3d(${(x * radius * perspective).toFixed(2)}px, ${(-y * radius * perspective).toFixed(2)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(4)})`
         const tiltX = tiltXs[index]
         const tiltY = tiltYs[index]
