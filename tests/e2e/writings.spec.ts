@@ -452,6 +452,7 @@ test("a hovered row boils its drawing through its frames", async ({ page }) => {
   // At rest the drawing shows the first frame of its strip and holds still.
   const owner = popup(page).getByRole("region", { name: "Tools" }).locator("li").first()
   const drawing = owner.locator(".writings-drawing")
+  await expect(drawing).toHaveCSS("mask-image", /drawing-folder-pencil-frames\.png/)
   await expect(drawing).toHaveCSS("animation-name", "none")
   await expect(drawing).toHaveCSS("mask-position", "0px 0px")
   // Its row wakes it, and it steps through the other frames rather than

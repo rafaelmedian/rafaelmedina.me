@@ -74,7 +74,7 @@ function archiveDrawings(rows: readonly WritingSummary[]) {
     if (previous?.place === place && previous.pull === pull) pull = DRAWING_PULLS[(DRAWING_PULLS.indexOf(pull) + 2) % DRAWING_PULLS.length]
     drawings.push({
       row,
-      object: ARCHIVE_DRAWINGS[drawings.length % ARCHIVE_DRAWINGS.length],
+      object: rows[row].category === "Tools" ? "folder-pencil" : ARCHIVE_DRAWINGS[drawings.length % ARCHIVE_DRAWINGS.length],
       place,
       pull,
       size: pickFrom(DRAWING_SIZES, hash, 2),

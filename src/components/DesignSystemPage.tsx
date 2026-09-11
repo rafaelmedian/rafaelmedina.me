@@ -1380,13 +1380,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Notes are ordinary text in the reading order: a gutter note reads after its paragraph, and it is never
                 announced as a separate landmark or the only place a point is made.
                 The archive leaves the same two gutters empty, and draws into them instead: the things a note gets
-                written with rather than icons — a sheet with its corner turned down, a sharpened pencil and its
-                shavings, and a cup on its saucer. They come from the same Rough.js pass and ship as 88px PNG masks beside
+                written with rather than icons. Tools begins with a page lifted from a folder while a pencil finishes
+                its line; the other rows cycle a sheet with its corner turned down, a sharpened pencil and its shavings,
+                and a cup on its saucer. They come from the same Rough.js pass and ship as 88px PNG masks beside
                 the brackets, on --muted at 0.55 so they read as pencil the list can look past. Drawn as vector
                 outlines they had one even stroke at every edge and read as traced; adding detail to the path did not
-                fix that, and retracing them did. One is pinned every third row counted across the whole list rather
-                than per category, alternating rails so no two face each other, on three lifts and three tilts between
-                -5 and 7 degrees. The three objects cycle, so the archive passes ten notes before one repeats. They
+                fix that, and retracing them did. One is pinned every few rows counted across the whole list rather
+                than per category, changing rails, lifts, and tilts so the marks do not form another ruled column.
+                The three general objects cycle, so the archive passes several notes before one repeats. They
                 are decorative and hidden from assistive technology, absolutely positioned so they never enter the
                 content height the card measures, and they leave below the same 48rem container threshold.
                 Each ships as a strip of three frames — the resting drawing and two retracings on fresh seeds, set down
