@@ -228,7 +228,7 @@ const INK_ENTRIES = [
   { token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
   { hex: "#363636", token: "—", use: "Inline links on hover" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
-  { hex: "#545454", token: "—", use: "About-panel prose and article prose" },
+  { hex: "#545454", token: "—", use: "Standard project-preview prose; About and case studies use #2d2d2d" },
   { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions, work-history chip labels at rest, and both halves of the avatar hint — its Handlee line and the arrow beside it, which used to be the site's one red" },
   { token: "--muted-soft", use: "Tertiary labels: corner nav, the About sheet's local time, definition terms, and hobby notes" },
 ]
@@ -279,13 +279,13 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, contents rows, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
+    where: "The whole hero and corner nav, body copy, detail rows, hover-card text, mobile contents labels, wider project captions, and the notes reader. About and case-study prose and supporting headings also use this step; weight distinguishes their headings.",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
     token: "--text-md",
     sample: "Senior Product Designer",
-    where: "Longer quotes, labels, section headings, card titles, metadata, the Notes toolbar title, the About sheet's two section headings, and the avatar hint's Handlee display line",
+    where: "Longer quotes, labels, card titles, metadata, the Notes toolbar title, the opening About and project titles, and the avatar hint's Handlee display line",
     style: { fontSize: "var(--text-md)", lineHeight: 1.5, letterSpacing: "-0.005rem", fontWeight: 600 },
   },
   {
@@ -449,7 +449,7 @@ const BREAKPOINTS = [
   { at: "≥ 900px", change: "The mosaic becomes four named desktop groups with independent container-relative heights and the shell drops its inline padding." },
   {
     at: "≥ 1320px",
-    change: "Project previews open in the wide view with a 5vh top inset: at most 981px, and narrower when the media’s height cap gives a 4:3 preview less width to fill.",
+    change: "Project previews open in the wide view with matching 5vh top and bottom gutters: at most 981px, and narrower when the media’s height cap gives a 4:3 preview less width to fill. Compact desktop previews use matching 8vh gutters; short cards keep their natural height.",
   },
 ]
 
@@ -925,7 +925,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <h2>Typography</h2>
               <p>
                 Interface text uses one face, four sizes, and four weights. The handwriting face — the avatar hint
-                and marginalia in Handlee — and the draggable hobby emoji are deliberate display exceptions.
+                and marginalia in Handlee, with La Belle Aurore and Caveat for project signatures — and the draggable hobby emoji are deliberate display exceptions.
               </p>
             </div>
 
@@ -1196,7 +1196,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   photograph rather than sitting on a page. Taking no room in the flow is the point: a row of its own
                   under the title would push every description down whether or not anyone ever taps it.
                   Below the artwork, the project title and a single description cover the product, contribution,
-                  and result. On fine-pointer desktop layouts, a 3.5rem white wash fades over the card&rsquo;s bottom
+                  and result. On fine-pointer desktop layouts, the shared four-layer progressive blur and canvas fade
+                  cover a 3.5rem band over the card&rsquo;s bottom
                   edge only while more project content remains below it, making a short laptop viewport&rsquo;s hidden
                   overflow visible without adding a scrollbar. The wash shares the card&rsquo;s paging motion so it
                   never remains over the backdrop between slides. Left-aligned collaborator avatar links follow the
@@ -1209,6 +1210,31 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   maximum width with 1.5rem of padding on all four sides, and 1.25rem side padding below 700px.
                   The notes reader keeps a narrower column of its own, because it is read rather than scanned.
                   The dialog has no project-site link, metadata table, or row dividers.
+                  The main project title uses the same <code>--text-md</code> heading step as the About section.
+                  Multi-section case studies share the Notes horizontal 44px sticky contents control, revealed
+                  only after the first story section passes the top of the viewport. In the project modal,
+                  the bar offsets the card's top padding to pin flush to its top edge. An inline-size container on the card's
+                  inner content supplies the width, so its background reaches both modal edges while its text stays on the story measure.
+                  Its negative row-height
+                  bottom margin avoids reserving an empty row above the introduction and keeps the reveal from shifting the story. It shows the current
+                  section and a dropdown built from that project's sections, without repeating the project title.
+                  Each Matcha project and Protector has its own editorial content in projectCaseStudies.ts. The introduction and all story sections
+                  use concise lists with small middle-dot markers in --muted, a 0.5rem left inset, and balanced wrapping
+                  on each short bullet to avoid sparse final lines. The summary and lists use About's --text-sm reading step
+                  and -0.00563rem tracking in #2d2d2d ink, with 1.6 line height for the case-study copy and 1.5 for its headings.
+                  All headings inside a case study use --text-sm at weight 600; only the project title above it retains --text-md.
+                  Stories vary from one to three sections, with brief introductions and uneven bullet counts. Single-section stories omit Contents.
+                  The case-study label and dates are omitted. Each case study keeps its main preview artwork at the top; the sections below are text only for now.
+                  The optional media layout is retained for later: a single image spans the column, and pairs sit side by side
+                  before stacking below 700px. Author avatars and names sit below the opening project summary. The signature row
+                  is currently disabled; its component and styling are retained behind the optional showSignatures field. When enabled, it contains
+                  only linked handwritten names in #0550ae blue ink: Rafael uses La Belle Aurore and Simon keeps Caveat.
+                  As a display exception, the --text-lg lettering follows gently curved SVG baselines in a 160 × 56 viewBox,
+                  rendered 208px wide for Rafael and 184px for Simon, with a 3rem column gap and 1.5rem row gap.
+                  Rafael rises -4deg, skews -6deg and sits 2px higher; Simon leans 2deg, skews -3deg and sits 2px lower.
+                  Rafael's regular lettering carries a 0.12-unit ink stroke; Simon uses weight 500. Curved underlines use
+                  rounded 0.65- and 0.85-unit strokes, respectively, with a second light pass under Simon's name.
+                  Only the SVG transforms, keeping the named links' hit areas stable. The fonts are self-hosted Latin subsets under SIL OFL.
                 </p>
               </div>
             </div>
@@ -1297,7 +1323,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
                 with 8px corners and reader-sized 14px type scaled to one third. Papers fan over 360ms with smooth easing.
                 The reader is a sheet up to 56rem wide that hangs from the line a project preview opens on — 8vh
-                from the top of the viewport, 5vh from 1320px — and runs to 1rem above the bottom, with room for the navigation
+                from the top of the viewport, 5vh in the wide layout — and reserves the same inset at the bottom, with room for the navigation
                 rail, white, overlay elevation, and 24px corners.
                 Rows are grouped under Tools, Notes, and, when it has entries, Misc; categories keep that order and dates sort newest first within each one.
                 Category labels sit above their rows so the titles keep the full measure, and empty categories do not render.
@@ -2408,10 +2434,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   profile-photo message prompt; the dormant video path remains available for the future recording.
                 </li>
                 <li data-ds-terms={terms("bottom fade progressive blur backdrop-filter 1.25rem gradient --canvas clamp(3rem, 8vh, 4.5rem) 3rem sticky safe area seam sheet notes card mask rounded clip")}>
-                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet and the notes card
+                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet, notes card, and project previews
                   soften their copy as it sinks, with the work tiles&rsquo; caption blur rescaled to the strip: four
                   masked layers stepping the radius from 0.12 of <code>1.25rem</code> up to all of it, under an eased
-                  ramp into <code>--canvas</code>. The project grid and the previews do not fade. The sheet&rsquo;s
+                  ramp into <code>--canvas</code>. Project previews use a 3.5rem band on fine-pointer desktops only while
+                  more content remains below; opacity changes on the individual layers preserve their backdrop. The project grid does not fade. The sheet&rsquo;s
                   fade covers the bottom <code>clamp(3rem, 8vh, 4.5rem)</code> of the viewport plus the safe-area
                   inset, sticky to the viewport&rsquo;s foot. It is the sheet&rsquo;s last child and pulls itself back
                   over the panel&rsquo;s bottom padding, so it adds no height, never paints outside the sheet&rsquo;s

@@ -54,6 +54,8 @@
 
 .preview-gallery-shell {
   --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
+  --preview-gallery-fixed-bottom: max(var(--preview-gallery-fixed-top), env(safe-area-inset-bottom));
+  --preview-gallery-room: calc(100dvh - var(--preview-gallery-fixed-top) - var(--preview-gallery-fixed-bottom));
   --preview-gallery-gutter: clamp(1rem, 3vw, 2.5rem);
   /* The artwork bleeds to the card's sides now, so the card's width *is* the
      artwork's: any width the common 4:3 preview cannot fill comes back as a
@@ -80,7 +82,7 @@
   padding:
     var(--preview-gallery-fixed-top)
     max(var(--preview-gallery-gutter), env(safe-area-inset-right))
-    max(1rem, env(safe-area-inset-bottom))
+    var(--preview-gallery-fixed-bottom)
     max(var(--preview-gallery-gutter), env(safe-area-inset-left));
   cursor: pointer;
 }
@@ -117,7 +119,7 @@
   --preview-gallery-card-padding: clamp(2rem, 3.4vw, 2.8rem);
   position: relative;
   width: min(var(--preview-gallery-width), 100%);
-  max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  max-height: var(--preview-gallery-room);
   outline: none;
   overscroll-behavior: contain;
   border-radius:
@@ -177,7 +179,7 @@
 }
 
 .preview-gallery-card {
-  max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
+  max-height: var(--preview-gallery-room);
   overflow-x: hidden;
   overflow-y: auto;
   /* `none`, not `contain`: both keep the scroll off the page behind the dialog,
@@ -237,19 +239,25 @@
 }
 
 .preview-gallery-scroll-cue {
+  --bottom-fade-height: 3.5rem;
+
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
-  height: 3.5rem;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff 88%);
+}
+
+/* Fade each layer: opacity on their parent would isolate the backdrop blur. */
+.preview-gallery-scroll-cue > span,
+.preview-gallery-scroll-cue::after {
+  border-radius: inherit;
   opacity: 0;
-  pointer-events: none;
   transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
-.preview-gallery-scroll-cue[data-visible="true"] {
+.preview-gallery-scroll-cue[data-visible="true"] > span,
+.preview-gallery-scroll-cue[data-visible="true"]::after {
   opacity: 1;
 }
 
@@ -556,6 +564,203 @@
      The top carries extra so the title reads as its own block rather than a
      caption hanging off the artwork. */
   padding: 4rem 1.5rem 1.5rem;
+}
+
+/* Matcha's tiles are chapters of one product redesign. A compact sticky rail
+   keeps the opened chapter and its contents in view while the story moves
+   beside it; the media rhythm is one establishing image, then paired details. */
+.project-case-study {
+  margin-top: 3rem;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding-top: 3rem;
+}
+
+.project-case-study-layout {
+  --writing-contents-height: 44px;
+}
+
+.project-case-study .writing-contents {
+  top: 0;
+  margin-bottom: calc(-1 * var(--writing-contents-height));
+}
+
+.project-case-study .writing-contents[data-revealed="false"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.preview-gallery-popup[data-case-study="true"] .preview-gallery-card-inner {
+  container-type: inline-size;
+}
+
+.preview-gallery-card .project-case-study .writing-contents {
+  --project-contents-inset: calc((100cqi - 100%) / 2 + var(--preview-gallery-card-padding));
+
+  top: calc(-1 * var(--preview-gallery-card-padding));
+  width: calc(100cqi + 2 * var(--preview-gallery-card-padding));
+  margin-left: calc(-1 * var(--project-contents-inset));
+  padding-inline: var(--project-contents-inset);
+}
+
+.project-case-study-body {
+  min-width: 0;
+}
+
+.project-case-study-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding-left: 0.5rem;
+  list-style: disc;
+  color: #2d2d2d;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  letter-spacing: -0.00563rem;
+  text-wrap: pretty;
+}
+
+.project-case-study-list > li {
+  text-wrap: balance;
+}
+
+.project-case-study-list > li::marker {
+  content: "·  ";
+  color: var(--muted);
+}
+
+.preview-gallery-popup[data-case-study="true"] .preview-gallery-description,
+.standalone-page:has(.project-case-study) .standalone-description {
+  color: #2d2d2d;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  letter-spacing: -0.00563rem;
+}
+
+.project-case-study :is(h2, h3) {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.project-case-study h2 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: -0.00563rem;
+  line-height: 1.5;
+}
+
+.project-case-study h3 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: -0.00563rem;
+  line-height: 1.5;
+}
+
+.project-case-study-sections {
+  display: grid;
+  gap: 3rem;
+  margin-top: 3.5rem;
+}
+
+.project-case-study-section {
+  scroll-margin-top: calc(44px + 1.5rem);
+}
+
+.project-case-study-media {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.project-case-study-media[data-layout="pair"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.project-case-study-media[data-layout="feature"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.project-case-study-media figure {
+  min-width: 0;
+  margin: 0;
+}
+
+.project-case-study-media img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  background: var(--mosaic-card-surface);
+  outline: 1px solid rgb(0 0 0 / 0.1);
+  outline-offset: -1px;
+}
+
+.project-case-study-media figcaption {
+  margin-top: 0.6rem;
+  color: var(--muted-soft);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.project-case-study-signatures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 3rem;
+  margin-top: 4rem;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding-top: 1.5rem;
+}
+
+.project-case-study-signatures a {
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #0550ae;
+  font-family: "Caveat", cursive;
+  font-size: var(--text-lg);
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.project-case-study-signatures svg {
+  display: block;
+  width: 184px;
+  height: auto;
+  overflow: visible;
+  transform: translateY(2px) rotate(2deg) skewX(-3deg);
+}
+
+.project-case-study-signatures text {
+  fill: currentColor;
+  font-weight: 500;
+}
+
+.project-signature-underline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.project-case-study-signatures a[data-signature="rafael"] {
+  font-family: "La Belle Aurore", cursive;
+}
+
+.project-case-study-signatures a[data-signature="rafael"] svg {
+  width: 208px;
+  transform: translateY(-2px) rotate(-4deg) skewX(-6deg);
+}
+
+.project-case-study-signatures a[data-signature="rafael"] text {
+  font-weight: 400;
+  stroke: currentColor;
+  stroke-width: 0.12;
+}
+
+.project-case-study-signatures a[data-signature="rafael"] .project-signature-underline {
+  stroke-width: 0.65;
 }
 
 .preview-gallery-toolbar {
@@ -961,6 +1166,7 @@
   .preview-gallery-shell,
   .preview-gallery-shell[data-wide="true"] {
     --preview-gallery-fixed-top: env(safe-area-inset-top);
+    --preview-gallery-fixed-bottom: env(safe-area-inset-bottom);
     padding: var(--preview-gallery-fixed-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     background: var(--canvas);
   }
@@ -1076,12 +1282,17 @@
   .preview-gallery-content {
     padding-inline: 1.25rem;
   }
+
+  .project-case-study-media[data-layout="pair"] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
 }
 
 /* Notes is a nested view of this same card. Keep the chrome opaque while the
    content uses the very same page-turn poses as the work cards. */
 .notes-gallery-card {
-  --notes-room: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
+  --notes-room: var(--preview-gallery-room);
   height: var(--notes-list-height, auto);
   max-height: var(--notes-room);
   overflow: hidden;

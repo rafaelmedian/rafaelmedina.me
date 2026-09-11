@@ -129,19 +129,15 @@
   }
 }
 
-/* Work history is a sibling of the About lede, not a paragraph. It kept the
-   prose weight and colour, which made it pixel-identical to the copy directly
-   under it -- an <h2> that only assistive technology could tell was a heading.
-   The scale's heading form of this step is what it takes instead: --text-md
-   at 600 and #2d2d2d, one step above the entries beneath it and identical to
-   the About lede, the sheet's other section heading. */
+/* Supporting headings stay on the reading step; weight supplies hierarchy.
+   Only the opening About lede takes the larger title step. */
 .mosaic-about-section-heading {
   margin: 0;
   color: #2d2d2d;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.6;
-  letter-spacing: -0.005rem;
+  letter-spacing: -0.00563rem;
 }
 
 /* About is set the same way as the Work history section under it, which is
@@ -153,13 +149,11 @@
   font-size: var(--text-sm);
   line-height: 1.5;
   letter-spacing: -0.00563rem;
-  color: #545454;
+  color: #2d2d2d;
   text-wrap: pretty;
 }
 
-/* "About me" and "Work history" are the sheet's two section headings and now
-   look like it: the same step, weight and ink, so neither reads as ranking
-   above the other. */
+/* The opening title retains one step of size above the reading content. */
 .mosaic-about-body .mosaic-about-lede {
   margin: 0;
   font-size: var(--text-md);

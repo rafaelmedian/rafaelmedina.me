@@ -859,12 +859,10 @@ test("sets the whole About sheet on the reading step under one heading step", as
   // it -- the same pairing the notes reader uses.
   expect(sizes).toEqual(["14px", "16px"])
 
-  // The lede, "Worked with", "How I work", "Services" and the questions that
-  // close it are the sheet's section headings and are set identically, so none
-  // reads as ranking above another.
+  // Only the opening title is larger; supporting headings use reading size.
   await expect(sectionHeading).toHaveCount(4)
   for (const heading of [...(await sectionHeading.all()), lede]) {
-    await expect(heading).toHaveCSS("font-size", "16px")
+    await expect(heading).toHaveCSS("font-size", heading === lede ? "16px" : "14px")
     await expect(heading).toHaveCSS("font-weight", "600")
     await expect(heading).toHaveCSS("color", "rgb(45, 45, 45)")
   }
@@ -5268,7 +5266,7 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
   await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })
 
-test("puts teammates before Rafael in unlabelled credits below the description", async ({ page }) => {
+test("keeps Matcha authors below the summary with signatures disabled", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
@@ -5276,7 +5274,9 @@ test("puts teammates before Rafael in unlabelled credits below the description",
   const dialog = page.getByRole("dialog")
   const description = dialog.locator(".preview-gallery-description")
   const team = dialog.getByRole("list", { name: "Collaborators" })
+  const signatures = dialog.locator(".project-case-study-signatures")
   await expect(team.getByRole("link")).toHaveText(["Simon Rico", "Rafael Medina"])
+  await expect(signatures).toHaveCount(0)
   await expect(description).toContainText("I mapped and designed")
   await expect(description).toContainText("without losing their quote or inputs")
   await expect(dialog.locator("dl")).toHaveCount(0)
@@ -5305,7 +5305,10 @@ test("puts teammates before Rafael in unlabelled credits below the description",
       await expect(description).not.toBeEmpty()
       await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined)|sole product designer/)
       await expect(dialog.locator("dl")).toHaveCount(0)
-      if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
+      if (await dialog.locator(".project-case-study").count()) {
+        await expect(team.getByRole("link").last()).toHaveText("Rafael Medina")
+        await expect(signatures).toHaveCount(0)
+      } else if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
         await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
       }
     }
@@ -5313,7 +5316,7 @@ test("puts teammates before Rafael in unlabelled credits below the description",
   }
 })
 
-test("reveals a new teammate from the left when paging from solo work", async ({ page }) => {
+test("updates Matcha authors when paging from solo work", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
@@ -5333,13 +5336,7 @@ test("reveals a new teammate from the left when paging from solo work", async ({
   await next.click()
   await expect(counter).toHaveText("10 / 14")
   await expect(team.getByRole("link")).toHaveText(["Jakub Antalik", "Rafael Medina"])
-  const teammateMotion = await team.getByRole("link", { name: "Jakub Antalik" }).locator("..").evaluate((item) =>
-    item.getAnimations().map((animation) => ({
-      name: (animation as CSSAnimation).animationName,
-      firstTransform: animation.effect?.getKeyframes()[0]?.transform,
-    })),
-  )
-  expect(teammateMotion).toContainEqual({ name: "preview-gallery-person-in", firstTransform: "translate(-12px)" })
+  await expect(dialog.locator(".project-case-study-signatures")).toHaveCount(0)
 })
 
 test("shows a bottom fade while a laptop preview has more content to scroll", async ({ page }) => {
@@ -5351,12 +5348,15 @@ test("shows a bottom fade while a laptop preview has more content to scroll", as
   const card = page.getByRole("dialog").locator(".preview-gallery-card")
   const cue = page.locator(".preview-gallery-scroll-cue")
   await expect(cue).toHaveAttribute("data-visible", "true")
-  await expect(cue).toHaveCSS("opacity", "1")
-  expect(await cue.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain("linear-gradient")
+  const layers = cue.locator("span")
+  await expect(layers).toHaveCount(4)
+  await expect(layers.first()).toHaveCSS("opacity", "1")
+  await expect(layers.last()).toHaveCSS("backdrop-filter", "blur(20px)")
+  expect(await cue.evaluate((element) => getComputedStyle(element, "::after").backgroundImage)).toContain("linear-gradient")
 
   await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
   await expect(cue).not.toHaveAttribute("data-visible", "true")
-  await expect(cue).toHaveCSS("opacity", "0")
+  await expect(layers.first()).toHaveCSS("opacity", "0")
 })
 
 const expectPreviewContributionFits = async (page: Page, viewportHeight: number) => {

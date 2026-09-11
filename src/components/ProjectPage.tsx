@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { collaborators, siteLinks, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
 import { updatePageMetadata } from "../lib/projectMetadata"
+import { ProjectCaseStudy } from "./ProjectCaseStudy"
 
 /** Direct project visits have useful HTML even without hydration or a modal. */
 export function ProjectPage({ card }: { card: PortfolioCard }) {
@@ -17,6 +18,12 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
       <header>
         <h1 className="standalone-title">{card.title}</h1>
         <p className="standalone-description">{card.detail}</p>
+        {card.caseStudy ? <ul className="preview-gallery-people" aria-label="Collaborators">
+          {team.map((person) => <li key={person.href}><a className="preview-gallery-person" href={person.href}>
+            {person.photo ? <img className="preview-gallery-person-avatar" src={person.photo} alt="" width={22} height={22} /> : null}
+            <span>{person.name}</span>
+          </a></li>)}
+        </ul> : null}
       </header>
       <div className="standalone-media">
         {isVideoSource(card.image) ? (
@@ -34,16 +41,19 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
         ].map(([label, value]) => (
           <div className="preview-gallery-detail-row" key={label}><dt>{label}</dt><dd>{value}</dd></div>
         ))}
-        <div className="preview-gallery-detail-row">
-          <dt>Team</dt>
-          <dd>{team.map((person, index) => (
-            <span key={person.href}>{index > 0 ? ", " : ""}<a href={person.href}>{person.name}</a></span>
-          ))}</dd>
-        </div>
+        {!card.caseStudy ? (
+          <div className="preview-gallery-detail-row">
+            <dt>Team</dt>
+            <dd>{team.map((person, index) => (
+              <span key={person.href}>{index > 0 ? ", " : ""}<a href={person.href}>{person.name}</a></span>
+            ))}</dd>
+          </div>
+        ) : null}
         {card.ctaHref.startsWith("https://") ? (
           <div className="preview-gallery-detail-row"><dt>Link</dt><dd><a href={card.ctaHref}>{new URL(card.ctaHref).hostname}</a></dd></div>
         ) : null}
       </dl>
+      <ProjectCaseStudy card={card} />
     </article>
   )
 }

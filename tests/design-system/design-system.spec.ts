@@ -45,20 +45,21 @@ test("keeps the caption blur outside the card's squircle clip", async ({ page })
   await expect(card.locator(":scope > .mosaic-row-card-scrim")).toHaveCount(1)
 })
 
-test("corner tuner changes rounded surfaces without reshaping circles", async ({ page }) => {
-  await page.goto("/?tune=corners")
-  const curve = page.getByRole("slider", { name: "Exponent" })
-  await expect(curve).toBeVisible()
-  await expect(curve).toHaveAttribute("aria-valuenow", "1.3")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.3)")
+test("does not mount the retired corner tuner on development pages", async ({ page }) => {
+  for (const path of ["/", "/?tune=corners"]) {
+    await page.goto(path)
+    await page.waitForLoadState("networkidle")
+    await expect(page.getByRole("slider", { name: "Exponent" })).toHaveCount(0)
+    await expect(page.getByText("Continuous corners", { exact: true })).toHaveCount(0)
+  }
+})
 
-  await curve.press("End")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(4)")
-  await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
+test("keeps internal case-study headings on the reading step", async ({ page }) => {
+  await page.setViewportSize({ width: 2394, height: 1223 })
+  await page.goto("/work/matcha-multiwallet-flow/")
 
-  await page.locator(".mosaic-row-card").first().click()
-  await expect(page.locator(".preview-gallery-card")).toHaveCSS("corner-shape", "superellipse(4)")
-  await expect(curve).toBeVisible()
+  const title = page.getByRole("heading", { level: 2, name: "Connecting wallets without losing the trade" })
+  await expect(title).toHaveCSS("font-size", "14px")
 })
 
 const customPropertyPattern = /^--[\w-]+$/

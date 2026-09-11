@@ -1,5 +1,6 @@
 import profilePhoto from "../assets/profile-photo.webp"
 import type { ProjectId } from "./projectIds"
+import { projectCaseStudies } from "./projectCaseStudies"
 
 export type PortfolioCard = {
   /** Registered in `projectIds`, so the likes API knows every project by name. */
@@ -37,6 +38,9 @@ export type PortfolioCard = {
   /** Alternate artwork used only in the home mosaic. The project preview and
       social metadata continue to use `image` as their single hero source. */
   homeImages?: PortfolioImage[]
+  /** Long-form project narrative. Matcha tiles share one body because they are
+      chapters of the same end-to-end product redesign, not isolated shots. */
+  caseStudy?: ProjectCaseStudy
 }
 
 export type PortfolioImage = {
@@ -44,6 +48,21 @@ export type PortfolioImage = {
   label: string
   width: number
   height: number
+}
+
+export type ProjectCaseStudySection = {
+  heading: string
+  paragraphs: string[]
+  media?: PortfolioImage[]
+}
+
+export type ProjectCaseStudy = {
+  showSignatures?: boolean
+  label: string
+  period: string
+  title: string
+  introduction: string[]
+  sections: ProjectCaseStudySection[]
 }
 
 export type Collaborator = {
@@ -244,11 +263,11 @@ const matchaMeta = {
   ctaHref: "https://matcha.xyz",
 }
 
-export const portfolioCards: PortfolioCard[] = [
+const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-9",
     slug: "matcha-multiwallet-flow",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha multiwallet flow",
     summary: "",
     detail:
@@ -269,7 +288,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-22",
     slug: "matcha-dark-mode",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha dark mode",
     summary: "",
     detail:
@@ -286,7 +305,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-16",
     slug: "matcha-homepage",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha homepage",
     summary: "",
     detail:
@@ -305,7 +324,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-protector",
     slug: "protector-booking",
-    category: "Preview",
+    category: "Case study",
     title: "Protector booking",
     summary: "",
     detail:
@@ -347,7 +366,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-21",
     slug: "matcha-token-page",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha token page",
     summary: "",
     detail:
@@ -365,7 +384,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-1",
     slug: "matcha-trade-page",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha trade page",
     summary: "",
     detail:
@@ -382,7 +401,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-19",
     slug: "matcha-trade-module",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha trade module",
     summary: "",
     detail:
@@ -399,7 +418,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-14",
     slug: "matcha-on-mobile",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha on mobile",
     summary: "",
     detail:
@@ -416,7 +435,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-23",
     slug: "matcha-pro",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha Pro",
     summary: "",
     detail:
@@ -433,7 +452,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-shot-20",
     slug: "matcha-security-audit",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha security audit",
     summary: "",
     detail:
@@ -489,7 +508,7 @@ export const portfolioCards: PortfolioCard[] = [
   {
     id: "preview-matcha-rewards",
     slug: "matcha-rewards",
-    category: "Preview",
+    category: "Case study",
     title: "Matcha Rewards",
     summary: "",
     detail:
@@ -522,3 +541,8 @@ export const portfolioCards: PortfolioCard[] = [
     previewAspectRatio: 1540 / 1325,
   },
 ]
+
+export const portfolioCards: PortfolioCard[] = portfolioCardEntries.map((card) => ({
+  ...card,
+  caseStudy: projectCaseStudies[card.slug as keyof typeof projectCaseStudies],
+}))

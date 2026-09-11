@@ -150,6 +150,9 @@ for (const destination of ["project", "other reader"]) {
       await personalLife.focus()
       await page.keyboard.press("Enter")
       await expect(page.getByRole("dialog", { name: "Personal photos", exact: true })).toBeVisible()
+      // Visibility precedes the modal's focus handoff. Send Escape only once
+      // the replacement reader owns keyboard input.
+      await expect(page.getByRole("region", { name: "Photo globe" })).toBeFocused()
     }
     release()
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
