@@ -488,6 +488,11 @@ test("the globe carries every photo at least twice, larger at the front than the
   const layout = await readTiles(page)
   const byDepth = [...layout].sort((a, b) => b.depth - a.depth)
   expect(byDepth[0].width).toBeGreaterThan(byDepth[byDepth.length - 1].width * 1.5)
+  // Every photo is a print: a white border, the same all round.
+  expect(await tiles.first().evaluate((slide) => {
+    const style = getComputedStyle(slide)
+    return { paper: style.backgroundColor, even: parseFloat(style.paddingTop) > 0 && style.paddingTop === style.paddingBottom && style.paddingLeft === style.paddingTop }
+  })).toEqual({ paper: "rgb(255, 255, 255)", even: true })
   // A slow spin of its own, once the open flight has landed: the photo at
   // the front moves off it.
   const before = await frontTile(page)

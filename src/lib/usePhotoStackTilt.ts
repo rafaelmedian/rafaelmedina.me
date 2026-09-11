@@ -112,8 +112,6 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
       point = { x: NaN, y: NaN }
       if (immediate) tilt.setAttribute("data-tilt-reset", "")
       flattenHand()
-      tilt.style.removeProperty("--photo-stack-light-x")
-      tilt.style.removeProperty("--photo-stack-light-y")
       trigger.removeAttribute("data-fan-open")
       hover(null)
     }
@@ -156,8 +154,6 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
         const print = press?.print ?? printFrom(target)
         const rotation = print ? readPrintRotation(print, rect, point.x, point.y, press ? 1.6 : 1) : "none"
         tilt.removeAttribute("data-tilt-reset")
-        tilt.style.setProperty("--photo-stack-light-x", `${35 + x * 20}%`)
-        tilt.style.setProperty("--photo-stack-light-y", `${25 + y * 15}%`)
         trigger.setAttribute("data-fan-open", "")
         if (!press) hover(print)
         if (print) {
