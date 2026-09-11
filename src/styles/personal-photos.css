@@ -45,22 +45,50 @@
      dealing prints wider than a five-print one. A short count leaves the row
      narrower than the stack, so it centres rather than hanging off the left. */
   --photo-print-width: min(35%, calc(100% / (1 + (var(--photo-preview-count, 5) - 1) * 0.5)));
+  /* The deal in, below the prints' own rules. */
+  --photo-deal-duration: 410ms;
+  --photo-deal-ease: cubic-bezier(0.31, 1.84, 0.64, 1);
   position: relative;
   display: flex;
   justify-content: center;
   width: min(100%, 27rem);
   isolation: isolate;
-  /* Only the press. Nothing lifts or shifts the stack as a whole: an away
-     print has to hold the rect its return flight was aimed at, and a transform
-     on the stack is an ancestor transform that carries the away prints with it
-     — the photos then come down a few pixels off their frames. Everything the
-     fan does, it does through each print's own transform. */
+  /* The inner hand resets before flights measure it, and stays flat while
+     photos are away. This outer pointer reference never tilts. */
   transition: scale var(--duration-fast) var(--ease-standard);
 }
 
-/* Each print carries its resting lean and the near-flat angle it squares up
-   to when the pointer picks it out of the pile. The lift is a share of the
-   print's own height, so it scales with the row. */
+.personal-photos-stack-tilt {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  transform: none;
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .personal-photos-stack-tilt {
+    /* One camera over the hand, for the print that turns on its own below. */
+    perspective: 1000px;
+  }
+  .personal-photos-stack-tilt[data-tilt-active] {
+    transform: perspective(1000px) rotateX(var(--photo-stack-rotate-x, 0deg)) rotateY(var(--photo-stack-rotate-y, 0deg));
+    transition-duration: var(--duration-base);
+  }
+}
+
+.personal-photos-stack-tilt[data-tilt-reset],
+.personal-photos-trigger[data-photo-away] .personal-photos-stack-tilt {
+  transform: none;
+  transition: none;
+}
+/* The reset before a flight snaps every print to rest in the same frame, so
+   the flight measures the frames the placeholders will hold, not the first
+   frame of a 360ms glide back to them. */
+.personal-photos-stack-tilt[data-tilt-reset] .personal-photos-print { transition: none; }
+
+/* Each print keeps its resting lean, fanned angle and original depth. */
 .personal-photos-print {
   --print-tilt: -7deg;
   --print-offset-y: 0rem;
@@ -75,19 +103,112 @@
   z-index: var(--print-depth);
   flex: 0 0 var(--photo-print-width);
   margin-left: calc(var(--photo-print-width) * -0.5);
-  padding: 0.25rem 0.25rem 0.75rem;
-  border-radius: var(--radius-sm);
+  /* A photo print: a thin white border all round, a hair of rounding and a
+     soft lift — the frame every slide on the globe and the grid wears, so a
+     print grows into its slot without changing on the way. The border is a
+     share of the print's own width; a padding percentage resolves against
+     the same row --photo-print-width does. */
+  --photo-frame: var(--photo-print-width);
+  padding: calc(var(--photo-frame) * 0.035);
+  border-radius: 4px;
   background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
-  transform: translateY(var(--print-offset-y)) rotate(var(--print-tilt));
+  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+  transform: translate(var(--print-offset-x, 0%), var(--print-offset-y)) rotate(var(--print-tilt));
   /* The settle curve, not the carousel's: it starts moving the instant the
      pointer crosses onto a print and eases out long, so sweeping across the
      row reads as one print handing off to the next rather than each one
-     waiting a beat before it stirs. */
-  transition: transform var(--duration-slow) var(--ease-smooth);
+     waiting a beat before it stirs. Each print keeps its assigned depth. The
+     lift rides on `translate`, apart from the transform that carries the lean
+     and the drop, so the two compose without either rule rewriting the other;
+     the turn toward the pointer rides on `rotate`, apart from both. */
+  transition: transform var(--duration-slow) var(--ease-smooth), translate var(--duration-slow) var(--ease-smooth), rotate var(--duration-base) var(--ease-smooth);
+}
+
+/* The print under the pointer turns toward it on its own, about an axis
+   square to the pointer's offset from the print's centre, up to 5deg at
+   its edge — a gentle lean, as the whole hand takes over the label (6deg),
+   given to one print — while the hand itself lies flat (usePhotoStackTilt lets it
+   down the moment the pointer crosses onto a print). It rides on the
+   individual `rotate` property, so the lean and the drop on `transform` and
+   the lift on `translate` are untouched, and the flight's measurement of
+   `transform` still reads a plain 2D lean. The reset before a flight turns
+   it flat in the same frame as everything else. */
+@media (prefers-reduced-motion: no-preference) {
+  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-tilt] {
+    rotate: var(--print-rotate, none);
+  }
+}
+
+/* The print under the pointer slides up out of the hand, by its own
+   --print-lift, and stays in its place in the pile — a card lifted from a
+   hand rises above the others' edges, it does not come out in front of them.
+   Which print that is comes from pointer travel (`data-print-hover`, set by
+   usePhotoStackTilt), not from `:hover`: when the sheet closed over a
+   resting pointer the browser re-evaluated `:hover` with nothing moving, and
+   a print rose on its own, as if still picked. The hit area reaches down over
+   the spot the print rose from: without that a pointer resting near a print's
+   bottom edge lost it as it rose, the print fell back under the pointer, and
+   the two chased each other. An away print sits out the lift like everything
+   else, so the return flight lands on a frame that has not moved. */
+@media (prefers-reduced-motion: no-preference) {
+  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-hover] {
+    translate: 0 var(--print-lift, -11%);
+  }
+  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-hover]::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 var(--print-lift, -11%);
+  }
+  /* A pressed print is pulled: it follows the pointer with a rubber band's
+     resistance, on the same `translate` as the lift with the pull on top,
+     and turns further as it goes (the tilt rule below, given more reach).
+     Neither waits on a transition while the press lasts, and the lean and
+     the drop snap too, so the reset before a flight still measures the hand
+     at rest in one frame. Let go, the print springs back into the hand:
+     usePhotoStackTilt animates the way home itself, since the print becomes
+     the flight's placeholder a beat later and the placeholder has no
+     transition to carry it. */
+  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-drag] {
+    translate: var(--print-drag-x, 0px) calc(var(--print-lift, -11%) + var(--print-drag-y, 0px));
+    transition: translate 0s, rotate 0s;
+  }
 }
 
 .personal-photos-print:first-child { margin-left: 0; }
+
+/* The hand fans itself out the first time the tile scrolls into view, after
+   transitions.dev's card stack hover: the prints wait gathered in one pile
+   on the middle print — level, leaning half their dealt angle, the ones
+   behind the front print at half opacity — and spring out along the arc all
+   at once, 410ms on the stack's own overshoot, so each print swings a little
+   past its slot and settles back. The pile is `--print-deal-x` (from
+   `arcPlacement`) on `translate`, which cancels the print's place in the
+   row, and half its lean taken back on `rotate`, so the lean and the drop on
+   `transform` are the arc from the first frame; the `backwards` fill hands
+   both back to the lift and the pointer's turn the moment a print lands.
+   `usePhotoFanDeal` holds a fan that is still below the fold in the pile and
+   lets it go. While the deal runs `translate` and `rotate` carry no
+   transition, or the pile letting go would start one alongside the spring. */
+@media (prefers-reduced-motion: no-preference) {
+  .personal-photos-stack[data-deal="pending"] .personal-photos-print {
+    opacity: var(--print-deal-opacity, 1);
+    translate: calc(var(--print-deal-x, 0%) - var(--print-offset-x, 0%)) calc(var(--print-offset-y) * -1);
+    rotate: calc(var(--print-tilt) * -0.5);
+  }
+
+  .personal-photos-stack[data-deal="dealing"] .personal-photos-print {
+    transition: transform var(--duration-slow) var(--ease-smooth);
+    animation: personal-photos-deal var(--photo-deal-duration) var(--photo-deal-ease) backwards;
+  }
+}
+
+@keyframes personal-photos-deal {
+  from {
+    opacity: var(--print-deal-opacity, 1);
+    translate: calc(var(--print-deal-x, 0%) - var(--print-offset-x, 0%)) calc(var(--print-offset-y) * -1);
+    rotate: calc(var(--print-tilt) * -0.5);
+  }
+}
 
 /* Leave a quiet card-shaped marker where each expanded photo belongs. It
    holds still: the return flight is aimed at the rect this print has when the
@@ -105,47 +226,42 @@
 }
 .personal-photos-print[data-photo-away] img { opacity: 0; }
 
-/* One overlapping row of equally sized prints, fanned along an arc. The lean,
-   the drop and the depth are per-print and come from `arcPlacement` in
+
+/* One overlapping row of equally sized prints, loosely placed along a shallow
+   arc. The sideways nudge, lean, drop and depth are per-print and come from `arcPlacement` in
    PersonalPhotosPreview.tsx, because they are a formula over the print's place
    in the row and the row is four prints on a phone and five above it. */
 
 .personal-photos-print img {
+  display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 1;
   object-fit: cover;
   object-position: center 40%;
-  border-radius: calc(var(--radius-sm) - 0.375rem);
+  border-radius: 1px;
 }
 
-/* The tile answers as one thing: pointing at it, or reaching it with the
-   keyboard, leans every print a little further out and settles the whole hand
-   a few percent down its own curve. Each print takes its lean off the arc by
-   its own wobble, so the row loosens the way a hand of prints does rather than
-   stepping through even angles. Nothing changes hands and no single print is
-   picked out, so the region each print answers to never moves under the
-   pointer.
+/* A pointer moving over the tile leans every print a little further out and
+   settles the whole hand a few percent down its own curve. Each print takes
+   its lean off the arc by its own wobble, so the row loosens the way a hand
+   of prints does rather than stepping through even angles. Pointer movement
+   tilts the whole hand, and the one print under the pointer slides up (the
+   lift rule above); nothing is enlarged or reordered, so the middle remains
+   in front throughout.
 
-   An away print takes the hand's shape like any other, it just takes it
-   without a transition. The hand is already in the shape it will rest in
-   before the photos start home — pointed at, or holding the focus the sheet
-   handed back — so the flights are aimed at the frames it actually keeps and
-   nothing shifts once they land. Excluding away prints here left them at rest
-   through the flight and opened the hand under the photos the instant they
-   arrived, which read as the whole row settling a second time. */
+   `data-fan-open` is set by usePhotoStackTilt on pointer travel and cleared
+   when the pointer leaves, so the hand never opens on `:hover` or on the
+   focus the sheet hands back: it is at rest at both ends of a flight, the
+   flights are measured against the frames it keeps at rest, and it stays at
+   rest after a close until the pointer moves again. Keyboard focus shows the
+   house ring and nothing more. An away print takes the hand's shape without
+   a transition, like everything else it does while its photo is out. */
 @media (prefers-reduced-motion: no-preference) {
-  .personal-photos-trigger:not([data-photo-away]):focus-visible .personal-photos-print {
+  .personal-photos-trigger[data-fan-open]:not([data-photo-away]) .personal-photos-print {
     transform: translateY(var(--print-fan-offset-y)) rotate(var(--print-fan-tilt));
   }
-
-  @media (hover: hover) and (pointer: fine) {
-    .personal-photos-trigger:not([data-photo-away]):hover .personal-photos-print {
-      transform: translateY(var(--print-fan-offset-y)) rotate(var(--print-fan-tilt));
-    }
-  }
 }
-
 
 /* A phone deals four prints instead of five, and the row it sits in is
    shorter, so the fan comes down with it. */
@@ -166,11 +282,15 @@
   --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
+/* The globe floats over the work grid rather than covering it the way the
+   old sheet of prints did. A solid scrim separates the two without a live
+   full-screen backdrop filter, which dropped compositor frames during the
+   open and close flights. */
 .personal-photos-backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog-backdrop);
-  background: rgb(18 18 18 / 0.46);
+  background: rgb(18 18 18 / 0.6);
   transition: opacity var(--photo-open-duration) var(--photo-motion-ease);
 }
 
@@ -180,11 +300,23 @@
 .personal-photos-backdrop[data-ending-style] { opacity: 0; }
 
 .personal-photos-dialog {
-  /* The sheet scrolls within the viewport while the source stack stays put. */
   pointer-events: none;
+  /* A photo clicked or reached with Tab turns to the front of the globe
+     on a critically damped spring that has settled to 95% in this time,
+     and its growth, the globe's recede and its lean ride the same spring;
+     the arrow keys step it round on the same beat. */
+  --sphere-hover-duration: var(--duration-fast);
+  --sphere-focus-duration: var(--duration-base);
+  --grid-focus-duration: var(--duration-slow);
+  --photo-layout-duration: var(--duration-quick);
   --photo-gutter: clamp(1.25rem, 4vw, 5rem);
   --photo-column-gap: 1.5rem;
-  /* A scrolled sheet glides back to its first row before the prints fly
+  /* The grid's captions are read out, not shown, until a photo is held, so
+     the rows sit as close as the columns. */
+  --photo-row-gap: var(--photo-column-gap);
+  /* The held photo's caption sits this far under it, in either layout. */
+  --stage-caption-gap: 0.75rem;
+  /* A scrolled grid glides back to its first row before the prints fly
      home, so they leave from the slots they were dealt to. At the top the
      close is immediate. */
   --photo-rewind-duration: var(--duration-slow);
@@ -202,23 +334,110 @@
   transition-duration: var(--photo-close-duration);
 }
 
-/* One sheet of every print. It scrolls natively — wheel, swipe, keys — with
-   nothing snapping or dragging; the margin around the masonry dismisses. */
+/* Grid or sphere: a frosted bar over the top of the stage, after
+   transitions.dev's sliding tabs — the site's tile grey made translucent
+   over a small, saturated blur, with a white highlight catching its top edge
+   and a glass-white thumb under the picked label. The thumb is sized and
+   placed from the picked segment's own box
+   (PersonalPhotosSheet writes --thumb-x and --thumb-w from its offsetLeft
+   and offsetWidth, and again when the group resizes), so each label hugs
+   its own words; it slides and resizes over --duration-base on
+   --ease-smooth, and the labels change colour on the same clock. The thumb
+   wears the control shadow as well as the ring, so the two translucent layers
+   remain distinct against either a bright photograph or the dark scrim. */
+.personal-photos-layout {
+  position: absolute;
+  top: max(1.25rem, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 1;
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 3px;
+  padding: 3px;
+  translate: -50% 0;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--mosaic-card-surface) 78%, transparent);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay), inset 0 1px 0 rgb(255 255 255 / 0.72);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  backdrop-filter: blur(16px) saturate(1.15);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  isolation: isolate;
+  pointer-events: auto;
+}
+.personal-photos-layout::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 0;
+  z-index: 0;
+  width: var(--thumb-w, calc(50% - 3px));
+  height: calc(100% - 6px);
+  translate: var(--thumb-x, 3px) 0;
+  border-radius: inherit;
+  background: rgb(255 255 255 / 0.88);
+  box-shadow: var(--shadow-ring), var(--shadow-control), inset 0 1px 0 rgb(255 255 255 / 0.82);
+  transition: translate var(--duration-fast) var(--ease-smooth), width var(--duration-fast) var(--ease-smooth);
+}
+.personal-photos-layout button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-smooth);
+}
+.personal-photos-layout button[aria-pressed="true"] { color: var(--ink); }
+@media (hover: hover) {
+  .personal-photos-layout button:hover:not([aria-pressed="true"]) { color: var(--ink); }
+}
+/* The house ring, just inside the segment: it reads on the white thumb and
+   on the grey bar alike. */
+.personal-photos-layout button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* The stage: the whole screen takes the drag, so a turn can start anywhere,
+   and a click on its own margin — outside the globe — dismisses. Nothing
+   scrolls; the wheel and a swipe turn the globe instead. */
 .personal-photos-sheet {
   position: absolute;
   inset: 0;
   pointer-events: auto;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.personal-photos-sheet[data-sphere-dragging] { cursor: grabbing; }
+/* The modal is the browsing context; don't frame the entire stage. */
+.personal-photos-sheet:focus { outline: none; }
+
+/* The grid: one sheet of every photo. It scrolls natively — wheel, swipe,
+   keys — with nothing snapping or dragging; the margin around the masonry
+   dismisses. Room above the first row for the toggle, and below the last
+   for its caption and shadow. */
+.personal-photos-sheet[data-layout="grid"] {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
-  /* Room above the first row and below the last for their shadows. */
   padding: 5rem var(--photo-gutter) 6rem;
+  touch-action: auto;
+  cursor: auto;
   scrollbar-width: none;
-  user-select: none;
 }
-.personal-photos-sheet::-webkit-scrollbar { display: none; }
-/* The modal is the browsing context; don't frame the entire sheet. */
-.personal-photos-sheet:focus { outline: none; }
+.personal-photos-sheet[data-layout="grid"]::-webkit-scrollbar { display: none; }
 
 /* Columns the component fills itself, rather than a CSS multi-column. Both
    lay out the same, but `columns` fills the first column top to bottom before
@@ -231,94 +450,219 @@
   gap: var(--photo-column-gap);
   width: min(100%, 64rem);
   margin-inline: auto;
-  pointer-events: auto;
 }
 
 .personal-photos-column {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--photo-column-gap);
+  gap: var(--photo-row-gap);
   min-width: 0;
+  /* The print's border is a share of its width, as on the globe. */
+  container-type: inline-size;
 }
 
-.personal-photos-slide {
-  /* The print's frame and the hand its caption is written in. Named, and set
-     here rather than on the dialog, because the flights are cloned onto
-     <body> and have to carry them too; the dev tuner (?tune=photos) overrides
-     them. The lean, place and rise are per-photo units from the sheet (0-1,
-     the rise -1-1) that these scale. */
-  --photo-frame: 0.6875rem; /* 11px */
-  --photo-caption-band: 2.0625rem; /* 33px */
-  /* 13px, between --text-xs and --text-sm: tuned by eye on the sheet, where
-     Handlee at 14px crowded the slimmer band and 12px read as a footnote. */
-  --photo-caption-size: 0.8125rem;
-  --photo-caption-stroke: 0.05px;
-  --photo-caption-tilt-min: 1.6; /* deg */
-  --photo-caption-tilt-max: 3; /* deg */
-  --photo-caption-spread: 0.44; /* share of the band's spare room a caption wanders across */
-  --photo-caption-rise: 2px;
+/* The same print as the globe's, at a column's width. A photo under a fine
+   pointer grows 4% in its existing stack, to say it can be held without
+   crossing over a selected neighbour; a click, Enter or Space holds it: it
+   glides to the centre of the stage and grows to fill
+   most of it (--hold-dx/--hold-dy/--hold-scale, measured by the component)
+   over the slower --grid-focus-duration, then returns on --duration-base,
+   with its caption under it. Each column is a container, and so a stacking
+   context of its own, so the held photo's column has to come forward as well
+   or the columns to its right paint over it. */
+.personal-photos-masonry .personal-photos-slide {
+  --photo-frame: 100cqi;
+  position: relative;
   width: 100%;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform var(--sphere-focus-duration) var(--ease-smooth), scale var(--duration-base) var(--ease-smooth);
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .personal-photos-masonry .personal-photos-slide:hover:not([data-held]) {
+    scale: 1.04;
+  }
+}
+.personal-photos-masonry .personal-photos-slide[data-held] {
+  z-index: 2;
+  scale: 1;
+  transform: translate(var(--hold-dx, 0px), var(--hold-dy, 0px)) scale(var(--hold-scale, 1)) perspective(1000px) rotateX(var(--grid-tilt-x, 0deg)) rotateY(var(--grid-tilt-y, 0deg));
+  transition-duration: var(--grid-focus-duration), var(--duration-base);
+}
+.personal-photos-masonry .personal-photos-slide[data-held][data-grid-tilting] {
+  transition-duration: var(--duration-fast), var(--duration-base);
+}
+/* A quiet, fixed top-left reflection makes every grid print feel glazed. The
+   held print catches a brighter, smaller highlight which shifts opposite its
+   tilt, keeping the implied light source in one direction. This is a painted
+   overlay on one photo, not a filter over the image, so the bitmap stays crisp. */
+.personal-photos-masonry .personal-photos-slide::after {
+  background:
+    radial-gradient(circle at var(--grid-gloss-x, 32%) var(--grid-gloss-y, 24%), rgb(255 255 255 / 0.36), rgb(255 255 255 / 0.08) 24%, transparent 52%),
+    linear-gradient(135deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.035) 28%, transparent 52%);
+  mix-blend-mode: screen;
+  opacity: 0.18;
+  transition: opacity var(--duration-base) var(--ease-smooth);
+}
+.personal-photos-masonry .personal-photos-slide[data-held]::after { opacity: 0.48; }
+.personal-photos-column:has(> [data-held]) { z-index: 1; }
+/* A close asked for over a held photo, or inside its glide back, snaps the
+   grid to rest so the flight measures the slides where they will stay. */
+.personal-photos-sheet[data-hold-snap] .personal-photos-slide { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .personal-photos-masonry .personal-photos-slide[data-held] {
+    transform: translate(var(--hold-dx, 0px), var(--hold-dy, 0px)) scale(var(--hold-scale, 1));
+  }
+}
+.personal-photos-sheet .personal-photos-slide:focus-visible {
+  outline: 2px solid var(--canvas);
+  outline-offset: 4px;
+}
+/* The globe. `usePhotoSphere` places each slide from its point on a sphere
+   of --sphere-radius (a share of this box's width) and writes its position,
+   scale, stacking and shade every frame. The round corners are for the
+   pointer, not the eye: a press in the corners of this square is on the
+   stage's margin, and closes like any other. */
+.personal-photos-sphere {
+  --sphere-size: min(96vw, 92vh, 60rem);
+  --sphere-radius: 0.44;
+  /* A photo's width at the front of the globe; the share is set inline from
+     the tile count in PersonalPhotosSheet.tsx. */
+  --sphere-card: calc(var(--sphere-size) * var(--sphere-card-share, 0.2));
+  /* Centred by position rather than by a grid, so a phone's globe — wider
+     than the screen — overhangs both edges equally, not the right one alone. */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: var(--sphere-size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  perspective: 1000px;
+}
+
+/* A print at the front of the globe is drawn at its own size; everything
+   further back is scaled down from there, never up, so a photo is never
+   blown up past the bitmap its layer was painted at. */
+.personal-photos-sphere .personal-photos-slide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: var(--sphere-depth, 0);
+  width: var(--sphere-card);
+  --photo-frame: var(--sphere-card);
+  opacity: var(--sphere-fade, 1);
+  will-change: transform;
+  cursor: pointer;
+}
+/* Chrome rasterizes a permanently promoted slide at its small resting size
+   and scales that layer when the photo is held, which visibly softens it.
+   The selected print can repaint at full resolution while the other tiles
+   keep their transform hint for the turning globe. */
+.personal-photos-sphere .personal-photos-slide[data-sphere-held] { will-change: auto; }
+.personal-photos-sphere .personal-photos-slide[data-sphere-hidden] { display: none; }
+/* A photo on the face of the globe can be clicked, and says so. The far side
+   is behind the face, so it lets presses through to the stage rather than
+   bringing round a photo nobody can see. */
+.personal-photos-sphere .personal-photos-slide[data-sphere-far] { pointer-events: none; }
+
+/* Keep the globe's circular hit area and pill controls round under the
+   site's shared continuous-corner policy. */
+.personal-photos-sphere,
+.personal-photos-layout,
+.personal-photos-layout::before,
+.personal-photos-layout button { corner-shape: round; }
+
+/* The held photo's name, just under it. usePhotoSphere places it from the
+   photo's drawn box every frame and fades it with the photo's own zoom, so
+   it arrives as the hold lands and leaves with the release; when the screen
+   ends below the photo it sits above instead. In the interface face, not the
+   handwriting: it is a label on the stage, not a note on a print. */
+.personal-photos-stage-caption {
+  position: absolute;
+  top: var(--stage-caption-y, 100%);
+  left: var(--stage-caption-x, 50%);
+  max-width: min(28rem, 90vw);
   margin: 0;
-  /* A slim border, so the photo carries the print. */
-  padding: var(--photo-frame) var(--photo-frame) 0;
-  border-radius: var(--radius-sm);
+  translate: -50% 0;
+  color: var(--canvas);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  /* A tight edge plus a wider cast stays readable over whichever bright or
+     detailed photo lies behind the caption, not only over the dark scrim. */
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.72),
+    0 3px 10px rgb(0 0 0 / 0.58);
+  opacity: var(--stage-caption-opacity, 0);
+  pointer-events: none;
+}
+/* On the grid the caption's fade is a transition rather than a frame-by-
+   frame value: in, once the photo is most of the way to the centre; out,
+   at once. */
+.personal-photos-sheet[data-layout="grid"] .personal-photos-stage-caption {
+  /* The component hands over the held photo's bottom edge; the gap is the
+     stylesheet's, as the globe's is. */
+  top: calc(var(--stage-caption-y, 100%) + var(--stage-caption-gap));
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+.personal-photos-sheet[data-layout="grid"][data-held] .personal-photos-stage-caption {
+  transition: opacity var(--duration-base) var(--ease-smooth) calc(var(--grid-focus-duration) / 2);
+}
+
+/* A photo print, the fan's own at the slide's size: a thin white border all
+   round — 3.5% of the slide's width, from --photo-frame, which each layout
+   sets — a hair of rounding, and a soft lift. Picked over an Instax card,
+   the glass pebble and a glass edge, side by side on the fan and the globe.
+   A flight morphs one frame into the other, border and all. */
+.personal-photos-slide {
+  margin: 0;
+  padding: calc(var(--photo-frame, 12rem) * 0.035);
+  border-radius: 4px;
   background: var(--canvas);
   color: var(--ink);
-  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04), 0 18px 44px -18px rgb(0 0 0 / 0.28), 0 48px 92px -42px rgb(0 0 0 / 0.38);
+  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
   /* No transition of its own. The flight hands off to its slot by snapping
      the slot's opacity, and the photos that never fly arrive and leave with
      the sheet's single fade: a per-photo fade or dim on top of that read as
      the pictures going transparent, with the page showing through. */
 }
-/* Each photo keeps its own shape, with the thumbnail showing through until the
-   bitmap arrives. The sheet pins the ratio from the data (inline
-   `aspect-ratio`) rather than leaving it to the width and height attributes:
-   those give way to the file's own ratio once it loads, and the 400w and 800w
-   variants round their heights, so every lazy photo nudged its column by a
-   fraction of a pixel after the fact -- enough, over a long sheet, to leave
-   End a pixel short of the bottom. */
+/* The far side of the globe falls into shadow rather than going see-through:
+   half-transparent photos stacked on one another read as mud. The shade
+   rides on the flights too, so a photo landing at the back of the globe is
+   already as dark as the slot it hands off to. */
+.personal-photos-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(0 0 0);
+  opacity: var(--sphere-shade, 0);
+  pointer-events: none;
+}
+/* Each photo keeps its own shape; the width and height attributes set the
+   ratio before the bitmap arrives, with the thumbnail showing through until it does. */
 .personal-photos-slide img {
   display: block;
   width: 100%;
   height: auto;
-  object-fit: cover;
-  border-radius: calc(var(--radius-sm) / 2);
+  border-radius: 1px;
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
 }
-/* Written across the bottom in marker. Each caption leans its own way and
-   lands at its own place along the band -- the sheet sets both per photo --
-   rather than sitting level in the middle like a label. */
+/* A print carries no caption on its face; it stays for assistive tech,
+   and the held photo's is written out under it instead. */
 .personal-photos-slide figcaption {
-  display: flex;
-  align-items: center;
-  min-height: var(--photo-caption-band);
-  padding-inline: 0.5rem;
-  font-family: "Handlee", cursive;
-  font-size: var(--photo-caption-size);
-  /* Handlee ships a single weight; a stroke of its own ink thickens it toward
-     a marker line instead of asking for a faux-bold synthesis. */
-  -webkit-text-stroke: var(--photo-caption-stroke) currentColor;
-  /* Where along the band it lands; see the spacers below. */
-  --caption-at: calc(0.5 + (var(--caption-place, 0.5) - 0.5) * var(--photo-caption-spread));
-}
-/* The two spacers split the band's spare room at the caption's place (0 is
-   flush left, 1 flush right, --photo-caption-spread of the way from the
-   middle), so a long caption only loses its room to wander and can never run
-   off the print. */
-.personal-photos-slide figcaption::before,
-.personal-photos-slide figcaption::after { content: ""; flex: 1 1 0; }
-.personal-photos-slide figcaption::before { flex-grow: var(--caption-at); }
-.personal-photos-slide figcaption::after { flex-grow: calc(1 - var(--caption-at)); }
-.personal-photos-slide figcaption span {
-  flex: 0 1 auto;
-  min-width: 0;
-  text-align: center;
-  transform:
-    translateY(calc(var(--caption-rise, 0) * var(--photo-caption-rise)))
-    rotate(calc(var(--caption-sign, 1) * (var(--photo-caption-tilt-min) + var(--caption-lean, 0) * (var(--photo-caption-tilt-max) - var(--photo-caption-tilt-min))) * 1deg));
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .personal-photos-flight {
@@ -349,22 +693,29 @@
    behind the pile and still well clear of the backdrop. */
 .personal-photos-flight[data-photo-trailing] { z-index: calc(var(--z-dialog) - 1); }
 
+/* On a phone each photo takes a larger share of the globe, to stay a photo
+   rather than a stamp. */
 @media (max-width: 699.98px) {
-  .personal-photos-dialog { --photo-column-gap: 1rem; }
-  .personal-photos-slide {
-    --photo-frame: 0.5625rem; /* 9px */
-    --photo-caption-band: 2.125rem;
-    /* 11px, a step under --text-xs, tuned by eye like the desktop size: the
-       two-column prints are narrow enough that 12px crowded the band. */
-    --photo-caption-size: 0.6875rem;
-    --photo-caption-stroke: 0.2px;
+  /* Wider than the screen: only the rim's smallest prints reach past its
+     edges, and a globe held to the width left half a tall screen empty. */
+  .personal-photos-sphere {
+    --sphere-size: min(136vw, 80vh);
+    --sphere-radius: 0.4;
+    --sphere-card: calc(var(--sphere-size) * var(--sphere-card-share, 0.2) * 1.3);
   }
-  .personal-photos-slide figcaption { padding-inline: 0.25rem; }
+  /* Two columns of the grid, and a caption a step smaller to fit them. */
+  .personal-photos-dialog {
+    --photo-column-gap: 1rem;
+  }
+  .personal-photos-stage-caption { font-size: var(--text-sm); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .personal-photos-print,
   .personal-photos-stack,
   .personal-photos-backdrop,
-  .personal-photos-dialog { transition: none; }
+  .personal-photos-dialog,
+  .personal-photos-masonry .personal-photos-slide,
+  .personal-photos-stage-caption,
+  .personal-photos-layout::before { transition: none; }
 }
