@@ -231,8 +231,11 @@ test("the toolbar divider appears only once the article has scrolled", async ({ 
   // The line and its shadow are both fully transparent while the article rests at its top.
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0)")
   const reader = dialog.locator(".writings-scroll")
-  await reader.evaluate((element) => element.scrollTo(0, 400))
+  await reader.evaluate((element) => element.scrollTo(0, 20))
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
+  await reader.evaluate((element) => element.scrollTo(0, 400))
+  await expect(dialog.locator('.writing-contents')).toHaveAttribute('data-stuck', 'true')
+  await expect.poll(shadow).not.toContain("rgba(0, 0, 0, 0.05)")
   // Turning to the next note resets the reader to the top, so the divider goes with it.
   await dialog.getByRole("button", { name: "Next note", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeVisible()
@@ -332,7 +335,8 @@ test("margin notes hang in the gutters without widening the reader", async ({ pa
     // And it uses the gutter rather than sitting in a sliver of it: a note is
     // most of the width the reading column leaves over on its side.
     const column = (await dialog.locator(".writing-reader").boundingBox())!
-    const gutter = bounds!.x + bounds!.width - (column.x + column.width)
+    const cardPadding = await reader.evaluate((element) => parseFloat(getComputedStyle(element).paddingRight))
+    const gutter = bounds!.x + bounds!.width - cardPadding - (column.x + column.width)
     expect(noteBox.width).toBeGreaterThan(gutter * 0.7)
   }
 })
@@ -467,10 +471,23 @@ test("the compact contents label uses the site TOC's directional swap", async ({
   await heading.evaluate((element) => element.scrollIntoView({ block: "start", behavior: "instant" }))
   await expect(contents).toHaveAttribute("data-stuck", "true")
   await dialog.locator(".writings-scroll").evaluate((element) => element.scrollBy(0, 24))
-  await expect(contents.locator(".writing-contents-trigger")).toHaveText("Everyday decisions are practice")
+  await expect(contents.locator(".writing-contents-current")).toHaveText("Everyday decisions are practice")
   await expect(contents.locator(".writing-contents-current")).toHaveCSS("animation-name", "mosaic-toc-label-enter")
   await expect(contents.locator(".writing-contents-ghost")).toHaveCSS("animation-name", "mosaic-toc-label-exit")
   await expect(contents).toHaveAttribute("data-swap", "up")
+  const originDifference = await contents.evaluate((element) =>
+    element.querySelector(".writing-contents-ghost")!.getBoundingClientRect().x
+    - element.querySelector(".writing-contents-current")!.getBoundingClientRect().x)
+  expect(Math.abs(originDifference)).toBeLessThan(1)
+  const firstLabel = await contents.locator(".writing-contents-current").elementHandle()
+  await dialog.getByRole("heading", { name: "Leaving is not equally available to everyone", exact: true })
+    .evaluate((element) => {
+      element.scrollIntoView({ block: "start", behavior: "instant" })
+      element.closest(".writings-scroll")!.scrollTop += 30
+    })
+  await expect(contents.locator(".writing-contents-current")).toHaveText("Leaving is not equally available to everyone")
+  expect(await firstLabel!.evaluate((element) => element.isConnected)).toBe(false)
+  expect(await contents.locator(".writing-contents-current").evaluate((element) => element.getAnimations().length)).toBeGreaterThan(0)
 })
 
 test("the contents label changes only as section headings cross the pinned row", async ({ page }) => {
@@ -538,7 +555,10 @@ test("the contents row eases out to the modal edges beneath Notes", async ({ pag
   expect(Math.abs(contentsBox!.x - cardBox!.x)).toBeLessThan(1.1)
   expect(Math.abs(contentsBox!.x + contentsBox!.width - cardBox!.x - cardBox!.width)).toBeLessThan(1.1)
   expect(await contents.evaluate((element) => getComputedStyle(element).position)).toBe("sticky")
-  expect(await contents.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none")
+  expect(await contents.evaluate((element) => getComputedStyle(element, "::before").opacity)).toBe("1")
+  // A correct rail rect is insufficient when an ancestor clips its paint.
+  expect(Math.abs(scrollerBox!.x - contentsBox!.x)).toBeLessThan(1.1)
+  expect(Math.abs(scrollerBox!.width - contentsBox!.width)).toBeLessThan(1.1)
 })
 
 test("a shared section link survives the handoff to the reader", async ({ page }) => {

@@ -226,13 +226,21 @@
   padding-inline: 0;
   border-bottom: 1px solid rgb(0 0 0 / 0.06);
   background: var(--canvas);
-  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
   transition:
     width var(--duration-base) var(--ease-smooth),
     margin-left var(--duration-base) var(--ease-smooth),
-    padding-inline var(--duration-base) var(--ease-smooth),
-    box-shadow var(--duration-base) var(--ease-smooth);
+    padding-inline var(--duration-base) var(--ease-smooth);
 }
+.writing-contents::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+.writing-contents[data-stuck="true"]::before { opacity: 1; }
 .writing-contents-sentinel { display: block; height: 0; }
 .writings-dialog .writing-contents { top: -0.5rem; }
 /* In the reading dialog, the pinned row reaches through the column gutters and
@@ -243,7 +251,6 @@
   width: calc(100% + 2 * var(--writing-contents-offset));
   margin-left: calc(-1 * var(--writing-contents-offset));
   padding-inline: var(--writing-contents-offset);
-  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
 }
 .writing-contents-trigger {
   position: relative;

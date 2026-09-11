@@ -339,10 +339,10 @@ function NoteContents({ sections }: { sections: WritingSection[] }) {
         <button ref={triggerRef} type="button" className="writing-contents-trigger" aria-expanded={isOpen}
           aria-controls={panelId} aria-label={`Contents: ${currentSection?.heading ?? "Introduction"}`}
           onClick={() => setIsOpen((open) => !open)}>
-          <span className="writing-contents-current">{currentLabel}</span>
+          <span key={current ?? "introduction"} className="writing-contents-current">{currentLabel}</span>
+          {leavingLabel && !isOpen ? <span key={`leaving-${current}`} className="writing-contents-ghost" aria-hidden="true">{leavingLabel}</span> : null}
           <ChevronDown className="writing-contents-chevron" size={16} strokeWidth={1.75} aria-hidden="true" />
         </button>
-        {leavingLabel && !isOpen ? <span className="writing-contents-ghost" aria-hidden="true">{leavingLabel}</span> : null}
         <div id={panelId} className="writing-contents-panel" inert={!isOpen} aria-hidden={!isOpen}>
           <ol>{sections.map((section) => {
             const slug = sectionSlug(section.heading)

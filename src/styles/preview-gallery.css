@@ -1078,8 +1078,8 @@
 .notes-gallery-viewport {
   flex: 1 1 auto;
   min-height: 0;
-  margin-inline: -0.5rem;
-  padding: 0.5rem 0.5rem var(--preview-gallery-card-padding);
+  margin-inline: calc(-1 * var(--preview-gallery-card-padding));
+  padding: 0.5rem var(--preview-gallery-card-padding) var(--preview-gallery-card-padding);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1113,6 +1113,9 @@
 }
 .preview-gallery-notes[data-scrolled="true"] .notes-gallery-heading {
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
+}
+.preview-gallery-notes:has(.writing-contents[data-stuck="true"]) .notes-gallery-heading {
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
 }
 @container writings (max-width: 47.99rem) {
   .notes-gallery-back {
