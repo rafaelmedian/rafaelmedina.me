@@ -78,13 +78,14 @@ liking a project can never show up on a note. `src/data/writingIds.ts` and
 typed into `PortfolioCard`, so adding a card without registering it fails the
 build rather than 404ing at runtime.
 
-Port 8787 is repo-wide, so a second checkout cannot run its suite while the
-first is serving. Set `LIKES_API_URL` to give it a port of its own — the
+The default API port 8787 and preview port 4174 can be occupied by another
+checkout. Set `E2E_PORT` to an unused preview port and `LIKES_API_URL` to give
+the Worker a port of its own — the
 Playwright config starts the Worker there, the build is pointed at it, and the
 direct API tests call it:
 
 ```sh
-LIKES_API_URL=http://127.0.0.1:8791 npm run test:e2e
+E2E_PORT=4184 LIKES_API_URL=http://127.0.0.1:8791 npm run test:e2e
 ```
 
 ## Shared likes, publicly

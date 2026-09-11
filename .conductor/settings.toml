@@ -18,7 +18,6 @@ icon = "play"
 command = "npm run build && npx vite preview --port $CONDUCTOR_PORT --host 127.0.0.1"
 icon = "globe"
 
-# No run script for `npm run test:e2e` on purpose: playwright.config.ts pins
-# 127.0.0.1:4174 with reuseExistingServer false, so two workspaces running it
-# at once would fight over that port. Run it from a terminal instead, or
-# parameterise the port there first.
+# Run `npm run test:e2e` from a terminal with E2E_PORT and LIKES_API_URL set
+# to unused preview and API ports when another workspace is testing.
+# Playwright refuses to reuse existing servers, keeping each run isolated.
