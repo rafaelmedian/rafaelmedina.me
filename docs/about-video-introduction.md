@@ -184,3 +184,19 @@ active dialog’s focus scope, using a manual popover to escape clipping and
 transforms. Paused clips stay paused; a move only resumes a previously playing
 clip in browsers that pause moved media. The X or Escape closes the player.
 Opening the TOC still collapses it, and background tabs still pause playback.
+
+## Development design options
+
+The A/B/C selector appears when About is active in development. It changes the
+widget in place; the selected option is also saved in the URL as `introStyle`.
+
+- **A — Compact pill:** the current hover-expanding icon buttons.
+- **B — Chat bubble:** an identity line and “How can I help today?” above two
+  buttons, inspired by the supplied screenshot. Both choices stay visible.
+- **C — Stacked buttons:** separate “Your email” and “Text me” pills beside
+  the portrait, without the introductory copy.
+
+All three use the same video, deferred media, reply form and email-draft flow.
+Switching options closes playback. B and C stack comfortably above the mobile
+TOC. Use the existing feedback toolbar to annotate an option; include its letter.
+The selector is development-only and can be removed after choosing a direction.

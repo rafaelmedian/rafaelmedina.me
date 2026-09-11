@@ -2185,6 +2185,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Text grows that surface upward to
                   172px with <code>--radius-lg</code> corners. On mobile, portrait and field share a
                   row above the TOC, with the field constrained to the viewport minus 100px.
+                  Development offers three comparison options: A keeps the compact pill; B uses a 320px by
+                  156px chat bubble with a muted identity line, an 18px question, and two 44px buttons;
+                  C separates the actions into two 184px pills with a 12px gap. B uses 24px corners except
+                  its 8px lower-left corner, plus the existing ring and overlay shadows. Its email button
+                  uses ink with canvas text. On mobile, B is 216px tall, stacks the buttons, uses a 16px
+                  question and is constrained to the viewport minus 100px. B and C keep their reply
+                  choices visible beside the portrait above the TOC. The development-only A/B/C selector
+                  sits 12px from the top safe area on the corner layer with 44px targets; share an option
+                  using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>. All options share playback
+                  and reply forms, and use the existing feedback toolbar for review.
                   There is no corner dismiss button.
                   Both cap at 320px, use shared overlay shadows and <code>--text-md</code> input text
                   to prevent Safari focus zoom. Escape closes the composer and returns focus;

@@ -14,6 +14,7 @@ import VolumeMute01Icon from "@hugeicons/core-free-icons/VolumeMute01Icon"
 
 import AboutIntroReply from "./AboutIntroReply"
 
+import type { IntroOption } from "./AboutIntroOptions"
 import type { AboutIntroMedia } from "../data/aboutIntro"
 import { useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
@@ -35,7 +36,8 @@ const subscribeVisibility = (listener: () => void) => {
 const pageIsHidden = () => document.hidden
 const hiddenOnServer = () => true
 
-export default function AboutIntro({ media, visible, open, onOpenChange, repliesAvailable = true }: {
+export default function AboutIntro({ media, visible, open, onOpenChange, repliesAvailable = true, variant = "a" }: {
+  variant?: IntroOption
   media: AboutIntroMedia
   repliesAvailable?: boolean
   visible: boolean
@@ -189,7 +191,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
   const action = error ? "Retry introduction" : ended ? "Replay introduction" : started ? "Resume introduction" : "Play introduction"
 
   return (
-    <section className="about-intro" aria-label="A quick hello from Rafael" data-visible={visible}
+    <section className="about-intro" aria-label="A quick hello from Rafael" data-visible={visible} data-variant={variant}
       onPointerEnter={event => { if (event.pointerType === "mouse") setActionsOpen(true) }}
       onPointerLeave={event => { if (!event.currentTarget.contains(document.activeElement)) setActionsOpen(false) }}
       onFocusCapture={() => setActionsOpen(true)}
@@ -202,7 +204,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
         // next button. Keep the hovered target alive until its click completes.
         if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
       }}
-      data-open={open} data-enlarged={enlarged && open} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
+      data-open={open} data-enlarged={enlarged && open} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || (variant !== "a" && !open)) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
         if (event.key.toLowerCase() === "c" && open && !event.metaKey && !event.ctrlKey && !event.altKey &&
           !(event.target instanceof HTMLElement && event.target.matches("input, textarea, [contenteditable]"))) {
@@ -301,16 +303,22 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
         <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}
           onPointerLeave={() => setReplyLabel(returnedReply)}
           onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setReplyLabel(returnedReply) }}>
-        <button ref={emailReplyRef} type="button" className="about-intro-reply-action" aria-label="Your email" data-expanded={replyLabel === "email"}
-          onPointerEnter={event => { if (event.pointerType === "mouse") setReplyLabel("email") }} onFocus={() => setReplyLabel("email")}
-          aria-describedby={`${id}-email-tooltip`} onClick={() => startReply("email")}>
-          <HugeiconsIcon icon={Mail01Icon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" aria-hidden={replyLabel !== "email"} className="about-intro-action-label">Your email</span>
-        </button>
-        <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Text me" data-expanded={replyLabel === "text"}
-          onPointerEnter={event => { if (event.pointerType === "mouse") setReplyLabel("text") }} onFocus={() => setReplyLabel("text")}
-          aria-describedby={`${id}-text-tooltip`} onClick={() => startReply("text")}>
-          <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" aria-hidden={replyLabel !== "text"} className="about-intro-action-label">Text me</span>
-        </button>
+          {variant === "b" && <div className="about-intro-greeting">
+            <span>Rafael — Product designer</span>
+            <strong>How can I help today?</strong>
+          </div>}
+          <div className="about-intro-choices">
+            <button ref={emailReplyRef} type="button" className="about-intro-reply-action" aria-label="Your email" data-expanded={replyLabel === "email"}
+              onPointerEnter={event => { if (event.pointerType === "mouse") setReplyLabel("email") }} onFocus={() => setReplyLabel("email")}
+              aria-describedby={`${id}-email-tooltip`} onClick={() => startReply("email")}>
+              <HugeiconsIcon icon={Mail01Icon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" aria-hidden={variant === "a" && replyLabel !== "email"} className="about-intro-action-label">Your email</span>
+            </button>
+            <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Text me" data-expanded={replyLabel === "text"}
+              onPointerEnter={event => { if (event.pointerType === "mouse") setReplyLabel("text") }} onFocus={() => setReplyLabel("text")}
+              aria-describedby={`${id}-text-tooltip`} onClick={() => startReply("text")}>
+              <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" aria-hidden={variant === "a" && replyLabel !== "text"} className="about-intro-action-label">Text me</span>
+            </button>
+          </div>
         </div>
         {replyContent && visible && repliesAvailable && <AboutIntroReply key={replyContent} mode={replyContent} active={Boolean(reply)} onClose={closeReply} />}
       </div>
