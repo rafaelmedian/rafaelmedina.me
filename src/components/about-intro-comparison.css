@@ -69,7 +69,7 @@
 .intro-comparison-stage {
   position: relative;
   container-type: inline-size;
-  height: 360px;
+  height: 440px;
   isolation: isolate;
 }
 
@@ -100,26 +100,8 @@
   right: auto;
 }
 
-.intro-comparison-stage .about-intro[data-reply-open="true"] .about-intro-actions,
-.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-actions[data-reply="none"] {
+.intro-comparison-stage .about-intro[data-reply-open="true"] .about-intro-actions {
   width: min(320px, calc(100cqw - 100px));
-}
-
-.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-actions[data-reply="none"] {
-  height: 216px;
-}
-
-.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-choices {
-  flex-direction: column;
-}
-
-.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-reply-action {
-  flex: 0 0 44px;
-  width: 100%;
-}
-
-.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-greeting strong {
-  font-size: var(--text-md);
 }
 
 .intro-comparison-context {
@@ -142,4 +124,16 @@
     grid-template-columns: minmax(0, 1fr);
     max-width: 480px;
   }
+}
+
+.intro-comparison-stage .about-intro-chat {
+  width: min(320px, calc(100cqw - 100px));
+}
+
+.intro-comparison-stage .about-intro[data-variant="b"]:not([data-open="true"]) .about-intro-surface {
+  bottom: 68px;
+}
+
+.intro-comparison-stage .about-intro[data-variant="b"]:not([data-open="true"]):has([data-step="message"]) .about-intro-surface {
+  bottom: 132px;
 }

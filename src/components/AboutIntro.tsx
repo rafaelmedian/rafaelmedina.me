@@ -13,6 +13,7 @@ import VolumeHighIcon from "@hugeicons/core-free-icons/VolumeHighIcon"
 import VolumeMute01Icon from "@hugeicons/core-free-icons/VolumeMute01Icon"
 
 import AboutIntroReply from "./AboutIntroReply"
+import AboutIntroChat from "./AboutIntroChat"
 
 import type { IntroOption } from "./AboutIntroOptions"
 import type { AboutIntroMedia } from "../data/aboutIntro"
@@ -244,7 +245,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
             default={captions} onLoad={syncCaptions} />}
         </video>
         <button type="button" className="about-intro-portrait-trigger" aria-label="Show introduction actions"
-          aria-expanded={actionsOpen} aria-controls={`${id}-actions`} onClick={() => setActionsOpen(true)}
+          aria-expanded={actionsOpen} aria-controls={variant === "b" ? id : `${id}-actions`} onClick={() => setActionsOpen(true)}
           inert={open} aria-hidden={open} />
         <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
           aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
@@ -299,29 +300,25 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
           <span className="about-intro-status" role="status">{error ? "Couldn’t load video. Try again." : waiting ? "Loading introduction…" : ""}</span>
         </div>
       </div>
-      <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+      {variant === "b" ? <AboutIntroChat active={visible && !open && repliesAvailable} /> : <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
         <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}
           onPointerLeave={() => setReplyLabel(returnedReply)}
           onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setReplyLabel(returnedReply) }}>
-          {variant === "b" && <div className="about-intro-greeting">
-            <span>Rafael — Product designer</span>
-            <strong>How can I help today?</strong>
-          </div>}
           <div className="about-intro-choices">
             <button ref={emailReplyRef} type="button" className="about-intro-reply-action" aria-label="Your email" data-expanded={replyLabel === "email"}
               onPointerEnter={event => { if (event.pointerType === "mouse") setReplyLabel("email") }} onFocus={() => setReplyLabel("email")}
               aria-describedby={`${id}-email-tooltip`} onClick={() => startReply("email")}>
-              <HugeiconsIcon icon={Mail01Icon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" aria-hidden={variant === "a" && replyLabel !== "email"} className="about-intro-action-label">Your email</span>
+              <HugeiconsIcon icon={Mail01Icon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" aria-hidden={variant !== "c" && replyLabel !== "email"} className="about-intro-action-label">Your email</span>
             </button>
             <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Text me" data-expanded={replyLabel === "text"}
               onPointerEnter={event => { if (event.pointerType === "mouse") setReplyLabel("text") }} onFocus={() => setReplyLabel("text")}
               aria-describedby={`${id}-text-tooltip`} onClick={() => startReply("text")}>
-              <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" aria-hidden={variant === "a" && replyLabel !== "text"} className="about-intro-action-label">Text me</span>
+              <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" aria-hidden={variant !== "c" && replyLabel !== "text"} className="about-intro-action-label">Text me</span>
             </button>
           </div>
         </div>
         {replyContent && visible && repliesAvailable && <AboutIntroReply key={replyContent} mode={replyContent} active={Boolean(reply)} onClose={closeReply} />}
-      </div>
+      </div>}
       <span className="about-intro-label" aria-hidden="true">A quick hello <span>{timeLabel(duration)}</span></span>
     </section>
   )

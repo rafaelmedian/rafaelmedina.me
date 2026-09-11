@@ -671,7 +671,6 @@
   }
 }
 
-
 /* A single email row; the text action adds only a composer above it. */
 .about-intro-reply {
   position: absolute;
@@ -894,73 +893,6 @@
   background: var(--ink);
 }
 
-.about-intro[data-variant="b"] .about-intro-actions[data-reply="none"] {
-  width: 320px;
-  height: 156px;
-  border-radius: var(--radius-lg);
-  background: var(--mosaic-card-surface);
-  box-shadow: none;
-}
-
-.about-intro[data-variant="b"] .about-intro-actions::before {
-  content: "";
-  position: absolute;
-  left: -8px;
-  bottom: 0;
-  width: 24px;
-  height: 24px;
-  background: var(--mosaic-card-surface);
-  clip-path: path("M 8 0 H 24 V 24 H 0 C 6 21 8 16 8 8 Z");
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-quick) var(--ease-standard);
-}
-
-.about-intro[data-variant="b"] .about-intro-actions[data-reply="none"]::before {
-  opacity: 1;
-}
-
-.about-intro[data-variant="b"] .about-intro-action-buttons {
-  flex-direction: column;
-  gap: 16px;
-  padding: 12px;
-}
-
-.about-intro-greeting {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-family: var(--font-ui);
-}
-
-.about-intro-greeting span {
-  font-size: var(--text-xs);
-  color: var(--muted);
-}
-
-.about-intro-greeting strong {
-  font-size: var(--text-lg);
-  font-weight: 400;
-  line-height: 1.4;
-}
-
-.about-intro[data-variant="b"] .about-intro-choices {
-  gap: 8px;
-}
-
-.about-intro[data-variant="b"] .about-intro-reply-action {
-  flex: 1;
-  width: 0;
-  min-width: 0;
-  padding-inline: 12px;
-  background: var(--canvas);
-  box-shadow: var(--shadow-control);
-}
-
-.about-intro[data-variant="b"] .about-intro-reply-action:first-child {
-  color: var(--ink);
-}
-
 .about-intro[data-variant="c"] .about-intro-actions[data-reply="none"] {
   width: 184px;
   height: 100px;
@@ -981,18 +913,18 @@
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
 }
 
-.about-intro:is([data-variant="b"], [data-variant="c"]) .about-intro-action-label {
+.about-intro[data-variant="c"] .about-intro-action-label {
   opacity: 1;
   transform: none;
 }
 
-.about-intro:is([data-variant="b"], [data-variant="c"]):not([data-open="true"]) .about-intro-actions:not([aria-hidden="true"]) {
+.about-intro[data-variant="c"]:not([data-open="true"]) .about-intro-actions:not([aria-hidden="true"]) {
   visibility: visible;
   opacity: 1;
   transform: none;
 }
 
-.about-intro:is([data-variant="b"], [data-variant="c"]) .about-intro-label {
+.about-intro[data-variant="c"] .about-intro-label {
   display: none;
 }
 
@@ -1006,28 +938,10 @@
     display: none;
   }
 
-  .about-intro[data-variant="b"] .about-intro-actions[data-reply="none"] {
-    width: min(320px, calc(100vw - 100px));
-    height: 216px;
   }
-
-  .about-intro[data-variant="b"] .about-intro-choices {
-    flex-direction: column;
-  }
-
-  .about-intro[data-variant="b"] .about-intro-reply-action {
-    flex: 0 0 44px;
-    width: 100%;
-  }
-
-  .about-intro[data-variant="b"] .about-intro-greeting strong {
-    font-size: var(--text-md);
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
-  .about-intro-send::before,
-  .about-intro[data-variant="b"] .about-intro-actions::before {
+  .about-intro-send::before {
     transition: none;
   }
 }

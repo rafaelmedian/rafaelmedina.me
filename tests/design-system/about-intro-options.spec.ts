@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-for (const variant of ['b', 'c']) {
+for (const variant of ['c']) {
   for (const width of [320, 1440]) {
     test(`option ${variant.toUpperCase()} supports replies and playback at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 })
@@ -12,7 +12,6 @@ for (const variant of ['b', 'c']) {
       const text = intro.getByRole('button', { name: 'Text me', exact: true })
       await expect(email).toBeVisible()
       await expect(text).toBeVisible()
-      if (variant === 'b') await expect(intro.getByText('How can I help today?')).toBeVisible()
       const selector = page.getByRole('complementary', { name: 'Introduction design options' })
       const selectorBox = await selector.boundingBox()
       expect(selectorBox!.y).toBeLessThan(20)

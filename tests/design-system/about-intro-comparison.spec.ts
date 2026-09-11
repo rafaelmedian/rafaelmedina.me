@@ -13,6 +13,10 @@ for (const width of [320, 1440]) {
       const frame = await card.boundingBox()
       expect(frame!.x).toBeGreaterThanOrEqual(12)
       expect(frame!.x + frame!.width).toBeLessThanOrEqual(width - 12)
+      if (name === 'Chat bubble') {
+        await expect(card.getByRole('textbox', { name: 'Your email' })).toBeVisible()
+        continue
+      }
       await card.getByRole('button', { name: 'Show introduction actions' }).focus()
       await card.getByRole('button', { name: 'Your email', exact: true }).click()
       await expect(card.getByRole('textbox', { name: 'Your email' })).toBeFocused()

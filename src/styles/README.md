@@ -12,6 +12,7 @@ and the global reduced-motion policy last.
 - `local-time.css`: local time, map, and résumé preview.
 - `about.css`: About content and résumé layout.
 - `about-intro.css`: deferred introduction video, circle-to-player morph, plain reply actions and floating dialog layer, minimal email and text replies, and shared mobile TOC dock.
+- `about-intro-chat.css`: B’s staggered greeting, scrollable conversation, and email-first composer.
 - `work-history.css`: work-history popovers and inline company links.
 - `contact.css`: contact pills, the booking pill, and social hover cards.
 - `work-grid.css`: project rows, captions, media, and About takeover choreography.

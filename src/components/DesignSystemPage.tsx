@@ -2185,21 +2185,24 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Text grows that surface upward to
                   172px with <code>--radius-lg</code> corners. On mobile, portrait and field share a
                   row above the TOC, with the field constrained to the viewport minus 100px.
-                  Development offers three comparison options: A keeps the compact pill; B uses a 320px by
-                  156px chat bubble with a muted identity line, an 18px question, and two 44px buttons;
-                  C separates the actions into two 184px pills with a 12px gap. B uses 24px corners and
-                  the shared gray tile surface without an outer shadow. A transparent, curved 24px tail
-                  extends 8px toward the portrait, fading out when a form opens. The question uses regular
-                  weight, and both reply buttons use white surfaces, dark icons and the control shadow. On mobile, B is 216px tall, stacks the buttons, uses a 16px
-                  question and is constrained to the viewport minus 100px. B and C keep their reply
-                  choices visible beside the portrait above the TOC. The development-only A/B/C selector
-                  sits 12px from the top safe area on the corner layer with 44px targets; share an option
-                  using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>. All options share playback
-                  and reply forms, and use the existing feedback toolbar for review. The development-only
-                  <a href="/intro-options"> comparison page</a> shows all three together in separate 360px stages,
-                  with contained 64px portraits and 240px players (320px when enlarged). It uses the shared
-                  type, radius and shadow tokens and stacks its cards below 1100px. Only one recording
-                  can play at a time; its styles load with that page alone.
+                  Development offers three comparison options: A keeps the compact pill; C separates the actions
+                  into two 184px pills with a 12px gap. B becomes a conversation anchored to a 64px portrait.
+                  Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
+                  curved tail extends 8px toward the face. They enter after 80, 120 and 160ms, followed by the
+                  email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
+                  0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
+                  the greeting; comparison previews observe their own stage. No field takes focus on arrival.
+                  Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
+                  asks “Want to share anything else?” after 80ms and reveals the optional message after 160ms.
+                  The message textarea is 88px high. The face sits 68px above the input baseline initially and
+                  132px above it in the message step. The history scrolls within 88–256px, constrained by the
+                  viewport minus 260px; the composer stays below it. Final submission opens an email draft,
+                  with a visible explanation. No address is sent or stored when advancing to the message step.
+                  The development-only A/B/C selector sits 12px from the top safe area on the corner layer with
+                  44px targets; share an option using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
+                  The <a href="/intro-options">comparison page</a> shows all three together in separate 440px
+                  stages, with contained 64px portraits and 240px players (320px when enlarged). It stacks its
+                  cards below 1100px. Only one recording can play at a time; its styles load with that page alone.
                   There is no corner dismiss button.
                   Both forms cap at 320px, use the page fill and shared hairline ring, and <code>--text-md</code> input text
                   to prevent Safari focus zoom. Escape closes the composer and returns focus;

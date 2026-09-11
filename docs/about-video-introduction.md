@@ -191,12 +191,13 @@ The A/B/C selector appears when About is active in development. It changes the
 widget in place; the selected option is also saved in the URL as `introStyle`.
 
 - **A — Compact pill:** the current hover-expanding icon buttons.
-- **B — Chat bubble:** an identity line and “How can I help today?” above two
-  buttons, inspired by the supplied screenshot. Both choices stay visible.
+- **B — Chat bubble:** a staggered greeting, then an email field. Confirming the
+  address reveals an optional message field while keeping the conversation visible.
 - **C — Stacked buttons:** separate “Your email” and “Text me” pills beside
   the portrait, without the introductory copy.
 
-All three use the same video, deferred media, reply form and email-draft flow.
+All three use the same video and email-draft delivery. B uses a conversational
+email-first flow; A and C keep the compact reply forms.
 Switching options closes playback. B and C stack comfortably above the mobile
 TOC. Use the existing feedback toolbar to annotate an option; include its letter.
 The selector is development-only and can be removed after choosing a direction.
@@ -207,7 +208,19 @@ one video pauses the others. Cards sit side by side on wide screens and stack
 on narrow screens. The homepage selector also links to this comparison.
 
 B now follows the supplied Messages reference: a shared gray surface, rounded
-corners and a curved tail toward the portrait, with two white reply buttons.
+corners and a curved tail toward the portrait, followed by an email-first conversation.
 All reply forms use a quiet outlined field and an upward send arrow. It is hidden
 while the email is empty, disabled gray for an invalid email, and blue when the
 browser accepts the address. It still opens a draft in the visitor's email app.
+
+B's conversation starts on entering About (or scrolling its comparison card into
+view): the portrait appears first, then “Hey, I’m Rafa.”, “How are you doing?”,
+and “Wanna share your email with me so I can reach out to you?” The email field
+follows. The short stagger uses 80/120/160/240ms entry delays, an 8px rise, 2px
+blur and the shared 360ms surface easing; reduced motion shows it immediately.
+
+Confirming the email only advances local UI state. It appears as an editable
+reply bubble, followed by “Want to share anything else?” and an optional message
+field. Nothing is transmitted until the visitor reviews and sends the final
+email draft in their email app. The face stays beside the latest incoming bubble;
+the history scrolls when necessary while the input remains below it.
