@@ -45,15 +45,22 @@ test("keeps the caption blur outside the card's squircle clip", async ({ page })
   await expect(card.locator(":scope > .mosaic-row-card-scrim")).toHaveCount(1)
 })
 
-test("corner tuner changes rounded surfaces without reshaping circles", async ({ page }) => {
+test("corner tuner changes the shared curve and radius scale without reshaping circles", async ({ page }) => {
   await page.goto("/?tune=corners")
   const curve = page.getByRole("slider", { name: "Exponent" })
+  const radiusScale = page.getByRole("slider", { name: "Radius Scale" })
   await expect(curve).toBeVisible()
+  await expect(radiusScale).toBeVisible()
   await expect(curve).toHaveAttribute("aria-valuenow", "1.3")
+  await expect(radiusScale).toHaveAttribute("aria-valuenow", "1.3")
   await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.3)")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "31.2px")
 
   await curve.press("End")
+  await radiusScale.press("End")
   await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(4)")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "48px")
+  await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link").first()).toHaveCSS("border-radius", "16px")
   await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
 
   await page.locator(".mosaic-row-card").first().click()

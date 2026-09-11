@@ -1150,8 +1150,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>superellipse(2)</code> curve from CSS Borders Level 4. Browsers that do not support{" "}
                 <code>corner-shape</code> fall back to the same four circular radii without changing layout. Pills,
                 dots, avatars, the photo globe's circular hit area, and its layout control remain geometrically round. In development, the homepage shows the live curve
-                tuner by default; <a href="/?tune=corners">/?tune=corners</a> remains its explicit route. The
-                stylesheet remains the production source of truth.
+                and 0.5–2× radius-scale tuner by default; <a href="/?tune=corners">/?tune=corners</a> remains its explicit route. The
+                stylesheet remains the production source of truth; the tuner starts at the shipped 1.3× scale.
               </p>
               <div
                 className="ds-rule"
