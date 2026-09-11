@@ -150,6 +150,36 @@ test('shows three typing dots before each greeting and pauses the sequence in a 
   expect(Math.abs(chatBox!.x + chatBox!.width - formBox!.x - formBox!.width)).toBeLessThan(1)
 })
 
+test('unsends the address with a puff before reopening the email field', async ({ page }) => {
+  await page.clock.install()
+  await page.goto('/')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  await expect(chat.getByRole('status', { name: 'Rafa is typing' })).toBeVisible()
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
+  // Each typing timer is scheduled after the previous message renders.
+  for (const text of ['Hey, I’m Rafa.', 'How are you doing?', 'Wanna share your email with me so I can reach out to you?']) {
+    await page.clock.runFor(900)
+    await expect(chat.getByText(text)).toBeVisible()
+  }
+  const email = chat.getByRole('textbox', { name: 'Your email' })
+  await email.fill('hello@example.com')
+  await email.press('Enter')
+  const sent = chat.getByRole('button', { name: 'Edit email address: hello@example.com' })
+  await sent.click()
+  await expect(chat.locator('.about-intro-chat-puff i')).toHaveCount(24)
+  await expect(chat.locator('.about-intro-chat-sent')).toHaveAttribute('data-puff', 'true')
+  await expect(email).toHaveCount(0)
+  await page.clock.runFor(480)
+  await expect(email).toBeVisible()
+  await expect(sent).toHaveCount(0)
+  await expect(chat.locator('.about-intro-chat-puff')).toHaveCount(0)
+  // Focus waits a frame for the field to mount.
+  await page.clock.runFor(50)
+  await expect(email).toBeFocused()
+  await expect(email).toHaveValue('hello@example.com')
+})
+
 
 test('sends from the website, preserves failed messages and reuses the retry key', async ({ page }) => {
   const payloads: { email: string; message: string; requestId: string }[] = []

@@ -248,6 +248,11 @@ mobile. When the field appears, history shifts over the shared 360ms smooth
 transition. The white reply surface uses the shared hairline and overlay shadow,
 with an 8px visual gap below the last message. Reduced motion skips the shift.
 
+Clicking the sent address to edit it unsends it with a Messages-style puff: the
+bubble and its tapback blur out while dots of its blue drift up and away, and
+after 480ms the email field returns with the address and takes focus. Reduced
+motion goes straight back to the field.
+
 ## Direct website replies
 
 B now submits to a contact Worker instead of opening an email app. The email

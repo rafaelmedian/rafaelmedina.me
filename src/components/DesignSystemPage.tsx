@@ -2221,7 +2221,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   shows the same typing bubble before “Want to share anything else?” and reveals the optional
                   message field after 160ms. Hidden fields stay inert; their measured height offsets the history
                   so the typing bubble’s bottom edge rests level with the avatar’s. The history moves into its reply position
-                  over 360ms with the shared smooth curve as the field enters. Timers
+                  over 360ms with the shared smooth curve as the field enters. Clicking the sent address unsends it
+                  with a puff: the bubble and its tapback blur 6px and grow to 1.08 as they fade over 240ms, while 24
+                  dots of the bubble’s blue, 3–6px, pop in and drift up to 25px up and out over 420ms, staggered
+                  within 70ms. At 480ms the email field returns with the address and takes focus; typing timers hold
+                  during the puff. Reduced motion skips it. Timers
                   pause when the chat or tab is hidden, completed messages stay visible on return, and
                   reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
                   The email field caps at 256px by 44px and matches the bubbles’ 14px text. It sits at the chat’s

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useId, useRef, useState, type FormEvent } from "react"
+import { useEffect, useLayoutEffect, useId, useRef, useState, type CSSProperties, type FormEvent } from "react"
 import { ArrowUp } from "./NavigationIcons"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
 import { sendContact, type ContactMessage } from "../lib/sendContact"
@@ -17,6 +17,18 @@ const tapbackShape = <>
   <circle className="about-intro-chat-tapback-trail" cx="18" cy="34" r="6.5" />
   <circle className="about-intro-chat-tapback-trail" data-far="true" cx="8" cy="44" r="3.5" />
 </>
+
+// Editing the sent address unsends it with a Messages-style puff: the bubble
+// blurs away while its colour scatters as dots, then the email field returns.
+const puffDuration = 480
+// A fixed scatter across the bubble (percent positions, from the R2 sequence so it
+// is even without falling into rows), drifting up and out like smoke. The right
+// side drifts at most 6px so the history's 8px padding never clips it.
+const puffDots = Array.from({ length: 24 }, (_, index) => {
+  const x = Math.round((0.5 + index * 0.7548776662) % 1 * 100)
+  const y = Math.round((0.5 + index * 0.5698402910) % 1 * 100)
+  return { x, y, dx: Math.min(6, (x - 60) * 0.4), dy: (y - 50) * 0.3 - 10, size: 3 + (index * 7) % 4, delay: (index * 23) % 70 }
+})
 
 export default function AboutIntroChat({ active }: { active: boolean }) {
   const id = useId()
@@ -37,6 +49,10 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   const locked = delivery === "sending" || delivery === "sent"
   const [revealed, setRevealed] = useState(0)
   const [reaction, setReaction] = useState(0)
+  const sentRef = useRef<HTMLDivElement>(null)
+  // The unsent bubble's box within the history, where its dots scatter from.
+  const [puff, setPuff] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
+  const puffing = puff !== null
   const reducedMotion = usePrefersReducedMotion()
   const skipTyping = reducedMotion || (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
   const reactionStage = confirmed ? (skipTyping ? reactionDelays.length : reaction) : 0
@@ -93,16 +109,17 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   }, [confirmed, message])
 
   useEffect(() => {
-    if (!active || revealed >= target) return
+    // An unsend in progress holds the conversation where it is.
+    if (!active || puffing || revealed >= target) return
     const timer = window.setTimeout(() => setRevealed(count => skipTyping ? target : count + 1), skipTyping ? 0 : typingDuration)
     return () => window.clearTimeout(timer)
-  }, [active, revealed, target, skipTyping])
+  }, [active, puffing, revealed, target, skipTyping])
 
   useEffect(() => {
-    if (!active || !confirmed || reactionStage >= reactionDelays.length) return
+    if (!active || !confirmed || puffing || reactionStage >= reactionDelays.length) return
     const timer = window.setTimeout(() => setReaction(stage => stage + 1), reactionDelays[reactionStage])
     return () => window.clearTimeout(timer)
-  }, [active, confirmed, reactionStage])
+  }, [active, confirmed, puffing, reactionStage])
 
   useEffect(() => {
     if (!active) focusAfterTyping.current = false
@@ -138,11 +155,22 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     setConfirmed(true)
   }
   const editEmail = () => {
-    setConfirmed(false)
-    setReaction(0)
-    setDelivery("idle")
-    requestAnimationFrame(() => emailRef.current?.focus({ preventScroll: true }))
+    const sent = sentRef.current
+    setPuff({ top: sent?.offsetTop ?? 0, left: sent?.offsetLeft ?? 0, width: sent?.offsetWidth ?? 0, height: sent?.offsetHeight ?? 0 })
   }
+
+  useEffect(() => {
+    if (!puffing) return
+    const timer = window.setTimeout(() => {
+      setPuff(null)
+      setConfirmed(false)
+      setReaction(0)
+      setDelivery("idle")
+      requestAnimationFrame(() => emailRef.current?.focus({ preventScroll: true }))
+    }, skipTyping ? 0 : puffDuration)
+    return () => window.clearTimeout(timer)
+  }, [puffing, skipTyping])
+
   const submitMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (sending.current || delivery === "sent" || !valid) return
@@ -171,8 +199,8 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
       {/* Only the typing bubble has a tail on Rafa's side; once a question lands, the visitor's field below it carries one on the right. */}
       {greeting.slice(0, Math.min(shown, 3)).map(text => <p key={text} className="about-intro-chat-bubble about-intro-chat-new">{text}</p>)}
       {confirmed && <>
-        <div className="about-intro-chat-sent about-intro-chat-new" data-reacted={reactionShown}>
-          <button type="button" className="about-intro-chat-outgoing" onClick={editEmail}
+        <div ref={sentRef} className="about-intro-chat-sent about-intro-chat-new" data-reacted={reactionShown} data-puff={puffing}>
+          <button type="button" className="about-intro-chat-outgoing" onClick={puffing ? undefined : editEmail}
             aria-label={`Edit email address: ${email}`} title="Edit your email" disabled={locked}>{email}</button>
           {reactionShown && <svg className="about-intro-chat-reaction" viewBox="0 0 52 50" width="52" height="50" role="img" aria-label="Loved by Rafa">
             <circle className="about-intro-chat-tapback-ripple" cx="32" cy="20" r="18" />
@@ -183,6 +211,13 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
             </g>
           </svg>}
         </div>
+        {/* A sibling rather than a child, so the dots outlive the bubble's fade. */}
+        {puff && !skipTyping && <span className="about-intro-chat-puff" style={puff} aria-hidden="true">
+          {puffDots.map(({ x, y, dx, dy, size, delay }) => <i key={`${x}-${y}`} style={{
+            left: `${x}%`, top: `${y}%`, width: size, height: size,
+            "--puff-x": `${dx}px`, "--puff-y": `${dy}px`, animationDelay: `${delay}ms`,
+          } as CSSProperties} />)}
+        </span>}
         {messageReady && <p className="about-intro-chat-bubble about-intro-chat-new" data-followup>Want to share anything else?</p>}
       </>}
       {typing && <div key={`typing-${shown}`} className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-typing about-intro-chat-new"

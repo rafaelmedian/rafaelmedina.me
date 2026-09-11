@@ -49,6 +49,7 @@
 }
 
 .about-intro-chat-history {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -230,6 +231,38 @@
   .about-intro-chat-reaction .about-intro-chat-heart { animation: none; }
 
   .about-intro-chat-tapback-ripple { display: none; }
+}
+
+/* Unsend puff: the address and its tapback blur out as one, while dots of the
+   bubble's blue scatter from where it sat. Reduced motion skips straight back
+   to the email field and never renders the dots. */
+.about-intro-chat-sent[data-puff="true"] {
+  transform-origin: center;
+  animation: intro-puff 240ms var(--ease-standard) forwards;
+}
+
+.about-intro-chat-puff {
+  position: absolute;
+  pointer-events: none;
+}
+
+.about-intro-chat-puff i {
+  position: absolute;
+  translate: -50% -50%;
+  border-radius: var(--radius-full);
+  background: var(--intro-blue);
+  opacity: 0;
+  animation: intro-puff-dot 420ms var(--ease-smooth) forwards;
+}
+
+@keyframes intro-puff {
+  to { opacity: 0; transform: scale(1.08); filter: blur(6px); }
+}
+
+@keyframes intro-puff-dot {
+  0% { opacity: 0; transform: scale(0.4); }
+  25% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: translate(var(--puff-x), var(--puff-y)) scale(0.2); }
 }
 
 .about-intro-chat-composer {
