@@ -14,7 +14,7 @@ import {
 import { ExternalLink, X } from "./NavigationIcons"
 
 import { AboutPanel } from "./AboutPanel"
-import { WritingsFolder, type WritingsFolderHandle } from "./WritingsFolder"
+import { WritingsFolder, type WritingsFolderHandle, type WritingsReaderStatus } from "./WritingsFolder"
 import { ContactActionRow } from "./ContactActionRow"
 import { ProfileEmailCopy } from "./ProfileEmailCopy"
 import { ProfileLocation } from "./ProfileLocation"
@@ -30,60 +30,37 @@ import { formatAvailability } from "../lib/availability"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { useHoverCard } from "../lib/hoverCard"
 import { visibleOriginRect } from "../lib/originMotion"
+import { revealGalleryEntry } from "../lib/galleryEntry"
+import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
-import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl } from "../lib/portfolioUrl"
-import { projectPath } from "../lib/projectMetadata"
-import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, type GalleryItem } from "../lib/galleryItems"
+import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl, usePortfolioItemUrl } from "../lib/portfolioUrl"
+import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
+import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
+import { ProfileChat } from "./ProfileChat"
 
-type PreviewGalleryModule = typeof import("./PreviewGalleryDialog")
-
-let galleryModulePromise: Promise<PreviewGalleryModule> | null = null
-// Browsers cache failed module imports for the page lifetime. Keep the emitted
-// chunk URL so a later interaction can retry it under a fresh module-map key.
-let failedGalleryModuleUrl: string | null = null
-let galleryRetryAttempt = 0
-
-function findGalleryModuleUrl() {
-  if (typeof performance === "undefined") return null
-  const entries = performance.getEntriesByType("resource")
-  for (let index = entries.length - 1; index >= 0; index -= 1) {
-    const url = entries[index]?.name
-    if (url?.includes("PreviewGalleryDialog")) return url
-  }
-  return null
-}
-
-function loadPreviewGallery() {
-  if (galleryModulePromise) return galleryModulePromise
-
-  let modulePromise: Promise<PreviewGalleryModule>
-  if (failedGalleryModuleUrl) {
-    const retryUrl = new URL(failedGalleryModuleUrl)
-    retryUrl.searchParams.set("retry", String(++galleryRetryAttempt))
-    failedGalleryModuleUrl = null
-    modulePromise = import(/* @vite-ignore */ retryUrl.href) as Promise<PreviewGalleryModule>
-  } else {
-    modulePromise = import("./PreviewGalleryDialog")
-  }
-
-  galleryModulePromise = modulePromise.catch((error: unknown) => {
-    galleryModulePromise = null
-    failedGalleryModuleUrl = findGalleryModuleUrl()
-    throw error
-  })
-  return galleryModulePromise
-}
+type PreviewGalleryComponent = typeof import("./PreviewGalleryDialog").PreviewGalleryDialog
 
 // React caches a lazy component's rejection forever, so a retry needs a fresh
 // component identity — each call hands back a new one over the same
 // loadPreviewGallery, whose own bookkeeping cache-busts the failed chunk URL.
+//
+// A chunk that has already arrived -- hover prefetched it, or a shared link
+// fetched it during hydration -- is handed over synchronously, which `lazy`
+// takes as resolved. Through a promise it suspends even when warm, and React
+// holds a boundary's content back for up to 300ms once its fallback has shown:
+// the first preview of a visit took 315ms to appear against 15ms for the next.
 function createPreviewGalleryComponent() {
-  return lazy(() => loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog })))
+  return lazy(() => {
+    const loaded = loadedPreviewGallery()
+    if (!loaded) return loadPreviewGallery().then((module) => ({ default: module.PreviewGalleryDialog }))
+    const resolved = { then: (resolve: (module: { default: PreviewGalleryComponent }) => void) => resolve({ default: loaded.PreviewGalleryDialog }) }
+    return resolved as unknown as Promise<{ default: PreviewGalleryComponent }>
+  })
 }
 
 type GalleryLoadBoundaryProps = {
@@ -447,7 +424,7 @@ function SectionCorner({
   resumeHref,
 }: {
   onSelect: (href: string) => void
-  onNotes: (opener: HTMLElement) => void
+  onNotes: () => void
   onNotesIntent: () => void
   resumeHref: string
 }) {
@@ -537,7 +514,7 @@ function SectionCorner({
           folder the mosaic tile does, so this is a button, not a link. It hands
           itself over as the opener, so the sheet flies out of this corner
           rather than out of a tile that may be pages down. */}
-      <button type="button" className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent} onClick={(event) => onNotes(event.currentTarget)}>
+      <button type="button" className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent} onClick={onNotes}>
         Notes
       </button>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
@@ -625,6 +602,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const { gridRef, runwayRef } = useWorkGridHeight()
   const { avatarRef, active: introActive } = useAvatarIntro()
   const avatarSpinTimerRef = useRef<number | undefined>(undefined)
+  const [isProfileChatOpen, setIsProfileChatOpen] = useState(false)
   useEffect(() => () => window.clearTimeout(avatarSpinTimerRef.current), [])
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
@@ -638,14 +616,21 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   // Keyed by gallery index, and the résumé tile is one of the keys: the sheet
   // grows out of whichever tile the slide belongs to.
   const previewCardNodesRef = useRef(new Map<number, HTMLElement>())
+  const writingsFolderTileRef = useRef<HTMLButtonElement | null>(null)
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [availabilityLabel, setAvailabilityLabel] = useState(() =>
     formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
-  const [writingsOpen, setWritingsOpen] = useState(false)
+  const [readerModule, setReaderModule] = useState<typeof import("./WritingsReader") | null>(null)
+  const { itemId: writingId, selectItem: selectWriting, clearItem: clearWriting } = usePortfolioItemUrl("writing")
   const writingsFolderRef = useRef<WritingsFolderHandle>(null)
+  // Direct note links have no opener to restore when the gallery finally
+  // closes. Returning to their list establishes the folder as that fallback.
+  const [galleryFallbackFocus, setGalleryFallbackFocus] = useState<HTMLElement | null>(null)
+  // What the notes slide says while a reader is on its way or failed to come.
+  const [notesStatus, setNotesStatus] = useState<WritingsReaderStatus>({ status: null, pendingId: null })
   const [GalleryDialog, setGalleryDialog] = useState(() => createPreviewGalleryComponent())
 
   const handleGalleryLoadError = useCallback(() => {
@@ -667,6 +652,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         // declares: the sequence the arrow keys walk has to be the one the grid
         // shows, or they page through tiles a visitor cannot see.
         if (item.kind === "resume") return { ...item, previewIndex: previewIndex++ }
+        // The folder opens a slide too -- the list of notes -- so it draws a
+        // number from the same counter as the résumé does.
+        if (item.kind === "writings") return { ...item, previewIndex: previewIndex++ }
         if (item.kind !== "project") return item
         const card = cards.find(candidate => candidate.id === item.cardId)
         if (!card) throw new Error(`Missing home project: ${item.cardId}`)
@@ -683,7 +671,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
             ? [projectGalleryItem(item.card)]
             : item.kind === "resume"
               ? [resumeGalleryItem]
-              : [],
+              : item.kind === "writings"
+                ? [writingsGalleryItem]
+                : [],
         ),
       ),
     [groupsRender],
@@ -701,11 +691,39 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     const item = galleryItems[index]
     if (item) selectGalleryItem(item.id, galleryItemId !== null)
   }
+  const notesIndex = galleryItems.findIndex((item) => item.kind === "writings")
 
-  const openGalleryItem = (item: GalleryItem, index: number) => {
+  const openGalleryItem = (item: GalleryItem, index: number, fallbackFocus: HTMLElement | null = null) => {
     setOpenedByGesture(true)
+    setGalleryFallbackFocus(fallbackFocus)
     openPreview(item, index, setSelectedWorkPreviewIndex)
   }
+
+  // The tile and the header's Notes link both open the gallery on the list.
+  const openNotes = () => {
+    if (notesIndex < 0) return
+    openGalleryItem(galleryItems[notesIndex], notesIndex)
+  }
+
+  // Back stays inside the same dialog. Canonical note paths already clear to
+  // /notes/; a legacy query link also needs that parent address installed.
+  const returnToNotes = () => {
+    setGalleryFallbackFocus(writingsFolderTileRef.current)
+    if (isNotesPath(window.location.pathname) || notesIndex < 0) return
+    setOpenedByGesture(false)
+    selectGalleryItem(writingsItemId, false)
+  }
+
+  // A gallery address with no dialog to open after all -- its chunk failed, or
+  // it was cleared before presenting -- still owes the visitor the page.
+  useEffect(() => {
+    if (activeWorkPreviewIndex === null) revealGalleryEntry()
+  }, [activeWorkPreviewIndex])
+
+  // Warm the reader while the list it opens from is on screen.
+  useEffect(() => {
+    if (galleryItemId === writingsItemId) writingsFolderRef.current?.preload()
+  }, [galleryItemId])
 
   // The gallery grows out of (and shrinks back into) the card it represents, so
   // it needs that card's live geometry at open and close time.
@@ -735,7 +753,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
           // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null || writingsOpen}
+          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null}
         />
       )
     }
@@ -875,8 +893,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   }
 
   // Clicking the avatar carries the turn the pointer already started round once
-  // more and then leaves for About, so the scroll reads as something the coin
-  // did rather than something that happened next to it.
+  // more and then opens the chat, so the new surface reads as something the
+  // coin revealed rather than something that happened next to it.
   //
   // The spin is a script animation composed onto whatever the hover transition
   // is doing at that instant: transitions outrank CSS animations, so a keyframe
@@ -884,10 +902,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   // animation would snap the coin back to zero before starting. Adding a whole
   // turn also means the animation ends on the angle its underlying value is
   // already at, so there is nothing to see when it hands the transform back.
-  const spinAvatarToAbout = () => {
+  const spinAvatarToChat = () => {
     const coin = avatarRef.current?.querySelector<HTMLElement>(".mosaic-avatar-coin-inner")
     if (!coin || prefersReducedMotion) {
-      scrollToSection("avatar")
+      setIsProfileChatOpen(true)
       return
     }
     const style = getComputedStyle(coin)
@@ -898,7 +916,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     })
     window.clearTimeout(avatarSpinTimerRef.current)
     avatarSpinTimerRef.current = window.setTimeout(
-      () => scrollToSection("avatar"),
+      () => setIsProfileChatOpen(true),
       cssTimeToMilliseconds(style.getPropertyValue("--avatar-spin-lead")),
     )
   }
@@ -926,8 +944,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     <section className="mosaic-shell">
       <SectionCorner
         onSelect={openAbout}
-        onNotes={(opener) => writingsFolderRef.current?.openFolder(opener)}
-        onNotesIntent={() => writingsFolderRef.current?.preload()}
+        onNotes={openNotes}
+        onNotesIntent={prefetchPreviewGallery}
         resumeHref={links.resumePdf}
       />
       <SocialCorner email={links.email} />
@@ -935,6 +953,16 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
         onServices={() => scrollToSection("toc_services", "about-panel-services")}
+      />
+      <ProfileChat
+        open={isProfileChatOpen}
+        name={profile.name}
+        photo={profile.photo}
+        links={links}
+        onClose={() => {
+          setIsProfileChatOpen(false)
+          window.requestAnimationFrame(() => avatarRef.current?.focus())
+        }}
       />
       <button
         type="button"
@@ -955,8 +983,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               ref={avatarRef}
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
-              aria-label={`Read about ${profile.name}`}
-              onClick={spinAvatarToAbout}
+              aria-label={`Ask about ${profile.name}`}
+              aria-haspopup="dialog"
+              onClick={spinAvatarToChat}
             >
               <div className="mosaic-avatar-coin-inner">
                 <span className="mosaic-avatar-face mosaic-avatar-face-front">
@@ -981,7 +1010,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   <path d="M33 5C23 4 11 7 4 15" />
                   <path d="M4 15 10.8 13.4M4 15 6.5 8.5" />
                 </svg>
-                <span className="mosaic-avatar-hint-label">read about me</span>
+                <span className="mosaic-avatar-hint-label">ask about me</span>
               </span>
             </button>
             <div className="mosaic-profile-meta">
@@ -1068,7 +1097,19 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           )
                           if (item.kind === "writings") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
-                              <WritingsFolder ref={writingsFolderRef} onOpenChange={setWritingsOpen} />
+                              <WritingsFolder
+                                ref={writingsFolderRef}
+                                onOpen={openNotes}
+                                onPrefetch={prefetchPreviewGallery}
+                                onReaderReady={setReaderModule}
+                                onStatusChange={setNotesStatus}
+                                tileRef={(node) => {
+                                  writingsFolderTileRef.current = node
+                                  const nodes = previewCardNodesRef.current
+                                  if (node) nodes.set(item.previewIndex, node)
+                                  else nodes.delete(item.previewIndex)
+                                }}
+                              />
                             </div>
                           )
                           if (item.kind === "photos") return (
@@ -1123,7 +1164,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${galleryItems.length}`}
                                 aria-describedby={`${itemKey}-description`}
                               >
-                                {media}
+                                <span className="mosaic-row-card-media-clip">
+                                  {media}
+                                </span>
                                 <span className="mosaic-row-card-scrim" aria-hidden="true">
                                   <span /><span /><span /><span />
                                 </span>
@@ -1189,11 +1232,28 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   prefersReducedMotion={prefersReducedMotion}
                   getOriginRect={getPreviewOriginRect}
                   onOpenChange={(nextOpen) => {
-                    if (!nextOpen) {
+                    if (nextOpen) return
+                    writingsFolderRef.current?.cancelPending()
+                    if (!writingId) {
                       clearGalleryItem()
+                      return
                     }
+                    // A press outside a note closes the gallery with it. The
+                    // note gives up its address first and the list its own
+                    // after, so history lands where the visit began rather
+                    // than on a /notes/ entry nothing is showing any more.
+                    if (!openedByGesture) setGalleryFallbackFocus(writingsFolderTileRef.current)
+                    clearWriting(() => clearGalleryItem())
                   }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}
+                  onSelectWriting={(id) => writingsFolderRef.current?.openWriting(id)}
+                  writingId={writingId}
+                  WritingReader={readerModule?.WritingsReader}
+                  onPageWriting={(id) => selectWriting(id, true)}
+                  onRetryWriting={() => writingsFolderRef.current?.retry()}
+                  onBackFromWriting={() => clearWriting(returnToNotes)}
+                  notesStatus={notesStatus}
+                  finalFocus={galleryFallbackFocus ? { current: galleryFallbackFocus } : undefined}
                 />
               </Suspense>
             </GalleryLoadBoundary>

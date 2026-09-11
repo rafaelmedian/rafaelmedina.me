@@ -5,9 +5,12 @@ these imports; component styles are not loaded on demand. Keep Tailwind first
 and the global reduced-motion policy last.
 
 - `base.css`: fonts, shared tokens, element defaults, and keyboard focus.
-- `page-edge.css`: the bottom overscroll effect.
+- `inline-swap.css`: shared directional swaps for compact labels and icons.
+- `page-edge.css`: the bottom-fade ramp shared by the About sheet and the notes
+  card (each places its own), and the bottom overscroll effect.
 - `profile.css`: page shell, hero, avatar, first-load intro, and profile metadata
   (including the location line's copy-to-clipboard address).
+- `profile-chat.css`: the avatar's full-screen email gate, conversation, and composer.
 - `navigation.css`: corner links, takeover close button, and mobile contents.
 - `local-time.css`: local time, map, and résumé preview.
 - `about.css`: About content and résumé layout.
@@ -20,10 +23,10 @@ and the global reduced-motion policy last.
 - `resume-content.css`: company logos, work history entries, and selected project screenshots in the reader.
 - `likes.css`: the like pill shared by the notes reader and the project preview.
 - `personal-photos.css`: photo stack and carousel dialog.
-- `preview-gallery.css`: project preview dialog.
+- `preview-gallery.css`: shared gallery dialog, nested Notes pages, and card motion.
 - `booking.css`: the hint tooltip shared by the booking pill and the address,
   the booking dialog, and the Cal.com frame.
-- `writings.css`: writings folder tile, reader dialog, and its transitions.
+- `writings.css`: writings folder tile, article typography, and margin artwork.
 - `standalone.css`: prerendered project pages and the 404.
 - `reduced-motion.css`: the shared duration clamp and final visibility resets.
 

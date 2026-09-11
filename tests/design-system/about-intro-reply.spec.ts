@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const openAbout = async (page: Page) => {
-  await page.goto('/?introStyle=a')
+  await page.goto('/?introStyle=a&tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
   await expect(intro).toBeVisible()

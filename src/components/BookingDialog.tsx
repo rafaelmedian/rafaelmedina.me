@@ -1,6 +1,8 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useEffect, useRef, useState, type RefObject } from "react"
 
+import { isTuningCornerCurve } from "../lib/developmentTuning"
+
 type BookingDialogProps = {
   /** Cal.com event type, e.g. `https://cal.com/rafaelmedian/30min`. */
   bookingUrl: string
@@ -14,6 +16,9 @@ type BookingDialogProps = {
 // Long enough that a slow connection is not accused of being a blocked one,
 // short enough that nobody sits in front of a blank rectangle wondering.
 const STALL_MS = 6000
+const SKELETON_WEEKDAYS = Array.from({ length: 7 })
+const SKELETON_DAYS = Array.from({ length: 35 })
+const SKELETON_TIMES = Array.from({ length: 7 })
 
 // Cal.com renders its booking page without the marketing chrome when it is
 // asked for the embed view, so the iframe carries only the calendar itself.
@@ -36,6 +41,7 @@ export function BookingDialog({ bookingUrl, availabilityLabel, open, onOpenChang
   // been, so the fallback is a clock rather than an event.
   const [hasStalled, setHasStalled] = useState(false)
   const popupRef = useRef<HTMLDivElement | null>(null)
+  const tuningCornerCurve = isTuningCornerCurve()
 
   useEffect(() => {
     if (!open || isCalendarReady) return
@@ -44,7 +50,8 @@ export function BookingDialog({ bookingUrl, availabilityLabel, open, onOpenChang
   }, [isCalendarReady, open])
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}
+      modal={!tuningCornerCurve} disablePointerDismissal={tuningCornerCurve}>
       <Dialog.Portal>
         <Dialog.Backdrop className="booking-backdrop" />
         <div
@@ -65,9 +72,41 @@ export function BookingDialog({ bookingUrl, availabilityLabel, open, onOpenChang
               {availabilityLabel} · 30 minutes, on Cal.com
             </Dialog.Description>
 
-            <div className="booking-frame" data-ready={isCalendarReady ? "true" : undefined}>
+            <div
+              className={`booking-frame t-skel${isCalendarReady ? " is-revealed" : ""}`}
+              data-ready={isCalendarReady ? "true" : undefined}
+              data-stalled={hasStalled ? "true" : undefined}
+            >
+              <div className="booking-skeleton t-skel-skeleton is-pulsing" aria-hidden="true">
+                <div className="booking-skeleton-panel">
+                  <div className="booking-skeleton-profile">
+                    <span className="booking-skeleton-avatar" />
+                    <span className="booking-skeleton-line booking-skeleton-line-name" />
+                    <span className="booking-skeleton-line booking-skeleton-line-title" />
+                    <span className="booking-skeleton-line booking-skeleton-line-detail" />
+                    <span className="booking-skeleton-line booking-skeleton-line-detail" />
+                    <span className="booking-skeleton-line booking-skeleton-line-zone" />
+                  </div>
+                  <div className="booking-skeleton-calendar">
+                    <div className="booking-skeleton-month">
+                      <span className="booking-skeleton-line booking-skeleton-line-month" />
+                      <span className="booking-skeleton-arrows" />
+                    </div>
+                    <div className="booking-skeleton-weekdays">
+                      {SKELETON_WEEKDAYS.map((_, index) => <span key={index} />)}
+                    </div>
+                    <div className="booking-skeleton-days">
+                      {SKELETON_DAYS.map((_, index) => <span className="booking-skeleton-day" key={index} />)}
+                    </div>
+                  </div>
+                  <div className="booking-skeleton-times">
+                    <span className="booking-skeleton-line booking-skeleton-line-times" />
+                    {SKELETON_TIMES.map((_, index) => <span className="booking-skeleton-time" key={index} />)}
+                  </div>
+                </div>
+              </div>
               {isCalendarReady ? null : (
-                <p className="booking-loading" role="status">
+                <p className={hasStalled ? "booking-loading" : "booking-loading sr-only"} role="status">
                   {hasStalled ? (
                     <>
                       {/* The header used to carry this link from the start. It
@@ -85,7 +124,7 @@ export function BookingDialog({ bookingUrl, availabilityLabel, open, onOpenChang
                 </p>
               )}
               <iframe
-                className="booking-iframe"
+                className="booking-iframe t-skel-content"
                 src={toEmbedUrl(bookingUrl)}
                 title="Book a call on Cal.com"
                 loading="lazy"

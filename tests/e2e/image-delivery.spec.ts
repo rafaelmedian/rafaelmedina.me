@@ -2,21 +2,31 @@ import { expect, test } from "@playwright/test"
 import sharp from "sharp"
 import path from "node:path"
 
+// The globe advertises the held size up front: its initial candidate must
+// have enough pixels when a visitor enlarges the photo on a 2x display.
 for (const width of [390, 1440]) {
-  test(`photo sheet chooses responsive sources at ${width}px`, async ({ browser }) => {
+  test(`photo globe chooses responsive sources at ${width}px`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 2, reducedMotion: "reduce" })
     const page = await context.newPage()
     await page.goto("/")
-    await page.locator(".personal-photos-print").first().click()
+    await page.locator(".personal-photos-label").click()
     const photo = page.locator(".personal-photos-slide img").first()
-    await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).currentSrc)).toContain(width === 390 ? "-400w.webp" : "-800w.webp")
-    await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
-    const sizes = await photo.evaluate((img) => {
-      const image = img as HTMLImageElement
-      return { selected: image.currentSrc, width: image.getBoundingClientRect().width }
-    })
-    expect(width === 390 ? 400 : 800).toBeGreaterThanOrEqual(sizes.width * 2)
-    await expect(page.locator('.personal-photos-slide img[loading="lazy"]')).not.toHaveCount(0)
+    // Twenty-seven photos load at once when the globe opens; under a full
+    // parallel run the first can take longer than the default 5s to arrive.
+    await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).naturalWidth), { timeout: 15_000 }).toBeGreaterThan(0)
+    const source = await photo.evaluate((img) => (img as HTMLImageElement).currentSrc)
+    // Read the bitmap itself: naturalWidth on a srcset image is corrected
+    // for density, rather than reporting the file's available pixels.
+    const bitmap = await sharp(path.resolve("public", new URL(source).pathname.slice(1))).metadata()
+    const slide = page.locator(".personal-photos-sphere .personal-photos-slide[data-photo-id]").first()
+    await slide.focus()
+    await page.keyboard.press("Enter")
+    await expect(slide).toHaveAttribute("data-sphere-held", "")
+    const required = await photo.evaluate((img) => img.getBoundingClientRect().width * devicePixelRatio)
+    expect(bitmap.width).toBeGreaterThanOrEqual(required)
+    // Every tile loads eagerly: a lazy one on the far side of the globe
+    // (display: none never loads) came round to the front still blank.
+    await expect(page.locator('.personal-photos-sphere img[loading="lazy"]')).toHaveCount(0)
     await context.close()
   })
 }
@@ -59,10 +69,11 @@ for (const width of [390, 1440]) {
     test(`sizes contained previews at ${width}px and ${deviceScaleFactor}x density`, async ({ browser }) => {
       const page = await browser.newPage({ viewport: { width, height: 1000 }, deviceScaleFactor, reducedMotion: "reduce" })
       await page.goto("/")
-      // Pre-optimization artwork widths: smaller downloads must not shrink the layout.
+      // Intended artwork widths: smaller downloads must not shrink the layout.
+      // Dealership renders at 112% of its clip width for the deliberate crop.
       const fixtures = width === 390
-        ? [["Popparazi V1", 84], ["Shared family stories", 177], ["Dealership lead hub", 165]] as const
-        : [["Popparazi V1", 130], ["Shared family stories", 565], ["Dealership lead hub", 383]] as const
+        ? [["Popparazi V1", 84], ["Shared family stories", 177], ["Dealership lead hub", 185]] as const
+        : [["Popparazi V1", 130], ["Shared family stories", 565], ["Dealership lead hub", 854]] as const
       for (const [name, originalWidth] of fixtures) {
         const image = page.getByAltText(name, { exact: true }).and(page.locator("img.mosaic-row-media"))
         await image.scrollIntoViewIfNeeded()

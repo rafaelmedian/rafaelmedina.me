@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS profile_chat_visitors (
+  visitor_id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  question_day TEXT NOT NULL,
+  questions_today INTEGER NOT NULL DEFAULT 0
+);

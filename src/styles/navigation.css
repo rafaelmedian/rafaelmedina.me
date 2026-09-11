@@ -37,6 +37,7 @@
     height: 51.2px;
     border: 0;
     border-radius: var(--radius-full);
+    corner-shape: round;
     display: grid;
     place-items: center;
     background: var(--canvas);
@@ -310,24 +311,13 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
 .mosaic-mobile-toc-icon svg {
   position: absolute;
   inset: 0;
-  transition:
-    opacity var(--duration-quick) var(--ease-standard),
-    transform var(--toc-resize-duration, var(--duration-base)) var(--ease-smooth);
+  transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
-.mosaic-mobile-toc-close {
-  opacity: 0;
-  transform: scale(0.8);
-}
-
+/* Open, the rows are the controls; the chevron steps aside rather than
+   handing off to a close icon. */
 .mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-chevron {
   opacity: 0;
-  transform: rotate(90deg);
-}
-
-.mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-close {
-  opacity: 1;
-  transform: scale(1);
 }
 
 .mosaic-mobile-toc-trigger:active .mosaic-mobile-toc-row-content {

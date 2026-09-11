@@ -3,9 +3,13 @@ import { lazy, Suspense, useState, useSyncExternalStore } from "react"
 import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
 import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
-import { isResumePath, projectAtPath } from "./lib/projectMetadata"
+import { isNotesPath, isResumePath, projectAtPath, writingAtPath } from "./lib/projectMetadata"
 import { ProjectPage } from "./components/ProjectPage"
 import { ResumePage } from "./components/ResumePage"
+import { NotesPage } from "./components/NotesPage"
+import { DeferredWritingPage } from "./components/DeferredWritingPage"
+import { getWritingPage } from "./lib/writingPageSlot"
+import { isTuningCornerCurve } from "./lib/developmentTuning"
 
 // Dev-only. In production `/design-system` is served by public/404.html — shipping the chunk would
 // be dead weight. The page's CSS rides the same lazy chunk, so none of it
@@ -27,6 +31,15 @@ const Agentation = import.meta.env.DEV
 const ElasticEdgeTuner = import.meta.env.DEV
   ? lazy(() => import("./components/ElasticEdgeTuner"))
   : null
+const PhotoPrintTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/PhotoPrintTuner"))
+  : null
+const CornerCurveTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/CornerCurveTuner"))
+  : null
+const ContactShineTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/ContactShineTuner"))
+  : null
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -44,19 +57,26 @@ function App({ pathname }: { pathname?: string }) {
   // Select the document at mount. History changes within the homepage keep its
   // enhanced gallery mounted.
   const [currentPath] = useState(() => normalizePath(pathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)))
-  // Every gallery item's path -- each project and the résumé -- is prerendered
+  // Every project, the résumé, and every note is prerendered
   // as a standalone article, so a crawler or a visitor without JavaScript reads
   // the whole thing from the HTML. Once React is running the same URL belongs in
-  // the gallery it was shared from: hand the feed the path and `useGalleryUrl`
-  // opens that item over it. The article still renders on the first client pass,
+  // the dialog it was shared from -- the gallery for a project or the résumé,
+  // the notes reader for a note: hand the feed the path and the dialog opens
+  // that item over it. The article still renders on the first client pass,
   // so hydration matches the prerendered markup before the swap.
   const isHydrated = useIsHydrated()
   const standaloneProject = isHydrated ? undefined : projectAtPath(currentPath)
   const standaloneResume = !isHydrated && isResumePath(currentPath)
+  const standaloneWriting = isHydrated ? undefined : writingAtPath(currentPath)
+  const standaloneNotes = !isHydrated && isNotesPath(currentPath)
   const isDesignSystemPage = DesignSystemPage !== null && DESIGN_SYSTEM_PATHS.has(currentPath)
   const isIntroComparison = AboutIntroComparison !== null && currentPath === "/intro-options"
-  const isTuningEdge = ElasticEdgeTuner !== null && !isDesignSystemPage && !isIntroComparison
-    && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tune") === "edge"
+  const tuning = !isDesignSystemPage && !isIntroComparison && typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tune") : null
+  const isTuningEdge = ElasticEdgeTuner !== null && tuning === "edge"
+  const isTuningPhotos = PhotoPrintTuner !== null && tuning === "photos"
+  const isTuningContact = ContactShineTuner !== null && !isDesignSystemPage && !isIntroComparison
+    && (tuning === null || tuning === "contact" || currentPath === "/__design_lab")
+  const isTuningCorners = CornerCurveTuner !== null && !isDesignSystemPage && !isIntroComparison && !isTuningContact && isTuningCornerCurve()
 
   return (
     <div className="relative isolate min-h-dvh overflow-x-clip bg-canvas text-ink">
@@ -72,7 +92,9 @@ function App({ pathname }: { pathname?: string }) {
         ) : (
           <>
             <main id="main-content" tabIndex={-1} className="relative z-dock">
-              {standaloneProject ? <ProjectPage card={standaloneProject} /> : standaloneResume ? <ResumePage /> : (
+              {standaloneProject ? <ProjectPage card={standaloneProject} /> : standaloneResume ? <ResumePage /> : standaloneNotes ? <NotesPage /> : standaloneWriting && getWritingPage() ? (
+                <DeferredWritingPage writing={standaloneWriting} />
+              ) : (
                 <>
                   <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
                   <BottomOverscrollEffect />
@@ -89,6 +111,21 @@ function App({ pathname }: { pathname?: string }) {
         {isTuningEdge && ElasticEdgeTuner ? (
           <Suspense fallback={null}>
             <ElasticEdgeTuner />
+          </Suspense>
+        ) : null}
+        {isTuningContact && ContactShineTuner ? (
+          <Suspense fallback={null}>
+            <ContactShineTuner />
+          </Suspense>
+        ) : null}
+        {isTuningPhotos && PhotoPrintTuner ? (
+          <Suspense fallback={null}>
+            <PhotoPrintTuner />
+          </Suspense>
+        ) : null}
+        {isTuningCorners && CornerCurveTuner ? (
+          <Suspense fallback={null}>
+            <CornerCurveTuner />
           </Suspense>
         ) : null}
     </div>

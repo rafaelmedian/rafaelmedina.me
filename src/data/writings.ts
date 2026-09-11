@@ -1,4 +1,5 @@
 import { writingPreviews } from "./writingPreviews"
+import { writingFields, type WritingCategory } from "./writingIndex"
 import type { WritingId } from "./writingIds"
 import { portfolioCards } from "./portfolio"
 
@@ -21,6 +22,11 @@ export type WritingCode = {
   caption?: string
 }
 
+export type WritingTool = {
+  package: string
+  sourceUrl: string
+}
+
 export type WritingSection = {
   heading: string
   paragraphs: string[]
@@ -35,7 +41,8 @@ export type WritingSection = {
 // characters wide -- and keep them rare: two an article, one early and one
 // late, one in each gutter. They used to run to five, plus interjections
 // dropped between the paragraphs, and at that rate a reader stops reading the
-// article and starts reading the margin.
+// article and starts reading the margin. Where the reader floats a note's
+// contents in the left gutter, a note written for that side hangs right.
 export type WritingAnnotation = {
   text: string
   /** Zero-based paragraph within the block the note is pinned beside. */
@@ -46,11 +53,14 @@ export type WritingAnnotation = {
 export type Writing = {
   id: WritingId
   title: string
+  category: WritingCategory
   cover?: WritingImage
   paragraphs: string[]
   annotations?: WritingAnnotation[]
   image?: WritingImage
   code?: WritingCode
+  /** An installable skill or utility presented inside the article. */
+  tool?: WritingTool
   sections?: WritingSection[]
   /** Publication or editorial edition date, YYYY-MM-DD. Project samples use illustrative dates. */
   publishedAt?: string
@@ -79,8 +89,52 @@ function projectImage(id: string): WritingImage | undefined {
 // Curated public selection. Full omitted entries live in docs/archive/writings.md.
 export const writings: Writing[] = [
   {
+    ...writingFields("review-ready-pull-requests"),
+    tool: {
+      package: "rafaelmedian/skills@review-ready-prs",
+      sourceUrl: "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
+    },
+    paragraphs: [
+      "A pull request is often the last place where the work is still easy to understand. The branch has the decisions, the failed attempts, and the checks that finally passed. After it merges, most of that context disappears unless the commits and the pull request carry it forward.",
+      "I want the review to explain itself before someone opens the diff. A reviewer should be able to see what changed, why it changed, how the work was divided, and what proof belongs beside it. That makes the review faster now, but the larger benefit arrives months later when the same page becomes the history of the decision.",
+      "I turned those preferences into a small skill called `review-ready-prs`. It reads the repository's own instructions first, then helps an agent shape the commits, write the pull request, and put the evidence where the reviewer will actually find it.",
+    ],
+    annotations: [
+      { at: 0, place: "right", text: "The diff says what. I still need the why." },
+    ],
+    sections: [
+      {
+        heading: "The story starts in the commits",
+        paragraphs: [
+          "A useful commit is small enough to name. Its title says what it does in the present tense, and its body records the thing that was missing or wrong. If a measurement, constraint, or failure made the change necessary, that belongs there too. `Fix styles` cannot carry any of that weight.",
+          "The order matters as much as the wording. A refactor that makes room for a feature should land before the feature. Generated output should be tied to the source change that produced it, or separated clearly when it deserves its own checkpoint. Each commit should leave the project in a state another person can inspect without mentally borrowing half of the next one.",
+          "That history gives the pull request its natural outline. Instead of inventing a summary after the work is done, the PR can walk through the same changes in the order they landed and explain each one in plain language.",
+        ],
+      },
+      {
+        heading: "Put the proof next to the explanation",
+        paragraphs: [
+          "Visual changes need visual evidence. I want matched before-and-after screenshots for a static interface, and a short recording when timing, focus, scrolling, or another interaction is the point. The reviewer should not have to check out a branch just to learn whether the card moved or the transition still makes sense.",
+          "Changes without a visible surface still need a picture of the idea. A small ASCII map can show a request moving through a new boundary, a file becoming the source of generated output, or a data field reaching the component that renders it. It does not have to look formal. It has to use the names that a person reading the repository will recognize.",
+          "The evidence belongs in the pull request itself. A path on one person's computer is not part of the record, and a note that says screenshots are coming is not finished review material. When an agent cannot upload the media, the skill keeps the PR as a draft and leaves the prepared files ready for that last handoff.",
+        ],
+      },
+      {
+        heading: "A checklist should still sound like a person",
+        paragraphs: [
+          "Structure helps, but it can also flatten the writing. I do not want every pull request to begin with the same sentence about improving an experience. The description should use the nouns from the work, mention the actual tradeoff, and say exactly which checks ran. If a test failed, that is more useful than a polished claim that everything was verified.",
+          "The skill does not grant itself permission to rewrite history, push a branch, publish a pull request, or mark a draft ready. It works inside the authority the request already gave it. That boundary is part of making the output trustworthy: a careful description is not useful if it quietly performs a different operation behind it.",
+          "This is the first tool in a small public library. I expect the wording to change as I use it on real work. That is another reason to keep it as a skill rather than a paragraph I paste into every repository: the habit can improve in one place while each project keeps its own local rules.",
+        ],
+        annotations: [
+          { at: 2, place: "left", text: "The first user of the skill is this PR" },
+        ],
+      },
+    ],
+    acknowledgements: "The skill grew from the commit and pull-request conventions used on this site. Its examples are generic so another repository can keep its own voice.",
+  },
+  {
     ...writingPreviews[0],
-    publishedAt: "2026-09-07",
     acknowledgements: "Expanded from my own draft. The file names are this site's: `PROJECT_STATUS.md` and `DESIGN_QA.md` are the two I actually keep.",
     // Source: supplied draft screenshot, 01.19.00; PROJECT_STATUS.md and DESIGN_QA.md.
     annotations: [
@@ -139,7 +193,6 @@ export const writings: Writing[] = [
   },
   {
     ...writingPreviews[1],
-    publishedAt: "2026-07-29",
     acknowledgements: "Expanded from two posts of mine on X and a draft written alongside them. The Figma-to-code workflow described here is my own; nothing in it is a claim about how anyone else works.",
     // Sources: supplied draft screenshot, 01.18.48, and Rafael's public posts:
     // https://x.com/rafaelmedian/status/2020873645401276488
@@ -179,7 +232,6 @@ export const writings: Writing[] = [
   },
   {
     ...writingPreviews[2],
-    publishedAt: "2026-06-16",
     acknowledgements: "Expanded from a reply I drafted about tokens, time, and running costs. The accounting is mine, and it changes every time the tools do.",
     // Source: supplied draft screenshot, 01.19.00; reply about tokens, time, and running costs.
     annotations: [
@@ -216,9 +268,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "room-to-figure-it-out",
-    title: "Room to figure it out",
-    publishedAt: "2026-05-21",
+    ...writingFields("room-to-figure-it-out"),
     acknowledgements: "Expanded from a draft about family, distance, and independence. It is written from my own experience and the conversations behind it, not as a description of anyone else's family.",
     // Source: supplied draft screenshot, 01.19.00; reflection on family and independence.
     paragraphs: [
@@ -260,9 +310,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "a-song-we-all-know",
-    title: "A song we all know",
-    publishedAt: "2026-04-08",
+    ...writingFields("a-song-we-all-know"),
     acknowledgements: "Expanded from a post of mine on X about the song of the summer. Thanks to everyone who has sent me a track since; it is still the better way to hear one.",
     // Source: https://x.com/rafaelmedian/status/1940027633594458581
     paragraphs: [
@@ -304,9 +352,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "designing-matcha",
-    title: "Designing Matcha",
-    publishedAt: "2026-03-02",
+    ...writingFields("designing-matcha"),
     acknowledgements: "Matcha was designed at the 0x Project, with its product, engineering, and research teams. The screens here are theirs as much as mine; the reading of them is my own.",
     cover: { src: "/Projects/shot-small-16-poster.webp", alt: "Matcha discovery homepage with token search and market overview", width: 640, height: 480 },
     paragraphs: [
@@ -355,9 +401,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "designing-for-active-traders",
-    title: "Designing for active traders",
-    publishedAt: "2026-02-10",
+    ...writingFields("designing-for-active-traders"),
     acknowledgements: "Matcha Pro was designed at the 0x Project, alongside the product and engineering teams who built and shipped it.",
     paragraphs: [
       "There's a version of interface simplicity that photographs very well: one action, a few numbers, plenty of empty space. It's useful for a focused task. It becomes less convincing when the task involves repeatedly checking a chart, an order, a balance, and a live quote.",
@@ -396,9 +440,7 @@ export const writings: Writing[] = [
     ],
   },
   {
-    id: "quote-to-confirmation",
-    title: "From quote to confirmation",
-    publishedAt: "2025-11-12",
+    ...writingFields("quote-to-confirmation"),
     acknowledgements: "The trade module was designed at the 0x Project with its product and engineering teams. The token checks shown here use GoPlus data.",
     cover: { src: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg", alt: "Matcha trade module showing the quote, review, and confirmation interface", width: 1600, height: 1200 },
     paragraphs: [

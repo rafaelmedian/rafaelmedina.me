@@ -144,6 +144,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   width: 3.25rem;
   height: 3.25rem;
   border-radius: var(--radius-full);
+  corner-shape: round;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -161,9 +162,10 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   position: absolute;
   inset: 0;
   border-radius: inherit;
+  corner-shape: inherit;
   transform-style: preserve-3d;
   /* Read by SimpleFeed for the click spin: the turn it adds, and the beat it
-     holds before handing over to the scroll. */
+     holds before handing over to the chat. */
   --avatar-flip-duration: 1100ms;
   --avatar-spin-duration: 1200ms;
   --avatar-spin-lead: 240ms;
@@ -190,9 +192,25 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   width: 100%;
   height: 100%;
   border-radius: inherit;
+  corner-shape: inherit;
   overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+/* The quote portraits' 12% hairline, so the pale edges of the photo keep a
+   line against the canvas. It rides on the frame rather than the portrait:
+   the portrait zooms under the pointer, and a ring on it would grow with it
+   and be cut off by this crop. Laid over the image because an inset
+   box-shadow on the frame would paint beneath it. */
+.mosaic-avatar-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  corner-shape: inherit;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  pointer-events: none;
 }
 
 .mosaic-avatar-face-back {
@@ -224,7 +242,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 }
 
 .mosaic-avatar-button:active {
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 /* The global :where() focus rule supplies the outline; only the offset grows. */
@@ -526,6 +544,12 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   height: 100%;
 }
 
+.mosaic-profile-email-icon .inline-swap,
+.mosaic-profile-email-icon .inline-swap-current {
+  width: 100%;
+  height: 100%;
+}
+
 .mosaic-profile-email:hover .mosaic-profile-email-icon,
 .mosaic-profile-email:focus-visible .mosaic-profile-email-icon {
   opacity: 1;
@@ -605,6 +629,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-full);
+  corner-shape: round;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.07);
   object-fit: cover;
 }

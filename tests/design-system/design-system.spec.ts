@@ -21,6 +21,46 @@ test("documents the caption dropping out where there is no hover", async ({ page
   await expect(captionRule).not.toContainText("rgb(20 20 20 / 0.82)")
 })
 
+test("uses continuous corners without reshaping circles and pills", async ({ page }) => {
+  await page.goto("/?tune=off")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(2)")
+  await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
+  await expect(page.locator(".mosaic-profile-actions a").first()).toHaveCSS("corner-shape", "superellipse(1)")
+
+  await openDesignSystem(page)
+  await expect(page.locator("#space")).toContainText("superellipse(2)")
+})
+
+test("keeps the caption blur outside the card's squircle clip", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/?tune=off")
+
+  const card = page.getByRole("link", { name: /Open Protector booking preview/ })
+  const mediaClip = card.locator(".mosaic-row-card-media-clip")
+
+  await expect(card).toHaveCSS("corner-shape", "superellipse(2)")
+  await expect(card).toHaveCSS("overflow", "visible")
+  await expect(mediaClip).toHaveCSS("corner-shape", "superellipse(2)")
+  await expect(mediaClip).toHaveCSS("overflow", "hidden")
+  await expect(card.locator(":scope > .mosaic-row-card-scrim")).toHaveCount(1)
+})
+
+test("corner tuner changes rounded surfaces without reshaping circles", async ({ page }) => {
+  await page.goto("/?tune=corners")
+  const curve = page.getByRole("slider", { name: "Exponent" })
+  await expect(curve).toBeVisible()
+  await expect(curve).toHaveAttribute("aria-valuenow", "1.3")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.3)")
+
+  await curve.press("End")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(4)")
+  await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
+
+  await page.locator(".mosaic-row-card").first().click()
+  await expect(page.locator(".preview-gallery-card")).toHaveCSS("corner-shape", "superellipse(4)")
+  await expect(curve).toBeVisible()
+})
+
 const customPropertyPattern = /^--[\w-]+$/
 const cssVariablePattern = /var\((--[\w-]+)/g
 
@@ -103,7 +143,9 @@ test("grades meaningful non-text colors against the 3:1 threshold", async ({ pag
       value: { writeText: async () => {} },
     })
   })
-  await page.goto("/")
+  // The default development tuner overlaps this corner control. It is not
+  // part of the colour sample, so keep the page itself unobstructed.
+  await page.goto("/?tune=off")
   await page.locator(".mosaic-social-corner .mosaic-profile-email").click()
   const icon = page.locator('.mosaic-social-corner .mosaic-profile-email[data-copied="true"] .mosaic-profile-email-icon')
   // The check fades from --ink to --accent, and a colour read mid-transition is
@@ -156,7 +198,7 @@ test("documents the computed resume-title weight", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
   const resumeTitleWeight = await page
-    .getByRole("dialog", { name: "Work history" })
+    .getByRole("dialog", { name: "Résumé" })
     .locator(".mosaic-about-resume-title")
     .first()
     .evaluate((title) => getComputedStyle(title).fontWeight)

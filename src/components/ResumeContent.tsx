@@ -1,4 +1,4 @@
-import { Fragment } from "react"
+import { Fragment, type CSSProperties } from "react"
 
 import { cvEducation, cvExperience, type CvExperience } from "../data/cv"
 import { portfolioCards } from "../data/portfolio"
@@ -11,6 +11,26 @@ import { buildPreviewSrcSet } from "../lib/media"
    587px. Without this the browser assumes a full-width slot and takes the
    1600px original for a thumbnail. */
 const PRINT_SIZES = "(max-width: 373px) 60px, (max-width: 587px) 16vw, 94px"
+
+const RESUME_DRAWINGS = [
+  { row: 1, object: "pencil", place: "right", size: "4.5rem", pull: "0.3", drop: "1.25rem", tilt: "8deg" },
+  { row: 3, object: "cup", place: "left", size: "5rem", pull: "0.65", drop: "0.5rem", tilt: "-7deg" },
+  { row: 5, object: "sheet", place: "right", size: "4.75rem", pull: "0.1", drop: "1rem", tilt: "5deg" },
+] as const
+
+type ResumeDrawing = (typeof RESUME_DRAWINGS)[number]
+
+function ResumeMarginDrawing({ drawing }: { drawing: ResumeDrawing }) {
+  return (
+    <span className="resume-margin-drawing" data-place={drawing.place} aria-hidden="true" style={{
+      "--resume-drawing-mark": `url("/writings/marks/drawing-${drawing.object}-frames.png")`,
+      "--resume-drawing-size": drawing.size,
+      "--resume-drawing-pull": drawing.pull,
+      "--resume-drawing-drop": drawing.drop,
+      "--resume-drawing-tilt": drawing.tilt,
+    } as CSSProperties} />
+  )
+}
 
 function ResumeCompanyLink({ company, href }: { company: string; href: string }) {
   return (
@@ -59,7 +79,7 @@ function ResumeCompany({ job }: { job: CvExperience }) {
    h2. Education sits at the same level as a company, its schools one below. */
 export type ResumeHeadingLevel = 2 | 3
 
-function IllustratedExperience({ job, level, onSelectProject }: { job: CvExperience; level: ResumeHeadingLevel; onSelectProject?: (id: string) => boolean }) {
+function IllustratedExperience({ job, level, drawing, onSelectProject }: { job: CvExperience; level: ResumeHeadingLevel; drawing?: ResumeDrawing; onSelectProject?: (id: string) => boolean }) {
   const Company = `h${level}` as const
   const logos = job.logoUrls ?? job.clients?.map((client) => client.logoUrl) ?? []
   const projects = (job.projectIds ?? []).flatMap((id) => {
@@ -69,24 +89,30 @@ function IllustratedExperience({ job, level, onSelectProject }: { job: CvExperie
 
   return (
     <li className="resume-experience">
-      {logos.length > 0 ? (
-        <div className="resume-experience-logos" aria-hidden="true">
-          {logos.map((src) => (
-            <span className="resume-experience-logo" key={src}>
-              <img src={src} alt="" width={18} height={18} loading="lazy" />
-            </span>
-          ))}
-        </div>
-      ) : null}
+      {drawing ? <ResumeMarginDrawing drawing={drawing} /> : null}
       <div className="resume-experience-details">
         <div className="resume-experience-heading">
-          <Company className="mosaic-about-resume-title resume-experience-company" aria-label={`${job.role} at ${getCompanyLabel(job)}`}>
-            <ResumeCompany job={job} />{job.company === "0x Project" ? " / Matcha" : null}
-          </Company>
+          <div className="resume-experience-identity">
+            {logos.length > 0 ? (
+              <div className="resume-experience-logos" aria-hidden="true">
+                {logos.map((src) => (
+                  <span className="resume-experience-logo" key={src}>
+                    <img src={src} alt="" width={18} height={18} loading="lazy" />
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <Company className="mosaic-about-resume-title resume-experience-company" aria-label={`${job.role} at ${getCompanyLabel(job)}`}>
+              <ResumeCompany job={job} />{job.company === "0x Project" ? " / Matcha" : null}
+            </Company>
+          </div>
           <p className="mosaic-about-resume-dates">{job.dates}</p>
         </div>
-        <p className="resume-experience-role">{job.role}</p>
-        <p className="mosaic-about-resume-location">{job.location}</p>
+        <div className="resume-experience-meta">
+          <p className="resume-experience-role">{job.role}</p>
+          <span className="resume-experience-meta-separator" aria-hidden="true">·</span>
+          <p className="mosaic-about-resume-location">{job.location}</p>
+        </div>
         {Array.isArray(job.highlight) ? (
           <ul className="mosaic-about-resume-description resume-experience-points">
             {job.highlight.map((point) => (
@@ -145,10 +171,11 @@ export function ResumeContent({ level = 3, onSelectProject }: { level?: ResumeHe
   const SectionHeading = `h${level}` as const
   const School = level === 2 ? "h3" : "h4"
   return (
-    <>
+    <div className="resume-content">
       <ol className="mosaic-about-resume mosaic-about-work-list resume-experience-list" aria-label="Work history">
-        {cvExperience.map((job) => (
-          <IllustratedExperience key={`${job.company}-${job.dates}`} job={job} level={level} onSelectProject={onSelectProject} />
+        {cvExperience.map((job, index) => (
+          <IllustratedExperience key={`${job.company}-${job.dates}`} job={job} level={level}
+            drawing={RESUME_DRAWINGS.find((drawing) => drawing.row === index)} onSelectProject={onSelectProject} />
         ))}
       </ol>
 
@@ -170,6 +197,6 @@ export function ResumeContent({ level = 3, onSelectProject }: { level?: ResumeHe
           ))}
         </ul>
       </div>
-    </>
+    </div>
   )
 }

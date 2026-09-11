@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('uses the tucked numeric badge beside the TOC throughout the compact breakpoint', async ({ page }) => {
   await page.clock.install()
   await page.setViewportSize({ width: 768, height: 700 })
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
 
   const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
@@ -72,7 +72,7 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
 for (const width of [320, 1440]) {
   test(`B reveals a conversation and advances from email to an optional message at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })
-    await page.goto('/')
+    await page.goto('/?tune=off')
     await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toHaveCount(0)
     await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
     if (width === 320) {
@@ -181,7 +181,7 @@ test('starts the comparison chat when its card comes into view and respects redu
 test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   await page.getByRole('button', { name: /Open \d+ messages? from Rafa/ }).click()
   const chat = page.getByRole('dialog', { name: 'Chat with Rafa' })
@@ -233,7 +233,7 @@ test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ pa
 test('springs the Tapback picker open and folds it into the message', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 800 })
   await page.emulateMedia({ reducedMotion: 'no-preference' })
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   const greeting = chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' })
@@ -250,7 +250,7 @@ test('springs the Tapback picker open and folds it into the message', async ({ p
 
 test('shows three typing dots before each greeting and pauses the sequence in a hidden tab', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   const typing = chat.getByRole('status', { name: 'Rafa is typing' })
@@ -299,7 +299,7 @@ test('shows three typing dots before each greeting and pauses the sequence in a 
 
 test('unsends the address with a puff before reopening the email field', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await expect(chat.getByRole('status', { name: 'Rafa is typing' })).toBeVisible()
@@ -338,7 +338,7 @@ test('sends each message as a bubble, keeps failed ones and reuses the retry key
       body: JSON.stringify(success ? { sent: true } : { error: 'Couldn’t send. Please retry.' }) })
   })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
@@ -383,7 +383,7 @@ test('an empty first send delivers the address with a keep-in-touch bubble', asy
       headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ sent: true }) })
   })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
@@ -396,7 +396,7 @@ test('an empty first send delivers the address with a keep-in-touch bubble', asy
 
 test('rejects an incomplete email before confirmation and allows correction', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const email = page.getByRole('textbox', { name: 'Your email', exact: true })
   await email.fill('visitor@gmail')
@@ -411,7 +411,7 @@ test('rejects an incomplete email before confirmation and allows correction', as
 test('contains mobile chat focus, preserves reactions and restores the portrait', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const portrait = page.getByRole('button', { name: /Open .*messages? from Rafa/ })
   await portrait.click()
@@ -443,7 +443,7 @@ test('contains mobile chat focus, preserves reactions and restores the portrait'
 test('sizes the initial desktop conversation to the available viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 400 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()

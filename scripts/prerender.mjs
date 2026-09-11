@@ -5,7 +5,10 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const dist = path.join(root, "dist")
 const serverEntry = path.join(root, ".ssr", "entry-server.js")
-const { render, pages } = await import(pathToFileURL(serverEntry).href)
+const { render, pages, ready } = await import(pathToFileURL(serverEntry).href)
+// The note article is a chunk of its own; `render` cannot write a note page
+// until it has arrived.
+await ready
 const template = await fs.readFile(path.join(dist, "index.html"), "utf8")
 const prerenderedAt = Date.now()
 globalThis.__PRERENDERED_AT__ = prerenderedAt

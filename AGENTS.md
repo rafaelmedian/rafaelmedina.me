@@ -104,9 +104,48 @@ keys walk from a project into the résumé and out the other side. It owns
 `/resume/` the way a project owns `/work/<slug>/` — prerendered by
 `scripts/prerender.mjs`, listed in the sitemap, rendered as `ResumePage` for a
 crawler or a visitor without JavaScript, and swapped for the gallery slide once
-React is running. Adding another non-project tile to the sequence means adding a
-kind to `src/lib/galleryItems.ts` and a location to `src/lib/portfolioUrl.ts`;
-the gallery itself only knows about items.
+React is running. With JavaScript that article never paints: the head script in
+`index.html` holds every gallery address back until the dialog presents (see
+`src/lib/galleryEntry.ts`). Adding another non-project tile to the sequence means
+adding a kind to `src/lib/galleryItems.ts`, a location to
+`src/lib/portfolioUrl.ts`, and its path to that head script's pattern; the
+gallery itself only knows about items.
+
+## Notes
+
+The notes are two surfaces, and which one a change belongs to matters.
+
+The **list** is a slide of the preview gallery, exactly as the résumé is: a
+`writings` item in `src/lib/galleryItems.ts`, at the place the folder tile
+occupies on the grid, so the arrow keys walk from a project into the notes and
+out the other side. It owns `/notes/` — prerendered, in the sitemap, rendered as
+`NotesPage` for a crawler — and the folder tile and the header's Notes link both
+open the gallery on it. `WritingsArchive` is the list itself, shared by the slide
+and that page.
+
+A **note** is a nested view inside the same preview-gallery dialog. Its deferred
+`WritingsReader` renders article content only; the gallery owns the backdrop,
+card, focus trap, and controls. Arrows browse notes while an article is forward;
+Back and Escape return to the list. Each note owns `/notes/<id>/`, rendered as
+`WritingPage` for a crawler. `?writing=<id>` was the
+old address and still opens the reader. `WritingArticle` is the article, shared
+by the sheet and that page.
+
+Two modules hold a note. `src/data/writingIndex.ts` is the eager half: id,
+title, date, blurb, and the social card. `src/data/writings.ts` is the prose,
+and it is 34KB — it stays out of the main bundle, so the standalone note page is
+fetched before hydration by `src/lib/writingPageSlot.ts` rather than imported.
+Add a note to the index and `writings.ts` will spread its fields; a title or a
+date is written once.
+
+The reader chunk is fetched by a row of the list, not by the tile, and
+`WritingsFolder` is where it is fetched, cancelled, and retried; the list prints
+its status. The gallery stays on its Notes item for both /notes/ and a note URL.
+Only content turns horizontally: the card remains opaque and grows downward to
+the viewport's bottom gutter for articles, then shrinks to the list on Back.
+The list stays measured, hidden, and inert while reading so its scroll position
+and row focus can be restored. Do not reintroduce a second dialog, copied sheet
+geometry, or a separate backdrop for notes.
 
 ## The last-updated clause and its GitHub card
 
@@ -161,7 +200,9 @@ and the card takes its shape from the `width`/`height` you give it.
 The photo sheet uses generated 400/800 px WebP siblings in
 `public/images/personal/`. Add originals and their dimensions to
 `src/data/personalPhotos.ts`, then run `node scripts/optimize-personal-media.mjs`
-with Node 22.18 or newer. Commit the generated variants. The original stays in
+with Node 22.18 or newer. It also writes a `-thumb.webp` (300×400 box) for any
+photo that lacks one, which the fan and the flights start from; it never rewrites
+an existing thumb. Commit the generated variants. The original stays in
 `srcSet` for large/high-density displays; `sizes` mirrors the sheet's columns,
 gutters, gaps, and print padding in `src/styles/personal-photos.css`.
 
@@ -189,6 +230,12 @@ same artwork instead of churning the diff.
 
 The PNGs are black on transparent and are used as CSS masks, so the reader still
 colours them with `currentColor` and one asset serves any ink.
+
+The archive's gutter drawings (`drawing-<object>-frames.png`) are strips of
+three frames side by side, which the list steps through on hover. The first
+frame keeps the seed the single drawing always had, so the resting artwork never
+changes; the frame count in the script and the `300%` mask size in
+`src/styles/writings.css` have to agree.
 
 ## Planning Mode Rules
 

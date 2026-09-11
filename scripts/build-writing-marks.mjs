@@ -49,6 +49,19 @@ const UNDERLINE = { width: 72, height: 10 }
 // the outline only; everything that makes them read as drawn rather than
 // traced happens on the way through Rough.js.
 const DRAWING_SIZE = 88
+// Each object ships as a strip of frames, side by side in one PNG. The first is
+// the drawing at rest; hovered, the archive steps through the rest the way a
+// stop-motion drawing boils between exposures. Every frame is the same outline
+// retraced by Rough.js on a seed of its own, then set back down a hair off
+// where the last one lay -- the wobble changes, the object does not. Moved by
+// more than a pixel or a degree and a frame reads as the object jumping rather
+// than as the line being redrawn. One file rather than one per frame, so the
+// frames arrive with the drawing and the first hover has nothing to wait on.
+const DRAWING_FRAMES = [
+  { dx: 0, dy: 0, turn: 0 },
+  { dx: 0.6, dy: -0.4, turn: -1.1 },
+  { dx: -0.5, dy: 0.35, turn: 0.9 },
+]
 const DRAWINGS = {
   // A written-on sheet with the corner turned down, a second page behind it,
   // and three strokes of shadow where it lifts off the desk.
@@ -94,6 +107,24 @@ const DRAWINGS = {
     "M30.4 73.2C38.4 74.8 47.6 74.8 55.6 73.2",
     "M32.6 76C39.6 77.2 46.6 77.2 53.6 76",
   ],
+  // A page lifted out of a folder while a pencil finishes its last line. This
+  // belongs to the Tools shelf: the note is still writing itself as the thing
+  // inside it becomes something another person can use. It stays after the
+  // original drawings so their index-derived seeds remain byte-stable.
+  "folder-pencil": [
+    "M27 15.4C37.2 14.5 47.4 14.2 57.6 14.6 58.4 28.4 59.1 42.2 59.5 56 49.3 56.8 39.1 57.1 28.9 56.7 28.4 42.9 27.8 29.1 27 15.4Z",
+    "M32.8 24.4C39.2 23.7 45.6 23.5 52 23.8",
+    "M33.2 31.8C39.5 31.1 45.8 30.9 52.1 31.2",
+    "M33.5 39.2C38.6 38.6 43.8 38.4 49 38.6",
+    "M13.8 42.4C13.8 37.9 14 33.4 14.5 28.9 22.2 28.4 29.9 28.4 37.6 28.9 40 31.8 42.4 34.7 44.8 37.6 54.7 37.3 64.6 37.6 74.5 38.4",
+    "M12.4 43.8C32.9 42.8 53.4 42.7 73.9 43.6 72.4 54 70.6 64.3 68.5 74.5 51.8 75.7 35.1 75.8 18.4 74.8 16.1 64.6 14.1 54.3 12.4 43.8Z",
+    "M23.4 51.7C35.8 51 48.2 50.9 60.6 51.5",
+    "M61.3 39.6C65.1 34.8 69 30.1 73 25.5",
+    "M65.2 43C69 38.1 72.9 33.4 76.9 28.7",
+    "M73 25.5C75.1 22.5 78.2 22 80.1 23.7 82 25.4 80.9 28.2 76.9 28.7",
+    "M61.3 39.6C61.7 41.2 63 42.4 65.2 43 63.4 44.1 61.7 45.1 60 46.1 60.4 43.9 60.8 41.7 61.3 39.6Z",
+    "M59.8 46.2C58.9 46.8 58.1 47.4 57.2 48",
+  ],
 }
 
 // Rough.js needs a seed to be repeatable; without one every run would produce
@@ -134,13 +165,16 @@ async function main() {
   }
 
   for (const [index, [object, paths]] of Object.entries(DRAWINGS).entries()) {
-    const name = `drawing-${object}.png`
+    // Seeded off the name the single frame had, so the drawing at rest is the
+    // one the archive has always shown and only the hover frames are new.
+    const name = `drawing-${object}-frames.png`
     await draw(page, {
       width: DRAWING_SIZE,
       height: DRAWING_SIZE,
-      seed: seedFor(name, index),
+      seed: seedFor(`drawing-${object}.png`, index),
       shape: "drawing",
       paths,
+      frames: DRAWING_FRAMES,
     })
     await shoot(page, name)
     written.push(name)
@@ -152,12 +186,13 @@ async function main() {
 
 // Drawn inside the page so Rough.js runs against a real SVG element.
 async function draw(page, options) {
-  await page.evaluate(({ width, height, seed, shape, paths }) => {
+  await page.evaluate(({ width, height, seed, shape, paths, frames = [{ dx: 0, dy: 0, turn: 0 }] }) => {
     const svgNS = "http://www.w3.org/2000/svg"
     const svg = document.createElementNS(svgNS, "svg")
-    svg.setAttribute("width", String(width))
+    const stripWidth = width * frames.length
+    svg.setAttribute("width", String(stripWidth))
     svg.setAttribute("height", String(height))
-    svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
+    svg.setAttribute("viewBox", `0 0 ${stripWidth} ${height}`)
     const stage = document.getElementById("stage")
     stage.replaceChildren(svg)
 
@@ -202,11 +237,21 @@ async function draw(page, options) {
       if (shape === "drawing") {
         // One node per path, all under the pass's opacity: an object is a set
         // of separate strokes, not one figure, and Rough.js seeds each from
-        // the one it is given so no two lines wobble the same way.
-        for (const [index, d] of paths.entries()) {
-          const stroke = rc.path(d, { ...options, seed: (pass.seed + index * 17) % 2 ** 31 })
-          stroke.setAttribute("opacity", String(pass.opacity))
-          svg.appendChild(stroke)
+        // the one it is given so no two lines wobble the same way. Each frame
+        // takes its own cell of the strip, turned about the cell's centre;
+        // the first keeps the pass's own seeds, so it is the resting drawing.
+        for (const [frameIndex, frame] of frames.entries()) {
+          const cell = document.createElementNS(svgNS, "g")
+          cell.setAttribute(
+            "transform",
+            `translate(${frameIndex * width + frame.dx} ${frame.dy}) rotate(${frame.turn} ${width / 2} ${height / 2})`,
+          )
+          for (const [index, d] of paths.entries()) {
+            const stroke = rc.path(d, { ...options, seed: (pass.seed + index * 17 + frameIndex * 7919) % 2 ** 31 })
+            stroke.setAttribute("opacity", String(pass.opacity))
+            cell.appendChild(stroke)
+          }
+          svg.appendChild(cell)
         }
         continue
       }

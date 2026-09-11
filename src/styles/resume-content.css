@@ -1,16 +1,29 @@
 /* Company-led entries in the reader; About keeps its compact date column. The
    reader is the gallery's résumé slide and the prerendered /resume/ page, and
    the rules below are shared by both -- only the surface around them differs. */
-/* The PDF link closes the reader rather than heading it, so it sits under
-   education with the gap the entries keep between each other. */
-.preview-gallery-resume-body .mosaic-about-resume-download,
+/* The standalone page keeps the PDF link after the document; the gallery puts
+   it in the sticky heading where it remains available while the sheet scrolls. */
 .standalone-resume-body .mosaic-about-resume-download {
   margin-top: 3rem;
   margin-bottom: 0;
 }
 
+/* The reader is wide enough to give its résumé a real page margin while the
+   work itself keeps the site's 34rem reading measure. That spare room is also
+   where the same pencil objects used by Notes can sit without narrowing copy. */
+.preview-gallery-resume,
+.standalone-resume-body {
+  container-type: inline-size;
+  container-name: resume;
+}
+
+.resume-content {
+  width: min(100%, 34rem);
+  margin-inline: auto;
+}
+
 /* Icon and label on one line, whichever surface the link sits on. */
-.preview-gallery-resume-body .mosaic-about-resume-download a,
+.preview-gallery-resume-heading .mosaic-about-resume-download a,
 .standalone-resume-body .mosaic-about-resume-download a {
   display: inline-flex;
   align-items: center;
@@ -25,17 +38,32 @@
 
 .resume-experience-list {
   margin-top: 0;
-  gap: 3rem;
+  gap: 0;
 }
 
 .resume-experience {
+  position: relative;
   min-width: 0;
+}
+
+.resume-experience-list > .resume-experience {
+  padding-block: 2.5rem;
+}
+
+.resume-experience-list > .resume-experience:first-child {
+  padding-top: 0;
+}
+
+.resume-content > .mosaic-about-resume-education {
+  margin-top: 0;
+  padding-top: 4rem;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
 }
 
 .resume-experience-logos {
   display: flex;
   align-items: center;
-  margin-bottom: 1rem;
+  flex: none;
 }
 
 .resume-experience-logo {
@@ -47,6 +75,7 @@
   height: 2rem;
   padding: 0.45rem;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-control);
 }
@@ -66,14 +95,48 @@
 .resume-experience-heading {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   align-items: baseline;
   column-gap: 0.75rem;
-  row-gap: 0.25rem;
+  row-gap: 0.5rem;
+}
+
+.resume-experience-identity {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.resume-experience-company {
+  min-width: 0;
+}
+
+/* Company names remain external links, but the résumé's logo-and-title rows
+   provide the affordance without the inline prose treatment's underline. */
+.resume-content .mosaic-company-inline-link {
+  text-decoration-line: none;
+}
+
+.resume-experience-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.mosaic-about-body .resume-experience-meta .resume-experience-role,
+.mosaic-about-body .resume-experience-meta .mosaic-about-resume-location {
+  margin-top: 0;
 }
 
 .mosaic-about-body .resume-experience-role {
-  margin-top: 0.25rem;
   color: var(--muted);
+}
+
+.resume-experience-meta-separator {
+  color: var(--muted-soft);
 }
 
 /* An entry that carries two points stays a list for screen readers, but reads
@@ -133,9 +196,8 @@
 .resume-project:nth-child(3) { transform: translateY(-0.35rem) rotate(-2deg); }
 .resume-project:nth-child(4) { transform: translateY(0.2rem) rotate(-5deg); }
 
-/* A tilted print overlaps the one after it, so whichever is hovered or focused
-   has to come up out of the stack to be readable and clickable. */
-.resume-project:hover,
+/* Hovering straightens a print where it lies, so the pile keeps its order. Only
+   keyboard focus lifts one out, since the next print would cover its ring. */
 .resume-project:focus-visible {
   z-index: 1;
 }
@@ -168,4 +230,66 @@
   object-fit: cover;
   border-radius: calc(var(--radius-sm) - 0.25rem);
   background: var(--mosaic-card-surface);
+}
+
+/* Three quiet objects punctuate the long sheet. They are the generated pencil
+   strips already used by Notes, so hovering or tabbing into the role makes the
+   line retrace itself instead of moving the object around. */
+.resume-margin-drawing {
+  display: none;
+}
+
+@container resume (min-width: 48rem) {
+  @supports (mask-image: url("/writings/marks/drawing-sheet-frames.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet-frames.png")) {
+    .resume-margin-drawing {
+      --resume-drawing-gutter: calc((100cqi - 34rem) / 2);
+      --resume-drawing-inset: 2.5rem;
+      --resume-drawing-slack: max(0rem, var(--resume-drawing-gutter) - var(--resume-drawing-size) - var(--resume-drawing-inset));
+      --resume-drawing-rail: calc(var(--resume-drawing-inset) + var(--resume-drawing-pull) * var(--resume-drawing-slack));
+      position: absolute;
+      top: var(--resume-drawing-drop);
+      display: block;
+      width: min(var(--resume-drawing-size), calc(var(--resume-drawing-gutter) - var(--resume-drawing-inset)));
+      aspect-ratio: 1;
+      background-color: var(--muted);
+      opacity: 0.48;
+      rotate: var(--resume-drawing-tilt);
+      -webkit-mask: var(--resume-drawing-mark) 0 0 / 300% 100% no-repeat;
+      mask: var(--resume-drawing-mark) 0 0 / 300% 100% no-repeat;
+    }
+
+    .resume-margin-drawing[data-place="left"] {
+      right: calc(100% + var(--resume-drawing-rail));
+    }
+
+    .resume-margin-drawing[data-place="right"] {
+      left: calc(100% + var(--resume-drawing-rail));
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .resume-experience:hover > .resume-margin-drawing,
+      .resume-experience:focus-within > .resume-margin-drawing {
+        animation: resume-drawing-boil 375ms steps(1, end) infinite;
+      }
+    }
+  }
+}
+
+@keyframes resume-drawing-boil {
+  0% { -webkit-mask-position: 50% 0; mask-position: 50% 0; }
+  33.333% { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  66.667%, 100% { -webkit-mask-position: 0 0; mask-position: 0 0; }
+}
+
+@media (max-width: 479.98px) {
+  .resume-experience-identity {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resume-experience:hover > .resume-margin-drawing,
+  .resume-experience:focus-within > .resume-margin-drawing {
+    animation: none;
+  }
 }

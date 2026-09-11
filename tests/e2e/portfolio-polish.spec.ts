@@ -533,6 +533,106 @@ test("defines the overlapping About surface with a top border and shadow", async
   expect(treatment.topEdgeShadow).not.toBe("none")
 })
 
+test("fades the About sheet into its own foot without adding height", async ({ page }) => {
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const scrollTo = async (stop: "crossing" | "end") => {
+    const target = await page.evaluate((stop) => {
+      const sheetTop = document.querySelector(".mosaic-about")!.getBoundingClientRect().top + window.scrollY
+      const top = Math.round(stop === "crossing"
+        ? sheetTop - window.innerHeight / 2
+        : document.documentElement.scrollHeight - window.innerHeight)
+      window.scrollTo({ top, behavior: "instant" })
+      return top
+    }, stop)
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(target)
+  }
+
+  const measure = () => page.evaluate(() => {
+    const sheet = document.querySelector<HTMLElement>(".mosaic-about")!
+    const panel = document.querySelector<HTMLElement>(".mosaic-about-panel")!
+    const fade = document.querySelector(".mosaic-about-fade")!
+    const closings = document.querySelectorAll(".mosaic-about-closing")
+    const sheetRect = sheet.getBoundingClientRect()
+    const fadeRect = fade.getBoundingClientRect()
+    return {
+      viewport: window.innerHeight,
+      sheetHeight: sheet.offsetHeight,
+      panelHeight: panel.offsetHeight,
+      sheetTop: sheetRect.top,
+      sheetBottom: sheetRect.bottom,
+      fadeTop: fadeRect.top,
+      fadeBottom: fadeRect.bottom,
+      lastLineBottom: closings[closings.length - 1].getBoundingClientRect().bottom,
+    }
+  })
+
+  // Mid-crossing the fade already sits on the viewport's foot, inside the
+  // sheet's box -- paint outside it would cost the sheet's layer its opacity
+  // -- and adds nothing to the sheet's height.
+  await scrollTo("crossing")
+  const crossing = await measure()
+  expect(crossing.sheetHeight).toBe(crossing.panelHeight)
+  expect(crossing.fadeBottom).toBeCloseTo(crossing.viewport, 0)
+  expect(crossing.fadeTop).toBeGreaterThanOrEqual(crossing.sheetTop)
+
+  // At the end of the page it rests on the padding below the last line.
+  await scrollTo("end")
+  const end = await measure()
+  expect(end.fadeBottom).toBeCloseTo(end.sheetBottom, 0)
+  expect(end.fadeTop).toBeGreaterThanOrEqual(end.lastLineBottom)
+})
+
+test("fades the notes card at its foot, clear of the last row and the article's end", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("button", { name: "Open writings folder" }).click()
+  const popup = page.locator(".preview-gallery-popup")
+  await expect(popup.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+
+  const scrollToEndAndMeasure = async (lastContent: string) => {
+    await popup.locator(".notes-gallery-viewport").evaluate((viewport) => {
+      viewport.scrollTop = viewport.scrollHeight
+    })
+    return popup.evaluate((element, lastContent) => {
+      const card = element.querySelector(".notes-gallery-card")!.getBoundingClientRect()
+      const fade = element.querySelector(".notes-gallery-fade")!
+      const fadeRect = fade.getBoundingClientRect()
+      const contents = element.querySelectorAll(lastContent)
+      return {
+        // Chrome ignores the blur layers' masks inside the card's rounded
+        // overflow clip, so the fade has to stay a sibling of the card.
+        insideCard: Boolean(fade.closest(".notes-gallery-card")),
+        blurLayers: [...fade.children].map((layer) => getComputedStyle(layer).backdropFilter),
+        card: { left: card.left, right: card.right, bottom: card.bottom },
+        fade: { left: fadeRect.left, right: fadeRect.right, top: fadeRect.top, bottom: fadeRect.bottom },
+        lastContentBottom: contents[contents.length - 1].getBoundingClientRect().bottom,
+      }
+    }, lastContent)
+  }
+
+  // Held outside the card, edge to edge on its foot, blurring progressively,
+  // and short enough that the end of the list is never under it.
+  const list = await scrollToEndAndMeasure(".writing-entry-trigger")
+  expect(list.insideCard).toBe(false)
+  expect(list.blurLayers).toEqual(["blur(2.4px)", "blur(6px)", "blur(12.4px)", "blur(20px)"])
+  expect(list.fade.left).toBeCloseTo(list.card.left, 0)
+  expect(list.fade.right).toBeCloseTo(list.card.right, 0)
+  expect(list.fade.bottom).toBeCloseTo(list.card.bottom, 0)
+  expect(list.fade.top).toBeGreaterThanOrEqual(list.lastContentBottom)
+
+  // It rides the card down as the card grows to an article, and clears that
+  // article's last line too.
+  await popup.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await expect(popup).toHaveAttribute("data-reading-note", "true")
+  await page.evaluate(() => document.getAnimations().forEach((animation) => animation.finish()))
+  const article = await scrollToEndAndMeasure(".writing-reader > *")
+  expect(article.fade.bottom).toBeCloseTo(article.card.bottom, 0)
+  expect(article.fade.top).toBeGreaterThanOrEqual(article.lastContentBottom)
+})
+
 test("does not claim a sitemap modification date for every deployment", async ({ request }) => {
   const response = await request.get("/sitemap.xml")
 
@@ -549,6 +649,47 @@ test("offers LinkedIn and X actions beside booking", async ({ page }) => {
 
   await expect(linkedInAction).toHaveAttribute("href", "https://www.linkedin.com/in/rafaelmedian")
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
+})
+
+test("expands the contact pills' internal shine on hover and focus", async ({ page }) => {
+  await page.goto("/")
+
+  const actions = page.getByRole("group", { name: "Profile contact actions" })
+  const pills = actions.locator(".mosaic-contact-pill")
+  await expect(pills).toHaveCount(3)
+
+  for (let index = 0; index < 3; index += 1) {
+    const pill = pills.nth(index)
+    const rest = await pill.evaluate((element) => {
+      const highlight = getComputedStyle(element, "::before")
+      return {
+        height: Number.parseFloat(highlight.height),
+        opacity: Number.parseFloat(highlight.opacity),
+        transitionProperty: highlight.transitionProperty,
+      }
+    })
+
+    expect(rest.height).toBe(22)
+    expect(rest.transitionProperty).toContain("height")
+
+    await pill.hover()
+
+    await expect
+      .poll(() =>
+        pill.evaluate((element) => Number.parseFloat(getComputedStyle(element, "::before").opacity)),
+      )
+      .toBe(1)
+
+    const shineHeight = () => pill.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element, "::before").height),
+    )
+    await expect.poll(shineHeight).toBe(28)
+    await page.mouse.move(0, 0)
+    await expect.poll(shineHeight).toBe(rest.height)
+    await pill.focus()
+    await expect.poll(shineHeight).toBe(28)
+    await pill.evaluate((element) => (element as HTMLElement).blur())
+  }
 })
 
 test("leads the contact row with the booking pill", async ({ page }) => {
@@ -1797,7 +1938,7 @@ for (const width of [768, 1440]) {
 test("keeps the mobile profile and final content clear of the table of contents", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.goto("/")
-  const avatar = await page.getByRole("button", { name: "Read about Rafael Medina" }).boundingBox()
+  const avatar = await page.getByRole("button", { name: "Ask about Rafael Medina" }).boundingBox()
   expect(avatar!.y).toBeLessThan(96)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("03 Services")
@@ -2100,9 +2241,57 @@ test("frames the calendar without chrome and still says what it is", async ({ pa
   expect(titleBox!.width).toBeLessThanOrEqual(1)
   expect(titleBox!.height).toBeLessThanOrEqual(1)
 
+  // Cal.com supplies the neutral field above and below its calendar. The host
+  // extends that same field evenly along both sides instead of letting the
+  // dense three-column calendar run directly into the dialog edge.
+  const frame = dialog.locator(".booking-frame")
+  const iframe = frame.locator(".booking-iframe")
+  const [frameBox, iframeBox, frameBackground] = await Promise.all([
+    frame.boundingBox(),
+    iframe.boundingBox(),
+    frame.evaluate((element) => getComputedStyle(element).backgroundColor),
+  ])
+  const leftGutter = iframeBox!.x - frameBox!.x
+  const rightGutter = frameBox!.x + frameBox!.width - iframeBox!.x - iframeBox!.width
+  expect(leftGutter).toBeCloseTo(32, 0)
+  expect(rightGutter).toBeCloseTo(leftGutter, 5)
+  expect(frameBackground).toBe("rgb(250, 250, 250)")
+
   // Escape is not the only way out, which matters on a phone with no Escape key.
   await page.mouse.click(5, 5)
   await expect(dialog).toBeHidden()
+})
+
+test("shows a calendar skeleton until the embedded calendar is ready", async ({ page }) => {
+  let finishCalendarRequest: (() => void) | undefined
+  await page.route("https://cal.com/**", async (route) => {
+    await new Promise<void>((resolve) => {
+      finishCalendarRequest = resolve
+    })
+    await route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" })
+  })
+  await page.goto("/")
+  await settleAvatarIntro(page)
+  await page.locator(".mosaic-booking-pill").click()
+
+  const frame = page.getByRole("dialog").locator(".booking-frame")
+  const skeleton = frame.locator(".booking-skeleton")
+  await expect(skeleton).toBeVisible()
+  await expect(skeleton).toHaveAttribute("aria-hidden", "true")
+  await expect(skeleton.locator(".booking-skeleton-day")).toHaveCount(35)
+  await expect(skeleton).toHaveCSS("opacity", "1")
+  await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "0")
+  const skeletonPanel = await skeleton.locator(".booking-skeleton-panel").boundingBox()
+  const iframe = await frame.locator(".booking-iframe").boundingBox()
+  expect(skeletonPanel!.width).toBeCloseTo(760, 0)
+  expect(iframe!.width).toBeCloseTo(1040, 0)
+  expect(skeletonPanel!.x + skeletonPanel!.width / 2).toBeCloseTo(iframe!.x + iframe!.width / 2, 5)
+
+  expect(finishCalendarRequest).toBeDefined()
+  finishCalendarRequest!()
+  await expect(frame).toHaveAttribute("data-ready", "true")
+  await expect(skeleton).toHaveCSS("opacity", "0")
+  await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "1")
 })
 
 // A blocked third-party frame never fires onError, so the only signal that the
@@ -2412,24 +2601,17 @@ test("left aligns the about introduction with the services reading axis", async 
   })
 })
 
-test("scrolls to and focuses the about section from the avatar button", async ({ page }) => {
-  // Reduced motion makes the scroll instant, so the assertion isn't racing a
-  // smooth-scroll animation.
+test("opens chat directly and focuses its email field from the avatar button", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   const trigger = page.locator(".mosaic-avatar-button")
 
-  await expect(trigger).toHaveAccessibleName("Read about Rafael Medina")
+  await expect(trigger).toHaveAccessibleName("Ask about Rafael Medina")
   await trigger.focus()
   await trigger.press("Enter")
 
-  const about = page.locator("#about-panel")
-  await expect(about).toBeInViewport()
-  await expect(about).toBeFocused()
-  // The section is a landing container, not a control: it takes focus so
-  // reading continues from there, and draws no ring. The browser's default one
-  // boxes the whole sheet, which reads as a selection.
-  await expect(about).toHaveCSS("outline-style", "none")
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(page.getByLabel("Your email")).toBeFocused()
 })
 
 test("keeps every project group together inside the takeover stage", async ({ page }) => {
@@ -2860,10 +3042,9 @@ test("gives the takeover cue a full tap target and its own name", async ({ page 
   const cueBottom = await cue.evaluate((element) => element.getBoundingClientRect().bottom)
   expect(cueBottom).toBeLessThanOrEqual(seam)
 
-  // Distinct from the avatar, which scrolls to the same place: two buttons
-  // reading "Read about Rafael Medina" would be ambiguous in a rotor list.
+  // Distinct from the avatar's chat action in a screen-reader rotor list.
   await expect(cue).toHaveAccessibleName("Continue to About")
-  await expect(page.getByRole("button", { name: "Read about Rafael Medina" })).toHaveCount(1)
+  await expect(page.getByRole("button", { name: "Ask about Rafael Medina" })).toHaveCount(1)
 })
 
 test("drops the takeover cue below the breakpoint that pins the gallery", async ({ page }) => {
@@ -3195,7 +3376,7 @@ test("opens the resume reader from the folded tile and returns focus on close", 
   await expect(resume.locator(".resume-tile-copy")).toContainText("2026 - Present")
 
   await resume.click()
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   await expect(dialog).toBeVisible()
   await expect(page).toHaveURL(/\/resume\/$/)
   await expect(page).toHaveTitle("Résumé — Rafael Medina")
@@ -3215,7 +3396,7 @@ test("pages between the resume reader and its neighbouring projects", async ({ p
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const dialog = page.getByRole("dialog")
-  await expect(dialog).toHaveAccessibleName("Work history")
+  await expect(dialog).toHaveAccessibleName("Résumé")
 
   // Protector follows the résumé in the portraits group.
   await page.keyboard.press("ArrowRight")
@@ -3223,7 +3404,7 @@ test("pages between the resume reader and its neighbouring projects", async ({ p
   await expect(page).toHaveURL(/\/work\/protector-booking\/$/)
 
   await page.keyboard.press("ArrowLeft")
-  await expect(dialog).toHaveAccessibleName("Work history")
+  await expect(dialog).toHaveAccessibleName("Résumé")
   await expect(page).toHaveURL(/\/resume\/$/)
 
   // And Popparazi sits above it on the other side.
@@ -3236,7 +3417,7 @@ test("opens a shared resume link straight into the gallery", async ({ page }) =>
   await page.goto("/resume/")
 
   const dialog = page.getByRole("dialog")
-  await expect(dialog).toHaveAccessibleName("Work history")
+  await expect(dialog).toHaveAccessibleName("Résumé")
   await expect(dialog.getByRole("list", { name: "Work history" })).toBeVisible()
 })
 
@@ -3293,6 +3474,63 @@ for (const key of ["ArrowDown", "PageDown", "End"]) {
   })
 }
 
+for (const width of [1440, 390]) {
+  test(`keeps the résumé heading fixed above the scrolling history at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/resume/")
+
+    const dialog = page.getByRole("dialog", { name: "Résumé" })
+    const card = dialog.locator(".preview-gallery-card")
+    const title = dialog.getByRole("heading", { name: "Résumé" })
+    const drawings = dialog.locator(".resume-margin-drawing")
+    const titleTop = (await title.boundingBox())!.y
+
+    await expect(drawings).toHaveCount(3)
+    if (width === 1440) await expect(drawings.first()).toBeVisible()
+
+    await card.evaluate((element) => element.scrollTo({ top: 500, behavior: "instant" }))
+    await expect(dialog.locator(".preview-gallery-resume")).toHaveAttribute("data-scrolled", "true")
+    // Scrolling content must not reappear in the padding above the title.
+    expect(await card.evaluate((element) => {
+      const cardBox = element.getBoundingClientRect()
+      const heading = element.querySelector(".preview-gallery-resume-heading")!
+      const headingBox = heading.getBoundingClientRect()
+      const topmost = document.elementFromPoint(
+        cardBox.x + cardBox.width / 2,
+        (cardBox.top + headingBox.top) / 2,
+      )
+      return topmost === heading || heading.contains(topmost)
+    })).toBe(true)
+
+    await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
+    await expect(dialog.locator(".preview-gallery-resume")).toHaveAttribute("data-scrolled", "true")
+    expect((await title.boundingBox())!.y).toBeCloseTo(titleTop, 0)
+  })
+}
+
+test("keeps resume margin drawings clear of the reading column", async ({ page }) => {
+  await page.setViewportSize({ width: 2394, height: 1279 })
+  await page.goto("/resume/")
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const clearances = await dialog.locator(".resume-margin-drawing").evaluateAll((drawings) => {
+    const content = document.querySelector(".resume-content")!.getBoundingClientRect()
+
+    return drawings.map((drawing) => {
+      const box = drawing.getBoundingClientRect()
+      const side = drawing.getAttribute("data-place")
+      return {
+        side,
+        gap: side === "left" ? content.left - box.right : box.left - content.right,
+      }
+    })
+  })
+
+  expect(clearances.filter(({ side }) => side === "left").every(({ gap }) => gap >= 40)).toBe(true)
+  expect(clearances.filter(({ side }) => side === "right").every(({ gap }) => gap >= 32)).toBe(true)
+})
+
 test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -3329,7 +3567,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   const workHistory = dialog.getByRole("list", { name: "Work history" })
   const education = dialog.getByRole("list", { name: "Education" })
 
@@ -3347,6 +3585,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   const pdf = dialog.getByRole("link", { name: "View resume PDF" })
   await expect(pdf).toHaveAttribute("href", "/rafael-medina-resume.pdf")
   await expect(pdf).toHaveAttribute("target", "_blank")
+  await expect(dialog.locator(".preview-gallery-resume-heading").getByRole("link", { name: "View resume PDF" })).toBeVisible()
 })
 
 // On a phone the sheet fills the viewport, so there is no backdrop to aim at and
@@ -3361,14 +3600,14 @@ test("gives the mobile resume reader its own close control", async ({ page }) =>
   const trigger = page.getByRole("link", { name: "Open résumé" })
   await trigger.click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   const close = dialog.getByRole("button", { name: "Close résumé" })
   await expect(close).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Next preview" })).toBeVisible()
 
   const [closeBox, titleBox] = await Promise.all([
     close.boundingBox(),
-    dialog.getByRole("heading", { name: "Work history" }).boundingBox(),
+    dialog.getByRole("heading", { name: "Résumé" }).boundingBox(),
   ])
   expect(closeBox!.width).toBeGreaterThanOrEqual(44)
   expect(closeBox!.height).toBeGreaterThanOrEqual(44)
@@ -3390,7 +3629,7 @@ test("keeps the desktop resume reader free of a close control", async ({ page })
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   await expect(dialog).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Close résumé" })).toBeHidden()
   await expect(dialog.locator(".preview-gallery-toolbar")).toHaveCSS("display", "none")
@@ -3540,6 +3779,33 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 
+// Hovering a tile fetches the gallery's chunk ahead of the press. Handed to
+// `lazy` through a promise it still suspended, and once a boundary has shown its
+// fallback React holds the content back for up to 300ms: the first preview of
+// a visit appeared 315ms after the press, against 15ms for every one after it.
+test("opens a prefetched gallery without passing through its loading state", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  const tile = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
+  const chunk = page.waitForResponse(/PreviewGalleryDialog-[\w-]+\.js/)
+  await tile.hover()
+  await chunk
+  // The module evaluates once its own imports are in; give it that turn.
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 100)))
+
+  const firstSurface = page.evaluate(() => new Promise<string>((resolve) => {
+    new MutationObserver((_, observer) => {
+      const surface = document.querySelector(".preview-gallery-pending, .preview-gallery-popup")
+      if (!surface) return
+      observer.disconnect()
+      resolve(surface.className)
+    }).observe(document.body, { childList: true, subtree: true })
+  }))
+  await tile.click()
+  expect(await firstSurface).toContain("preview-gallery-popup")
+})
+
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
@@ -3593,9 +3859,8 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
       }),
     )
   })
-  // The counter is a screen-reader label on this layout rather than a pill, so
-  // the swipe is confirmed by what it says and not by whether it is drawn.
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  // The position label follows the swipe after its outgoing number settles.
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -3659,10 +3924,9 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
       animations: 0,
     })
   }
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
-  // Paging holds the leading edge and leaving holds the trailing one, with the
-  // corner between them empty.
+  // The visible counter fits between paging and close without moving either.
   const [prevBox, nextBox, closeBox] = await Promise.all(
     ["Previous preview", "Next preview", "Close preview"].map((name) =>
       dialog.getByRole("button", { name }).boundingBox(),
@@ -3671,6 +3935,11 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(prevBox!.x).toBeLessThan(nextBox!.x)
   expect(nextBox!.x + nextBox!.width).toBeLessThan(mobileViewport.width / 2)
   expect(closeBox!.x).toBeGreaterThan(mobileViewport.width / 2)
+  const countBox = (await dialog.locator(".preview-gallery-count").boundingBox())!
+  expect(countBox.width).toBeGreaterThan(32)
+  expect(countBox.height).toBeGreaterThanOrEqual(32)
+  expect(countBox.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
+  expect(countBox.x + countBox.width).toBeLessThan(closeBox!.x)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
 })
@@ -3696,7 +3965,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 13")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 14")
   await context.close()
 })
 
@@ -3733,7 +4002,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 13")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 14")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -3743,7 +4012,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 14")
   await context.close()
 })
 
@@ -3921,20 +4190,12 @@ test("adds breathing room above the about hobbies", async ({ page }) => {
   await expect(page.locator(".mosaic-about-hobbies")).toHaveCSS("margin-top", "8px")
 })
 
-test("starts the education section without a top hairline", async ({ page }) => {
-  await page.goto("/")
-  await page.getByRole("link", { name: "Open résumé" }).click()
-
-  const dialog = page.getByRole("dialog", { name: "Work history" })
-  await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "0px")
-})
-
 test("gives the Chainlink work a fuller description", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const chainlinkEntry = page
-    .getByRole("dialog", { name: "Work history" })
+    .getByRole("dialog", { name: "Résumé" })
     .locator(".resume-experience")
     .filter({ has: page.getByRole("heading", { name: "Product Designer & Frontend Developer at TM (Chainlink, Twilio, and Onit)" }) })
 
@@ -3978,7 +4239,7 @@ test("keeps work-history company links free of logo tooltips", async ({ page }) 
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   const companyLink = dialog
     .locator("a.mosaic-company-inline-link")
     .filter({ hasText: "Moody's" })
@@ -3996,7 +4257,7 @@ test("keeps work-history company links free of logo tooltips", async ({ page }) 
 test("links each work-history company name to its primary website", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
-  const workHistory = page.getByRole("dialog", { name: "Work history" })
+  const workHistory = page.getByRole("dialog", { name: "Résumé" })
 
   const projects = [
     { company: "0x Project", href: "https://0x.org/" },
@@ -4015,6 +4276,56 @@ test("links each work-history company name to its primary website", async ({ pag
   }
 })
 
+test("shows work-history company links without underlines", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const companyLink = page
+    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("link", { name: "0x Project", exact: true })
+
+  await expect(companyLink).toHaveCSS("text-decoration-line", "none")
+})
+
+test("aligns work locations with their roles", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  // Measure settled layout rather than different frames of the opening travel.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const jobs = page
+    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("list", { name: "Work history" })
+    .locator(":scope > li")
+
+  for (const index of [0, 1]) {
+    const [roleBox, locationBox] = await Promise.all([
+      jobs.nth(index).locator(".resume-experience-role").boundingBox(),
+      jobs.nth(index).locator(".mosaic-about-resume-location").boundingBox(),
+    ])
+
+    expect(roleBox).not.toBeNull()
+    expect(locationBox).not.toBeNull()
+    const overlap = Math.min(roleBox!.y + roleBox!.height, locationBox!.y + locationBox!.height)
+      - Math.max(roleBox!.y, locationBox!.y)
+    expect(overlap).toBeGreaterThan(Math.min(roleBox!.height, locationBox!.height) * 0.75)
+  }
+})
+
+test("uses one hairline between work history and education", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const jobs = dialog
+    .getByRole("list", { name: "Work history" })
+    .locator(":scope > li")
+
+  await expect(jobs.nth(1)).toHaveCSS("border-top-width", "0px")
+  await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "1px")
+})
+
 test("opens a work-history company website from its name", async ({ page }) => {
   await page.context().route("https://0x.org/**", (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>0x</title>" }),
@@ -4023,7 +4334,7 @@ test("opens a work-history company website from its name", async ({ page }) => {
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const companyLink = page
-    .getByRole("dialog", { name: "Work history" })
+    .getByRole("dialog", { name: "Résumé" })
     .getByRole("link", { name: "0x Project", exact: true })
 
   const popupPromise = page.waitForEvent("popup")
@@ -4037,7 +4348,7 @@ test("keeps each role and employer as the accessible work-history heading", asyn
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   await expect(dialog.getByRole("heading", { name: "Senior Product Designer at 0x Project" })).toBeVisible()
   await expect(dialog.getByRole("link", { name: "0x Project", exact: true })).toBeVisible()
 })
@@ -4065,8 +4376,9 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   // One control per side, level with each other and 16px clear of the card.
   const placement = async () => {
     const dialogBox = (await dialog.boundingBox())!
-    const previousBox = (await previous.boundingBox())!
-    const nextBox = (await next.boundingBox())!
+    // By class rather than name: reading a note renames the pair.
+    const previousBox = (await rail.locator(".preview-gallery-nav-prev").boundingBox())!
+    const nextBox = (await rail.locator(".preview-gallery-nav-next").boundingBox())!
     return {
       dialogTop: dialogBox.y,
       previousGap: dialogBox.x - (previousBox.x + previousBox.width),
@@ -4094,15 +4406,40 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   // The span between the two controls belongs to the card, not the group.
   await expect(rail).toHaveCSS("pointer-events", "none")
 
+  // One hop, not two: the stop after the homepage is the notes folder, which
+  // closes this preview and opens the folder's own sheet.
   await next.click()
-  await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   // A taller or shorter preview must not move them.
   expect(await placement()).toEqual(initial)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
+
+  // Nor may a slide with no artwork. The notes list is shorter than the
+  // artwork, an open note grows the card to the viewport's foot, and the
+  // résumé starts there: each used to take half its own card, so the pair
+  // jumped on every step into or out of them.
+  const railNext = rail.locator(".preview-gallery-nav-next")
+  await railNext.click()
+  await railNext.click()
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(dialog).toHaveAttribute("data-preview-kind", "writings")
+  await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
+  expect(await placement()).toEqual(initial)
+
+  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await expect(dialog).toHaveAttribute("data-reading-note", "true")
+  await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  expect(await placement()).toEqual(initial)
+
+  await page.keyboard.press("Escape")
+  await expect(dialog).not.toHaveAttribute("data-reading-note")
+  await railNext.click()
+  await railNext.click()
+  await expect(dialog).toHaveAttribute("data-preview-kind", "resume")
+  expect(await placement()).toEqual(initial)
 })
 
 // The rail's affordance is a left and a right chevron, and the card already
@@ -4170,7 +4507,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(forward.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(forward.at(-1)!.from).toBeGreaterThan(8)
   expect(Math.max(...forward.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   const back = await poses(".preview-gallery-rail .preview-gallery-nav-prev")
   expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(8)
@@ -4178,7 +4515,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(back.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(back.at(-1)!.from).toBeLessThan(-8)
   expect(Math.max(...back.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 13")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
 })
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
@@ -4770,7 +5107,7 @@ test("clips the Protector artwork to its full-width card on mobile", async ({ pa
   const [cardBox, mediaBox] = await Promise.all([protectorCard.boundingBox(), protectorMedia.boundingBox()])
 
   await expect(protectorMedia).toHaveCSS("object-fit", "cover")
-  await expect(protectorCard).toHaveCSS("overflow", "hidden")
+  await expect(protectorCard.locator(".mosaic-row-card-media-clip")).toHaveCSS("overflow", "hidden")
   expect(cardBox).not.toBeNull()
   expect(mediaBox).not.toBeNull()
   expect(cardBox!.x).toBe(8)
@@ -4931,7 +5268,7 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
   await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })
 
-test("puts unlabelled credits below the description without a site link", async ({ page }) => {
+test("puts teammates before Rafael in unlabelled credits below the description", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
@@ -4939,7 +5276,7 @@ test("puts unlabelled credits below the description without a site link", async 
   const dialog = page.getByRole("dialog")
   const description = dialog.locator(".preview-gallery-description")
   const team = dialog.getByRole("list", { name: "Collaborators" })
-  await expect(team.getByRole("link")).toHaveText(["Rafael Medina", "Simon Rico"])
+  await expect(team.getByRole("link")).toHaveText(["Simon Rico", "Rafael Medina"])
   await expect(description).toContainText("I mapped and designed")
   await expect(description).toContainText("without losing their quote or inputs")
   await expect(dialog.locator("dl")).toHaveCount(0)
@@ -4959,10 +5296,10 @@ test("puts unlabelled credits below the description without a site link", async 
   const [first, total] = (await counter.innerText()).split("/").map((part) => Number(part.trim()))
   for (let step = 0; step < total; step += 1) {
     await expect(counter).toHaveText(`${((first - 1 + step) % total) + 1} / ${total}`)
-    if (page.url().endsWith("/resume/")) {
-      // The résumé rides in the same sequence as a reader rather than a
-      // preview, so it carries no prose and no credits and the claims below
-      // are not about it.
+    if (page.url().endsWith("/resume/") || page.url().endsWith("/notes/")) {
+      // The résumé and the list of notes ride in the same sequence as readers
+      // rather than previews, so they carry no prose and no credits and the
+      // claims below are not about them.
       await expect(description).toHaveCount(0)
     } else {
       await expect(description).not.toBeEmpty()
@@ -4974,6 +5311,52 @@ test("puts unlabelled credits below the description without a site link", async 
     }
     await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   }
+})
+
+test("reveals a new teammate from the left when paging from solo work", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha token page/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const counter = dialog.locator(".preview-gallery-count")
+  const team = dialog.getByRole("list", { name: "Collaborators" })
+  const next = dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true })
+  const previous = dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true })
+
+  await expect(counter).toHaveText("10 / 14")
+  await previous.click()
+  await expect(counter).toHaveText("9 / 14")
+  await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
+
+  await next.click()
+  await expect(counter).toHaveText("10 / 14")
+  await expect(team.getByRole("link")).toHaveText(["Jakub Antalik", "Rafael Medina"])
+  const teammateMotion = await team.getByRole("link", { name: "Jakub Antalik" }).locator("..").evaluate((item) =>
+    item.getAnimations().map((animation) => ({
+      name: (animation as CSSAnimation).animationName,
+      firstTransform: animation.effect?.getKeyframes()[0]?.transform,
+    })),
+  )
+  expect(teammateMotion).toContainEqual({ name: "preview-gallery-person-in", firstTransform: "translate(-12px)" })
+})
+
+test("shows a bottom fade while a laptop preview has more content to scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 })
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha homepage/ }).click()
+
+  const card = page.getByRole("dialog").locator(".preview-gallery-card")
+  const cue = page.locator(".preview-gallery-scroll-cue")
+  await expect(cue).toHaveAttribute("data-visible", "true")
+  await expect(cue).toHaveCSS("opacity", "1")
+  expect(await cue.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain("linear-gradient")
+
+  await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
+  await expect(cue).not.toHaveAttribute("data-visible", "true")
+  await expect(cue).toHaveCSS("opacity", "0")
 })
 
 const expectPreviewContributionFits = async (page: Page, viewportHeight: number) => {
@@ -5030,13 +5413,19 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
 
   const content = await (await pdf.getPage(1)).getTextContent()
   // Non-empty items also prove the text is real and selectable, not an image.
-  const text = content.items.map((item) => ("str" in item ? item.str : "")).join("")
+  // Line ends are kept: joined flat, the address ran into the line above it and
+  // the address match found "Designerhey@..." instead.
+  const text = content.items.map((item) => ("str" in item ? item.str + (item.hasEOL ? "\n" : "") : "")).join("")
   expect(text.length).toBeGreaterThan(500)
 
   expect(text).toContain("Stealth fintech")
   expect(text).toContain("Co-founder")
-  expect(text).toContain("2026 - Present")
+  // The sheet sets a range over two lines, the dash closing the first.
+  expect(text).toMatch(/2026 –\s*Present/)
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)
+  // Each entry's copy precedes its dates in the text layer, and the bullets
+  // stay with their entry rather than being painted in a later pass.
+  expect(text).toMatch(/Stealth fintech[\s\S]*Building a mobile wallet[\s\S]*2026 –[\s\S]*0x Project/)
   // The old Figma export advertised an address the site had already moved off,
   // so the PDF must carry the site's current one and no other: naming the stale
   // address would only catch the drift that already happened.

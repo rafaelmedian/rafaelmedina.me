@@ -13,7 +13,7 @@ test("defers introduction assets until About and recording until play", async ({
   page.on("request", request => {
     if (request.url().includes("/tests/fixtures/about-intro/")) requests.push(request.url())
   })
-  await page.goto("/?intro=preview")
+  await page.goto("/?intro=preview&tune=off")
   await expect(page.locator("#about-panel")).toBeAttached()
   expect(requests).toEqual([])
   await openAbout(page)
@@ -55,7 +55,7 @@ for (const preference of ["reduced motion", "data saving"] as const) {
     page.on("request", request => {
       if (/about-intro\/.*\.(mp4|gif)/.test(request.url())) media.push(request.url())
     })
-    await page.goto("/?intro=preview")
+    await page.goto("/?intro=preview&tune=off")
     await openAbout(page)
     await expect(intro(page).locator("img")).toBeVisible()
     expect(media).toEqual([])
@@ -66,7 +66,7 @@ for (const preference of ["reduced motion", "data saving"] as const) {
 }
 
 test("keeps the player open and playing above About until explicitly closed", async ({ page }) => {
-  await page.goto("/?intro=preview")
+  await page.goto("/?intro=preview&tune=off")
   await openAbout(page)
   await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
   const video = intro(page).locator("video[data-recording]")
@@ -92,7 +92,7 @@ test("keeps the player open and playing above About until explicitly closed", as
 
 test("keeps the poster and recovers after a media error", async ({ page }) => {
   await page.route("**/about-intro/recording.mp4", route => route.abort("failed"))
-  await page.goto("/?intro=preview")
+  await page.goto("/?intro=preview&tune=off")
   await openAbout(page)
   await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
   await expect(intro(page).getByRole("button", { name: "Retry introduction" })).toBeVisible()
@@ -103,7 +103,7 @@ test("keeps the poster and recovers after a media error", async ({ page }) => {
 })
 
 test("plays again from the beginning after the recording ends", async ({ page }) => {
-  await page.goto("/?intro=preview")
+  await page.goto("/?intro=preview&tune=off")
   await openAbout(page)
   await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
   await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
@@ -129,7 +129,7 @@ test("offers play again when the browser blocks the first playback request", asy
       return original.call(this)
     }
   })
-  await page.goto("/?intro=preview")
+  await page.goto("/?intro=preview&tune=off")
   await openAbout(page)
   await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
   await expect(intro(page).getByRole("status")).toBeHidden()
@@ -138,7 +138,7 @@ test("offers play again when the browser blocks the first playback request", asy
 })
 
 test("pauses when the tab is hidden and does not restart sound on return", async ({ page }) => {
-  await page.goto("/?intro=preview")
+  await page.goto("/?intro=preview&tune=off")
   await openAbout(page)
   await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
   const video = intro(page).locator("video[data-recording]")
@@ -161,7 +161,7 @@ test("pauses when the tab is hidden and does not restart sound on return", async
 for (const width of [1440]) {
   test(`keeps the player interactive over a booking dialog at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
-    await page.goto("/?intro=preview")
+    await page.goto("/?intro=preview&tune=off")
     await page.locator("#about-panel-services").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
     await expect(intro(page)).toBeVisible()
     await intro(page).getByRole("button", { name: "Play introduction", exact: true }).focus()
@@ -216,7 +216,7 @@ test("keeps a poster while the recording download is pending", async ({ page }) 
     await held
     await route.continue()
   })
-  await page.goto("/?intro=preview")
+  await page.goto("/?intro=preview&tune=off")
   await openAbout(page)
   await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
   await expect(intro(page).getByRole("status")).toHaveText("Loading introduction…")
@@ -226,7 +226,7 @@ test("keeps a poster while the recording download is pending", async ({ page }) 
 })
 
 test("keeps the message prompt when the development video is off", async ({ page }) => {
-  await page.goto("/?intro=off")
+  await page.goto("/?intro=off&tune=off")
   await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
   await expect(intro(page)).toBeVisible()
   await expect(intro(page).locator("img.about-intro-poster")).toHaveAttribute("src", /profile-photo.*\.webp$/)
@@ -234,7 +234,7 @@ test("keeps the message prompt when the development video is off", async ({ page
 })
 
 test("uses the profile-photo message prompt on ordinary development visits", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/?tune=off")
   await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
   await expect(intro(page)).toBeVisible()
   await expect(intro(page).locator("img.about-intro-poster")).toHaveAttribute("src", /profile-photo.*\.webp$/)

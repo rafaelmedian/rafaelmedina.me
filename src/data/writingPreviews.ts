@@ -1,11 +1,13 @@
 import type { WritingId } from "./writingIds"
+import { writingFields } from "./writingIndex"
 
 // The three miniature pages on the folder. The full articles reuse these
 // fields, so the lightweight preview stays in step without copying content.
+// The name and the date come off the index the whole site reads a note's
+// heading from, so the miniature cannot drift from the article it previews.
 export const writingPreviews = [
   {
-    id: "project-context-in-markdown",
-    title: "My project context is moving into Markdown",
+    ...writingFields("project-context-in-markdown"),
     paragraphs: [
       "I've found myself creating more Markdown files lately. Things I would have put in Linear, or kept beside a design system in Figma, are ending up in files called `PROJECT_STATUS.md` and `DESIGN_QA.md`. It wasn't a big decision to change my workflow. I just kept needing somewhere to put information that both I and an agent could use.",
       "A task needs a little history. A design decision needs a reason. A bug needs an explanation of what should have happened. When those details are scattered across tools, I become the person carrying them between places. The files started as a way to do less of that.",
@@ -13,8 +15,7 @@ export const writingPreviews = [
     ]
   },
   {
-    id: "ai-design-needs-control",
-    title: "AI design needs more control",
+    ...writingFields("ai-design-needs-control"),
     paragraphs: [
       "Claude-only web design is wild when you already have a Figma design in front of you. There is very little mystery about what you want. You can see the layout, the spacing, the way the pieces belong together. Getting the code to arrive at that same place can still take a surprising amount of back and forth.",
       "I described it on X as three stretches: the first 60% flies, the next 30% takes ages of saying 'no, not like that,' and the final 10% feels like god mode. Those numbers describe the feeling, not a benchmark. The strange part is how quickly the experience swings from impressive to frustrating and back again.",
@@ -22,8 +23,7 @@ export const writingPreviews = [
     ]
   },
   {
-    id: "building-it-yourself-isnt-free",
-    title: "Building it yourself still costs something",
+    ...writingFields("building-it-yourself-isnt-free"),
     paragraphs: [
       "Whenever someone says you can just build a tool yourself now, I have two reactions. The first is excitement, because more of those ideas are becoming possible. The second is a small accounting question: what are we including in the cost?",
       "In a draft reply, I listed tokens, time, and running costs. It was a fairly ordinary objection to a very exciting possibility. Being able to make the thing doesn't settle whether I want to be responsible for it.",

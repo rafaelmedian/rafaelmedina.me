@@ -4,7 +4,7 @@ for (const variant of ['c']) {
   for (const width of [320, 1440]) {
     test(`option ${variant.toUpperCase()} supports replies and playback at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 })
-      await page.goto(`/?introStyle=${variant}`)
+      await page.goto(`/?introStyle=${variant}&tune=off`)
       await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
       const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
       await expect(intro).toHaveAttribute('data-variant', variant)
@@ -37,7 +37,7 @@ for (const variant of ['c']) {
 }
 
 test('uses B by default without a design switcher', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
   await expect(intro).toHaveAttribute('data-variant', 'b')

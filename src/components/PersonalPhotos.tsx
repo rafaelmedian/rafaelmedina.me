@@ -13,17 +13,17 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
   const { module, status, load, warm } = useDeferredModule(loadSheet)
   const Sheet = module?.PersonalPhotosSheet
   const sheetRef = useRef<PersonalPhotosSheetHandle>(null)
-  const [request, setRequest] = useState<{ opener: HTMLElement; isCurrent: () => boolean } | null>(null)
+  const [request, setRequest] = useState<{ opener: HTMLElement; photoId?: string; isCurrent: () => boolean } | null>(null)
   const [previewImages, setPreviewImages] = useState<Record<string, string>>({})
   const count = usePreviewCount()
   const preview = photos.slice(0, count).map(photo => ({ photo, src: previewImages[photo.id] ?? `/images/personal/${photo.name}-thumb.webp` }))
-  const openPhoto: OpenPhoto = opener => {
-    setRequest({ opener, isCurrent: beginDialogIntent("photos") })
+  const openPhoto: OpenPhoto = (opener, photoId) => {
+    setRequest({ opener, photoId, isCurrent: beginDialogIntent("photos") })
     if (!Sheet) void load()
   }
   useEffect(() => {
     if (!Sheet || !request || !request.isCurrent()) return
-    sheetRef.current?.openPhoto(request.opener)
+    sheetRef.current?.openPhoto(request.opener, request.photoId)
   }, [Sheet, request])
   useEffect(() => {
     if (Sheet || !request) return
