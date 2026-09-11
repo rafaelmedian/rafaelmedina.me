@@ -1186,7 +1186,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
-                  header at z-index 1. The current position swaps with the TOC's 4px slide and
+                  header at z-index 1. A compact position pill sits between the paging group and close,
+                  keeping both controls fixed. The current position swaps with the TOC's 4px slide and
                   <code>--blur-reveal</code>: 120ms out on the exit curve, 160ms in on the standard curve.
                   Next sends it up, Previous down, including when the sequence wraps. The total stays still,
                   and the counter reserves enough digits for the full sequence. Reduced motion swaps instantly.
