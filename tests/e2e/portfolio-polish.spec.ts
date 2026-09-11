@@ -2281,6 +2281,11 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   await expect(skeleton.locator(".booking-skeleton-day")).toHaveCount(35)
   await expect(skeleton).toHaveCSS("opacity", "1")
   await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "0")
+  const skeletonPanel = await skeleton.locator(".booking-skeleton-panel").boundingBox()
+  const iframe = await frame.locator(".booking-iframe").boundingBox()
+  expect(skeletonPanel!.width).toBeCloseTo(760, 0)
+  expect(iframe!.width).toBeCloseTo(1040, 0)
+  expect(skeletonPanel!.x + skeletonPanel!.width / 2).toBeCloseTo(iframe!.x + iframe!.width / 2, 5)
 
   expect(finishCalendarRequest).toBeDefined()
   finishCalendarRequest!()

@@ -1757,8 +1757,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 and a second set above it was the same thing twice. Escape and a press outside close it; the dialog's
                 responsive <code>clamp(16px, 3vw, 32px)</code> side gutters preserve the embed's 1040px desktop canvas
                 and extend Cal.com's <code>#fafafa</code> top-and-bottom field to both sides. Before that third-party
-                page paints, an <code>aria-hidden</code> calendar skeleton occupies the exact iframe slot: profile,
-                month grid, and time rail on desktop, then the month grid alone on phones. Its neutral blocks pulse
+                page paints, an <code>aria-hidden</code> calendar skeleton sits on the iframe's centre line but keeps
+                the 760px-wide stage Cal.com uses while booting: profile, month grid, and time rail on desktop, then
+                the month grid alone on phones. The live calendar can expand into the full 1040px canvas without the
+                preload beginning wider than the state it hands off to. Its neutral blocks pulse
                 once over two slow-duration steps, then cross-fade and cross-blur into the calendar over
                 <code>--duration-slow</code>; reduced motion swaps the layers immediately. The loading status remains
                 available to assistive technology and becomes visible only if the six-second failure threshold is met. The dialog's

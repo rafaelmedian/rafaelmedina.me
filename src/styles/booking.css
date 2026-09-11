@@ -171,7 +171,7 @@
 }
 
 .booking-skeleton-panel {
-  width: 100%;
+  width: min(760px, 100%);
   height: min(492px, 100%);
   display: grid;
   grid-template-columns: 28% 48% 24%;
