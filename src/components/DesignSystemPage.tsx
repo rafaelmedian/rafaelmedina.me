@@ -432,7 +432,7 @@ const DURATIONS_ENTRIES = [
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },
   { value: "410ms", use: "The personal-photo fan springing out of its pile the first time it scrolls into view, every print at once on the card-stack overshoot (see Easing). Taken whole from transitions.dev’s card stack hover, the fan-out beat there. --photo-deal-duration on the stack." },
-  { value: "1100ms / 1200ms / 240ms", use: "The avatar coin. One whole turn under the pointer over 1100ms, and a click adds another over 1200ms, then hands over to the About scroll 240ms in — long enough that the spin is what started the scroll, short enough that the click still feels answered. Both are slow on purpose: a coin this small has to turn lazily to read as turning at all. JavaScript reads all three numbers from the coin's own custom properties." },
+  { value: "1100ms / 1200ms / 240ms", use: "The avatar coin. One whole turn under the pointer over 1100ms, and a click adds another over 1200ms, then opens the profile chat 240ms in — long enough that the spin is what revealed it, short enough that the click still feels answered. Both are slow on purpose: a coin this small has to turn lazily to read as turning at all. JavaScript reads all three numbers from the coin's own custom properties." },
   { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
 ]
 
@@ -2008,18 +2008,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="avatar-coin"
-                data-ds-terms={terms("avatar coin flip spin rotateY 360deg hover click about scroll 1100ms 1200ms 240ms crop zoom 1.12 object-fit cover composite add web animations preserve-3d backface hint arrow reduced motion")}
+                data-ds-terms={terms("avatar coin flip spin rotateY 360deg hover click chat dialog email gate conversation composer 1100ms 1200ms 240ms crop zoom 1.12 object-fit cover composite add web animations preserve-3d backface hint arrow reduced motion")}
               >
-                <strong>The avatar spins, and the spin is what goes to About.</strong>
+                <strong>The avatar spins, and the spin opens a conversation.</strong>
                 <p>
                   Pointing at the 52px portrait, or reaching it with the keyboard, turns it{" "}
                   <code>360deg</code> &mdash; one whole turn, with the mirrored second face passing underneath and the
                   first one coming back. The crop tightens at the same time: the circle keeps its size and the face
                   inside it scales to <code>1.12</code> over <code>--duration-slow</code>, so the frame closes in rather
                   than the avatar growing into the line of text beside it. Clicking adds another whole turn and,{" "}
-                  <code>240ms</code> later, scrolls to the About sheet with the same <code>scrollIntoView</code> every
-                  other section link uses.
-                  The grey Handlee hint reads &ldquo;read about me&rdquo; throughout; it is the only label the control has.
+                  <code>240ms</code> later, opens a full-screen chat. The first visit asks for an email; the address is
+                  kept on the device and sent with each question to identify the rate-limited conversation, never to
+                  subscribe the visitor. Returning visitors go directly to the stored history. The conversation is a
+                  restrained version of the page: assistant answers sit directly on the canvas, questions use the dark
+                  primary surface, and a pill composer stays at the foot. The grey Handlee hint reads &ldquo;ask about
+                  me&rdquo; throughout; the accessible name is &ldquo;Ask about Rafael Medina.&rdquo;
                 </p>
                 <p>
                   The click spin is a script animation with <code>composite: &quot;add&quot;</code>, not a keyframe
@@ -2031,7 +2034,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   interrupted coin only ever rest on a face. The crop is clipped by a frame around each portrait rather
                   than by the coin, because the coin carries <code>preserve-3d</code> and any overflow but{" "}
                   <code>visible</code> would flatten it and take the flip with it. Reduced motion holds the coin, the
-                  crop, and the spin, and goes straight to About.
+                  crop and the spin, and opens the chat at once.
                 </p>
               </div>
 
@@ -2212,11 +2215,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   white and disappears over the runway.
                 </li>
                 <li data-ds-terms={terms("cue shortcut 44px scrollintoview continue to about focus ring")}>
-                  <strong>The cue is also the shortcut.</strong> It is a 44px button that runs the same{" "}
-                  <code>scrollIntoView</code> as the avatar, landing the sheet at the top of the viewport and moving
-                  focus into it — a tap finishes a crossing the reader has already committed to. It is named
-                  &ldquo;Continue to About&rdquo; rather than reusing the avatar&rsquo;s &ldquo;Read about Rafael
-                  Medina&rdquo;, so the two paths to the same place stay distinguishable in a list of controls. The
+                  <strong>The cue is also the shortcut.</strong> It is a 44px button that lands the About sheet at the
+                  top of the viewport and moves focus into it — a tap finishes a crossing the reader has already
+                  committed to. It is named &ldquo;Continue to About&rdquo;, distinct from the avatar&rsquo;s
+                  &ldquo;Ask about Rafael Medina&rdquo; chat action, so they stay distinguishable in a list of controls. The
                   button owns the target and the focus ring; the chevron inside owns the blend, because a ring drawn on
                   the blended element would invert along with the stroke.
                 </li>

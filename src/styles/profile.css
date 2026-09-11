@@ -165,7 +165,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   corner-shape: inherit;
   transform-style: preserve-3d;
   /* Read by SimpleFeed for the click spin: the turn it adds, and the beat it
-     holds before handing over to the scroll. */
+     holds before handing over to the chat. */
   --avatar-flip-duration: 1100ms;
   --avatar-spin-duration: 1200ms;
   --avatar-spin-lead: 240ms;
@@ -242,7 +242,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 }
 
 .mosaic-avatar-button:active {
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 /* The global :where() focus rule supplies the outline; only the offset grows. */
