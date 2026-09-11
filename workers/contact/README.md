@@ -3,9 +3,11 @@
 The static GitHub Pages site posts to this Cloudflare Worker. The Worker sends
 to `CONTACT_TO` through [Resend's email API](https://resend.com/docs/api-reference/emails/send-email),
 with the visitor in `reply_to`; visitors cannot choose a recipient or sender.
-`CONTACT_TO` is the Gmail inbox directly, not the public `siteLinks.email`:
-Resend reported a test to `hey@rafaelmedina.me` as delivered to Namecheap's
-forwarder, and it never reached Gmail. Skipping the forwarder removes that hop.
+`CONTACT_TO` is the Gmail inbox directly, not the public `siteLinks.email`.
+A first test to `hey@rafaelmedina.me` never reached Gmail: Namecheap had no `hey`
+forwarder, so it fell to the catch-all, which forwards to a different inbox.
+`hey` now forwards to the same Gmail address, but sending directly keeps the
+Worker independent of Namecheap's forwarding rules.
 There is no app database, attachment storage, or request-body logging. Resend and
 the inbox still process and retain mail according to their own settings.
 
