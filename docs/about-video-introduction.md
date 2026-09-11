@@ -236,7 +236,8 @@ The selected B email field is now 44px high and capped at 256px wide, with
 the same 14px type as the messages. It sits at the chat's right edge, its
 center level with the portrait, and
 the conversation grows above that row. The optional message keeps its larger
-textarea and 16px input type.
+textarea and 16px input type. It grows with the text, from 88px up to seven
+lines (less on short screens), then scrolls.
 
 Typing bubbles rest on the avatar's bottom edge while either reply field is pending.
 Only the typing bubble has a tail on Rafa's side; the questions have none. The

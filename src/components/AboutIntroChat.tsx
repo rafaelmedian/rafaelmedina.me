@@ -63,6 +63,19 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     }
   }, [confirmed, active])
 
+  useLayoutEffect(() => {
+    const field = messageRef.current
+    if (!field) return
+    // Fit the message to its text; CSS clamps it between its floor and cap.
+    const fit = () => {
+      field.style.height = "auto"
+      field.style.height = `${field.scrollHeight}px`
+    }
+    fit()
+    window.addEventListener("resize", fit)
+    return () => window.removeEventListener("resize", fit)
+  }, [confirmed, message])
+
   useEffect(() => {
     if (!active || revealed >= target) return
     const timer = window.setTimeout(() => setRevealed(count => skipTyping ? target : count + 1), skipTyping ? 0 : typingDuration)

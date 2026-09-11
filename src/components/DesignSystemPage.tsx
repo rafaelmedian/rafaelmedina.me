@@ -2216,7 +2216,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   right edge and its center aligns vertically with the 64px face, moving the conversation above that row. Both composers use the white
                   canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
                   8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
-                  The message textarea remains 88px high with 16px text. The history uses the available space above the dock with a 12px top clearance, accounting for the
+                  The message textarea starts 88px high with 16px text and grows with each line up to seven lines
+                  (188px), or 30% of the viewport on short screens, before scrolling; the history gives up the room. The history uses the available space above the dock with a 12px top clearance, accounting for the
                   actual form height; only short viewports scroll. The composer stays below it. Focus deepens
                   the overlay shadow to <code>--shadow-overlay-hover</code> instead of drawing a stroke. The arrow starts gray,
                   turning blue for a valid email or nonempty optional message. Final submission posts to the contact

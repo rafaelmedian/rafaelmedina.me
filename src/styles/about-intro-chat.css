@@ -176,8 +176,12 @@
   border-radius: var(--radius-lg);
 }
 
+/* Grows with the text (sized in AboutIntroChat) up to seven lines, or less on
+   short screens, then scrolls. The history above gives up the room. */
 .about-intro-chat-message textarea {
-  height: 88px;
+  min-height: 88px;
+  max-height: min(188px, 30dvh);
+  overflow-y: auto;
   font-size: var(--text-md);
   resize: none;
 }

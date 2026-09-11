@@ -39,7 +39,21 @@ for (const width of [320, 1440]) {
     }).toBeLessThan(1)
     // Focus deepens the overlay shadow instead of drawing an inset stroke.
     expect(await message.locator('..').evaluate(node => getComputedStyle(node).boxShadow)).toContain('0px 16px 36px')
+    // The message grows with its text from 88px, caps at seven lines and then scrolls.
+    const fieldHeight = () => message.evaluate(node => node.getBoundingClientRect().height)
+    expect(await fieldHeight()).toBe(88)
+    await message.fill('One\nTwo\nThree\nFour\nFive')
+    expect(await fieldHeight()).toBe(140)
+    expect(await message.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
+    await message.fill(Array.from({ length: 20 }, (_, line) => `Line ${line + 1}`).join('\n'))
+    expect(await fieldHeight()).toBe(188)
+    await expect.poll(async () => {
+      const face = await page.locator('.about-intro-surface').boundingBox()
+      const hint = await chat.locator('.about-intro-chat-hint').boundingBox()
+      return Math.abs(face!.y + face!.height - hint!.y - hint!.height)
+    }).toBeLessThan(1)
     await message.fill('A little more context')
+    expect(await fieldHeight()).toBe(88)
     await chat.getByRole('button', { name: 'Edit email address: hello@example.com' }).click()
     await expect(email).toBeFocused()
     await email.fill('new@example.com')
