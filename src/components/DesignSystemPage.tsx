@@ -2283,7 +2283,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   self-hosted profile image without mounting a teaser, recording, playback control or media request.
                   It anchors the visible desktop conversation and opens the modal conversation when tapped at compact
                   sizes. The preserved video prototype is available only through the explicit development preview.
-                  Its 112px desktop circle
+                  Its 112px desktop true circle uses <code>corner-shape: round</code> rather than the site&rsquo;s squircle curve and
                   sits at the bottom-left on <code>--z-corner</code>, expanding to 240px with
                   <code> --radius-lg</code> corners, <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
                   Below 700px a 64px circle shares the centered TOC row with a 12px gap on
