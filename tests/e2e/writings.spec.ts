@@ -131,6 +131,58 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   await expect(folder).toBeFocused()
 })
 
+test("a press outside a note closes the gallery once, with the note still on it", async ({ page }) => {
+  // Back is a single tone and the close is a noise transient over one. A press
+  // outside used to be two dismissals -- Back on mousedown, then Base UI closing
+  // the list on the click -- and played both.
+  await page.addInitScript(() => {
+    const sounds = { tones: 0, noise: 0 }
+    Object.assign(window, { __sounds: sounds })
+    const { createOscillator, createBufferSource } = BaseAudioContext.prototype
+    BaseAudioContext.prototype.createOscillator = function () { sounds.tones += 1; return createOscillator.call(this) }
+    BaseAudioContext.prototype.createBufferSource = function () { sounds.noise += 1; return createBufferSource.call(this) }
+  })
+  const sounds = () => page.evaluate(() => ({ ...(window as unknown as { __sounds: { tones: number; noise: number } }).__sounds }))
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+  const folder = page.getByRole("button", { name: "Open writings folder" })
+  await folder.click()
+  await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
+  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
+  const before = await sounds()
+
+  // The note stays on the card while it shrinks: turning back to the list on
+  // the way out is the second dismissal this replaced.
+  const frames = popup(page).evaluate(element => new Promise<string[]>(resolve => {
+    const samples: string[] = []
+    const end = performance.now() + 1500
+    const sample = () => {
+      if (!element.isConnected || performance.now() > end) return resolve(samples)
+      samples.push(element.querySelector(".writing-reader") ? "note" : "list")
+      requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  }))
+  await page.mouse.click(8, 500)
+  expect(await frames).not.toContain("list")
+  await expect(popup(page)).toBeHidden()
+  // Both addresses are given up, so the visit is back where it began.
+  await expect(page).toHaveURL(/\/$/)
+  await expect(folder).toBeFocused()
+  const after = await sounds()
+  expect({ tones: after.tones - before.tones, noise: after.noise - before.noise }).toEqual({ tones: 1, noise: 1 })
+
+  // A shared note has no list or opener behind it, and closes to the page.
+  await page.goto("/notes/designing-matcha/")
+  await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
+  await page.mouse.click(8, 500)
+  await expect(popup(page)).toBeHidden()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(folder).toBeFocused()
+})
+
 for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 768 }]) {
   test(`a note's sheet hangs from the preview's line and keeps its box at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport)

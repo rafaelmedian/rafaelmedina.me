@@ -152,8 +152,18 @@ export function PreviewGalleryDialog({
   // than the window, so both give the vertical arrows back to scrolling and
   // page on the horizontal pair alone.
   const isReaderSlide = isResumeSlide || activeItem?.kind === "writings"
+  // A press outside a note leaves the gallery, not only the note: it aimed past
+  // the whole card. It used to be two dismissals -- Back to the list on
+  // mousedown, then Base UI closing that list on the click -- each with its own
+  // sound. Now it is one close, so the note stays on the card while it shrinks
+  // instead of turning back to the list on the way out. Held until the exit
+  // finishes, or until the gallery opens again before it does.
+  const [leavingNote, setLeavingNote] = useState<string | null>(null)
+  useIsomorphicLayoutEffect(() => {
+    if (open) setLeavingNote(null)
+  }, [open])
   const noteDirection = useRef<GalleryPageDirection>("next")
-  const notesPage = useGalleryPage(writingId, noteDirection, cardRef, prefersReducedMotion || !open || !isReaderSlide)
+  const notesPage = useGalleryPage(leavingNote ?? writingId, noteDirection, cardRef, prefersReducedMotion || !open || !isReaderSlide)
   const readingNote = activeItem?.kind === "writings" && notesPage.displayed !== null
   const noteTitleRef = useRef<HTMLHeadingElement>(null)
   const notesListRef = useRef<HTMLDivElement>(null)
@@ -303,13 +313,14 @@ export function PreviewGalleryDialog({
   }, [open, originWrapNode, runOriginAnimation])
 
   const handleOpenChange = useCallback(
-    (nextOpen: boolean) => {
-      if (!nextOpen && writingId) {
+    (nextOpen: boolean, details?: Pick<Dialog.Root.ChangeEventDetails, "reason">) => {
+      if (!nextOpen && writingId && details?.reason !== "outside-press") {
         playBack()
         onBackFromWriting()
         return
       }
       if (!nextOpen) {
+        if (writingId) setLeavingNote(notesPage.displayed ?? writingId)
         playClose()
         runOriginAnimation("close")
         cancelSwitchTransition()
@@ -324,7 +335,7 @@ export function PreviewGalleryDialog({
       }
       onOpenChange(nextOpen)
     },
-    [cancelSwitchTransition, onOpenChange, playClose, playBack, runOriginAnimation, writingId, onBackFromWriting],
+    [cancelSwitchTransition, onOpenChange, playClose, playBack, runOriginAnimation, writingId, onBackFromWriting, notesPage.displayed],
   )
 
   // One step of the strip, in either direction, and the only way the selection
@@ -502,7 +513,8 @@ export function PreviewGalleryDialog({
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
 
   return (
-    <Dialog.Root open={present} onOpenChange={handleOpenChange}>
+    <Dialog.Root open={present && !leavingNote} onOpenChange={handleOpenChange}
+      onOpenChangeComplete={(isOpen) => { if (!isOpen) setLeavingNote(null) }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
 
@@ -518,7 +530,7 @@ export function PreviewGalleryDialog({
           style={galleryMotionVars}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
-              handleOpenChange(false)
+              handleOpenChange(false, { reason: "outside-press" })
             }
           }}
         >

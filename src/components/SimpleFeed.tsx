@@ -1236,10 +1236,18 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   prefersReducedMotion={prefersReducedMotion}
                   getOriginRect={getPreviewOriginRect}
                   onOpenChange={(nextOpen) => {
-                    if (!nextOpen) {
-                      writingsFolderRef.current?.cancelPending()
+                    if (nextOpen) return
+                    writingsFolderRef.current?.cancelPending()
+                    if (!writingId) {
                       clearGalleryItem()
+                      return
                     }
+                    // A press outside a note closes the gallery with it. The
+                    // note gives up its address first and the list its own
+                    // after, so history lands where the visit began rather
+                    // than on a /notes/ entry nothing is showing any more.
+                    if (!openedByGesture) setGalleryFallbackFocus(writingsFolderTileRef.current)
+                    clearWriting(() => clearGalleryItem())
                   }}
                   onSelectedIndexChange={setSelectedWorkPreviewIndex}
                   onSelectWriting={(id) => writingsFolderRef.current?.openWriting(id)}
