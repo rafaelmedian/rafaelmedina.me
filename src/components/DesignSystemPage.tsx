@@ -1328,8 +1328,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 paragraphs at every viewport width: its narrower page has no reserved margin-note gutters.
                 Each reader ends with up to three entries from its own category, newest first, using the archive’s rows; a category with no sibling omits it.
                 The section sits 48px below the article; selecting a title opens that note at the top and focuses its heading.
-                The top bar carries one title, Notes, with no year crumb, search, document count, author byline, or subtitle.
-                Notes uses --text-md, aligned with the archive's category labels on the shared 34rem measure.
+                The top bar carries one title, Notes and tools, with no year crumb, search, document count, author byline, or subtitle.
+                The title uses --text-md, aligned with the archive's category labels on the shared 34rem measure.
                 Heading insets follow the gallery card's responsive padding.
                 Notes is a nested view of the same preview-gallery dialog: one backdrop, focus trap, and card.
                 The list remains at its tile's place in the outer sequence ("3 / 14"). Its arrows page work items;
@@ -1350,7 +1350,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 and scroll internally; Back animates to the list's natural height. Mobile keeps the full-height gallery
                 frame and toolbar. Reduced motion changes state instantly.
                 The toolbar's 5% black divider and short shadow appear only while scrolled, over 160ms.
-                The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes" title on the same column
+                The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes and tools" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
                 Every note carries marginalia in Handlee on --muted, authored per paragraph rather than generated: a

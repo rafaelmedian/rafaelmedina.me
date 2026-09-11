@@ -25,7 +25,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await expect(page).toHaveTitle("Notes — Rafael Medina")
   await expect(popup(page)).toHaveAttribute("data-preview-kind", "writings")
   await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 14")
-  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   await expect(popup(page).locator(".writings-category > h3")).toHaveText(["Tools", "Notes"])
   await expect(popup(page).getByRole("button", { name: "Make pull requests easier to review", exact: true })
     .locator(".writing-entry-date")).toHaveText("Sep 11 '26")
@@ -96,7 +96,7 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   // List and article share the same active modal tree.
   await expect(page.getByRole("dialog")).toHaveCount(1)
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
-  await expect(sheet(page).locator(".writings-toolbar")).toHaveText("Notes")
+  await expect(sheet(page).locator(".writings-toolbar")).toHaveText("Notes and tools")
   await expect(sheet(page).locator(".writing-reader-date time")).toHaveText("March 2, 2026")
   await expect(sheet(page).getByRole("img", { name: "Matcha discovery homepage with token search and market overview" })).toBeVisible()
   // The sheet is the one surface with a back arrow, and it never collapses:
@@ -104,7 +104,7 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   const back = sheet(page).getByRole("button", { name: "Go back to Notes", exact: true })
   await expect(back).toBeVisible()
   const arrow = (await back.boundingBox())!
-  const title = (await sheet(page).getByRole("heading", { name: "Notes", exact: true }).boundingBox())!
+  const title = (await sheet(page).getByRole("heading", { name: "Notes and tools", exact: true }).boundingBox())!
   // On a sheet this wide the arrow hangs in the left gutter, clear of the title.
   expect(arrow.x + arrow.width).toBeLessThanOrEqual(title.x)
   await expect(sheet(page).getByRole("button", { name: "Next note", exact: true })).toBeVisible()
@@ -212,7 +212,7 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     const reader = dialog.locator(".writings-scroll")
     await reader.evaluate((element) => element.scrollTo(0, 400))
     await expect.poll(() => dialog.boundingBox()).toEqual(reading)
-    expect((await dialog.getByRole("heading", { name: "Notes", exact: true }).boundingBox())!.y).toBeLessThan(reading.y + 80)
+    expect((await dialog.getByRole("heading", { name: "Notes and tools", exact: true }).boundingBox())!.y).toBeLessThan(reading.y + 80)
     await expect(dialog.getByRole("button", { name: "Next note" })).toBeInViewport()
     await expect.poll(() => reader.evaluate((element) => element.scrollTop)).toBe(400)
     await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toHaveCount(1)
@@ -416,7 +416,7 @@ test("the list's drawings stay in the card's gutters and leave at narrow widths"
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/")
   const card = popup(page).locator(".preview-gallery-card")
-  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   const drawings = popup(page).locator(".writings-drawing")
   expect(await drawings.count()).toBeGreaterThan(0)
   // The drawings hang outside the list's column, so the failure to catch is a
@@ -439,14 +439,14 @@ test("the list's drawings stay in the card's gutters and leave at narrow widths"
   // card opens, so this is a fresh visit rather than a resize.
   await page.setViewportSize({ width: 1200, height: 1000 })
   await page.goto("/notes/")
-  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   await expect(drawings.first()).toBeHidden()
 })
 
 test("a hovered row boils its drawing through its frames", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/notes/")
-  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   await expect(popup(page)).toHaveCSS("opacity", "1")
 
   // At rest the drawing shows the first frame of its strip and holds still.
@@ -485,7 +485,7 @@ test("the mouse moving onto a notes row strikes one key", async ({ page }) => {
     }
   })
   await page.goto("/notes/")
-  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   await expect(popup(page)).toHaveCSS("opacity", "1")
   // The popup reaches full opacity before its origin wrapper finishes moving.
   // Measure rows only after that travel lands, or these coordinates can point
