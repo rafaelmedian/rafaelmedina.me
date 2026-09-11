@@ -2167,12 +2167,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   A 20%-black overlay darkens the portrait only while those actions are shown, fading over
                   <code> --duration-quick</code>. The triangle has no disc or colored background.
                   A 100px white pill to the right holds separate 44px email and text actions,
-                  with small named tooltips and the shared ring and overlay shadows, without backdrop blur.
+                  with the shared ring and overlay shadows, without backdrop blur. Hover or keyboard focus
+                  grows one action from 44px to 128px and the pill to 184px, revealing “Your email” or
+                  “Text me” inside the button. The label enters after 80ms with an 8px slide; width uses
+                  the same slow-open, quick-close surface motion.
                   Controls use Hugeicons rounded strokes at 1.5px; email, text and the reply arrow are 24px
                   dark icons on transparent buttons. The focused play triangle uses a white outline.
                   The desktop “A quick hello” and duration tooltip is hidden until hover or focus.
                   Fine-pointer hover scales the portrait to 1.04. The action pill settles from an 8px horizontal offset and 0.97 scale over
-                  <code> --duration-quick</code>. Tooltips use an 80ms intent delay only on entry,
+                  <code> --duration-quick</code>. The hello tooltip uses an 80ms intent delay only on entry,
                   and the hello label settles from 0.98 scale. Reduced motion removes the movement.
                   The same white surface expands to a 320px-wide, 52px-high email field, 12px to the
                   right of the portrait, using <code>--duration-slow</code> to open and
@@ -2185,7 +2188,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   There is no corner dismiss button.
                   Both cap at 320px, use shared overlay shadows and <code>--text-md</code> input text
                   to prevent Safari focus zoom. Escape closes the composer and returns focus;
-                  clicking outside closes without stealing focus. The arrow opens an email draft
+                  clicking outside restores the labeled button without stealing focus. That button stays visible
+                  until the next About visit or playback, retaining the mobile row above the TOC so
+                  the form can shrink in place. The arrow opens an email draft
                   for the visitor to review and send. The website does not collect the address.
                   Media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.

@@ -45,6 +45,8 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
   const id = useId()
   const [actionsOpen, setActionsOpen] = useState(false)
   const [reply, setReply] = useState<"email" | "text" | null>(null)
+  const [replyLabel, setReplyLabel] = useState<"email" | "text" | null>(null)
+  const [returnedReply, setReturnedReply] = useState<"email" | "text" | null>(null)
   const [replyContent, setReplyContent] = useState<"email" | "text" | null>(null)
   const available = visible && repliesAvailable
   const [wasAvailable, setWasAvailable] = useState(available)
@@ -54,6 +56,8 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
     setWasAvailable(available)
     if (!available) {
       setReply(null)
+      setReturnedReply(null)
+      setReplyLabel(null)
       setActionsOpen(false)
     }
   }
@@ -122,6 +126,8 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
     const video = videoRef.current
     if (!video) return
     setReply(null)
+    setReturnedReply(null)
+    setReplyLabel(null)
     setActionsOpen(false)
     setTouchControls(true)
     if (!open) setEnlarged(false)
@@ -162,7 +168,9 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
     const target = reply === "email" ? emailReplyRef : textReplyRef
     restoringReplyFocus.current = restoreFocus
     setReply(null)
-    setActionsOpen(restoreFocus)
+    setReturnedReply(reply)
+    setReplyLabel(reply)
+    setActionsOpen(true)
     if (restoreFocus) requestAnimationFrame(() => {
       target.current?.focus({ preventScroll: true })
       restoringReplyFocus.current = false
@@ -173,6 +181,8 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
     videoRef.current?.pause()
     onOpenChange(false)
     setReply(mode)
+    setReturnedReply(null)
+    setReplyLabel(mode)
     setReplyContent(mode)
     setActionsOpen(false)
   }
@@ -192,7 +202,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
         // next button. Keep the hovered target alive until its click completes.
         if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
       }}
-      data-open={open} data-enlarged={enlarged && open} data-touch-controls={touchControls} data-actions-open={actionsOpen} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
+      data-open={open} data-enlarged={enlarged && open} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
         if (event.key.toLowerCase() === "c" && open && !event.metaKey && !event.ctrlKey && !event.altKey &&
           !(event.target instanceof HTMLElement && event.target.matches("input, textarea, [contenteditable]"))) {
@@ -287,15 +297,19 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
           <span className="about-intro-status" role="status">{error ? "Couldn’t load video. Try again." : waiting ? "Loading introduction…" : ""}</span>
         </div>
       </div>
-      <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
-        <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}>
-        <button ref={emailReplyRef} type="button" className="about-intro-reply-action" aria-label="Email"
+      <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+        <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}
+          onPointerLeave={() => setReplyLabel(returnedReply)}
+          onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setReplyLabel(returnedReply) }}>
+        <button ref={emailReplyRef} type="button" className="about-intro-reply-action" aria-label="Your email" data-expanded={replyLabel === "email"}
+          onPointerEnter={event => { if (event.pointerType === "mouse") setReplyLabel("email") }} onFocus={() => setReplyLabel("email")}
           aria-describedby={`${id}-email-tooltip`} onClick={() => startReply("email")}>
-          <HugeiconsIcon icon={Mail01Icon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" className="about-intro-tooltip">Email</span>
+          <HugeiconsIcon icon={Mail01Icon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-email-tooltip`} role="tooltip" aria-hidden={replyLabel !== "email"} className="about-intro-action-label">Your email</span>
         </button>
-        <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Text"
+        <button ref={textReplyRef} type="button" className="about-intro-reply-action" aria-label="Text me" data-expanded={replyLabel === "text"}
+          onPointerEnter={event => { if (event.pointerType === "mouse") setReplyLabel("text") }} onFocus={() => setReplyLabel("text")}
           aria-describedby={`${id}-text-tooltip`} onClick={() => startReply("text")}>
-          <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" className="about-intro-tooltip">Text</span>
+          <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={1.5} size={24} aria-hidden="true" /><span id={`${id}-text-tooltip`} role="tooltip" aria-hidden={replyLabel !== "text"} className="about-intro-action-label">Text me</span>
         </button>
         </div>
         {replyContent && visible && repliesAvailable && <AboutIntroReply key={replyContent} mode={replyContent} active={Boolean(reply)} onClose={closeReply} />}

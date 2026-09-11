@@ -144,8 +144,9 @@ The original remains a local input. Generated files stay in `tests/fixtures/`,
 and production remains disabled until the introduction is ready to publish.
 
 Hover or focus the portrait to reveal play in its center and two small reply
-controls beside it: Email and Text. Touch users tap the portrait to reveal them.
-The action icons have named tooltips and 44px targets.
+controls beside it. Hover or focus an icon to expand it into a labeled button:
+“Your email” or “Text me.” Each grows from 44px to 128px with its label inside
+the pill; touch users tap the portrait to reveal the 44px icon targets.
 
 The play triangle is white with no disc. A 20% dark overlay fades over the
 portrait while actions are shown. Reply icons and the send arrow use simple
@@ -159,8 +160,9 @@ On mobile, the image and field move into a side-by-side row above the TOC.
 The collapsed widget has no corner X. The arrow validates the address and opens
 a prefilled email draft addressed to `siteLinks.email`. The visitor reviews and sends it in
 their email app; the website does not send or store their reply. Escape closes
-and returns focus to the action, while clicking elsewhere closes without moving
-focus away from the clicked control. No camera permission is requested.
+and returns focus to the action. Clicking elsewhere morphs the form back into
+the labeled button without moving focus away from the clicked control. It stays
+visible so the visitor can reopen it; on mobile it keeps the row above the TOC. No camera permission is requested.
 
 The compact “A quick hello” label and duration appear only on hover or focus.
 The player fills its square edge to edge with controls overlaid on the video:
