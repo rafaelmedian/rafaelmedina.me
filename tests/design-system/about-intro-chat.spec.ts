@@ -110,6 +110,7 @@ for (const width of [320, 1440]) {
     await expect(chat.getByText('Want to share anything else?')).toBeVisible()
     const message = chat.getByRole('textbox', { name: 'Your message (optional)' })
     await expect(message).toBeFocused()
+    await expect(message.locator('..')).toHaveCSS('border-radius', '999px')
     await expect(chat.getByRole('status', { name: 'Rafa is typing' })).toHaveCount(0)
     await expect(chat.getByRole('button', { name: 'Send message' })).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(chat.getByRole('button', { name: 'Send message' })).toHaveAttribute('data-muted', 'true')

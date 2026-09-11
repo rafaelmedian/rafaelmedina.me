@@ -596,10 +596,6 @@
   opacity: 1;
 }
 
-.about-intro-chat-message .about-intro-chat-composer {
-  border-radius: var(--radius-lg);
-}
-
 /* Grows with the text (sized in AboutIntroChat) up to seven lines, or less on
    short screens, then scrolls. The history above gives up the room. */
 .about-intro-chat-message textarea {
