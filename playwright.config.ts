@@ -20,7 +20,10 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `npm run likes:migrate:local && npx wrangler dev --config workers/likes/wrangler.jsonc --port ${likesPort}`,
+      // Browser requests come from the selected preview port; direct API
+      // tests also exercise the default preview origin. Override only this
+      // local Worker's binding, leaving the deployed allowlist unchanged.
+      command: `npm run likes:migrate:local && npx wrangler dev --config workers/likes/wrangler.jsonc --port ${likesPort} --var ALLOWED_ORIGINS:http://127.0.0.1:4174,${previewUrl}`,
       url: `${likesApiUrl}/health`,
       reuseExistingServer: false,
     },
