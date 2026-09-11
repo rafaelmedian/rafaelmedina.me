@@ -2314,7 +2314,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls use Hugeicons rounded strokes at 1.5px; email and text are 24px
                   dark icons on transparent buttons. The focused play triangle uses a white outline.
                   The desktop “A quick hello” and duration tooltip is hidden until hover or focus.
-                  Fine-pointer hover scales the portrait to 1.04. The action pill settles from an 8px horizontal offset and 0.97 scale over
+                  The portrait itself stays still on fine-pointer hover. The action pill settles from an 8px horizontal offset and 0.97 scale over
                   <code> --duration-quick</code>. The hello tooltip uses an 80ms intent delay only on entry,
                   and the hello label settles from 0.98 scale. Reduced motion removes the movement.
                   The same white surface expands to a 320px-wide, 52px-high email field, 12px to the

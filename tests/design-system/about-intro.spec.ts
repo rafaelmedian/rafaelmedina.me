@@ -240,6 +240,8 @@ test("uses the profile-photo message prompt on ordinary development visits", asy
   const poster = intro(page).locator("img.about-intro-poster")
   await expect(poster).toHaveAttribute("src", /profile-photo.*\.webp$/)
   await expect(poster).toHaveCSS("corner-shape", "superellipse(1)")
+  await intro(page).hover()
+  await expect(intro(page).locator(".about-intro-surface")).toHaveCSS("transform", "none")
   await expect(intro(page).locator("video")).toHaveCount(0)
   await expect(intro(page).getByRole("button", { name: /introduction/i })).toHaveCount(0)
 })

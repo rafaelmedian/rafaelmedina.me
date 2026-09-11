@@ -314,12 +314,6 @@
   pointer-events: none;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .about-intro:not([data-open="true"]):hover .about-intro-surface {
-    transform: scale(1.04);
-  }
-}
-
 .about-intro-button:focus-visible,
 .about-intro-progress input:focus-visible {
   outline-offset: -4px;
@@ -681,7 +675,6 @@
     transition: none;
   }
 
-  .about-intro:not([data-open="true"]):hover .about-intro-surface,
   .about-intro-trigger:active .about-intro-play-mark,
   .about-intro-reply-action:active,
   .about-intro-button:active {
