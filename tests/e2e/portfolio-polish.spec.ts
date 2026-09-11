@@ -4065,8 +4065,9 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   // One control per side, level with each other and 16px clear of the card.
   const placement = async () => {
     const dialogBox = (await dialog.boundingBox())!
-    const previousBox = (await previous.boundingBox())!
-    const nextBox = (await next.boundingBox())!
+    // By class rather than name: reading a note renames the pair.
+    const previousBox = (await rail.locator(".preview-gallery-nav-prev").boundingBox())!
+    const nextBox = (await rail.locator(".preview-gallery-nav-next").boundingBox())!
     return {
       dialogTop: dialogBox.y,
       previousGap: dialogBox.x - (previousBox.x + previousBox.width),
@@ -4104,6 +4105,30 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
 
   await previous.click()
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
+
+  // Nor may a slide with no artwork. The notes list is shorter than the
+  // artwork, an open note grows the card to the viewport's foot, and the
+  // résumé starts there: each used to take half its own card, so the pair
+  // jumped on every step into or out of them.
+  const railNext = rail.locator(".preview-gallery-nav-next")
+  await railNext.click()
+  await railNext.click()
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(dialog).toHaveAttribute("data-preview-kind", "writings")
+  await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
+  expect(await placement()).toEqual(initial)
+
+  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await expect(dialog).toHaveAttribute("data-reading-note", "true")
+  await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
+  expect(await placement()).toEqual(initial)
+
+  await page.keyboard.press("Escape")
+  await expect(dialog).not.toHaveAttribute("data-reading-note")
+  await railNext.click()
+  await railNext.click()
+  await expect(dialog).toHaveAttribute("data-preview-kind", "resume")
+  expect(await placement()).toEqual(initial)
 })
 
 // The rail's affordance is a left and a right chevron, and the card already
