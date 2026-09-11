@@ -49,8 +49,8 @@ test("corner tuner changes rounded surfaces without reshaping circles", async ({
   await page.goto("/")
   const curve = page.getByRole("slider", { name: "Exponent" })
   await expect(curve).toBeVisible()
-  await expect(curve).toHaveAttribute("aria-valuenow", "1.2")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.2)")
+  await expect(curve).toHaveAttribute("aria-valuenow", "1.3")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.3)")
 
   await curve.press("End")
   await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(4)")
