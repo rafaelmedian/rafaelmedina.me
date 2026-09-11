@@ -563,6 +563,7 @@
   overflow: clip;
   border: 1px solid #dedee0;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--canvas);
   color: var(--muted);
   font-size: var(--text-xs);

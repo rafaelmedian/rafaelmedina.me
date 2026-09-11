@@ -279,6 +279,7 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--mosaic-card-surface);
   object-fit: cover;
   /* Portraits with pale edges dissolve into the card surface, so they carry
@@ -452,6 +453,7 @@
   padding: 0;
   border: 0;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: transparent;
   cursor: pointer;
   /* The tap target is four times the dot it draws; the dot filling in says
@@ -468,6 +470,7 @@
   width: 6px;
   height: 6px;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--muted-soft);
   opacity: 0.3;
   transition: opacity var(--duration-quick) var(--ease-standard);
@@ -708,6 +711,7 @@
     width: 17px;
     height: 1.5px;
     border-radius: var(--radius-full);
+    corner-shape: round;
     background: currentColor;
   }
 
@@ -906,7 +910,10 @@
   min-width: 0;
   min-height: 0;
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  /* Chromium turns a masked backdrop-filter inside a squircle overflow clip
+     into an opaque rectangular raster. Clip only the artwork below; the
+     caption blur stays a sibling and the card keeps the same visible curve. */
+  overflow: visible;
   border: 1px solid rgb(0 0 0 / 0.08);
   background: var(--mosaic-card-surface);
   padding: 0;
@@ -917,6 +924,22 @@
     background-color var(--duration-quick) var(--ease-standard),
     border-color var(--duration-quick) var(--ease-standard),
     box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-row-card-media-clip {
+  position: relative;
+  z-index: 0;
+  display: grid;
+  /* Keep percentage media heights tied to the tile, not an intrinsic row. */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  corner-shape: inherit;
 }
 
 /* Protector is a full-bleed photograph, Family Stories seats its phones on the
@@ -994,6 +1017,7 @@
   inset: auto 0 0;
   z-index: 1;
   height: max(46%, 6rem);
+  border-radius: inherit;
   pointer-events: none;
 }
 
@@ -1007,6 +1031,8 @@
   position: absolute;
   inset: 0;
   display: block;
+  border-radius: inherit;
+  corner-shape: inherit;
   opacity: 0;
   /* var(--duration-slow) is the scale's "media un-blurring as it decodes" step. This is the
      same event -- a blur resolving -- so it borrows that value rather than
@@ -1051,6 +1077,8 @@
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: inherit;
+  corner-shape: inherit;
   /* On wide layouts this is nearly flat across the bottom seventh, where the
      caption sits, then eased to nothing over the rest of the band. The plateau
      is what buys the weight back: contrast is only owed at the label, so the
@@ -1162,6 +1190,7 @@
   inset: 0;
   z-index: 0;
   border-radius: inherit;
+  corner-shape: inherit;
   background: linear-gradient(
     105deg,
     var(--card-skeleton-base) 0%,
@@ -1263,8 +1292,25 @@
   padding: 0;
 }
 
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories {
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-card-media-clip {
   place-items: end center;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub {
+  /* The dashboard is intentionally taller than its landscape slot. Keep the
+     breathing room above, but let its lower rows continue into the card edge
+     instead of cutting them off against an inner grey strip. */
+  padding-bottom: 0;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-card-media-clip {
+  place-items: start center;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-media {
+  width: 112%;
+  max-width: none;
+  max-height: none;
 }
 
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
@@ -1293,7 +1339,7 @@
    lighter than the workspace between them. Sitting it on the bottom edge spends
    the whole leftover height above the image instead, where a single flat colour
    does match, and the workspace reads as continuing past the card. */
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23 {
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23 .mosaic-row-card-media-clip {
   place-items: end center;
 }
 

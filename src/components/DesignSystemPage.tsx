@@ -1111,8 +1111,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-section-heading">
               <h2>Space &amp; radius</h2>
               <p>
-                Spacing is a short ladder in rem. Radius is four tokens, and anything nested is derived from one of them
-                rather than added to them.
+                Spacing is a short ladder in rem. Radius is four tokens on one continuous squircle curve, and anything
+                nested is derived from one of them rather than added to them.
               </p>
             </div>
 
@@ -1143,10 +1143,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 {RADII.map((entry) => (
                   <SpecCard
                     key={entry.value}
-                    terms={terms(entry.value, entry.css, entry.use, "radius corner border-radius")}
+                    terms={terms(entry.value, entry.css, entry.use, "radius corner border-radius squircle superellipse continuous")}
                     proof={
                       <div
                         className="ds-radius-proof"
+                        data-corner-shape={entry.value.startsWith("--radius-full") ? "round" : undefined}
                         style={{ borderRadius: `${entry.css} ${entry.css} 0 0` }}
                         aria-hidden="true"
                       />
@@ -1157,6 +1158,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   />
                 ))}
               </div>
+              <p className="ds-caption">
+                Rounded rectangular surfaces use <code>--corner-curve: squircle</code>, the exact{" "}
+                <code>superellipse(2)</code> curve from CSS Borders Level 4. Browsers that do not support{" "}
+                <code>corner-shape</code> fall back to the same four circular radii without changing layout. Pills,
+                dots, and avatars remain geometrically round. In development, the homepage shows the live curve
+                tuner by default; <a href="/?tune=corners">/?tune=corners</a> remains its explicit route. The
+                stylesheet remains the production source of truth.
+              </p>
               <div
                 className="ds-rule"
                 data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px résumé notes")}
@@ -1276,8 +1285,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   wait <code>--card-caption-delay: 60ms</code> before they start, in either direction: while a tile's
                   loop plays, Chrome paces an otherwise idle page at the video's 30fps, and a fade that began on the
                   hover's first frame arrived as a 32% jump, a held frame, and a second jump before it eased. The delay
-                  spends that ramp-up, so the first frame that moves is an ordinary step. It paints only
-                  on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden
+                  spends that ramp-up, so the first frame that moves is an ordinary step. The artwork is clipped by an
+                  inner layer carrying the tile's radius and squircle; the blur is its sibling, because Chromium
+                  flattens a masked backdrop filter inside a squircle overflow clip into an opaque rectangle. It paints
+                  only on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden
                   and so is the caption: with no hover to reveal it, a name would have to sit on every tile at once,
                   over artwork that already carries the project's own wordmark. The title still reaches assistive
                   technology and crawlers through the link's accessible name and its prerendered description.
@@ -2122,10 +2133,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   to 899px the gap is 10px and the grid provides 32px total horizontal inset; below 700px
                   the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 16px radius;
                   desktop tiles use 24px. Contained artwork letterboxes inside the card: the card's grid
-                  gets one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
-                  height to resolve against, and the inset drops to <code>0.375rem</code>. Nine compositions remove the
-                  pale mat entirely: Family Stories, Matcha Rewards, Matcha Token, Matcha Pro, Matcha trade page,
-                  Matcha on mobile, Wallet, Homepage, and
+                  and its inner artwork clip each get one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
+                  height to resolve against, and the inset drops to <code>0.375rem</code>. The dealership dashboard is
+                  the deliberate crop: it is 112% of the content width, anchored at the top centre, and shows roughly
+                  its upper half before continuing through the card&rsquo;s lower edge. The card keeps its top and side
+                  inset but removes it below, so the crop lands on the edge rather than against an inner grey strip.
+                  Nine compositions remove the pale mat entirely: Family Stories, Matcha Rewards, Matcha Token,
+                  Matcha Pro, Matcha trade page, Matcha on mobile, Wallet, Homepage, and
                   Security. Family Stories anchors to <code>center bottom</code> so its devices meet the lower edge.
                   Rewards positions its two complete banners independently — diagonal on desktop and stacked below
                   900px — so their rounded ends remain inside the card at every slot ratio. Token, Pro, the trade page,
