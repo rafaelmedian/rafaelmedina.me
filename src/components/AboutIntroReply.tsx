@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react"
 import { ArrowUp } from "./NavigationIcons"
 
 import { siteLinks } from "../data/portfolio"
+import { ignorePasswordManagers } from "../lib/passwordManagers"
 
 export default function AboutIntroReply({ mode, active, onClose }: {
   mode: "email" | "text"
@@ -39,10 +40,10 @@ export default function AboutIntroReply({ mode, active, onClose }: {
     <section ref={panelRef} className="about-intro-reply" data-mode={mode} data-active={active} inert={!active} aria-hidden={!active} aria-label={mode === "email" ? "Email reply" : "Text reply"}>
       <form onSubmit={submit}>
         {mode === "text" && <textarea ref={messageRef} aria-label="Your message" name="message" rows={3}
-          maxLength={2000} value={message} onChange={event => setMessage(event.target.value)} placeholder="Your message…" />}
+          {...ignorePasswordManagers} maxLength={2000} value={message} onChange={event => setMessage(event.target.value)} placeholder="Your message…" />}
         <div className="about-intro-email-row">
           <input ref={emailRef} type="email" name="email" aria-label="Your email" autoComplete="email" required
-            maxLength={254} value={email} onChange={event => {
+            {...ignorePasswordManagers} maxLength={254} value={email} onChange={event => {
               setEmail(event.target.value)
               setEmailValid(event.currentTarget.validity.valid)
             }} placeholder="hello@example.com" />

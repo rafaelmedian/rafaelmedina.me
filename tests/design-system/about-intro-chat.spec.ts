@@ -12,6 +12,11 @@ for (const width of [320, 1440]) {
     const email = chat.getByRole('textbox', { name: 'Your email' })
     await expect(email).toBeVisible()
     await expect(email).not.toBeFocused()
+    // Not a login: password managers stay out, and browser autofill still offers the address.
+    await expect(email).toHaveAttribute('autocomplete', 'email')
+    for (const [name, value] of [['data-1p-ignore', 'true'], ['data-lpignore', 'true'], ['data-bwignore', 'true'], ['data-form-type', 'other']]) {
+      await expect(email).toHaveAttribute(name, value)
+    }
     await expect(chat.getByRole('button', { name: 'Continue with email' })).toBeVisible()
     await expect(chat.getByRole('button', { name: 'Continue with email' })).toBeDisabled()
     await email.fill('asda@asd.')

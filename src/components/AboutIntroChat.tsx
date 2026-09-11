@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useId, useRef, useState, type FormEvent } from "react"
 import { ArrowUp } from "./NavigationIcons"
+import { ignorePasswordManagers } from "../lib/passwordManagers"
 import { sendContact, type ContactMessage } from "../lib/sendContact"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
@@ -159,7 +160,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     </div>
     {!confirmed ? <form className="about-intro-chat-composer about-intro-chat-enter" data-order="4" data-pending={!emailReady} inert={!emailReady} aria-hidden={!emailReady} onSubmit={confirmEmail}>
       <input ref={emailRef} type="email" aria-label="Your email" autoComplete="email" required maxLength={254}
-        placeholder="hello@example.com" value={email} onChange={event => {
+        {...ignorePasswordManagers} placeholder="hello@example.com" value={email} onChange={event => {
           setEmail(event.target.value)
           setValid(event.currentTarget.validity.valid)
         }} />
@@ -170,7 +171,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={submitMessage} aria-busy={delivery === "sending"}>
       <div className="about-intro-chat-composer">
         <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${id}-delivery`} maxLength={2000}
-          rows={2} placeholder="Anything on your mind?" value={message} readOnly={locked} onChange={event => { setMessage(event.target.value); setDelivery("idle") }} />
+          rows={2} {...ignorePasswordManagers} placeholder="Anything on your mind?" value={message} readOnly={locked} onChange={event => { setMessage(event.target.value); setDelivery("idle") }} />
         <button type="submit" className="about-intro-send" aria-label={delivery === "error" ? "Retry message" : "Send message"} disabled={locked} data-muted={!message.trim()}>
           <ArrowUp size={24} aria-hidden="true" />
         </button>

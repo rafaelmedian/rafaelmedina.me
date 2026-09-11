@@ -34,6 +34,7 @@ test('opens a minimal email input with an arrow and returns focus on escape', as
   const panel = intro.getByRole('region', { name: 'Email reply' })
   const email = panel.getByRole('textbox', { name: 'Your email' })
   await expect(email).toBeFocused()
+  await expect(email).toHaveAttribute('data-1p-ignore', 'true')
   await expect(panel.getByRole('textbox')).toHaveCount(1)
   await expect(panel.getByRole('button')).toHaveCount(0)
   const send = panel.locator('.about-intro-send')
