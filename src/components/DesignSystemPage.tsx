@@ -290,7 +290,7 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-lg",
     sample: "Ten years prototyping in code.",
-    where: "Short quotes, a note's own title in the reader, standalone-page headings, and the handwriting faces — the Handlee carousel captions and, after its x-height correction, the Reenie Beanie photo-stack note",
+    where: "Short quotes, a note's own title in the reader, and standalone-page headings",
     style: { fontSize: "var(--text-lg)", lineHeight: 1.5, letterSpacing: "-0.015rem", fontWeight: 600 },
   },
 ]
@@ -916,9 +916,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-section-heading">
               <h2>Typography</h2>
               <p>
-                Interface text uses one face, four sizes, and four weights. The two handwriting faces — the avatar
-                hint and marginalia in Handlee, the photo-stack note in Reenie Beanie — and the draggable hobby emoji
-                are deliberate display exceptions.
+                Interface text uses one face, four sizes, and four weights. The handwriting face — the avatar hint
+                and marginalia in Handlee — and the draggable hobby emoji are deliberate display exceptions.
               </p>
             </div>
 
@@ -926,14 +925,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Families</p>
               <div className="ds-grid ds-grid-wide">
                 <SpecCard
-                  terms={terms("ui system stack font-ui font-body apple sf pro inter webfont")}
+                  terms={terms("ui system stack font-ui font-body apple sf pro inter variable webfont subset")}
                   name="UI — --font-ui"
                   copy={readToken("--font-ui")}
                   note={
                     <>
-                      All interface copy and controls. No webfont, no layout shift, SF Pro on Apple hardware. Use{" "}
-                      <code>var(--font-ui)</code>; <code>var(--font-body)</code> is the Inter-first fallback stack the
-                      page root sets.
+                      All copy and controls. SF Pro on Apple hardware, which never asks for a webfont; everywhere else
+                      the self-hosted Inter Variable (rsms/inter 4.1, SIL OFL, a 66KB Latin subset with both axes,
+                      font-display: swap) sits ahead of Segoe and Roboto. It is not preloaded, since Apple visitors
+                      would download it for nothing. Use <code>var(--font-ui)</code>; <code>var(--font-body)</code>{" "}
+                      aliases it on the page root.
                     </>
                   }
                 />
@@ -943,9 +944,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   copy='"Handlee", "Bradley Hand", "Segoe Print", cursive'
                   note={
                     <>
-                      Preloaded, used for the avatar hint, the photo-carousel captions, and the notes reader's margin
-                      annotations. It ships one weight; the avatar hint fakes bold with a 0.45px text-stroke, while the
-                      margin notes take none and stay on --muted.
+                      Preloaded, used for the avatar hint and the notes reader's margin annotations. It ships one
+                      weight; the avatar hint fakes bold with a 0.45px text-stroke, while the margin notes take none
+                      and stay on --muted.
                     </>
                   }
                 />
@@ -972,13 +973,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("--font-primary --font-fallback --font-ui face")}
+                data-ds-terms={terms("--font-body --font-ui face stack")}
               >
                 <strong>There is no second general-purpose face.</strong>
                 <p>
-                  Two stacks exist: <code>--font-ui</code> (system-first, what interface text renders with) and{" "}
-                  <code>--font-fallback</code> (Inter-first, what <code>--font-body</code> resolves to on the page
-                  root). Any additional general-purpose face needs a real <code>@font-face</code>, not a new variable.
+                  One stack: <code>--font-ui</code> is the only family token, and <code>--font-body</code> aliases it
+                  on the page root. Any additional general-purpose face needs a real <code>@font-face</code>, not a new
+                  variable.
                 </p>
               </div>
             </div>
