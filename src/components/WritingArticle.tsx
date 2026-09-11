@@ -6,6 +6,7 @@ import type { Writing, WritingAnnotation, WritingCode, WritingImage } from "../d
 import { noteHash, pickFrom } from "../lib/writings"
 import { siteOrigin, writingPath } from "../lib/projectMetadata"
 import { LikeButton } from "./LikeButton"
+import { InlineSwap } from "./InlineSwap"
 
 function inlineProse(text: string) {
   return text.split(/`([^`]+)`/).map((part, index) => (index % 2 ? <code className="writing-code" key={index}>{part}</code> : part))
@@ -183,7 +184,9 @@ function CopyNoteLink({ writing }: { writing: Writing }) {
         {copied
           ? <Check className="writing-copy-link-icon" size={14} aria-hidden="true" />
           : <Link2 className="writing-copy-link-icon" size={14} aria-hidden="true" />}
-        <span aria-hidden="true">{copied ? "Link copied" : "Copy link"}</span>
+        <span aria-hidden="true">
+          <InlineSwap value={copied ? "Link copied" : "Copy link"} direction={copied ? "up" : "down"} reserve="Link copied" />
+        </span>
         {/* The name says what the control does and stays saying it: the label
             beside the icon is the confirmation, and a name that changed with it
             would leave a screen reader hunting for the button it just used. */}

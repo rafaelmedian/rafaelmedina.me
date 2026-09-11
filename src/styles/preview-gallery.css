@@ -661,6 +661,7 @@
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  white-space: pre;
 }
 
 .preview-gallery-details {

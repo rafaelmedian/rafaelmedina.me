@@ -1186,7 +1186,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
-                  header at z-index 1.
+                  header at z-index 1. The current position swaps with the TOC's 4px slide and
+                  <code>--blur-reveal</code>: 120ms out on the exit curve, 160ms in on the standard curve.
+                  Next sends it up, Previous down, including when the sequence wraps. The total stays still,
+                  and the counter reserves enough digits for the full sequence. Reduced motion swaps instantly.
                   The like pill rides the line where the artwork stops: a zero-height row centres it on that
                   boundary, 1.25rem in from the card&rsquo;s right edge, half over the shot and half over the white
                   below it. It is the notes reader&rsquo;s control on the overlay tier instead of the control
@@ -1306,7 +1309,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Beside it, “Copy link” is an ordinary link to the note's public address at the same 32px height on an 8% black
                 hairline, --text-xs on --muted, so it reads as a note about the note rather than a second action competing with the
                 heart. A plain press copies instead of navigating and holds the confirmation for 1.6s, swapping the chain icon for a
-                check and the label for “Link copied” on --ink; its accessible name stays “Copy a link to this note” throughout and
+                check and the label for “Link copied” on --ink. The label uses the TOC's 4px slide and
+                --blur-reveal, with a 120ms exit and 160ms entrance; confirmation travels up and reset travels down.
+                The longer label reserves the width, so the control stays still. Reduced motion swaps instantly;
+                its accessible name stays “Copy a link to this note” throughout and
                 the confirmation is announced from a live region beside it. Modified and secondary presses are left to the browser.
                 Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
                 canonical, and listed in the sitemap, the way a project owns `/work/&lt;slug&gt;/`.

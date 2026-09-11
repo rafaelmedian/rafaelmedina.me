@@ -1,0 +1,58 @@
+/* The TOC's 4px directional handoff, for compact labels and icons. */
+.inline-swap {
+  --inline-swap-direction: 1;
+  position: relative;
+  display: inline-grid;
+  align-items: center;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.inline-swap[data-direction="down"] {
+  --inline-swap-direction: -1;
+}
+
+.inline-swap[data-reserve]::before {
+  content: attr(data-reserve);
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+.inline-swap-current,
+.inline-swap-leaving {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.inline-swap-leaving {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: inline-swap-exit var(--duration-fast) var(--ease-exit) both;
+}
+
+.inline-swap[data-swapping] .inline-swap-current {
+  animation: inline-swap-enter var(--duration-quick) var(--ease-standard) both;
+}
+
+@keyframes inline-swap-exit {
+  to {
+    transform: translateY(calc(var(--inline-swap-direction) * -0.25rem));
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
+@keyframes inline-swap-enter {
+  from {
+    transform: translateY(calc(var(--inline-swap-direction) * 0.25rem));
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inline-swap-leaving { display: none; }
+  .inline-swap[data-swapping] .inline-swap-current { animation: none; }
+}

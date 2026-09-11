@@ -15,6 +15,7 @@ import { groupWritingsByYear } from "../lib/writings"
 import { useGalleryPage, type GalleryPageDirection } from "../lib/useGalleryPage"
 import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
+import { InlineSwap } from "./InlineSwap"
 import { PreviewMedia } from "./PreviewMedia"
 import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
@@ -569,7 +570,9 @@ export function PreviewGalleryDialog({
                   while the artwork and prose page behind it. */}
               <div className="preview-gallery-toolbar">
                 <span className="preview-gallery-count">
-                  {safeIndex + 1} / {items.length}
+                  <InlineSwap value={safeIndex + 1} direction={switchDirection === "next" ? "up" : "down"}
+                    reserve={"0".repeat(String(items.length).length)} />
+                  <span> / {items.length}</span>
                 </span>
 
                 <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
