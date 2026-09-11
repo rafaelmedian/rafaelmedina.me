@@ -2,9 +2,9 @@
 
 /* The Cal.com calendar, opened from the hero's availability line. Clicking that
    line is the trigger, so the surface has to arrive without ceremony: one fade
-   and a short lift, no origin flight. Chrome around the iframe stays minimal —
-   the calendar inside brings its own dense layout and a framed panel would
-   double every edge. */
+   and a short lift, no origin flight. The iframe keeps only a quiet, even mat:
+   the calendar inside brings its own dense layout and more chrome would double
+   every edge. */
 
 .booking-backdrop {
   position: fixed;
@@ -42,10 +42,10 @@
 
 .booking-popup {
   position: relative;
-  /* Sized to the Cal.com month view rather than to the viewport: the embed
-     centres its own layout, so a taller surface only adds empty bands above
-     and below the calendar. */
-  width: min(1040px, 100%);
+  /* Preserve the Cal.com month view's 1040px canvas inside the 32px desktop
+     side gutters. A taller surface would only add empty bands above and below
+     the calendar, so height stays tied to the embed rather than the viewport. */
+  width: min(1104px, 100%);
   height: min(640px, 100%);
   display: grid;
   /* One row, not two: the header that used to own the `auto` track is gone, and
@@ -92,7 +92,10 @@
   position: relative;
   display: grid;
   min-height: 0;
-  background: var(--body-bg);
+  padding-inline: clamp(16px, 3vw, 32px);
+  /* Cal.com paints this same neutral above and below its calendar. Extending it
+     outside the iframe makes the mat read evenly on all four sides. */
+  background: #fafafa;
 }
 
 .booking-iframe {

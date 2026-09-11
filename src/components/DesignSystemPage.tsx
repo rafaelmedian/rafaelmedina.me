@@ -337,7 +337,7 @@ const SPACE = [
   { value: "8.75rem", use: "Maximum About inset" },
   { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
   { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
-  { value: "clamp(16px, 3vw, 32px)", use: "Grid inset from 900px up; compact tablet uses 1rem" },
+  { value: "clamp(16px, 3vw, 32px)", use: "Grid inset from 900px up and the Cal.com frame's equal side gutters; compact tablet uses 1rem" },
   { value: "clamp(1.25rem, 4vw, 5rem)", use: "Personal-photo sheet side gutters" },
   { value: "clamp(12rem, 30vh, 18rem)", use: "Desktop white runway before the About takeover" },
 ]
@@ -1753,8 +1753,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 label alone, the green status dot that used to ride inside it having been the hero's only chromatic
                 pixel for a month the hint already names. A 260ms intent delay reveals that one-line hint with the
                 live availability month, and a press opens the Cal.com dialog — which wears no chrome of its own: no header, no
-                close button, nothing but the calendar, because that page already has a title and a month of its own
+                close button, only the calendar on an even mat, because that page already has a title and a month of its own
                 and a second set above it was the same thing twice. Escape and a press outside close it; the dialog's
+                responsive <code>clamp(16px, 3vw, 32px)</code> side gutters preserve the embed's 1040px desktop canvas
+                and extend Cal.com's <code>#fafafa</code> top-and-bottom field to both sides. The dialog's
                 name and description are still there as <code>sr-only</code> text, and the &ldquo;open it on
                 cal.com&rdquo; escape hatch waits inside the loading line for the six seconds it takes to know a
                 third-party frame has been blocked rather than sitting in a header from the start. The address is the page's top-right corner, opposite the section

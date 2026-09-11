@@ -2241,6 +2241,22 @@ test("frames the calendar without chrome and still says what it is", async ({ pa
   expect(titleBox!.width).toBeLessThanOrEqual(1)
   expect(titleBox!.height).toBeLessThanOrEqual(1)
 
+  // Cal.com supplies the neutral field above and below its calendar. The host
+  // extends that same field evenly along both sides instead of letting the
+  // dense three-column calendar run directly into the dialog edge.
+  const frame = dialog.locator(".booking-frame")
+  const iframe = frame.locator(".booking-iframe")
+  const [frameBox, iframeBox, frameBackground] = await Promise.all([
+    frame.boundingBox(),
+    iframe.boundingBox(),
+    frame.evaluate((element) => getComputedStyle(element).backgroundColor),
+  ])
+  const leftGutter = iframeBox!.x - frameBox!.x
+  const rightGutter = frameBox!.x + frameBox!.width - iframeBox!.x - iframeBox!.width
+  expect(leftGutter).toBeCloseTo(32, 0)
+  expect(rightGutter).toBeCloseTo(leftGutter, 5)
+  expect(frameBackground).toBe("rgb(250, 250, 250)")
+
   // Escape is not the only way out, which matters on a phone with no Escape key.
   await page.mouse.click(5, 5)
   await expect(dialog).toBeHidden()
