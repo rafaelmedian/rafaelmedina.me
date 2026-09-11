@@ -453,6 +453,43 @@ test("a hovered row boils its drawing through its frames", async ({ page }) => {
   await expect(drawing).toHaveCSS("mask-position", "0px 0px")
 })
 
+test("the mouse moving onto a notes row strikes one key", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  // Every key click starts one oscillator, its thock, so counting them counts
+  // keys. Reduced motion is left off: the sound library mutes under it.
+  await page.addInitScript(() => {
+    const counted = window as typeof window & { keyClicks: number }
+    counted.keyClicks = 0
+    const create = AudioContext.prototype.createOscillator
+    AudioContext.prototype.createOscillator = function (this: AudioContext) {
+      counted.keyClicks++
+      return create.call(this)
+    }
+  })
+  await page.goto("/notes/")
+  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page)).toHaveCSS("opacity", "1")
+  const keyClicks = () => page.evaluate(() => (window as typeof window & { keyClicks: number }).keyClicks)
+
+  // One key per row the mouse moves onto: not one per movement inside a row,
+  // and none for rows a scroll carries under a still pointer.
+  const rows = popup(page).locator(".writing-entry-trigger")
+  await page.evaluate(() => { (window as typeof window & { keyClicks: number }).keyClicks = 0 })
+  for (let index = 0; index < 4; index++) {
+    const box = (await rows.nth(index).boundingBox())!
+    await page.mouse.move(box.x + 40, box.y + box.height / 2, { steps: 3 })
+    await page.waitForTimeout(100)
+  }
+  expect(await keyClicks()).toBe(4)
+  const last = (await rows.nth(3).boundingBox())!
+  for (let step = 1; step <= 5; step++) await page.mouse.move(last.x + 40 + step * 12, last.y + last.height / 2)
+  await page.mouse.wheel(0, 240)
+  await page.waitForTimeout(300)
+  await page.mouse.wheel(0, -240)
+  await page.waitForTimeout(300)
+  expect(await keyClicks()).toBe(4)
+})
+
 test("margin notes fold into the column when the gutters are gone", async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
