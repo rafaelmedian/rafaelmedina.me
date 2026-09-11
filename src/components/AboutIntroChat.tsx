@@ -6,6 +6,17 @@ import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
 const greeting = ["Hey, I’m Rafa.", "How are you doing?", "Wanna share your email with me so I can reach out to you?"]
 const typingDuration = 900
+// Rafa hearts the sent address the way a received tapback arrives: it pops onto
+// the bubble's corner, then he starts typing. Each delay is a stage: the tapback
+// lands, then the follow-up typing starts.
+const reactionDelays = [900, 700]
+const heartPath = "M12 20.7C6.1 16.6 2.5 13.3 2.5 9.2c0-2.8 2.2-4.9 4.9-4.9 1.9 0 3.6 1 4.6 2.6 1-1.6 2.7-2.6 4.6-2.6 2.7 0 4.9 2.1 4.9 4.9 0 4.1-3.6 7.4-9.5 11.5Z"
+// Drawn twice, as the canvas ring and then the fill, so no ring cuts a neighbour.
+const tapbackShape = <>
+  <circle className="about-intro-chat-tapback-disc" cx="32" cy="20" r="18" />
+  <circle className="about-intro-chat-tapback-trail" cx="18" cy="34" r="6.5" />
+  <circle className="about-intro-chat-tapback-trail" data-far="true" cx="8" cy="44" r="3.5" />
+</>
 
 export default function AboutIntroChat({ active }: { active: boolean }) {
   const id = useId()
@@ -25,13 +36,17 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   const lastSubmission = useRef<ContactMessage | null>(null)
   const locked = delivery === "sending" || delivery === "sent"
   const [revealed, setRevealed] = useState(0)
+  const [reaction, setReaction] = useState(0)
   const reducedMotion = usePrefersReducedMotion()
   const skipTyping = reducedMotion || (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
-  const target = confirmed ? 4 : 3
+  const reactionStage = confirmed ? (skipTyping ? reactionDelays.length : reaction) : 0
+  const reactionShown = reactionStage >= 1
+  const target = reactionStage >= reactionDelays.length ? 4 : 3
   const shown = skipTyping ? target : revealed
   const emailReady = shown >= 3
   const messageReady = shown >= 4
   const typing = shown < target
+  const pending = confirmed ? !messageReady : !emailReady
 
   useLayoutEffect(() => {
     const chat = chatRef.current
@@ -84,6 +99,12 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   }, [active, revealed, target, skipTyping])
 
   useEffect(() => {
+    if (!active || !confirmed || reactionStage >= reactionDelays.length) return
+    const timer = window.setTimeout(() => setReaction(stage => stage + 1), reactionDelays[reactionStage])
+    return () => window.clearTimeout(timer)
+  }, [active, confirmed, reactionStage])
+
+  useEffect(() => {
     if (!active) focusAfterTyping.current = false
     if (active && confirmed && !messageReady && focusAfterTyping.current) {
       // Safari moves focus to the nearest focusable ancestor when email unmounts.
@@ -108,7 +129,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     if (active && historyRef.current) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight
     }
-  }, [active, confirmed, shown])
+  }, [active, confirmed, reactionShown, shown])
 
   const confirmEmail = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -118,6 +139,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   }
   const editEmail = () => {
     setConfirmed(false)
+    setReaction(0)
     setDelivery("idle")
     requestAnimationFrame(() => emailRef.current?.focus({ preventScroll: true }))
   }
@@ -142,15 +164,25 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     }
   }
 
-  return <section ref={chatRef} className="about-intro-chat" data-active={active} data-typing={typing} data-step={confirmed ? "message" : "email"}
+  return <section ref={chatRef} className="about-intro-chat" data-active={active} data-typing={pending} data-step={confirmed ? "message" : "email"}
     inert={!active} aria-hidden={!active} aria-label="Chat with Rafa">
     {/* Hidden live regions can make modal isolation hide the neighboring player. */}
     <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={active ? "polite" : undefined} aria-relevant="additions">
       {/* Only the typing bubble has a tail on Rafa's side; once a question lands, the visitor's field below it carries one on the right. */}
       {greeting.slice(0, Math.min(shown, 3)).map(text => <p key={text} className="about-intro-chat-bubble about-intro-chat-new">{text}</p>)}
       {confirmed && <>
-        <button type="button" className="about-intro-chat-outgoing about-intro-chat-new" onClick={editEmail}
-          aria-label={`Edit email address: ${email}`} title="Edit your email" disabled={locked}>{email}</button>
+        <div className="about-intro-chat-sent about-intro-chat-new" data-reacted={reactionShown}>
+          <button type="button" className="about-intro-chat-outgoing" onClick={editEmail}
+            aria-label={`Edit email address: ${email}`} title="Edit your email" disabled={locked}>{email}</button>
+          {reactionShown && <svg className="about-intro-chat-reaction" viewBox="0 0 52 50" width="52" height="50" role="img" aria-label="Loved by Rafa">
+            <circle className="about-intro-chat-tapback-ripple" cx="32" cy="20" r="18" />
+            <g fill="var(--canvas)" stroke="var(--canvas)" strokeWidth="4">{tapbackShape}</g>
+            <g fill="currentColor">{tapbackShape}</g>
+            <g className="about-intro-chat-tapback-heart">
+              <g transform="translate(21.8 9.6) scale(0.85)"><path className="about-intro-chat-heart" d={heartPath} /></g>
+            </g>
+          </svg>}
+        </div>
         {messageReady && <p className="about-intro-chat-bubble about-intro-chat-new" data-followup>Want to share anything else?</p>}
       </>}
       {typing && <div key={`typing-${shown}`} className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-typing about-intro-chat-new"

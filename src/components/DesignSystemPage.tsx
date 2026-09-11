@@ -2206,7 +2206,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
-                  Messages blue with white text and a mirrored tail on the right, then
+                  Messages blue with white text and a mirrored tail on the right, which rises out of the field
+                  from 20px below at 0.92 scale, anchored at its tail. At 900ms Rafa hearts it the way a received
+                  tapback arrives: a 36px blue disc on the bubble’s top-left corner, with a pink #ff5f8f heart and
+                  two trailing dots, ringed 2px in canvas white. The disc springs out of a point, a ripple spreads
+                  from its edge to 1.8 scale as it fades, the trail bubbles out 80ms and 140ms behind, and the heart
+                  grows in at 120ms, then beats twice (1.24, a 0.96 rebound, 1.14) over 900ms. As it lands, the
+                  bubble’s top margin grows from 8px to 28px, shifting the conversation up to make room. Typing for
+                  the follow-up waits a further 700ms. The motion runs on two component springs sampled into
+                  <code>linear()</code> from SwiftUI’s duration and bounce model, each run for the time it takes to
+                  settle: snappy (0.45s, 0.2 bounce; 580ms, 1.5% overshoot) for the bubble and the shift, and pop
+                  (0.35s, 0.5; 680ms, 16%) for the tapback. Reduced motion shows the tapback at rest, without its
+                  ripple. The bubble stays 24px clear of the history’s left edge for the tapback’s trail. The chat then
                   shows the same typing bubble before “Want to share anything else?” and reveals the optional
                   message field after 160ms. Hidden fields stay inert; their measured height offsets the history
                   so the typing bubble’s bottom edge rests level with the avatar’s. The history moves into its reply position
