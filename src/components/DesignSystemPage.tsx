@@ -951,20 +951,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   }
                 />
                 <SpecCard
-                  terms={terms("display reenie beanie webfont cursive handwriting photo stack note pencil x-height metric")}
-                  name="Display — Reenie Beanie"
-                  copy='"Reenie Beanie", "Bradley Hand", "Segoe Print", cursive'
-                  note={
-                    <>
-                      The photo-stack note only, on --muted. Handlee is an even-width print, so that note read as
-                      lettered rather than written; this is a pencil scrawl — loose joins, a wandering baseline, tall
-                      ascenders over small lowercase — and needs no faux-bold stroke. It sets at
-                      <code>calc(var(--text-lg) * 1.4)</code>, the one place on the site a size is not a bare token:
-                      see the note under the scale. Not preloaded — the note only surfaces on hover.
-                    </>
-                  }
-                />
-                <SpecCard
                   terms={terms("mono font-code sf mono consolas menlo specification")}
                   name="Mono — --font-code"
                   copy='"SF Mono", "SFMono-Regular", "Consolas", Menlo, monospace'
@@ -1014,14 +1000,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   18px prose — and it now reads on --text-sm under a --text-lg title, with a --text-md bar above it.
                   The About sheet is set the same way, so both long-form surfaces share one reading scale and the
                   four steps hold everywhere.
-                </p>
-                <p>
-                  One size on the site is not a bare token: the photo-stack note sets at{" "}
-                  <code>calc(var(--text-lg) * 1.4)</code>. That is a metric correction rather than a fifth step. Reenie
-                  Beanie draws its lowercase at 0.41em where Handlee draws 0.49 and most text faces 0.68, so at a plain
-                  --text-lg it would read about two thirds the optical size of everything beside it. The multiplier
-                  restores the x-height; it does not add a size anyone else may reach for. A second face needing its own
-                  factor is the signal to drop the face, not to widen the scale.
                 </p>
               </div>
               <div
