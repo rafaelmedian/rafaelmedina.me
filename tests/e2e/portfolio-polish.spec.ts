@@ -4214,6 +4214,17 @@ test("links each work-history company name to its primary website", async ({ pag
   }
 })
 
+test("shows work-history company links without underlines", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const companyLink = page
+    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("link", { name: "0x Project", exact: true })
+
+  await expect(companyLink).toHaveCSS("text-decoration-line", "none")
+})
+
 test("opens a work-history company website from its name", async ({ page }) => {
   await page.context().route("https://0x.org/**", (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>0x</title>" }),

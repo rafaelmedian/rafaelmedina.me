@@ -1586,8 +1586,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p>
                 In the reader, company logos sit inline with each company title in 2rem circular white badges with 0.45rem
                 padding, overlapping by 0.26rem like the work-history popover&rsquo;s logo group. Work entries are
-                separated by the established 8% hairline and 2.5rem spacing step, making dates and roles easier to scan without adding cards. This restores the earlier company-link treatment with
-                <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
+                separated by the established 8% hairline and 2.5rem spacing step, making dates and roles easier to scan without adding cards.
+                Company names retain their external links but omit the prose-link underline in the résumé; the logo
+                badges keep <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
                 Company names, dates, locations, and descriptions reuse the shared résumé styles in
                 <code>about.css</code>: <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
                 Four selected Matcha screenshots sit below the description as loose photo prints. They are sized by

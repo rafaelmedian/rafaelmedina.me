@@ -108,6 +108,12 @@
   min-width: 0;
 }
 
+/* Company names remain external links, but the résumé's logo-and-title rows
+   provide the affordance without the inline prose treatment's underline. */
+.resume-content .mosaic-company-inline-link {
+  text-decoration-line: none;
+}
+
 .mosaic-about-body .resume-experience-role {
   margin-top: 0.25rem;
   color: var(--muted);
