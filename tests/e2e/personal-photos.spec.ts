@@ -522,7 +522,15 @@ test("a drag turns the globe and lets a held photo go; a click holds a photo at 
   await expect.poll(() => centred(target.id), motion).toBeLessThanOrEqual(2)
   const held = (await readTiles(page)).find((tile) => tile.id === target.id)!
   expect(held.width).toBeGreaterThan(target.width * 1.8)
-  await expect(page.locator(".personal-photos-sphere-caption")).toHaveText(await stage(page).locator(`.personal-photos-slide[data-photo-id="${target.id}"] figcaption`).innerText())
+  // The caption names it, just under it, once the hold has landed.
+  const caption = page.locator(".personal-photos-stage-caption")
+  await expect(caption).toHaveText(await stage(page).locator(`.personal-photos-slide[data-photo-id="${target.id}"] figcaption`).innerText())
+  await expect.poll(() => caption.evaluate((element) => getComputedStyle(element).opacity), motion).toBe("1")
+  const heldBox = (await stage(page).locator(`.personal-photos-slide[data-photo-id="${target.id}"]`).boundingBox())!
+  const captionBox = (await caption.boundingBox())!
+  expect(captionBox.y - (heldBox.y + heldBox.height)).toBeGreaterThan(4)
+  expect(captionBox.y - (heldBox.y + heldBox.height)).toBeLessThan(32)
+  expect(Math.abs(captionBox.x + captionBox.width / 2 - (heldBox.x + heldBox.width / 2))).toBeLessThan(3)
   // While one photo is held the rest of the globe steps back a little.
   const others = (await readTiles(page)).filter((tile) => tile.id !== target.id)
   expect(Math.max(...others.map((tile) => tile.width))).toBeLessThan(held.width / 2)
@@ -534,6 +542,8 @@ test("a drag turns the globe and lets a held photo go; a click holds a photo at 
   await page.mouse.move(5, 5)
   await expect.poll(async () => Math.max(...(await readTiles(page)).map((tile) => tile.width)), motion).toBeLessThan(target.width * 1.3)
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
+  // The caption went with it.
+  await expect(caption).toHaveText("")
 
   // A drag turns it: the front changes hands. A drag also lets a held photo go.
   // The globe turned to bring the target to the centre and stays there once it

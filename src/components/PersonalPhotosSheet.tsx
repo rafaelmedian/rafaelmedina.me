@@ -255,8 +255,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                 {/* Draws every slide as a glass pebble; the slides underneath
                     keep the pointer, the focus, and the flights. */}
                 <canvas className="personal-photos-pebbles" aria-hidden="true" />
-                {/* Each print's own figcaption is what a screen reader hears. */}
-                <p className="personal-photos-sphere-caption" aria-hidden="true" />
+                {/* Names the held photo, under it; each print's own figcaption
+                    is what a screen reader hears. */}
+                <p className="personal-photos-stage-caption" aria-hidden="true" />
               </Fragment>
             ) : (
               <div className="personal-photos-masonry" key="grid">

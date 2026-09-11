@@ -137,6 +137,10 @@ const zoomRecede = 0.22
     that moves, so the glint on the shoulder travels with the hand while the
     photo holds its place. */
 const parallaxLean = 0.2
+/** The caption's distance below the held photo, and how far it rises as it
+    comes in. */
+const captionGap = 12
+const captionRise = 8
 
 type Tween = { from: Matrix; axis: Vector; angle: number; start: number; duration: number }
 
@@ -188,7 +192,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     if (!stage || !sphere) return
     const slides = Array.from(sphere.querySelectorAll<HTMLElement>(".personal-photos-slide"))
     const captions = slides.map((slide) => slide.querySelector("figcaption")?.textContent ?? "")
-    const caption = stage.querySelector<HTMLElement>(".personal-photos-sphere-caption")
+    const caption = stage.querySelector<HTMLElement>(".personal-photos-stage-caption")
     const points = spherePlacement(slides.length, Number(sphere.dataset.front) || 0)
     const tokens = getComputedStyle(sphere)
     const openHold = cssTimeToMilliseconds(tokens.getPropertyValue("--photo-open-duration"))
@@ -276,19 +280,18 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     /** The photo being turned to the front, and the turn's angular speed. */
     let turnTarget: number | null = null
     let turnSpeed = 0
+    /** The photo the caption names: the held one, kept through its release
+        until the caption has faded with it. */
+    let captioned: number | null = null
 
     const render = () => {
       const m = orientation.current
       const draws: PebbleDraw[] = []
-      let nearest = 0
-      let nearestZ = -Infinity
+      if (held !== null) captioned = held
+      let captionBox = { x: 0, y: 0, halfHeight: 0 }
       slides.forEach((slide, index) => {
         const [x, y, rawZ] = transform(m, points[index])
         const z = Math.max(-1, Math.min(1, rawZ))
-        if (z > nearestZ) {
-          nearest = index
-          nearestZ = z
-        }
         // 0 at the back of the sphere, 1 at the front.
         const depth = (z + 1) / 2
         // How far a tile is from being gone round the rim: 1 on the face, 0
@@ -307,6 +310,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         const zoom = zooms[index]
         const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + zoom * (zoomGrowth - 1)) * (1 - recede * zoomRecede * (1 - zoom))
         slide.style.transform = `translate3d(${(x * radius * perspective).toFixed(2)}px, ${(-y * radius * perspective).toFixed(2)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(4)})`
+        if (index === captioned) captionBox = { x: stageSize.width / 2 + x * radius * perspective, y: stageSize.height / 2 - y * radius * perspective, halfHeight: boxes[index].height * scale / 2 }
         // A held photo stacks above everything, however far its slot has
         // turned from the front while it grew.
         // A hovered photo comes forward of its neighbours too, so the part
@@ -351,11 +355,28 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         }
       })
       pebbles?.draw(draws, stageSize.width, stageSize.height)
-      // One caption for the whole globe: the held photo, else the photo
-      // under the pointer, else the one nearest the front, so it follows the
-      // spin.
-      const text = captions[held ?? (hovered ? slides.indexOf(hovered) : nearest)] ?? ""
-      if (caption && caption.textContent !== text) caption.textContent = text
+      // One caption, under the held photo. It is placed from the photo's
+      // drawn box and shown by the photo's zoom — the last two fifths of
+      // it — so it rises in as the hold lands and is gone the moment a
+      // release starts the photo back, with no clock of its own.
+      if (caption && captioned !== null) {
+        const opacity = Math.max(0, Math.min(1, (zooms[captioned] - 0.6) / 0.4))
+        if (opacity === 0 && held === null) {
+          captioned = null
+          caption.textContent = ""
+          caption.style.removeProperty("--stage-caption-opacity")
+        } else {
+          const text = captions[captioned] ?? ""
+          if (caption.textContent !== text) caption.textContent = text
+          const rise = (1 - opacity) * captionRise
+          let top = captionBox.y + captionBox.halfHeight + captionGap + rise
+          // Above the photo instead when the screen ends below it, never on it.
+          if (top + caption.offsetHeight > stageSize.height - captionGap) top = captionBox.y - captionBox.halfHeight - captionGap - caption.offsetHeight - rise
+          caption.style.setProperty("--stage-caption-x", `${captionBox.x.toFixed(1)}px`)
+          caption.style.setProperty("--stage-caption-y", `${top.toFixed(1)}px`)
+          caption.style.setProperty("--stage-caption-opacity", opacity.toFixed(3))
+        }
+      }
     }
 
     const turnToFront = (slide: HTMLElement) => {

@@ -526,14 +526,27 @@
 .personal-photos-sphere .personal-photos-slide[data-pebble]::before,
 .personal-photos-sphere .personal-photos-slide[data-pebble]::after { visibility: hidden; }
 
-.personal-photos-sphere-caption {
+/* The held photo's name, just under it. usePhotoSphere places it from the
+   photo's drawn box every frame and fades it with the photo's own zoom, so
+   it arrives as the hold lands and leaves with the release; when the screen
+   ends below the photo it sits above instead. In the interface face, not the
+   handwriting: it is a label on the stage, not a note on a print. */
+.personal-photos-stage-caption {
   position: absolute;
-  bottom: 1.5rem;
-  left: 50%;
+  top: var(--stage-caption-y, 100%);
+  left: var(--stage-caption-x, 50%);
+  max-width: min(28rem, 90vw);
   margin: 0;
   translate: -50% 0;
-  font-family: "Handlee", cursive;
-  font-size: var(--text-lg);
+  color: var(--canvas);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  /* Over whichever pebbles lie behind the held photo, not only the backdrop. */
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  opacity: var(--stage-caption-opacity, 0);
   pointer-events: none;
 }
 
@@ -633,7 +646,7 @@
   background-position: center;
 }
 /* A pebble carries no caption on its face; it stays for assistive tech,
-   and the hovered or front photo's is written out under the globe instead. */
+   and the held photo's is written out under it instead. */
 .personal-photos-slide figcaption {
   position: absolute;
   width: 1px;
@@ -690,6 +703,7 @@
     padding-top: 0.5rem;
     font-size: var(--text-md);
   }
+  .personal-photos-stage-caption { font-size: var(--text-sm); }
 }
 
 @media (prefers-reduced-motion: reduce) {
