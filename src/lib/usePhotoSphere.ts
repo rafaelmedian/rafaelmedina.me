@@ -334,7 +334,9 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // Only the face of the sphere answers the pointer; a click on a photo
         // on its way out round the rim would bring one back nobody can see.
         slide.toggleAttribute("data-sphere-far", z < -0.2)
-        if (pebbles && !slide.hasAttribute("data-pebble") && pebbles.prepare(images[index])) slide.setAttribute("data-pebble", "")
+        // Responsive sources can change after a resize. Readiness belongs
+        // to the current source, not to a slide that once had a texture.
+        if (pebbles) slide.toggleAttribute("data-pebble", pebbles.prepare(images[index]))
         // A slide wearing a flight is drawn by the flight: the canvas leaves
         // it out until the flight hands its slot back, so the photo is never
         // on screen twice.
