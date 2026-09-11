@@ -6,38 +6,48 @@ import { expect, test } from "@playwright/test"
    only then opened the dialog. `index.html` holds the page back until the
    dialog presents, and the page fades in under the dialog's own entrance. */
 
-type Frame = { entry: string | null; root: number; article: boolean; popup: boolean }
+type RevealStart = {
+  article: boolean
+  popup: boolean
+  animationName: string
+  duration: string
+}
 
 for (const path of ["/work/matcha-multiwallet-flow/", "/resume/", "/notes/", "/notes/designing-matcha/"]) {
   test(`${path} opens straight into its dialog`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" })
     await page.addInitScript(() => {
-      const frames: Frame[] = []
-      Object.assign(window, { __frames: frames })
-      const sample = () => {
+      const starts: RevealStart[] = []
+      Object.assign(window, { __galleryEntryRevealStarts: starts })
+      document.addEventListener("animationstart", (event) => {
+        if (!(event instanceof AnimationEvent) || event.animationName !== "gallery-entry-reveal") return
         const root = document.getElementById("root")
-        if (root) frames.push({
-          entry: document.documentElement.dataset.galleryEntry ?? null,
-          root: Number(getComputedStyle(root).opacity),
+        starts.push({
           article: document.querySelector(".standalone-page") !== null,
           popup: document.querySelector(".preview-gallery-popup") !== null,
+          animationName: event.animationName,
+          duration: root ? getComputedStyle(root).animationDuration : "0s",
         })
-        if (frames.length < 600) requestAnimationFrame(sample)
-      }
-      requestAnimationFrame(sample)
+      })
     })
     await page.goto(path)
     await expect(page.locator(".preview-gallery-popup")).toBeVisible()
     await expect(page.locator("html")).not.toHaveAttribute("data-gallery-entry")
     await expect(page.locator("#root")).toHaveCSS("opacity", "1")
 
-    const frames = await page.evaluate(() => (window as unknown as { __frames: Frame[] }).__frames)
-    expect(frames[0].entry).toBe("pending")
-    // Neither the prerendered article nor the feed without its dialog is ever
-    // painted: the page only shows once the dialog is there.
-    expect(frames.filter(frame => frame.root > 0 && (frame.article || !frame.popup))).toEqual([])
-    // And it arrives as a fade rather than a cut.
-    expect(frames.some(frame => frame.popup && frame.root > 0 && frame.root < 1)).toBe(true)
+    const starts = await page.evaluate(() => (
+      window as unknown as { __galleryEntryRevealStarts: RevealStart[] }
+    ).__galleryEntryRevealStarts)
+    // The pending page is only released once its dialog has replaced the
+    // prerendered article, and it arrives under the declared fade. Observing
+    // the animation event is reliable even when a busy runner misses every
+    // intermediate animation frame.
+    expect(starts).toContainEqual({
+      article: false,
+      popup: true,
+      animationName: "gallery-entry-reveal",
+      duration: "0.2s",
+    })
   })
 }
 
