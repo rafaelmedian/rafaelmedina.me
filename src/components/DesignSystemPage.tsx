@@ -1624,7 +1624,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Contact pills</p>
               <div
                 className="ds-specimen ds-specimen-canvas ds-specimen-center"
-                data-ds-terms={terms("contact pill book a call booking linkedin x follow button specular bevel")}
+                data-ds-terms={terms("contact pill book a call booking linkedin x follow button specular radial glow shine bevel")}
               >
                 <ContactActionRow
                   availabilityLabel={formatAvailability()}
@@ -1672,8 +1672,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-caption">
                 All three use a 2.125rem fine-pointer height and <code>--radius-full</code>; below 700px, touch inputs keep a
                 44px target. They share the same physical build: an outer shadow, a{" "}
-                <code>::before</code> specular highlight across the top, and a <code>::after</code> ring of inset
-                shadows for the bottom bevel. Labels are trimmed with{" "}
+                <code>::before</code> specular highlight across the top with two radial glints that brighten on hover
+                or keyboard focus over <code>--duration-quick</code>, and a <code>::after</code> ring of inset shadows
+                for the bottom bevel. Labels are trimmed with{" "}
                 <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
                 low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
                 carries the press.

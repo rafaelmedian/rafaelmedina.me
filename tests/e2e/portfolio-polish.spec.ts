@@ -651,6 +651,38 @@ test("offers LinkedIn and X actions beside booking", async ({ page }) => {
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
 })
 
+test("brightens the contact pills' internal lights on hover", async ({ page }) => {
+  await page.goto("/")
+
+  const actions = page.getByRole("group", { name: "Profile contact actions" })
+  const pills = actions.locator(".mosaic-contact-pill")
+  await expect(pills).toHaveCount(3)
+
+  for (let index = 0; index < 3; index += 1) {
+    const pill = pills.nth(index)
+    const rest = await pill.evaluate((element) => {
+      const highlight = getComputedStyle(element, "::before")
+      return {
+        backgroundImage: highlight.backgroundImage,
+        opacity: Number.parseFloat(highlight.opacity),
+        transitionProperty: highlight.transitionProperty,
+      }
+    })
+
+    expect(rest.backgroundImage.match(/radial-gradient/g) ?? []).toHaveLength(2)
+    expect(rest.opacity).toBeLessThan(1)
+    expect(rest.transitionProperty).toBe("opacity")
+
+    await pill.hover()
+
+    await expect
+      .poll(() =>
+        pill.evaluate((element) => Number.parseFloat(getComputedStyle(element, "::before").opacity)),
+      )
+      .toBe(1)
+  }
+})
+
 test("leads the contact row with the booking pill", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
