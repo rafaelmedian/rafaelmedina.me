@@ -93,10 +93,10 @@
    been cut rather than having finished. */
 .writings-archive { width: min(100%, var(--writings-measure, 34rem)); margin: 0 auto; padding-bottom: 1.5rem; }
 /* What the list says while a reader is on its way or failed to come, in the
-   place the first year heading would otherwise begin. */
+   place the first category heading would otherwise begin. */
 .writings-status { margin: 0 0 1rem; color: var(--muted); font-size: var(--text-xs); line-height: 1.5; }
 .writings-list { padding-top: 0; }
-.writings-year + .writings-year { margin-top: 3rem; }
+.writings-category + .writings-category { margin-top: 3rem; }
 /* Drawings hang in the gutter off the row they are pinned to. Absolute, so
    they never enter the content height the card is measured from, and hidden
    until the surface is wide enough to have gutters: the measure plus about
@@ -104,7 +104,7 @@
    titles. */
 .writings-drawing { display: none; }
 @container writings (min-width: 48rem) {
-  .writings-year li { position: relative; }
+  .writings-category li { position: relative; }
   /* A picture of pencil used as a mask, the way the reader's brackets are, so
      one asset per object serves any ink. The box is square because the drawing
      is: the mask is sized to it rather than to the file, and a PNG has no
@@ -158,7 +158,7 @@
      step leaves the resting frame at once, so the hover answers without a
      beat of stillness first. */
   @media (hover: hover) and (pointer: fine) {
-    .writings-year li:hover > .writings-drawing { animation: writings-drawing-boil 375ms steps(1, end) infinite; }
+    .writings-category li:hover > .writings-drawing { animation: writings-drawing-boil 375ms steps(1, end) infinite; }
   }
 }
 @keyframes writings-drawing-boil {
@@ -166,12 +166,12 @@
   33.333% { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
   66.667%, 100% { -webkit-mask-position: 0 0; mask-position: 0 0; }
 }
-/* A year sits above the notes it belongs to rather than in a gutter beside
+/* A category sits above the entries it owns rather than in a gutter beside
    them, so the full measure goes to the titles. The rows keep their -0.5rem
    bleed, which puts the title text back on the heading's line while the hover
    fill still reaches past it. */
-.writings-year h3, .writing-more h3 { margin: 0 0 0.25rem; font-size: var(--text-xs); font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
-.writings-year ul, .writing-more ul { list-style: none; padding: 0; margin: 0 -0.5rem; }
+.writings-category h3, .writing-more h3 { margin: 0 0 0.25rem; font-size: var(--text-xs); font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.writings-category ul, .writing-more ul { list-style: none; padding: 0; margin: 0 -0.5rem; }
 .writing-more { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgb(0 0 0 / 0.08); }
 .writing-entry-trigger { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; width: 100%; min-height: 44px; padding: 0.75rem 0.5rem; border-radius: var(--radius-sm); text-align: left; font-size: var(--text-sm); font-weight: 500; line-height: 1.5; letter-spacing: -0.00563rem; text-wrap: pretty; overflow-wrap: anywhere; transition: background-color var(--duration-quick) var(--ease-standard); }
 /* The date is the row's fixed column: it keeps its width so titles wrap against
@@ -245,6 +245,66 @@
 .writing-reader-figure { margin: 2rem 0; }
 .writing-reader-figure img { width: 100%; height: auto; border-radius: var(--radius-md); background: var(--mosaic-card-surface); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05); }
 .writing-reader-figure figcaption { margin-top: 0.5rem; font-size: var(--text-xs); line-height: 1.5; color: var(--muted); }
+
+/* An installable tool stays inside the article's measure but reads as an
+   object the reader can act on. It borrows the code sample's surface and the
+   reader actions' control chrome, so the note gains no new visual tier. */
+.writing-tool {
+  margin: 2rem 0;
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  background: var(--mosaic-card-surface);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05);
+}
+.writing-tool-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.writing-tool-heading h3 { margin: 0; color: var(--ink); font-size: var(--text-sm); font-weight: 600; line-height: 1.45; }
+.writing-tool-heading p { margin: 0.25rem 0 0; color: var(--muted); font-size: var(--text-xs); line-height: 1.5; }
+.writing-tool-heading a {
+  flex-shrink: 0;
+  min-height: 40px;
+  margin: -0.625rem -0.5rem 0 0;
+  padding: 0.625rem 0.5rem;
+  text-decoration: none;
+}
+.writing-tool-command {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring);
+}
+.writing-tool-command code {
+  min-width: 0;
+  overflow-x: auto;
+  color: #3d3d3d;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.writing-tool-command button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 66px;
+  min-height: 40px;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--radius-sm);
+  background: var(--mosaic-card-surface);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--duration-quick) var(--ease-standard), box-shadow var(--duration-quick) var(--ease-standard);
+}
+.writing-tool-command button:hover { background: #dedee0; box-shadow: var(--shadow-control); }
+.writing-tool-command button:active { scale: 0.96; }
 /* Marginalia. The narrow layout is the base: a note folds into the column under
    its paragraph, keeping the bracket as a left-hand mark. It only moves out to a
    gutter once the Notes container is at least 48rem wide. */
@@ -337,7 +397,11 @@
   }
   .writings-archive, .writing-reader { padding: 1.5rem 1.25rem calc(3rem + env(safe-area-inset-bottom)); }
   .writings-archive { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
-  .writings-year + .writings-year { margin-top: 2rem; }
+  .writings-category + .writings-category { margin-top: 2rem; }
+  .writing-tool-heading { display: block; }
+  .writing-tool-heading a { width: fit-content; margin: 0.5rem 0 -0.25rem -0.5rem; }
+  .writing-tool-command { align-items: stretch; flex-direction: column; padding: 0.75rem; }
+  .writing-tool-command button { align-self: flex-end; }
 }
 
 .t-modal {

@@ -11,7 +11,7 @@ import { revealGalleryEntry } from "../lib/galleryEntry"
 import { galleryItemTitle, resumeItemTitle, writingsItemTitle, type GalleryItem } from "../lib/galleryItems"
 import { originCloseEasePoints, originOpenEasePoints, toCssEasing, useOriginTravel } from "../lib/originMotion"
 import { writingSummaries } from "../data/writingIndex"
-import { groupWritingsByYear } from "../lib/writings"
+import { groupWritingsByCategory } from "../lib/writings"
 import { useGalleryPage, type GalleryPageDirection } from "../lib/useGalleryPage"
 import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
@@ -174,7 +174,7 @@ export function PreviewGalleryDialog({
   const returnRow = useRef<HTMLButtonElement | null>(null)
   const listScrollTop = useRef(0)
   const focusNoteTitle = useRef(true)
-  const orderedNotes = useMemo(() => groupWritingsByYear(writingSummaries).flatMap(group => group.entries), [])
+  const orderedNotes = useMemo(() => groupWritingsByCategory(writingSummaries).flatMap(group => group.entries), [])
   const [listHeight, setListHeight] = useState<number | null>(null)
 
   useIsomorphicLayoutEffect(() => {
@@ -721,7 +721,7 @@ export function PreviewGalleryDialog({
                       </header>
                       <Dialog.Description className="sr-only">
                         {readingNote ? "Read this note. Use Back to return to Notes, or the left and right arrows to browse notes."
-                          : "Rafael Medina's notes, grouped by year. Choose one to read it."}
+                          : "Rafael Medina's notes and tools, grouped by category. Choose one to read it."}
                       </Dialog.Description>
                       <div className="notes-gallery-viewport writings-scroll" ref={notesScrollRef}
                         onScroll={(event) => {

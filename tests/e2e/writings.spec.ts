@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { groupWritingsByYear } from "../../src/lib/writings"
+import { groupWritingsByCategory } from "../../src/lib/writings"
 
 /* The notes are two surfaces. The list is a slide of the preview gallery, at
    the place the folder tile occupies on the grid, so the arrow keys walk from a
@@ -16,7 +16,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   const folder = page.getByRole("button", { name: "Open writings folder" })
-  await expect(folder.locator(".writings-tile-label")).toHaveText("Writings & notes")
+  await expect(folder.locator(".writings-tile-label")).toHaveText("Notes & tools")
   await folder.click()
   // The same popup a project opens, on the list's own address, counted in the
   // sequence at the tile's place: after the two projects of the first row.
@@ -25,8 +25,10 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await expect(page).toHaveTitle("Notes — Rafael Medina")
   await expect(popup(page)).toHaveAttribute("data-preview-kind", "writings")
   await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 14")
-  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
-  await expect(popup(page).locator(".writings-year > h3")).toHaveText(["2026", "2025"])
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
+  await expect(popup(page).locator(".writings-category > h3")).toHaveText(["Tools", "Notes"])
+  await expect(popup(page).getByRole("button", { name: "Make pull requests easier to review", exact: true })
+    .locator(".writing-entry-date")).toHaveText("Sep 11 '26")
   await expect(popup(page).getByRole("searchbox")).toHaveCount(0)
   await expect(sheet(page)).toHaveCount(0)
 
@@ -271,7 +273,7 @@ test("the phone reader keeps the gallery's full-height frame and reachable contr
   }
   const reader = dialog.locator(".writings-scroll")
   await reader.evaluate(element => element.scrollTo(0, element.scrollHeight))
-  await expect(dialog.getByRole("heading", { name: "More articles" })).toBeVisible()
+  await expect(dialog.getByRole("heading", { name: "More notes" })).toBeVisible()
   for (let i = 0; i < 6; i++) {
     await page.keyboard.press("Tab")
     await expect.poll(() => dialog.evaluate(element => element.contains(document.activeElement))).toBe(true)
@@ -296,22 +298,37 @@ test("the toolbar divider appears only once the article has scrolled", async ({ 
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0)")
 })
 
-test("archive orders years and dates newest first without assigning dates to undated notes", () => {
+test("archive orders categories and dates without mutating its entries", () => {
   const entries = [
-    { id: "older", publishedAt: "2024-12-31" },
-    { id: "undated" },
-    { id: "january", publishedAt: "2026-01-01" },
-    { id: "september", publishedAt: "2026-09-01" },
-    { id: "middle", publishedAt: "2025-06-01" },
-  ].map((entry) => ({ ...entry, title: entry.id, category: "Notes", paragraphs: [] }))
-  expect(groupWritingsByYear(entries).map(({ year, entries }) => ({ year, ids: entries.map((entry) => entry.id) }))).toEqual([
-    { year: "2026", ids: ["september", "january"] },
-    { year: "2025", ids: ["middle"] },
-    { year: "2024", ids: ["older"] },
-    { year: "Undated", ids: ["undated"] },
+    { id: "older", category: "Notes", publishedAt: "2024-12-31" },
+    { id: "undated", category: "Notes" },
+    { id: "january", category: "Tools", publishedAt: "2026-01-01" },
+    { id: "september", category: "Tools", publishedAt: "2026-09-01" },
+    { id: "middle", category: "Notes", publishedAt: "2025-06-01" },
+  ] as const
+  expect(groupWritingsByCategory(entries).map(({ category, entries }) => ({ category, ids: entries.map((entry) => entry.id) }))).toEqual([
+    { category: "Tools", ids: ["september", "january"] },
+    { category: "Notes", ids: ["middle", "older", "undated"] },
   ])
   expect(entries[0].id).toBe("older")
-  expect(groupWritingsByYear([])).toEqual([])
+  expect(groupWritingsByCategory([])).toEqual([])
+})
+
+test("the review-ready tool can be installed and links to its source", async ({ page }) => {
+  await page.context().grantPermissions(["clipboard-write", "clipboard-read"])
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/review-ready-pull-requests/")
+  const dialog = sheet(page)
+  await expect(dialog.getByRole("heading", { name: "Make pull requests easier to review", exact: true })).toBeFocused()
+  const install = dialog.getByRole("region", { name: "Install review-ready-prs" })
+  await expect(install.getByText("npx skills add rafaelmedian/skills@review-ready-prs", { exact: true })).toBeVisible()
+  await expect(install.getByRole("link", { name: "View source", exact: true })).toHaveAttribute(
+    "href", "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
+  )
+  await install.getByRole("button", { name: "Copy install command", exact: true }).click()
+  await expect(install.getByRole("status")).toHaveText("Install command copied")
+  await expect(dialog.getByRole("region", { name: "More tools" })).toHaveCount(0)
 })
 
 test("note navigation follows the archive and resets the reader scroll", async ({ page }) => {
@@ -349,7 +366,7 @@ test("note navigation follows the archive and resets the reader scroll", async (
   await popup(page).getByRole("button", { name: "My project context is moving into Markdown", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "My project context is moving into Markdown", exact: true })).toBeFocused()
   await page.keyboard.press("ArrowLeft")
-  await expect(dialog.getByRole("heading", { name: "From quote to confirmation", exact: true })).toBeFocused()
+  await expect(dialog.getByRole("heading", { name: "Make pull requests easier to review", exact: true })).toBeFocused()
   await page.keyboard.press("ArrowRight")
   await expect(dialog.getByRole("heading", { name: "My project context is moving into Markdown", exact: true })).toBeFocused()
 })
@@ -399,14 +416,14 @@ test("the list's drawings stay in the card's gutters and leave at narrow widths"
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/")
   const card = popup(page).locator(".preview-gallery-card")
-  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
   const drawings = popup(page).locator(".writings-drawing")
   expect(await drawings.count()).toBeGreaterThan(0)
   // The drawings hang outside the list's column, so the failure to catch is a
   // sideways scrollbar on the card rather than a drawing that looks wrong.
   await expect.poll(() => card.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
   const bounds = (await card.boundingBox())!
-  const rows = (await popup(page).locator(".writings-year li").first().boundingBox())!
+  const rows = (await popup(page).locator(".writings-category li").first().boundingBox())!
   let sides = 0
   for (const box of await drawings.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect()))) {
     expect(box.left).toBeGreaterThanOrEqual(bounds.x)
@@ -422,18 +439,18 @@ test("the list's drawings stay in the card's gutters and leave at narrow widths"
   // card opens, so this is a fresh visit rather than a resize.
   await page.setViewportSize({ width: 1200, height: 1000 })
   await page.goto("/notes/")
-  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
   await expect(drawings.first()).toBeHidden()
 })
 
 test("a hovered row boils its drawing through its frames", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/notes/")
-  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
   await expect(popup(page)).toHaveCSS("opacity", "1")
 
   // At rest the drawing shows the first frame of its strip and holds still.
-  const owner = popup(page).locator(".writings-year li").filter({ has: page.locator(".writings-drawing") }).first()
+  const owner = popup(page).getByRole("region", { name: "Tools" }).locator("li").first()
   const drawing = owner.locator(".writings-drawing")
   await expect(drawing).toHaveCSS("animation-name", "none")
   await expect(drawing).toHaveCSS("mask-position", "0px 0px")
@@ -467,7 +484,7 @@ test("the mouse moving onto a notes row strikes one key", async ({ page }) => {
     }
   })
   await page.goto("/notes/")
-  await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
+  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes")
   await expect(popup(page)).toHaveCSS("opacity", "1")
   // The popup reaches full opacity before its origin wrapper finishes moving.
   // Measure rows only after that travel lands, or these coordinates can point
@@ -515,7 +532,7 @@ test("margin notes fold into the column when the gutters are gone", async ({ pag
   expect(await prose.textContent()).toContain("And I still typed three paragraphs describing it")
 })
 
-test("an article closes with its acknowledgements above More articles", async ({ page }) => {
+test("an article closes with its acknowledgements above More notes", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/designing-matcha/")
@@ -523,7 +540,7 @@ test("an article closes with its acknowledgements above More articles", async ({
   const credits = dialog.getByRole("region", { name: "Acknowledgements" })
   await expect(credits).toContainText("0x Project")
   const creditsBox = (await credits.boundingBox())!
-  const more = (await dialog.getByRole("region", { name: "More articles" }).boundingBox())!
+  const more = (await dialog.getByRole("region", { name: "More notes" }).boundingBox())!
   expect(creditsBox.y + creditsBox.height).toBeLessThanOrEqual(more.y)
 })
 
@@ -532,7 +549,7 @@ test("keeps marginalia to two notes an article, one in each gutter", async ({ pa
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/")
   const dialog = sheet(page)
-  const entries = popup(page).locator(".writings-year li button")
+  const entries = popup(page).locator(".writings-category li button")
   await expect(entries.first()).toBeVisible()
   const count = await entries.count()
   expect(count).toBeGreaterThan(0)

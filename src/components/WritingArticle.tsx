@@ -1,8 +1,8 @@
-import { ArrowUpRight, Check, Link2 } from "lucide-react"
+import { ArrowUpRight, Check, Copy, Link2 } from "lucide-react"
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ElementType, type RefObject } from "react"
 
 import { writingSummaries } from "../data/writingIndex"
-import type { Writing, WritingAnnotation, WritingCode, WritingImage } from "../data/writings"
+import type { Writing, WritingAnnotation, WritingCode, WritingImage, WritingTool } from "../data/writings"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { noteHash, pickFrom } from "../lib/writings"
 import { siteOrigin, writingPath } from "../lib/projectMetadata"
@@ -147,6 +147,44 @@ function NoteImage({ image }: { image: WritingImage }) {
   )
 }
 
+function ToolInstallCard({ tool }: { tool: WritingTool }) {
+  const [copied, setCopied] = useState(false)
+  const resetRef = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(resetRef.current), [])
+  const command = `npx skills add ${tool.package}`
+
+  return (
+    <section className="writing-tool" aria-label={`Install ${tool.package.split("@").at(-1)}`}>
+      <div className="writing-tool-heading">
+        <div>
+          <h3>Install the skill</h3>
+          <p>Use it in any agent that supports the open skills format.</p>
+        </div>
+        <a href={tool.sourceUrl} target="_blank" rel="noreferrer">
+          View source <ArrowUpRight size={14} aria-hidden="true" />
+        </a>
+      </div>
+      <div className="writing-tool-command">
+        <code>{command}</code>
+        <button type="button" onClick={() => {
+          void navigator.clipboard?.writeText(command).then(() => {
+            setCopied(true)
+            window.clearTimeout(resetRef.current)
+            resetRef.current = window.setTimeout(() => setCopied(false), COPY_CONFIRMATION_MS)
+          }, () => undefined)
+        }}>
+          {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+          <span aria-hidden="true"><InlineSwap value={copied ? "Copied" : "Copy"} direction={copied ? "up" : "down"} /></span>
+          <span className="sr-only">Copy install command</span>
+        </button>
+      </div>
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {copied ? "Install command copied" : ""}
+      </span>
+    </section>
+  )
+}
+
 /** How long a copied link stays confirmed, matching the address chip's window. */
 const COPY_CONFIRMATION_MS = 1600
 
@@ -247,8 +285,9 @@ type WritingArticleProps = {
  * the other's markup.
  */
 export function WritingArticle({ writing, titleRef, heading: Heading = "h2", showLikes, onSelectWriting }: WritingArticleProps) {
-  // Three neighbours, in the order the archive lists them, minus this one.
-  const moreWritings = writingSummaries.filter((entry) => entry.id !== writing.id).slice(0, 3)
+  // Three neighbours from the same shelf, in archive order, minus this one.
+  const moreWritings = writingSummaries.filter((entry) => entry.category === writing.category && entry.id !== writing.id).slice(0, 3)
+  const moreLabel = `More ${writing.category.toLowerCase()}`
 
   return (
     <article className="writing-reader">
@@ -269,6 +308,7 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
       {writing.cover ? <NoteImage image={writing.cover} /> : null}
       <div className="writing-reader-prose">
         <NoteProse paragraphs={writing.paragraphs} annotations={writing.annotations} />
+        {writing.tool ? <ToolInstallCard tool={writing.tool} /> : null}
         {writing.code ? <NoteCode code={writing.code} /> : null}
         {writing.image ? <NoteImage image={writing.image} /> : null}
         {writing.sections?.map((section) => (
@@ -288,8 +328,8 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
         </section>
       ) : null}
       {moreWritings.length > 0 ? (
-        <section className="writing-more" aria-label="More articles">
-          <h3>More articles</h3>
+        <section className="writing-more" aria-label={moreLabel}>
+          <h3>{moreLabel}</h3>
           <ul>{moreWritings.map((entry) => (
             <li key={entry.id}>
               {/* The reader turns to its neighbour; the static page has no
