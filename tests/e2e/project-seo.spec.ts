@@ -75,10 +75,10 @@ test("the resume page ships its own metadata and the whole history without JavaS
   // list of its own inside them.
   await expect(page.getByRole("list", { name: "Work history" }).locator(":scope > li")).toHaveCount(6)
   await expect(page.getByRole("list", { name: "Education" }).getByRole("listitem")).toHaveCount(2)
-  // The page's own h1 is "Work history", so the entries under it are h2 and
+  // The page's own h1 is "Résumé", so the entries under it are h2 and
   // the schools h3: the same component sits under an h2 in the About sheet,
   // where it renders one level down.
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Work history")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Résumé")
   await expect(page.getByRole("heading", { level: 2, name: "Senior Product Designer at 0x Project" })).toBeVisible()
   await expect(page.getByRole("heading", { level: 2, name: "Education" })).toBeVisible()
   await expect(page.getByRole("heading", { level: 3 })).toHaveCount(2)

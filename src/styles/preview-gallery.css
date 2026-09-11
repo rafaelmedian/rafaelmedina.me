@@ -682,13 +682,46 @@
    used to carry each side is the card's padding here, so only the measure is
    restated. */
 .preview-gallery-resume {
-  width: min(100%, 34rem);
+  width: 100%;
   margin: 0 auto;
   padding-bottom: 1.5rem;
   text-align: left;
 }
 
+.preview-gallery-resume-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 calc(-1 * var(--preview-gallery-card-padding));
+  padding:
+    0
+    var(--preview-gallery-card-padding)
+    1.5rem;
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
+  transition: box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+/* Sticky positioning leaves the card's top padding above the heading. Cover
+   that strip too, so history cannot reappear after passing behind the title. */
+.preview-gallery-resume-heading::before {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--preview-gallery-card-padding)) 0 100%;
+  background: inherit;
+}
+
+.preview-gallery-resume[data-scrolled="true"] .preview-gallery-resume-heading {
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
+}
+
+.preview-gallery-resume-heading .preview-gallery-resume-title {
+  width: min(100%, 34rem);
+  margin-inline: auto;
+}
+
 .preview-gallery-resume-body {
+  width: 100%;
   margin-top: 2rem;
 }
 

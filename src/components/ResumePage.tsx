@@ -21,7 +21,7 @@ export function ResumePage() {
         <a href={`mailto:${siteLinks.email}`}>Contact Rafael</a>
       </nav>
       <header>
-        <h1 className="standalone-title">Work history</h1>
+        <h1 className="standalone-title">Résumé</h1>
         <p className="standalone-description">
           Ten years of product design across web3, fintech, and consumer products.
         </p>
