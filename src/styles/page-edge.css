@@ -1,3 +1,116 @@
+/* ---------------------------------------------------------- bottom fades --- */
+
+/* The two long reading surfaces, the About sheet and the notes card, dissolve
+   their copy into the surface at the foot of what shows rather than cutting it
+   off there. Each places its own fade (about.css, preview-gallery.css); this is
+   the treatment they share: the work tiles' caption blur under a --canvas ramp.
+
+   The blur is the tile scrim's recipe at this strip's scale. Four separately
+   masked layers step the radius from 0.12 of --bottom-fade-blur up to all of it,
+   each reaching less far up, so the copy goes soft progressively as it sinks
+   rather than half-blending into one uniformly blurred layer. The masks keep
+   the scrim's eased falloff, rescaled from its 46% band to the whole strip. The
+   ramp above them finishes the job the blur cannot, since a blurred line of
+   type is still a line. Every ramp is eased; a straight one changes slope where
+   it reaches zero, and the eye reads that break as an edge. */
+.mosaic-about-fade,
+.notes-gallery-fade {
+  --bottom-fade-blur: 1.25rem;
+  --bottom-fade-mask-1: linear-gradient(
+    to top,
+    #000 48%,
+    rgb(0 0 0 / 0.54) 65.8%,
+    rgb(0 0 0 / 0.28) 77.5%,
+    rgb(0 0 0 / 0.13) 85.9%,
+    rgb(0 0 0 / 0.04) 92.6%,
+    transparent 100%
+  );
+  --bottom-fade-mask-2: linear-gradient(
+    to top,
+    #000 30%,
+    rgb(0 0 0 / 0.54) 45%,
+    rgb(0 0 0 / 0.28) 55%,
+    rgb(0 0 0 / 0.13) 62.1%,
+    rgb(0 0 0 / 0.04) 67.8%,
+    transparent 74%
+  );
+  --bottom-fade-mask-3: linear-gradient(
+    to top,
+    #000 17%,
+    rgb(0 0 0 / 0.54) 29%,
+    rgb(0 0 0 / 0.28) 36.8%,
+    rgb(0 0 0 / 0.13) 42.5%,
+    rgb(0 0 0 / 0.04) 47%,
+    transparent 52%
+  );
+  --bottom-fade-mask-4: linear-gradient(
+    to top,
+    #000 0%,
+    rgb(0 0 0 / 0.54) 11.3%,
+    rgb(0 0 0 / 0.28) 18.7%,
+    rgb(0 0 0 / 0.13) 24.1%,
+    rgb(0 0 0 / 0.04) 28.3%,
+    transparent 33%
+  );
+
+  height: var(--bottom-fade-height);
+  pointer-events: none;
+}
+
+:is(.mosaic-about-fade, .notes-gallery-fade) > span {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+:is(.mosaic-about-fade, .notes-gallery-fade) > span:nth-child(1) {
+  -webkit-backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.12));
+  backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.12));
+  -webkit-mask-image: var(--bottom-fade-mask-1);
+  mask-image: var(--bottom-fade-mask-1);
+}
+
+:is(.mosaic-about-fade, .notes-gallery-fade) > span:nth-child(2) {
+  -webkit-backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.3));
+  backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.3));
+  -webkit-mask-image: var(--bottom-fade-mask-2);
+  mask-image: var(--bottom-fade-mask-2);
+}
+
+:is(.mosaic-about-fade, .notes-gallery-fade) > span:nth-child(3) {
+  -webkit-backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.62));
+  backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.62));
+  -webkit-mask-image: var(--bottom-fade-mask-3);
+  mask-image: var(--bottom-fade-mask-3);
+}
+
+:is(.mosaic-about-fade, .notes-gallery-fade) > span:nth-child(4) {
+  -webkit-backdrop-filter: blur(var(--bottom-fade-blur));
+  backdrop-filter: blur(var(--bottom-fade-blur));
+  -webkit-mask-image: var(--bottom-fade-mask-4);
+  mask-image: var(--bottom-fade-mask-4);
+}
+
+:is(.mosaic-about-fade, .notes-gallery-fade)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--canvas) 2%, transparent) 10%,
+    color-mix(in srgb, var(--canvas) 8%, transparent) 20%,
+    color-mix(in srgb, var(--canvas) 18%, transparent) 30%,
+    color-mix(in srgb, var(--canvas) 32%, transparent) 40%,
+    color-mix(in srgb, var(--canvas) 50%, transparent) 50%,
+    color-mix(in srgb, var(--canvas) 68%, transparent) 60%,
+    color-mix(in srgb, var(--canvas) 82%, transparent) 70%,
+    color-mix(in srgb, var(--canvas) 92%, transparent) 80%,
+    color-mix(in srgb, var(--canvas) 98%, transparent) 90%,
+    var(--canvas) 100%
+  );
+}
+
 /* ----------------------------------------------------- bottom scroll edge --- */
 
 .elastic-scroll-edge {

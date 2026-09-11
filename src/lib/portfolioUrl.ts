@@ -74,9 +74,11 @@ const itemLocations: Record<PortfolioItem, ItemLocation> = {
       if (!writing) return
       url.pathname = writingPath(writing)
       url.searchParams.delete("writing")
+      url.hash = ""
     },
     clear: url => {
       url.searchParams.delete("writing")
+      url.hash = ""
       if (writingAtPath(url.pathname)) url.pathname = notesPath
     },
   },

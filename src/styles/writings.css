@@ -181,7 +181,7 @@
 .writing-entry-trigger:hover { background: var(--mosaic-card-surface); }
 .writing-entry-trigger:focus-visible { outline-offset: -2px; }
 .writing-entry-trigger[aria-busy="true"] { background: var(--mosaic-card-surface); cursor: progress; }
-.writing-reader { width: min(100%, var(--writings-column)); margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+.writing-reader { --writing-contents-height: 44px; width: min(100%, var(--writings-column)); margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 .writing-reader-header { margin-bottom: 1.5rem; }
 .writing-reader-date { margin-bottom: 0.25rem; color: var(--muted); font-size: var(--text-xs); line-height: 1.5; letter-spacing: 0; }
 /* Sits under the title and date, so the reserved height is load-bearing: counts
@@ -201,7 +201,166 @@
 /* A section heading is the same size as the copy under it and separates by
    weight, so the space has to do the grouping: 48px above it, 12px below. */
 .writing-reader-section { margin-top: 3rem; }
-.writing-reader-section h3 { margin: 0 0 0.75rem; color: var(--ink); font-size: var(--text-sm); font-weight: 600; line-height: 1.45; letter-spacing: -0.00563rem; }
+.writing-reader-section h3 {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.00563rem;
+  /* A jump from the contents lands the heading just under the top of whatever
+     scrolls it. The site-wide 5rem clears the home page's header, which
+     neither the notes card nor the standalone page has. */
+  scroll-margin-top: calc(1.5rem + var(--writing-contents-height));
+  /* A hairline runs from the heading to the measure's edge, so each section
+     reads as a new stretch without a rule strong enough to box it off. */
+  display: flex;
+  gap: 1rem;
+}
+/* The rule takes only the width the heading leaves over. A heading long enough
+   to wrap leaves none, so it goes without rather than strand a stub at the far
+   edge: a wrapped text box is as wide as the measure, not as its longest line,
+   so the stub would float well clear of the words. */
+.writing-reader-section h3::after {
+  content: "";
+  flex: 1 1 0;
+  align-self: center;
+  height: 1px;
+  background: rgb(0 0 0 / 0.06);
+}
+/* One horizontal contents row sits between the article header and its prose.
+   It begins as "Contents", then carries the section being read in the same
+   text position, updating immediately when the section changes.
+   The hairline is the row's only container, so it stays part of the page rather
+   than becoming a second floating surface inside the reader. */
+.writing-contents {
+  --writing-contents-gutter: max(0px, calc((100cqi - var(--writings-measure)) / 2));
+  --writing-contents-offset: calc(var(--preview-gallery-card-padding, 0px) + var(--writing-contents-gutter));
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  width: 100%;
+  margin-left: 0;
+  margin-bottom: 2rem;
+  padding-inline: 0;
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  background: var(--canvas);
+  transition:
+    width var(--duration-slow) var(--ease-smooth),
+    margin-left var(--duration-slow) var(--ease-smooth),
+    padding-inline var(--duration-slow) var(--ease-smooth);
+}
+.writing-contents::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+.writing-contents[data-stuck="true"]::before { opacity: 1; }
+.writing-contents-sentinel { display: block; height: 0; }
+.writings-dialog .writing-contents { top: -0.5rem; }
+/* In the reading dialog, the pinned row reaches through the column gutters and
+   the card padding to the same edges as the Notes toolbar. Its contents keep
+   their place on the prose measure while the hairline and shadow span the
+   modal, joining the two pieces of persistent chrome. */
+.writings-dialog .writing-contents[data-stuck="true"] {
+  width: calc(100% + 2 * var(--writing-contents-offset));
+  margin-left: calc(-1 * var(--writing-contents-offset));
+  padding-inline: var(--writing-contents-offset);
+}
+.writing-contents-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: var(--writing-contents-height);
+  padding: 0.625rem 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  letter-spacing: -0.00563rem;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+.writing-contents-trigger:hover,
+.writing-contents-trigger:focus-visible { color: var(--ink); }
+.writing-contents-trigger:focus-visible { outline-offset: 2px; }
+.writing-contents-current {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.writing-contents-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  transition: transform var(--duration-base) var(--ease-smooth);
+}
+.writing-contents[data-open="true"] .writing-contents-chevron { transform: rotate(-180deg); }
+
+/* The disclosed rows grow from the compact line without introducing another
+   surface. The inner list owns the overflow so a zero grid track closes all
+   the way instead of leaving its padding behind. */
+.writing-contents-panel {
+  position: absolute;
+  z-index: 1;
+  top: 100%;
+  right: 0;
+  left: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  background: var(--canvas);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    grid-template-rows var(--duration-base) var(--ease-smooth),
+    opacity var(--duration-quick) var(--ease-standard);
+}
+.writing-contents[data-open="true"] .writing-contents-panel {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+.writing-contents ol {
+  width: min(100%, var(--writings-measure));
+  min-height: 0;
+  overflow: hidden;
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+}
+.writing-contents a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-inline: -0.5rem;
+  padding: 0.625rem 0.5rem;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  letter-spacing: -0.00563rem;
+  text-decoration: none;
+  text-wrap: pretty;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+}
+.writing-contents a:hover { background: var(--mosaic-card-surface); }
+.writing-contents a:hover,
+.writing-contents a[aria-current] { color: var(--ink); }
+.writing-contents a:focus-visible { outline-offset: -2px; }
+
 /* The one code sample in the reader. It sits on the card surface the rest of
    the site uses for a held object, at the caption step: it is a quotation from
    a file rather than the article's own voice, and the monospace face is wider
@@ -492,5 +651,5 @@
 .writing-copy-link-icon { flex-shrink: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .writing-copy-link { transition: none; }
+  .writing-copy-link, .writing-contents a { transition: none; }
 }

@@ -278,7 +278,7 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
+    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, contents rows, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
@@ -422,6 +422,7 @@ const DURATIONS_ENTRIES = [
   { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
   { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening on hover or focus, and the sheet rewinding before close (--photo-rewind-duration)." },
   { value: "200ms", use: "Personal-photo sheet: --photo-open-duration and --photo-close-duration both alias --duration-base. Every flight, its caption, and the backdrop share one beat in either direction, with no stagger and no delay — the whole hand leaves together and comes home together. Reduced motion removes the transitions and flights." },
+  { value: "60ms", use: "--card-caption-delay: how long a work tile's caption, tint, and blur ramp wait before fading in or out. While a tile's video loops, Chrome runs an otherwise idle page at 30fps, and a fade that started on the hover's first frame jumped instead of easing. The page-entrance and About stagger also step by 60ms." },
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },
   { value: "1100ms / 1200ms / 240ms", use: "The avatar coin. One whole turn under the pointer over 1100ms, and a click adds another over 1200ms, then hands over to the About scroll 240ms in — long enough that the spin is what started the scroll, short enough that the click still feels answered. Both are slow on purpose: a coin this small has to turn lazily to read as turning at all. JavaScript reads all three numbers from the coin's own custom properties." },
@@ -450,7 +451,7 @@ const STACKING_ENTRIES = [
     name: "--z-dock / --z-chrome",
     note: "The page and main content wrapper (Tailwind's z-dock maps onto the token). The bottom scroll edge sits inside main at --z-chrome, below the table of contents at --z-social.",
   },
-  { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
+  { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side. Inside it, the sticky bottom fade takes z 1 of its own, above the intro column." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
   {
     z: "--z-corner",
@@ -1199,8 +1200,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   photograph rather than sitting on a page. Taking no room in the flow is the point: a row of its own
                   under the title would push every description down whether or not anyone ever taps it.
                   Below the artwork, the project title and a single description cover the product, contribution,
-                  and result. Left-aligned collaborator avatar links follow the description without a visible label,
-                  starting with mine on every project so a solo shot is credited rather than unattributed.
+                  and result. On fine-pointer desktop layouts, a 3.5rem white wash fades over the card&rsquo;s bottom
+                  edge only while more project content remains below it, making a short laptop viewport&rsquo;s hidden
+                  overflow visible without adding a scrollbar. The wash shares the card&rsquo;s paging motion so it
+                  never remains over the backdrop between slides. Left-aligned collaborator avatar links follow the
+                  description without a visible label. Project teammates sit before mine, so a newly introduced
+                  person arrives from the left over <code>--duration-base</code> while my stable final credit stays
+                  put; reduced motion reveals them immediately, and a solo shot still reads as credited rather than unattributed.
                   The description uses <code>--text-md</code>, a 1.6 line height, the existing prose colour
                   <code>#545454</code>, and a 46rem maximum measure. Credits use <code>--text-sm</code>
                   with 1.5rem of space above them. The text column is a centered 48rem
@@ -1238,7 +1244,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="project-caption-visibility"
-                data-ds-terms={terms("--card-caption-blur 2.5rem --card-caption-tint --card-caption-weight scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 0.93 ink white 360ms eased compact desktop mobile touch no caption hidden aria-label")}
+                data-ds-terms={terms("--card-caption-blur 2.5rem --card-caption-tint --card-caption-weight scrim backdrop ramp mask 12% 30% 40% 62% 100% 0.62 0.57 0.93 ink white 360ms 60ms --card-caption-delay delay 30fps video eased compact desktop mobile touch no caption hidden aria-label")}
               >
                 <strong>
                   <code>--card-caption-blur: 2.5rem</code> is the work tile's caption backdrop, and it is a ramp.
@@ -1266,7 +1272,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   across the whole band instead of ending partway up: a linear ramp changes slope where it reaches
                   zero, and the eye reads that break as an edge. The two fade on separate clocks — the tint at the 160ms hover default alongside
                   the caption, the ramp at the 360ms un-blurring step — because fading them together held the caption
-                  illegible until four backdrop rasters were ready, and the whole effect read as a stall. It paints only
+                  illegible until four backdrop rasters were ready, and the whole effect read as a stall. Both clocks
+                  wait <code>--card-caption-delay: 60ms</code> before they start, in either direction: while a tile's
+                  loop plays, Chrome paces an otherwise idle page at the video's 30fps, and a fade that began on the
+                  hover's first frame arrived as a 32% jump, a held frame, and a second jump before it eased. The delay
+                  spends that ramp-up, so the first frame that moves is an ordinary step. It paints only
                   on hover and focus, one tile at a time. Below 700px and on touch screens, the entire scrim is hidden
                   and so is the caption: with no hover to reveal it, a name would have to sit on every tile at once,
                   over artwork that already carries the project's own wordmark. The title still reaches assistive
@@ -1349,7 +1359,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 to 1rem above the viewport bottom or the safe-area inset, whichever is larger. All articles retain that height
                 and scroll internally; Back animates to the list's natural height. Mobile keeps the full-height gallery
                 frame and toolbar. Reduced motion changes state instantly.
-                The toolbar's 5% black divider and short shadow appear only while scrolled, over 160ms.
+                Long notes place one 44px contents row below their title and actions, with a 6% hairline across the
+                reading measure. It begins as “Contents”; after the introduction, the section being read replaces that
+                label immediately as its heading crosses the pinned row, with no fade, blur, or slide;
+                crossing back above the first heading restores “Contents”, while the final section holds
+                through the article's end. A press discloses every section
+                in 44px rows over the prose without reflowing it; selection closes the list, focuses the heading, and
+                scrolls without adding history. Once its natural position passes the top of the reader, the row pins
+                directly beneath Notes, then eases through the gutters and card padding to the modal edges over
+                --duration-slow (360ms) with --ease-smooth while its 5% upper hairline and short lower shadow resolve over the
+                same beat. The scroll viewport reaches the card edges so it cannot clip the rail or its shadow.
+                The shadow fades on a separate layer, replacing the Notes toolbar shadow while pinned.
+                Reduced motion makes the disclosure and pinned transition immediate too.
+                The toolbar's own 5% black divider and short shadow appear only while scrolled, over 160ms.
                 The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes and tools" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
@@ -1375,8 +1397,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 sits 7 to 17px outside the column, and leans up to 2.4 degrees either way. Notes sharing one offset drew
                 a second column down each edge, and a fixed cycle of three only moved that pattern rather than breaking it.
                 The gutters only exist from a 48rem Notes container; below that a note folds into the
-                column under its paragraph, bracket first. Nothing else interrupts the column: the reader has no rules
-                and no interjections between paragraphs.
+                column under its paragraph, bracket first. Nothing interrupts the prose itself: beyond the contents and
+                section-heading hairlines, the reader has no rules and no interjections between paragraphs.
                 Notes are ordinary text in the reading order: a gutter note reads after its paragraph, and it is never
                 announced as a separate landmark or the only place a point is made.
                 The archive leaves the same two gutters empty, and draws into them instead: the things a note gets
@@ -1419,7 +1441,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 height and -0.00563rem tracking, and the column is the measure, so paragraphs carry none of their own.
                 Paragraphs are separated by 16px. Section headings sit on the reading step at 600 weight with 1.45 line
                 height and -0.00563rem tracking, 48px above and 12px below, so the space does the grouping the size no
-                longer does; nothing is drawn in that break. List entries use --text-sm, 1.5 line height, -0.00563rem tracking, and pretty wrapping.
+                longer does. A 1px 6% black rule, the shared hairline weight, runs from 16px after the heading to the
+                column's edge, level with the middle of the line; a heading long enough to wrap has no width left
+                over and goes without one rather than leave a stub at the far edge. List entries use --text-sm, 1.5 line height, -0.00563rem tracking, and pretty wrapping.
                 The reader date uses --text-xs, 1.5 line height, and no tracking, 4px above the title; row dates sit on the entry's own --text-sm.
                 Category headings use --text-xs. Font kerning is enabled throughout the dialog.
                 Inline images retain their intrinsic
@@ -2076,10 +2100,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
                   them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
-                  The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity, ink text,
-                  and a 16px close icon. The collapsed row shows an upward chevron instead.
-                  Icons fade over 160ms; the chevron rotates 90 degrees while the close icon scales from 0.8 to 1.
-                  Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
+                  The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity and ink text,
+                  with no close icon. The collapsed row shows a 16px upward chevron, which fades out over 160ms
+                  on opening. Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
                   label. Other rows are inert and
                   hidden from assistive technology when closed; keyboard focus rings sit 2px inside the row.
                   Selection, outside click, Escape, or focus leaving the control closes it. Resizing preserves its open state.
@@ -2188,6 +2211,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   scroll position to the top, holding preview playback until the return settles so video compositing
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
+                </li>
+                <li data-ds-terms={terms("bottom fade progressive blur backdrop-filter 1.25rem gradient --canvas clamp(3rem, 8vh, 4.5rem) 3rem sticky safe area seam sheet notes card mask rounded clip")}>
+                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet and the notes card
+                  soften their copy as it sinks, with the work tiles&rsquo; caption blur rescaled to the strip: four
+                  masked layers stepping the radius from 0.12 of <code>1.25rem</code> up to all of it, under an eased
+                  ramp into <code>--canvas</code>. The project grid and the previews do not fade. The sheet&rsquo;s
+                  fade covers the bottom <code>clamp(3rem, 8vh, 4.5rem)</code> of the viewport plus the safe-area
+                  inset, sticky to the viewport&rsquo;s foot. It is the sheet&rsquo;s last child and pulls itself back
+                  over the panel&rsquo;s bottom padding, so it adds no height, never paints outside the sheet&rsquo;s
+                  opaque layer, and arrives with the sheet rather than washing out the seam it crosses on. At the end
+                  of the page it rests on that padding, clear of the last line. The notes card&rsquo;s is 3rem and sits
+                  over the card as its next sibling in the popup, not inside it: Chrome ignores the layers&rsquo; masks
+                  inside a rounded overflow clip and blurs the whole strip at full strength. Its layers take the
+                  card&rsquo;s bottom corners themselves, and borrow the card&rsquo;s switch opacity when Notes pages
+                  to a project. Neither blur measurably changed scrolling frame times in Chrome.
                 </li>
                 <li data-ds-terms={terms("about reading surface 36rem process how i work services pricing faq common questions stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
                   <strong>About is one continuous reading surface.</strong> The introduction, the worked-with wall,

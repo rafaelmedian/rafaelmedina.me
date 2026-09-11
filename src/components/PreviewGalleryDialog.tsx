@@ -87,7 +87,7 @@ function getPreviewDescription(card: PortfolioCard) {
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
   // Credited on every project, with or without company: a shot with no names
   // under it reads as unattributed rather than as solo work.
-  return [collaborators.rafael, ...(card.team ?? [])]
+  return [...(card.team ?? []), collaborators.rafael]
 }
 
 function getInitials(name: string) {
@@ -146,6 +146,7 @@ export function PreviewGalleryDialog({
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("next")
   const [isWide, setIsWide] = useState(shouldOpenPreviewWide)
+  const [showScrollCue, setShowScrollCue] = useState(false)
   const safeIndex = useMemo(() => wrapIndex(selectedIndex, items.length), [items.length, selectedIndex])
   const activeItem = items[safeIndex]
   const activeCard = activeItem?.kind === "project" ? activeItem.card : undefined
@@ -208,6 +209,17 @@ export function PreviewGalleryDialog({
         `[data-writing-id="${notesPage.displayed}"]`,
       ) ?? returnRow.current
       if (focusNoteTitle.current) noteTitleRef.current?.focus({ preventScroll: true })
+      // Hydration replaces the standalone article, including its native
+      // fragment scroll. Restore that destination in the mounted reader.
+      let fragment = window.location.hash.slice(1)
+      try { fragment = decodeURIComponent(fragment) } catch { /* An invalid escape cannot name a section. */ }
+      const section = fragment ? scroller.querySelector<HTMLElement>(
+        `.writing-reader-section h3#${CSS.escape(fragment)}`,
+      ) : null
+      if (section) {
+        section.focus({ preventScroll: true })
+        section.scrollIntoView({ block: "start", behavior: "instant" })
+      }
     } else {
       scroller.scrollTop = listScrollTop.current
       const row = returnRow.current
@@ -224,6 +236,38 @@ export function PreviewGalleryDialog({
   const activeMediaSource = activeCard?.image ?? ""
   const activeDescription = activeCard ? getPreviewDescription(activeCard) : ""
   const activeCollaborators = activeCard ? getPreviewCollaborators(activeCard) : []
+
+  useEffect(() => {
+    const card = cardRef.current
+    if (!open || !activeCard || !card) {
+      setShowScrollCue(false)
+      return
+    }
+
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const remaining = card.scrollHeight - card.clientHeight - card.scrollTop
+      setShowScrollCue(card.scrollHeight > card.clientHeight + 1 && remaining > 1)
+    }
+    const scheduleUpdate = () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(update)
+    }
+
+    card.addEventListener("scroll", scheduleUpdate, { passive: true })
+    const observer = new ResizeObserver(scheduleUpdate)
+    observer.observe(card)
+    const inner = card.firstElementChild
+    if (inner) observer.observe(inner)
+    scheduleUpdate()
+
+    return () => {
+      card.removeEventListener("scroll", scheduleUpdate)
+      observer.disconnect()
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [activeCard, isWide, open, originWrapNode])
 
   const playOpen = useSound(openSound, { volume: 0.3 })
   const playClose = useSound(closeSound, { volume: 0.26 })
@@ -782,6 +826,25 @@ export function PreviewGalleryDialog({
                   )}
                 </div>
               </article>
+
+              {activeCard ? (
+                <div
+                  className={`preview-gallery-scroll-cue-wrap${switchClassName}`}
+                  aria-hidden="true"
+                >
+                  <div className="preview-gallery-scroll-cue" data-visible={showScrollCue ? "true" : undefined} />
+                </div>
+              ) : null}
+
+              {/* The notes card's bottom fade sits over the card rather than in
+                  it: Chrome drops the mask from a backdrop blur inside a rounded
+                  overflow clip, and the card is one. Holding still while the
+                  page scrolls and turns underneath it comes free. */}
+              {activeItem?.kind === "writings" ? (
+                <div className="notes-gallery-fade" aria-hidden="true">
+                  <span /><span /><span /><span />
+                </div>
+              ) : null}
 
               <div className="preview-gallery-rail" role="group" aria-label={readingNote ? "Note navigation" : "Preview navigation"}>
                 <button

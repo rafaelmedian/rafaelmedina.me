@@ -28,8 +28,31 @@
   border-radius: 0;
   border: 0;
   background: var(--canvas);
-  padding: clamp(5rem, 10vw, 8.75rem) clamp(1.25rem, 6vw, 5rem) clamp(2.5rem, 7vw, 5.5rem);
+  /* The bottom inset carries the fade's safe-area share: the sheet's fade
+     comes to rest over this padding at the end of the page. */
+  padding:
+    clamp(5rem, 10vw, 8.75rem)
+    clamp(1.25rem, 6vw, 5rem)
+    calc(clamp(2.5rem, 7vw, 5.5rem) + env(safe-area-inset-bottom));
   overflow: hidden;
+}
+
+/* The sheet's bottom fade (the ramp is in page-edge.css), sticky to the
+   viewport's foot for as long as the sheet reaches past it. It is the sheet's
+   last child and pulls itself back over the panel's bottom padding, so it adds
+   no height and never paints outside the sheet's box: the sheet's compositor
+   layer has to stay exactly its own size to stay opaque (see the runway seam in
+   work-grid.css). Inside that box it follows the sheet in over the gallery with
+   nothing to wash out the seam. At the end of the page it comes to rest on the
+   padding, clear of the last line. z-index 1 clears the intro column, which
+   takes 1 of its own for the local-time card. */
+.mosaic-about-fade {
+  --bottom-fade-height: calc(clamp(3rem, 8vh, 4.5rem) + env(safe-area-inset-bottom));
+
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: calc(-1 * var(--bottom-fade-height));
 }
 
 .mosaic-about-body {

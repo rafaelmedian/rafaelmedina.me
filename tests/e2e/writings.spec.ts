@@ -290,8 +290,11 @@ test("the toolbar divider appears only once the article has scrolled", async ({ 
   // The line and its shadow are both fully transparent while the article rests at its top.
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0)")
   const reader = dialog.locator(".writings-scroll")
-  await reader.evaluate((element) => element.scrollTo(0, 400))
+  await reader.evaluate((element) => element.scrollTo(0, 20))
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
+  await reader.evaluate((element) => element.scrollTo(0, 400))
+  await expect(dialog.locator('.writing-contents')).toHaveAttribute('data-stuck', 'true')
+  await expect.poll(shadow).not.toContain("rgba(0, 0, 0, 0.05)")
   // Turning to the next note resets the reader to the top, so the divider goes with it.
   await dialog.getByRole("button", { name: "Next note", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeVisible()
@@ -406,7 +409,8 @@ test("margin notes hang in the gutters without widening the reader", async ({ pa
     // And it uses the gutter rather than sitting in a sliver of it: a note is
     // most of the width the reading column leaves over on its side.
     const column = (await dialog.locator(".writing-reader").boundingBox())!
-    const gutter = bounds!.x + bounds!.width - (column.x + column.width)
+    const cardPadding = await reader.evaluate((element) => parseFloat(getComputedStyle(element).paddingRight))
+    const gutter = bounds!.x + bounds!.width - cardPadding - (column.x + column.width)
     expect(noteBox.width).toBeGreaterThan(gutter * 0.7)
   }
 })
@@ -457,8 +461,7 @@ test("a hovered row boils its drawing through its frames", async ({ page }) => {
   await expect(drawing).toHaveCSS("mask-position", "0px 0px")
   // Its row wakes it, and it steps through the other frames rather than
   // sliding between them.
-  const row = (await owner.locator(".writing-entry-trigger").boundingBox())!
-  await page.mouse.move(row.x + 40, row.y + row.height / 2, { steps: 4 })
+  await owner.locator(".writing-entry-trigger").hover()
   await expect(drawing).toHaveCSS("animation-name", "writings-drawing-boil")
   const frames = new Set<string>()
   await expect.poll(async () => {
@@ -533,6 +536,238 @@ test("margin notes fold into the column when the gutters are gone", async ({ pag
   expect(await prose.textContent()).toContain("And I still typed three paragraphs describing it")
 })
 
+test("the contents open from one horizontal row and jump without adding history", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/designing-matcha/")
+  const dialog = sheet(page)
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  const trigger = contents.locator(".writing-contents-trigger")
+  await expect(trigger).toHaveAccessibleName("Contents: Introduction")
+  await expect(trigger).toHaveText("Contents")
+  await expect(contents.getByRole("link")).toHaveCount(0)
+
+  // The compact control is one row between the article header and body, on
+  // the reading column rather than in either marginalia gutter.
+  const [contentsBox, header] = await Promise.all([
+    contents.boundingBox(),
+    dialog.locator(".writing-reader-header").boundingBox(),
+  ])
+  expect(Math.round(contentsBox!.x)).toBe(Math.round(header!.x))
+  expect(Math.round(contentsBox!.width)).toBe(Math.round(header!.width))
+  expect(contentsBox!.y).toBeGreaterThanOrEqual(header!.y + header!.height)
+  expect(await contents.evaluate((element) => getComputedStyle(element).borderBottomWidth)).toBe("1px")
+
+  await trigger.click()
+  await expect(contents.getByRole("link")).toHaveText([
+    "Different reasons to arrive",
+    "The space around the trade",
+    "A system has to survive the awkward states",
+    "What the screens can tell you",
+  ])
+  // A real fragment underneath, so the static page and a copied link work
+  // without the reader.
+  const row = contents.getByRole("link", { name: "A system has to survive the awkward states" })
+  await expect(row).toHaveAttribute("href", "#a-system-has-to-survive-the-awkward-states")
+
+  // The introduction is not a listed section, so nothing is marked at the top.
+  const currentRows = contents.locator("a[aria-current]")
+  await expect(currentRows).toHaveCount(0)
+
+  const historyLength = await page.evaluate(() => history.length)
+  await row.click()
+  const heading = dialog.getByRole("heading", { name: "A system has to survive the awkward states" })
+  await expect(heading).toBeFocused()
+  await expect(contents.getByRole("link")).toHaveCount(0)
+  // The jump preserves the reader's 24px breathing room, so the preceding
+  // section remains current until the new heading crosses the rail.
+  await expect(trigger).toHaveText("The space around the trade")
+  const reader = dialog.locator(".writings-scroll")
+  await reader.evaluate((element) => element.scrollBy(0, 24))
+  await expect(trigger).toHaveText("A system has to survive the awkward states")
+  await expect(trigger).toHaveAccessibleName("Contents: A system has to survive the awkward states")
+  await trigger.click()
+  await expect(currentRows).toHaveText(["A system has to survive the awkward states"])
+  await trigger.click()
+  // The card scrolls, not the page.
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  await expect(page).toHaveURL(/\/notes\/designing-matcha\/$/)
+  expect(await page.evaluate(() => history.length)).toBe(historyLength)
+
+  // A short last section may never climb to the rail, so the end of the note
+  // still hands the mark to it.
+  await reader.evaluate((element) => element.scrollTo(0, element.scrollHeight))
+  await expect(trigger).toHaveText("What the screens can tell you")
+
+  // The gallery closes a note by stepping back through history, so one Back
+  // still leaves the note after a jump.
+  await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await expect(dialog).toBeHidden()
+})
+
+test("the compact contents label changes without animation", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/notes/room-to-figure-it-out/")
+  const dialog = sheet(page)
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  const heading = dialog.getByRole("heading", { name: "Everyday decisions are practice" })
+  await heading.evaluate((element) => element.scrollIntoView({ block: "start", behavior: "instant" }))
+  await expect(contents).toHaveAttribute("data-stuck", "true")
+  await dialog.locator(".writings-scroll").evaluate((element) => element.scrollBy(0, 24))
+  await expect(contents.locator(".writing-contents-current")).toHaveText("Everyday decisions are practice")
+  await expect(contents.locator(".writing-contents-current")).toHaveCSS("animation-name", "none")
+  await expect(contents.locator(".writing-contents-current")).toHaveCSS("filter", "none")
+  await dialog.getByRole("heading", { name: "Leaving is not equally available to everyone", exact: true })
+    .evaluate((element) => {
+      element.scrollIntoView({ block: "start", behavior: "instant" })
+      element.closest(".writings-scroll")!.scrollTop += 30
+    })
+  await expect(contents.locator(".writing-contents-current")).toHaveText("Leaving is not equally available to everyone")
+  expect(await contents.locator(".writing-contents-current").evaluate((element) => element.getAnimations().length)).toBe(0)
+})
+
+test("the contents label changes only as section headings cross the pinned row", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/room-to-figure-it-out/")
+  const dialog = sheet(page)
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  const trigger = contents.locator(".writing-contents-trigger")
+  const scroller = dialog.locator(".writings-scroll")
+  const first = dialog.getByRole("heading", { name: "Everyday decisions are practice" })
+
+  const placeHeading = async (offsetFromContents: number) => {
+    await first.evaluate((heading, offset) => {
+      const reader = heading.closest(".writings-scroll")!
+      const rail = reader.querySelector(".writing-contents")!
+      reader.scrollTop += heading.getBoundingClientRect().top - rail.getBoundingClientRect().bottom - offset
+    }, offsetFromContents)
+  }
+
+  await placeHeading(1)
+  await expect(contents).toHaveAttribute("data-stuck", "true")
+  await expect(trigger).toHaveText("Contents")
+
+  await placeHeading(-1)
+  await expect(trigger).toHaveText("Everyday decisions are practice")
+
+  await placeHeading(1)
+  await expect(trigger).toHaveText("Contents")
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  await expect(scroller).not.toHaveJSProperty("scrollTop", 0)
+})
+
+test("the contents row eases out to the modal edges beneath Notes and tools", async ({ page }) => {
+  await page.setViewportSize({ width: 2048, height: 646 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/notes/project-context-in-markdown/")
+  const dialog = sheet(page)
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  const scroller = dialog.locator(".writings-scroll")
+  const card = dialog.locator(".preview-gallery-card")
+  const readerHeader = dialog.locator(".writing-reader-header")
+  await expect(contents).toHaveAttribute("data-stuck", "false")
+  await contents.evaluate((element) => {
+    element.setAttribute("style", "transition-duration: 2s")
+  })
+  await scroller.evaluate((element) => element.scrollTo(0, 320))
+  await expect(contents).toHaveAttribute("data-stuck", "true")
+
+  await expect.poll(async () => {
+    const [movingBox, cardBox, headerBox] = await Promise.all([
+      contents.boundingBox(),
+      card.boundingBox(),
+      readerHeader.boundingBox(),
+    ])
+    return movingBox!.width > headerBox!.width && movingBox!.width < cardBox!.width - 1
+  }).toBe(true)
+
+  await page.waitForTimeout(2000)
+  const [contentsBox, scrollerBox, cardBox] = await Promise.all([
+    contents.boundingBox(),
+    scroller.boundingBox(),
+    card.boundingBox(),
+  ])
+  expect(Math.round(contentsBox!.y)).toBe(Math.round(scrollerBox!.y))
+  expect(Math.abs(contentsBox!.x - cardBox!.x)).toBeLessThan(1.1)
+  expect(Math.abs(contentsBox!.x + contentsBox!.width - cardBox!.x - cardBox!.width)).toBeLessThan(1.1)
+  expect(await contents.evaluate((element) => getComputedStyle(element).position)).toBe("sticky")
+  expect(await contents.evaluate((element) => getComputedStyle(element, "::before").opacity)).toBe("1")
+  // A correct rail rect is insufficient when an ancestor clips its paint.
+  expect(Math.abs(scrollerBox!.x - contentsBox!.x)).toBeLessThan(1.1)
+  expect(Math.abs(scrollerBox!.width - contentsBox!.width)).toBeLessThan(1.1)
+})
+
+test("a shared section link survives the handoff to the reader", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/designing-matcha/#a-system-has-to-survive-the-awkward-states")
+  const dialog = sheet(page)
+  const heading = dialog.getByRole("heading", { name: "A system has to survive the awkward states" })
+  await expect(heading).toBeVisible()
+  const reader = dialog.locator(".writings-scroll")
+  await expect.poll(async () => {
+    const [headingBox, readerBox] = await Promise.all([heading.boundingBox(), reader.boundingBox()])
+    return Math.round(headingBox!.y - readerBox!.y)
+  }).toBe(68)
+  await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
+  await expect(page).toHaveURL(/\/notes\/$/)
+})
+
+test("inline contents leave both marginalia gutters available", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/")
+  const dialog = sheet(page)
+  const entries = popup(page).locator(".writings-category li button")
+  await expect(entries.first()).toBeVisible()
+  const count = await entries.count()
+  for (let index = 0; index < count; index += 1) {
+    const id = await entries.nth(index).locator(".writing-entry-title").innerText()
+    await entries.nth(index).click()
+    await expect(dialog.locator(".writing-reader")).toBeVisible()
+    const contents = dialog.getByRole("navigation", { name: "Contents" })
+    if (await contents.count()) {
+      const column = (await dialog.locator(".writing-reader").boundingBox())!
+      const contentsBox = (await contents.boundingBox())!
+      const header = (await dialog.locator(".writing-reader-header").boundingBox())!
+      expect(Math.round(contentsBox.x), id).toBe(Math.round(header.x))
+      expect(Math.round(contentsBox.x + contentsBox.width), id).toBe(Math.round(header.x + header.width))
+      // Removing the contents from the left gutter lets authored notes keep
+      // their own side instead of being rerouted to the right.
+      const notes = await dialog.locator(".writing-margin-note")
+        .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON() as DOMRect))
+      for (const note of notes) expect(note.right <= column.x || note.left >= column.x + column.width, id).toBe(true)
+    }
+    await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
+    await expect(dialog).toBeHidden()
+  }
+
+  // The same row stays in the column when the card becomes compact.
+  await page.setViewportSize({ width: 1200, height: 900 })
+  await page.goto("/notes/designing-matcha/")
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  await expect(contents).toBeVisible()
+  await expect.poll(() => dialog.locator(".writing-reader").evaluate((reader) => {
+    const column = reader.getBoundingClientRect()
+    const contentsBox = reader.querySelector(".writing-contents")!.getBoundingClientRect()
+    const prose = reader.querySelector(".writing-reader-prose")!.getBoundingClientRect()
+    return Math.round(contentsBox.x) === Math.round(column.x)
+      && contentsBox.bottom <= prose.y
+  })).toBe(true)
+})
+
+test("More notes show the archive dates beside their titles", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/notes/room-to-figure-it-out/")
+  const more = sheet(page).getByRole("region", { name: "More notes" })
+  await expect(more.locator("time")).toHaveText(["07/09", "29/07", "16/06"])
+  await expect(more.locator("time").first()).toHaveAttribute("aria-hidden", "true")
+})
+
 test("an article closes with its acknowledgements above More notes", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -561,8 +796,9 @@ test("keeps marginalia to two notes an article, one in each gutter", async ({ pa
     const places = await dialog.locator(".writing-reader-prose .writing-margin-note")
       .evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.place))
     // Marginalia is an aside, not a second column: past a couple an article a
-    // reader stops reading the page and starts reading the margin. One goes in
-    // each gutter, so neither edge ever grows a stack.
+    // reader stops reading the page and starts reading the margin. One is
+    // written for each gutter, so neither edge ever grows a stack; where the
+    // contents float in the left one, both hang right, one early, one late.
     expect(places.length, id).toBeLessThanOrEqual(2)
     expect(new Set(places).size, id).toBe(places.length)
     // The interjections that used to drop between paragraphs are gone with them.

@@ -41,7 +41,8 @@ export type WritingSection = {
 // characters wide -- and keep them rare: two an article, one early and one
 // late, one in each gutter. They used to run to five, plus interjections
 // dropped between the paragraphs, and at that rate a reader stops reading the
-// article and starts reading the margin.
+// article and starts reading the margin. Where the reader floats a note's
+// contents in the left gutter, a note written for that side hangs right.
 export type WritingAnnotation = {
   text: string
   /** Zero-based paragraph within the block the note is pinned beside. */
