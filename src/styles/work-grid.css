@@ -1298,9 +1298,19 @@
 
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub {
   /* The dashboard is intentionally taller than its landscape slot. Keep the
-     breathing room above and beside it, but let its lower rows continue into
-     the card edge instead of cutting them off against an inner grey strip. */
+     breathing room above, but let its lower rows continue into the card edge
+     instead of cutting them off against an inner grey strip. */
   padding-bottom: 0;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-card-media-clip {
+  place-items: start center;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-media {
+  width: 112%;
+  max-width: none;
+  max-height: none;
 }
 
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {

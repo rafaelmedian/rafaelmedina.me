@@ -191,7 +191,7 @@ test("separates Rewards artwork and extends Matcha product backgrounds", async (
   )
 })
 
-test("lets the dealership preview bleed through the card's bottom edge", async ({ page }) => {
+test("shows the dealership preview large and crops it at the card edge", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
@@ -199,11 +199,19 @@ test("lets the dealership preview bleed through the card's bottom edge", async (
   const card = page.getByRole("link", { name: /Open Dealership lead hub/ })
   await card.scrollIntoViewIfNeeded()
 
-  const [cardBox, mediaBox] = await Promise.all([
+  const [cardBox, mediaClipBox, mediaBox] = await Promise.all([
     card.boundingBox(),
+    card.locator(".mosaic-row-card-media-clip").boundingBox(),
     card.locator("img.mosaic-row-media").boundingBox(),
   ])
   expect(cardBox).not.toBeNull()
+  expect(mediaClipBox).not.toBeNull()
   expect(mediaBox).not.toBeNull()
-  expect(mediaBox!.y + mediaBox!.height).toBeCloseTo(cardBox!.y + cardBox!.height - 1, 0)
+  expect(mediaClipBox!.y + mediaClipBox!.height).toBeCloseTo(cardBox!.y + cardBox!.height - 1, 0)
+  expect(mediaBox!.y).toBeCloseTo(mediaClipBox!.y, 0)
+  expect(mediaBox!.width).toBeGreaterThan(mediaClipBox!.width * 1.1)
+
+  const visibleShare = mediaClipBox!.height / mediaBox!.height
+  expect(visibleShare).toBeGreaterThan(0.45)
+  expect(visibleShare).toBeLessThan(0.6)
 })

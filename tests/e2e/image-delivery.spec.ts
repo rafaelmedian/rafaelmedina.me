@@ -60,10 +60,10 @@ for (const width of [390, 1440]) {
       const page = await browser.newPage({ viewport: { width, height: 1000 }, deviceScaleFactor, reducedMotion: "reduce" })
       await page.goto("/")
       // Intended artwork widths: smaller downloads must not shrink the layout.
-      // Dealership uses the extra height freed by removing its bottom inset.
+      // Dealership renders at 112% of its clip width for the deliberate crop.
       const fixtures = width === 390
-        ? [["Popparazi V1", 84], ["Shared family stories", 177], ["Dealership lead hub", 165]] as const
-        : [["Popparazi V1", 130], ["Shared family stories", 565], ["Dealership lead hub", 403]] as const
+        ? [["Popparazi V1", 84], ["Shared family stories", 177], ["Dealership lead hub", 185]] as const
+        : [["Popparazi V1", 130], ["Shared family stories", 565], ["Dealership lead hub", 854]] as const
       for (const [name, originalWidth] of fixtures) {
         const image = page.getByAltText(name, { exact: true }).and(page.locator("img.mosaic-row-media"))
         await image.scrollIntoViewIfNeeded()
