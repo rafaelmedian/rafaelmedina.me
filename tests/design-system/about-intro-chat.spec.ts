@@ -110,6 +110,14 @@ test('shows three typing dots before each greeting and pauses the sequence in a 
     const field = await chat.locator('form').boundingBox()
     return Math.abs(field!.y - question!.y - question!.height - 8)
   }).toBeLessThan(1)
+  // The field is the visitor's: right-aligned where the sent address lands, with
+  // the sent bubble's tail on the right, and no tail left on the question.
+  expect(await chat.getByText('Wanna share your email with me so I can reach out to you?').evaluate(node => getComputedStyle(node, '::before').content)).toBe('none')
+  const form = chat.locator('form')
+  expect(await form.evaluate(node => [getComputedStyle(node, '::after').content, getComputedStyle(node, '::after').right])).toEqual(['""', '-8px'])
+  const chatBox = await chat.boundingBox()
+  const formBox = await form.boundingBox()
+  expect(Math.abs(chatBox!.x + chatBox!.width - formBox!.x - formBox!.width)).toBeLessThan(1)
 })
 
 

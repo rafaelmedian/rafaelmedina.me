@@ -132,12 +132,12 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
     inert={!active} aria-hidden={!active} aria-label="Chat with Rafa">
     {/* Hidden live regions can make modal isolation hide the neighboring player. */}
     <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={active ? "polite" : undefined} aria-relevant="additions">
-      {greeting.slice(0, Math.min(shown, 3)).map((text, index) => <p key={text}
-        className={`about-intro-chat-bubble about-intro-chat-new${index === 2 && !confirmed ? " about-intro-chat-tail" : ""}`}>{text}</p>)}
+      {/* Only the typing bubble has a tail on Rafa's side; once a question lands, the visitor's field below it carries one on the right. */}
+      {greeting.slice(0, Math.min(shown, 3)).map(text => <p key={text} className="about-intro-chat-bubble about-intro-chat-new">{text}</p>)}
       {confirmed && <>
         <button type="button" className="about-intro-chat-outgoing about-intro-chat-new" onClick={editEmail}
           aria-label={`Edit email address: ${email}`} title="Edit your email" disabled={locked}>{email}</button>
-        {messageReady && <p className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-new" data-followup>Want to share anything else?</p>}
+        {messageReady && <p className="about-intro-chat-bubble about-intro-chat-new" data-followup>Want to share anything else?</p>}
       </>}
       {typing && <div key={`typing-${shown}`} className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-typing about-intro-chat-new"
         role="status" aria-label="Rafa is typing">

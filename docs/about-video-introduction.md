@@ -233,11 +233,15 @@ pause the sequence, returning keeps completed messages, and reduced motion
 skips the dots and delay. Clicking elsewhere cancels delayed input focus.
 
 The selected B email field is now 44px high and capped at 256px wide, with
-the same 14px type as the messages. Its center aligns with the portrait and
+the same 14px type as the messages. It sits at the chat's right edge, its
+center level with the portrait, and
 the conversation grows above that row. The optional message keeps its larger
 textarea and 16px input type.
 
 Typing bubbles rest on the avatar's bottom edge while either reply field is pending.
+Only the typing bubble has a tail on Rafa's side; the questions have none. The
+reply fields are the visitor's side: right-aligned where the sent address lands,
+rising from the right, with the sent bubble's tail mirrored on their right.
 The measured reserved form height accounts for the delivery hint wrapping on
 mobile. When the field appears, history shifts over the shared 360ms smooth
 transition. The white reply surface uses the shared hairline and overlay shadow,

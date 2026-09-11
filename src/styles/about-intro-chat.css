@@ -29,8 +29,10 @@
   --intro-chat-bottom: calc(var(--intro-chat-face-bottom) + (var(--intro-size) - 44px) / 2);
 }
 
+/* Right-aligned where the sent address will land, clear of Rafa's side. */
 .about-intro-chat[data-step="email"] > .about-intro-chat-composer {
   width: min(256px, 100%);
+  margin-left: auto;
   padding: 0;
 }
 
@@ -104,6 +106,8 @@
 }
 
 .about-intro-chat-composer {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: flex-end;
   gap: 4px;
@@ -111,6 +115,33 @@
   border-radius: var(--radius-full);
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
+}
+
+/* The fields are the visitor's side of the conversation, so their tail is the
+   sent bubble's, mirrored on the right, never pointing at the portrait. */
+.about-intro-chat-composer::before,
+.about-intro-chat-composer::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: 0;
+  z-index: -1;
+  width: 32px;
+  height: 24px;
+  clip-path: path("M 24 0 H 0 V 24 H 32 C 26 21 24 16 24 8 Z");
+  pointer-events: none;
+}
+
+/* The hairline: the same curve 1px out, in --shadow-ring's colour. It starts
+   where the field's own ring re-emerges below the corner, so the two never double. */
+.about-intro-chat-composer::before {
+  translate: 1px 1px;
+  background: rgb(0 0 0 / 0.06);
+  clip-path: path("M 24 0 H 5 V 24 H 32 C 26 21 24 16 24 8 Z");
+}
+
+.about-intro-chat-composer::after {
+  background: var(--canvas);
 }
 
 .about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
@@ -161,7 +192,8 @@
   opacity: 0;
   transform: translateY(8px) scale(0.98);
   filter: blur(2px);
-  transform-origin: left bottom;
+  /* The email field is its only user; it rises from its tail on the right. */
+  transform-origin: right bottom;
   transition: opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
 }
 
@@ -178,7 +210,10 @@
 }
 
 .about-intro-chat-new[data-followup] { transition-delay: 80ms; }
-.about-intro-chat-message { transition-delay: 160ms; }
+.about-intro-chat-message {
+  transform-origin: right bottom;
+  transition-delay: 160ms;
+}
 
 @starting-style {
   .about-intro-chat[data-active="true"] .about-intro-chat-enter,

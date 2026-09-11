@@ -2197,7 +2197,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
                   into two 184px pills with a 12px gap. B becomes a conversation anchored to a 64px portrait.
                   Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
-                  curved tail extends 8px toward the face. Each incoming message is preceded by a 900ms typing bubble with three 8px muted dots,
+                  curved tail extends 8px toward the face. Only the typing bubble carries it; the questions have none.
+                  The fields that follow them are the visitor’s side instead: right-aligned with the chat’s edge where the
+                  sent address lands, rising from their bottom-right corner, and carrying the sent bubble’s mirrored tail
+                  in canvas white with a 1px hairline traced 1px outside the curve. Each incoming message is preceded by a 900ms typing bubble with three 8px muted dots,
                   spaced 4px apart. They pulse and rise 4px in a 900ms cycle, staggered by 120ms.
                   Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
@@ -2209,8 +2212,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   over 360ms with the shared smooth curve as the field enters. Timers
                   pause when the chat or tab is hidden, completed messages stay visible on return, and
                   reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
-                  The email field caps at 256px by 44px and matches the bubbles’ 14px text. Its center
-                  aligns with the 64px face, moving the conversation above that row. Both composers use the white
+                  The email field caps at 256px by 44px and matches the bubbles’ 14px text. It sits at the chat’s
+                  right edge and its center aligns vertically with the 64px face, moving the conversation above that row. Both composers use the white
                   canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
                   8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
                   The message textarea remains 88px high with 16px text. The history uses the available space above the dock with a 12px top clearance, accounting for the
