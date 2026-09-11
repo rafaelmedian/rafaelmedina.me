@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef } from "react"
 
 import { cssTimeToMilliseconds } from "./cssTime"
-import { createPebbleRenderer, type PebbleDraw, type PebbleRenderer } from "./pebbleRenderer"
 
 type Vector = [number, number, number]
 /** A 3x3 rotation, row-major. */
@@ -115,13 +114,6 @@ const clickSlop = 6
 const keyStep = Math.PI / 6
 /** How long a photo brought to the front stays there before the spin takes it on. */
 const frontDwell = 4000
-/** How far a pebble leans with the globe's surface, as a share of the
-    surface's own angle. Glued flat to the sphere, the pebbles at the rim would
-    turn edge-on and vanish; square to the viewer, the globe would never show
-    their shoulders. Two fifths of the way reads as a lean without hiding the
-    photo, and the light is fixed to the viewer, so the glint travels along
-    each shoulder as the globe carries the pebble round. */
-const pebbleLean = 0.4
 /** How much a clicked photo grows, at the centre, over its size at the front. */
 const zoomGrowth = 2.4
 /** How much a photo under the pointer grows, to say it can be clicked. */
@@ -131,12 +123,6 @@ const hoverGrowth = 1.08
 const hoverShare = (hoverGrowth - 1) / (zoomGrowth - 1)
 /** How much the rest of the globe shrinks back while one photo is held. */
 const zoomRecede = 0.22
-/** How far the held photo leans towards the pointer, in radians: about
-    eleven degrees at the edge of the stage. The study leaned four, which
-    read as barely a lean at this size. It is the lean rather than the photo
-    that moves, so the glint on the shoulder travels with the hand while the
-    photo holds its place. */
-const parallaxLean = 0.2
 /** The caption's distance below the held photo, and how far it rises as it
     comes in. */
 const captionGap = 12
@@ -241,21 +227,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       dirty = true
     }
 
-    // The pebbles: one canvas over the whole globe draws every slide as the
-    // study's glass slab, and a slide hands its look over to it as soon as
-    // its photo is on the GPU. Until then, and wherever WebGL 2 is missing or
-    // its context is lost, the slide keeps drawing its CSS pebble itself.
-    const canvas = stage.querySelector<HTMLCanvasElement>(".personal-photos-pebbles")
     const images = slides.map((slide) => slide.querySelector("img")!)
-    let pebbles: PebbleRenderer | null = null
-    const dropPebbles = () => {
-      pebbles = null
-      slides.forEach((slide) => slide.removeAttribute("data-pebble"))
-      invalidate()
-    }
-    if (canvas) pebbles = createPebbleRenderer(canvas, dropPebbles)
-    const onImageLoad = invalidate
-    images.forEach((image) => image.addEventListener("load", onImageLoad))
     measure()
 
     let velocity = { pitch: 0, yaw: 0 }
@@ -276,20 +248,14 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     let pendingHold: string | null = null
     /** Each photo's share of the way to its held size, on a spring: the
         hover takes it the first --hoverShare-- of the way, a hold the rest.
-        One value drives the growth, the restacking, the pebble squaring up
-        and the caption, so they land together. */
+        One value drives the growth, the restacking and the caption, so they
+        land together. */
     const zooms = new Float32Array(slides.length)
     const zoomSpeeds = new Float32Array(slides.length)
     /** The globe's share of the way to its receded size: derived from the
         zooms past their hover share, so two photos handing the hold over —
         one growing as the other shrinks — leave the rest of the globe still. */
     let recede = 0
-    /** Where the pointer last was over the stage, -1..1 from the centre, and
-        the lean towards it, on the same spring; the held photo's zoom is what
-        brings the lean in, so it arrives with the growth. */
-    let pointer = { x: 0, y: 0 }
-    let parallax = { x: 0, y: 0 }
-    let parallaxSpeed = { x: 0, y: 0 }
     /** The photo being turned to the front, and the turn's angular speed. */
     let turnTarget: number | null = null
     let turnSpeed = 0
@@ -299,7 +265,6 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
 
     const render = () => {
       const m = orientation
-      const draws: PebbleDraw[] = []
       if (held !== null) captioned = held
       let captionBox = { x: 0, y: 0, halfHeight: 0 }
       slides.forEach((slide, index) => {
@@ -335,9 +300,9 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // gone behind it, the way the far side of a ball is. Shown, the far
         // side's photos crowd in between the near side's and the globe reads
         // as a cloud. A hidden slide takes no box, so no flight aims at it.
-        // Squared, and the tile shrinks as it goes: a pebble drawn at a
-        // sixth of its strength still showed its white glass rim, and the
-        // globe was ringed with ghost cards. Squared it is gone a beat sooner,
+        // Squared, and the tile shrinks as it goes: a photo drawn at a
+        // sixth of its strength still showed its white rim, and the globe
+        // was ringed with ghost cards. Squared it is gone a beat sooner,
         // and smaller while it goes.
         const fade = rim * rim
         slide.style.setProperty("--sphere-fade", fade.toFixed(3))
@@ -345,31 +310,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // Only the face of the sphere answers the pointer; a click on a photo
         // on its way out round the rim would bring one back nobody can see.
         slide.toggleAttribute("data-sphere-far", z < -0.2)
-        // Responsive sources can change after a resize. Readiness belongs
-        // to the current source, not to a slide that once had a texture.
-        if (pebbles) slide.toggleAttribute("data-pebble", pebbles.prepare(images[index]))
-        // A slide wearing a flight is drawn by the flight: the canvas leaves
-        // it out until the flight hands its slot back, so the photo is never
-        // on screen twice.
-        if (pebbles && fade > 0 && slide.hasAttribute("data-pebble") && slide.style.opacity !== "0") {
-          draws.push({
-            aspect: boxes[index].height / boxes[index].width,
-            image: images[index],
-            x: stageSize.width / 2 + x * radius * perspective,
-            y: stageSize.height / 2 - y * radius * perspective,
-            halfWidth: boxes[index].width * scale / 2,
-            depth: z * radius + zoom * radius * 2 + Math.min(1, zoom / hoverShare) * radius,
-            // The lean the surface has at this point: up or down by its
-            // height, round by its longitude, held short of edge-on. A held
-            // photo squares up as it grows.
-            tiltX: -Math.asin(Math.max(-1, Math.min(1, y))) * pebbleLean * (1 - zoom) + parallax.x * zoom,
-            tiltY: Math.max(-1.3, Math.min(1.3, Math.atan2(x, z))) * pebbleLean * (1 - zoom) + parallax.y * zoom,
-            shade: (1 - depth) ** 1.6 * 0.72,
-            alpha: fade,
-          })
-        }
       })
-      pebbles?.draw(draws, stageSize.width, stageSize.height)
       // One caption, under the held photo. It is placed from the photo's
       // drawn box and shown by the photo's zoom — the last two fifths of
       // it — so it rises in as the hold lands and is gone the moment a
@@ -526,16 +467,6 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         recede = nextRecede
         dirty = true
       }
-      // The lean follows the pointer's side of the stage whenever the pointer
-      // is over it; the held photo's zoom is what shows it.
-      const lean = [-pointer.y * parallaxLean, pointer.x * parallaxLean]
-      const speeds = [parallaxSpeed.x, parallaxSpeed.y]
-      const nextParallax = { x: spring(parallax.x, lean[0], speeds, 0, dt), y: spring(parallax.y, lean[1], speeds, 1, dt) }
-      parallaxSpeed = { x: speeds[0], y: speeds[1] }
-      if (nextParallax.x !== parallax.x || nextParallax.y !== parallax.y) {
-        parallax = nextParallax
-        dirty = true
-      }
       if (turnTarget !== null) {
         // Re-aimed every frame from where the globe is now: the axis square
         // to the photo's point and the view, by the angle between them.
@@ -590,9 +521,6 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     }
     const onPointerMove = (event: PointerEvent) => {
       wake()
-      if (event.pointerType === "mouse") {
-        pointer = { x: (event.clientX / stage.clientWidth) * 2 - 1, y: (event.clientY / stage.clientHeight) * 2 - 1 }
-      }
       if (event.pointerType === "mouse" && !press) {
         const next = slideFrom(event.target)
         if (next !== hovered) dirty = true
@@ -641,7 +569,6 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     }
     const onPointerLeave = () => {
       hovered = null
-      pointer = { x: 0, y: 0 }
       invalidate()
     }
     const onWheel = (event: WheelEvent) => {
@@ -721,8 +648,6 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       clearTimeout(wakeTimer)
       flights.disconnect()
       resize.disconnect()
-      images.forEach((image) => image.removeEventListener("load", onImageLoad))
-      pebbles?.dispose()
       stage.removeEventListener("pointerdown", onPointerDown)
       stage.removeEventListener("pointermove", onPointerMove)
       stage.removeEventListener("pointerup", onPointerUp)

@@ -65,7 +65,7 @@ export function flyBetweenLayouts(stage: HTMLElement, from: Map<string, SlideSna
     clone.setAttribute("aria-hidden", "true")
     // Neither a stop for the keyboard nor a slide for the globe or the
     // flights to find; and its own look, not the canvas's.
-    for (const attribute of ["tabindex", "role", "aria-label", "data-photo-id", "data-pebble", "data-held", "data-sphere-far", "data-sphere-hidden"]) clone.removeAttribute(attribute)
+    for (const attribute of ["tabindex", "role", "aria-label", "data-photo-id", "data-held", "data-sphere-far", "data-sphere-hidden"]) clone.removeAttribute(attribute)
     clone.querySelector("figcaption")?.remove()
     clone.dataset.photoFlight = slide.dataset.photoId
     // The slide's own inline transform, shade and hold go; the flight is

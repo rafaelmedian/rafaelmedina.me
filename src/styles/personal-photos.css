@@ -524,28 +524,6 @@
    bringing round a photo nobody can see. */
 .personal-photos-sphere .personal-photos-slide[data-sphere-far] { pointer-events: none; }
 
-/* The pebbles' canvas lies over the globe and lets every press through to
-   the slides under it. */
-.personal-photos-pebbles {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-/* Once the canvas draws a slide's pebble, the slide keeps only what the
-   canvas can't: the focus ring, and the box the pointer and the flights aim
-   at. Its shadow goes too — the slide stays square to the screen while its
-   pebble leans with the globe, so the shadow's rectangle showed beside every
-   pebble near the rim; on this backdrop the shoulder's own shading carries
-   the depth. Scoped to the globe, so a flight — a copy of the slide, out in
-   the page — still wears the CSS pebble on its way. */
-.personal-photos-sphere .personal-photos-slide[data-pebble] { box-shadow: none; }
-.personal-photos-sphere .personal-photos-slide[data-pebble] > img,
-.personal-photos-sphere .personal-photos-slide[data-pebble]::before,
-.personal-photos-sphere .personal-photos-slide[data-pebble]::after { visibility: hidden; }
-
 /* The held photo's name, just under it. usePhotoSphere places it from the
    photo's drawn box every frame and fades it with the photo's own zoom, so
    it arrives as the hold lands and leaves with the release; when the screen
@@ -564,7 +542,7 @@
   font-weight: 500;
   line-height: 1.5;
   text-align: center;
-  /* Over whichever pebbles lie behind the held photo, not only the backdrop. */
+  /* Over whichever photos lie behind the held one, not only the backdrop. */
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   opacity: var(--stage-caption-opacity, 0);
   pointer-events: none;

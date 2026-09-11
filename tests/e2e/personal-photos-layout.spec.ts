@@ -43,7 +43,7 @@ test("the toggle turns the open sheet between the globe and a grid, and the choi
   await expect(dialog(page)).toBeVisible()
   await expect(grid(page)).toBeVisible()
   await expect(toggle(page, "Grid")).toHaveAttribute("aria-pressed", "true")
-  await expect(page.locator(".personal-photos-sphere, .personal-photos-pebbles")).toHaveCount(0)
+  await expect(page.locator(".personal-photos-sphere")).toHaveCount(0)
   const layout = await grid(page).evaluate((element) => {
     const slides = Array.from(element.querySelectorAll<HTMLElement>(".personal-photos-slide"))
     return {
