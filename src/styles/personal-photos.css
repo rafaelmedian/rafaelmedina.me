@@ -293,7 +293,9 @@
      on a critically damped spring that has settled to 95% in this time,
      and its growth, the globe's recede and its lean ride the same spring;
      the arrow keys step it round on the same beat. */
-  --sphere-focus-duration: var(--duration-slow);
+  --sphere-hover-duration: var(--duration-fast);
+  --sphere-focus-duration: var(--duration-base);
+  --photo-layout-duration: var(--duration-fast);
   --photo-gutter: clamp(1.25rem, 4vw, 5rem);
   --photo-column-gap: 1.5rem;
   /* The grid's captions are read out, not shown, until a photo is held, so
@@ -361,7 +363,7 @@
   border-radius: inherit;
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-control);
-  transition: translate var(--duration-base) var(--ease-smooth), width var(--duration-base) var(--ease-smooth);
+  transition: translate var(--duration-fast) var(--ease-smooth), width var(--duration-fast) var(--ease-smooth);
 }
 .personal-photos-layout button {
   position: relative;
@@ -378,7 +380,7 @@
   color: var(--muted);
   font: inherit;
   cursor: pointer;
-  transition: color var(--duration-base) var(--ease-smooth);
+  transition: color var(--duration-fast) var(--ease-smooth);
 }
 .personal-photos-layout button[aria-pressed="true"] { color: var(--ink); }
 @media (hover: hover) {
@@ -489,8 +491,8 @@
    pointer, not the eye: a press in the corners of this square is on the
    stage's margin, and closes like any other. */
 .personal-photos-sphere {
-  --sphere-size: min(94vw, 88vh, 56rem);
-  --sphere-radius: 0.4;
+  --sphere-size: min(96vw, 92vh, 60rem);
+  --sphere-radius: 0.44;
   /* A photo's width at the front of the globe; the share is set inline from
      the tile count in PersonalPhotosSheet.tsx. */
   --sphere-card: calc(var(--sphere-size) * var(--sphere-card-share, 0.2));
@@ -503,6 +505,7 @@
   width: var(--sphere-size);
   aspect-ratio: 1;
   border-radius: 50%;
+  perspective: 1000px;
 }
 
 /* A print at the front of the globe is drawn at its own size; everything
@@ -647,8 +650,8 @@
   /* Wider than the screen: only the rim's smallest prints reach past its
      edges, and a globe held to the width left half a tall screen empty. */
   .personal-photos-sphere {
-    --sphere-size: min(118vw, 72vh);
-    --sphere-radius: 0.36;
+    --sphere-size: min(136vw, 80vh);
+    --sphere-radius: 0.4;
     --sphere-card: calc(var(--sphere-size) * var(--sphere-card-share, 0.2) * 1.3);
   }
   /* Two columns of the grid, and a caption a step smaller to fit them. */

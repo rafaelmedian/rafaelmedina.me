@@ -118,6 +118,9 @@ const frontDwell = 4000
 const zoomGrowth = 2.4
 /** How much a photo under the pointer grows, to say it can be clicked. */
 const hoverGrowth = 1.08
+/** A small lean at the card edge: enough to answer the pointer without
+    breaking the globe's upright billboard illusion. */
+const hoverTilt = 3
 /** The hover is the first stretch of the same growth a hold makes, so a
     click carries on from it instead of dropping it while the hold begins. */
 const hoverShare = (hoverGrowth - 1) / (zoomGrowth - 1)
@@ -149,9 +152,10 @@ type Press = { id: number; x: number; y: number; lastX: number; lastY: number; l
  * again or another photo is clicked.
  *
  * The slides are billboards, not cards glued to the sphere: each stays square
- * to the screen and upright, and only its position, size, shade, and stacking
- * follow its point. That keeps every slide's box a plain rectangle, which is
- * what the open and close flights measure and land on.
+ * to the screen except for a soft hover tilt, and only its position, size,
+ * shade, and stacking follow its point. That keeps every resting slide's box
+ * a plain rectangle, which is what the open and close flights measure and
+ * land on.
  */
 export function usePhotoSphere(stage: HTMLDivElement | null, {
   open,
@@ -185,9 +189,11 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     const tokens = getComputedStyle(sphere)
     const openHold = cssTimeToMilliseconds(tokens.getPropertyValue("--photo-open-duration"))
     const focusDuration = cssTimeToMilliseconds(tokens.getPropertyValue("--sphere-focus-duration"))
-    /** Every spring on the globe — the turn to the front, the growth, the
-        recede, the lean — settles to 95% in --sphere-focus-duration. */
-    const springRate = springSettle / (focusDuration / 1000)
+    const hoverDuration = cssTimeToMilliseconds(tokens.getPropertyValue("--sphere-hover-duration"))
+    /** Holds and turns settle to 95% in --sphere-focus-duration; the small
+        hover growth and lean use the quicker --sphere-hover-duration. */
+    const focusSpringRate = springSettle / (focusDuration / 1000)
+    const hoverSpringRate = springSettle / (hoverDuration / 1000)
 
     // Every visit opens square to the viewer, so the prints fly out to the
     // face of the sphere however far it was turned last time.
@@ -235,6 +241,9 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     let tween: Tween | null = null
     let press: Press | null = null
     let hovered: HTMLElement | null = null
+    /** Pointer direction inside the hovered photo, read from the flat stage's
+        events and used as the target for its soft 3D lean. */
+    let hoverPoint = { x: 0, y: 0 }
     /** A photo holding keyboard focus. The spin waits while one does: left to
         turn, it would carry the focused photo round behind the globe, where it
         is hidden and the focus falls out of the dialog. */
@@ -252,6 +261,10 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         land together. */
     const zooms = new Float32Array(slides.length)
     const zoomSpeeds = new Float32Array(slides.length)
+    const tiltXs = new Float32Array(slides.length)
+    const tiltXSpeeds = new Float32Array(slides.length)
+    const tiltYs = new Float32Array(slides.length)
+    const tiltYSpeeds = new Float32Array(slides.length)
     /** The globe's share of the way to its receded size: derived from the
         zooms past their hover share, so two photos handing the hold over —
         one growing as the other shrinks — leave the rest of the globe still. */
@@ -288,6 +301,10 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         const zoom = zooms[index]
         const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + zoom * (zoomGrowth - 1)) * (1 - recede * zoomRecede * (1 - zoom))
         slide.style.transform = `translate3d(${(x * radius * perspective).toFixed(2)}px, ${(-y * radius * perspective).toFixed(2)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(4)})`
+        const tiltX = tiltXs[index]
+        const tiltY = tiltYs[index]
+        const tiltLength = Math.hypot(tiltX, tiltY)
+        slide.style.rotate = tiltLength < 0.001 ? "none" : `${(-tiltY).toFixed(3)} ${tiltX.toFixed(3)} 0 ${(tiltLength * hoverTilt).toFixed(2)}deg`
         if (index === captioned) captionBox = { x: stageSize.width / 2 + x * radius * perspective, y: stageSize.height / 2 - y * radius * perspective, halfHeight: boxes[index].height * scale / 2 }
         // A held photo stacks above everything, however far its slot has
         // turned from the front while it grew.
@@ -435,12 +452,12 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     let springsMoving = false
     /** Moves `value` towards `target` on the spring, keeping its speed in
         `speeds[index]`; reduced motion takes it there in one step. */
-    const spring = (value: number, target: number, speeds: Float32Array | number[], index: number, dt: number) => {
+    const spring = (value: number, target: number, speeds: Float32Array | number[], index: number, dt: number, rate = focusSpringRate) => {
       if (reducedMotion) {
         speeds[index] = 0
         return target
       }
-      const [gap, speed] = springStep(value - target, speeds[index], springRate, dt)
+      const [gap, speed] = springStep(value - target, speeds[index], rate, dt)
       speeds[index] = speed
       if (gap !== 0 || speed !== 0) springsMoving = true
       return target + gap
@@ -455,12 +472,21 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // The hover grows only a photo that can be clicked — not one out on
         // the rim — and a hold carries on from wherever the hover has got to.
         const target = held === index ? 1 : hovered === slides[index] && !slides[index].hasAttribute("data-sphere-far") ? hoverShare : 0
-        const next = spring(zooms[index], target, zoomSpeeds, index, dt)
+        const rate = zooms[index] > hoverShare || held === index ? focusSpringRate : hoverSpringRate
+        const next = spring(zooms[index], target, zoomSpeeds, index, dt, rate)
         if (Math.fround(next) !== zooms[index]) {
           zooms[index] = next
           dirty = true
         }
         zoomed += Math.max(0, zooms[index] - hoverShare)
+        const tiltTarget = !reducedMotion && hovered === slides[index] && !slides[index].hasAttribute("data-sphere-far") ? hoverPoint : { x: 0, y: 0 }
+        const nextTiltX = spring(tiltXs[index], tiltTarget.x, tiltXSpeeds, index, dt, hoverSpringRate)
+        const nextTiltY = spring(tiltYs[index], tiltTarget.y, tiltYSpeeds, index, dt, hoverSpringRate)
+        if (Math.fround(nextTiltX) !== tiltXs[index] || Math.fround(nextTiltY) !== tiltYs[index]) {
+          tiltXs[index] = nextTiltX
+          tiltYs[index] = nextTiltY
+          dirty = true
+        }
       }
       const nextRecede = Math.min(1, zoomed / (1 - hoverShare))
       if (nextRecede !== recede) {
@@ -477,7 +503,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
           turnTarget = null
           turnSpeed = 0
         } else {
-          const [left, speed] = springStep(angle, turnSpeed, springRate, dt)
+          const [left, speed] = springStep(angle, turnSpeed, focusSpringRate, dt)
           turnSpeed = speed
           orientation = multiply(rotation([y / length, -x / length, 0], angle - left), orientation)
           if (left === 0) {
@@ -525,6 +551,13 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         const next = slideFrom(event.target)
         if (next !== hovered) dirty = true
         hovered = next
+        if (next) {
+          const rect = next.getBoundingClientRect()
+          hoverPoint = {
+            x: Math.max(-1, Math.min(1, (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2))),
+            y: Math.max(-1, Math.min(1, (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2))),
+          }
+        }
       }
       if (!press || event.pointerId !== press.id) return
       const dx = event.clientX - press.lastX

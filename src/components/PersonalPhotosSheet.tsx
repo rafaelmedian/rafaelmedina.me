@@ -26,10 +26,14 @@ const sphereTiles = Array.from({ length: sphereCopies }, (_, copy) => photos.map
 // A slide's width, which is its size at the front of the globe: a share of
 // --sphere-size in personal-photos.css.
 /** Each tile's width as a share of the globe, at the front. Three dozen tiles
-    take a fifth of the globe each; more tiles share the same surface, so the
+    take 22.5% of the globe each; more tiles share the same surface, so the
     width comes down by the square root of the count. */
-const sphereCardShare = 0.2 * Math.sqrt(36 / sphereTiles.length)
-const spherePhotoSizes = `(max-width: 699.98px) calc(min(118vw, 72vh) * ${(sphereCardShare * 1.3).toFixed(3)}), calc(min(94vw, 88vh, 56rem) * ${sphereCardShare.toFixed(3)})`
+const sphereCardShare = 0.225 * Math.sqrt(36 / sphereTiles.length)
+/** The sphere controller can grow any print to 2.4x without a React render.
+    Advertise that largest drawn size up front so a 2x screen does not keep
+    the 400px candidate after the photo has been held. */
+const sphereHoldGrowth = 2.4
+const spherePhotoSizes = `(max-width: 699.98px) calc(min(136vw, 80vh) * ${(sphereCardShare * 1.3 * sphereHoldGrowth).toFixed(3)}), calc(min(96vw, 92vh, 60rem) * ${(sphereCardShare * sphereHoldGrowth).toFixed(3)})`
 // One column's width: the sheet less its gutters and the gaps between the
 // columns, as --photo-gutter and --photo-column-gap set them.
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3)"
@@ -209,7 +213,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     observer.observe(layoutNode)
     return () => observer.disconnect()
   }, [layoutNode, layout])
-  // The new layout starts at its top and fades in over the old one's place;
+  // The new layout starts at its top without fading the entire stage away;
   // the backdrop and the toggle stay put. The photos themselves reorganise:
   // each one on screen flies from where the old layout left it to where the
   // new one has put it, and the globe holds still until they have landed.
@@ -222,13 +226,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     switchFrom.current = null
     if (reducedMotion) return
     const tokens = getComputedStyle(sheet)
-    sheet.animate([{ opacity: 0 }, { opacity: 1 }], {
-      duration: cssTimeToMilliseconds(tokens.getPropertyValue("--duration-base")),
-      easing: tokens.getPropertyValue("--ease-smooth").trim(),
-    })
     if (!from) return
     layoutFlight.current = flyBetweenLayouts(sheet, from, () => { layoutFlight.current = null })
-    if (layout === "sphere") sphere.current.rest(cssTimeToMilliseconds(tokens.getPropertyValue("--sphere-focus-duration")))
+    if (layout === "sphere") sphere.current.rest(cssTimeToMilliseconds(tokens.getPropertyValue("--photo-layout-duration")))
   }, [layout, reducedMotion, sphere])
 
   // The grid scrolls natively. Its own margin — the padding around the

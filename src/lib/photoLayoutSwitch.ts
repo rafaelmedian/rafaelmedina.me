@@ -28,15 +28,16 @@ export function snapshotSlides(stage: HTMLElement): Map<string, SlideSnapshot> {
  * Reorganises the photos from one layout into the other: each photo on
  * screen flies from where the old layout left it to where the new one has
  * put it, as a copy of its new slide over the stage — the same clone the
- * open and close flights use — over --sphere-focus-duration on
+ * open and close flights use — over --photo-layout-duration on
  * --ease-smooth, its corner morphing between the two layouts' radii, while
  * the slide underneath waits hidden. Copies, and anything that was off
- * screen at both ends, simply arrive with the sheet. Returns a function
- * that ends every flight at once, for a close or another switch mid-way.
+ * screen at both ends, simply appear in the already-opaque sheet. Returns a
+ * function that ends every flight at once, for a close or another switch
+ * mid-way.
  */
 export function flyBetweenLayouts(stage: HTMLElement, from: Map<string, SlideSnapshot>, onDone: () => void): () => void {
   const tokens = getComputedStyle(stage)
-  const duration = cssTimeToMilliseconds(tokens.getPropertyValue("--sphere-focus-duration"))
+  const duration = cssTimeToMilliseconds(tokens.getPropertyValue("--photo-layout-duration"))
   const easing = tokens.getPropertyValue("--ease-smooth").trim() || "ease-out"
   const bounds = stage.getBoundingClientRect()
   const onScreen = (rect: DOMRect) => rect.right > bounds.left && rect.left < bounds.right && rect.bottom > bounds.top && rect.top < bounds.bottom
