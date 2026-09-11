@@ -1200,8 +1200,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   photograph rather than sitting on a page. Taking no room in the flow is the point: a row of its own
                   under the title would push every description down whether or not anyone ever taps it.
                   Below the artwork, the project title and a single description cover the product, contribution,
-                  and result. Left-aligned collaborator avatar links follow the description without a visible label,
-                  starting with mine on every project so a solo shot is credited rather than unattributed.
+                  and result. On fine-pointer desktop layouts, a 3.5rem white wash fades over the card&rsquo;s bottom
+                  edge only while more project content remains below it, making a short laptop viewport&rsquo;s hidden
+                  overflow visible without adding a scrollbar. The wash shares the card&rsquo;s paging motion so it
+                  never remains over the backdrop between slides. Left-aligned collaborator avatar links follow the
+                  description without a visible label. Project teammates sit before mine, so a newly introduced
+                  person arrives from the left over <code>--duration-base</code> while my stable final credit stays
+                  put; reduced motion reveals them immediately, and a solo shot still reads as credited rather than unattributed.
                   The description uses <code>--text-md</code>, a 1.6 line height, the existing prose colour
                   <code>#545454</code>, and a 46rem maximum measure. Credits use <code>--text-sm</code>
                   with 1.5rem of space above them. The text column is a centered 48rem
