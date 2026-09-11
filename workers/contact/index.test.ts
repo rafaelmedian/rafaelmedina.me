@@ -44,7 +44,7 @@ test("accepts an email-only hello when the optional message is empty", async t =
 
 test("rejects invalid senders, long messages, oversized bodies and foreign origins before delivery", async t => {
   const outbound = t.mock.method(globalThis, "fetch", async () => { throw new Error("Unexpected delivery") })
-  for (const invalid of [{ ...payload, email: "bad\r\nBcc:x@example.com" }, { ...payload, message: "x".repeat(2001) }, { ...payload, requestId: "bad" }]) {
+  for (const invalid of [{ ...payload, email: "visitor@gmail" }, { ...payload, email: "bad\r\nBcc:x@example.com" }, { ...payload, message: "x".repeat(2001) }, { ...payload, requestId: "bad" }]) {
     assert.equal((await worker.fetch(request(invalid), env)).status, 400)
   }
   assert.equal((await worker.fetch(request({ ...payload, message: "x".repeat(13000) }), env)).status, 413)

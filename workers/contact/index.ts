@@ -1,3 +1,4 @@
+import { isContactEmail } from "../../src/lib/contactEmail.ts"
 import type { RateLimit } from "@cloudflare/workers-types"
 
 export type ContactEnv = {
@@ -8,7 +9,6 @@ export type ContactEnv = {
   CONTACT_LIMITER: RateLimit
 }
 
-const emailPattern = /^[^\s@<>\r\n]+@[^\s@<>\r\n]+\.[^\s@<>\r\n]+$/
 const requestIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export default {
@@ -46,7 +46,7 @@ export default {
     try { data = JSON.parse(body) } catch { return json({ error: "Invalid message" }, 400) }
     if (!data || typeof data !== "object") return json({ error: "Invalid message" }, 400)
     const { email, message, requestId } = data as Record<string, unknown>
-    if (typeof email !== "string" || email.length > 254 || !emailPattern.test(email.trim()) ||
+    if (typeof email !== "string" || !isContactEmail(email) ||
         typeof message !== "string" || message.length > 2000 ||
         typeof requestId !== "string" || !requestIdPattern.test(requestId)) {
       return json({ error: "Check your email and message" }, 400)

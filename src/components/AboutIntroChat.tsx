@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useId, useRef, useState, type CSSProperties, type FormEvent } from "react"
 import { Menu } from "@base-ui/react/menu"
 import { ArrowUp } from "./NavigationIcons"
+import { isContactEmail } from "../lib/contactEmail"
 import { trackEvent } from "../lib/analytics"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
 import { sendContact, type ContactMessage } from "../lib/sendContact"
@@ -317,7 +318,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
       <input ref={emailRef} type="email" aria-label="Your email" autoComplete="email" required maxLength={254}
         {...ignorePasswordManagers} placeholder="hello@example.com" value={email} onChange={event => {
           setEmail(event.target.value)
-          setValid(event.currentTarget.validity.valid)
+          setValid(event.currentTarget.validity.valid && isContactEmail(event.target.value))
         }} />
       <button type="submit" className="about-intro-send" aria-label="Continue with email"
         disabled={!valid}>

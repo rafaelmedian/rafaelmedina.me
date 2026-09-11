@@ -315,3 +315,17 @@ test('an empty first send delivers the address with a keep-in-touch bubble', asy
   await expect(chat.getByText('Delivered')).toBeVisible()
   expect(payloads.map(payload => payload.message)).toEqual(['Hi Rafa, I’d like to keep in touch.'])
 })
+
+test('rejects an incomplete email before confirmation and allows correction', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  const email = page.getByRole('textbox', { name: 'Your email', exact: true })
+  await email.fill('visitor@gmail')
+  await expect(page.getByRole('button', { name: 'Continue with email' })).toBeDisabled()
+  await email.press('Enter')
+  await expect(email).toBeVisible()
+  await email.fill('visitor@gmail.com')
+  await page.getByRole('button', { name: 'Continue with email' }).click()
+  await expect(page.getByRole('textbox', { name: 'Your message (optional)' })).toBeVisible()
+})
