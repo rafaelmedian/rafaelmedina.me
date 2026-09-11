@@ -83,7 +83,7 @@ test('shows three typing dots before each greeting and pauses the sequence in a 
   await expect.poll(async () => {
     const bubble = await typing.boundingBox()
     const face = await page.locator('.about-intro-surface').boundingBox()
-    return Math.abs(bubble!.y + bubble!.height / 2 - face!.y - face!.height / 2)
+    return Math.abs(bubble!.y + bubble!.height - face!.y - face!.height)
   }).toBeLessThan(1)
   await expect(chat.getByText('Hey, I’m Rafa.')).toHaveCount(0)
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toHaveCount(0)

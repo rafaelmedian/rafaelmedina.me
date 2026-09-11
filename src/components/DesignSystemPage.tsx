@@ -2205,7 +2205,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
                   shows the same typing bubble before “Want to share anything else?” and reveals the optional
                   message field after 160ms. Hidden fields stay inert; their measured height offsets the history
-                  so the typing bubble stays centered on the avatar. The history moves into its reply position
+                  so the typing bubble’s bottom edge rests level with the avatar’s. The history moves into its reply position
                   over 360ms with the shared smooth curve as the field enters. Timers
                   pause when the chat or tab is hidden, completed messages stay visible on return, and
                   reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.

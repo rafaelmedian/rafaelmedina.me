@@ -237,7 +237,7 @@ the same 14px type as the messages. Its center aligns with the portrait and
 the conversation grows above that row. The optional message keeps its larger
 textarea and 16px input type.
 
-Typing bubbles stay centered on the avatar while either reply field is pending.
+Typing bubbles rest on the avatar's bottom edge while either reply field is pending.
 The measured reserved form height accounts for the delivery hint wrapping on
 mobile. When the field appears, history shifts over the shared 360ms smooth
 transition. The white reply surface uses the shared hairline and overlay shadow,

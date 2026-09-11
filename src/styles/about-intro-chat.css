@@ -55,8 +55,8 @@
 }
 
 .about-intro-chat[data-typing="true"] .about-intro-chat-history {
-  /* Keep the final 44px typing bubble centered on the portrait, across both forms. */
-  transform: translateY(calc(var(--intro-reply-height) + 8px + var(--intro-chat-bottom) - var(--intro-chat-face-bottom) - (var(--intro-size) - 44px) / 2));
+  /* Rest the final typing bubble on the portrait's bottom edge, across both forms. */
+  transform: translateY(calc(var(--intro-reply-height) + 8px + var(--intro-chat-bottom) - var(--intro-chat-face-bottom)));
 }
 
 .about-intro-chat .about-intro-chat-bubble {
