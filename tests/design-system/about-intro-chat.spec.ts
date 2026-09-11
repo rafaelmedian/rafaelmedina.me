@@ -248,8 +248,10 @@ test('opens the Tapback picker from the right with staggered, tactile choices', 
 
   const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
   await expect(picker).toHaveCSS('animation-name', 'intro-picker-open, intro-fade-in')
+  await expect(picker).toHaveCSS('animation-duration', '0.36s, 0.16s')
   const choices = picker.getByRole('menuitemcheckbox')
-  await expect(choices.first()).toHaveCSS('animation-delay', '0.216s')
+  await expect(choices.first()).toHaveCSS('animation-duration', '0.36s')
+  await expect(choices.first()).toHaveCSS('animation-delay', '0.144s')
   await expect(choices.last()).toHaveCSS('animation-delay', '0s')
   await choices.first().hover()
   await expect(choices.first()).toHaveCSS('translate', '0px -2px')

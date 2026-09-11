@@ -218,7 +218,7 @@
   outline: none;
   transform-origin: right bottom;
   animation:
-    intro-picker-open 580ms var(--intro-spring-snappy) both,
+    intro-picker-open var(--duration-slow) var(--intro-spring-snappy) both,
     intro-fade-in var(--duration-quick) var(--ease-standard) both;
 }
 
@@ -244,8 +244,8 @@
   font-size: 17px;
   line-height: 1;
   cursor: pointer;
-  animation: intro-pick-in 580ms var(--intro-spring-snappy) both;
-  animation-delay: calc(var(--intro-reaction-order) * 24ms);
+  animation: intro-pick-in var(--duration-slow) var(--intro-spring-snappy) both;
+  animation-delay: calc(var(--intro-reaction-order) * 16ms);
   transition:
     background-color var(--duration-quick) var(--ease-standard),
     box-shadow var(--duration-quick) var(--ease-standard),

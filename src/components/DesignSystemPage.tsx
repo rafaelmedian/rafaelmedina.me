@@ -2357,8 +2357,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   approximations of the supplied Messages references, not shared interface colours.
                   It stays 12px inside the viewport and retains horizontal arrow-key navigation. The picker
                   springs from its bottom-right corner at 0.92 horizontal / 0.88 vertical scale and a 10px by 4px
-                  offset over 580ms. Choices arrive from the right with a 10px slide, 0.72 scale and 2px blur,
-                  following 24ms apart from right to left on the snappy spring. Hover or keyboard highlight lifts a
+                  offset over 360ms. Choices arrive from the right with a 10px slide, 0.72 scale and 2px blur,
+                  following 16ms apart from right to left on the snappy spring. Hover or keyboard highlight lifts a
                   choice 2px at 1.08 scale over a soft gray surface and the shared control shadow. Choosing one swells
                   its glyph to 1.14 over a 32px
                   selection disc and fades the picker toward the bubble by 8px at 0.92 scale over 280ms.
