@@ -19,10 +19,10 @@
     "likes:check": "tsc -p workers/likes/tsconfig.json"
   },
   "dependencies": {
-    "@base-ui/react": "^1.1.0",
-    "@web-kits/audio": "^0.1.0",
+    "@base-ui/react": "^1.8.0",
+    "@web-kits/audio": "^0.2.0",
     "leaflet": "^1.9.4",
-    "lucide-react": "^1.8.0",
+    "lucide-react": "^1.41.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -33,11 +33,11 @@
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/leaflet": "^1.9.22",
-    "@types/node": "^22.20.1",
+    "@types/node": "^25.9.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
-    "@vitejs/plugin-react": "^5.1.1",
-    "agentation": "^2.2.1",
+    "@vitejs/plugin-react": "^6.1.1",
+    "agentation": "^3.0.2",
     "autoprefixer": "^10.5.5",
     "dialkit": "^2.0.0",
     "eslint": "^10.10.0",
@@ -55,7 +55,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.69.0",
-    "vite": "^7.3.1",
+    "vite": "^8.2.2",
     "wrangler": "^4.129.0"
   },
   "overrides": {
