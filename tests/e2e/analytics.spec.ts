@@ -43,3 +43,24 @@ test("attributes the floating table-of-contents About action to the TOC", async 
   )
   expect(aboutScrollEvent).toEqual(["event", "about_scroll", { about_scroll_trigger: "toc_about" }])
 })
+
+test("records the visitor reaction that lands on a chat message", async ({ page }) => {
+  await page.route("https://www.googletagmanager.com/**", (route) =>
+    route.fulfill({ contentType: "application/javascript", body: "" }),
+  )
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto(analyticsBaseUrl)
+  await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
+
+  const chat = page.getByRole("region", { name: "Chat with Rafa" })
+  await chat.getByRole("button", { name: "React to “Hey, I’m Rafa.”" }).click()
+  await page.getByRole("menu", { name: "React to “Hey, I’m Rafa.”" })
+    .getByRole("menuitemcheckbox", { name: "Love" }).click()
+
+  const reactionEvent = await page.evaluate(() =>
+    window.dataLayer
+      ?.map((entry) => Array.from(entry as ArrayLike<unknown>))
+      .find(([command, eventName]) => command === "event" && eventName === "about_intro_reaction"),
+  )
+  expect(reactionEvent).toEqual(["event", "about_intro_reaction", { message_index: 0, reaction: "love" }])
+})

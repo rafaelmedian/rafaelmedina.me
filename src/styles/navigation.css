@@ -74,7 +74,6 @@
   .mosaic-takeover-close svg {
     width: 1.5rem;
     height: 1.5rem;
-    stroke-width: 1.75;
   }
 }
 
@@ -421,5 +420,12 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   .mosaic-social-link {
     padding: 0 0.34rem;
     font-size: var(--text-sm);
+  }
+}
+
+/* Keep development feedback controls clear of the mobile navigation. */
+@media (max-width: 699.98px) {
+  .portfolio-feedback-toolbar {
+    bottom: calc(6rem + env(safe-area-inset-bottom)) !important;
   }
 }

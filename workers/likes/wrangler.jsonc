@@ -14,5 +14,21 @@
     "database_name": "rafaelmedina-note-likes",
     "database_id": "3fb0c0c8-b14a-447f-a122-58cf2bab0ff4",
     "migrations_dir": "migrations"
-  }]
+  }],
+  "env": {
+    // Browser tests exercise local D1 and reject chat requests before model
+    // inference. Omitting the non-inherited AI binding keeps CI local and
+    // credential-free while production continues to deploy the top level.
+    "e2e": {
+      "vars": {
+        "ALLOWED_ORIGINS": "http://127.0.0.1:4174"
+      },
+      "d1_databases": [{
+        "binding": "DB",
+        "database_name": "rafaelmedina-note-likes",
+        "database_id": "3fb0c0c8-b14a-447f-a122-58cf2bab0ff4",
+        "migrations_dir": "migrations"
+      }]
+    }
+  }
 }

@@ -709,7 +709,7 @@
   .mosaic-takeover-cue-arm {
     flex: none;
     width: 17px;
-    height: 1.5px;
+    height: 2.5px;
     border-radius: var(--radius-full);
     corner-shape: round;
     background: currentColor;

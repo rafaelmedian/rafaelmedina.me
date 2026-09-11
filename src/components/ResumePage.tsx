@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRight } from "./NavigationIcons"
 
 import { siteLinks } from "../data/portfolio"
 import { resumeItemId, updatePageMetadata } from "../lib/projectMetadata"

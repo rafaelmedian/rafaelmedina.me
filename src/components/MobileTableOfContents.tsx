@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react"
-import { ChevronUp } from "lucide-react"
+import { ChevronUp } from "./NavigationIcons"
 
 const SECTIONS = [
   { id: "work", number: "01", label: "Work", href: "#work" },
@@ -21,10 +21,12 @@ export function MobileTableOfContents({
   onWork,
   onAbout,
   onServices,
+  onOpenChange,
 }: {
   onWork: () => void
   onAbout: () => void
   onServices: () => void
+  onOpenChange?: (open: boolean) => void
 }) {
   const panelId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -34,6 +36,7 @@ export function MobileTableOfContents({
   const [isOpen, setIsOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionId>("work")
+  useEffect(() => { onOpenChange?.(isOpen) }, [isOpen, onOpenChange])
   // The label the pill is leaving behind, kept alive for one exit beat so the
   // scroll-driven change reads as a direction rather than a jump cut.
   const [leaving, setLeaving] = useState<{ id: SectionId; direction: "up" | "down" }>()
@@ -191,7 +194,7 @@ export function MobileTableOfContents({
                 </span>
                 {isCurrent && (
                   <span className="mosaic-mobile-toc-icon" aria-hidden="true">
-                    <ChevronUp className="mosaic-mobile-toc-chevron" size={16} strokeWidth={1.75} />
+                    <ChevronUp className="mosaic-mobile-toc-chevron" size={16} />
                   </span>
                 )}
               </span>

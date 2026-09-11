@@ -108,6 +108,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run likes:check
+      - run: npm run contact:check
+      - run: npm run contact:test
 
       - name: Install Playwright browser
         run: |

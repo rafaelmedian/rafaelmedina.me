@@ -17,6 +17,10 @@ const DesignSystemPage = import.meta.env.DEV
   ? lazy(() => import("./components/DesignSystemPage").then((module) => ({ default: module.DesignSystemPage })))
   : null
 
+const AboutIntroComparison = import.meta.env.DEV
+  ? lazy(() => import("./components/AboutIntroComparison"))
+  : null
+
 // `/styleguide` was the original path; keep it working rather than leaving a
 // stale development bookmark to fall through to the portfolio.
 const DESIGN_SYSTEM_PATHS = new Set(["/design-system", "/styleguide"])
@@ -62,10 +66,11 @@ function App({ pathname }: { pathname?: string }) {
   const standaloneWriting = isHydrated ? undefined : writingAtPath(currentPath)
   const standaloneNotes = !isHydrated && isNotesPath(currentPath)
   const isDesignSystemPage = DesignSystemPage !== null && DESIGN_SYSTEM_PATHS.has(currentPath)
-  const tuning = !isDesignSystemPage && typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tune") : null
+  const isIntroComparison = AboutIntroComparison !== null && currentPath === "/intro-options"
+  const tuning = !isDesignSystemPage && !isIntroComparison && typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tune") : null
   const isTuningEdge = ElasticEdgeTuner !== null && tuning === "edge"
   const isTuningPhotos = PhotoPrintTuner !== null && tuning === "photos"
-  const isTuningContact = ContactShineTuner !== null && !isDesignSystemPage
+  const isTuningContact = ContactShineTuner !== null && !isDesignSystemPage && !isIntroComparison
     && (tuning === null || tuning === "contact" || currentPath === "/__design_lab")
 
   return (
@@ -73,7 +78,9 @@ function App({ pathname }: { pathname?: string }) {
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
-        {isDesignSystemPage && DesignSystemPage ? (
+        {isIntroComparison && AboutIntroComparison ? (
+          <Suspense fallback={null}><AboutIntroComparison /></Suspense>
+        ) : isDesignSystemPage && DesignSystemPage ? (
           <Suspense fallback={null}>
             <DesignSystemPage links={siteLinks} name={siteProfile.name} />
           </Suspense>
@@ -93,7 +100,7 @@ function App({ pathname }: { pathname?: string }) {
         )}
         {Agentation ? (
           <Suspense fallback={null}>
-            <Agentation className="portfolio-feedback-toolbar max-[699.98px]:bottom-[calc(6rem+env(safe-area-inset-bottom))]!" />
+            <Agentation className="portfolio-feedback-toolbar" />
           </Suspense>
         ) : null}
         {isTuningEdge && ElasticEdgeTuner ? (
