@@ -1571,8 +1571,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 which the rail&rsquo;s <code>aria-keyshortcuts</code> narrow to match. Opening focuses the card
                 rather than the popup on every slide, because the card is the surface that scrolls.
                 Work history and Education use the same live <code>cv.ts</code> content
-                as About, under a “Work history” title with no repeated body heading; Education uses weight
-                600. A project print pages the gallery to that project rather than leaving for its page.
+                as About, under a “Résumé” title with no repeated body heading. The title stays pinned to the
+                card&rsquo;s top edge while its document scrolls and picks up the same quiet divider shadow as the
+                Notes toolbar once content passes beneath it; Education uses weight 600. A project print pages the
+                gallery to that project rather than leaving for its page.
                 “View resume PDF” opens the canonical PDF in a new tab and closes the reader rather than heading it:
                 it sits below Education, 3rem after it.
                 Education follows the same institution-and-date heading, credential, location, and description
@@ -1580,8 +1582,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 introduction and Services, and this reader is the only place the history is set.
               </p>
               <p>
-                In the reader, company logos sit above each title in 2rem circular white badges with 0.45rem
-                padding, overlapping by 0.26rem like the work-history popover&rsquo;s logo group, restoring the earlier company-link treatment with
+                In the reader, company logos sit inline with each company title in 2rem circular white badges with 0.45rem
+                padding, overlapping by 0.26rem like the work-history popover&rsquo;s logo group. Work entries are
+                separated by the established 8% hairline and 2.5rem spacing step, making dates and roles easier to scan without adding cards. This restores the earlier company-link treatment with
                 <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
                 Company names, dates, locations, and descriptions reuse the shared résumé styles in
                 <code>about.css</code>: <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
@@ -1596,7 +1599,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 its focus ring visible; hover keeps the pile&rsquo;s stacking order, lifts it 0.25rem, and straightens it
                 to 0 degrees over <code>--duration-quick</code>, which reduced motion removes.
                 They load the same <code>-480w</code>/<code>-960w</code> variants the grid tiles do, declared against
-                that rendered width rather than a full-width slot.
+                that rendered width rather than a full-width slot. At wide reader widths, a pencil, cup, and sheet
+                reuse the Notes archive&rsquo;s generated three-frame masks in the otherwise empty margins. Hovering
+                or focusing their adjacent role retraces the line at the same 375ms stepped cadence; compact layouts
+                hide them, and reduced motion keeps their resting frame.
               </p>
               <div className="ds-resume-tile-specimen mosaic-row-item">
                 <ResumeTile />

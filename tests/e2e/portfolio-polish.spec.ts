@@ -3295,7 +3295,7 @@ test("opens the resume reader from the folded tile and returns focus on close", 
   await expect(resume.locator(".resume-tile-copy")).toContainText("2026 - Present")
 
   await resume.click()
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   await expect(dialog).toBeVisible()
   await expect(page).toHaveURL(/\/resume\/$/)
   await expect(page).toHaveTitle("Résumé — Rafael Medina")
@@ -3315,7 +3315,7 @@ test("pages between the resume reader and its neighbouring projects", async ({ p
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const dialog = page.getByRole("dialog")
-  await expect(dialog).toHaveAccessibleName("Work history")
+  await expect(dialog).toHaveAccessibleName("Résumé")
 
   // Protector follows the résumé in the portraits group.
   await page.keyboard.press("ArrowRight")
@@ -3323,7 +3323,7 @@ test("pages between the resume reader and its neighbouring projects", async ({ p
   await expect(page).toHaveURL(/\/work\/protector-booking\/$/)
 
   await page.keyboard.press("ArrowLeft")
-  await expect(dialog).toHaveAccessibleName("Work history")
+  await expect(dialog).toHaveAccessibleName("Résumé")
   await expect(page).toHaveURL(/\/resume\/$/)
 
   // And Popparazi sits above it on the other side.
@@ -3336,7 +3336,7 @@ test("opens a shared resume link straight into the gallery", async ({ page }) =>
   await page.goto("/resume/")
 
   const dialog = page.getByRole("dialog")
-  await expect(dialog).toHaveAccessibleName("Work history")
+  await expect(dialog).toHaveAccessibleName("Résumé")
   await expect(dialog.getByRole("list", { name: "Work history" })).toBeVisible()
 })
 
@@ -3393,6 +3393,25 @@ for (const key of ["ArrowDown", "PageDown", "End"]) {
   })
 }
 
+test("keeps the résumé heading fixed above the scrolling history", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/resume/")
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const card = dialog.locator(".preview-gallery-card")
+  const title = dialog.getByRole("heading", { name: "Résumé" })
+  const drawings = dialog.locator(".resume-margin-drawing")
+  const titleTop = (await title.boundingBox())!.y
+
+  await expect(drawings).toHaveCount(3)
+  await expect(drawings.first()).toBeVisible()
+
+  await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
+  await expect(dialog.locator(".preview-gallery-resume")).toHaveAttribute("data-scrolled", "true")
+  expect((await title.boundingBox())!.y).toBeCloseTo(titleTop, 0)
+})
+
 test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -3429,7 +3448,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   const workHistory = dialog.getByRole("list", { name: "Work history" })
   const education = dialog.getByRole("list", { name: "Education" })
 
@@ -3461,14 +3480,14 @@ test("gives the mobile resume reader its own close control", async ({ page }) =>
   const trigger = page.getByRole("link", { name: "Open résumé" })
   await trigger.click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   const close = dialog.getByRole("button", { name: "Close résumé" })
   await expect(close).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Next preview" })).toBeVisible()
 
   const [closeBox, titleBox] = await Promise.all([
     close.boundingBox(),
-    dialog.getByRole("heading", { name: "Work history" }).boundingBox(),
+    dialog.getByRole("heading", { name: "Résumé" }).boundingBox(),
   ])
   expect(closeBox!.width).toBeGreaterThanOrEqual(44)
   expect(closeBox!.height).toBeGreaterThanOrEqual(44)
@@ -3490,7 +3509,7 @@ test("keeps the desktop resume reader free of a close control", async ({ page })
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   await expect(dialog).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Close résumé" })).toBeHidden()
   await expect(dialog.locator(".preview-gallery-toolbar")).toHaveCSS("display", "none")
@@ -4055,7 +4074,7 @@ test("starts the education section without a top hairline", async ({ page }) => 
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "0px")
 })
 
@@ -4064,7 +4083,7 @@ test("gives the Chainlink work a fuller description", async ({ page }) => {
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const chainlinkEntry = page
-    .getByRole("dialog", { name: "Work history" })
+    .getByRole("dialog", { name: "Résumé" })
     .locator(".resume-experience")
     .filter({ has: page.getByRole("heading", { name: "Product Designer & Frontend Developer at TM (Chainlink, Twilio, and Onit)" }) })
 
@@ -4108,7 +4127,7 @@ test("keeps work-history company links free of logo tooltips", async ({ page }) 
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   const companyLink = dialog
     .locator("a.mosaic-company-inline-link")
     .filter({ hasText: "Moody's" })
@@ -4126,7 +4145,7 @@ test("keeps work-history company links free of logo tooltips", async ({ page }) 
 test("links each work-history company name to its primary website", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
-  const workHistory = page.getByRole("dialog", { name: "Work history" })
+  const workHistory = page.getByRole("dialog", { name: "Résumé" })
 
   const projects = [
     { company: "0x Project", href: "https://0x.org/" },
@@ -4153,7 +4172,7 @@ test("opens a work-history company website from its name", async ({ page }) => {
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const companyLink = page
-    .getByRole("dialog", { name: "Work history" })
+    .getByRole("dialog", { name: "Résumé" })
     .getByRole("link", { name: "0x Project", exact: true })
 
   const popupPromise = page.waitForEvent("popup")
@@ -4167,7 +4186,7 @@ test("keeps each role and employer as the accessible work-history heading", asyn
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Work history" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
   await expect(dialog.getByRole("heading", { name: "Senior Product Designer at 0x Project" })).toBeVisible()
   await expect(dialog.getByRole("link", { name: "0x Project", exact: true })).toBeVisible()
 })

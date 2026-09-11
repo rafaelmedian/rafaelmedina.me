@@ -25,7 +25,7 @@ export function projectGalleryItem(card: PortfolioCard): GalleryItem {
 }
 
 /** The reader's heading, and the accessible name of its slide. */
-export const resumeItemTitle = "Work history"
+export const resumeItemTitle = "Résumé"
 
 /** The list's heading, and the accessible name of its slide. */
 export const writingsItemTitle = "Notes"
