@@ -32,7 +32,7 @@ test("uses continuous corners without reshaping circles and pills", async ({ pag
 })
 
 test("corner tuner changes rounded surfaces without reshaping circles", async ({ page }) => {
-  await page.goto("/?tune=corners")
+  await page.goto("/")
   const curve = page.getByRole("slider", { name: "Exponent" })
   await expect(curve).toBeVisible()
   await expect(curve).toHaveAttribute("aria-valuenow", "2")

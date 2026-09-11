@@ -1162,8 +1162,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Rounded rectangular surfaces use <code>--corner-curve: squircle</code>, the exact{" "}
                 <code>superellipse(2)</code> curve from CSS Borders Level 4. Browsers that do not support{" "}
                 <code>corner-shape</code> fall back to the same four circular radii without changing layout. Pills,
-                dots, and avatars remain geometrically round. In development, tune the curve live at{" "}
-                <a href="/?tune=corners">/?tune=corners</a>; the stylesheet remains the production source of truth.
+                dots, and avatars remain geometrically round. In development, the homepage shows the live curve
+                tuner by default; <a href="/?tune=corners">/?tune=corners</a> remains its explicit route. The
+                stylesheet remains the production source of truth.
               </p>
               <div
                 className="ds-rule"

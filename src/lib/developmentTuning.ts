@@ -1,5 +1,6 @@
 export function isTuningCornerCurve() {
-  return import.meta.env.DEV
-    && typeof window !== "undefined"
-    && new URLSearchParams(window.location.search).get("tune") === "corners"
+  if (!import.meta.env.DEV || typeof window === "undefined") return false
+
+  const tuner = new URLSearchParams(window.location.search).get("tune")
+  return tuner === null || tuner === "corners"
 }

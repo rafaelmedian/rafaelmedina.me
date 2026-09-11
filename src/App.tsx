@@ -9,6 +9,7 @@ import { ResumePage } from "./components/ResumePage"
 import { NotesPage } from "./components/NotesPage"
 import { DeferredWritingPage } from "./components/DeferredWritingPage"
 import { getWritingPage } from "./lib/writingPageSlot"
+import { isTuningCornerCurve } from "./lib/developmentTuning"
 
 // Dev-only. In production `/design-system` is served by public/404.html — shipping the chunk would
 // be dead weight. The page's CSS rides the same lazy chunk, so none of it
@@ -65,7 +66,7 @@ function App({ pathname }: { pathname?: string }) {
   const tuning = !isDesignSystemPage && typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tune") : null
   const isTuningEdge = ElasticEdgeTuner !== null && tuning === "edge"
   const isTuningPhotos = PhotoPrintTuner !== null && tuning === "photos"
-  const isTuningCorners = CornerCurveTuner !== null && tuning === "corners"
+  const isTuningCorners = CornerCurveTuner !== null && !isDesignSystemPage && isTuningCornerCurve()
 
   return (
     <div className="relative isolate min-h-dvh overflow-x-clip bg-canvas text-ink">
