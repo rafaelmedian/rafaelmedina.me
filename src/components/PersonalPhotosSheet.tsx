@@ -5,6 +5,7 @@ import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
 import { usePhotoSphere } from "../lib/usePhotoSphere"
+import { flyBetweenLayouts, snapshotSlides } from "../lib/photoLayoutSwitch"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 import { readSheetLayout, saveSheetLayout, usePreviewCount, useSheetColumns, type PhotoSheetLayout } from "../lib/photoLayout"
 
@@ -86,6 +87,15 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const rewinding = useRef<{ cancelled: boolean } | null>(null)
   /** Set by the toggle, so only a switch — not the open — fades the stage in. */
   const switched = useRef(false)
+  /** Where the old layout left every photo, taken by the toggle before the
+      switch, and the flights that carry them to the new one. */
+  const switchFrom = useRef<ReturnType<typeof snapshotSlides> | null>(null)
+  const layoutFlight = useRef<(() => void) | null>(null)
+  const endLayoutFlight = useCallback(() => {
+    layoutFlight.current?.()
+    layoutFlight.current = null
+  }, [])
+  useEffect(() => endLayoutFlight, [endLayoutFlight])
   const registerSheet = useCallback((sheet: HTMLDivElement | null) => {
     sheetRef.current = sheet
     setSheetNode(sheet)
@@ -174,7 +184,11 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     if (rewinding.current) rewinding.current.cancelled = true
     rewinding.current = null
     releaseHeld()
+    endLayoutFlight()
     switched.current = true
+    // Where every photo is now, before this layout is torn down: the flights
+    // in the switch effect carry each one from here to its place in the next.
+    switchFrom.current = !reducedMotion && sheetRef.current ? snapshotSlides(sheetRef.current) : null
     saveSheetLayout(next)
     setLayout(next)
   }
@@ -195,19 +209,26 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     return () => observer.disconnect()
   }, [layoutNode, layout])
   // The new layout starts at its top and fades in over the old one's place;
-  // the backdrop and the toggle stay put.
+  // the backdrop and the toggle stay put. The photos themselves reorganise:
+  // each one on screen flies from where the old layout left it to where the
+  // new one has put it, and the globe holds still until they have landed.
   useLayoutEffect(() => {
     const sheet = sheetRef.current
     if (!switched.current || !sheet) return
     switched.current = false
     sheet.scrollTop = 0
+    const from = switchFrom.current
+    switchFrom.current = null
     if (reducedMotion) return
     const tokens = getComputedStyle(sheet)
     sheet.animate([{ opacity: 0 }, { opacity: 1 }], {
       duration: cssTimeToMilliseconds(tokens.getPropertyValue("--duration-base")),
       easing: tokens.getPropertyValue("--ease-smooth").trim(),
     })
-  }, [layout, reducedMotion])
+    if (!from) return
+    layoutFlight.current = flyBetweenLayouts(sheet, from, () => { layoutFlight.current = null })
+    if (layout === "sphere") sphere.current.rest(cssTimeToMilliseconds(tokens.getPropertyValue("--sphere-focus-duration")))
+  }, [layout, reducedMotion, sphere])
 
   // The grid scrolls natively. Its own margin — the padding around the
   // masonry — dismisses on click; the prints and the gaps between them keep
@@ -251,6 +272,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
       }
       if (rewinding.current) rewinding.current.cancelled = true
       rewinding.current = null
+      // A switch still in flight lands at once, so the close measures slides
+      // that are showing.
+      endLayoutFlight()
       if (sheet) {
         // Hand the stack the full-size bitmaps the sheet has loaded, so the
         // returning photo and the print it lands on are the same image.

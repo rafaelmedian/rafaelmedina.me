@@ -147,6 +147,8 @@ type Tween = { from: Matrix; axis: Vector; angle: number; start: number; duratio
 export type PhotoSphereControls = {
   /** Lets a held photo go, back to its place on the globe. False if none was held. */
   release: () => boolean
+  /** Keeps the globe still for this long: a flight is landing on its slots. */
+  rest: (milliseconds: number) => void
   /** Holds the photo with this id at the centre, as a click on it would. Asked
       for while the open flight is still landing, it waits for the flight. */
   hold: (photoId: string) => void
@@ -180,7 +182,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
   const running = useRef(false)
   /** A hold asked for before the globe has mounted, taken up when it does. */
   const requestedHold = useRef<string | null>(null)
-  const controls = useRef<PhotoSphereControls>({ release: () => false, hold: (photoId) => { requestedHold.current = photoId } })
+  const controls = useRef<PhotoSphereControls>({ release: () => false, rest: () => undefined, hold: (photoId) => { requestedHold.current = photoId } })
 
   // Stop turning the moment the dialog starts to close, before the close
   // flight measures where each slide is: a slide that kept moving under its
@@ -427,6 +429,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       return true
     }
     controls.current.release = release
+    controls.current.rest = (milliseconds) => { restUntil = Math.max(restUntil, performance.now() + milliseconds) }
     const holdById = (photoId: string) => {
       // The first copy of a photo is the one with the id; the rest are decoration.
       const slide = slides.find((candidate) => candidate.dataset.photoId === photoId)
@@ -671,7 +674,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     stage.addEventListener("focusin", onFocusIn)
     stage.addEventListener("focusout", onFocusOut)
     return () => {
-      controls.current = { release: () => false, hold: (photoId) => { requestedHold.current = photoId } }
+      controls.current = { release: () => false, rest: () => undefined, hold: (photoId) => { requestedHold.current = photoId } }
       cancelAnimationFrame(frame)
       resize.disconnect()
       images.forEach((image) => image.removeEventListener("load", onImageLoad))

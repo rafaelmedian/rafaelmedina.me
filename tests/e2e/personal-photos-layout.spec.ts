@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "@playwright/test"
 
 /** The grid now appears with the shared avatar intro. */
 async function openHome(page: Page) {
@@ -156,6 +156,79 @@ test("on the grid a click holds a photo at the centre with its name under it; Es
   await page.mouse.click(10, 450)
   await expect(dialog(page)).toBeHidden()
   await expect(trigger).toBeFocused()
+})
+
+test("a switch flies every photo from where one layout left it to where the other puts it", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openHome(page)
+  await openFromLabel(page)
+  await expect(globe(page)).toBeVisible()
+  await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
+  await page.mouse.move(5, 5)
+  // Park the globe: a photo brought to the front from the keyboard holds it
+  // still for seconds, so the positions read here are the ones the switch
+  // will find, however long the click takes to land.
+  await page.keyboard.press("Tab")
+  await page.waitForTimeout(700)
+  // Hold the switch's flights at their first frame as they are built, so
+  // both ends can be read.
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.closest(".personal-photos-flight")) {
+        animation.pause()
+        animation.currentTime = 0
+      }
+      return animation
+    }
+  })
+  const centres = (root: Locator) => root.evaluate((element) => Object.fromEntries(Array.from(element.querySelectorAll<HTMLElement>(".personal-photos-slide[data-photo-id]"))
+    .filter((slide) => slide.getBoundingClientRect().width)
+    .map((slide) => { const rect = slide.getBoundingClientRect(); return [slide.dataset.photoId!, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, width: rect.width }] })))
+  const before = await centres(globe(page))
+
+  await toggle(page, "Grid").click()
+  await expect(grid(page)).toBeVisible()
+  const flights = page.locator(".personal-photos-flight")
+  await expect(flights).not.toHaveCount(0)
+  const after = await centres(grid(page))
+  // At their first frame the flights sit where the globe left the photos,
+  // carrying that size; the grid's own slides wait hidden under them.
+  const flown = await flights.evaluateAll((elements) => elements.map((element) => {
+    const rect = element.getBoundingClientRect()
+    const slide = document.querySelector<HTMLElement>(`.personal-photos-sheet .personal-photos-slide[data-photo-id="${element.dataset.photoFlight}"]`)!
+    return { id: element.dataset.photoFlight!, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, width: rect.width, slideOpacity: getComputedStyle(slide).opacity }
+  }))
+  expect(flown.length).toBeGreaterThan(5)
+  for (const flight of flown) {
+    const start = before[flight.id]
+    expect(start, flight.id).toBeDefined()
+    expect(Math.hypot(flight.x - start.x, flight.y - start.y), flight.id).toBeLessThan(2)
+    expect(Math.abs(flight.width - start.width), flight.id).toBeLessThan(2)
+    expect(flight.slideOpacity).toBe("0")
+  }
+  // At their last frame they sit exactly where the grid has put the photos.
+  const landed = await flights.evaluateAll((elements) => elements.map((element) => {
+    element.getAnimations().forEach((animation) => { animation.currentTime = Number(animation.effect!.getTiming().duration) })
+    const rect = element.getBoundingClientRect()
+    return { id: element.dataset.photoFlight!, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, width: rect.width }
+  }))
+  for (const flight of landed) {
+    const end = after[flight.id]
+    expect(Math.hypot(flight.x - end.x, flight.y - end.y), flight.id).toBeLessThan(2)
+    expect(Math.abs(flight.width - end.width), flight.id).toBeLessThan(2)
+  }
+  await flights.evaluateAll((elements) => elements.forEach((element) => element.getAnimations().forEach((animation) => animation.finish())))
+  await expect(flights).toHaveCount(0)
+  expect(await grid(page).locator(".personal-photos-slide[data-photo-id]").evaluateAll((elements) => elements.every((element) => getComputedStyle(element).opacity === "1"))).toBe(true)
+
+  // And back: the grid's photos fly out to their slots on the globe.
+  await toggle(page, "Sphere").click()
+  await expect(globe(page)).toBeVisible()
+  await expect(flights).not.toHaveCount(0)
+  await flights.evaluateAll((elements) => elements.forEach((element) => element.getAnimations().forEach((animation) => animation.finish())))
+  await expect(flights).toHaveCount(0)
 })
 
 test("a scrolled grid glides back to its first row before the prints fly home", async ({ page }) => {
