@@ -469,6 +469,12 @@ test("the mouse moving onto a notes row strikes one key", async ({ page }) => {
   await page.goto("/notes/")
   await expect(popup(page).getByRole("heading", { name: "Notes", exact: true })).toBeVisible()
   await expect(popup(page)).toHaveCSS("opacity", "1")
+  // The popup reaches full opacity before its origin wrapper finishes moving.
+  // Measure rows only after that travel lands, or these coordinates can point
+  // at the next row by the time the mouse gets there.
+  await page.locator(".preview-gallery-origin-wrap").evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  )
   const keyClicks = () => page.evaluate(() => (window as typeof window & { keyClicks: number }).keyClicks)
 
   // One key per row the mouse moves onto: not one per movement inside a row,
