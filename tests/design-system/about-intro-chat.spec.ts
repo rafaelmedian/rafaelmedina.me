@@ -126,7 +126,7 @@ test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ pa
   // The shape is drawn twice so its white outer ring cannot cut either blue trail dot.
   await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-disc')).toHaveCount(2)
   await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-trail')).toHaveCount(4)
-  await expect(chat.getByRole('status')).toHaveText('Got it — I’ll see your ❤️.')
+  await expect(chat.getByRole('status')).toHaveText('Got it — I’ll see your 🩷.')
   await expect(picker).toHaveCount(0)
 
   await greeting.click()

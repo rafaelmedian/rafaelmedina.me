@@ -13,7 +13,7 @@ const typingDuration = 900
 // lands, then the follow-up typing starts.
 const reactionDelays = [900, 700]
 const visitorReactions = [
-  { id: "love", label: "Love", emoji: "❤️", announcement: "loved" },
+  { id: "love", label: "Love", emoji: "🩷", announcement: "loved" },
   { id: "like", label: "Like", emoji: "👍", announcement: "liked" },
   { id: "dislike", label: "Dislike", emoji: "👎", announcement: "disliked" },
   { id: "laugh", label: "Laugh", emoji: "😂", announcement: "laughed at" },
@@ -21,6 +21,13 @@ const visitorReactions = [
   { id: "question", label: "Question", emoji: "❓", announcement: "questioned" },
 ] as const
 type VisitorReactionId = typeof visitorReactions[number]["id"]
+
+function ReactionGlyph({ reaction }: { reaction: typeof visitorReactions[number] }) {
+  if (reaction.id === "laugh") return <span className="about-intro-tapback-symbol" data-symbol="laugh">HA<br />HA</span>
+  if (reaction.id === "emphasize") return <span className="about-intro-tapback-symbol" data-symbol="emphasize">!!</span>
+  if (reaction.id === "question") return <span className="about-intro-tapback-symbol" data-symbol="question">?</span>
+  return reaction.emoji
+}
 const heartPath = "M12 20.7C6.1 16.6 2.5 13.3 2.5 9.2c0-2.8 2.2-4.9 4.9-4.9 1.9 0 3.6 1 4.6 2.6 1-1.6 2.7-2.6 4.6-2.6 2.7 0 4.9 2.1 4.9 4.9 0 4.1-3.6 7.4-9.5 11.5Z"
 // Drawn twice, as the canvas ring and then the fill, so no ring cuts a neighbour.
 const tapbackShape = <>
@@ -61,7 +68,7 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
             <g fill="currentColor">{tapbackShape}</g>
           </g>
         </svg>
-        <span className="about-intro-chat-visitor-tapback-glyph" aria-hidden="true">{selected.emoji}</span>
+        <span className="about-intro-chat-visitor-tapback-glyph" aria-hidden="true"><ReactionGlyph reaction={selected} /></span>
       </span>}
     </span>
     <Menu.Portal>
@@ -71,7 +78,7 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
           {visitorReactions.map(choice => <Menu.CheckboxItem key={choice.id} label={choice.label}
               checked={reactionId === choice.id} onCheckedChange={() => onReaction(messageIndex, choice.id)}
               closeOnClick className="about-intro-chat-reaction-choice" aria-label={choice.label}>
-              <span aria-hidden="true">{choice.emoji}</span>
+              <span aria-hidden="true"><ReactionGlyph reaction={choice} /></span>
             </Menu.CheckboxItem>)}
         </Menu.Popup>
       </Menu.Positioner>

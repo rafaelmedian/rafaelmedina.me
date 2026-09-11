@@ -226,9 +226,12 @@ laughter, exclamation points, and a question mark. The picker uses Base UI menu
 semantics, left/right arrow navigation, 40px targets, viewport collision
 handling, and the shared white overlay surface. It springs open using the
 existing Messages motion from the earlier reaction exploration, staggers the
-six choices, and folds toward the bubble after a selection. The chosen glyph
-then grows into the same blue disc and two-dot trail used by Rafa's automatic
-heart, mirrored onto the message's top-right corner. A later choice replaces
+six choices, and fades toward the bubble after a selection. The supplied Messages
+references guide the pink heart and custom blue HA HA, coral !! and purple ?.
+The picker uses smaller 18px glyphs while preserving 40px tap targets. The chosen
+14px glyph then grows into a 27px blue disc and two-dot trail, a three-quarter
+version of Rafa's automatic heart, mirrored onto the message's top-right corner.
+A later choice replaces
 it; choosing the current Tapback again removes it. The hint confirms both
 actions, while reduced motion shows picker and Tapback at rest.
 When analytics is configured, the site records only the message index and

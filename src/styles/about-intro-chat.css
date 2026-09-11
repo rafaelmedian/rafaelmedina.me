@@ -108,7 +108,7 @@
 }
 
 .about-intro-chat-received[data-reacted="true"] {
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .about-intro-chat-received .about-intro-chat-bubble {
@@ -132,16 +132,18 @@
    corner: a blue disc, its two thought-bubble dots, and the chosen glyph. */
 .about-intro-chat-visitor-tapback {
   position: absolute;
-  right: -30px;
-  top: -26px;
-  width: 52px;
-  height: 50px;
+  right: -22px;
+  top: -20px;
+  width: 39px;
+  height: 37.5px;
   color: var(--intro-blue);
   pointer-events: none;
 }
 
 .about-intro-chat-visitor-tapback svg {
   display: block;
+  width: 100%;
+  height: 100%;
   overflow: visible;
 }
 
@@ -152,16 +154,46 @@
 
 .about-intro-chat-visitor-tapback-glyph {
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 15px;
+  left: 15px;
   display: grid;
   place-items: center;
   width: 24px;
   height: 24px;
-  font-size: 18px;
+  font-size: var(--text-sm);
   line-height: 1;
   translate: -50% -50%;
-  animation: intro-grow 780ms var(--intro-spring-bouncy) 120ms both;
+  animation: intro-grow 580ms var(--intro-spring-snappy) 80ms both;
+}
+
+.about-intro-chat-visitor-tapback .about-intro-chat-tapback-disc,
+.about-intro-chat-visitor-tapback .about-intro-chat-tapback-trail {
+  animation-duration: 580ms;
+  animation-timing-function: var(--intro-spring-snappy);
+}
+
+/* Messages uses sculpted symbols for these three Tapbacks, not face emoji. */
+.about-intro-tapback-symbol {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 1.2em;
+  font-weight: 900;
+  line-height: 1;
+  color: transparent;
+  background: linear-gradient(#ffb59e, #f34b40);
+  background-clip: text;
+  -webkit-text-stroke: 0.4px rgb(0 0 0 / 0.12);
+}
+
+.about-intro-tapback-symbol[data-symbol="laugh"] {
+  font-size: 0.62em;
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  background-image: linear-gradient(#8eeaff, #009bdf);
+}
+
+.about-intro-tapback-symbol[data-symbol="question"] {
+  background-image: linear-gradient(#dbbaff, #8a4ddd);
 }
 
 .about-intro-chat-reaction-positioner {
@@ -170,7 +202,7 @@
 
 .about-intro-chat-reaction-picker {
   display: flex;
-  gap: 2px;
+  gap: 0;
   padding: 4px;
   border-radius: var(--radius-full);
   background: var(--canvas);
@@ -195,10 +227,10 @@
   height: 40px;
   border-radius: var(--radius-full);
   outline: none;
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
-  animation: intro-pick-in 780ms var(--intro-spring-bouncy) both;
+  animation: intro-pick-in 580ms var(--intro-spring-snappy) both;
   transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
 }
 
@@ -215,7 +247,7 @@
 .about-intro-chat-reaction-choice[data-checked]::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 4px;
   z-index: -1;
   border-radius: var(--radius-full);
   background: var(--intro-blue);
@@ -239,13 +271,12 @@
 }
 
 @keyframes intro-picker-open {
-  from { transform: translateY(8px) scale(0.3); }
+  from { transform: translateY(8px) scale(0.75, 0.6); }
   to { transform: none; }
 }
 
 @keyframes intro-picker-fold {
-  55% { opacity: 0; }
-  to { opacity: 0; transform: translateY(16px) scale(0.06); visibility: hidden; }
+  to { opacity: 0; transform: translateY(8px) scale(0.92); }
 }
 
 @keyframes intro-pick-in {
@@ -255,7 +286,7 @@
 
 @keyframes intro-pick-press {
   0% { transform: scale(1); animation-timing-function: var(--ease-standard); }
-  30% { transform: scale(1.32); animation-timing-function: var(--intro-spring-bouncy); }
+  30% { transform: scale(1.14); animation-timing-function: var(--intro-spring-snappy); }
   100% { transform: scale(1); }
 }
 

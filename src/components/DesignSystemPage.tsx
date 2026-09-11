@@ -2207,13 +2207,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
                   Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint invites the visitor to tap.
                   The fixed-positioned picker uses Apple’s six classic choices — heart, thumbs up, thumbs down,
-                  laughter, exclamation points and a question mark — as 22px glyphs in 40px targets, separated by
-                  2px inside a 4px-padded white pill with the shared ring and overlay shadow. It stays 12px inside
-                  the viewport and retains horizontal arrow-key navigation. The picker springs from 0.3 scale and
-                  an 8px offset over 580ms; its choices follow 24ms apart on the existing bouncy spring. Choosing
-                  one swells its glyph to 1.32, folds the picker toward the bubble over 280ms, and grows the chosen
-                  18px glyph into the same 36px blue, canvas-ringed disc and two-dot trail used by Rafa’s automatic
-                  Tapback, mirrored onto the gray bubble’s top-right corner. The wrapper gains 20px above it so the
+                  laughter, exclamation points and a question mark — as 18px glyphs in adjacent 40px targets
+                  inside a 4px-padded white pill with the shared ring and overlay shadow. The heart is pink;
+                  stacked HA HA, !! and ? use sculpted text treatments with blue (#8eeaff to #009bdf),
+                  coral (#ffb59e to #f34b40) and purple (#dbbaff to #8a4ddd) gradients. These are local
+                  approximations of the supplied Messages references, not shared interface colours.
+                  It stays 12px inside the viewport and retains horizontal arrow-key navigation. The picker
+                  springs from 0.75 horizontal / 0.6 vertical scale and an 8px offset over 580ms; choices
+                  follow 24ms apart on the snappy spring. Choosing one swells its glyph to 1.14 over a 32px
+                  selection disc and fades the picker toward the bubble by 8px at 0.92 scale over 280ms.
+                  The chosen 14px glyph grows into a 27px blue, canvas-ringed disc with a two-dot trail,
+                  mirrored onto the gray bubble’s top-right corner. Its 580ms snappy entrance follows the disc
+                  by 80ms. The wrapper gains 12px above it so the
                   Tapback does not cover the prior message. A later choice replaces the earlier one; choosing the
                   current Tapback again removes it. Reduced motion shows both surfaces at rest. The hint gives a
                   polite applied or removed confirmation, and only applied reactions record the message index and
