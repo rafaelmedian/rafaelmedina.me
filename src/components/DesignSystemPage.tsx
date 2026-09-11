@@ -1337,12 +1337,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 frame and toolbar. Reduced motion changes state instantly.
                 Long notes place one 44px contents row below their title and actions, with a 6% hairline across the
                 reading measure. It begins as “Contents”; after the introduction, the section being read replaces that
-                label with the floating table of contents' directional blur-and-slide. A press discloses every section
+                label exactly as its heading crosses the pinned row, using the floating table of contents' directional
+                blur-and-slide; crossing back above the first heading restores “Contents”, while the final section holds
+                through the article's end. A press discloses every section
                 in 44px rows over the prose without reflowing it; selection closes the list, focuses the heading, and
                 scrolls without adding history. Once its natural position passes the top of the reader, the row pins
-                directly beneath Notes, reaches through the gutters and card padding to the modal edges, and draws a
-                5% hairline above itself with the toolbar's short shadow below. Reduced motion makes both the label swap
-                and disclosure immediate.
+                directly beneath Notes, then eases through the gutters and card padding to the modal edges over
+                --duration-base with --ease-smooth while its 5% upper hairline and short lower shadow resolve over the
+                same beat. Reduced motion makes the label swap, disclosure, and pinned transition immediate.
                 The toolbar's own 5% black divider and short shadow appear only while scrolled, over 160ms.
                 The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,

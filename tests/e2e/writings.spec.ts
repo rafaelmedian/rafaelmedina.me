@@ -428,24 +428,23 @@ test("the contents open from one horizontal row and jump without adding history"
   const heading = dialog.getByRole("heading", { name: "A system has to survive the awkward states" })
   await expect(heading).toBeFocused()
   await expect(contents.getByRole("link")).toHaveCount(0)
+  // The jump preserves the reader's 24px breathing room, so the preceding
+  // section remains current until the new heading crosses the rail.
+  await expect(trigger).toHaveText("The space around the trade")
+  const reader = dialog.locator(".writings-scroll")
+  await reader.evaluate((element) => element.scrollBy(0, 24))
   await expect(trigger).toHaveText("A system has to survive the awkward states")
   await expect(trigger).toHaveAccessibleName("Contents: A system has to survive the awkward states")
-  // The section it landed on is the one marked, and only by its ink.
   await trigger.click()
   await expect(currentRows).toHaveText(["A system has to survive the awkward states"])
   await trigger.click()
-  // The card scrolls, not the page, and the heading lands just under its top.
-  const reader = dialog.locator(".writings-scroll")
-  await expect.poll(async () => {
-    const [headingBox, readerBox] = await Promise.all([heading.boundingBox(), reader.boundingBox()])
-    return Math.round(headingBox!.y - readerBox!.y)
-  }).toBe(68)
+  // The card scrolls, not the page.
   expect(await page.evaluate(() => window.scrollY)).toBe(0)
   await expect(page).toHaveURL(/\/notes\/designing-matcha\/$/)
   expect(await page.evaluate(() => history.length)).toBe(historyLength)
 
-  // A short last section may never climb into the top third, so the end of
-  // the note hands the mark to it.
+  // A short last section may never climb to the rail, so the end of the note
+  // still hands the mark to it.
   await reader.evaluate((element) => element.scrollTo(0, element.scrollHeight))
   await expect(trigger).toHaveText("What the screens can tell you")
 
@@ -464,33 +463,80 @@ test("the compact contents label uses the site TOC's directional swap", async ({
   const contents = dialog.getByRole("navigation", { name: "Contents" })
   // Hold the state long enough to inspect the motion deterministically.
   await contents.evaluate((element) => (element as HTMLElement).style.setProperty("--toc-swap-duration", "2s"))
-  await dialog.getByRole("heading", { name: "Everyday decisions are practice" })
-    .evaluate((element) => element.scrollIntoView({ block: "start", behavior: "instant" }))
+  const heading = dialog.getByRole("heading", { name: "Everyday decisions are practice" })
+  await heading.evaluate((element) => element.scrollIntoView({ block: "start", behavior: "instant" }))
+  await expect(contents).toHaveAttribute("data-stuck", "true")
+  await dialog.locator(".writings-scroll").evaluate((element) => element.scrollBy(0, 24))
   await expect(contents.locator(".writing-contents-trigger")).toHaveText("Everyday decisions are practice")
   await expect(contents.locator(".writing-contents-current")).toHaveCSS("animation-name", "mosaic-toc-label-enter")
   await expect(contents.locator(".writing-contents-ghost")).toHaveCSS("animation-name", "mosaic-toc-label-exit")
   await expect(contents).toHaveAttribute("data-swap", "up")
 })
 
-test("the contents row pins beneath Notes and spans the modal", async ({ page }) => {
+test("the contents label changes only as section headings cross the pinned row", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/room-to-figure-it-out/")
   const dialog = sheet(page)
   const contents = dialog.getByRole("navigation", { name: "Contents" })
+  const trigger = contents.locator(".writing-contents-trigger")
   const scroller = dialog.locator(".writings-scroll")
+  const first = dialog.getByRole("heading", { name: "Everyday decisions are practice" })
+
+  const placeHeading = async (offsetFromContents: number) => {
+    await first.evaluate((heading, offset) => {
+      const reader = heading.closest(".writings-scroll")!
+      const rail = reader.querySelector(".writing-contents")!
+      reader.scrollTop += heading.getBoundingClientRect().top - rail.getBoundingClientRect().bottom - offset
+    }, offsetFromContents)
+  }
+
+  await placeHeading(1)
+  await expect(contents).toHaveAttribute("data-stuck", "true")
+  await expect(trigger).toHaveText("Contents")
+
+  await placeHeading(-1)
+  await expect(trigger).toHaveText("Everyday decisions are practice")
+
+  await placeHeading(1)
+  await expect(trigger).toHaveText("Contents")
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  await expect(scroller).not.toHaveJSProperty("scrollTop", 0)
+})
+
+test("the contents row eases out to the modal edges beneath Notes", async ({ page }) => {
+  await page.setViewportSize({ width: 2048, height: 646 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/notes/project-context-in-markdown/")
+  const dialog = sheet(page)
+  const contents = dialog.getByRole("navigation", { name: "Contents" })
+  const scroller = dialog.locator(".writings-scroll")
+  const card = dialog.locator(".preview-gallery-card")
+  const readerHeader = dialog.locator(".writing-reader-header")
   await expect(contents).toHaveAttribute("data-stuck", "false")
+  await contents.evaluate((element) => {
+    element.setAttribute("style", "transition-duration: 2s")
+  })
   await scroller.evaluate((element) => element.scrollTo(0, 320))
   await expect(contents).toHaveAttribute("data-stuck", "true")
 
-  const [contentsBox, scrollerBox, toolbarBox] = await Promise.all([
+  await page.waitForTimeout(100)
+  const [movingBox, cardBox, headerBox] = await Promise.all([
+    contents.boundingBox(),
+    card.boundingBox(),
+    readerHeader.boundingBox(),
+  ])
+  expect(movingBox!.width).toBeGreaterThan(headerBox!.width)
+  expect(movingBox!.width).toBeLessThan(cardBox!.width - 1)
+
+  await page.waitForTimeout(2000)
+  const [contentsBox, scrollerBox] = await Promise.all([
     contents.boundingBox(),
     scroller.boundingBox(),
-    dialog.locator(".notes-gallery-heading").boundingBox(),
   ])
   expect(Math.round(contentsBox!.y)).toBe(Math.round(scrollerBox!.y))
-  expect(Math.round(contentsBox!.x)).toBe(Math.round(toolbarBox!.x))
-  expect(Math.round(contentsBox!.width)).toBe(Math.round(toolbarBox!.width))
+  expect(Math.abs(contentsBox!.x - cardBox!.x)).toBeLessThan(1.1)
+  expect(Math.abs(contentsBox!.x + contentsBox!.width - cardBox!.x - cardBox!.width)).toBeLessThan(1.1)
   expect(await contents.evaluate((element) => getComputedStyle(element).position)).toBe("sticky")
   expect(await contents.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none")
 })

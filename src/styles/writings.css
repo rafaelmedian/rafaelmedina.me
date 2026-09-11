@@ -215,14 +215,23 @@
    than becoming a second floating surface inside the reader. */
 .writing-contents {
   --toc-swap-duration: var(--duration-quick);
+  --writing-contents-gutter: max(0px, calc((100cqi - var(--writings-measure)) / 2));
+  --writing-contents-offset: calc(var(--preview-gallery-card-padding, 0px) + var(--writing-contents-gutter));
   position: sticky;
   z-index: 2;
   top: 0;
+  width: 100%;
+  margin-left: 0;
   margin-bottom: 2rem;
+  padding-inline: 0;
   border-bottom: 1px solid rgb(0 0 0 / 0.06);
   background: var(--canvas);
   box-shadow: inset 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
-  transition: box-shadow var(--duration-quick) var(--ease-standard);
+  transition:
+    width var(--duration-base) var(--ease-smooth),
+    margin-left var(--duration-base) var(--ease-smooth),
+    padding-inline var(--duration-base) var(--ease-smooth),
+    box-shadow var(--duration-base) var(--ease-smooth);
 }
 .writing-contents-sentinel { display: block; height: 0; }
 .writings-dialog .writing-contents { top: -0.5rem; }
@@ -231,10 +240,9 @@
    their place on the prose measure while the hairline and shadow span the
    modal, joining the two pieces of persistent chrome. */
 .writings-dialog .writing-contents[data-stuck="true"] {
-  --writing-contents-side: max(0px, calc((100cqi - var(--writings-measure)) / 2 + var(--preview-gallery-card-padding)));
-  width: calc(100cqi + 2 * var(--preview-gallery-card-padding));
-  margin-left: calc((var(--writings-measure) - 100cqi) / 2 - var(--preview-gallery-card-padding));
-  padding-inline: var(--writing-contents-side);
+  width: calc(100% + 2 * var(--writing-contents-offset));
+  margin-left: calc(-1 * var(--writing-contents-offset));
+  padding-inline: var(--writing-contents-offset);
   box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
 }
 .writing-contents-trigger {

@@ -170,12 +170,11 @@ function scrollParent(element: HTMLElement) {
 }
 
 /**
- * The section being read, for the contents to mark. A section is current once
- * its heading has climbed into the top third of whatever scrolls the note --
- * a jump lands a heading well inside that -- and the last one takes over at
- * the very end, where a short closing section may never climb that far. Until
- * the first heading arrives the reader is in the introduction, which the
- * contents do not list, so nothing is marked.
+ * The section being read, for the contents to mark. A section becomes current
+ * at the moment its heading crosses the pinned contents row. Crossing back
+ * above the first heading returns the label to Contents. The last section
+ * still takes over at the very end, where a short close may not have enough
+ * copy below it to reach the row on its own.
  */
 function useCurrentSection(navRef: RefObject<HTMLElement | null>, sections: WritingSection[]) {
   const [current, setCurrent] = useState<string | null>(null)
@@ -189,13 +188,13 @@ function useCurrentSection(navRef: RefObject<HTMLElement | null>, sections: Writ
     let frame = 0
     const update = () => {
       frame = 0
-      const top = scroller ? scroller.getBoundingClientRect().top : 0
-      const height = scroller ? scroller.clientHeight : window.innerHeight
+      const boundary = navRef.current?.getBoundingClientRect().bottom
+        ?? (scroller ? scroller.getBoundingClientRect().top : 0)
       const atEnd = scroller
         ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1
         : window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1
       let active: string | null = null
-      for (const heading of headings) if (heading.getBoundingClientRect().top <= top + height / 3) active = heading.id
+      for (const heading of headings) if (heading.getBoundingClientRect().top <= boundary) active = heading.id
       if (atEnd && active) active = headings[headings.length - 1].id
       setCurrent(active)
     }
