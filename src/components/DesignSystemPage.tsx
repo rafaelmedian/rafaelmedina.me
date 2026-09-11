@@ -1573,7 +1573,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Work history and Education use the same live <code>cv.ts</code> content
                 as About, under a “Résumé” title with no repeated body heading. The title stays pinned to the
                 card&rsquo;s top edge while its document scrolls and picks up the same quiet divider shadow as the
-                Notes toolbar once content passes beneath it; Education uses weight 600. A project print pages the
+                Notes toolbar once content passes beneath it. Its opaque background extends through the card&rsquo;s
+                top padding so scrolling content cannot reappear above the title; Education uses weight 600. A project print pages the
                 gallery to that project rather than leaving for its page.
                 “View resume PDF” opens the canonical PDF in a new tab and closes the reader rather than heading it:
                 it sits below Education, 3rem after it.

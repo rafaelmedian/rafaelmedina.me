@@ -600,6 +600,15 @@
   transition: box-shadow var(--duration-quick) var(--ease-standard);
 }
 
+/* Sticky positioning leaves the card's top padding above the heading. Cover
+   that strip too, so history cannot reappear after passing behind the title. */
+.preview-gallery-resume-heading::before {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--preview-gallery-card-padding)) 0 100%;
+  background: inherit;
+}
+
 .preview-gallery-resume[data-scrolled="true"] .preview-gallery-resume-heading {
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
 }

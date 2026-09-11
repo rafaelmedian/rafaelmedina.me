@@ -3393,24 +3393,40 @@ for (const key of ["ArrowDown", "PageDown", "End"]) {
   })
 }
 
-test("keeps the résumé heading fixed above the scrolling history", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/resume/")
+for (const width of [1440, 390]) {
+  test(`keeps the résumé heading fixed above the scrolling history at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/resume/")
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
-  const card = dialog.locator(".preview-gallery-card")
-  const title = dialog.getByRole("heading", { name: "Résumé" })
-  const drawings = dialog.locator(".resume-margin-drawing")
-  const titleTop = (await title.boundingBox())!.y
+    const dialog = page.getByRole("dialog", { name: "Résumé" })
+    const card = dialog.locator(".preview-gallery-card")
+    const title = dialog.getByRole("heading", { name: "Résumé" })
+    const drawings = dialog.locator(".resume-margin-drawing")
+    const titleTop = (await title.boundingBox())!.y
 
-  await expect(drawings).toHaveCount(3)
-  await expect(drawings.first()).toBeVisible()
+    await expect(drawings).toHaveCount(3)
+    if (width === 1440) await expect(drawings.first()).toBeVisible()
 
-  await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
-  await expect(dialog.locator(".preview-gallery-resume")).toHaveAttribute("data-scrolled", "true")
-  expect((await title.boundingBox())!.y).toBeCloseTo(titleTop, 0)
-})
+    await card.evaluate((element) => element.scrollTo({ top: 500, behavior: "instant" }))
+    await expect(dialog.locator(".preview-gallery-resume")).toHaveAttribute("data-scrolled", "true")
+    // Scrolling content must not reappear in the padding above the title.
+    expect(await card.evaluate((element) => {
+      const cardBox = element.getBoundingClientRect()
+      const heading = element.querySelector(".preview-gallery-resume-heading")!
+      const headingBox = heading.getBoundingClientRect()
+      const topmost = document.elementFromPoint(
+        cardBox.x + cardBox.width / 2,
+        (cardBox.top + headingBox.top) / 2,
+      )
+      return topmost === heading || heading.contains(topmost)
+    })).toBe(true)
+
+    await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
+    await expect(dialog.locator(".preview-gallery-resume")).toHaveAttribute("data-scrolled", "true")
+    expect((await title.boundingBox())!.y).toBeCloseTo(titleTop, 0)
+  })
+}
 
 test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
