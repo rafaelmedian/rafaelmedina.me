@@ -67,13 +67,11 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
         edge. Measured from the stationary stack and the print's layout box,
         never from the print's own rect: a print turning under the pointer
         would move its own reference and chase itself. */
-    const tiltPrint = (print: HTMLElement, x: number, y: number, reach: number) => {
-      const stackRect = stack.getBoundingClientRect()
+    const readPrintRotation = (print: HTMLElement, stackRect: DOMRect, x: number, y: number, reach: number) => {
       const nx = Math.max(-reach, Math.min(reach, (x - (stackRect.left + print.offsetLeft + print.offsetWidth / 2)) / (print.offsetWidth / 2)))
       const ny = Math.max(-reach, Math.min(reach, (y - (stackRect.top + print.offsetTop + print.offsetHeight / 2)) / (print.offsetHeight / 2)))
       const angle = 10 * Math.hypot(nx, ny)
-      print.style.setProperty("--print-rotate", angle < 0.05 ? "none" : `${(-ny).toFixed(3)} ${nx.toFixed(3)} 0 ${angle.toFixed(2)}deg`)
-      print.setAttribute("data-print-tilt", "")
+      return angle < 0.05 ? "none" : `${(-ny).toFixed(3)} ${nx.toFixed(3)} 0 ${angle.toFixed(2)}deg`
     }
     /** Lets a pulled print go. Sprung, it glides back into the hand from
         where it was let go; otherwise the pull is simply dropped. */
@@ -105,9 +103,7 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
       endPull(false)
       point = { x: NaN, y: NaN }
       if (immediate) tilt.setAttribute("data-tilt-reset", "")
-      tilt.removeAttribute("data-tilt-active")
-      tilt.style.removeProperty("--photo-stack-rotate-x")
-      tilt.style.removeProperty("--photo-stack-rotate-y")
+      flattenHand()
       tilt.style.removeProperty("--photo-stack-light-x")
       tilt.style.removeProperty("--photo-stack-light-y")
       trigger.removeAttribute("data-fan-open")
@@ -149,10 +145,18 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
         if (!rect.width || !rect.height) return
         const x = Math.max(-1, Math.min(1, (point.x - rect.left) / rect.width * 2 - 1))
         const y = Math.max(-1, Math.min(1, (point.y - rect.top) / rect.height * 2 - 1))
+        const print = press?.print ?? printFrom(target)
+        const rotation = print ? readPrintRotation(print, rect, point.x, point.y, press ? 1.6 : 1) : "none"
         tilt.removeAttribute("data-tilt-reset")
         tilt.style.setProperty("--photo-stack-light-x", `${35 + x * 20}%`)
         tilt.style.setProperty("--photo-stack-light-y", `${25 + y * 15}%`)
         trigger.setAttribute("data-fan-open", "")
+        if (!press) hover(print)
+        if (print) {
+          flattenHand()
+          print.style.setProperty("--print-rotate", rotation)
+          print.setAttribute("data-print-tilt", "")
+        }
         if (press) {
           // Pulled: the print follows the pointer with resistance, and turns
           // further the further it is pulled.
@@ -162,16 +166,9 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
           const give = pull ? pullReach / (pullReach + pull) : 0
           press.print.style.setProperty("--print-drag-x", `${(dx * give).toFixed(1)}px`)
           press.print.style.setProperty("--print-drag-y", `${(dy * give).toFixed(1)}px`)
-          flattenHand()
-          tiltPrint(press.print, point.x, point.y, 1.6)
           return
         }
-        const print = printFrom(target)
-        hover(print)
-        if (print) {
-          flattenHand()
-          tiltPrint(print, point.x, point.y, 1)
-        } else {
+        if (!print) {
           tilt.style.setProperty("--photo-stack-rotate-x", `${(-y * 10).toFixed(2)}deg`)
           tilt.style.setProperty("--photo-stack-rotate-y", `${(x * 10).toFixed(2)}deg`)
           tilt.setAttribute("data-tilt-active", "")
