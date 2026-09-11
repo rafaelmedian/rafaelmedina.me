@@ -218,7 +218,7 @@ async function holdFlights(page: Page) {
   })
 }
 
-test("the hand takes its shape before the photos come home, and holds it once they are back", async ({ page }) => {
+test("the hand comes to rest when the sheet closes and only opens again for a moving pointer", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
   const trigger = page.getByRole("button", { name: "Personal life", exact: true })
@@ -227,34 +227,42 @@ test("the hand takes its shape before the photos come home, and holds it once th
     const { x, y, width, height } = print.getBoundingClientRect()
     return [x, y, width, height].map((value) => Math.round(value * 10) / 10)
   }))
-  // Untouched, before the pointer or the keyboard has been near the tile.
+  // Untouched, before the pointer or the keyboard has been near the tile;
+  // in view, so the click below scrolls nothing.
+  await trigger.scrollIntoViewIfNeeded()
+  await expect(page.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
   const resting = await rects()
 
-  // Opened from the tile's label, so no photo is held and the pointer is on
-  // no print: a print under the pointer comes up to meet it once the sheet
-  // is gone, which is its hover, not the hand settling again.
+  // Opened from the tile's label, with the pointer left where it clicked —
+  // over the tile — the way a click on the globe's margin leaves it.
   await trigger.locator(".personal-photos-label").click()
   await expect(dialog(page)).toBeVisible()
   await holdFlights(page)
   await page.keyboard.press("Escape")
   const flights = page.locator(".personal-photos-flight")
   await expect(flights).not.toHaveCount(0)
-  // Escape hands the tile its focus back, so the hand opens here — under the
-  // sheet, before a single photo has left it — and the flights are aimed at
-  // the frames it keeps. It used to wait for the dialog to unmount, which the
-  // flight holds off until the photos have landed, and the whole row then
-  // opened out from under them a beat after they arrived.
-  const aimed = await rects()
-  expect(aimed).not.toEqual(resting)
+  // The hand is at rest under the sheet, so the flights are aimed at the
+  // frames it keeps at rest. It used to open here on the focus the sheet
+  // handed back, and again on :hover once the sheet stopped taking the
+  // pointer, which read as a print still picked after the close.
+  expect(await rects()).toEqual(resting)
 
   await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
   await expect(dialog(page)).toBeHidden()
   await expect(flights).toHaveCount(0)
   await expect(trigger).toBeFocused()
-  expect(await rects()).toEqual(aimed)
-  // Nothing glides on afterwards either: the settle is well inside 360ms.
+  // The pointer is still over the tile and the tile holds focus; neither is
+  // intent, so nothing opens, lifts, or glides on.
   await page.waitForTimeout(500)
-  expect(await rects()).toEqual(aimed)
+  expect(await rects()).toEqual(resting)
+  await expect(trigger).not.toHaveAttribute("data-fan-open")
+  expect(await prints.evaluateAll((elements) => elements.map((print) => print.hasAttribute("data-print-hover") || getComputedStyle(print).translate !== "none"))).toEqual([false, false, false, false, false])
+
+  // Travel is intent: the smallest nudge opens the hand.
+  const label = (await trigger.locator(".personal-photos-label").boundingBox())!
+  await page.mouse.move(label.x + label.width / 2 + 2, label.y + label.height / 2 + 2)
+  await expect(trigger).toHaveAttribute("data-fan-open", "")
+  await expect.poll(rects).not.toEqual(resting)
 })
 
 test("the fan is dealt with a wobble, opens as a hand, and lifts the one print under the pointer", async ({ page }) => {

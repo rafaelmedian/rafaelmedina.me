@@ -386,7 +386,7 @@ const EASINGS_ENTRIES = [
     name: "Smooth — --ease-smooth",
     css: "--ease-smooth",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the avatar's crop tightening under the pointer, the live-time roll, the personal-photo fan opening on hover or focus, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the avatar's crop tightening under the pointer, the live-time roll, the personal-photo fan opening under a moving pointer, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
@@ -420,7 +420,7 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-base", use: "Larger surface moves and overlay entrances: the gallery open, the hover card, the local-time card, the work-history popover, and the takeover close. Also gallery and note paging." },
   { value: "240ms", use: "The live-time label roll only; hover-card and work-history entrances use --duration-base." },
   { value: "260ms", use: "Gallery close-state cleanup timer, not a visible animation. Shell, backdrop, and content use --duration-base in and --duration-quick out; paging uses --duration-base. JavaScript reads the computed CSS durations for flights and paging timers." },
-  { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening on hover or focus, and the sheet rewinding before close (--photo-rewind-duration)." },
+  { value: "--duration-slow", use: "The avatar reveal and each following content entrance, feed and preview media resolving from --blur-reveal as they decode, the personal-photo fan opening under a moving pointer, and the sheet rewinding before close (--photo-rewind-duration)." },
   { value: "200ms", use: "Personal-photo sheet: --photo-open-duration and --photo-close-duration both alias --duration-base. Every flight, its caption, and the backdrop share one beat in either direction, with no stagger and no delay — the whole hand leaves together and comes home together. Reduced motion removes the transitions and flights." },
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },

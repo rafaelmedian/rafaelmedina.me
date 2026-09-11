@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, type RefObject } from "react"
 
-/** Tilt the whole hand from its stationary tile. Reset synchronously before
-    measuring a gallery flight, so its source and return rectangles stay flat. */
+/** The fan's pointer model. A pointer travelling over the tile opens the
+    hand (`data-fan-open` on the trigger) and tilts it as a whole; the one
+    print under the pointer is marked `data-print-hover` and lifts. Every
+    state comes from pointer travel, never from `:hover`: when the sheet
+    closes over a resting pointer the browser re-evaluates `:hover` without
+    the pointer moving, and the hand used to spring open on its own — which
+    read as a print still selected. Nothing here answers until the pointer
+    moves again. Reset synchronously before measuring a gallery flight, so
+    its source and return rectangles stay flat. */
 export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
   const resetRef = useRef<() => void>(() => {})
   const resetBeforeOpen = useCallback(() => resetRef.current(), [])
@@ -14,24 +21,41 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)")
     const fine = matchMedia("(hover: hover) and (pointer: fine)")
     let frame = 0
-    let point = { x: 0, y: 0 }
+    let point = { x: NaN, y: NaN }
+    let target: Element | null = null
+    let hovered: HTMLElement | null = null
     let locked = false
 
+    const printFrom = (node: Element | null) => node?.closest<HTMLElement>(".personal-photos-print") ?? null
+    const hover = (print: HTMLElement | null) => {
+      if (print === hovered) return
+      hovered?.removeAttribute("data-print-hover")
+      hovered = print
+      hovered?.setAttribute("data-print-hover", "")
+    }
     const reset = (immediate = false) => {
       cancelAnimationFrame(frame)
       frame = 0
+      point = { x: NaN, y: NaN }
       if (immediate) tilt.setAttribute("data-tilt-reset", "")
       tilt.removeAttribute("data-tilt-active")
       tilt.style.removeProperty("--photo-stack-rotate-x")
       tilt.style.removeProperty("--photo-stack-rotate-y")
       tilt.style.removeProperty("--photo-stack-light-x")
       tilt.style.removeProperty("--photo-stack-light-y")
+      trigger.removeAttribute("data-fan-open")
+      hover(null)
     }
     const resetBeforeFlight = () => { locked = true; reset(true) }
     resetRef.current = resetBeforeFlight
     const move = (event: PointerEvent) => {
       if (locked || reduced.matches || !fine.matches || event.pointerType !== "mouse" || trigger.hasAttribute("data-photo-away")) return
+      // Only travel is intent: a move that reports the pointer where it
+      // already was (a re-dispatch after the sheet's pointer-events change,
+      // say) opens nothing.
+      if (event.clientX === point.x && event.clientY === point.y) return
       point = { x: event.clientX, y: event.clientY }
+      target = event.target as Element | null
       if (frame) return
       frame = requestAnimationFrame(() => {
         frame = 0
@@ -45,6 +69,8 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
         tilt.style.setProperty("--photo-stack-light-x", `${35 + x * 20}%`)
         tilt.style.setProperty("--photo-stack-light-y", `${25 + y * 15}%`)
         tilt.setAttribute("data-tilt-active", "")
+        trigger.setAttribute("data-fan-open", "")
+        hover(printFrom(target))
       })
     }
     const leave = () => { locked = false; reset() }

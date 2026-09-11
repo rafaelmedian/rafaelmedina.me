@@ -76,6 +76,10 @@
   transform: none;
   transition: none;
 }
+/* The reset before a flight snaps every print to rest in the same frame, so
+   the flight measures the frames the placeholders will hold, not the first
+   frame of a 360ms glide back to them. */
+.personal-photos-stack-tilt[data-tilt-reset] .personal-photos-print { transition: none; }
 
 /* Each print keeps its resting lean, fanned angle and original depth. */
 .personal-photos-print {
@@ -111,16 +115,19 @@
 /* The print under the pointer slides up out of the hand, by its own
    --print-lift, and stays in its place in the pile — a card lifted from a
    hand rises above the others' edges, it does not come out in front of them.
-   The hit area reaches down over the spot the print rose from: without that
-   a pointer resting near a print's bottom edge lost it as it rose, the print
-   fell back under the pointer, and the two chased each other. An away print
-   sits out the lift like everything else, so the return flight lands on a
-   frame that has not moved. */
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print:hover {
+   Which print that is comes from pointer travel (`data-print-hover`, set by
+   usePhotoStackTilt), not from `:hover`: when the sheet closed over a
+   resting pointer the browser re-evaluated `:hover` with nothing moving, and
+   a print rose on its own, as if still picked. The hit area reaches down over
+   the spot the print rose from: without that a pointer resting near a print's
+   bottom edge lost it as it rose, the print fell back under the pointer, and
+   the two chased each other. An away print sits out the lift like everything
+   else, so the return flight lands on a frame that has not moved. */
+@media (prefers-reduced-motion: no-preference) {
+  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-hover] {
     translate: 0 var(--print-lift, -11%);
   }
-  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print:hover::after {
+  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-hover]::after {
     content: "";
     position: absolute;
     inset: 0 0 var(--print-lift, -11%);
@@ -161,34 +168,26 @@
   border-radius: inherit;
 }
 
-/* Pointing at the tile, or reaching it with the keyboard, leans every print a
-   little further out and settles the whole hand a few percent down its own
-   curve. Each print takes its lean off the arc by its own wobble, so the row
-   loosens the way a hand of prints does rather than stepping through even
-   angles. Pointer movement tilts the whole hand, and the one print under the
-   pointer slides up (the lift rule above); nothing is enlarged or reordered,
-   so the middle remains in front throughout the hover.
+/* A pointer moving over the tile leans every print a little further out and
+   settles the whole hand a few percent down its own curve. Each print takes
+   its lean off the arc by its own wobble, so the row loosens the way a hand
+   of prints does rather than stepping through even angles. Pointer movement
+   tilts the whole hand, and the one print under the pointer slides up (the
+   lift rule above); nothing is enlarged or reordered, so the middle remains
+   in front throughout.
 
-   An away print takes the hand's shape like any other, it just takes it
-   without a transition. The hand is already in the shape it will rest in
-   before the photos start home — pointed at, or holding the focus the sheet
-   handed back — so the flights are aimed at the frames it actually keeps and
-   nothing shifts once they land. Excluding away prints here left them at rest
-   through the flight and opened the hand under the photos the instant they
-   arrived, which read as the whole row settling a second time. */
+   `data-fan-open` is set by usePhotoStackTilt on pointer travel and cleared
+   when the pointer leaves, so the hand never opens on `:hover` or on the
+   focus the sheet hands back: it is at rest at both ends of a flight, the
+   flights are measured against the frames it keeps at rest, and it stays at
+   rest after a close until the pointer moves again. Keyboard focus shows the
+   house ring and nothing more. An away print takes the hand's shape without
+   a transition, like everything else it does while its photo is out. */
 @media (prefers-reduced-motion: no-preference) {
-  .personal-photos-trigger:not([data-photo-away]):focus-visible .personal-photos-print {
+  .personal-photos-trigger[data-fan-open]:not([data-photo-away]) .personal-photos-print {
     transform: translateY(var(--print-fan-offset-y)) rotate(var(--print-fan-tilt));
   }
-
-  @media (hover: hover) and (pointer: fine) {
-    .personal-photos-trigger:not([data-photo-away]):hover .personal-photos-print {
-      transform: translateY(var(--print-fan-offset-y)) rotate(var(--print-fan-tilt));
-    }
-
-  }
 }
-
 
 /* A phone deals four prints instead of five, and the row it sits in is
    shorter, so the fan comes down with it. */
