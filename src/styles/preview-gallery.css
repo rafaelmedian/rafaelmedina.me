@@ -1058,6 +1058,43 @@
   flex-direction: column;
   padding-bottom: 0;
 }
+/* The copy dissolves into the card at its foot rather than being cut by it
+   (the blur and the ramp are in page-edge.css). The fade is the card's next
+   sibling in the popup rather than its child: inside the card's rounded
+   overflow clip, Chrome ignores the masks on the blur layers and blurs the
+   whole strip at full strength. The popup traces the card, so pinning the
+   fade to the popup's foot puts it on the card's bottom edge, and it rides that
+   edge while the card grows to an article and shrinks back. Its layers take the
+   card's bottom corners themselves; a clip here would bring the bug back.
+   At 3rem it fits inside the clearance under the last row and under an
+   article's More articles, so the end of either stays unfaded. */
+.notes-gallery-fade {
+  --bottom-fade-height: 3rem;
+
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.notes-gallery-fade > span,
+.notes-gallery-fade::after {
+  border-radius: inherit;
+  transition: opacity var(--pg-switch-ms) ease-out;
+}
+/* Outside the card it no longer rides the card's switch poses, so it borrows
+   their opacity: out with the card when Notes pages away, and installed at 0
+   with it on the way in, then settling back together. On the layers, not the
+   fade: opacity on the fade would make it the blur's backdrop root, and the
+   layers would have nothing to blur until the transition ended. */
+.preview-gallery-card[class*="preview-gallery-card-switch-"] + .notes-gallery-fade > span,
+.preview-gallery-card[class*="preview-gallery-card-switch-"] + .notes-gallery-fade::after {
+  opacity: 0;
+}
+.preview-gallery-card[class*="preview-gallery-card-switch-in-"] + .notes-gallery-fade > span,
+.preview-gallery-card[class*="preview-gallery-card-switch-in-"] + .notes-gallery-fade::after {
+  transition: none;
+}
 /* The heading's bottom edge is the edge the text scrolls under, and it runs
    through the card's padding to both sides, so the divider that appears on
    scroll spans the card rather than underlining the title. The 2rem between
@@ -1105,8 +1142,8 @@
 .notes-gallery-viewport {
   flex: 1 1 auto;
   min-height: 0;
-  margin-inline: -0.5rem;
-  padding: 0.5rem 0.5rem var(--preview-gallery-card-padding);
+  margin-inline: calc(-1 * var(--preview-gallery-card-padding));
+  padding: 0.5rem var(--preview-gallery-card-padding) var(--preview-gallery-card-padding);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1141,6 +1178,9 @@
 .preview-gallery-notes[data-scrolled="true"] .notes-gallery-heading {
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
 }
+.preview-gallery-notes:has(.writing-contents[data-stuck="true"]) .notes-gallery-heading {
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0), 0 4px 10px -8px rgb(16 16 20 / 0);
+}
 @container writings (max-width: 47.99rem) {
   .notes-gallery-back {
     right: auto;
@@ -1155,11 +1195,17 @@
     height: auto;
     max-height: none;
   }
+  /* The compact card is square-cornered and fills the popup's column. */
+  .notes-gallery-fade {
+    border-radius: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .notes-gallery-page,
   .notes-gallery-back,
-  .notes-gallery-heading .preview-gallery-notes-title {
+  .notes-gallery-heading .preview-gallery-notes-title,
+  .notes-gallery-fade > span,
+  .notes-gallery-fade::after {
     transition: none;
   }
 }
