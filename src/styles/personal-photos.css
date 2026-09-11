@@ -121,9 +121,9 @@
 }
 
 /* The print under the pointer turns toward it on its own, about an axis
-   square to the pointer's offset from the print's centre, up to 10deg at
-   its edge — the same lean the whole hand takes over the label, given to
-   one print — while the hand itself lies flat (usePhotoStackTilt lets it
+   square to the pointer's offset from the print's centre, up to 5deg at
+   its edge — a gentle lean, as the whole hand takes over the label (6deg),
+   given to one print — while the hand itself lies flat (usePhotoStackTilt lets it
    down the moment the pointer crosses onto a print). It rides on the
    individual `rotate` property, so the lean and the drop on `transform` and
    the lift on `translate` are untouched, and the flight's measurement of

@@ -45,6 +45,14 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
     /** Travel before a press counts as a pull; a click that never became a
         pull has nothing to spring back from. */
     const pullSlop = 6
+    /** How far the whole hand tips toward a pointer at the tile's edge. It
+        was 10deg, which read as the tile lurching rather than leaning. */
+    const handTilt = 6
+    /** How far one print turns toward a pointer at its own edge. A print is a
+        third of the hand's width, so the same 10deg the hand once took swept
+        three times as fast under the pointer; half of it reads as the lean
+        the whole hand used to have. */
+    const printTurn = 5
 
     const printFrom = (node: Element | null) => node?.closest<HTMLElement>(".personal-photos-print") ?? null
     const hover = (print: HTMLElement | null) => {
@@ -63,14 +71,14 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
       tilt.style.removeProperty("--photo-stack-rotate-y")
     }
     /** Turns one print toward the pointer, about the axis square to the
-        pointer's offset from the print's own centre, up to 10deg at its
-        edge. Measured from the stationary stack and the print's layout box,
+        pointer's offset from the print's own centre, up to `printTurn` at
+        its edge. Measured from the stationary stack and the print's layout box,
         never from the print's own rect: a print turning under the pointer
         would move its own reference and chase itself. */
     const readPrintRotation = (print: HTMLElement, stackRect: DOMRect, x: number, y: number, reach: number) => {
       const nx = Math.max(-reach, Math.min(reach, (x - (stackRect.left + print.offsetLeft + print.offsetWidth / 2)) / (print.offsetWidth / 2)))
       const ny = Math.max(-reach, Math.min(reach, (y - (stackRect.top + print.offsetTop + print.offsetHeight / 2)) / (print.offsetHeight / 2)))
-      const angle = 10 * Math.hypot(nx, ny)
+      const angle = printTurn * Math.hypot(nx, ny)
       return angle < 0.05 ? "none" : `${(-ny).toFixed(3)} ${nx.toFixed(3)} 0 ${angle.toFixed(2)}deg`
     }
     /** Lets a pulled print go. Sprung, it glides back into the hand from
@@ -169,8 +177,8 @@ export function usePhotoStackTilt(root: RefObject<HTMLDivElement | null>) {
           return
         }
         if (!print) {
-          tilt.style.setProperty("--photo-stack-rotate-x", `${(-y * 10).toFixed(2)}deg`)
-          tilt.style.setProperty("--photo-stack-rotate-y", `${(x * 10).toFixed(2)}deg`)
+          tilt.style.setProperty("--photo-stack-rotate-x", `${(-y * handTilt).toFixed(2)}deg`)
+          tilt.style.setProperty("--photo-stack-rotate-y", `${(x * handTilt).toFixed(2)}deg`)
           tilt.setAttribute("data-tilt-active", "")
         }
       })
