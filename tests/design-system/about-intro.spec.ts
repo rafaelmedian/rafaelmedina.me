@@ -108,6 +108,7 @@ test("keeps the player open and playing above About until explicitly closed", as
   await expect(intro(page)).toBeVisible()
   await expect(intro(page)).toHaveAttribute("data-open", "true")
   await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
+  await expect.poll(() => video.evaluate(node => Number.isFinite((node as HTMLVideoElement).duration))).toBe(true)
   await video.evaluate(node => { (node as HTMLVideoElement).currentTime = (node as HTMLVideoElement).duration - 0.2 })
   await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).ended)).toBe(true)
   await expect(intro(page)).toHaveAttribute("data-open", "true")
