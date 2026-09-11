@@ -4,6 +4,19 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
 })
 
+test("long gallery cards keep equal top and bottom desktop gutters", async ({ page }) => {
+  for (const viewport of [{ width: 2394, height: 1279 }, { width: 1024, height: 768 }]) {
+    await page.setViewportSize(viewport)
+    await page.goto("/work/protector-booking/")
+    const card = page.locator(".preview-gallery-card")
+    await expect(card).toBeVisible()
+    await expect.poll(async () => card.evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      return Math.abs(rect.top - (window.innerHeight - rect.bottom))
+    })).toBeLessThan(1)
+  }
+})
+
 test("project URLs follow selection and browser Back and Forward", async ({ page }) => {
   await page.goto("/?ref=portfolio")
   const trigger = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })

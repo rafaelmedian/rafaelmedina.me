@@ -844,7 +844,9 @@ export function PreviewGalleryDialog({
                   className={`preview-gallery-scroll-cue-wrap${switchClassName}`}
                   aria-hidden="true"
                 >
-                  <div className="preview-gallery-scroll-cue" data-visible={showScrollCue ? "true" : undefined} />
+                  <div className="preview-gallery-scroll-cue" data-visible={showScrollCue ? "true" : undefined}>
+                    <span /><span /><span /><span />
+                  </div>
                 </div>
               ) : null}
 

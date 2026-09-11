@@ -200,9 +200,9 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     await waitForSettledDialog()
     const reading = (await dialog.boundingBox())!
     // The sheet hangs from the line a project preview opens on -- 8vh, and
-    // 5vh from 1320px where the preview goes wide -- over a 1rem bottom gutter.
+    // 5vh from 1320px where the preview goes wide -- with a matching bottom gutter.
     const top = viewport.height * (viewport.width >= 1320 ? 0.05 : 0.08)
-    const room = viewport.height - top - 16
+    const room = viewport.height - 2 * top
     expect(reading.y).toBeCloseTo(top, 0)
     // An article is taller than the room, so the sheet takes all of it.
     expect(reading.height).toBeCloseTo(room, 0)
@@ -239,7 +239,7 @@ test("the nested reader grows downward without replacing its dialog", async ({ p
   const original = await dialog.elementHandle()
   await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
   await expect(dialog).toHaveAttribute("data-reading-note", "true")
-  await expect.poll(async () => (await dialog.boundingBox())!.height).toBeCloseTo(934, 0)
+  await expect.poll(async () => (await dialog.boundingBox())!.height).toBeCloseTo(900, 0)
   const readingBox = (await dialog.boundingBox())!
   expect(readingBox.x).toBe(listBox.x)
   expect(readingBox.y).toBe(listBox.y)

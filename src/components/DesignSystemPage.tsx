@@ -448,7 +448,7 @@ const BREAKPOINTS = [
   { at: "≥ 900px", change: "The mosaic becomes four named desktop groups with independent container-relative heights and the shell drops its inline padding." },
   {
     at: "≥ 1320px",
-    change: "Project previews open in the wide view with a 5vh top inset: at most 981px, and narrower when the media’s height cap gives a 4:3 preview less width to fill.",
+    change: "Project previews open in the wide view with matching 5vh top and bottom gutters: at most 981px, and narrower when the media’s height cap gives a 4:3 preview less width to fill. Compact desktop previews use matching 8vh gutters; short cards keep their natural height.",
   },
 ]
 
@@ -1195,7 +1195,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   photograph rather than sitting on a page. Taking no room in the flow is the point: a row of its own
                   under the title would push every description down whether or not anyone ever taps it.
                   Below the artwork, the project title and a single description cover the product, contribution,
-                  and result. On fine-pointer desktop layouts, a 3.5rem white wash fades over the card&rsquo;s bottom
+                  and result. On fine-pointer desktop layouts, the shared four-layer progressive blur and canvas fade
+                  cover a 3.5rem band over the card&rsquo;s bottom
                   edge only while more project content remains below it, making a short laptop viewport&rsquo;s hidden
                   overflow visible without adding a scrollbar. The wash shares the card&rsquo;s paging motion so it
                   never remains over the backdrop between slides. Left-aligned collaborator avatar links follow the
@@ -1297,7 +1298,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
                 with 8px corners and reader-sized 14px type scaled to one third. Papers fan over 360ms with smooth easing.
                 The reader is a sheet up to 56rem wide that hangs from the line a project preview opens on — 8vh
-                from the top of the viewport, 5vh from 1320px — and runs to 1rem above the bottom, with room for the navigation
+                from the top of the viewport, 5vh in the wide layout — and reserves the same inset at the bottom, with room for the navigation
                 rail, white, overlay elevation, and 24px corners.
                 Rows are grouped under Tools, Notes, and, when it has entries, Misc; categories keep that order and dates sort newest first within each one.
                 Category labels sit above their rows so the titles keep the full measure, and empty categories do not render.
@@ -2223,10 +2224,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
                 <li data-ds-terms={terms("bottom fade progressive blur backdrop-filter 1.25rem gradient --canvas clamp(3rem, 8vh, 4.5rem) 3rem sticky safe area seam sheet notes card mask rounded clip")}>
-                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet and the notes card
+                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet, notes card, and project previews
                   soften their copy as it sinks, with the work tiles&rsquo; caption blur rescaled to the strip: four
                   masked layers stepping the radius from 0.12 of <code>1.25rem</code> up to all of it, under an eased
-                  ramp into <code>--canvas</code>. The project grid and the previews do not fade. The sheet&rsquo;s
+                  ramp into <code>--canvas</code>. Project previews use a 3.5rem band on fine-pointer desktops only while
+                  more content remains below; opacity changes on the individual layers preserve their backdrop. The project grid does not fade. The sheet&rsquo;s
                   fade covers the bottom <code>clamp(3rem, 8vh, 4.5rem)</code> of the viewport plus the safe-area
                   inset, sticky to the viewport&rsquo;s foot. It is the sheet&rsquo;s last child and pulls itself back
                   over the panel&rsquo;s bottom padding, so it adds no height, never paints outside the sheet&rsquo;s

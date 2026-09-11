@@ -54,6 +54,8 @@
 
 .preview-gallery-shell {
   --preview-gallery-fixed-top: max(8vh, env(safe-area-inset-top));
+  --preview-gallery-fixed-bottom: max(var(--preview-gallery-fixed-top), env(safe-area-inset-bottom));
+  --preview-gallery-room: calc(100dvh - var(--preview-gallery-fixed-top) - var(--preview-gallery-fixed-bottom));
   --preview-gallery-gutter: clamp(1rem, 3vw, 2.5rem);
   /* The artwork bleeds to the card's sides now, so the card's width *is* the
      artwork's: any width the common 4:3 preview cannot fill comes back as a
@@ -80,7 +82,7 @@
   padding:
     var(--preview-gallery-fixed-top)
     max(var(--preview-gallery-gutter), env(safe-area-inset-right))
-    max(1rem, env(safe-area-inset-bottom))
+    var(--preview-gallery-fixed-bottom)
     max(var(--preview-gallery-gutter), env(safe-area-inset-left));
   cursor: pointer;
 }
@@ -117,7 +119,7 @@
   --preview-gallery-card-padding: clamp(2rem, 3.4vw, 2.8rem);
   position: relative;
   width: min(var(--preview-gallery-width), 100%);
-  max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  max-height: var(--preview-gallery-room);
   outline: none;
   overscroll-behavior: contain;
   border-radius:
@@ -177,7 +179,7 @@
 }
 
 .preview-gallery-card {
-  max-height: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
+  max-height: var(--preview-gallery-room);
   overflow-x: hidden;
   overflow-y: auto;
   /* `none`, not `contain`: both keep the scroll off the page behind the dialog,
@@ -237,19 +239,25 @@
 }
 
 .preview-gallery-scroll-cue {
+  --bottom-fade-height: 3.5rem;
+
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
-  height: 3.5rem;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff 88%);
+}
+
+/* Fade each layer: opacity on their parent would isolate the backdrop blur. */
+.preview-gallery-scroll-cue > span,
+.preview-gallery-scroll-cue::after {
+  border-radius: inherit;
   opacity: 0;
-  pointer-events: none;
   transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
-.preview-gallery-scroll-cue[data-visible="true"] {
+.preview-gallery-scroll-cue[data-visible="true"] > span,
+.preview-gallery-scroll-cue[data-visible="true"]::after {
   opacity: 1;
 }
 
@@ -1052,6 +1060,7 @@
   .preview-gallery-shell,
   .preview-gallery-shell[data-wide="true"] {
     --preview-gallery-fixed-top: env(safe-area-inset-top);
+    --preview-gallery-fixed-bottom: env(safe-area-inset-bottom);
     padding: var(--preview-gallery-fixed-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     background: var(--canvas);
   }
@@ -1168,15 +1177,16 @@
     padding-inline: 1.25rem;
   }
 
-  .project-case-study-media {
+  .project-case-study-media[data-layout="pair"] {
     grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
   }
 }
 
 /* Notes is a nested view of this same card. Keep the chrome opaque while the
    content uses the very same page-turn poses as the work cards. */
 .notes-gallery-card {
-  --notes-room: calc(100dvh - var(--preview-gallery-fixed-top) - max(1rem, env(safe-area-inset-bottom)));
+  --notes-room: var(--preview-gallery-room);
   height: var(--notes-list-height, auto);
   max-height: var(--notes-room);
   overflow: hidden;

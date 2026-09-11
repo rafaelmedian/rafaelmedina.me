@@ -5205,12 +5205,15 @@ test("shows a bottom fade while a laptop preview has more content to scroll", as
   const card = page.getByRole("dialog").locator(".preview-gallery-card")
   const cue = page.locator(".preview-gallery-scroll-cue")
   await expect(cue).toHaveAttribute("data-visible", "true")
-  await expect(cue).toHaveCSS("opacity", "1")
-  expect(await cue.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain("linear-gradient")
+  const layers = cue.locator("span")
+  await expect(layers).toHaveCount(4)
+  await expect(layers.first()).toHaveCSS("opacity", "1")
+  await expect(layers.last()).toHaveCSS("backdrop-filter", "blur(20px)")
+  expect(await cue.evaluate((element) => getComputedStyle(element, "::after").backgroundImage)).toContain("linear-gradient")
 
   await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
   await expect(cue).not.toHaveAttribute("data-visible", "true")
-  await expect(cue).toHaveCSS("opacity", "0")
+  await expect(layers.first()).toHaveCSS("opacity", "0")
 })
 
 const expectPreviewContributionFits = async (page: Page, viewportHeight: number) => {

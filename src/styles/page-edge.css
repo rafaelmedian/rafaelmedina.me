@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------- bottom fades --- */
 
-/* The two long reading surfaces, the About sheet and the notes card, dissolve
+/* The About sheet, notes card, and project previews dissolve
    their copy into the surface at the foot of what shows rather than cutting it
    off there. Each places its own fade (about.css, preview-gallery.css); this is
    the treatment they share: the work tiles' caption blur under a --canvas ramp.
@@ -14,7 +14,8 @@
    type is still a line. Every ramp is eased; a straight one changes slope where
    it reaches zero, and the eye reads that break as an edge. */
 .mosaic-about-fade,
-.notes-gallery-fade {
+.notes-gallery-fade,
+.preview-gallery-scroll-cue {
   --bottom-fade-blur: 1.25rem;
   --bottom-fade-mask-1: linear-gradient(
     to top,
@@ -57,41 +58,41 @@
   pointer-events: none;
 }
 
-:is(.mosaic-about-fade, .notes-gallery-fade) > span {
+:is(.mosaic-about-fade, .notes-gallery-fade, .preview-gallery-scroll-cue) > span {
   position: absolute;
   inset: 0;
   display: block;
 }
 
-:is(.mosaic-about-fade, .notes-gallery-fade) > span:nth-child(1) {
+:is(.mosaic-about-fade, .notes-gallery-fade, .preview-gallery-scroll-cue) > span:nth-child(1) {
   -webkit-backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.12));
   backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.12));
   -webkit-mask-image: var(--bottom-fade-mask-1);
   mask-image: var(--bottom-fade-mask-1);
 }
 
-:is(.mosaic-about-fade, .notes-gallery-fade) > span:nth-child(2) {
+:is(.mosaic-about-fade, .notes-gallery-fade, .preview-gallery-scroll-cue) > span:nth-child(2) {
   -webkit-backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.3));
   backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.3));
   -webkit-mask-image: var(--bottom-fade-mask-2);
   mask-image: var(--bottom-fade-mask-2);
 }
 
-:is(.mosaic-about-fade, .notes-gallery-fade) > span:nth-child(3) {
+:is(.mosaic-about-fade, .notes-gallery-fade, .preview-gallery-scroll-cue) > span:nth-child(3) {
   -webkit-backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.62));
   backdrop-filter: blur(calc(var(--bottom-fade-blur) * 0.62));
   -webkit-mask-image: var(--bottom-fade-mask-3);
   mask-image: var(--bottom-fade-mask-3);
 }
 
-:is(.mosaic-about-fade, .notes-gallery-fade) > span:nth-child(4) {
+:is(.mosaic-about-fade, .notes-gallery-fade, .preview-gallery-scroll-cue) > span:nth-child(4) {
   -webkit-backdrop-filter: blur(var(--bottom-fade-blur));
   backdrop-filter: blur(var(--bottom-fade-blur));
   -webkit-mask-image: var(--bottom-fade-mask-4);
   mask-image: var(--bottom-fade-mask-4);
 }
 
-:is(.mosaic-about-fade, .notes-gallery-fade)::after {
+:is(.mosaic-about-fade, .notes-gallery-fade, .preview-gallery-scroll-cue)::after {
   content: "";
   position: absolute;
   inset: 0;
