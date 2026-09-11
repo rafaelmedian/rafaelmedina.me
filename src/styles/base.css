@@ -133,9 +133,9 @@
      rule (outer = inner + the padding between them) rather than becoming a
      fifth value -- that is why hover-card media uses calc(), not a new token. */
   --corner-curve: squircle;
-  --radius-sm: 8px; /* chips, nav targets, focus rings */
-  --radius-md: 16px; /* hover cards, popovers, the local-time card */
-  --radius-lg: 24px; /* work tiles, dialog media and corners */
+  --radius-sm: 10.4px; /* chips, nav targets, focus rings */
+  --radius-md: 20.8px; /* hover cards, popovers, the local-time card */
+  --radius-lg: 31.2px; /* work tiles, dialog media and corners */
   --radius-full: 999px; /* pills, dots, avatars, nav buttons */
   color-scheme: light;
   text-rendering: optimizeLegibility;

@@ -122,8 +122,10 @@ test("a held sphere photo thins its frame into the house radius", async ({ page 
   const heldSurface = await target.evaluate((slide) => {
     const frame = getComputedStyle(slide)
     const image = getComputedStyle(slide.querySelector("img")!)
+    const root = getComputedStyle(document.documentElement)
     const scale = slide.getBoundingClientRect().width / slide.offsetWidth
     return {
+      houseRadius: parseFloat(root.getPropertyValue("--radius-lg")),
       padding: parseFloat(frame.paddingTop) * scale,
       outerRadius: parseFloat(frame.borderTopLeftRadius) * scale,
       innerRadius: parseFloat(image.borderTopLeftRadius) * scale,
@@ -131,10 +133,9 @@ test("a held sphere photo thins its frame into the house radius", async ({ page 
   })
 
   expect(heldSurface.padding).toBeLessThan(restingPadding * 1.4)
-  expect(heldSurface.outerRadius).toBeGreaterThan(22)
-  expect(heldSurface.outerRadius).toBeLessThan(26)
+  expect(heldSurface.outerRadius).toBeCloseTo(heldSurface.houseRadius, 0)
   expect(heldSurface.innerRadius).toBeLessThan(heldSurface.outerRadius)
-  expect(heldSurface.innerRadius).toBeGreaterThan(16)
+  expect(heldSurface.outerRadius - heldSurface.innerRadius).toBeCloseTo(heldSurface.padding, 0)
 })
 
 test("a held sphere photo catches the same moving gloss as the grid", async ({ page }) => {

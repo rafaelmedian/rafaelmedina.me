@@ -1155,15 +1155,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </p>
               <div
                 className="ds-rule"
-                data-ds-terms={terms("concentric nested radius calc 11px 11.5px 10px --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px résumé notes")}
+                data-ds-terms={terms("concentric nested radius calc --radius-md --radius-lg mat media bleed full bleed square card edge previous next rail flank 44px 16px artwork middle 42vh 72vh 367px 684px résumé notes")}
               >
                 <strong>Nested corners are concentric, and they are derived — not a fifth step.</strong>
                 <p>
                   When one rounded box sits inside another, the outer radius is the inner radius plus the gap between
                   them. Those cases are written as <code>calc()</code> off one of the four tokens rather than measured
                   and hard-coded: the LinkedIn card's media is <code>calc(var(--radius-md) - 5px)</code>. That is how
-                  11px, 11.5px, and 10px corners exist without being scale steps — and why they stay correct when a
-                  padding changes.
+                  inner corners exist without becoming scale steps — and why they stay correct when a padding changes.
                   The preview dialog is the one authored outer corner, <code>calc(var(--radius-lg) + 0.75rem)</code>{" "}
                   on desktop: its artwork runs to the card's top and sides, so there is no inner corner up there to be
                   concentric with. The card's own clip rounds the top of the frame, and the frame draws no corner of its
@@ -1290,15 +1289,15 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Writings folder</p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}><WritingsFolder onOpen={() => {}} onReaderReady={() => {}} /></div>
               <p className="ds-caption">
-                A tile on --mosaic-card-surface with 24px corners and one label, “Notes &amp; tools”.
-                Below 900px the corners drop to 16px and the folder is zoomed to 0.7 so it and the
+                A tile on --mosaic-card-surface with 31.2px corners and one label, “Notes &amp; tools”.
+                Below 900px the corners drop to 20.8px and the folder is zoomed to 0.7 so it and the
                 label both fit its compact portrait slot; the artwork is absolutely positioned at fixed offsets, so only a
                 layout-affecting scale keeps it off the label.
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
-                with 8px corners and reader-sized 14px type scaled to one third. Papers fan over 360ms with smooth easing.
+                with 10.4px corners and reader-sized 14px type scaled to one third. Papers fan over 360ms with smooth easing.
                 The reader is a sheet up to 56rem wide that hangs from the line a project preview opens on — 8vh
                 from the top of the viewport, 5vh from 1320px — and runs to 1rem above the bottom, with room for the navigation
-                rail, white, overlay elevation, and 24px corners.
+                rail, white, overlay elevation, and 31.2px corners.
                 Rows are grouped under Tools, Notes, and, when it has entries, Misc; categories keep that order and dates sort newest first within each one.
                 Category labels sit above their rows so the titles keep the full measure, and empty categories do not render.
                 Each row carries its title and, on the right, a compact month, day, and two-digit year as tabular --muted figures; a note kept only as an
@@ -1445,7 +1444,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The reader date uses --text-xs, 1.5 line height, and no tracking, 4px above the title; row dates sit on the entry's own --text-sm.
                 Category headings use --text-xs. Font kerning is enabled throughout the dialog.
                 Inline images retain their intrinsic
-                aspect ratio, fill the reading column, load lazily, and use 16px corners. Optional image captions are --text-xs.
+                aspect ratio, fill the reading column, load lazily, and use 20.8px corners. Optional image captions are --text-xs.
                 The gallery supplies padding around a 34rem (544px) reading measure, about 68 characters
                 on the 14px step. Prose uses #2d2d2d, dark enough to hold at that size; secondary text uses --muted.
                 Archive and reader begin 32px below the heading; the article ends with 48px of breathing room.
@@ -1837,11 +1836,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </div>
                 <div
                   className="ds-specimen ds-specimen-block"
-                  data-ds-terms={terms("tile #ececee work card 24px 16px radius desktop compact below 900px rgb(0 0 0 / 0.08)")}
+                  data-ds-terms={terms("tile #ececee work card 31.2px 20.8px radius desktop compact below 900px rgb(0 0 0 / 0.08)")}
                 >
                   <strong className="ds-specimen-title">Tile — #ececee</strong>
                   <p className="ds-specimen-note">
-                    Work cards and the résumé tile use a 24px radius on desktop and 16px throughout the compact grid below 900px —{" "}
+                    Work cards and the résumé tile use a 31.2px radius on desktop and 20.8px throughout the compact grid below 900px —{" "}
                     <code>1px solid rgb(0 0 0 / 0.08)</code>, and no shadow —
                     they sit in the page rather than above it. About uses the full-bleed white canvas surface.
                   </p>
@@ -2124,7 +2123,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   only its width eases to the new label.
                   Open, the control is one continuous card with three rows. The surface expands from the measured
                   label width to 17rem and from 48px to 160px — three adjacent 48px rows with an 8px outer inset —
-                  keeping its bottom edge fixed. The card has 24px corners and the inset rows have concentric 16px
+                  keeping its bottom edge fixed. The card has 31.2px corners and the inset rows have concentric 20.8px
                   corners; labels are 14px and section numbers 12px. Its white fill is 92% opaque over a 16px backdrop
                   blur, with a 5% hairline and <code>--shadow-overlay</code> around the whole card.
                   Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
@@ -2145,7 +2144,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
                 </li>
-                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 320px 420px 536px 660px 600px 900px personal photos band compact two columns display contents protector quote span both 10px tablet 32px total inset 16px mobile gap 8px outer radius 16px 24px contain letterbox zero mat family stories rewards wallet homepage security token pro trade mobile flat backdrop rgb(63 62 68) rgb(231 231 233) background pair center bottom minmax(0, 1fr)")}>
+                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 320px 420px 536px 660px 600px 900px personal photos band compact two columns display contents protector quote span both 10px tablet 32px total inset 16px mobile gap 8px outer radius 20.8px 31.2px contain letterbox zero mat family stories rewards wallet homepage security token pro trade mobile flat backdrop rgb(63 62 68) rgb(231 231 233) background pair center bottom minmax(0, 1fr)")}>
                   <strong>The mosaic is four named groups.</strong> At 900px and above, Opening is a 3:6:3 row
                   and Closing is three equal columns; each is <code>clamp(260px, 28.075cqw, 420px)</code> tall.
                   Portraits uses 3:5:4 columns and two internal rows within
@@ -2158,8 +2157,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Below 900px the group wrappers become <code>display: contents</code> and their areas form one
                   two-column grid without changing DOM order. The résumé, Protector, the quote, and the personal-photo band span both columns. From 700px
                   to 899px the gap is 10px and the grid provides 32px total horizontal inset; below 700px
-                  the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 16px radius;
-                  desktop tiles use 24px. Contained artwork letterboxes inside the card: the card's grid
+                  the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 20.8px radius;
+                  desktop tiles use 31.2px. Contained artwork letterboxes inside the card: the card's grid
                   and its inner artwork clip each get one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
                   height to resolve against, and the inset drops to <code>0.375rem</code>. The dealership dashboard is
                   the deliberate crop: it is 112% of the content width, anchored at the top centre, and shows roughly
@@ -2306,7 +2305,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   toward the left and stays 12px above the enlarged portrait.
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
                   into two 184px pills with a 12px gap. A and C keep their mobile reply row 80px above the safe-area edge to clear the TOC. B becomes a conversation anchored to a 64px portrait.
-                  Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
+                  Three gray bubbles use 31.2px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
                   curved tail extends 8px toward the face. Only the typing bubble carries it; the questions have none.
                   The fields that follow them are the visitor’s side instead: right-aligned with the chat’s edge where the
                   sent address lands and rising from their bottom-right corner. The email field stays a clean circular pill;
@@ -2541,7 +2540,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </li>
               <li data-ds-terms={terms("resume résumé preview map hover focus 260ms 140ms 22.5rem")}>
                 <strong>The Resume link previews the document.</strong> It shares the map card's surface,
-                6px inset, 16px radius, shadow, and motion, opening after 260ms of hover or immediately on
+                6px inset, 20.8px radius, shadow, and motion, opening after 260ms of hover or immediately on
                 focus and closing after 140ms away or Escape. The preview is at most 22.5rem wide, fits
                 the viewport height, and is available from the desktop corner navigation. Its decorative image
                 is generated alongside the PDF and loads on demand; clicking the link opens the PDF in a new tab.
