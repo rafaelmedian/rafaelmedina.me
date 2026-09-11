@@ -144,7 +144,9 @@ test("grades meaningful non-text colors against the 3:1 threshold", async ({ pag
       value: { writeText: async () => {} },
     })
   })
-  await page.goto("/")
+  // The default development tuner overlaps this corner control. It is not
+  // part of the colour sample, so keep the page itself unobstructed.
+  await page.goto("/?tune=off")
   await page.locator(".mosaic-social-corner .mosaic-profile-email").click()
   const icon = page.locator('.mosaic-social-corner .mosaic-profile-email[data-copied="true"] .mosaic-profile-email-icon')
   // The check fades from --ink to --accent, and a colour read mid-transition is

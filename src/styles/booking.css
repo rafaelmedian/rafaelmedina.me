@@ -2,9 +2,9 @@
 
 /* The Cal.com calendar, opened from the hero's availability line. Clicking that
    line is the trigger, so the surface has to arrive without ceremony: one fade
-   and a short lift, no origin flight. Chrome around the iframe stays minimal —
-   the calendar inside brings its own dense layout and a framed panel would
-   double every edge. */
+   and a short lift, no origin flight. The iframe keeps only a quiet, even mat:
+   the calendar inside brings its own dense layout and more chrome would double
+   every edge. */
 
 .booking-backdrop {
   position: fixed;
@@ -42,10 +42,10 @@
 
 .booking-popup {
   position: relative;
-  /* Sized to the Cal.com month view rather than to the viewport: the embed
-     centres its own layout, so a taller surface only adds empty bands above
-     and below the calendar. */
-  width: min(1040px, 100%);
+  /* Preserve the Cal.com month view's 1040px canvas inside the 32px desktop
+     side gutters. A taller surface would only add empty bands above and below
+     the calendar, so height stays tied to the embed rather than the viewport. */
+  width: min(1104px, 100%);
   height: min(640px, 100%);
   display: grid;
   /* One row, not two: the header that used to own the `auto` track is gone, and
@@ -89,27 +89,226 @@
 }
 
 .booking-frame {
+  --booking-frame-gutter: clamp(16px, 3vw, 32px);
+  --pulse-dur: calc(var(--duration-slow) * 2);
+  --pulse-count: 1;
+  --pulse-min: 0.58;
+  --reveal-dur: var(--duration-slow);
+  --reveal-blur: var(--blur-reveal);
+  --reveal-ease: var(--ease-standard);
   position: relative;
   display: grid;
   min-height: 0;
-  background: var(--body-bg);
+  /* Cal.com paints this same neutral above and below its calendar. Extending it
+     outside the iframe makes the mat read evenly on all four sides. */
+  background: #fafafa;
+}
+
+.t-skel-skeleton,
+.t-skel-content {
+  position: absolute;
+  inset: 0;
+}
+
+.t-skel-skeleton {
+  z-index: 1;
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    opacity var(--reveal-dur) var(--reveal-ease),
+    filter var(--reveal-dur) var(--reveal-ease);
+}
+
+.t-skel-content {
+  z-index: 2;
+  opacity: 0;
+  filter: blur(var(--reveal-blur));
+  transition:
+    opacity var(--reveal-dur) var(--reveal-ease),
+    filter var(--reveal-dur) var(--reveal-ease);
+}
+
+.t-skel.is-revealed .t-skel-skeleton,
+.booking-frame[data-stalled="true"] .t-skel-skeleton {
+  opacity: 0;
+  filter: blur(var(--reveal-blur));
+}
+
+.t-skel.is-revealed .t-skel-content {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.t-skel-skeleton.is-pulsing :is(
+  .booking-skeleton-avatar,
+  .booking-skeleton-line,
+  .booking-skeleton-weekdays span,
+  .booking-skeleton-day,
+  .booking-skeleton-time,
+  .booking-skeleton-arrows
+) {
+  animation: booking-skeleton-pulse var(--pulse-dur) ease-in-out var(--pulse-count);
+}
+
+@keyframes booking-skeleton-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: var(--pulse-min);
+  }
+}
+
+.booking-skeleton {
+  inset-inline: var(--booking-frame-gutter);
+  display: grid;
+  place-items: center;
+  padding-block: 2rem 3rem;
+  pointer-events: none;
+}
+
+.booking-skeleton-panel {
+  width: min(760px, 100%);
+  height: min(492px, 100%);
+  display: grid;
+  grid-template-columns: 28% 48% 24%;
+  overflow: hidden;
+  background: var(--canvas);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+}
+
+.booking-skeleton-profile,
+.booking-skeleton-calendar,
+.booking-skeleton-times {
+  min-width: 0;
+  padding: 1.5rem;
+}
+
+.booking-skeleton-profile,
+.booking-skeleton-calendar {
+  box-shadow: inset -1px 0 rgb(0 0 0 / 0.08);
+}
+
+.booking-skeleton-profile,
+.booking-skeleton-times {
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-skeleton-avatar,
+.booking-skeleton-line,
+.booking-skeleton-weekdays span,
+.booking-skeleton-day,
+.booking-skeleton-time,
+.booking-skeleton-arrows {
+  display: block;
+  background: var(--mosaic-card-surface);
+}
+
+.booking-skeleton-avatar {
+  width: 2rem;
+  aspect-ratio: 1;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-full);
+}
+
+.booking-skeleton-line {
+  height: 0.75rem;
+  border-radius: var(--radius-full);
+}
+
+.booking-skeleton-line-name {
+  width: 44%;
+  margin-bottom: 1rem;
+}
+
+.booking-skeleton-line-title {
+  width: 72%;
+  height: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.booking-skeleton-line-detail {
+  width: 48%;
+  margin-bottom: 1.25rem;
+}
+
+.booking-skeleton-line-zone {
+  width: 78%;
+}
+
+.booking-skeleton-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.booking-skeleton-line-month {
+  width: 32%;
+  height: 1rem;
+}
+
+.booking-skeleton-arrows {
+  width: 3.5rem;
+  height: 1rem;
+  border-radius: var(--radius-full);
+}
+
+.booking-skeleton-weekdays,
+.booking-skeleton-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.booking-skeleton-weekdays {
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.booking-skeleton-weekdays span {
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.booking-skeleton-days {
+  gap: 0.375rem;
+}
+
+.booking-skeleton-day {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+}
+
+.booking-skeleton-line-times {
+  width: 58%;
+  height: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.booking-skeleton-time {
+  height: 2.5rem;
+  margin-bottom: 0.625rem;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05);
 }
 
 .booking-iframe {
-  width: 100%;
+  inset-inline: var(--booking-frame-gutter);
+  width: calc(100% - var(--booking-frame-gutter) - var(--booking-frame-gutter));
   height: 100%;
   border: 0;
-  opacity: 0;
-  transition: opacity var(--duration-slow) ease-out;
-}
-
-.booking-frame[data-ready="true"] .booking-iframe {
-  opacity: 1;
 }
 
 .booking-loading {
   position: absolute;
   inset: 0;
+  z-index: 3;
   margin: 0;
   display: grid;
   place-items: center;
@@ -136,6 +335,26 @@
     height: 100%;
     border-radius: var(--radius-md);
   }
+
+  .booking-skeleton {
+    align-items: center;
+    padding-block: 2.5rem;
+  }
+
+  .booking-skeleton-panel {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-skeleton-profile,
+  .booking-skeleton-times {
+    display: none;
+  }
+
+  .booking-skeleton-calendar {
+    padding: 1.25rem;
+    box-shadow: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -143,6 +362,22 @@
   .booking-popup[data-starting-style],
   .booking-popup[data-ending-style] {
     transform: none;
+  }
+
+  .t-skel-skeleton,
+  .t-skel-content {
+    transition: none;
+  }
+
+  .t-skel-skeleton.is-pulsing :is(
+    .booking-skeleton-avatar,
+    .booking-skeleton-line,
+    .booking-skeleton-weekdays span,
+    .booking-skeleton-day,
+    .booking-skeleton-time,
+    .booking-skeleton-arrows
+  ) {
+    animation: none;
   }
 }
 

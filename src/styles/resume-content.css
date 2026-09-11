@@ -1,9 +1,8 @@
 /* Company-led entries in the reader; About keeps its compact date column. The
    reader is the gallery's résumé slide and the prerendered /resume/ page, and
    the rules below are shared by both -- only the surface around them differs. */
-/* The PDF link closes the reader rather than heading it, so it sits under
-   education with the gap the entries keep between each other. */
-.preview-gallery-resume-body .mosaic-about-resume-download,
+/* The standalone page keeps the PDF link after the document; the gallery puts
+   it in the sticky heading where it remains available while the sheet scrolls. */
 .standalone-resume-body .mosaic-about-resume-download {
   margin-top: 3rem;
   margin-bottom: 0;
@@ -24,7 +23,7 @@
 }
 
 /* Icon and label on one line, whichever surface the link sits on. */
-.preview-gallery-resume-body .mosaic-about-resume-download a,
+.preview-gallery-resume-heading .mosaic-about-resume-download a,
 .standalone-resume-body .mosaic-about-resume-download a {
   display: inline-flex;
   align-items: center;
@@ -49,12 +48,16 @@
 
 .resume-experience-list > .resume-experience {
   padding-block: 2.5rem;
-  border-top: 1px solid rgb(0 0 0 / 0.08);
 }
 
 .resume-experience-list > .resume-experience:first-child {
   padding-top: 0;
-  border-top: 0;
+}
+
+.resume-content > .mosaic-about-resume-education {
+  margin-top: 0;
+  padding-top: 4rem;
+  border-top: 1px solid rgb(0 0 0 / 0.08);
 }
 
 .resume-experience-logos {
@@ -109,9 +112,31 @@
   min-width: 0;
 }
 
-.mosaic-about-body .resume-experience-role {
+/* Company names remain external links, but the résumé's logo-and-title rows
+   provide the affordance without the inline prose treatment's underline. */
+.resume-content .mosaic-company-inline-link {
+  text-decoration-line: none;
+}
+
+.resume-experience-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
   margin-top: 0.25rem;
+}
+
+.mosaic-about-body .resume-experience-meta .resume-experience-role,
+.mosaic-about-body .resume-experience-meta .mosaic-about-resume-location {
+  margin-top: 0;
+}
+
+.mosaic-about-body .resume-experience-role {
   color: var(--muted);
+}
+
+.resume-experience-meta-separator {
+  color: var(--muted-soft);
 }
 
 /* An entry that carries two points stays a list for screen readers, but reads
@@ -218,12 +243,13 @@
   @supports (mask-image: url("/writings/marks/drawing-sheet-frames.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet-frames.png")) {
     .resume-margin-drawing {
       --resume-drawing-gutter: calc((100cqi - 34rem) / 2);
-      --resume-drawing-slack: max(0rem, var(--resume-drawing-gutter) - var(--resume-drawing-size) - 0.75rem);
-      --resume-drawing-rail: calc(0.75rem + var(--resume-drawing-pull) * var(--resume-drawing-slack));
+      --resume-drawing-inset: 2.5rem;
+      --resume-drawing-slack: max(0rem, var(--resume-drawing-gutter) - var(--resume-drawing-size) - var(--resume-drawing-inset));
+      --resume-drawing-rail: calc(var(--resume-drawing-inset) + var(--resume-drawing-pull) * var(--resume-drawing-slack));
       position: absolute;
       top: var(--resume-drawing-drop);
       display: block;
-      width: min(var(--resume-drawing-size), calc(var(--resume-drawing-gutter) - 0.75rem));
+      width: min(var(--resume-drawing-size), calc(var(--resume-drawing-gutter) - var(--resume-drawing-inset)));
       aspect-ratio: 1;
       background-color: var(--muted);
       opacity: 0.48;

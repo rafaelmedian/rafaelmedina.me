@@ -651,6 +651,47 @@ test("offers LinkedIn and X actions beside booking", async ({ page }) => {
   await expect(xAction).toHaveAttribute("href", "https://x.com/rafaelmedian")
 })
 
+test("expands the contact pills' internal shine on hover and focus", async ({ page }) => {
+  await page.goto("/")
+
+  const actions = page.getByRole("group", { name: "Profile contact actions" })
+  const pills = actions.locator(".mosaic-contact-pill")
+  await expect(pills).toHaveCount(3)
+
+  for (let index = 0; index < 3; index += 1) {
+    const pill = pills.nth(index)
+    const rest = await pill.evaluate((element) => {
+      const highlight = getComputedStyle(element, "::before")
+      return {
+        height: Number.parseFloat(highlight.height),
+        opacity: Number.parseFloat(highlight.opacity),
+        transitionProperty: highlight.transitionProperty,
+      }
+    })
+
+    expect(rest.height).toBe(22)
+    expect(rest.transitionProperty).toContain("height")
+
+    await pill.hover()
+
+    await expect
+      .poll(() =>
+        pill.evaluate((element) => Number.parseFloat(getComputedStyle(element, "::before").opacity)),
+      )
+      .toBe(1)
+
+    const shineHeight = () => pill.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element, "::before").height),
+    )
+    await expect.poll(shineHeight).toBe(28)
+    await page.mouse.move(0, 0)
+    await expect.poll(shineHeight).toBe(rest.height)
+    await pill.focus()
+    await expect.poll(shineHeight).toBe(28)
+    await pill.evaluate((element) => (element as HTMLElement).blur())
+  }
+})
+
 test("leads the contact row with the booking pill", async ({ page }) => {
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
@@ -1895,7 +1936,7 @@ for (const width of [768, 1440]) {
 test("keeps the mobile profile and final content clear of the table of contents", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.goto("/")
-  const avatar = await page.getByRole("button", { name: "Read about Rafael Medina" }).boundingBox()
+  const avatar = await page.getByRole("button", { name: "Ask about Rafael Medina" }).boundingBox()
   expect(avatar!.y).toBeLessThan(96)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("03 Services")
@@ -2198,9 +2239,57 @@ test("frames the calendar without chrome and still says what it is", async ({ pa
   expect(titleBox!.width).toBeLessThanOrEqual(1)
   expect(titleBox!.height).toBeLessThanOrEqual(1)
 
+  // Cal.com supplies the neutral field above and below its calendar. The host
+  // extends that same field evenly along both sides instead of letting the
+  // dense three-column calendar run directly into the dialog edge.
+  const frame = dialog.locator(".booking-frame")
+  const iframe = frame.locator(".booking-iframe")
+  const [frameBox, iframeBox, frameBackground] = await Promise.all([
+    frame.boundingBox(),
+    iframe.boundingBox(),
+    frame.evaluate((element) => getComputedStyle(element).backgroundColor),
+  ])
+  const leftGutter = iframeBox!.x - frameBox!.x
+  const rightGutter = frameBox!.x + frameBox!.width - iframeBox!.x - iframeBox!.width
+  expect(leftGutter).toBeCloseTo(32, 0)
+  expect(rightGutter).toBeCloseTo(leftGutter, 5)
+  expect(frameBackground).toBe("rgb(250, 250, 250)")
+
   // Escape is not the only way out, which matters on a phone with no Escape key.
   await page.mouse.click(5, 5)
   await expect(dialog).toBeHidden()
+})
+
+test("shows a calendar skeleton until the embedded calendar is ready", async ({ page }) => {
+  let finishCalendarRequest: (() => void) | undefined
+  await page.route("https://cal.com/**", async (route) => {
+    await new Promise<void>((resolve) => {
+      finishCalendarRequest = resolve
+    })
+    await route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" })
+  })
+  await page.goto("/")
+  await settleAvatarIntro(page)
+  await page.locator(".mosaic-booking-pill").click()
+
+  const frame = page.getByRole("dialog").locator(".booking-frame")
+  const skeleton = frame.locator(".booking-skeleton")
+  await expect(skeleton).toBeVisible()
+  await expect(skeleton).toHaveAttribute("aria-hidden", "true")
+  await expect(skeleton.locator(".booking-skeleton-day")).toHaveCount(35)
+  await expect(skeleton).toHaveCSS("opacity", "1")
+  await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "0")
+  const skeletonPanel = await skeleton.locator(".booking-skeleton-panel").boundingBox()
+  const iframe = await frame.locator(".booking-iframe").boundingBox()
+  expect(skeletonPanel!.width).toBeCloseTo(760, 0)
+  expect(iframe!.width).toBeCloseTo(1040, 0)
+  expect(skeletonPanel!.x + skeletonPanel!.width / 2).toBeCloseTo(iframe!.x + iframe!.width / 2, 5)
+
+  expect(finishCalendarRequest).toBeDefined()
+  finishCalendarRequest!()
+  await expect(frame).toHaveAttribute("data-ready", "true")
+  await expect(skeleton).toHaveCSS("opacity", "0")
+  await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "1")
 })
 
 // A blocked third-party frame never fires onError, so the only signal that the
@@ -2510,24 +2599,17 @@ test("left aligns the about introduction with the services reading axis", async 
   })
 })
 
-test("scrolls to and focuses the about section from the avatar button", async ({ page }) => {
-  // Reduced motion makes the scroll instant, so the assertion isn't racing a
-  // smooth-scroll animation.
+test("opens chat directly and focuses its email field from the avatar button", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   const trigger = page.locator(".mosaic-avatar-button")
 
-  await expect(trigger).toHaveAccessibleName("Read about Rafael Medina")
+  await expect(trigger).toHaveAccessibleName("Ask about Rafael Medina")
   await trigger.focus()
   await trigger.press("Enter")
 
-  const about = page.locator("#about-panel")
-  await expect(about).toBeInViewport()
-  await expect(about).toBeFocused()
-  // The section is a landing container, not a control: it takes focus so
-  // reading continues from there, and draws no ring. The browser's default one
-  // boxes the whole sheet, which reads as a selection.
-  await expect(about).toHaveCSS("outline-style", "none")
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(page.getByLabel("Your email")).toBeFocused()
 })
 
 test("keeps every project group together inside the takeover stage", async ({ page }) => {
@@ -2958,10 +3040,9 @@ test("gives the takeover cue a full tap target and its own name", async ({ page 
   const cueBottom = await cue.evaluate((element) => element.getBoundingClientRect().bottom)
   expect(cueBottom).toBeLessThanOrEqual(seam)
 
-  // Distinct from the avatar, which scrolls to the same place: two buttons
-  // reading "Read about Rafael Medina" would be ambiguous in a rotor list.
+  // Distinct from the avatar's chat action in a screen-reader rotor list.
   await expect(cue).toHaveAccessibleName("Continue to About")
-  await expect(page.getByRole("button", { name: "Read about Rafael Medina" })).toHaveCount(1)
+  await expect(page.getByRole("button", { name: "Ask about Rafael Medina" })).toHaveCount(1)
 })
 
 test("drops the takeover cue below the breakpoint that pins the gallery", async ({ page }) => {
@@ -3426,6 +3507,28 @@ for (const width of [1440, 390]) {
   })
 }
 
+test("keeps resume margin drawings clear of the reading column", async ({ page }) => {
+  await page.setViewportSize({ width: 2394, height: 1279 })
+  await page.goto("/resume/")
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const clearances = await dialog.locator(".resume-margin-drawing").evaluateAll((drawings) => {
+    const content = document.querySelector(".resume-content")!.getBoundingClientRect()
+
+    return drawings.map((drawing) => {
+      const box = drawing.getBoundingClientRect()
+      const side = drawing.getAttribute("data-place")
+      return {
+        side,
+        gap: side === "left" ? content.left - box.right : box.left - content.right,
+      }
+    })
+  })
+
+  expect(clearances.filter(({ side }) => side === "left").every(({ gap }) => gap >= 40)).toBe(true)
+  expect(clearances.filter(({ side }) => side === "right").every(({ gap }) => gap >= 32)).toBe(true)
+})
+
 test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -3480,6 +3583,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   const pdf = dialog.getByRole("link", { name: "View resume PDF" })
   await expect(pdf).toHaveAttribute("href", "/rafael-medina-resume.pdf")
   await expect(pdf).toHaveAttribute("target", "_blank")
+  await expect(dialog.locator(".preview-gallery-resume-heading").getByRole("link", { name: "View resume PDF" })).toBeVisible()
 })
 
 // On a phone the sheet fills the viewport, so there is no backdrop to aim at and
@@ -4084,14 +4188,6 @@ test("adds breathing room above the about hobbies", async ({ page }) => {
   await expect(page.locator(".mosaic-about-hobbies")).toHaveCSS("margin-top", "8px")
 })
 
-test("starts the education section without a top hairline", async ({ page }) => {
-  await page.goto("/")
-  await page.getByRole("link", { name: "Open résumé" }).click()
-
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
-  await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "0px")
-})
-
 test("gives the Chainlink work a fuller description", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
@@ -4176,6 +4272,56 @@ test("links each work-history company name to its primary website", async ({ pag
     await expect(companyLink).toHaveAttribute("href", project.href)
     await expect(companyLink).toHaveAttribute("target", "_blank")
   }
+})
+
+test("shows work-history company links without underlines", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const companyLink = page
+    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("link", { name: "0x Project", exact: true })
+
+  await expect(companyLink).toHaveCSS("text-decoration-line", "none")
+})
+
+test("aligns work locations with their roles", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  // Measure settled layout rather than different frames of the opening travel.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const jobs = page
+    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("list", { name: "Work history" })
+    .locator(":scope > li")
+
+  for (const index of [0, 1]) {
+    const [roleBox, locationBox] = await Promise.all([
+      jobs.nth(index).locator(".resume-experience-role").boundingBox(),
+      jobs.nth(index).locator(".mosaic-about-resume-location").boundingBox(),
+    ])
+
+    expect(roleBox).not.toBeNull()
+    expect(locationBox).not.toBeNull()
+    const overlap = Math.min(roleBox!.y + roleBox!.height, locationBox!.y + locationBox!.height)
+      - Math.max(roleBox!.y, locationBox!.y)
+    expect(overlap).toBeGreaterThan(Math.min(roleBox!.height, locationBox!.height) * 0.75)
+  }
+})
+
+test("uses one hairline between work history and education", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const jobs = dialog
+    .getByRole("list", { name: "Work history" })
+    .locator(":scope > li")
+
+  await expect(jobs.nth(1)).toHaveCSS("border-top-width", "0px")
+  await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "1px")
 })
 
 test("opens a work-history company website from its name", async ({ page }) => {

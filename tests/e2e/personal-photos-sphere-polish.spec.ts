@@ -24,6 +24,33 @@ test("the desktop sphere reaches toward the layout control with larger photos", 
   })).toEqual({ nearControl: true, largerPhoto: true })
 })
 
+test("repeated photos stay clear of one another on the sphere face", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openSphere(page)
+
+  const closestRepeat = await page.locator(".personal-photos-sphere").evaluate((sphere) => {
+    const groups = new Map<string, DOMRect[]>()
+    for (const slide of sphere.querySelectorAll<HTMLElement>(".personal-photos-slide:not([data-sphere-hidden])")) {
+      const source = slide.querySelector("img")!.getAttribute("src")!
+      groups.set(source, [...(groups.get(source) ?? []), slide.getBoundingClientRect()])
+    }
+    let closest = Number.POSITIVE_INFINITY
+    for (const boxes of groups.values()) {
+      for (let left = 0; left < boxes.length; left++) {
+        for (let right = left + 1; right < boxes.length; right++) {
+          const a = boxes[left], b = boxes[right]
+          const distance = Math.hypot(a.x + a.width / 2 - (b.x + b.width / 2), a.y + a.height / 2 - (b.y + b.height / 2))
+          closest = Math.min(closest, distance / ((a.width + b.width) / 2))
+        }
+      }
+    }
+    return closest
+  })
+
+  expect(closestRepeat).toBeGreaterThan(1.75)
+})
+
 test("sphere hover reacts quickly with a soft pointer tilt", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openSphere(page)
@@ -75,4 +102,62 @@ test("a held sphere photo opens sharply at its full size", async ({ browser }) =
   await expect(caption).not.toHaveText("")
   expect(await caption.evaluate((element) => getComputedStyle(element).textShadow.match(/rgba?\(/g)?.length ?? 0)).toBeGreaterThanOrEqual(2)
   await context.close()
+})
+
+test("a held sphere photo thins its frame into the house radius", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openSphere(page)
+
+  const target = page.locator(".personal-photos-sphere .personal-photos-slide[data-photo-id]:not([data-sphere-far])").first()
+  const restingBox = (await target.boundingBox())!
+  const restingPadding = await target.evaluate((slide) => {
+    const style = getComputedStyle(slide)
+    const scale = slide.getBoundingClientRect().width / slide.offsetWidth
+    return parseFloat(style.paddingTop) * scale
+  })
+  await target.click()
+  await expect(target).toHaveAttribute("data-sphere-held", "")
+  await expect.poll(async () => (await target.boundingBox())!.width / restingBox.width).toBeGreaterThan(1.8)
+  const heldSurface = await target.evaluate((slide) => {
+    const frame = getComputedStyle(slide)
+    const image = getComputedStyle(slide.querySelector("img")!)
+    const scale = slide.getBoundingClientRect().width / slide.offsetWidth
+    return {
+      padding: parseFloat(frame.paddingTop) * scale,
+      outerRadius: parseFloat(frame.borderTopLeftRadius) * scale,
+      innerRadius: parseFloat(image.borderTopLeftRadius) * scale,
+    }
+  })
+
+  expect(heldSurface.padding).toBeLessThan(restingPadding * 1.4)
+  expect(heldSurface.outerRadius).toBeGreaterThan(22)
+  expect(heldSurface.outerRadius).toBeLessThan(26)
+  expect(heldSurface.innerRadius).toBeLessThan(heldSurface.outerRadius)
+  expect(heldSurface.innerRadius).toBeGreaterThan(16)
+})
+
+test("a held sphere photo catches the same moving gloss as the grid", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openSphere(page)
+  await page.mouse.move(5, 5)
+
+  const target = page.locator(".personal-photos-sphere .personal-photos-slide[data-photo-id]:not([data-sphere-far])").first()
+  const resting = (await target.boundingBox())!
+  await page.mouse.click(resting.x + resting.width / 2, resting.y + resting.height / 2)
+  await expect(target).toHaveAttribute("data-sphere-held", "")
+  await expect.poll(() => target.evaluate((slide) => Number(getComputedStyle(slide).getPropertyValue("--sphere-zoom")))).toBeGreaterThan(0.95)
+  const held = (await target.boundingBox())!
+  await page.mouse.move(held.x + held.width * 0.2, held.y + held.height * 0.2)
+  await expect.poll(() => target.evaluate((slide) => getComputedStyle(slide).rotate)).not.toBe("none")
+  const first = await target.evaluate((slide) => ({
+    glossX: getComputedStyle(slide).getPropertyValue("--sphere-gloss-x"),
+    background: getComputedStyle(slide, "::after").backgroundImage,
+    opacity: getComputedStyle(slide, "::after").opacity,
+  }))
+  await page.mouse.move(held.x + held.width * 0.8, held.y + held.height * 0.8)
+  await expect.poll(() => target.evaluate((slide) => getComputedStyle(slide).getPropertyValue("--sphere-gloss-x"))).not.toBe(first.glossX)
+
+  expect(first.background).toContain("radial-gradient")
+  expect(Number(first.opacity)).toBeGreaterThan(0.4)
 })

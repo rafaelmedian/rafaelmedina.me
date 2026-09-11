@@ -807,32 +807,34 @@ export function PreviewGalleryDialog({
                   ) : (
                     <div className="preview-gallery-resume">
                       <header className="preview-gallery-resume-heading">
-                        <Dialog.Title className="preview-gallery-title preview-gallery-resume-title">
-                          {resumeItemTitle}
-                        </Dialog.Title>
+                        <div className="preview-gallery-resume-heading-inner">
+                          <Dialog.Title className="preview-gallery-title preview-gallery-resume-title">
+                            {resumeItemTitle}
+                          </Dialog.Title>
+                          <p className="mosaic-about-resume-download">
+                            <a
+                              href={siteLinks.resumePdf}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mosaic-about-link"
+                              onClick={() => {
+                                trackEvent("social_link_click", {
+                                  social_label: "View Resume",
+                                  social_href: siteLinks.resumePdf,
+                                  social_placement: "resume_dialog",
+                                })
+                              }}
+                            >
+                              View resume PDF <ArrowUpRight size={16} aria-hidden="true" />
+                            </a>
+                          </p>
+                        </div>
                       </header>
                       <Dialog.Description className="sr-only">
                         Rafael Medina's work history and education, with a link to the PDF résumé.
                       </Dialog.Description>
                       <div className="preview-gallery-resume-body mosaic-about-body">
                         <ResumeContent onSelectProject={selectItemId} />
-                        <p className="mosaic-about-resume-download">
-                          <a
-                            href={siteLinks.resumePdf}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mosaic-about-link"
-                            onClick={() => {
-                              trackEvent("social_link_click", {
-                                social_label: "View Resume",
-                                social_href: siteLinks.resumePdf,
-                                social_placement: "resume_dialog",
-                              })
-                            }}
-                          >
-                            View resume PDF <ArrowUpRight size={16} aria-hidden="true" />
-                          </a>
-                        </p>
                       </div>
                     </div>
                   )}

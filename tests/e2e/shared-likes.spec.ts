@@ -39,6 +39,22 @@ test("likes API rejects unknown notes, invalid visitors, foreign origins and mal
   expect(preflight.headers()["access-control-allow-origin"]).toBe(headers.Origin)
 })
 
+test("profile chat rejects requests before they can reach the model", async ({ request }) => {
+  const endpoint = `${likesApiUrl}/chat`
+  const headers = { Origin: "http://127.0.0.1:4174", "X-Visitor-ID": crypto.randomUUID() }
+  const messages = [{ role: "user", content: "What does Rafael design?" }]
+
+  expect((await request.post(endpoint, { headers: { ...headers, Origin: "https://example.com" }, data: { email: "visitor@example.com", messages } })).status()).toBe(403)
+  expect((await request.post(endpoint, { headers: { ...headers, "X-Visitor-ID": "invalid" }, data: { email: "visitor@example.com", messages } })).status()).toBe(400)
+  expect((await request.post(endpoint, { headers, data: { email: "not-an-email", messages } })).status()).toBe(400)
+  expect((await request.post(endpoint, { headers, data: { email: "visitor@example.com", messages: [] } })).status()).toBe(400)
+  expect((await request.get(endpoint, { headers })).status()).toBe(405)
+
+  const preflight = await request.fetch(endpoint, { method: "OPTIONS", headers })
+  expect(preflight.status()).toBe(204)
+  expect(preflight.headers()["access-control-allow-methods"]).toContain("POST")
+})
+
 test("legacy clients can read, retry likes, and unlike during rollout", async ({ request }) => {
   const endpoint = `${likesApiUrl}/notes/a-song-we-all-know/likes`
   const headers = { Origin: "http://127.0.0.1:4174", "X-Visitor-ID": crypto.randomUUID() }
