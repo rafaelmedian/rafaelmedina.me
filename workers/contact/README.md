@@ -3,6 +3,9 @@
 The static GitHub Pages site posts to this Cloudflare Worker. The Worker sends
 to `CONTACT_TO` through [Resend's email API](https://resend.com/docs/api-reference/emails/send-email),
 with the visitor in `reply_to`; visitors cannot choose a recipient or sender.
+`CONTACT_TO` is the Gmail inbox directly, not the public `siteLinks.email`:
+Resend reported a test to `hey@rafaelmedina.me` as delivered to Namecheap's
+forwarder, and it never reached Gmail. Skipping the forwarder removes that hop.
 There is no app database, attachment storage, or request-body logging. Resend and
 the inbox still process and retain mail according to their own settings.
 
@@ -17,8 +20,8 @@ the inbox still process and retain mail according to their own settings.
    npx wrangler secret put CONTACT_FROM --config workers/contact/wrangler.jsonc
    ```
 
-3. Confirm `CONTACT_TO` matches `siteLinks.email` and that rate-limit namespace
-   `1002` is unused by other Workers in the Cloudflare account, then deploy:
+3. Confirm that rate-limit namespace `1002` is unused by other Workers in the
+   Cloudflare account, then deploy:
 
    ```sh
    npm run contact:check

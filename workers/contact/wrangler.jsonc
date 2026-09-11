@@ -5,7 +5,7 @@
   "compatibility_date": "2026-09-10",
   "vars": {
     "ALLOWED_ORIGINS": "https://rafaelmedina.me,https://www.rafaelmedina.me,http://localhost:5173,http://127.0.0.1:5173,http://127.0.0.1:4175",
-    "CONTACT_TO": "hey@rafaelmedina.me"
+    "CONTACT_TO": "hellorafaelmedina@gmail.com"
   },
   "ratelimits": [{
     "name": "CONTACT_LIMITER",
