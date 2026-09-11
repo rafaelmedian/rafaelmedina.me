@@ -22,7 +22,6 @@ import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
 import type { WritingsReaderStatus } from "./WritingsFolder"
 import { backSound, closeSound, nextSound, openSound } from "../lib/sounds"
-import { isTuningCornerCurve } from "../lib/developmentTuning"
 
 type PreviewGalleryDialogProps = {
   items: GalleryItem[]
@@ -563,11 +562,8 @@ export function PreviewGalleryDialog({
     switchPhase === "idle" ? "" : ` preview-gallery-card-switch-${switchPhase}-${switchDirection}`
   const prevKeyshortcuts = isReaderSlide ? "ArrowLeft" : "ArrowUp ArrowLeft"
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
-  const tuningCornerCurve = isTuningCornerCurve()
-
   return (
     <Dialog.Root open={present && !leavingNote} onOpenChange={handleOpenChange}
-      modal={!tuningCornerCurve} disablePointerDismissal={tuningCornerCurve}
       onOpenChangeComplete={(isOpen) => { if (!isOpen) setLeavingNote(null) }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />

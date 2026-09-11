@@ -45,20 +45,13 @@ test("keeps the caption blur outside the card's squircle clip", async ({ page })
   await expect(card.locator(":scope > .mosaic-row-card-scrim")).toHaveCount(1)
 })
 
-test("corner tuner changes rounded surfaces without reshaping circles", async ({ page }) => {
-  await page.goto("/")
-  const curve = page.getByRole("slider", { name: "Exponent" })
-  await expect(curve).toBeVisible()
-  await expect(curve).toHaveAttribute("aria-valuenow", "1.3")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.3)")
-
-  await curve.press("End")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(4)")
-  await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
-
-  await page.locator(".mosaic-row-card").first().click()
-  await expect(page.locator(".preview-gallery-card")).toHaveCSS("corner-shape", "superellipse(4)")
-  await expect(curve).toBeVisible()
+test("does not mount the retired corner tuner on development pages", async ({ page }) => {
+  for (const path of ["/", "/?tune=corners"]) {
+    await page.goto(path)
+    await page.waitForLoadState("networkidle")
+    await expect(page.getByRole("slider", { name: "Exponent" })).toHaveCount(0)
+    await expect(page.getByText("Continuous corners", { exact: true })).toHaveCount(0)
+  }
 })
 
 const customPropertyPattern = /^--[\w-]+$/
