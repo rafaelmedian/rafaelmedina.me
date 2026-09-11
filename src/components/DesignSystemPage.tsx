@@ -2155,13 +2155,18 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Width, height, corner radius and vertical position use <code>--duration-slow</code> to expand,
                   <code> --duration-quick</code> to collapse, and <code>--ease-smooth</code> throughout.
                   Video fills the square edge to edge, fading in over <code>--duration-base</code> once ready.
-                  White 16–18px icons sit in 44px targets on a
-                  transparent-to-72%-black bottom scrim, with a 2px 60%-white seek track, 8px thumb and
-                  <code> --text-xs</code> tabular time aligned right. Play/pause, volume, expand and a close X
-                  appear on hover or keyboard focus; touch users tap the video to show or hide controls.
-                  Close has a 36%-black backing for contrast; hovered controls use 16% white.
-                  Expand grows the square to 480px, constrained
-                  by the viewport and the mobile TOC. Captions remain enabled for real recordings and
+                  A dark <code>--ink</code> pill sits 8px inside the bottom edge with
+                  <code> --radius-full</code> corners and the shared ring and control shadows.
+                  White 18px icons occupy 44px targets: play/pause left, mute right, and a
+                  4px rounded seek bar between them. Its white fill tracks playback over a
+                  36%-white rail without a visible thumb or time counter; the native range
+                  retains keyboard seeking and announces elapsed and total time.
+                  Playback controls appear on hover or keyboard focus; touch users tap the video to toggle them.
+                  The close X stays visible 8px above the card in a 44px white circular target,
+                  using <code>--canvas</code>, <code>--ink</code>, <code>--shadow-ring</code> and
+                  <code> --shadow-overlay</code> (overlay-hover on hover). Media is clipped in its own
+                  rounded wrapper so the close target remains outside the image throughout the resize.
+                  Hovered playback controls use 16% white. Captions remain enabled for real recordings and
                   can be toggled with C; the sample recording starts without its descriptive captions.
                   The speaking portrait reveals a centered 24px white play triangle on hover, keyboard focus or tap.
                   A 20%-black overlay darkens the portrait only while those actions are shown, fading over
@@ -2211,7 +2216,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Worker, with sending, sent and retry states. No address is sent when advancing to the message step.
                   B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
                   The <a href="/intro-options">comparison page</a> shows all three together in separate 440px
-                  stages, with contained 64px portraits and 240px players (320px when enlarged). It stacks its
+                  stages, with contained 64px portraits and 240px players. It stacks its
                   cards below 1100px. Only one recording can play at a time; its styles load with that page alone.
                   There is no corner dismiss button.
                   The A/C reply forms cap at 320px, use the page fill and shared hairline ring, and <code>--text-md</code> input text
@@ -2228,7 +2233,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   for the visitor to review and send. The website does not collect the address.
                   Media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
-                  The transitions.dev icon-swap recipe keeps play/pause, volume and expand/shrink glyphs
+                  The transitions.dev icon-swap recipe keeps play/pause and volume glyphs
                   stacked in one cell: <code>--icon-swap-dur</code> (250ms), <code>--icon-swap-blur</code> (2px),
                   <code>--icon-swap-start-scale</code> (0.25) and <code>--icon-swap-ease</code> (ease-in-out).
                   Reduced motion removes the morph, swaps and press feedback. Real captions start enabled.

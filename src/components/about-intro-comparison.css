@@ -83,10 +83,6 @@
   z-index: auto;
 }
 
-.intro-comparison-stage .about-intro[data-enlarged="true"] {
-  --intro-open-size: min(320px, calc(100cqw - 24px));
-}
-
 .intro-comparison-stage .about-intro .about-intro-surface {
   left: 0;
   right: auto;

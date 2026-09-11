@@ -43,10 +43,10 @@ test('plays one comparison video at a time and keeps the players inside their ca
     await expect.poll(() => page.locator('video[data-recording]').evaluateAll(videos =>
       videos.filter(video => !(video as HTMLVideoElement).paused).length)).toBe(1)
     await expect(card.getByRole('button', { name: 'Pause introduction' })).toBeVisible()
-    await card.getByRole('button', { name: 'Expand introduction' }).click()
+    await expect(card.getByRole('button', { name: 'Expand introduction' })).toHaveCount(0)
     const frame = await card.boundingBox()
     const surface = card.locator('.about-intro-surface')
-    await expect(surface).toHaveCSS('width', '320px')
+    await expect(surface).toHaveCSS('width', '240px')
     const player = await surface.boundingBox()
     expect(player!.x).toBeGreaterThanOrEqual(frame!.x)
     expect(player!.x + player!.width).toBeLessThanOrEqual(frame!.x + frame!.width)

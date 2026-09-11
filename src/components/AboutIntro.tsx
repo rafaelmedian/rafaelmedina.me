@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import { type CSSProperties, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 // Direct imports keep the deferred development chunk free of the full icon catalog.
 import ArrowReloadHorizontalIcon from "@hugeicons/core-free-icons/ArrowReloadHorizontalIcon"
 import BubbleChatIcon from "@hugeicons/core-free-icons/BubbleChatIcon"
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon"
-import FullScreenIcon from "@hugeicons/core-free-icons/FullScreenIcon"
 import Mail01Icon from "@hugeicons/core-free-icons/Mail01Icon"
-import MinimizeScreenIcon from "@hugeicons/core-free-icons/MinimizeScreenIcon"
 import PauseIcon from "@hugeicons/core-free-icons/PauseIcon"
 import PlayIcon from "@hugeicons/core-free-icons/PlayIcon"
 import VolumeHighIcon from "@hugeicons/core-free-icons/VolumeHighIcon"
@@ -74,7 +72,6 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
   const requestRef = useRef(0)
   const [started, setStarted] = useState(false)
   const [playing, setPlaying] = useState(false)
-  const [enlarged, setEnlarged] = useState(false)
   const [touchControls, setTouchControls] = useState(true)
   const [ready, setReady] = useState(false)
   const [waiting, setWaiting] = useState(false)
@@ -133,7 +130,6 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
     setReplyLabel(null)
     setActionsOpen(false)
     setTouchControls(true)
-    if (!open) setEnlarged(false)
     const request = ++requestRef.current
     teaserRef.current?.pause()
     setStarted(true)
@@ -162,7 +158,6 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
     requestRef.current += 1
     videoRef.current?.pause()
     onOpenChange(false)
-    setEnlarged(false)
     // The trigger stays mounted through the morph; focus after React removes
     // inert from it, with no transition timer to race a rapid reopen.
     requestAnimationFrame(() => focusTarget?.focus({ preventScroll: true }))
@@ -205,7 +200,7 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
         // next button. Keep the hovered target alive until its click completes.
         if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
       }}
-      data-open={open} data-enlarged={enlarged && open} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || (variant !== "a" && !open)) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
+      data-open={open} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || (variant !== "a" && !open)) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
         if (event.key.toLowerCase() === "c" && open && !event.metaKey && !event.ctrlKey && !event.altKey &&
           !(event.target instanceof HTMLElement && event.target.matches("input, textarea, [contenteditable]"))) {
@@ -223,60 +218,57 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
         }
       }}>
       <div className="about-intro-surface" data-ready={ready && open}>
-        <img className="about-intro-poster" src={media.assets.poster} width={720} height={720} alt="" />
-        {animateTeaser && teaserIsGif && visible && !open && !pageHidden &&
-          <img className="about-intro-teaser" src={media.assets.teaser} width={180} height={180} alt="" />}
-        {animateTeaser && !teaserIsGif && <video ref={teaserRef} className="about-intro-teaser" src={media.assets.teaser}
-          muted loop playsInline preload="metadata" aria-hidden="true" />}
-        <video ref={videoRef} className="about-intro-recording" data-recording="" playsInline preload="none"
-          aria-label={media.placeholder ? "Placeholder introduction" : "Rafael's introduction"} aria-description="Press C to toggle captions." aria-hidden={!open} tabIndex={-1}
-          onLoadedMetadata={event => {
-            const next = event.currentTarget.duration
-            if (Number.isFinite(next) && next > 0) setDuration(next)
-            syncCaptions()
-          }}
-          onLoadedData={() => setReady(true)} onWaiting={() => setWaiting(true)}
-          onPlaying={() => { setWaiting(false); setPlaying(true) }}
-          onPause={() => { setPlaying(false); setWaiting(false) }}
-          onTimeUpdate={event => setPosition(event.currentTarget.currentTime)}
-          onEnded={() => { setEnded(true); setPlaying(false); setWaiting(false) }}
-          onError={() => { setError(true); setWaiting(false); setPlaying(false) }}>
-          {started && <track kind="captions" label="English" srcLang="en" src={media.assets.captions}
-            default={captions} onLoad={syncCaptions} />}
-        </video>
-        <button type="button" className="about-intro-portrait-trigger" aria-label="Show introduction actions"
-          aria-expanded={actionsOpen} aria-controls={variant === "b" ? id : `${id}-actions`} onClick={() => setActionsOpen(true)}
-          inert={open} aria-hidden={open} />
-        <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
-          aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
-          <span className="about-intro-play-mark"><HugeiconsIcon icon={PlayIcon} strokeWidth={1.5} size={24} fill="currentColor" aria-hidden="true" /></span>
-        </button>
-        <div id={id} className="about-intro-expanded" inert={!open} aria-hidden={!open}>
-          <button type="button" className="about-intro-video-touch" aria-label={touchControls ? "Hide video controls" : "Show video controls"}
-            onClick={() => setTouchControls(!touchControls)} />
-          <button type="button" className="about-intro-collapse about-intro-button" onClick={collapse} aria-label="Close introduction">
-            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.5} size={16} aria-hidden="true" />
+        <div className="about-intro-media">
+          <img className="about-intro-poster" src={media.assets.poster} width={720} height={720} alt="" />
+          {animateTeaser && teaserIsGif && visible && !open && !pageHidden &&
+            <img className="about-intro-teaser" src={media.assets.teaser} width={180} height={180} alt="" />}
+          {animateTeaser && !teaserIsGif && <video ref={teaserRef} className="about-intro-teaser" src={media.assets.teaser}
+            muted loop playsInline preload="metadata" aria-hidden="true" />}
+          <video ref={videoRef} className="about-intro-recording" data-recording="" playsInline preload="none"
+            aria-label={media.placeholder ? "Placeholder introduction" : "Rafael's introduction"} aria-description="Press C to toggle captions." aria-hidden={!open} tabIndex={-1}
+            onLoadedMetadata={event => {
+              const next = event.currentTarget.duration
+              if (Number.isFinite(next) && next > 0) setDuration(next)
+              syncCaptions()
+            }}
+            onLoadedData={() => setReady(true)} onWaiting={() => setWaiting(true)}
+            onPlaying={() => { setWaiting(false); setPlaying(true) }}
+            onPause={() => { setPlaying(false); setWaiting(false) }}
+            onTimeUpdate={event => setPosition(event.currentTarget.currentTime)}
+            onEnded={() => { setEnded(true); setPlaying(false); setWaiting(false) }}
+            onError={() => { setError(true); setWaiting(false); setPlaying(false) }}>
+            {started && <track kind="captions" label="English" srcLang="en" src={media.assets.captions}
+              default={captions} onLoad={syncCaptions} />}
+          </video>
+          <button type="button" className="about-intro-portrait-trigger" aria-label="Show introduction actions"
+            aria-expanded={actionsOpen} aria-controls={variant === "b" ? id : `${id}-actions`} onClick={() => setActionsOpen(true)}
+            inert={open} aria-hidden={open} />
+          <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
+            aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+            <span className="about-intro-play-mark"><HugeiconsIcon icon={PlayIcon} strokeWidth={1.5} size={24} fill="currentColor" aria-hidden="true" /></span>
           </button>
-          <div className="about-intro-controls">
-            <div className="about-intro-progress">
-              <input type="range" min={0} max={duration} step={0.1} value={Math.min(position, duration)}
-                aria-label="Seek introduction" aria-valuetext={`${timeLabel(position)} of ${timeLabel(duration)}`}
-                disabled={!ready} onChange={event => {
-                  const next = Number(event.target.value)
-                  if (videoRef.current) videoRef.current.currentTime = next
-                  setPosition(next)
-                  setEnded(false)
-                }} />
-            </div>
-            <div className="about-intro-control-row">
+          <div id={id} className="about-intro-expanded" inert={!open} aria-hidden={!open}>
+            <button type="button" className="about-intro-video-touch" aria-label={touchControls ? "Hide video controls" : "Show video controls"}
+              onClick={() => setTouchControls(!touchControls)} />
+            <div className="about-intro-controls">
               <button ref={playRef} type="button" className="about-intro-button"
                 aria-label={playing ? "Pause introduction" : action}
                 onClick={() => { if (playing) videoRef.current?.pause(); else play() }}>
                 <span className="t-icon-swap" data-state={playing ? "b" : "a"} aria-hidden="true">
-                  <span className="t-icon" data-icon="a"><HugeiconsIcon icon={ended || error ? ArrowReloadHorizontalIcon : PlayIcon} strokeWidth={1.5} size={18} /></span>
-                  <span className="t-icon" data-icon="b"><HugeiconsIcon icon={PauseIcon} strokeWidth={1.5} size={18} /></span>
+                  <span className="t-icon" data-icon="a"><HugeiconsIcon icon={ended || error ? ArrowReloadHorizontalIcon : PlayIcon} fill={ended || error ? "none" : "currentColor"} strokeWidth={1.5} size={18} /></span>
+                  <span className="t-icon" data-icon="b"><HugeiconsIcon icon={PauseIcon} fill="currentColor" strokeWidth={1.5} size={18} /></span>
                 </span>
               </button>
+              <div className="about-intro-progress" style={{ "--intro-progress": `${duration > 0 ? Math.min(100, position / duration * 100) : 0}%` } as CSSProperties}>
+                <input type="range" min={0} max={duration} step={0.1} value={Math.min(position, duration)}
+                  aria-label="Seek introduction" aria-valuetext={`${timeLabel(position)} of ${timeLabel(duration)}`}
+                  disabled={!ready} onChange={event => {
+                    const next = Number(event.target.value)
+                    if (videoRef.current) videoRef.current.currentTime = next
+                    setPosition(next)
+                    setEnded(false)
+                  }} />
+              </div>
               <button type="button" className="about-intro-button" aria-label={muted ? "Unmute introduction" : "Mute introduction"}
                 onClick={() => {
                   if (videoRef.current) videoRef.current.muted = !muted
@@ -287,18 +279,13 @@ export default function AboutIntro({ media, visible, open, onOpenChange, replies
                   <span className="t-icon" data-icon="b"><HugeiconsIcon icon={VolumeMute01Icon} strokeWidth={1.5} size={18} /></span>
                 </span>
               </button>
-              <button type="button" className="about-intro-button" aria-label={enlarged ? "Shrink introduction" : "Expand introduction"}
-                onClick={() => setEnlarged(!enlarged)}>
-                <span className="t-icon-swap" data-state={enlarged ? "b" : "a"} aria-hidden="true">
-                  <span className="t-icon" data-icon="a"><HugeiconsIcon icon={FullScreenIcon} strokeWidth={1.5} size={16} /></span>
-                  <span className="t-icon" data-icon="b"><HugeiconsIcon icon={MinimizeScreenIcon} strokeWidth={1.5} size={16} /></span>
-                </span>
-              </button>
-              <span className="about-intro-time" aria-hidden="true">{timeLabel(position)} / {timeLabel(duration)}</span>
             </div>
+            <span className="about-intro-status" role="status">{error ? "Couldn’t load video. Try again." : waiting ? "Loading introduction…" : ""}</span>
           </div>
-          <span className="about-intro-status" role="status">{error ? "Couldn’t load video. Try again." : waiting ? "Loading introduction…" : ""}</span>
         </div>
+        <button type="button" className="about-intro-collapse about-intro-button" inert={!open} aria-hidden={!open} onClick={collapse} aria-label="Close introduction">
+          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.5} size={16} aria-hidden="true" />
+        </button>
       </div>
       {variant === "b" ? <AboutIntroChat active={visible && !open && repliesAvailable && !pageHidden} /> : <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
         <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}
