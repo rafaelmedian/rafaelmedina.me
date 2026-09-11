@@ -2061,8 +2061,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   kept on the device and sent with each question to identify the rate-limited conversation, never to
                   subscribe the visitor. Returning visitors go directly to the stored history. The conversation is a
                   restrained version of the page: assistant answers sit directly on the canvas, questions use the dark
-                  primary surface, and a pill composer stays at the foot. The grey Handlee hint reads &ldquo;ask about
-                  me&rdquo; throughout; the accessible name is &ldquo;Ask about Rafael Medina.&rdquo;
+                  primary surface, and a <code>--radius-md</code> squircle composer stays at the foot. Its inset send
+                  control and the email gate&rsquo;s button subtract the shared 6px padding from that radius to keep their
+                  corners concentric; navigation uses <code>--radius-md</code> and suggested questions use the squarer
+                  <code>--radius-sm</code>. The 52px portrait remains a true circle with <code>corner-shape: round</code>,
+                  distinct from those chat surfaces. The grey Handlee hint reads &ldquo;ask about me&rdquo; throughout; the
+                  accessible name is &ldquo;Ask about Rafael Medina.&rdquo;
                 </p>
                 <p>
                   The click spin is a script animation with <code>composite: &quot;add&quot;</code>, not a keyframe

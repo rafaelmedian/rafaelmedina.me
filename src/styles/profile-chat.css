@@ -49,7 +49,7 @@
 .profile-chat-nav {
   min-height: 40px;
   border: 0;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.8rem;
   display: inline-flex;
   align-items: center;
@@ -97,6 +97,7 @@
   width: 3.25rem;
   height: 3.25rem;
   border-radius: var(--radius-full);
+  corner-shape: round;
   object-fit: cover;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
 }
@@ -141,7 +142,7 @@
 
 .profile-chat-email-control,
 .profile-chat-composer-control {
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-control);
 }
@@ -170,7 +171,7 @@
 .profile-chat-email-control button {
   min-height: 40px;
   border: 0;
-  border-radius: var(--radius-full);
+  border-radius: calc(var(--radius-md) - 0.375rem);
   padding: 0.55rem 1rem;
   background: var(--ink);
   color: var(--canvas);
@@ -251,7 +252,7 @@
 .profile-chat-suggestions button {
   min-height: 40px;
   border: 0;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   padding: 0.55rem 0.8rem;
   background: var(--canvas);
   color: var(--focus-ring);
@@ -298,7 +299,7 @@
   height: 40px;
   flex: 0 0 40px;
   border: 0;
-  border-radius: var(--radius-full);
+  border-radius: calc(var(--radius-md) - 0.375rem);
   display: grid;
   place-items: center;
   background: var(--ink);
