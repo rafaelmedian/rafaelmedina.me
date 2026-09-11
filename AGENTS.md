@@ -231,6 +231,12 @@ same artwork instead of churning the diff.
 The PNGs are black on transparent and are used as CSS masks, so the reader still
 colours them with `currentColor` and one asset serves any ink.
 
+The archive's gutter drawings (`drawing-<object>-frames.png`) are strips of
+three frames side by side, which the list steps through on hover. The first
+frame keeps the seed the single drawing always had, so the resting artwork never
+changes; the frame count in the script and the `300%` mask size in
+`src/styles/writings.css` have to agree.
+
 ## Planning Mode Rules
 
 - In planning mode, any task related to design, animation/motion, or user flows must include an ASCII plan.

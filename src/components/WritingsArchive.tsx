@@ -87,7 +87,7 @@ function archiveDrawings(rows: readonly WritingSummary[]) {
 function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
   return (
     <span className="writings-drawing" data-place={drawing.place} aria-hidden="true" style={{
-      "--writings-drawing-mark": `url("/writings/marks/drawing-${drawing.object}.png")`,
+      "--writings-drawing-mark": `url("/writings/marks/drawing-${drawing.object}-frames.png")`,
       "--writings-drawing-size": drawing.size,
       "--writings-drawing-pull": drawing.pull,
       "--writings-drawing-drop": drawing.drop,
