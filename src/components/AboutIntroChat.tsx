@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useId, useRef, useState, type CSSProperties, type FormEvent } from "react"
+import { useCallback, useEffect, useLayoutEffect, useId, useRef, useState, type CSSProperties, type FormEvent } from "react"
+import { Dialog } from "@base-ui/react/dialog"
 import { Menu } from "@base-ui/react/menu"
 import { ArrowUp } from "./NavigationIcons"
 import { isContactEmail } from "../lib/contactEmail"
@@ -89,9 +90,22 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
   </Menu.Root>
 }
 
-export default function AboutIntroChat({ active }: { active: boolean }) {
-  const id = useId()
-  const chatRef = useRef<HTMLElement>(null)
+export default function AboutIntroChat({ active, id, modal = false, onClose, onMessageCount, visible = active }: {
+  active: boolean
+  id?: string
+  modal?: boolean
+  onClose?: () => void
+  onMessageCount?: (count: number) => void
+  visible?: boolean
+}) {
+  const fieldId = useId()
+  const chatRef = useRef<HTMLDivElement>(null)
+  const [chatElement, setChatElement] = useState<HTMLDivElement | null>(null)
+  const attachChat = useCallback((element: HTMLDivElement | null) => {
+    chatRef.current = element
+    setChatElement(element)
+  }, [])
+  const portalRef = useRef<HTMLDivElement>(null)
   const focusAfterTyping = useRef(false)
   const focusWhileTyping = useRef<Element | null>(null)
   const historyRef = useRef<HTMLDivElement>(null)
@@ -124,8 +138,10 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   const typing = shown < target
   const pending = confirmed ? !messageReady : !emailReady
 
+  useEffect(() => onMessageCount?.(Math.min(shown, greeting.length)), [onMessageCount, shown])
+
   useLayoutEffect(() => {
-    const chat = chatRef.current
+    const chat = chatElement
     const form = chat?.querySelector("form")
     if (!chat || !form) return
     const intro = chat.closest<HTMLElement>(".about-intro")
@@ -153,7 +169,7 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
       window.removeEventListener("scroll", schedule)
       window.visualViewport?.removeEventListener("resize", schedule)
     }
-  }, [confirmed, active])
+  }, [chatElement, confirmed, visible])
 
   useLayoutEffect(() => {
     const field = messageRef.current
@@ -182,17 +198,17 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   }, [active, confirmed, puffing, reactionStage])
 
   useEffect(() => {
-    if (!active) focusAfterTyping.current = false
-    if (active && confirmed && !messageReady && focusAfterTyping.current) {
+    if (!visible) focusAfterTyping.current = false
+    if (visible && confirmed && !messageReady && focusAfterTyping.current) {
       // Safari moves focus to the nearest focusable ancestor when email unmounts.
       focusWhileTyping.current = document.activeElement
     }
-    if (!active || !confirmed || !messageReady || !focusAfterTyping.current) return
+    if (!visible || !confirmed || !messageReady || !focusAfterTyping.current) return
     focusAfterTyping.current = false
     if (document.activeElement === document.body || document.activeElement === focusWhileTyping.current || chatRef.current?.contains(document.activeElement)) {
       messageRef.current?.focus({ preventScroll: true })
     }
-  }, [active, confirmed, messageReady])
+  }, [visible, confirmed, messageReady])
 
   useEffect(() => {
     const cancelFocus = (event: PointerEvent) => {
@@ -203,10 +219,10 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   }, [])
 
   useEffect(() => {
-    if (active && historyRef.current) {
+    if (visible && historyRef.current) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight
     }
-  }, [active, confirmed, reactionShown, shown, outbox])
+  }, [visible, confirmed, reactionShown, shown, outbox])
 
   const confirmEmail = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -231,6 +247,9 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   useEffect(() => {
     if (!puffing) return
     const timer = window.setTimeout(() => {
+      // Move off the disappearing address before the dialog's focus manager
+      // sees its removal, then hand focus to the email field after it mounts.
+      if (sentRef.current?.contains(document.activeElement)) chatRef.current?.focus({ preventScroll: true })
       setPuff(null)
       setConfirmed(false)
       setReaction(0)
@@ -264,11 +283,18 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
   }
   const lastSent = outbox.at(-1)
 
-  return <section ref={chatRef} className="about-intro-chat" data-active={active} data-typing={pending} data-step={confirmed ? "message" : "email"}
-    inert={!active} aria-hidden={!active} aria-label="Chat with Rafa">
+  return <Dialog.Root open={visible} modal={modal} disablePointerDismissal={!modal}
+    onOpenChange={next => { if (!next && modal) onClose?.() }}>
+    {/* Keep the portal in the intro layer so responsive positioning and drafts survive. */}
+    <div ref={portalRef} style={{ display: "contents" }} />
+    <Dialog.Portal container={portalRef} keepMounted>
+      <Dialog.Popup ref={attachChat} initialFocus={modal ? chatRef : false} finalFocus={false} id={id} className="about-intro-chat" data-active={visible} data-typing={pending} data-step={confirmed ? "message" : "email"}
+    role={modal ? "dialog" : "region"}
+    inert={!visible} aria-hidden={!visible} aria-label="Chat with Rafa">
+    {modal && <Dialog.Close className="sr-only" tabIndex={-1}>Close chat</Dialog.Close>}
     {/* Hidden live regions can make modal isolation hide the neighboring player. */}
-    <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={active ? "polite" : undefined} aria-relevant="additions">
-      {emailReady && <p className="about-intro-chat-reaction-hint" role="status" aria-live={active ? "polite" : undefined}>{reactionFeedback}</p>}
+    <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={visible ? "polite" : undefined} aria-relevant="additions">
+      {emailReady && <p className="about-intro-chat-reaction-hint" role="status" aria-live={visible ? "polite" : undefined}>{reactionFeedback}</p>}
       {/* Only the typing bubble has a tail on Rafa's side; once a question lands, the visitor's field below it carries one on the right. */}
       {greeting.slice(0, Math.min(shown, 3)).map((text, messageIndex) =>
         <ReactableMessage key={text} text={text} messageIndex={messageIndex}
@@ -326,15 +352,17 @@ export default function AboutIntroChat({ active }: { active: boolean }) {
       </button>
     </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={submitMessage}>
       <div className="about-intro-chat-composer">
-        <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${id}-delivery`} maxLength={2000}
+        <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${fieldId}-delivery`} maxLength={2000}
           rows={2} {...ignorePasswordManagers} placeholder={locked ? "Anything else?" : "Anything on your mind?"} value={message} onChange={event => setMessage(event.target.value)} />
         <button type="submit" className="about-intro-send" aria-label="Send message" disabled={locked && !message.trim()} data-muted={!message.trim()}>
           <ArrowUp size={24} aria-hidden="true" />
         </button>
       </div>
-      <p id={`${id}-delivery`} className="about-intro-chat-hint">
+      <p id={`${fieldId}-delivery`} className="about-intro-chat-hint">
         {locked ? "Each message goes straight to my inbox." : "Optional. Send straight to my inbox."}
       </p>
     </form>}
-  </section>
+      </Dialog.Popup>
+    </Dialog.Portal>
+  </Dialog.Root>
 }

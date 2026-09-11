@@ -4,7 +4,7 @@ const intro = (page: Page) => page.getByRole("region", { name: "A quick hello fr
 const openAbout = async (page: Page) => {
   await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
   await expect(intro(page)).toBeVisible()
-  await intro(page).getByRole("button", { name: "Show introduction actions" }).focus()
+  await intro(page).locator(".about-intro-portrait-trigger").focus()
 }
 
 test("defers introduction assets until About and recording until play", async ({ page }) => {
@@ -43,38 +43,6 @@ test("defers introduction assets until About and recording until play", async ({
   await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).currentTime)).toBeGreaterThan(2)
   await page.keyboard.press("Escape")
   await expect(intro(page).getByRole("button", { name: "Resume introduction", exact: true })).toBeFocused()
-})
-
-test("keeps the mobile conversation and expanded video above the TOC", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 740 })
-  await page.goto("/?intro=preview")
-  await openAbout(page)
-  const toc = page.getByRole("button", { name: "Table of contents: About" })
-  const bubble = intro(page).getByRole("button", { name: "Play introduction", exact: true })
-  const tocBox = await toc.boundingBox()
-  const bubbleBox = await intro(page).getByRole("button", { name: "Show introduction actions" }).boundingBox()
-  expect(bubbleBox!.x).toBeGreaterThanOrEqual(12)
-  expect(bubbleBox!.y + bubbleBox!.height).toBeLessThanOrEqual(tocBox!.y - 8)
-  expect(bubbleBox!.x + bubbleBox!.width).toBeLessThanOrEqual(308)
-  await bubble.click()
-  await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
-  await expect.poll(async () => {
-    const box = await intro(page).locator(".about-intro-surface").boundingBox()
-    return box!.y + box!.height <= tocBox!.y - 8
-  }).toBe(true)
-  const playerBox = await intro(page).locator(".about-intro-surface").boundingBox()
-  expect(playerBox!.x).toBeGreaterThanOrEqual(12)
-  expect(playerBox!.x + playerBox!.width).toBeLessThanOrEqual(308)
-  await toc.click()
-  await expect(intro(page)).toHaveAttribute("data-open", "false")
-  await expect(intro(page).getByRole("button", { name: "Show introduction actions" })).toBeVisible()
-  await expect.poll(() => intro(page).locator("video[data-recording]").evaluate(video => (video as HTMLVideoElement).paused)).toBe(true)
-  await expect(page.getByRole("navigation", { name: "Table of contents" })).toHaveCSS("width", "272px")
-  await expect.poll(async () => {
-    const menu = await page.getByRole("navigation", { name: "Table of contents" }).boundingBox()
-    return menu!.x >= 12 && menu!.x + menu!.width <= 308
-  }).toBe(true)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
 for (const preference of ["reduced motion", "data saving"] as const) {
@@ -190,13 +158,13 @@ test("pauses when the tab is hidden and does not restart sound on return", async
   expect(await video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(true)
 })
 
-for (const width of [320, 1440]) {
+for (const width of [1440]) {
   test(`keeps the player interactive over a booking dialog at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto("/?intro=preview")
     await page.locator("#about-panel-services").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
     await expect(intro(page)).toBeVisible()
-    await intro(page).getByRole("button", { name: "Show introduction actions" }).focus()
+    await intro(page).getByRole("button", { name: "Play introduction", exact: true }).focus()
     await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
     const video = intro(page).locator("video[data-recording]")
     await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).paused)).toBe(false)
@@ -257,17 +225,19 @@ test("keeps a poster while the recording download is pending", async ({ page }) 
   await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
 })
 
-test("can turn off the development placeholder", async ({ page }) => {
+test("keeps the message prompt when the development video is off", async ({ page }) => {
   await page.goto("/?intro=off")
   await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
-  await expect(intro(page)).toHaveCount(0)
+  await expect(intro(page)).toBeVisible()
+  await expect(intro(page).locator("img.about-intro-poster")).toHaveAttribute("src", /profile-photo.*\.webp$/)
+  await expect(intro(page).locator("video")).toHaveCount(0)
 })
 
-test("shows the placeholder video and GIF on ordinary development visits", async ({ page }) => {
+test("uses the profile-photo message prompt on ordinary development visits", async ({ page }) => {
   await page.goto("/")
-  await openAbout(page)
-  await expect(intro(page).locator("img.about-intro-teaser")).toHaveAttribute("src", /teaser\.gif$/)
-  await intro(page).getByRole("button", { name: "Play introduction", exact: true }).click()
-  await expect(intro(page).getByText("Placeholder", { exact: true })).toHaveCount(0)
-  await expect(intro(page).getByRole("button", { name: "Pause introduction" })).toBeVisible()
+  await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
+  await expect(intro(page)).toBeVisible()
+  await expect(intro(page).locator("img.about-intro-poster")).toHaveAttribute("src", /profile-photo.*\.webp$/)
+  await expect(intro(page).locator("video")).toHaveCount(0)
+  await expect(intro(page).getByRole("button", { name: /introduction/i })).toHaveCount(0)
 })

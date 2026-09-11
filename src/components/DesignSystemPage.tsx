@@ -2151,8 +2151,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
-                <li data-ds-terms={terms("about introduction video teaser circle 112px 64px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion pip transitions.dev")}>
-                  <strong>The optional introduction grows from its own circle.</strong> A 112px desktop circle
+                <li data-ds-terms={terms("about introduction profile photo message prompt video teaser circle 112px 64px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion pip transitions.dev")}>
+                  <strong>The message prompt is anchored by Rafael&rsquo;s profile photo.</strong> The main site uses the
+                  self-hosted profile image without mounting a teaser, recording, playback control or media request.
+                  It anchors the visible desktop conversation and opens the modal conversation when tapped at compact
+                  sizes. The preserved video prototype is available only through the explicit development preview.
+                  Its 112px desktop circle
                   sits at the bottom-left on <code>--z-corner</code>, expanding to 240px with
                   <code> --radius-lg</code> corners, <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
                   Below 700px a 64px circle shares the centered TOC row with a 12px gap on
@@ -2192,15 +2196,24 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Its input and 44px arrow enter after 80ms with an 8px slide, 0.97 scale and 2px cross-blur;
                   exiting content stays mounted, inert and hidden from assistive technology while it fades.
                   Text grows that surface upward to
-                  172px with <code>--radius-lg</code> corners. On mobile, portrait and field share a
-                  row above the TOC, with the field constrained to the viewport minus 100px.
+                  172px with <code>--radius-lg</code> corners. On mobile, the 64px speaking portrait stays fixed
+                  12px from the left edge while the TOC remains centred. Through the compact breakpoint at
+                  899.98px, Rafa’s greeting runs behind an 18px red notification circle tucked 1px into the
+                  portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
+                  15%-black hairline, 2px canvas-white halo and the shared control shadow. The badge enters
+                  with the TOC’s 6px rise and blur; each previous number exits 4px upward while its replacement
+                  enters from below over the shared quick duration.
+                  Tapping the portrait or count fades in the shared 42%-black dialog backdrop over
+                  <code>--duration-slow</code>, hides the TOC and grows the portrait from 64px to 80px. The
+                  conversation remains 12px from both viewport edges; its email composer expands to 320px
+                  toward the left and stays 12px above the enlarged portrait.
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
-                  into two 184px pills with a 12px gap. B becomes a conversation anchored to a 64px portrait.
+                  into two 184px pills with a 12px gap. A and C keep their mobile reply row 80px above the safe-area edge to clear the TOC. B becomes a conversation anchored to a 64px portrait.
                   Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
                   curved tail extends 8px toward the face. Only the typing bubble carries it; the questions have none.
                   The fields that follow them are the visitor’s side instead: right-aligned with the chat’s edge where the
-                  sent address lands, rising from their bottom-right corner, and carrying the sent bubble’s mirrored tail
-                  in canvas white with a 1px hairline traced 1px outside the curve. Each incoming message is preceded by a 900ms typing bubble with three 8px muted dots,
+                  sent address lands and rising from their bottom-right corner. The email field stays a clean circular pill;
+                  only the submitted blue address gains the mirrored tail on the right. Each incoming message is preceded by a 900ms typing bubble with three 8px muted dots,
                   spaced 4px apart. They pulse and rise 4px in a 900ms cycle, staggered by 120ms.
                   Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
@@ -2281,7 +2294,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   focus-ring-soft ring, avoiding a second pill outline inside the field. The placeholder is hello@example.com.
                   The arrow opens an email draft
                   for the visitor to review and send. The website does not collect the address.
-                  Media waits until within 200px of About; only a press requests the spoken recording.
+                  In the explicit video preview, media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
                   The transitions.dev icon-swap recipe keeps play/pause and volume glyphs
                   stacked in one cell: <code>--icon-swap-dur</code> (250ms), <code>--icon-swap-blur</code> (2px),
@@ -2292,10 +2305,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   In a dialog, the same player joins that dialog’s focus scope and uses a manual popover
                   in the browser top layer, keeping it above transformed content without a new z-index.
                   On mobile this floating player sits centered, 80px above the safe-area bottom edge.
-                  Closing it returns focus to the dialog. Preview the matching silent GIF and full recording with original audio
-                  fixture on the <a href="/#about-panel">development homepage</a> (a speaking GIF and
-                  test recording); <code>?intro=off</code> hides it for development comparisons. Production stays
-                  disabled until the real recording is ready.
+                  Closing it returns focus to the dialog. Append <code>?intro=preview</code> to the
+                  <a href="/?intro=preview#about-panel"> development homepage</a> to exercise the matching silent GIF,
+                  full recording and original-audio fixture. Ordinary development and production visits keep the
+                  profile-photo message prompt; the dormant video path remains available for the future recording.
                 </li>
                 <li data-ds-terms={terms("about reading surface 36rem process how i work services pricing faq common questions stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
                   <strong>About is one continuous reading surface.</strong> The introduction, the worked-with wall,

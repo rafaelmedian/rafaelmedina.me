@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 
 import { getAboutIntro } from "../data/aboutIntro"
+import { siteProfile } from "../data/portfolio"
 import { MobileTableOfContents } from "./MobileTableOfContents"
 import { AboutIntroLayer } from "./AboutIntroLayer"
 
@@ -21,7 +22,12 @@ export function AboutIntroDock(props: {
   onAbout: () => void
   onServices: () => void
 }) {
-  const [media] = useState(getAboutIntro)
+  const [videoEnabled] = useState(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") return false
+    const params = new URLSearchParams(window.location.search)
+    return params.get("intro") === "preview" || params.has("introStyle")
+  })
+  const [media] = useState(() => videoEnabled ? getAboutIntro() : null)
   const [option] = useState<IntroOption>(() => {
     const requested = import.meta.env.DEV && typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("introStyle") : null
@@ -40,16 +46,15 @@ export function AboutIntroDock(props: {
 
   useEffect(() => {
     const dock = dockRef.current
-    if (!media || !dock) return
+    if (!dock) return
     const observer = new ResizeObserver(([entry]) => {
       dock.style.setProperty("--intro-dock-width", `${entry.contentRect.width}px`)
     })
     observer.observe(dock)
     return () => observer.disconnect()
-  }, [media])
+  }, [])
 
   useEffect(() => {
-    if (!media) return
     const about = document.getElementById("about-panel")
     if (!about) return
     let frame = 0
@@ -82,16 +87,16 @@ export function AboutIntroDock(props: {
       window.removeEventListener("resize", schedule)
       window.removeEventListener("pageshow", schedule)
     }
-  }, [media])
+  }, [])
 
   useEffect(() => {
-    if (!media || !approached) return
+    if (!approached) return
     // Dialogs live in several independently owned portals. Observe their
     // semantic state instead of coupling every gallery/booking/photo reader
     // to this optional player. Ignore persistent, closed Base UI popups.
     const sync = () => {
       const covered = [...document.querySelectorAll<HTMLElement>("[role='dialog'], dialog[open]")]
-        .some(dialog => !dialog.hasAttribute("data-closed") &&
+        .some(dialog => !dialog.closest(".about-intro") && !dialog.hasAttribute("data-closed") &&
           dialog.getAttribute("aria-hidden") !== "true" && dialog.getClientRects().length > 0)
       setObscured(covered)
     }
@@ -102,18 +107,20 @@ export function AboutIntroDock(props: {
     })
     sync()
     return () => observer.disconnect()
-  }, [media, approached])
+  }, [approached])
 
   const visible = open || (active && !obscured)
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
-      data-intro-visible={Boolean(media && approached && visible)} data-toc-open={tocOpen}>
+      data-intro-visible={Boolean(approached && visible)} data-toc-open={tocOpen}>
       <MobileTableOfContents {...props} onOpenChange={handleTocOpen} />
-      {media && approached && (
+      {approached && (
         <IntroBoundary>
           <Suspense fallback={null}>
             <AboutIntroLayer open={open}>
-              <AboutIntro key={option} variant={option} media={media} repliesAvailable={!tocOpen && !obscured} visible={visible} open={open} onOpenChange={setOpen} />
+              <AboutIntro key={option} variant={option} media={media ?? undefined}
+                portrait={siteProfile.photo} videoEnabled={videoEnabled} mobileMessages
+                repliesAvailable={!tocOpen && !obscured} visible={visible} open={open} onOpenChange={setOpen} />
             </AboutIntroLayer>
           </Suspense>
         </IntroBoundary>

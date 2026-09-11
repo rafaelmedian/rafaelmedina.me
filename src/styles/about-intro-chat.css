@@ -8,6 +8,11 @@
   bottom: var(--intro-chat-face-bottom);
 }
 
+.about-intro-chat-backdrop,
+.about-intro-chat-notification {
+  display: none;
+}
+
 /* Springs for the chat and its portaled Tapback picker, sampled into linear()
    from SwiftUI's duration/bounce model so they overshoot and settle like UIKit's. */
 .about-intro-chat,
@@ -551,33 +556,6 @@
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
 }
 
-/* The fields are the visitor's side of the conversation, so their tail is the
-   sent bubble's, mirrored on the right, never pointing at the portrait. */
-.about-intro-chat-composer::before,
-.about-intro-chat-composer::after {
-  content: "";
-  position: absolute;
-  right: -8px;
-  bottom: 0;
-  z-index: -1;
-  width: 32px;
-  height: 24px;
-  clip-path: path("M 24 0 H 0 V 24 H 32 C 26 21 24 16 24 8 Z");
-  pointer-events: none;
-}
-
-/* The hairline: the same curve 1px out, in --shadow-ring's colour. It starts
-   where the field's own ring re-emerges below the corner, so the two never double. */
-.about-intro-chat-composer::before {
-  translate: 1px 1px;
-  background: rgb(0 0 0 / 0.06);
-  clip-path: path("M 24 0 H 5 V 24 H 32 C 26 21 24 16 24 8 Z");
-}
-
-.about-intro-chat-composer::after {
-  background: var(--canvas);
-}
-
 /* Focus lifts the field rather than outlining it; the caret marks the rest. */
 .about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
   box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
@@ -632,7 +610,7 @@
   opacity: 0;
   transform: translateY(8px) scale(0.98);
   filter: blur(2px);
-  /* The email field is its only user; it rises from its tail on the right. */
+  /* The email field is its only user; it rises from the portrait-side corner. */
   transform-origin: right bottom;
   transition: opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
 }
@@ -664,13 +642,131 @@
   }
 }
 
-@media (max-width: 699.98px) {
+@media (max-width: 899.98px) {
+  body:has(.about-intro[data-chat-open="true"]) .mosaic-mobile-toc {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 0.375rem);
+    transition-delay: 0s, 0s, var(--duration-quick);
+  }
+
+  .about-intro-dock .about-intro[data-chat-open="true"] {
+    --intro-size: 80px;
+  }
+
+  .about-intro-dock .about-intro[data-chat-open="true"] .about-intro-surface {
+    transition-duration: var(--duration-base);
+  }
+
+  .about-intro-dock .about-intro-chat-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: rgb(18 18 18 / 0.42);
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-slow) var(--ease-standard), visibility 0s var(--duration-slow);
+  }
+
+  .about-intro-dock .about-intro[data-chat-open="true"] .about-intro-chat-backdrop {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+
+  .about-intro-dock .about-intro-chat-notification {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    background: #e5352b;
+    color: var(--canvas);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15), 0 0 0 3px var(--canvas), var(--shadow-control);
+    font: 700 11px / 1 var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    animation: intro-notification-enter var(--duration-base) var(--ease-smooth) both;
+  }
+
+  .about-intro-chat-notification-number,
+  .about-intro-chat-notification-ghost {
+    grid-area: 1 / 1;
+  }
+
+  .about-intro-chat-notification-number {
+    animation: intro-notification-number-enter var(--duration-quick) var(--ease-standard) both;
+  }
+
+  .about-intro-chat-notification-ghost {
+    animation: intro-notification-number-exit var(--duration-fast) var(--ease-exit) both;
+  }
+
+  .about-intro-dock .about-intro[data-chat-open="true"] :is(.about-intro-surface, .about-intro-chat) {
+    z-index: 2;
+  }
+
+  .about-intro-dock .about-intro-chat {
+    position: fixed;
+    right: 12px;
+    bottom: calc(104px + env(safe-area-inset-bottom));
+    left: 12px;
+    z-index: 2;
+    width: auto;
+  }
+
   .about-intro-chat {
     width: min(320px, calc(100vw - 100px));
+  }
+
+  .about-intro-dock .about-intro-chat[data-step="email"] > .about-intro-chat-composer {
+    width: min(320px, 100%);
+  }
+}
+
+@keyframes intro-notification-enter {
+  from {
+    transform: translateY(6px);
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
+@keyframes intro-notification-number-enter {
+  from {
+    transform: translateY(4px);
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
+  }
+}
+
+@keyframes intro-notification-number-exit {
+  to {
+    transform: translateY(-4px);
+    filter: blur(var(--blur-reveal));
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .about-intro-chat-backdrop,
+  .about-intro-chat-notification,
+  .about-intro-chat-notification-number,
+  .about-intro-chat-notification-ghost {
+    animation: none;
+    transition: none;
+  }
+
   .about-intro-chat-history { transition: none; }
 
   .about-intro-chat-received .about-intro-chat-bubble,

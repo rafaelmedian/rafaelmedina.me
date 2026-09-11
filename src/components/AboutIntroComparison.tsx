@@ -25,7 +25,8 @@ function ComparisonPreview({ variant, open, onOpenChange }: {
     return () => observer.disconnect()
   }, [])
   return <div ref={stageRef} className="intro-comparison-stage">
-    <AboutIntro media={aboutIntroPreview} variant={variant} visible={visible}
+    <AboutIntro media={aboutIntroPreview} portrait={aboutIntroPreview.assets.poster}
+      videoEnabled variant={variant} visible={visible}
       open={open} onOpenChange={onOpenChange} />
   </div>
 }
