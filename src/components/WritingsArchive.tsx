@@ -99,8 +99,8 @@ function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
 // Dates are stored as plain YYYY-MM-DD, so they are read at UTC midnight rather
 // than in the reader's zone, where a western offset would roll them back a day.
 const noteDate = (publishedAt: string) => new Date(`${publishedAt}T00:00:00Z`)
-// A list row sits under its own year heading, so it only carries day and month.
-const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", timeZone: "UTC" })
+// A list row sits under its own year heading, so it only carries month and day.
+const monthDayFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
 
 // One row of either list: the title, and the date it was written on the right.
 // Notes kept only as an archive year have nothing to put there, and the year
@@ -108,7 +108,7 @@ const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month:
 //
 // The date is a scanning aid rather than part of the entry's name, so it stays
 // out of the accessible name: "Designing Matcha, button" beats reading a row as
-// "Designing Matcha oh one slash oh nine", and the note's own header announces
+// "Designing Matcha Sep 1", and the note's own header announces
 // the full date the moment it opens.
 function WritingEntry({ writing, busy, onClick }: {
   writing: WritingSummary
@@ -116,7 +116,7 @@ function WritingEntry({ writing, busy, onClick }: {
   onClick?: (trigger: HTMLButtonElement) => void
 }) {
   const date = writing.publishedAt ? (
-    <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{dayMonthFormat.format(noteDate(writing.publishedAt))}</time>
+    <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{monthDayFormat.format(noteDate(writing.publishedAt))}</time>
   ) : null
   if (!onClick) {
     return (
