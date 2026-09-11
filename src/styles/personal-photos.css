@@ -573,6 +573,9 @@
    frame value: in, once the photo is most of the way to the centre; out,
    at once. */
 .personal-photos-sheet[data-layout="grid"] .personal-photos-stage-caption {
+  /* The component hands over the held photo's bottom edge; the gap is the
+     stylesheet's, as the globe's is. */
+  top: calc(var(--stage-caption-y, 100%) + var(--stage-caption-gap));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .personal-photos-sheet[data-layout="grid"][data-held] .personal-photos-stage-caption {

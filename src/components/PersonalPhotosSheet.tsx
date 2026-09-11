@@ -391,7 +391,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                 </div>
                 {/* The held photo's name, under it, as on the globe; the
                     figcaptions stay for assistive tech. */}
-                <p className="personal-photos-stage-caption" aria-hidden="true" style={held ? { "--stage-caption-y": `calc(${held.captionTop.toFixed(1)}px + var(--stage-caption-gap))`, "--stage-caption-opacity": 1 } as CSSProperties : undefined}>{held?.caption}</p>
+                <p className="personal-photos-stage-caption" aria-hidden="true" style={held ? { "--stage-caption-y": `${held.captionTop.toFixed(1)}px`, "--stage-caption-opacity": 1 } as CSSProperties : undefined}>{held?.caption}</p>
               </Fragment>
             )}
           </div>
