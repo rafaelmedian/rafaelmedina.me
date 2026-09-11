@@ -2171,7 +2171,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   grows one action from 44px to 128px and the pill to 184px, revealing “Your email” or
                   “Text me” inside the button. The label enters after 80ms with an 8px slide; width uses
                   the same slow-open, quick-close surface motion.
-                  Controls use Hugeicons rounded strokes at 1.5px; email, text and the reply arrow are 24px
+                  Controls use Hugeicons rounded strokes at 1.5px; email and text are 24px
                   dark icons on transparent buttons. The focused play triangle uses a white outline.
                   The desktop “A quick hello” and duration tooltip is hidden until hover or focus.
                   Fine-pointer hover scales the portrait to 1.04. The action pill settles from an 8px horizontal offset and 0.97 scale over
@@ -2187,9 +2187,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   row above the TOC, with the field constrained to the viewport minus 100px.
                   Development offers three comparison options: A keeps the compact pill; B uses a 320px by
                   156px chat bubble with a muted identity line, an 18px question, and two 44px buttons;
-                  C separates the actions into two 184px pills with a 12px gap. B uses 24px corners except
-                  its 8px lower-left corner, plus the existing ring and overlay shadows. Its email button
-                  uses ink with canvas text. On mobile, B is 216px tall, stacks the buttons, uses a 16px
+                  C separates the actions into two 184px pills with a 12px gap. B uses 24px corners and
+                  the shared gray tile surface without an outer shadow. A transparent, curved 24px tail
+                  extends 8px toward the portrait, fading out when a form opens. The question uses regular
+                  weight, and both reply buttons use white surfaces, dark icons and the control shadow. On mobile, B is 216px tall, stacks the buttons, uses a 16px
                   question and is constrained to the viewport minus 100px. B and C keep their reply
                   choices visible beside the portrait above the TOC. The development-only A/B/C selector
                   sits 12px from the top safe area on the corner layer with 44px targets; share an option
@@ -2200,11 +2201,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   type, radius and shadow tokens and stacks its cards below 1100px. Only one recording
                   can play at a time; its styles load with that page alone.
                   There is no corner dismiss button.
-                  Both cap at 320px, use shared overlay shadows and <code>--text-md</code> input text
+                  Both forms cap at 320px, use the page fill and shared hairline ring, and <code>--text-md</code> input text
                   to prevent Safari focus zoom. Escape closes the composer and returns focus;
                   clicking outside restores the labeled button without stealing focus. That button stays visible
                   until the next About visit or playback, retaining the mobile row above the TOC so
-                  the form can shrink in place. The arrow opens an email draft
+                  the form can shrink in place. The composer uses a Messages-style upward arrow: a 36px
+                  disc inside a 44px target, with a 24px white Hugeicon at 2.5px stroke. Its component-specific
+                  blue is #007aff; the disabled disc uses muted-soft at 40% opacity. The arrow is hidden when
+                  empty, disabled gray for an invalid email, and enabled blue when native email validation
+                  passes. The reserved target prevents text shifting. A focused email input uses one outer 1px
+                  focus-ring-soft ring, avoiding a second pill outline inside the field. The placeholder is hello@example.com.
+                  The arrow opens an email draft
                   for the visitor to review and send. The website does not collect the address.
                   Media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.

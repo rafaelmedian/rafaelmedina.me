@@ -149,15 +149,15 @@ controls beside it. Hover or focus an icon to expand it into a labeled button:
 the pill; touch users tap the portrait to reveal the 44px icon targets.
 
 The play triangle is white with no disc. A 20% dark overlay fades over the
-portrait while actions are shown. Reply icons and the send arrow use simple
-24px Hugeicons rounded strokes on transparent buttons; their shared white
-surface keeps the site's existing shadows without glass blur or green fills.
+portrait while actions are shown. Reply icons use simple 24px Hugeicons rounded strokes. A and C keep the
+site's existing white surfaces and shadows; B uses the gray Messages-style
+bubble. The composer's upward send arrow uses a blue disc when enabled.
 
 Email expands the same white control into an input and arrow, 12px to the right
 of the image. Text expands it upward to add a small textarea above the email
 row. Opening takes 360ms and closing 160ms; reduced motion removes the morph.
 On mobile, the image and field move into a side-by-side row above the TOC.
-The collapsed widget has no corner X. The arrow validates the address and opens
+The collapsed widget has no corner X. The arrow becomes available for a valid address and opens
 a prefilled email draft addressed to `siteLinks.email`. The visitor reviews and sends it in
 their email app; the website does not send or store their reply. Escape closes
 and returns focus to the action. Clicking elsewhere morphs the form back into
@@ -205,3 +205,9 @@ Open `/intro-options` in development to compare A, B, and C on one page.
 The cards contain the real widgets, including playback and reply forms; starting
 one video pauses the others. Cards sit side by side on wide screens and stack
 on narrow screens. The homepage selector also links to this comparison.
+
+B now follows the supplied Messages reference: a shared gray surface, rounded
+corners and a curved tail toward the portrait, with two white reply buttons.
+All reply forms use a quiet outlined field and an upward send arrow. It is hidden
+while the email is empty, disabled gray for an invalid email, and blue when the
+browser accepts the address. It still opens a draft in the visitor's email app.

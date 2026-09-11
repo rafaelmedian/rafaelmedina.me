@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import ArrowRight02Icon from "@hugeicons/core-free-icons/ArrowRight02Icon"
+import ArrowUp02Icon from "@hugeicons/core-free-icons/ArrowUp02Icon"
 
 import { siteLinks } from "../data/portfolio"
 
@@ -14,6 +14,7 @@ export default function AboutIntroReply({ mode, active, onClose }: {
   const emailRef = useRef<HTMLInputElement>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const [email, setEmail] = useState("")
+  const [emailValid, setEmailValid] = useState(false)
   const [message, setMessage] = useState("")
   const [draftOpened, setDraftOpened] = useState(false)
 
@@ -42,9 +43,12 @@ export default function AboutIntroReply({ mode, active, onClose }: {
           maxLength={2000} value={message} onChange={event => setMessage(event.target.value)} placeholder="Your message…" />}
         <div className="about-intro-email-row">
           <input ref={emailRef} type="email" name="email" aria-label="Your email" autoComplete="email" required
-            maxLength={254} value={email} onChange={event => setEmail(event.target.value)} placeholder="Your email" />
-          <button type="submit" className="about-intro-send" aria-label="Open email draft" aria-describedby={`${id}-hint`}
-            title="Review and send in your email app"><HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={1.5} size={24} aria-hidden="true" /></button>
+            maxLength={254} value={email} onChange={event => {
+              setEmail(event.target.value)
+              setEmailValid(event.currentTarget.validity.valid)
+            }} placeholder="hello@example.com" />
+          <button type="submit" className="about-intro-send" data-empty={!email} disabled={!emailValid} aria-hidden={!email} aria-label="Open email draft" aria-describedby={`${id}-hint`}
+            title="Review and send in your email app"><HugeiconsIcon icon={ArrowUp02Icon} strokeWidth={2.5} size={24} aria-hidden="true" /></button>
         </div>
       </form>
       <span id={`${id}-hint`} className="sr-only">Review and send in your email app.</span>
