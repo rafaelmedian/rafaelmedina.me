@@ -774,6 +774,16 @@ export function PreviewGalleryDialog({
                 </div>
               </article>
 
+              {/* The notes card's bottom fade sits over the card rather than in
+                  it: Chrome drops the mask from a backdrop blur inside a rounded
+                  overflow clip, and the card is one. Holding still while the
+                  page scrolls and turns underneath it comes free. */}
+              {activeItem?.kind === "writings" ? (
+                <div className="notes-gallery-fade" aria-hidden="true">
+                  <span /><span /><span /><span />
+                </div>
+              ) : null}
+
               <div className="preview-gallery-rail" role="group" aria-label={readingNote ? "Note navigation" : "Preview navigation"}>
                 <button
                   type="button"

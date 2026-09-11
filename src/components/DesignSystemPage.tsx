@@ -450,7 +450,7 @@ const STACKING_ENTRIES = [
     name: "--z-dock / --z-chrome",
     note: "The page and main content wrapper (Tailwind's z-dock maps onto the token). The bottom scroll edge sits inside main at --z-chrome, below the table of contents at --z-social.",
   },
-  { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side." },
+  { z: "1", name: "About sheet", note: "The full-viewport white surface paints above the pinned project gallery during takeover. Its seam layers — hairline, shadow, and ambient cast — share the level from the runway side. Inside it, the sticky bottom fade takes z 1 of its own, above the intro column." },
   { z: "auto", name: "Takeover cue", note: "The one control that deliberately declines a level. It is a positioned sibling following the stage in document order, so it already paints above it — and a z-index here would make it a stacking context and isolate the chevron's blend." },
   {
     z: "--z-corner",
@@ -2150,6 +2150,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   scroll position to the top, holding preview playback until the return settles so video compositing
                   cannot steal its final frames; under reduced motion the return is immediate. Below 700px it is not
                   exposed as an interactive control because the takeover itself is disabled.
+                </li>
+                <li data-ds-terms={terms("bottom fade progressive blur backdrop-filter 1.25rem gradient --canvas clamp(3rem, 8vh, 4.5rem) 3rem sticky safe area seam sheet notes card mask rounded clip")}>
+                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet and the notes card
+                  soften their copy as it sinks, with the work tiles&rsquo; caption blur rescaled to the strip: four
+                  masked layers stepping the radius from 0.12 of <code>1.25rem</code> up to all of it, under an eased
+                  ramp into <code>--canvas</code>. The project grid and the previews do not fade. The sheet&rsquo;s
+                  fade covers the bottom <code>clamp(3rem, 8vh, 4.5rem)</code> of the viewport plus the safe-area
+                  inset, sticky to the viewport&rsquo;s foot. It is the sheet&rsquo;s last child and pulls itself back
+                  over the panel&rsquo;s bottom padding, so it adds no height, never paints outside the sheet&rsquo;s
+                  opaque layer, and arrives with the sheet rather than washing out the seam it crosses on. At the end
+                  of the page it rests on that padding, clear of the last line. The notes card&rsquo;s is 3rem and sits
+                  over the card as its next sibling in the popup, not inside it: Chrome ignores the layers&rsquo; masks
+                  inside a rounded overflow clip and blurs the whole strip at full strength. Its layers take the
+                  card&rsquo;s bottom corners themselves, and borrow the card&rsquo;s switch opacity when Notes pages
+                  to a project. Neither blur measurably changed scrolling frame times in Chrome.
                 </li>
                 <li data-ds-terms={terms("about reading surface 36rem process how i work services pricing faq common questions stickers clamp(5rem, 10vw, 8.75rem) #about-panel-services")}>
                   <strong>About is one continuous reading surface.</strong> The introduction, the worked-with wall,
