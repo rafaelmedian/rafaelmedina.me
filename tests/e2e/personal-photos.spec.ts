@@ -327,8 +327,15 @@ test("the fan is dealt with a wobble, opens as a hand, and lifts the one print u
   expect(await prints.evaluateAll(readAngles)).toEqual(open)
   expect(await growth()).toEqual([1, 1, 1, 1, 1])
   expect(await depths()).toEqual(["1", "3", "5", "3", "1"])
+  // Over a print the hand lies flat and the print alone turns toward the
+  // pointer, on `rotate`, so the lean it was dealt with is untouched.
+  const turns = () => prints.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).rotate !== "none"))
+  await expect.poll(turns).toEqual([false, true, false, false, false])
+  await expect(preview.locator(".personal-photos-stack-tilt")).toHaveCSS("transform", "none")
+  expect(await prints.evaluateAll(readAngles)).toEqual(open)
   await page.mouse.move(label.x + label.width / 2, label.y + label.height / 2)
   await expect.poll(lifts).toEqual([0, 0, 0, 0, 0])
+  await expect.poll(turns).toEqual([false, false, false, false, false])
 })
 
 /** The budget for anything that waits on the globe's own motion. A turn

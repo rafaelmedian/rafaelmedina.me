@@ -65,6 +65,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .personal-photos-stack-tilt {
+    /* One camera over the hand, for the print that turns on its own below. */
+    perspective: 1000px;
+  }
   .personal-photos-stack-tilt[data-tilt-active] {
     transform: perspective(1000px) rotateX(var(--photo-stack-rotate-x, 0deg)) rotateY(var(--photo-stack-rotate-y, 0deg));
     transition-duration: var(--duration-base);
@@ -108,8 +112,24 @@
      row reads as one print handing off to the next rather than each one
      waiting a beat before it stirs. Each print keeps its assigned depth. The
      lift rides on `translate`, apart from the transform that carries the lean
-     and the drop, so the two compose without either rule rewriting the other. */
-  transition: transform var(--duration-slow) var(--ease-smooth), translate var(--duration-slow) var(--ease-smooth);
+     and the drop, so the two compose without either rule rewriting the other;
+     the turn toward the pointer rides on `rotate`, apart from both. */
+  transition: transform var(--duration-slow) var(--ease-smooth), translate var(--duration-slow) var(--ease-smooth), rotate var(--duration-base) var(--ease-smooth);
+}
+
+/* The print under the pointer turns toward it on its own, about an axis
+   square to the pointer's offset from the print's centre, up to 10deg at
+   its edge — the same lean the whole hand takes over the label, given to
+   one print — while the hand itself lies flat (usePhotoStackTilt lets it
+   down the moment the pointer crosses onto a print). It rides on the
+   individual `rotate` property, so the lean and the drop on `transform` and
+   the lift on `translate` are untouched, and the flight's measurement of
+   `transform` still reads a plain 2D lean. The reset before a flight turns
+   it flat in the same frame as everything else. */
+@media (prefers-reduced-motion: no-preference) {
+  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-tilt] {
+    rotate: var(--print-rotate, none);
+  }
 }
 
 /* The print under the pointer slides up out of the hand, by its own
