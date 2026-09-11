@@ -64,9 +64,12 @@ export function ProfileChat({ open, name, photo, links, onClose }: ProfileChatPr
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
-    if (open && !dialog.open) {
-      dialog.showModal()
-      dialog.querySelector<HTMLElement>(email ? "textarea" : 'input[type="email"]')?.focus()
+    if (open) {
+      if (!dialog.open) dialog.showModal()
+      const frame = window.requestAnimationFrame(() =>
+        dialog.querySelector<HTMLElement>(email ? "textarea" : 'input[type="email"]')?.focus(),
+      )
+      return () => window.cancelAnimationFrame(frame)
     }
     if (!open && dialog.open) dialog.close()
   }, [email, open])
@@ -120,6 +123,13 @@ export function ProfileChat({ open, name, photo, links, onClose }: ProfileChatPr
     setError("")
     setMessages([welcomeMessage])
     saveMessages([welcomeMessage])
+  }
+
+  const changeEmail = () => {
+    resetConversation()
+    setEmail("")
+    setEmailDraft("")
+    try { localStorage.removeItem(emailStorageKey) } catch { /* Session only. */ }
   }
 
   return (
@@ -215,7 +225,10 @@ export function ProfileChat({ open, name, photo, links, onClose }: ProfileChatPr
             </div>
             <div className="profile-chat-composer-meta">
               <p className="profile-chat-form-error" aria-live="polite">{error}</p>
-              <a href={`mailto:${links.email}`}>Prefer email?</a>
+              <div className="profile-chat-secondary-actions">
+                <button type="button" onClick={changeEmail}>Change email</button>
+                <a href={`mailto:${links.email}`}>Prefer email?</a>
+              </div>
             </div>
           </form>
         </div>

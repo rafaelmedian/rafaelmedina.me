@@ -22,6 +22,7 @@ test("the avatar opens an email-gated conversation and remembers it", async ({ p
   await chat.getByLabel("Your email").fill("visitor@example.com")
   await chat.getByRole("button", { name: "Start chatting" }).click()
   await expect(chat.getByRole("heading", { name: "Rafael Medina" })).toBeVisible()
+  await expect(chat.getByLabel("Ask about Rafael")).toBeFocused()
   await chat.getByRole("button", { name: "What kind of products does Rafael design?" }).click()
   await expect(chat.getByText("Rafael designs and builds product experiences across fintech, web3, and consumer products.")).toBeVisible()
   expect(requestBody).toMatchObject({
@@ -36,4 +37,6 @@ test("the avatar opens an email-gated conversation and remembers it", async ({ p
   await expect(avatar).toBeFocused()
   await avatar.click()
   await expect(page.getByRole("dialog", { name: "Rafael Medina" }).getByText("Rafael designs and builds product experiences across fintech, web3, and consumer products.")).toBeVisible()
+  await chat.getByRole("button", { name: "Change email" }).click()
+  await expect(chat.getByLabel("Your email")).toBeFocused()
 })
