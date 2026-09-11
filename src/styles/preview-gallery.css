@@ -722,6 +722,27 @@
   gap: 0.5rem 1rem;
 }
 
+/* Rafael is the stable final credit. Project-specific teammates mount to his
+   left, so only the people newly introduced by a page turn get this one-shot
+   reveal; a teammate shared by adjacent projects keeps their place quietly. */
+.preview-gallery-people > li:not(:last-child) {
+  animation: preview-gallery-person-in var(--duration-base) var(--ease-smooth) both;
+}
+
+@keyframes preview-gallery-person-in {
+  from {
+    opacity: 0;
+    filter: blur(var(--blur-reveal));
+    transform: translateX(-0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    filter: none;
+    transform: translateX(0);
+  }
+}
+
 /* Team credits keep the existing avatar links, below the project prose. */
 .preview-gallery-person {
   display: inline-flex;
@@ -953,6 +974,10 @@
   .preview-gallery-popup .preview-gallery-card .preview-gallery-title,
   .preview-gallery-media[data-loaded] {
     filter: none;
+  }
+
+  .preview-gallery-people > li:not(:last-child) {
+    animation: none;
   }
 }
 

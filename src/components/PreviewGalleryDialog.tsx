@@ -87,7 +87,7 @@ function getPreviewDescription(card: PortfolioCard) {
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
   // Credited on every project, with or without company: a shot with no names
   // under it reads as unattributed rather than as solo work.
-  return [collaborators.rafael, ...(card.team ?? [])]
+  return [...(card.team ?? []), collaborators.rafael]
 }
 
 function getInitials(name: string) {

@@ -4987,7 +4987,7 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
   await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })
 
-test("puts unlabelled credits below the description without a site link", async ({ page }) => {
+test("puts teammates before Rafael in unlabelled credits below the description", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
@@ -4995,7 +4995,7 @@ test("puts unlabelled credits below the description without a site link", async 
   const dialog = page.getByRole("dialog")
   const description = dialog.locator(".preview-gallery-description")
   const team = dialog.getByRole("list", { name: "Collaborators" })
-  await expect(team.getByRole("link")).toHaveText(["Rafael Medina", "Simon Rico"])
+  await expect(team.getByRole("link")).toHaveText(["Simon Rico", "Rafael Medina"])
   await expect(description).toContainText("I mapped and designed")
   await expect(description).toContainText("without losing their quote or inputs")
   await expect(dialog.locator("dl")).toHaveCount(0)
@@ -5030,6 +5030,35 @@ test("puts unlabelled credits below the description without a site link", async 
     }
     await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   }
+})
+
+test("reveals a new teammate from the left when paging from solo work", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha token page/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const counter = dialog.locator(".preview-gallery-count")
+  const team = dialog.getByRole("list", { name: "Collaborators" })
+  const next = dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true })
+  const previous = dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true })
+
+  await expect(counter).toHaveText("10 / 14")
+  await previous.click()
+  await expect(counter).toHaveText("9 / 14")
+  await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
+
+  await next.click()
+  await expect(counter).toHaveText("10 / 14")
+  await expect(team.getByRole("link")).toHaveText(["Jakub Antalik", "Rafael Medina"])
+  const teammateMotion = await team.getByRole("link", { name: "Jakub Antalik" }).locator("..").evaluate((item) =>
+    item.getAnimations().map((animation) => ({
+      name: (animation as CSSAnimation).animationName,
+      firstTransform: animation.effect?.getKeyframes()[0]?.transform,
+    })),
+  )
+  expect(teammateMotion).toContainEqual({ name: "preview-gallery-person-in", firstTransform: "translate(-12px)" })
 })
 
 const expectPreviewContributionFits = async (page: Page, viewportHeight: number) => {
