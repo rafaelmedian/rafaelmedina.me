@@ -243,12 +243,13 @@
   @supports (mask-image: url("/writings/marks/drawing-sheet-frames.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet-frames.png")) {
     .resume-margin-drawing {
       --resume-drawing-gutter: calc((100cqi - 34rem) / 2);
-      --resume-drawing-slack: max(0rem, var(--resume-drawing-gutter) - var(--resume-drawing-size) - 0.75rem);
-      --resume-drawing-rail: calc(0.75rem + var(--resume-drawing-pull) * var(--resume-drawing-slack));
+      --resume-drawing-inset: 2.5rem;
+      --resume-drawing-slack: max(0rem, var(--resume-drawing-gutter) - var(--resume-drawing-size) - var(--resume-drawing-inset));
+      --resume-drawing-rail: calc(var(--resume-drawing-inset) + var(--resume-drawing-pull) * var(--resume-drawing-slack));
       position: absolute;
       top: var(--resume-drawing-drop);
       display: block;
-      width: min(var(--resume-drawing-size), calc(var(--resume-drawing-gutter) - 0.75rem));
+      width: min(var(--resume-drawing-size), calc(var(--resume-drawing-gutter) - var(--resume-drawing-inset)));
       aspect-ratio: 1;
       background-color: var(--muted);
       opacity: 0.48;

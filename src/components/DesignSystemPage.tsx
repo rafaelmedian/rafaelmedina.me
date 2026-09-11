@@ -1605,9 +1605,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 to 0 degrees over <code>--duration-quick</code>, which reduced motion removes.
                 They load the same <code>-480w</code>/<code>-960w</code> variants the grid tiles do, declared against
                 that rendered width rather than a full-width slot. At wide reader widths, a pencil, cup, and sheet
-                reuse the Notes archive&rsquo;s generated three-frame masks in the otherwise empty margins. Hovering
-                or focusing their adjacent role retraces the line at the same 375ms stepped cadence; compact layouts
-                hide them, and reduced motion keeps their resting frame.
+                reuse the Notes archive&rsquo;s generated three-frame masks in the otherwise empty margins. Their rail
+                begins 2.5rem beyond the reading column and distributes each object through the remaining gutter, so
+                the marks stay clear of the copy on both sides. Hovering or focusing their adjacent role retraces the
+                line at the same 375ms stepped cadence; compact layouts hide them, and reduced motion keeps their resting frame.
               </p>
               <div className="ds-resume-tile-specimen mosaic-row-item">
                 <ResumeTile />

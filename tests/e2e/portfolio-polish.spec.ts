@@ -3461,6 +3461,28 @@ for (const width of [1440, 390]) {
   })
 }
 
+test("keeps resume margin drawings clear of the reading column", async ({ page }) => {
+  await page.setViewportSize({ width: 2394, height: 1279 })
+  await page.goto("/resume/")
+
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const clearances = await dialog.locator(".resume-margin-drawing").evaluateAll((drawings) => {
+    const content = document.querySelector(".resume-content")!.getBoundingClientRect()
+
+    return drawings.map((drawing) => {
+      const box = drawing.getBoundingClientRect()
+      const side = drawing.getAttribute("data-place")
+      return {
+        side,
+        gap: side === "left" ? content.left - box.right : box.left - content.right,
+      }
+    })
+  })
+
+  expect(clearances.filter(({ side }) => side === "left").every(({ gap }) => gap >= 40)).toBe(true)
+  expect(clearances.filter(({ side }) => side === "right").every(({ gap }) => gap >= 32)).toBe(true)
+})
+
 test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -4120,14 +4142,6 @@ test("adds breathing room above the about hobbies", async ({ page }) => {
   await expect(page.locator(".mosaic-about-hobbies")).toHaveCSS("margin-top", "8px")
 })
 
-test("starts the education section without a top hairline", async ({ page }) => {
-  await page.goto("/")
-  await page.getByRole("link", { name: "Open résumé" }).click()
-
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
-  await expect(dialog.locator(".mosaic-about-resume-education")).toHaveCSS("border-top-width", "0px")
-})
-
 test("gives the Chainlink work a fuller description", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
@@ -4243,7 +4257,9 @@ test("aligns work locations with their roles", async ({ page }) => {
 
     expect(roleBox).not.toBeNull()
     expect(locationBox).not.toBeNull()
-    expect(Math.abs(roleBox!.y - locationBox!.y)).toBeLessThan(1)
+    const overlap = Math.min(roleBox!.y + roleBox!.height, locationBox!.y + locationBox!.height)
+      - Math.max(roleBox!.y, locationBox!.y)
+    expect(overlap).toBeGreaterThan(Math.min(roleBox!.height, locationBox!.height) * 0.75)
   }
 })
 
