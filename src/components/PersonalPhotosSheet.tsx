@@ -8,6 +8,7 @@ import { photoSphereHoldGrowth, usePhotoSphere } from "../lib/usePhotoSphere"
 import { flyBetweenLayouts, snapshotSlides } from "../lib/photoLayoutSwitch"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 import { readSheetLayout, saveSheetLayout, usePreviewCount, useSheetColumns, type PhotoSheetLayout } from "../lib/photoLayout"
+import { isTuningCornerCurve } from "../lib/developmentTuning"
 
 export type PersonalPhotosSheetHandle = {
   /** Opens the sheet; on the globe, with a photo id, holds that photo at the
@@ -71,6 +72,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const [open, setOpen] = useState(false)
   const [layout, setLayout] = useState<PhotoSheetLayout>(readSheetLayout)
   const previewCount = usePreviewCount()
+  const tuningCornerCurve = isTuningCornerCurve()
   const columnCount = useSheetColumns()
   // The first photos are the prints, so dealing them round-robin puts them
   // across the top of the grid rather than down its left-hand column.
@@ -351,7 +353,8 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange} actionsRef={dialogActions}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange} actionsRef={dialogActions}
+      modal={!tuningCornerCurve} disablePointerDismissal={tuningCornerCurve}>
       <Dialog.Portal>
         <Dialog.Backdrop className="personal-photos-backdrop" />
         <Dialog.Popup initialFocus={sheetRef} finalFocus={() => opener} className="personal-photos-dialog">

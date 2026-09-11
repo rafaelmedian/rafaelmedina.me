@@ -37,6 +37,7 @@
     height: 51.2px;
     border: 0;
     border-radius: var(--radius-full);
+    corner-shape: round;
     display: grid;
     place-items: center;
     background: var(--canvas);

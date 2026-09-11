@@ -821,6 +821,10 @@
   background: var(--mosaic-card-surface);
 }
 
+.ds-radius-proof[data-corner-shape="round"] {
+  corner-shape: round;
+}
+
 /* ----------------------------------------------------------- elevation --- */
 
 /* Shadows cannot be shown inside a bordered box — the border reads as the edge

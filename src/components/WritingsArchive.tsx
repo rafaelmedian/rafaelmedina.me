@@ -4,7 +4,7 @@ import { useRef, type CSSProperties, type PointerEvent } from "react"
 import { writingSummaries, type WritingSummary } from "../data/writingIndex"
 import { writingPath } from "../lib/projectMetadata"
 import { keyClickSounds } from "../lib/sounds"
-import { groupWritingsByYear, noteHash, pickFrom } from "../lib/writings"
+import { groupWritingsByCategory, noteHash, pickFrom } from "../lib/writings"
 
 // The archive leaves the same two gutters empty that the reader hangs its
 // marginalia in. Objects go into them down the list, in the same pencil the
@@ -74,7 +74,7 @@ function archiveDrawings(rows: readonly WritingSummary[]) {
     if (previous?.place === place && previous.pull === pull) pull = DRAWING_PULLS[(DRAWING_PULLS.indexOf(pull) + 2) % DRAWING_PULLS.length]
     drawings.push({
       row,
-      object: ARCHIVE_DRAWINGS[drawings.length % ARCHIVE_DRAWINGS.length],
+      object: rows[row].category === "Tools" ? "folder-pencil" : ARCHIVE_DRAWINGS[drawings.length % ARCHIVE_DRAWINGS.length],
       place,
       pull,
       size: pickFrom(DRAWING_SIZES, hash, 2),
@@ -102,12 +102,17 @@ function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
 // Dates are stored as plain YYYY-MM-DD, so they are read at UTC midnight rather
 // than in the reader's zone, where a western offset would roll them back a day.
 const noteDate = (publishedAt: string) => new Date(`${publishedAt}T00:00:00Z`)
-// A list row sits under its own year heading, so it only carries month and day.
-const monthDayFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
+// Category headings no longer supply a year, so the compact row date carries it.
+const archiveDateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "2-digit", timeZone: "UTC" })
+
+function archiveDate(publishedAt: string) {
+  return archiveDateFormat.formatToParts(noteDate(publishedAt)).map((part) =>
+    part.type === "year" ? `'${part.value}` : part.type === "literal" && part.value.includes(",") ? " " : part.value,
+  ).join("").replace(/\s+/g, " ").trim()
+}
 
 // One row of either list: the title, and the date it was written on the right.
-// Notes kept only as an archive year have nothing to put there, and the year
-// heading above them already says as much.
+// Notes kept only as an archive year have no exact date to put there.
 //
 // The date is a scanning aid rather than part of the entry's name, so it stays
 // out of the accessible name: "Designing Matcha, button" beats reading a row as
@@ -119,7 +124,7 @@ function WritingEntry({ writing, busy, onClick }: {
   onClick?: (trigger: HTMLButtonElement) => void
 }) {
   const date = writing.publishedAt ? (
-    <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{monthDayFormat.format(noteDate(writing.publishedAt))}</time>
+    <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{archiveDate(writing.publishedAt)}</time>
   ) : null
   if (!onClick) {
     return (
@@ -193,13 +198,13 @@ type WritingsArchiveProps = {
 }
 
 /**
- * Every note by year, with the pencil objects in the gutters beside them. It is
+ * Every entry by category, with the pencil objects in the gutters beside them. It is
  * the folder's slide in the preview gallery -- at the place the folder tile
  * occupies on the grid, so the arrow keys walk from a project into the notes
  * and out the other side -- and the `/notes/` a crawler reads instead.
  */
 export function WritingsArchive({ onSelectWriting, pendingId, status }: WritingsArchiveProps) {
-  const groups = groupWritingsByYear(writingSummaries)
+  const groups = groupWritingsByCategory(writingSummaries)
   const orderedWritings = groups.flatMap(({ entries }) => entries)
   const drawings = archiveDrawings(orderedWritings)
   // Only the gallery's list types: the standalone page is what a crawler, or
@@ -210,9 +215,9 @@ export function WritingsArchive({ onSelectWriting, pendingId, status }: Writings
     <div className="writings-archive">
       {status ? <p className="writings-status" role="status">{status}</p> : null}
       <div className="writings-list" {...(onSelectWriting ? keyClicks : null)}>
-        {groups.map(({ year, entries }) => (
-          <section className="writings-year" key={year} aria-label={year}>
-            <h3>{year}</h3>
+        {groups.map(({ category, entries }) => (
+          <section className="writings-category" key={category} aria-label={category}>
+            <h3>{category}</h3>
             <ul>{entries.map((writing) => {
               const drawing = drawings.get(orderedWritings.indexOf(writing))
               return (

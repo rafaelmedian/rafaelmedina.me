@@ -20,7 +20,7 @@ export function NotesPage() {
       </nav>
       <header>
         <h1 className="standalone-title">Notes</h1>
-        <p className="standalone-description">Short essays on design, tools, and working with agents, written over the year.</p>
+        <p className="standalone-description">Notes and small tools about design, software, and working with agents.</p>
       </header>
       <WritingsArchive />
     </div>

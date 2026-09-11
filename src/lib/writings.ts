@@ -1,22 +1,19 @@
-/** Anything the archive can list under a year: a summary or a whole article. */
-type Dated = { publishedAt?: string; archiveYear?: number }
+import type { WritingCategory } from "../data/writingIndex"
 
-export function writingYear(writing?: Dated) {
-  return writing?.publishedAt?.slice(0, 4) || writing?.archiveYear?.toString() || "Undated"
-}
+type CategorizedWriting = { category: WritingCategory; publishedAt?: string; archiveYear?: number }
 
-/** Publication dates or archive years sort newest first; undated notes go last. */
-export function groupWritingsByYear<T extends Dated>(writings: readonly T[]) {
-  const groups = new Map<string, T[]>()
+export const writingCategoryOrder = ["Tools", "Notes", "Misc"] as const satisfies readonly WritingCategory[]
+
+/** Categories keep a fixed editorial order; entries inside them are newest first. */
+export function groupWritingsByCategory<T extends CategorizedWriting>(writings: readonly T[]) {
+  const groups = new Map<WritingCategory, T[]>()
   const sortDate = (writing: T) => writing.publishedAt ?? writing.archiveYear?.toString() ?? ""
-  const sorted = [...writings].sort((a, b) => sortDate(b).localeCompare(sortDate(a)))
-  for (const writing of sorted) {
-    const year = writingYear(writing)
-    const entries = groups.get(year) ?? []
-    entries.push(writing)
-    groups.set(year, entries)
+  for (const category of writingCategoryOrder) {
+    const entries = writings.filter((writing) => writing.category === category)
+      .sort((a, b) => sortDate(b).localeCompare(sortDate(a)))
+    if (entries.length) groups.set(category, entries)
   }
-  return [...groups].map(([year, entries]) => ({ year, entries }))
+  return [...groups].map(([category, entries]) => ({ category, entries }))
 }
 
 // Everything about a note that varies -- which mark it wears, how far it drops,

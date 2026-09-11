@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { writingSummaries } from "../../src/data/writingIndex"
-import { groupWritingsByYear } from "../../src/lib/writings"
+import { groupWritingsByCategory } from "../../src/lib/writings"
 
 test("gallery controls scroll an overflowing notes list with the keyboard", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 })
@@ -111,7 +111,7 @@ test("rapid paging settles on the latest note and dismissal cancels the turn", a
   await page.goto("/notes/designing-matcha/")
   const popup = page.locator(".preview-gallery-popup")
   await expect(popup.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
-  const notes = groupWritingsByYear(writingSummaries).flatMap(group => group.entries)
+  const notes = groupWritingsByCategory(writingSummaries).flatMap(group => group.entries)
   const index = notes.findIndex(note => note.id === "designing-matcha")
   await page.keyboard.press("ArrowRight")
   await page.keyboard.press("ArrowRight")

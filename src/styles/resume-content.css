@@ -47,6 +47,7 @@
   height: 2rem;
   padding: 0.45rem;
   border-radius: var(--radius-full);
+  corner-shape: round;
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-control);
 }

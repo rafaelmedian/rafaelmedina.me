@@ -567,6 +567,13 @@
    bringing round a photo nobody can see. */
 .personal-photos-sphere .personal-photos-slide[data-sphere-far] { pointer-events: none; }
 
+/* Keep the globe's circular hit area and pill controls round under the
+   site's shared continuous-corner policy. */
+.personal-photos-sphere,
+.personal-photos-layout,
+.personal-photos-layout::before,
+.personal-photos-layout button { corner-shape: round; }
+
 /* The held photo's name, just under it. usePhotoSphere places it from the
    photo's drawn box every frame and fades it with the photo's own zoom, so
    it arrives as the hold lands and leaves with the release; when the screen
