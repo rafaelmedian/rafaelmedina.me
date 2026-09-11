@@ -79,9 +79,10 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
       <Menu.Positioner className="about-intro-chat-reaction-positioner" positionMethod="fixed"
         side="top" align="end" sideOffset={4} collisionPadding={12}>
         <Menu.Popup className="about-intro-chat-reaction-picker" aria-label={`React to “${text}”`}>
-          {visitorReactions.map(choice => <Menu.CheckboxItem key={choice.id} label={choice.label}
+          {visitorReactions.map((choice, choiceIndex) => <Menu.CheckboxItem key={choice.id} label={choice.label}
               checked={reactionId === choice.id} onCheckedChange={() => onReaction(messageIndex, choice.id)}
-              closeOnClick className="about-intro-chat-reaction-choice" aria-label={choice.label}>
+              closeOnClick className="about-intro-chat-reaction-choice" aria-label={choice.label}
+              style={{ "--intro-reaction-order": visitorReactions.length - choiceIndex - 1 } as CSSProperties}>
               <span aria-hidden="true"><ReactionGlyph reaction={choice} /></span>
             </Menu.CheckboxItem>)}
         </Menu.Popup>

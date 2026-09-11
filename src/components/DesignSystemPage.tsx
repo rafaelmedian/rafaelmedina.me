@@ -2353,8 +2353,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   coral (#ffb59e to #f34b40) and purple (#dbbaff to #8a4ddd) gradients. These are local
                   approximations of the supplied Messages references, not shared interface colours.
                   It stays 12px inside the viewport and retains horizontal arrow-key navigation. The picker
-                  springs from 0.75 horizontal / 0.6 vertical scale and an 8px offset over 580ms; choices
-                  follow 24ms apart on the snappy spring. Choosing one swells its glyph to 1.14 over a 32px
+                  springs from its bottom-right corner at 0.92 horizontal / 0.88 vertical scale and a 10px by 4px
+                  offset over 580ms. Choices arrive from the right with a 10px slide, 0.72 scale and 2px blur,
+                  following 24ms apart from right to left on the snappy spring. Hover or keyboard highlight lifts a
+                  choice 2px at 1.08 scale over a soft gray surface and the shared control shadow. Choosing one swells
+                  its glyph to 1.14 over a 32px
                   selection disc and fades the picker toward the bubble by 8px at 0.92 scale over 280ms.
                   The chosen 14px glyph grows into a 27px blue, canvas-ringed disc with a two-dot trail,
                   mirrored onto the gray bubble’s top-right corner. Its 580ms snappy entrance follows the disc

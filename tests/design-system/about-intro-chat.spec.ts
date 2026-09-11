@@ -230,7 +230,7 @@ test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ pa
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
-test('springs the Tapback picker open and folds it into the message', async ({ page }) => {
+test('opens the Tapback picker from the right with staggered, tactile choices', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 800 })
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/?tune=off')
@@ -241,6 +241,12 @@ test('springs the Tapback picker open and folds it into the message', async ({ p
 
   const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
   await expect(picker).toHaveCSS('animation-name', 'intro-picker-open, intro-fade-in')
+  const choices = picker.getByRole('menuitemcheckbox')
+  await expect(choices.first()).toHaveCSS('animation-delay', '0.12s')
+  await expect(choices.last()).toHaveCSS('animation-delay', '0s')
+  await choices.first().hover()
+  await expect(choices.first()).toHaveCSS('translate', '0px -2px')
+  await expect(choices.first()).toHaveCSS('scale', '1.08')
   await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
   expect(await picker.evaluate(node => getComputedStyle(node).animationName)).toBe('intro-picker-fold')
 
