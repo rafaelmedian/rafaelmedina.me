@@ -86,7 +86,7 @@ test("a shared project path opens over the gallery and closes into it", async ({
   expect(errors).toEqual([])
 })
 
-test("Matcha previews open as long-form case studies", async ({ page }) => {
+test("Matcha case studies pair scannable highlights with full-width screenshots", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/work/matcha-homepage/")
 
@@ -94,8 +94,21 @@ test("Matcha previews open as long-form case studies", async ({ page }) => {
   await expect(dialog).toHaveAccessibleName("Matcha homepage")
   await expect(dialog.getByRole("heading", { name: "Designing Matcha end to end" })).toBeVisible()
   await expect(dialog.getByText("Case study", { exact: true })).toBeVisible()
+  const highlights = dialog.locator(".project-case-study-highlights")
+  await expect(highlights.getByRole("heading", { name: "Product", exact: true })).toBeVisible()
+  await expect(highlights.getByRole("heading", { name: "Design", exact: true })).toBeVisible()
+  await expect(highlights.getByRole("listitem")).toHaveCount(6)
+  expect(await highlights.getByRole("listitem").first()
+    .evaluate((element) => getComputedStyle(element).listStyleType)).toBe("disc")
   await expect(dialog.locator(".project-case-study-section")).toHaveCount(5)
   await expect(dialog.locator(".project-case-study-media img")).toHaveCount(10)
+
+  const desktopFigures = await dialog.locator(".project-case-study-media").first()
+    .locator("figure").evaluateAll((elements) => elements.map((element) => {
+      const rect = element.getBoundingClientRect()
+      return { top: rect.top, bottom: rect.bottom }
+    }))
+  expect(desktopFigures[1].top).toBeGreaterThan(desktopFigures[0].bottom)
 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.reload()

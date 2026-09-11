@@ -55,11 +55,17 @@ export type ProjectCaseStudySection = {
   media?: PortfolioImage[]
 }
 
+export type ProjectCaseStudyHighlightGroup = {
+  heading: string
+  items: string[]
+}
+
 export type ProjectCaseStudy = {
   label: string
   period: string
   title: string
   introduction: string
+  highlights: ProjectCaseStudyHighlightGroup[]
   sections: ProjectCaseStudySection[]
 }
 
@@ -261,6 +267,24 @@ const matchaCaseStudy: ProjectCaseStudy = {
   title: "Designing Matcha end to end",
   introduction:
     "A swap fits inside a small rectangle; the product around it does not. I redesigned Matcha across discovery, research, wallets, trading, mobile, and the visual system that holds those journeys together.",
+  highlights: [
+    {
+      heading: "Product",
+      items: [
+        "Redesigned Matcha.xyz end to end across discovery, research, wallets, and trading.",
+        "Led the structure and interaction design for the homepage, token pages, trade flows, mobile experience, and Matcha Pro.",
+        "Introduced monetization flows that generated sustainable revenue.",
+      ],
+    },
+    {
+      heading: "Design",
+      items: [
+        "Defined the visual system and dark theme across components, charts, and dense trading surfaces.",
+        "Designed loading, empty, error, warning, review, and confirmation states alongside the primary journeys.",
+        "Worked with product, engineering, and research from early direction through shipped implementation.",
+      ],
+    },
+  ],
   sections: [
     {
       heading: "Different reasons to arrive",

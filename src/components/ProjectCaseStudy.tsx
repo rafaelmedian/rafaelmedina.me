@@ -16,6 +16,17 @@ export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
         <p>{caseStudy.introduction}</p>
       </header>
 
+      <div className="project-case-study-highlights">
+        {caseStudy.highlights.map((group) => (
+          <section key={group.heading}>
+            <h3>{group.heading}</h3>
+            <ul>
+              {group.items.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </section>
+        ))}
+      </div>
+
       <div className="project-case-study-sections">
         {caseStudy.sections.map((section) => (
           <section className="project-case-study-section" key={section.heading}>

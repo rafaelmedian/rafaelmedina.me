@@ -613,15 +613,32 @@
   margin-top: 4rem;
 }
 
-.project-case-study-media {
+.project-case-study-highlights {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: 3rem;
+  margin-top: 3rem;
 }
 
-.project-case-study-media[data-count="1"] {
+.project-case-study-highlights ul {
+  display: grid;
+  gap: 0.85rem;
+  margin: 1rem 0 0;
+  padding-left: 1.15rem;
+  list-style: disc;
+  color: #545454;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.project-case-study-highlights li {
+  padding-left: 0.35rem;
+}
+
+.project-case-study-media {
+  display: grid;
   grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem;
+  margin-top: 1.5rem;
 }
 
 .project-case-study-media figure {
