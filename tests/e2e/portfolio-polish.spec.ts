@@ -2262,6 +2262,33 @@ test("frames the calendar without chrome and still says what it is", async ({ pa
   await expect(dialog).toBeHidden()
 })
 
+test("shows a calendar skeleton until the embedded calendar is ready", async ({ page }) => {
+  let finishCalendarRequest: (() => void) | undefined
+  await page.route("https://cal.com/**", async (route) => {
+    await new Promise<void>((resolve) => {
+      finishCalendarRequest = resolve
+    })
+    await route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" })
+  })
+  await page.goto("/")
+  await settleAvatarIntro(page)
+  await page.locator(".mosaic-booking-pill").click()
+
+  const frame = page.getByRole("dialog").locator(".booking-frame")
+  const skeleton = frame.locator(".booking-skeleton")
+  await expect(skeleton).toBeVisible()
+  await expect(skeleton).toHaveAttribute("aria-hidden", "true")
+  await expect(skeleton.locator(".booking-skeleton-day")).toHaveCount(35)
+  await expect(skeleton).toHaveCSS("opacity", "1")
+  await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "0")
+
+  expect(finishCalendarRequest).toBeDefined()
+  finishCalendarRequest!()
+  await expect(frame).toHaveAttribute("data-ready", "true")
+  await expect(skeleton).toHaveCSS("opacity", "0")
+  await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "1")
+})
+
 // A blocked third-party frame never fires onError, so the only signal that the
 // calendar is not coming is that it has not come. The link the header used to
 // hold from the start now waits for that moment.

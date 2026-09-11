@@ -1756,7 +1756,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 close button, only the calendar on an even mat, because that page already has a title and a month of its own
                 and a second set above it was the same thing twice. Escape and a press outside close it; the dialog's
                 responsive <code>clamp(16px, 3vw, 32px)</code> side gutters preserve the embed's 1040px desktop canvas
-                and extend Cal.com's <code>#fafafa</code> top-and-bottom field to both sides. The dialog's
+                and extend Cal.com's <code>#fafafa</code> top-and-bottom field to both sides. Before that third-party
+                page paints, an <code>aria-hidden</code> calendar skeleton occupies the exact iframe slot: profile,
+                month grid, and time rail on desktop, then the month grid alone on phones. Its neutral blocks pulse
+                once over two slow-duration steps, then cross-fade and cross-blur into the calendar over
+                <code>--duration-slow</code>; reduced motion swaps the layers immediately. The loading status remains
+                available to assistive technology and becomes visible only if the six-second failure threshold is met. The dialog's
                 name and description are still there as <code>sr-only</code> text, and the &ldquo;open it on
                 cal.com&rdquo; escape hatch waits inside the loading line for the six seconds it takes to know a
                 third-party frame has been blocked rather than sitting in a header from the start. The address is the page's top-right corner, opposite the section
