@@ -144,8 +144,9 @@
   background: var(--canvas);
 }
 
+/* Focus lifts the field rather than outlining it; the caret marks the rest. */
 .about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
-  box-shadow: inset 0 0 0 1px var(--focus-ring-soft), var(--shadow-overlay);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
 }
 
 .about-intro-chat-composer :is(input, textarea) {

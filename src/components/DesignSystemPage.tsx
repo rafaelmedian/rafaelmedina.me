@@ -2217,8 +2217,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
                   8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
                   The message textarea remains 88px high with 16px text. The history uses the available space above the dock with a 12px top clearance, accounting for the
-                  actual form height; only short viewports scroll. The composer stays below it. Focus uses an
-                  inset 1px shadow inside the field while preserving the outer elevation. The arrow starts gray,
+                  actual form height; only short viewports scroll. The composer stays below it. Focus deepens
+                  the overlay shadow to <code>--shadow-overlay-hover</code> instead of drawing a stroke. The arrow starts gray,
                   turning blue for a valid email or nonempty optional message. Final submission posts to the contact
                   Worker, with sending, sent and retry states. No address is sent when advancing to the message step.
                   B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.

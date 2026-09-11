@@ -37,7 +37,8 @@ for (const width of [320, 1440]) {
       const hint = await chat.locator('.about-intro-chat-hint').boundingBox()
       return Math.abs(face!.y + face!.height - hint!.y - hint!.height)
     }).toBeLessThan(1)
-    expect(await message.locator('..').evaluate(node => getComputedStyle(node).boxShadow)).toContain('inset')
+    // Focus deepens the overlay shadow instead of drawing an inset stroke.
+    expect(await message.locator('..').evaluate(node => getComputedStyle(node).boxShadow)).toContain('0px 16px 36px')
     await message.fill('A little more context')
     await chat.getByRole('button', { name: 'Edit email address: hello@example.com' }).click()
     await expect(email).toBeFocused()
