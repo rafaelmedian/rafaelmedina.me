@@ -144,9 +144,14 @@
   top: auto;
   bottom: calc(100% + 0.625rem);
   left: 50%;
-  translate: -50% 0;
-  transform: translateY(0.25rem) scale(0.97);
+  /* Keep both axes in one transform. Vite 8's production minifier drops an
+     individual `translate` when this rule also animates `transform`. */
+  transform: translate(-50%, 0.25rem) scale(0.97);
   transform-origin: bottom center;
+}
+
+.mosaic-profile-location-card.is-open {
+  transform: translateX(-50%) scale(1);
 }
 
 .mosaic-profile-location-card::before {
@@ -276,6 +281,11 @@
   .mosaic-resume-card,
   .mosaic-resume-card.is-open {
     transform: none;
+  }
+
+  .mosaic-profile-location-card,
+  .mosaic-profile-location-card.is-open {
+    transform: translateX(-50%);
   }
 }
 
