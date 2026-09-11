@@ -3540,6 +3540,33 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 
+// Hovering a tile fetches the gallery's chunk ahead of the press. Handed to
+// `lazy` through a promise it still suspended, and once a boundary has shown its
+// fallback React holds the content back for up to 300ms: the first preview of
+// a visit appeared 315ms after the press, against 15ms for every one after it.
+test("opens a prefetched gallery without passing through its loading state", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  const tile = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
+  const chunk = page.waitForResponse(/PreviewGalleryDialog-[\w-]+\.js/)
+  await tile.hover()
+  await chunk
+  // The module evaluates once its own imports are in; give it that turn.
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 100)))
+
+  const firstSurface = page.evaluate(() => new Promise<string>((resolve) => {
+    new MutationObserver((_, observer) => {
+      const surface = document.querySelector(".preview-gallery-pending, .preview-gallery-popup")
+      if (!surface) return
+      observer.disconnect()
+      resolve(surface.className)
+    }).observe(document.body, { childList: true, subtree: true })
+  }))
+  await tile.click()
+  expect(await firstSurface).toContain("preview-gallery-popup")
+})
+
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
