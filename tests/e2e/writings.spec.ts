@@ -280,21 +280,22 @@ test("the phone reader keeps the gallery's full-height frame and reachable contr
   }
 })
 
-test("the toolbar divider appears only once the article has scrolled", async ({ page }) => {
+test("the toolbar keeps a hairline while the article is scrolled", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 520 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/designing-matcha/")
   const dialog = sheet(page)
   const toolbar = dialog.locator(".writings-toolbar")
   const shadow = () => toolbar.evaluate((element) => getComputedStyle(element).boxShadow)
-  // The line and its shadow are both fully transparent while the article rests at its top.
+  // The hairline is fully transparent while the article rests at its top.
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0)")
   const reader = dialog.locator(".writings-scroll")
   await reader.evaluate((element) => element.scrollTo(0, 20))
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
+  await expect.poll(shadow).not.toContain("10px")
   await reader.evaluate((element) => element.scrollTo(0, 400))
   await expect(dialog.locator('.writing-contents')).toHaveAttribute('data-stuck', 'true')
-  await expect.poll(shadow).not.toContain("rgba(0, 0, 0, 0.05)")
+  await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
   // Turning to the next note resets the reader to the top, so the divider goes with it.
   await dialog.getByRole("button", { name: "Next note", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeVisible()

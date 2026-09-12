@@ -1394,10 +1394,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 scrolls without adding history. Once its natural position passes the top of the reader, the row pins
                 directly beneath Notes, then eases through the gutters and card padding to the modal edges over
                 --duration-slow (360ms) with --ease-smooth while its 5% upper hairline and short lower shadow resolve over the
-                same beat. The scroll viewport reaches the card edges so it cannot clip the rail or its shadow.
-                The shadow fades on a separate layer, replacing the Notes toolbar shadow while pinned.
+                same beat and the shadow&rsquo;s opacity follows that smooth curve on a separate layer. The scroll viewport
+                reaches the card edges so it cannot clip the rail or its shadow.
                 Reduced motion makes the disclosure and pinned transition immediate too.
-                The toolbar's own 5% black divider and short shadow appear only while scrolled, over 160ms.
+                The toolbar above keeps only its 5% black hairline while scrolled, appearing over 160ms; it never gains a
+                second drop shadow above the pinned contents rail.
                 The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes and tools" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
