@@ -295,14 +295,17 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
   // The transitionrun listener above holds the release fade inside the page,
-  // before a busy CI runner can finish it between Playwright round trips.
-  await edge.evaluate((element) => {
+  // before a busy CI runner can finish it between Playwright round trips. The
+  // resting target itself is written on the next animation frame, so wait for
+  // that frame to create the transition before sampling it.
+  await expect.poll(() => edge.evaluate((element) => {
     const fade = element
       .getAnimations()
       .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")
-    if (!fade) throw new Error("The release fade did not start")
+    if (!fade) return false
     fade.pause()
-  })
+    return true
+  })).toBe(true)
   await expect(edge).toHaveCSS("transition-duration", "1.26s")
   await expect(edge).toHaveCSS("transition-timing-function", "ease-in-out")
   const curtains = edge.locator(".elastic-scroll-edge-curtain")
