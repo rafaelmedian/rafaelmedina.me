@@ -118,6 +118,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   const focusWhileTyping = useRef<Element | null>(null)
   const historyRef = useRef<HTMLDivElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
+  const focusEmailAfterReset = useRef<"focus" | "select" | null>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const composerRef = useRef<HTMLDivElement>(null)
   const [email, setEmail] = useState("")
@@ -183,6 +184,15 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
       window.visualViewport?.removeEventListener("resize", schedule)
     }
   }, [chatElement, confirmed, visible])
+
+  useLayoutEffect(() => {
+    const focusMode = focusEmailAfterReset.current
+    const field = emailRef.current
+    if (confirmed || !focusMode || !field) return
+    focusEmailAfterReset.current = null
+    field.focus({ preventScroll: true })
+    if (focusMode === "select") field.select()
+  }, [confirmed])
 
   useLayoutEffect(() => {
     const field = messageRef.current
@@ -286,6 +296,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
       // Move off the disappearing address before the dialog's focus manager
       // sees its removal, then hand focus to the email field after it mounts.
       if (sentRef.current?.contains(document.activeElement)) chatRef.current?.focus({ preventScroll: true })
+      focusEmailAfterReset.current = restarting ? "select" : "focus"
       setPuff(null)
       setConfirmed(false)
       setReaction(0)
@@ -294,10 +305,6 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
         setOutbox([])
         setContinued(false)
       }
-      requestAnimationFrame(() => {
-        emailRef.current?.focus({ preventScroll: true })
-        if (restarting) emailRef.current?.select()
-      })
     }, skipTyping ? 0 : puffDuration)
     return () => window.clearTimeout(timer)
   }, [puffing, skipTyping])
