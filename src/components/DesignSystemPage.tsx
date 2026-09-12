@@ -2326,7 +2326,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   conversation collapses it into the portrait; the portrait reopens it without resetting its content.
                   On mobile, the 64px speaking portrait stays fixed 12px from the left edge while the TOC remains centred.
                   Whenever both the conversation and player are collapsed, its current message total sits in an 18px red notification
-                  circle tucked 1px into the portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
+                  circle offset 2px beyond the portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
                   15%-black hairline, 2px canvas-white halo and the shared control shadow. The badge enters
                   with the TOC’s 6px rise and blur; each previous number exits 4px upward while its replacement
                   enters from below over the shared quick duration.

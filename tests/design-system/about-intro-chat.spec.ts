@@ -30,8 +30,9 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
   expect(faceBox!.x).toBe(12)
   expect(Math.abs(tocBox!.x + tocBox!.width / 2 - 384)).toBeLessThan(1)
   expect(badgeBox).toMatchObject({ width: 18, height: 18 })
-  expect(Math.abs(badgeBox!.x - (faceBox!.x + faceBox!.width - badgeBox!.width - 1))).toBeLessThan(1)
-  expect(Math.abs(badgeBox!.y - faceBox!.y - 1)).toBeLessThan(1)
+  expect(Math.abs(badgeBox!.x - (faceBox!.x + faceBox!.width - badgeBox!.width + 2))).toBeLessThan(1)
+  expect(Math.abs(badgeBox!.y - faceBox!.y + 2)).toBeLessThan(1)
+  await expect(notification).toHaveCSS('border-radius', '50%')
   await expect(notification).toHaveCSS('box-shadow', /rgba\(0, 0, 0, 0\.15\).*rgb\(255, 255, 255\)/)
   expect(await notification.evaluate(node => {
     for (let parent = node.parentElement; parent; parent = parent.parentElement) {

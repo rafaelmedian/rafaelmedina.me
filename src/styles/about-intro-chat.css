@@ -20,14 +20,14 @@
 
 .about-intro-chat-notification {
   position: absolute;
-  top: 1px;
-  right: 1px;
+  top: -2px;
+  right: -2px;
   z-index: 3;
   display: grid;
   place-items: center;
   width: 18px;
   height: 18px;
-  border-radius: var(--radius-full);
+  border-radius: 50%;
   background: #e5352b;
   color: var(--canvas);
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15), 0 0 0 3px var(--canvas), var(--shadow-control);
