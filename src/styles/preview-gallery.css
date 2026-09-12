@@ -1207,16 +1207,18 @@
     flex: none;
     display: grid;
     grid-template-columns: auto 1fr auto;
+    column-gap: 0.75rem;
     padding: var(--preview-gallery-card-padding);
     background: var(--canvas);
   }
 
-  /* The count occupies the space between the paging group and close. Its
-     reserved digit width keeps both controls fixed while the number swaps. */
+  /* The position belongs to the exit end of the toolbar, immediately before
+     close. Its reserved digit width keeps both control groups fixed while the
+     number swaps. */
   .preview-gallery-count {
     grid-column: 2;
     grid-row: 1;
-    justify-self: center;
+    justify-self: end;
   }
 
   .preview-gallery-controls {
@@ -1227,6 +1229,28 @@
   .preview-gallery-close {
     grid-column: 3;
     grid-row: 1;
+  }
+
+  /* Balance the control's downward shadow without moving its hit area. */
+  .preview-gallery-close .preview-gallery-nav-icon {
+    translate: 0 1px;
+  }
+
+  /* On a white header these controls need an edge and a small lift, not the
+     rail's broad ambient cast. Keeping the ring in the shadow also prevents a
+     border from tightening the icon's drawn area. */
+  .preview-gallery-toolbar .preview-gallery-nav {
+    border: 0;
+    box-shadow: var(--shadow-ring), var(--shadow-control);
+  }
+
+  .preview-gallery-toolbar .preview-gallery-nav:hover:not(:disabled),
+  .preview-gallery-toolbar .preview-gallery-nav:focus-visible:not(:disabled) {
+    box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+  }
+
+  .preview-gallery-toolbar .preview-gallery-nav:active:not(:disabled) {
+    box-shadow: var(--shadow-ring), var(--shadow-control-pressed);
   }
 
   /* The compact gallery still shows the full composition even though the

@@ -1,0 +1,10 @@
+{
+  "duration": 8.24,
+  "transcript": "Hey, hi, my name is Rafael.\nYou already know a little bit about me.\nI'm a designer, obviously.",
+  "assets": {
+    "recording": "/about-intro/recording.mp4",
+    "teaser": "/about-intro/teaser.mp4",
+    "poster": "/about-intro/poster.webp",
+    "captions": "/about-intro/captions.vtt"
+  }
+}

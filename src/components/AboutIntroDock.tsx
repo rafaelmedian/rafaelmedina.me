@@ -22,12 +22,8 @@ export function AboutIntroDock(props: {
   onAbout: () => void
   onServices: () => void
 }) {
-  const [videoEnabled] = useState(() => {
-    if (!import.meta.env.DEV || typeof window === "undefined") return false
-    const params = new URLSearchParams(window.location.search)
-    return params.get("intro") === "preview" || params.has("introStyle")
-  })
-  const [media] = useState(() => videoEnabled ? getAboutIntro() : null)
+  const [media] = useState(() => getAboutIntro())
+  const videoEnabled = Boolean(media)
   const [option] = useState<IntroOption>(() => {
     const requested = import.meta.env.DEV && typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("introStyle") : null

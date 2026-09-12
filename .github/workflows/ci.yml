@@ -110,6 +110,7 @@ jobs:
       - run: npm run likes:check
       - run: npm run contact:check
       - run: npm run contact:test
+      - run: npm run test:about-intro
 
       - name: Install Playwright browser
         run: |

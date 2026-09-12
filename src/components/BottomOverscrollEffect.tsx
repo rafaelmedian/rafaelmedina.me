@@ -9,6 +9,7 @@ import {
   randomizeElasticEdgePalette,
   type ElasticEdgeSettings,
 } from "../lib/elasticEdgeGradient"
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 
 const MAX_PULL = 72
 const MAX_CONTENT_TRAVEL = 8
@@ -62,6 +63,7 @@ export function BottomOverscrollEffect() {
     let lastTouchY: number | null = null
     let paintFrame: number | undefined
     let releaseTimer: number | undefined
+    let glowFallbackTimer: number | undefined
 
     randomizeElasticEdgePalette(edge)
     paintElasticEdgeSettings(edge, DEFAULT_ELASTIC_EDGE_SETTINGS)
@@ -100,7 +102,19 @@ export function BottomOverscrollEffect() {
       paint(0)
       // A busy frame can release before the first paint. In that case there is
       // no opacity transition (and no transitionend) to reset the curtains.
-      if (!glowWasPainted) edge.dataset.glowing = "false"
+      if (!glowWasPainted) {
+        edge.dataset.glowing = "false"
+      } else {
+        // Browsers can omit transitionend when a starved frame jumps directly
+        // to the resting value. Clear the gate after the declared fade as a
+        // fallback so the next pull can always choose a fresh palette.
+        if (glowFallbackTimer !== undefined) window.clearTimeout(glowFallbackTimer)
+        const fadeDuration = cssTimeToMilliseconds(window.getComputedStyle(edge).transitionDuration)
+        glowFallbackTimer = window.setTimeout(() => {
+          glowFallbackTimer = undefined
+          if (pull === 0) edge.dataset.glowing = "false"
+        }, fadeDuration + 50)
+      }
     }
 
     const scheduleRelease = () => {
@@ -110,6 +124,11 @@ export function BottomOverscrollEffect() {
 
     const pullBy = (distance: number, gain = WHEEL_GAIN, changePalette = true) => {
       if (reducedMotion.matches || distance <= 0) return
+
+      if (glowFallbackTimer !== undefined) {
+        window.clearTimeout(glowFallbackTimer)
+        glowFallbackTimer = undefined
+      }
 
       if (edge.dataset.pulling !== "true") {
         // Release writes the resting target immediately, so recover the value
@@ -185,6 +204,8 @@ export function BottomOverscrollEffect() {
 
     const handleGlowEnd = (event: TransitionEvent) => {
       if (event.target === edge && event.propertyName === "opacity" && pull === 0) {
+        if (glowFallbackTimer !== undefined) window.clearTimeout(glowFallbackTimer)
+        glowFallbackTimer = undefined
         edge.dataset.glowing = "false"
       }
     }
@@ -215,6 +236,7 @@ export function BottomOverscrollEffect() {
     return () => {
       if (paintFrame !== undefined) window.cancelAnimationFrame(paintFrame)
       if (releaseTimer !== undefined) window.clearTimeout(releaseTimer)
+      if (glowFallbackTimer !== undefined) window.clearTimeout(glowFallbackTimer)
       content?.style.removeProperty("--elastic-content-offset")
       if (content) delete content.dataset.edgePulling
       window.removeEventListener("wheel", handleWheel)

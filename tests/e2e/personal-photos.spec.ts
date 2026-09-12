@@ -278,6 +278,18 @@ async function holdFlights(page: Page) {
   })
 }
 
+async function finishFlights(flights: Locator) {
+  // Closing builds a screenful of clones in a layout effect. Under a starved
+  // runner, another clone can mount after a one-shot snapshot; keep finishing
+  // the current set until every return flight has completed and unmounted.
+  await expect.poll(async () => {
+    await flights.evaluateAll((elements) => elements
+      .flatMap((element) => element.getAnimations({ subtree: true }))
+      .forEach((animation) => animation.finish()))
+    return flights.count()
+  }, { timeout: 5000 }).toBe(0)
+}
+
 test("the hand comes to rest when the sheet closes and only opens again for a moving pointer", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
@@ -307,9 +319,8 @@ test("the hand comes to rest when the sheet closes and only opens again for a mo
   // pointer, which read as a print still picked after the close.
   expect(await rects()).toEqual(resting)
 
-  await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
+  await finishFlights(flights)
   await expect(dialog(page)).toBeHidden()
-  await expect(flights).toHaveCount(0)
   await expect(trigger).toBeFocused()
   // The pointer is still over the tile and the tile holds focus; neither is
   // intent, so nothing opens, lifts, or glides on.

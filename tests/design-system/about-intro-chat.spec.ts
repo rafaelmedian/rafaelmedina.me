@@ -84,6 +84,12 @@ for (const width of [320, 1440]) {
     const email = chat.getByRole('textbox', { name: 'Your email' })
     await expect(email).toBeVisible()
     await expect(email).not.toBeFocused()
+    await expect(email.locator('..')).toHaveCSS('border-radius', '999px')
+    if (width === 320) {
+      // iOS zooms and pans the visual viewport when a focused input is below
+      // 16px, clipping this fixed chat off the left edge.
+      await expect(email).toHaveCSS('font-size', '16px')
+    }
     // Not a login: password managers stay out, and browser autofill still offers the address.
     await expect(email).toHaveAttribute('autocomplete', 'email')
     for (const [name, value] of [['data-1p-ignore', 'true'], ['data-lpignore', 'true'], ['data-bwignore', 'true'], ['data-form-type', 'other']]) {
@@ -95,7 +101,7 @@ for (const width of [320, 1440]) {
     await expect(chat.getByRole('button', { name: 'Continue with email' })).toBeDisabled()
     await email.fill('hello@example.com')
     await chat.getByRole('button', { name: 'Continue with email' }).click()
-    const outgoing = chat.getByRole('button', { name: 'Edit email address: hello@example.com' })
+    const outgoing = chat.getByRole('button', { name: 'Change email address: hello@example.com' })
     await expect(outgoing).toHaveCSS('background-color', 'rgb(0, 113, 227)')
     expect(await outgoing.evaluate(node => [getComputedStyle(node, '::before').content, getComputedStyle(node, '::before').right])).toEqual(['""', '-8px'])
     // Rafa's tapback pops onto the sent address, shifting the conversation up, before he types.
@@ -110,6 +116,7 @@ for (const width of [320, 1440]) {
     await expect(chat.getByText('Want to share anything else?')).toBeVisible()
     const message = chat.getByRole('textbox', { name: 'Your message (optional)' })
     await expect(message).toBeFocused()
+    await expect(message.locator('..')).toHaveCSS('border-radius', '24px')
     await expect(chat.getByRole('status', { name: 'Rafa is typing' })).toHaveCount(0)
     await expect(chat.getByRole('button', { name: 'Send message' })).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(chat.getByRole('button', { name: 'Send message' })).toHaveAttribute('data-muted', 'true')
@@ -144,7 +151,7 @@ for (const width of [320, 1440]) {
     await expect.poll(chatAlignment).toBeLessThan(2)
     await message.fill('A little more context')
     expect(await fieldHeight()).toBe(88)
-    await chat.getByRole('button', { name: 'Edit email address: hello@example.com' }).click()
+    await chat.getByRole('button', { name: 'Change email address: hello@example.com' }).click()
     await expect(email).toBeFocused()
     await email.fill('new@example.com')
     await email.press('Enter')
@@ -152,7 +159,12 @@ for (const width of [320, 1440]) {
     await expect(chat.getByRole('button', { name: 'Send message' })).toBeEnabled()
     if (width !== 320) {
       await page.mouse.click(width / 2, 100)
+      await expect(chat).toHaveCount(0)
+      const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
+      await expect(intro.locator('.about-intro-chat-notification')).toHaveText('3')
+      await intro.locator('.about-intro-portrait-trigger').click()
       await expect(message).toBeVisible()
+      await expect(message).toHaveValue('A little more context')
     }
     const box = await chat.boundingBox()
     expect(box!.x).toBeGreaterThanOrEqual(12)
@@ -178,29 +190,41 @@ test('starts the comparison chat when its card comes into view and respects redu
   await expect(chat.getByRole('textbox', { name: 'Your email' })).not.toBeFocused()
 })
 
-test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ page }) => {
+test('offers a compact, horizontally scrollable Apple-style reaction row', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   await page.getByRole('button', { name: /Open \d+ messages? from Rafa/ }).click()
   const chat = page.getByRole('dialog', { name: 'Chat with Rafa' })
-  await expect(chat.getByText('Tap a message to react — I’ll see what lands.')).toBeVisible()
+  const hint = chat.getByText('Tap a message to react — I’ll see what lands.')
+  await expect(hint).toBeVisible()
+  await expect(hint).toHaveCSS('background-color', 'rgb(236, 236, 238)')
+  await expect(hint).toHaveCSS('border-radius', '999px')
+  await expect(hint).toHaveCSS('padding', '4px 10px')
 
   const greeting = chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' })
   await greeting.click()
   const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
   await expect(picker).toBeVisible()
-  await expect(picker.getByRole('menuitemcheckbox')).toHaveCount(6)
-  for (const label of ['Love', 'Like', 'Dislike', 'Laugh', 'Emphasize', 'Question']) {
-    await expect(picker.getByRole('menuitemcheckbox', { name: label, exact: true })).toBeVisible()
+  await expect(picker.getByRole('menuitemcheckbox')).toHaveCount(10)
+  for (const label of ['Love', 'Like', 'Dislike', 'Laugh', 'Emphasize', 'Question', 'Fire', 'Applause', 'Celebrate', 'Thinking']) {
+    await expect(picker.getByRole('menuitemcheckbox', { name: label, exact: true })).toBeAttached()
   }
+  await expect(picker).toHaveCSS('overflow-x', 'auto')
+  expect(await picker.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true)
   const pickerBox = await picker.boundingBox()
   expect(pickerBox!.x).toBeGreaterThanOrEqual(12)
   expect(pickerBox!.x + pickerBox!.width).toBeLessThanOrEqual(308)
+  expect(pickerBox!.height).toBeLessThanOrEqual(44)
+  await picker.evaluate(node => { node.scrollLeft = node.scrollWidth })
+  await expect(picker.getByRole('menuitemcheckbox', { name: 'Thinking' })).toBeVisible()
+  await picker.evaluate(node => { node.scrollLeft = 0 })
   await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
 
   await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' }).locator('g[stroke]'))
+    .toHaveAttribute('stroke-width', '2')
   // The shape is drawn twice so its white outer ring cannot cut either blue trail dot.
   await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-disc')).toHaveCount(2)
   await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-trail')).toHaveCount(4)
@@ -230,17 +254,33 @@ test('uses Apple’s classic Tapbacks on each of Rafa’s messages', async ({ pa
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
-test('springs the Tapback picker open and folds it into the message', async ({ page }) => {
+test('opens the Tapback picker from the right with staggered, tactile choices', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 800 })
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  // Opening a Tapback while the scripted greeting is still adding messages
+  // moves the portaled picker with its anchor. Wait for the final composer so
+  // the hover assertion measures a stable user-visible hit box.
+  await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
   const greeting = chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' })
   await greeting.click()
 
   const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
   await expect(picker).toHaveCSS('animation-name', 'intro-picker-open, intro-fade-in')
+  await expect(picker).toHaveCSS('animation-duration', '0.36s, 0.16s')
+  const choices = picker.getByRole('menuitemcheckbox')
+  await expect(choices.first()).toHaveCSS('animation-duration', '0.36s')
+  await expect(choices.first()).toHaveCSS('animation-delay', '0.144s')
+  await expect(choices.last()).toHaveCSS('animation-delay', '0s')
+  // Test the resting hit box: while the picker and first choice are both
+  // translating in, a starved frame can move them out from under the pointer.
+  await picker.evaluate(node => Promise.all(node.getAnimations({ subtree: true }).map(animation => animation.finished)))
+  expect(await picker.evaluate(node => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1)
+  await choices.first().hover()
+  await expect(choices.first()).toHaveCSS('translate', '0px -2px')
+  await expect(choices.first()).toHaveCSS('scale', '1.08')
   await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
   expect(await picker.evaluate(node => getComputedStyle(node).animationName)).toBe('intro-picker-fold')
 
@@ -297,7 +337,7 @@ test('shows three typing dots before each greeting and pauses the sequence in a 
   expect(Math.abs(chatBox!.x + chatBox!.width - formBox!.x - formBox!.width)).toBeLessThan(1)
 })
 
-test('unsends the address with a puff before reopening the email field', async ({ page }) => {
+test('changes the address with a puff before reopening the email field', async ({ page }) => {
   await page.clock.install()
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
@@ -312,7 +352,8 @@ test('unsends the address with a puff before reopening the email field', async (
   const email = chat.getByRole('textbox', { name: 'Your email' })
   await email.fill('hello@example.com')
   await email.press('Enter')
-  const sent = chat.getByRole('button', { name: 'Edit email address: hello@example.com' })
+  const sent = chat.getByRole('button', { name: 'Change email address: hello@example.com' })
+  await expect(sent).toHaveAttribute('title', 'Change email')
   await sent.click()
   await expect(chat.locator('.about-intro-chat-puff i')).toHaveCount(24)
   await expect(chat.locator('.about-intro-chat-sent')).toHaveAttribute('data-puff', 'true')
@@ -355,9 +396,10 @@ test('sends each message as a bubble, keeps failed ones and reuses the retry key
   await expect(message).toHaveValue('')
   await expect(message).toBeFocused()
   await expect(chat.getByText('Couldn’t send. Please retry.')).toBeVisible()
-  await expect(chat.getByRole('button', { name: 'Edit email address: visitor@example.com' })).toBeDisabled()
+  await expect(chat.getByRole('button', { name: 'Start over with email address: visitor@example.com' })).toBeEnabled()
   await chat.getByRole('button', { name: 'Retry message: Let’s build something' }).click()
-  await expect(chat.getByText('Delivered')).toBeVisible()
+  await expect(chat.getByText('Delivered', { exact: true })).toBeVisible()
+  await expect(chat.getByText('Sent messages stay delivered')).toBeVisible()
   await expect(chat.locator('.about-intro-chat-sent-message p', { hasText: 'Let’s build something' })).toBeVisible()
   // An empty field can't send again, but the visitor can keep writing.
   await expect(send).toBeDisabled()
@@ -375,6 +417,83 @@ test('sends each message as a bubble, keeps failed ones and reuses the retry key
   expect(new URL(page.url()).pathname).toBe('/')
 })
 
+test('starts over after delivery and accepts another email address', async ({ page }) => {
+  const payloads: { email: string; message: string }[] = []
+  await page.route('**/contact', async route => {
+    payloads.push(route.request().postDataJSON())
+    await route.fulfill({ status: 202, contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ sent: true }) })
+  })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/?tune=off')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  const email = chat.getByRole('textbox', { name: 'Your email' })
+  await email.fill('first@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  await chat.getByRole('textbox', { name: 'Your message (optional)' }).fill('First hello')
+  await chat.getByRole('button', { name: 'Send message' }).click()
+  await expect(chat.getByText('Delivered', { exact: true })).toBeVisible()
+
+  const startOver = chat.getByRole('button', { name: 'Start over; sent messages stay delivered', exact: true })
+  await expect(chat.locator('.about-intro-chat-footer')).toHaveText('Sent messages stay delivered · Start over')
+  await expect(startOver).toHaveCSS('color', 'rgb(107, 107, 107)')
+  await expect(startOver).toHaveCSS('font-weight', '400')
+  await startOver.click()
+  await expect(email).toBeFocused()
+  await expect(email).toHaveValue('first@example.com')
+  await expect(chat.locator('.about-intro-chat-sent-message')).toHaveCount(0)
+
+  await email.fill('second@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  await chat.getByRole('textbox', { name: 'Your message (optional)' }).fill('Second hello')
+  await chat.getByRole('button', { name: 'Send message' }).click()
+  await expect(chat.getByText('Delivered', { exact: true })).toBeVisible()
+  expect(payloads.map(payload => payload.email)).toEqual(['first@example.com', 'second@example.com'])
+})
+
+test('pauses after three messages and stops after five', async ({ page }) => {
+  const payloads: { message: string }[] = []
+  await page.route('**/contact', async route => {
+    payloads.push(route.request().postDataJSON())
+    await route.fulfill({ status: 202, contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ sent: true }) })
+  })
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.goto('/?tune=off')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.getByRole('button', { name: /Open \d+ messages? from Rafa/ }).click()
+  const chat = page.getByRole('dialog', { name: 'Chat with Rafa' })
+  await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  const message = chat.getByRole('textbox', { name: 'Your message (optional)' })
+  const send = chat.getByRole('button', { name: 'Send message' })
+
+  for (const [text, expectedCount] of [['One', 1], ['Two', 2], ['Three', 3]] as const) {
+    await message.fill(text)
+    await send.click()
+    await expect.poll(() => payloads.length).toBe(expectedCount)
+  }
+
+  await expect(message.locator('..')).toHaveCSS('animation-name', 'intro-composer-shake')
+  await expect(message).toBeDisabled()
+  const footer = chat.locator('.about-intro-chat-footer')
+  await expect(footer).toHaveText('Keep going? 2 left · Continue · Start over')
+  expect(await footer.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true)
+  await chat.getByRole('button', { name: 'Continue' }).click()
+  await expect(message).toBeEnabled()
+  await expect(message).toBeFocused()
+
+  await message.fill('Four')
+  await send.click()
+  await expect(footer).toHaveText('1 left · Start over')
+  await message.fill('Five')
+  await send.click()
+  await expect(message).toBeDisabled()
+  await expect(footer).toHaveText('That’s enough · Start over')
+  expect(payloads.map(payload => payload.message)).toEqual(['One', 'Two', 'Three', 'Four', 'Five'])
+})
+
 test('an empty first send delivers the address with a keep-in-touch bubble', async ({ page }) => {
   const payloads: { message: string }[] = []
   await page.route('**/contact', async route => {
@@ -390,7 +509,7 @@ test('an empty first send delivers the address with a keep-in-touch bubble', asy
   await chat.getByRole('button', { name: 'Continue with email' }).click()
   await chat.getByRole('button', { name: 'Send message' }).click()
   await expect(chat.locator('.about-intro-chat-sent-message p', { hasText: 'Hi Rafa, I’d like to keep in touch.' })).toBeVisible()
-  await expect(chat.getByText('Delivered')).toBeVisible()
+  await expect(chat.getByText('Delivered', { exact: true })).toBeVisible()
   expect(payloads.map(payload => payload.message)).toEqual(['Hi Rafa, I’d like to keep in touch.'])
 })
 
@@ -450,4 +569,50 @@ test('sizes the initial desktop conversation to the available viewport', async (
   const history = chat.locator('.about-intro-chat-history')
   // The greeting fits here; the fallback height unnecessarily forces scrolling.
   await expect.poll(() => history.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
+})
+
+test('keeps a dismissed chat closed across the compact breakpoint', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/?tune=off')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+
+  await page.getByRole('button', { name: /Open .*messages? from Rafa/ }).click()
+  await expect(page.getByRole('dialog', { name: 'Chat with Rafa' })).toBeVisible()
+
+  await page.setViewportSize({ width: 1440, height: 844 })
+  await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toBeVisible()
+  await page.mouse.click(10, 10)
+  await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toHaveCount(0)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByRole('dialog', { name: 'Chat with Rafa' })).toHaveCount(0)
+})
+
+test('collapses the desktop chat outside and keeps its message count on the portrait', async ({ page }) => {
+  await page.clock.install()
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.goto('/?tune=off')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+
+  const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
+  const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  await expect(chat).toBeVisible()
+  await page.clock.runFor(2700)
+
+  await page.mouse.click(10, 10)
+  await expect(chat).toHaveCount(0)
+  await expect(intro).toHaveAttribute('data-chat-open', 'false')
+  await expect(intro.locator('.about-intro-chat-notification')).toHaveText('3')
+  const portrait = intro.locator('.about-intro-portrait-trigger')
+  await expect(portrait).toHaveAccessibleName('Open 3 messages from Rafa')
+
+  await portrait.click()
+  await expect(intro).toHaveAttribute('data-chat-open', 'true')
+  await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toBeVisible()
+  await expect(intro.locator('.about-intro-chat-notification')).toHaveCount(0)
+
+  await page.locator('a').first().focus()
+  await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toHaveCount(0)
+  await expect(intro.locator('.about-intro-chat-notification')).toHaveText('3')
 })

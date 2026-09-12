@@ -63,7 +63,8 @@ test("sphere hover reacts quickly with a soft pointer tilt", async ({ page }) =>
   const after = (await target.boundingBox())!
   const rotation = await target.evaluate((slide) => getComputedStyle(slide).rotate)
 
-  expect(after.width / before.width).toBeGreaterThan(1.07)
+  // Perspective tilt can shave a subpixel from the 1.07x screen-space box.
+  expect(after.width / before.width).toBeGreaterThanOrEqual(1.069)
   expect(rotation).not.toBe("none")
   expect(Number(rotation.match(/([\d.]+)deg$/)?.[1])).toBeLessThanOrEqual(4)
 })

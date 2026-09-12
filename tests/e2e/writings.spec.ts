@@ -549,12 +549,17 @@ test("the contents open from one horizontal row and jump without adding history"
 
   // The compact control is one row between the article header and body, on
   // the reading column rather than in either marginalia gutter.
-  const [contentsBox, header] = await Promise.all([
-    contents.boundingBox(),
-    dialog.locator(".writing-reader-header").boundingBox(),
-  ])
-  expect(Math.round(contentsBox!.x)).toBe(Math.round(header!.x))
-  expect(Math.round(contentsBox!.width)).toBe(Math.round(header!.width))
+  const readerHeader = dialog.locator(".writing-reader-header")
+  // A direct note URL hydrates into the gallery; wait for that layout handoff
+  // rather than sampling the contents rail in its transient prerender width.
+  await expect.poll(async () => {
+    const [contentsBox, header] = await Promise.all([contents.boundingBox(), readerHeader.boundingBox()])
+    return [
+      Math.round(contentsBox!.x) - Math.round(header!.x),
+      Math.round(contentsBox!.width) - Math.round(header!.width),
+    ]
+  }).toEqual([0, 0])
+  const [contentsBox, header] = await Promise.all([contents.boundingBox(), readerHeader.boundingBox()])
   expect(contentsBox!.y).toBeGreaterThanOrEqual(header!.y + header!.height)
   expect(await contents.evaluate((element) => getComputedStyle(element).borderBottomWidth)).toBe("1px")
 

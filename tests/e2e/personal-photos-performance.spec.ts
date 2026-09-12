@@ -15,6 +15,17 @@ async function countAnimationFrames(page: Page) {
   return () => page.evaluate(() => (window as unknown as { __photoFrames: { callbacks: number } }).__photoFrames.callbacks)
 }
 
+async function expectAnimationFramesToSleep(page: Page, count: () => Promise<number>) {
+  // The counter sees every page-wide callback, including a one-off late image
+  // or ResizeObserver update. Require a sustained quiet window so continuous
+  // sphere animation still fails without sampling before the page is settled.
+  await expect(async () => {
+    const before = await count()
+    await page.waitForTimeout(500)
+    expect(await count()).toBe(before)
+  }).toPass({ timeout: 5000 })
+}
+
 test("a settled reduced-motion globe stops animation callbacks and wakes for input", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   const count = await countAnimationFrames(page)
@@ -24,9 +35,7 @@ test("a settled reduced-motion globe stops animation callbacks and wakes for inp
   await expect(globe).toBeVisible()
   // Let image uploads, the fan's handoff and dialog effects finish first.
   await page.waitForTimeout(2000)
-  const before = await count()
-  await page.waitForTimeout(500)
-  expect(await count()).toBe(before)
+  await expectAnimationFramesToSleep(page, count)
 
   const photo = globe.locator(".personal-photos-slide").first()
   const pose = await photo.getAttribute("style")
@@ -34,9 +43,7 @@ test("a settled reduced-motion globe stops animation callbacks and wakes for inp
   await page.keyboard.press("ArrowRight")
   await expect(photo).not.toHaveAttribute("style", pose!)
   await page.waitForTimeout(250)
-  const afterInput = await count()
-  await page.waitForTimeout(500)
-  expect(await count()).toBe(afterInput)
+  await expectAnimationFramesToSleep(page, count)
   await page.keyboard.press("Escape")
   await expect(globe).toHaveCount(0)
 })
@@ -50,9 +57,7 @@ test("a held globe sleeps after its springs settle and resumes spinning after re
   await expect(globe).toBeVisible()
   await page.mouse.move(5, 5)
   await page.waitForTimeout(2500)
-  const settled = await count()
-  await page.waitForTimeout(500)
-  expect(await count()).toBe(settled)
+  await expectAnimationFramesToSleep(page, count)
 
   await page.mouse.click(5, 5)
   await expect(globe).toBeVisible()

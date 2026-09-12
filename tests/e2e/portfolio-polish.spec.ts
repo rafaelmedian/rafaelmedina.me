@@ -275,6 +275,15 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
 
   const edge = page.locator(".elastic-scroll-edge")
   const pullingState = await edge.evaluate((element) => {
+    const holdReleaseFade = (event: TransitionEvent) => {
+      if (event.propertyName !== "opacity" || element.getAttribute("data-pulling") !== "false") return
+      element.removeEventListener("transitionrun", holdReleaseFade)
+      element
+        .getAnimations()
+        .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")
+        ?.pause()
+    }
+    element.addEventListener("transitionrun", holdReleaseFade)
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
     return {
       pulling: element.getAttribute("data-pulling"),
@@ -285,17 +294,18 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0.12s" })
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
-  // Hold the release fade as soon as it starts so the opacity below is sampled
-  // at a known point in it. Sleeping 700ms instead measured from whenever the
-  // assertions in between happened to finish, which on CI is late enough that
-  // the fade has already dropped past the threshold.
-  await edge.evaluate((element) => {
+  // The transitionrun listener above holds the release fade inside the page,
+  // before a busy CI runner can finish it between Playwright round trips. The
+  // resting target itself is written on the next animation frame, so wait for
+  // that frame to create the transition before sampling it.
+  await expect.poll(() => edge.evaluate((element) => {
     const fade = element
       .getAnimations()
       .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")
-    if (!fade) throw new Error("The release fade did not start")
+    if (!fade) return false
     fade.pause()
-  })
+    return true
+  })).toBe(true)
   await expect(edge).toHaveCSS("transition-duration", "1.26s")
   await expect(edge).toHaveCSS("transition-timing-function", "ease-in-out")
   const curtains = edge.locator(".elastic-scroll-edge-curtain")
@@ -1455,9 +1465,17 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
   // reason. Clamp into the card, nearest the work history, which is the corner
   // a stacking regression would surface at.
   const clamp = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high)
+  const viewportHeight = page.viewportSize()!.height
   const overlapPoint = {
     x: clamp(workHistoryBox!.x + 8, cardBox!.x + 8, cardBox!.x + cardBox!.width - 8),
-    y: clamp(workHistoryBox!.y + 8, cardBox!.y + 8, cardBox!.y + cardBox!.height - 8),
+    // Locator hover scrolls the trigger into view, but the card may extend
+    // below a short viewport. elementFromPoint only accepts viewport
+    // coordinates, so keep the nearest card point inside the visible slice.
+    y: clamp(
+      workHistoryBox!.y + 8,
+      Math.max(cardBox!.y + 8, 8),
+      Math.min(cardBox!.y + cardBox!.height - 8, viewportHeight - 8),
+    ),
   }
   expect(
     await page.evaluate(
@@ -3924,7 +3942,8 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   }
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
-  // The visible counter fits between paging and close without moving either.
+  // The visible counter sits with close, away from the paging controls, without
+  // moving either end of the toolbar.
   const [prevBox, nextBox, closeBox] = await Promise.all(
     ["Previous preview", "Next preview", "Close preview"].map((name) =>
       dialog.getByRole("button", { name }).boundingBox(),
@@ -3937,9 +3956,43 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(countBox.width).toBeGreaterThan(32)
   expect(countBox.height).toBeGreaterThanOrEqual(32)
   expect(countBox.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
-  expect(countBox.x + countBox.width).toBeLessThan(closeBox!.x)
+  expect(closeBox!.x - (countBox.x + countBox.width)).toBeCloseTo(12, 0)
+  expect(countBox.x).toBeGreaterThan(mobileViewport.width / 2)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
+
+  // Compact chrome stays crisp on white instead of wearing the desktop rail's
+  // broad 32px ambient shadow.
+  const compactShadow = await dialog.getByRole("button", { name: "Close preview" }).evaluate((element) =>
+    getComputedStyle(element).boxShadow,
+  )
+  expect(compactShadow).toContain("5px")
+  expect(compactShadow).not.toContain("32px")
+})
+
+test("optically centers the compact close icon", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+
+  await page
+    .locator(".preview-gallery-origin-wrap")
+    .evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  const centers = await page.getByRole("button", { name: "Close preview" }).evaluate((button) => {
+    const icon = button.querySelector("svg")!
+    const buttonBox = button.getBoundingClientRect()
+    const iconBox = icon.getBoundingClientRect()
+    return {
+      buttonY: buttonBox.y + buttonBox.height / 2,
+      iconY: iconBox.y + iconBox.height / 2,
+    }
+  })
+
+  // The downward cast adds visual weight under the circle, so the symmetric X
+  // sits one pixel below its geometric center to balance the whole control.
+  expect(centers.iconY - centers.buttonY).toBeCloseTo(1, 1)
 })
 
 test("treats a mostly vertical touch gesture as scrolling rather than gallery paging", async ({ browser }) => {

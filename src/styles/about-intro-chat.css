@@ -8,9 +8,46 @@
   bottom: var(--intro-chat-face-bottom);
 }
 
-.about-intro-chat-backdrop,
-.about-intro-chat-notification {
+/* A collapsed chat gives the portrait pointer priority. The development video
+   trigger can still take over after keyboard focus explicitly reveals it. */
+.about-intro[data-variant="b"][data-chat-open="false"]:not([data-actions-open="true"]) .about-intro-portrait-trigger {
+  z-index: 1;
+}
+
+.about-intro-chat-backdrop {
   display: none;
+}
+
+.about-intro-chat-notification {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: #e5352b;
+  color: var(--canvas);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15), 0 0 0 3px var(--canvas), var(--shadow-control);
+  font: 700 11px / 1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  animation: intro-notification-enter var(--duration-base) var(--ease-smooth) both;
+}
+
+.about-intro-chat-notification-number,
+.about-intro-chat-notification-ghost {
+  grid-area: 1 / 1;
+}
+
+.about-intro-chat-notification-number {
+  animation: intro-notification-number-enter var(--duration-quick) var(--ease-standard) both;
+}
+
+.about-intro-chat-notification-ghost {
+  animation: intro-notification-number-exit var(--duration-fast) var(--ease-exit) both;
 }
 
 /* Springs for the chat and its portaled Tapback picker, sampled into linear()
@@ -68,6 +105,10 @@
   overscroll-behavior: contain;
   scrollbar-width: none;
   transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+.about-intro-chat-video-action {
+  display: none;
 }
 
 /* Each new bubble's entrance rise overflows for a moment, which flashed an
@@ -207,15 +248,29 @@
 .about-intro-chat-reaction-picker {
   display: flex;
   gap: 0;
-  padding: 4px;
+  max-width: min(252px, calc(100vw - 24px));
+  padding: 2px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
   border-radius: var(--radius-full);
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
   outline: none;
-  transform-origin: var(--transform-origin);
+  transform-origin: right bottom;
   animation:
-    intro-picker-open 580ms var(--intro-spring-snappy) both,
+    intro-picker-open var(--duration-slow) var(--intro-spring-snappy) both,
     intro-fade-in var(--duration-quick) var(--ease-standard) both;
+}
+
+.about-intro-chat-reaction-picker::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .about-intro-chat-reaction-picker {
+    max-width: min(404px, calc(100vw - 24px));
+  }
 }
 
 .about-intro-chat-reaction-picker[data-ending-style] {
@@ -229,23 +284,27 @@
   place-items: center;
   width: 40px;
   height: 40px;
+  flex: 0 0 40px;
   border-radius: var(--radius-full);
   outline: none;
-  font-size: 18px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  font-size: 17px;
   line-height: 1;
   cursor: pointer;
-  animation: intro-pick-in 580ms var(--intro-spring-snappy) both;
-  transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+  animation: intro-pick-in var(--duration-slow) var(--intro-spring-snappy) both;
+  animation-delay: calc(var(--intro-reaction-order) * 16ms);
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard),
+    scale var(--duration-fast) var(--ease-standard),
+    translate var(--duration-fast) var(--ease-standard);
 }
 
-.about-intro-chat-reaction-choice:nth-child(2) { animation-delay: 24ms; }
-.about-intro-chat-reaction-choice:nth-child(3) { animation-delay: 48ms; }
-.about-intro-chat-reaction-choice:nth-child(4) { animation-delay: 72ms; }
-.about-intro-chat-reaction-choice:nth-child(5) { animation-delay: 96ms; }
-.about-intro-chat-reaction-choice:nth-child(6) { animation-delay: 120ms; }
-
 .about-intro-chat-reaction-choice:is(:hover, [data-highlighted]) {
-  background: var(--mosaic-card-surface);
+  background: #e9e9e9;
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+  scale: 1.08;
+  translate: 0 -2px;
 }
 
 .about-intro-chat-reaction-choice[data-checked]::before {
@@ -267,7 +326,8 @@
 }
 
 .about-intro-chat-reaction-choice:active {
-  transform: scale(0.96);
+  scale: 0.96;
+  translate: 0;
 }
 
 @keyframes intro-fade-in {
@@ -275,17 +335,17 @@
 }
 
 @keyframes intro-picker-open {
-  from { transform: translateY(8px) scale(0.75, 0.6); }
+  from { transform: translate(10px, 4px) scale(0.92, 0.88); }
   to { transform: none; }
 }
 
 @keyframes intro-picker-fold {
-  to { opacity: 0; transform: translateY(8px) scale(0.92); }
+  to { opacity: 0; transform: translate(8px, 4px) scale(0.96); }
 }
 
 @keyframes intro-pick-in {
-  from { opacity: 0; transform: translateY(6px) scale(0.3); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translateX(10px) scale(0.72); filter: blur(2px); }
+  to { opacity: 1; transform: none; filter: none; }
 }
 
 @keyframes intro-pick-press {
@@ -300,7 +360,9 @@
   z-index: 2;
   align-self: flex-start;
   margin: 0 4px;
-  background: var(--canvas);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--mosaic-card-surface);
   color: var(--muted);
   font-size: var(--text-xs);
   line-height: 1.5;
@@ -445,7 +507,7 @@
   .about-intro-chat-tapback-ripple { display: none; }
 }
 
-/* Unsend puff: the address and its tapback blur out as one, while dots of the
+/* Address-reset puff: the address and its tapback blur out as one, while dots of the
    bubble's blue scatter from where it sat. Reduced motion skips straight back
    to the email field and never renders the dots. */
 .about-intro-chat-sent[data-puff="true"] {
@@ -555,6 +617,12 @@
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
 }
 
+/* A multiline field is a small writing surface, not a stretched pill. The
+   one-line email composer keeps the full radius. */
+.about-intro-chat-message .about-intro-chat-composer {
+  border-radius: var(--radius-lg);
+}
+
 /* Focus lifts the field rather than outlining it; the caret marks the rest. */
 .about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
   box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
@@ -583,10 +651,6 @@
   opacity: 1;
 }
 
-.about-intro-chat-message .about-intro-chat-composer {
-  border-radius: var(--radius-lg);
-}
-
 /* Grows with the text (sized in AboutIntroChat) up to seven lines, or less on
    short screens, then scrolls. The history above gives up the room. */
 .about-intro-chat-message textarea {
@@ -603,6 +667,67 @@
   color: var(--muted);
   font-size: var(--text-xs);
   line-height: 1.5;
+}
+
+.about-intro-chat-footer {
+  display: flex;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+
+.about-intro-chat-footer .about-intro-chat-hint {
+  margin-right: 0;
+}
+
+.about-intro-chat-footer-separator {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.about-intro-chat-footer-action {
+  display: inline-flex;
+  align-items: flex-end;
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.about-intro-chat-footer-action:hover,
+.about-intro-chat-footer-action:focus-visible {
+  opacity: 0.72;
+}
+
+.about-intro-chat-footer-action:active {
+  transform: scale(0.96);
+}
+
+.about-intro-chat-footer-action:disabled {
+  color: var(--muted-soft);
+  cursor: default;
+  opacity: 0.6;
+  transform: none;
+}
+
+.about-intro-chat-composer.is-shaking {
+  animation: intro-composer-shake var(--duration-slow) linear;
+}
+
+@keyframes intro-composer-shake {
+  0% { transform: translateX(0); animation-timing-function: var(--ease-smooth); }
+  28.57% { transform: translateX(6px); animation-timing-function: var(--ease-smooth); }
+  57.14% { transform: translateX(-6px); animation-timing-function: var(--ease-smooth); }
+  78.57% { transform: translateX(4px); animation-timing-function: var(--ease-smooth); }
+  100% { transform: translateX(0); }
 }
 
 .about-intro-chat-enter {
@@ -679,38 +804,6 @@
     transition-delay: 0s;
   }
 
-  .about-intro-dock .about-intro-chat-notification {
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    z-index: 3;
-    display: grid;
-    place-items: center;
-    width: 18px;
-    height: 18px;
-    border-radius: var(--radius-full);
-    background: #e5352b;
-    color: var(--canvas);
-    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15), 0 0 0 3px var(--canvas), var(--shadow-control);
-    font: 700 11px / 1 var(--font-ui);
-    font-variant-numeric: tabular-nums;
-    pointer-events: none;
-    animation: intro-notification-enter var(--duration-base) var(--ease-smooth) both;
-  }
-
-  .about-intro-chat-notification-number,
-  .about-intro-chat-notification-ghost {
-    grid-area: 1 / 1;
-  }
-
-  .about-intro-chat-notification-number {
-    animation: intro-notification-number-enter var(--duration-quick) var(--ease-standard) both;
-  }
-
-  .about-intro-chat-notification-ghost {
-    animation: intro-notification-number-exit var(--duration-fast) var(--ease-exit) both;
-  }
-
   .about-intro-dock .about-intro[data-chat-open="true"] :is(.about-intro-surface, .about-intro-chat) {
     z-index: 2;
   }
@@ -724,12 +817,54 @@
     width: auto;
   }
 
+  .about-intro-dock .about-intro-chat-video-action {
+    position: sticky;
+    top: 4px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-end;
+    gap: 7px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--canvas);
+    box-shadow: var(--shadow-ring), var(--shadow-control);
+    color: var(--ink);
+    font: 500 var(--text-sm) / 1 var(--font-ui);
+    cursor: pointer;
+    transition: box-shadow var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+  }
+
+  .about-intro-dock .about-intro-chat-video-action > span {
+    width: 0;
+    height: 0;
+    border-block: 5px solid transparent;
+    border-left: 8px solid currentColor;
+  }
+
+  .about-intro-dock .about-intro-chat-video-action:is(:hover, :focus-visible) {
+    box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+  }
+
+  .about-intro-dock .about-intro-chat-video-action:active {
+    box-shadow: var(--shadow-ring), var(--shadow-control-pressed);
+    transform: scale(0.97);
+  }
+
   .about-intro-chat {
     width: min(320px, calc(100vw - 100px));
   }
 
   .about-intro-dock .about-intro-chat[data-step="email"] > .about-intro-chat-composer {
     width: min(320px, 100%);
+  }
+
+  /* iOS zooms the visual viewport when a focused input is smaller than 16px,
+     which pans this fixed conversation beyond the left screen edge. */
+  .about-intro-dock .about-intro-chat-composer input {
+    font-size: var(--text-md);
   }
 }
 
@@ -787,6 +922,11 @@
     transition: none;
     transform: none;
     filter: none;
+  }
+
+  .about-intro-chat-composer.is-shaking {
+    animation: none;
+    transform: none;
   }
 }
 

@@ -233,11 +233,15 @@ test("keeps the message prompt when the development video is off", async ({ page
   await expect(intro(page).locator("video")).toHaveCount(0)
 })
 
-test("uses the profile-photo message prompt on ordinary development visits", async ({ page }) => {
+test("uses the personal introduction player on ordinary development visits", async ({ page }) => {
   await page.goto("/?tune=off")
   await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
   await expect(intro(page)).toBeVisible()
-  await expect(intro(page).locator("img.about-intro-poster")).toHaveAttribute("src", /profile-photo.*\.webp$/)
-  await expect(intro(page).locator("video")).toHaveCount(0)
-  await expect(intro(page).getByRole("button", { name: /introduction/i })).toHaveCount(0)
+  const poster = intro(page).locator("img.about-intro-poster")
+  await expect(poster).toHaveAttribute("src", "/about-intro/poster.webp")
+  await expect(poster).toHaveCSS("corner-shape", "superellipse(1)")
+  await intro(page).hover()
+  await expect(intro(page).locator(".about-intro-surface")).toHaveCSS("transform", "none")
+  await expect(intro(page).getByRole("button", { name: "Play introduction", exact: true })).toBeVisible()
+  await expect(intro(page).locator("video[data-recording]")).not.toHaveAttribute("src")
 })

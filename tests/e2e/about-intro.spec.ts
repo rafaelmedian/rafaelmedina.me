@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-test("production shows the profile-photo message prompt without video", async ({ page }) => {
+test("production chat offers the personal introduction video", async ({ page }) => {
   const requests: string[] = []
   page.on("request", request => {
     if (/about-intro\/|AboutIntro-/.test(request.url())) requests.push(request.url())
@@ -10,8 +10,37 @@ test("production shows the profile-photo message prompt without video", async ({
   await expect(page.locator("#about-panel")).toBeFocused()
   const intro = page.getByRole("region", { name: "A quick hello from Rafael" })
   await expect(intro).toBeVisible()
-  await expect(intro.locator("img.about-intro-poster")).toHaveAttribute("src", /profile-photo.*\.webp$/)
-  await expect(intro.locator("video")).toHaveCount(0)
-  await expect(intro.getByRole("button", { name: /introduction/i })).toHaveCount(0)
-  expect(requests.some(url => /about-intro\/(?:recording|teaser)/.test(url))).toBe(false)
+  await expect(intro.locator("img.about-intro-poster")).toHaveAttribute("src", "/about-intro/poster.webp")
+  await intro.locator(".about-intro-portrait-trigger").focus()
+  await expect(intro.getByRole("button", { name: "Play introduction", exact: true })).toBeVisible()
+  expect(requests.some(url => url.endsWith("/about-intro/recording.mp4"))).toBe(false)
+  await intro.getByRole("button", { name: "Play introduction", exact: true }).click()
+  const recording = intro.locator("video[data-recording]")
+  await expect(recording).toHaveAttribute("src", "/about-intro/recording.mp4")
+  await expect.poll(() => recording.evaluate(video => !(video as HTMLVideoElement).paused)).toBe(true)
+})
+
+test("compact chat keeps the personal introduction video discoverable", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/#about-panel")
+
+  const intro = page.getByRole("region", { name: "A quick hello from Rafael" })
+  await intro.locator(".about-intro-portrait-trigger").click()
+
+  const chat = page.getByRole("dialog", { name: "Chat with Rafa" })
+  await expect(chat).toBeVisible()
+  await chat.getByRole("button", { name: "Play introduction", exact: true }).click()
+
+  await expect(chat).toBeHidden()
+  const recording = intro.locator("video[data-recording]")
+  await expect(recording).toHaveAttribute("src", "/about-intro/recording.mp4")
+  await expect.poll(() => recording.evaluate(video => !(video as HTMLVideoElement).paused)).toBe(true)
+
+  const portrait = intro.locator(".about-intro-portrait-trigger")
+  const close = intro.getByRole("button", { name: "Close introduction" })
+  await close.focus()
+  await close.press("Enter")
+  await expect(chat).toBeHidden()
+  await expect(portrait).toBeVisible()
+  await expect(portrait).toBeFocused()
 })
