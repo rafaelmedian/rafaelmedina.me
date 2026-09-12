@@ -2325,7 +2325,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   172px with <code>--radius-lg</code> corners. Clicking or moving keyboard focus outside the desktop
                   conversation collapses it into the portrait; the portrait reopens it without resetting its content.
                   On mobile, the 64px speaking portrait stays fixed 12px from the left edge while the TOC remains centred.
-                  Whenever the conversation is collapsed, its current message total sits in an 18px red notification
+                  Whenever both the conversation and player are collapsed, its current message total sits in an 18px red notification
                   circle tucked 1px into the portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
                   15%-black hairline, 2px canvas-white halo and the shared control shadow. The badge enters
                   with the TOC’s 6px rise and blur; each previous number exits 4px upward while its replacement
@@ -2335,7 +2335,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   conversation remains 12px from both viewport edges; its email composer expands to 320px
                   toward the left and stays 12px above the enlarged portrait. A sticky 44px &ldquo;Play intro&rdquo;
                   pill at the conversation&rsquo;s top-right keeps the recording directly available on touch screens;
-                  it uses the shared full radius, ring and control shadows, and hands the surface from chat to player.
+                  it uses the shared full radius, ring and control shadows, hands the surface from chat to player,
+                  and returns to the preserved conversation and composer when the player closes.
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
                   into two 184px pills with a 12px gap. A and C keep their mobile reply row 80px above the safe-area edge to clear the TOC. B becomes a conversation anchored to a 64px portrait.
                   Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
