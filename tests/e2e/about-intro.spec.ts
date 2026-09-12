@@ -19,3 +19,20 @@ test("production chat offers the personal introduction video", async ({ page }) 
   await expect(recording).toHaveAttribute("src", "/about-intro/recording.mp4")
   await expect.poll(() => recording.evaluate(video => !(video as HTMLVideoElement).paused)).toBe(true)
 })
+
+test("compact chat keeps the personal introduction video discoverable", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/#about-panel")
+
+  const intro = page.getByRole("region", { name: "A quick hello from Rafael" })
+  await intro.locator(".about-intro-portrait-trigger").click()
+
+  const chat = page.getByRole("dialog", { name: "Chat with Rafa" })
+  await expect(chat).toBeVisible()
+  await chat.getByRole("button", { name: "Play introduction", exact: true }).click()
+
+  await expect(chat).toBeHidden()
+  const recording = intro.locator("video[data-recording]")
+  await expect(recording).toHaveAttribute("src", "/about-intro/recording.mp4")
+  await expect.poll(() => recording.evaluate(video => !(video as HTMLVideoElement).paused)).toBe(true)
+})

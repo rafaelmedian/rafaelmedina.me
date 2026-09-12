@@ -281,6 +281,10 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
     setChatOpen(false)
     if (restoreFocus) requestAnimationFrame(() => portraitRef.current?.focus({ preventScroll: true }))
   }
+  const playFromChat = () => {
+    closeChat(false)
+    play()
+  }
   const messageLabel = `${messageCount} ${messageCount === 1 ? "message" : "messages"}`
 
   return (
@@ -406,7 +410,8 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
         <button type="button" className="about-intro-chat-backdrop" aria-label="Close messages"
           inert={!mobileChatOpen} aria-hidden={!mobileChatOpen} onClick={() => closeChat()} />
       </>}
-      {variant === "b" ? <AboutIntroChat id={`${id}-chat`} active={chatActive} visible={chatVisible} modal={mobileChatOpen} onClose={closeChat} onMessageCount={setMessageCount} /> : <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+      {variant === "b" ? <AboutIntroChat id={`${id}-chat`} active={chatActive} visible={chatVisible} modal={mobileChatOpen} onClose={closeChat} onMessageCount={setMessageCount}
+        onPlayIntroduction={mobileChatOpen && videoAvailable ? playFromChat : undefined} /> : <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
         <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}
           onPointerLeave={() => setReplyLabel(returnedReply)}
           onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setReplyLabel(returnedReply) }}>

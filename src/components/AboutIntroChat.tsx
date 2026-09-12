@@ -97,12 +97,13 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
   </Menu.Root>
 }
 
-export default function AboutIntroChat({ active, id, modal = false, onClose, onMessageCount, visible = active }: {
+export default function AboutIntroChat({ active, id, modal = false, onClose, onMessageCount, onPlayIntroduction, visible = active }: {
   active: boolean
   id?: string
   modal?: boolean
   onClose?: () => void
   onMessageCount?: (count: number) => void
+  onPlayIntroduction?: () => void
   visible?: boolean
 }) {
   const fieldId = useId()
@@ -349,6 +350,10 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
     {modal && <Dialog.Close className="sr-only" tabIndex={-1}>Close chat</Dialog.Close>}
     {/* Hidden live regions can make modal isolation hide the neighboring player. */}
     <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={visible ? "polite" : undefined} aria-relevant="additions">
+      {modal && onPlayIntroduction && <button type="button" className="about-intro-chat-video-action"
+        aria-label="Play introduction" onClick={onPlayIntroduction}>
+        <span aria-hidden="true" />Play intro
+      </button>}
       {emailReady && <p className="about-intro-chat-reaction-hint" role="status" aria-live={visible ? "polite" : undefined}>{reactionFeedback}</p>}
       {/* Only the typing bubble has a tail on Rafa's side; once a question lands, the visitor's field below it carries one on the right. */}
       {greeting.slice(0, Math.min(shown, 3)).map((text, messageIndex) =>

@@ -2336,7 +2336,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Tapping the portrait or count fades in the shared 42%-black dialog backdrop over
                   <code>--duration-slow</code>, hides the TOC and grows the portrait from 64px to 80px. The
                   conversation remains 12px from both viewport edges; its email composer expands to 320px
-                  toward the left and stays 12px above the enlarged portrait.
+                  toward the left and stays 12px above the enlarged portrait. A sticky 44px &ldquo;Play intro&rdquo;
+                  pill at the conversation&rsquo;s top-right keeps the recording directly available on touch screens;
+                  it uses the shared full radius, ring and control shadows, and hands the surface from chat to player.
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
                   into two 184px pills with a 12px gap. A and C keep their mobile reply row 80px above the safe-area edge to clear the TOC. B becomes a conversation anchored to a 64px portrait.
                   Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
