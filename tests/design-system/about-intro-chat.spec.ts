@@ -8,6 +8,8 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
 
   const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
   const notification = intro.locator('.about-intro-chat-notification')
+  await expect(intro).toBeVisible()
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
   await page.clock.runFor(900)
   await expect(notification).toHaveText('1')
   await expect(notification).toHaveCSS('animation-name', 'intro-notification-enter')
@@ -30,8 +32,9 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
   expect(faceBox!.x).toBe(12)
   expect(Math.abs(tocBox!.x + tocBox!.width / 2 - 384)).toBeLessThan(1)
   expect(badgeBox).toMatchObject({ width: 18, height: 18 })
-  expect(Math.abs(badgeBox!.x - (faceBox!.x + faceBox!.width - badgeBox!.width - 1))).toBeLessThan(1)
-  expect(Math.abs(badgeBox!.y - faceBox!.y - 1)).toBeLessThan(1)
+  expect(Math.abs(badgeBox!.x - (faceBox!.x + faceBox!.width - badgeBox!.width + 2))).toBeLessThan(1)
+  expect(Math.abs(badgeBox!.y - faceBox!.y + 2)).toBeLessThan(1)
+  await expect(notification).toHaveCSS('border-radius', '50%')
   await expect(notification).toHaveCSS('box-shadow', /rgba\(0, 0, 0, 0\.15\).*rgb\(255, 255, 255\)/)
   expect(await notification.evaluate(node => {
     for (let parent = node.parentElement; parent; parent = parent.parentElement) {
@@ -254,7 +257,43 @@ test('offers a compact, horizontally scrollable Apple-style reaction row', async
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
-test('opens the Tapback picker from the right with staggered, tactile choices', async ({ page }) => {
+test('keeps desktop reactions compact and reveals the remaining choices by scroll or keyboard', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/?tune=off')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
+  await chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' }).click()
+  const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  const choices = picker.getByRole('menuitemcheckbox')
+  const visibleChoices = await choices.evaluateAll(nodes => {
+    const viewport = nodes[0].parentElement!.getBoundingClientRect()
+    return nodes.map(node => {
+      const box = node.getBoundingClientRect()
+      return Math.max(0, Math.min(box.right, viewport.right) - Math.max(box.left, viewport.left)) / box.width
+    })
+  })
+  expect(visibleChoices.filter(ratio => ratio >= 0.99)).toHaveLength(6)
+  expect(visibleChoices[6]).toBeGreaterThan(0)
+  expect(visibleChoices[6]).toBeLessThan(1)
+  await expect(picker).toHaveCSS('scrollbar-width', 'none')
+  await picker.hover()
+  await page.mouse.wheel(240, 0)
+  await expect.poll(() => picker.evaluate(node => node.scrollLeft)).toBeGreaterThan(0)
+  await choices.first().focus()
+  await page.keyboard.press('End')
+  await expect(choices.last()).toBeFocused()
+  const lastBox = await choices.last().boundingBox()
+  const pickerBox = await picker.boundingBox()
+  expect(lastBox!.x + lastBox!.width).toBeLessThanOrEqual(pickerBox!.x + pickerBox!.width)
+  await page.keyboard.press('Enter')
+  await expect(chat.getByRole('img', { name: 'You thought about “Hey, I’m Rafa.”' })).toBeVisible()
+  await expect(picker).toHaveCount(0)
+})
+
+test('opens the Tapback picker from the right and holds a selection beat before closing', async ({ page }) => {
+  await page.clock.install()
   await page.setViewportSize({ width: 1440, height: 800 })
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/?tune=off')
@@ -272,17 +311,19 @@ test('opens the Tapback picker from the right with staggered, tactile choices', 
   await expect(picker).toHaveCSS('animation-duration', '0.36s, 0.16s')
   const choices = picker.getByRole('menuitemcheckbox')
   await expect(choices.first()).toHaveCSS('animation-duration', '0.36s')
-  await expect(choices.first()).toHaveCSS('animation-delay', '0.144s')
-  await expect(choices.last()).toHaveCSS('animation-delay', '0s')
   // Test the resting hit box: while the picker and first choice are both
   // translating in, a starved frame can move them out from under the pointer.
   await picker.evaluate(node => Promise.all(node.getAnimations({ subtree: true }).map(animation => animation.finished)))
-  expect(await picker.evaluate(node => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1)
   await choices.first().hover()
   await expect(choices.first()).toHaveCSS('translate', '0px -2px')
   await expect(choices.first()).toHaveCSS('scale', '1.08')
-  await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
-  expect(await picker.evaluate(node => getComputedStyle(node).animationName)).toBe('intro-picker-fold')
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
+  await picker.getByRole('menuitemcheckbox', { name: 'Love' }).dispatchEvent('click')
+  await expect(greeting).toHaveAttribute('aria-expanded', 'true')
+  await page.clock.runFor(120)
+  await expect(greeting).toHaveAttribute('aria-expanded', 'true')
+  await page.clock.runFor(80)
+  await expect(greeting).toHaveAttribute('aria-expanded', 'false')
 
   const tapback = page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })
   await expect(tapback.locator('.about-intro-chat-visitor-tapback-glyph')).toHaveCSS('animation-name', 'intro-grow')

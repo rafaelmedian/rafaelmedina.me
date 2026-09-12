@@ -105,3 +105,34 @@ for (const interrupt of ["keyboard", "resize", "reduced motion"] as const) {
     if (interrupt === "keyboard") await expect(page.locator(".skip-link")).toBeFocused()
   })
 }
+
+
+test("avatar greeting plays on hover and opens the recording on request", async ({ page }) => {
+  await page.goto("/")
+  const avatar = page.locator(".mosaic-avatar-button")
+  const teaser = avatar.locator("video")
+  await expect(teaser).toHaveCount(0)
+  await avatar.hover()
+  await expect(teaser).toBeVisible()
+  await expect.poll(() => teaser.evaluate(video => (video as HTMLVideoElement).currentTime)).toBeGreaterThan(0)
+  await page.mouse.move(0, 0)
+  await expect(teaser).toHaveCount(0)
+  await avatar.click()
+  const recording = page.locator("video[data-recording]")
+  await expect(recording).not.toHaveAttribute("src")
+  await page.getByRole("button", { name: "Play introduction", exact: true }).click()
+  await expect(recording).toHaveAttribute("src", "/about-intro/recording.mp4")
+  await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).currentTime)).toBeGreaterThan(0)
+  await page.getByRole("button", { name: "Close introduction", exact: true }).click()
+  await expect(avatar).toBeFocused()
+})
+
+test("reduced motion keeps the avatar greeting still", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  const avatar = page.locator(".mosaic-avatar-button")
+  await avatar.hover()
+  await expect(avatar.locator("video")).toHaveCount(0)
+  await avatar.focus()
+  await expect(avatar.locator("video")).toHaveCount(0)
+})

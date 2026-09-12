@@ -100,6 +100,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const playRef = useRef<HTMLButtonElement>(null)
   const introRef = useRef<HTMLElement>(null)
   const collapseFocusRef = useRef<HTMLElement | null>(null)
+  const restoreChatAfterVideoRef = useRef(false)
   const requestRef = useRef(0)
   const [started, setStarted] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -123,7 +124,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const desktopChatOpen = !mobileChat && variant === "b" && chatActive && !chatCollapsed
   const chatExpanded = mobileChatOpen || desktopChatOpen
   const chatVisible = chatExpanded
-  const collapsedMessageCount = !chatExpanded ? messageCount : 0
+  const collapsedMessageCount = !open && !chatExpanded ? messageCount : 0
   if (notificationTransition.current !== collapsedMessageCount) {
     setNotificationTransition({
       current: collapsedMessageCount,
@@ -174,7 +175,8 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
       if (!(event.target instanceof Element)) return
       if (introRef.current?.dataset.chatOpen !== "true") return
       const chat = introRef.current?.querySelector(".about-intro-chat")
-      if (event.target.closest(".about-intro-chat-reaction-positioner") || chat?.contains(event.target)) return
+      const surface = introRef.current?.querySelector(".about-intro-surface")
+      if (event.target.closest(".about-intro-chat-reaction-positioner") || chat?.contains(event.target) || surface?.contains(event.target)) return
       setChatCollapsed(true)
       setChatOpen(false)
     }
@@ -223,6 +225,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const play = () => {
     const video = videoRef.current
     if (!video || !media || !videoAvailable) return
+    if (!open) restoreChatAfterVideoRef.current = chatExpanded
     setReply(null)
     setReturnedReply(null)
     setReplyLabel(null)
@@ -252,12 +255,21 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   }
 
   const collapse = () => {
-    const focusTarget = mobileChat
-      ? portraitRef.current
-      : triggerRef.current?.closest<HTMLElement>("[role='dialog'], dialog[open]") ?? triggerRef.current
+    const parentDialog = triggerRef.current?.closest<HTMLElement>("[role='dialog'], dialog[open]")
+    const restoreChat = restoreChatAfterVideoRef.current && !parentDialog && repliesAvailable
+    restoreChatAfterVideoRef.current = false
+    const focusTarget = parentDialog ?? (restoreChat
+      ? introRef.current?.querySelector<HTMLElement>(".about-intro-chat") ?? null
+      : mobileChat
+        ? portraitRef.current
+        : triggerRef.current)
     requestRef.current += 1
     videoRef.current?.pause()
     collapseFocusRef.current = focusTarget
+    if (restoreChat) {
+      setChatCollapsed(false)
+      setChatOpen(true)
+    }
     onOpenChange(false)
   }
   const closeReply = useCallback((restoreFocus = true) => {
@@ -294,12 +306,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
     if (restoreFocus) requestAnimationFrame(() => portraitRef.current?.focus({ preventScroll: true }))
   }
   const playFromChat = () => {
-    closeChat(false)
     play()
-    // Leaving the compact chat for playback is a completed dismissal, not a
-    // request to reopen the modal when the recording closes.
-    setChatCollapsed(true)
-    setChatOpen(false)
   }
   const messageLabel = `${messageCount} ${messageCount === 1 ? "message" : "messages"}`
 
@@ -325,7 +332,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
         // next button. Keep the hovered target alive until its click completes.
         if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
       }}
-      data-open={open} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || (variant !== "a" && !open)) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
+      data-open={open} data-started={started} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || (variant !== "a" && !open)) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
         if (videoAvailable && event.key.toLowerCase() === "c" && open && !event.metaKey && !event.ctrlKey && !event.altKey &&
           !(event.target instanceof HTMLElement && event.target.matches("input, textarea, [contenteditable]"))) {

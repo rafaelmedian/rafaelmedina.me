@@ -20,14 +20,14 @@
 
 .about-intro-chat-notification {
   position: absolute;
-  top: 1px;
-  right: 1px;
+  top: -2px;
+  right: -2px;
   z-index: 3;
   display: grid;
   place-items: center;
   width: 18px;
   height: 18px;
-  border-radius: var(--radius-full);
+  border-radius: 50%;
   background: #e5352b;
   color: var(--canvas);
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15), 0 0 0 3px var(--canvas), var(--shadow-control);
@@ -248,7 +248,8 @@
 .about-intro-chat-reaction-picker {
   display: flex;
   gap: 0;
-  max-width: min(252px, calc(100vw - 24px));
+  /* Six full 40px targets and half of the next one invite a sideways swipe. */
+  max-width: min(264px, calc(100vw - 24px));
   padding: 2px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
@@ -267,14 +268,8 @@
   display: none;
 }
 
-@media (min-width: 900px) {
-  .about-intro-chat-reaction-picker {
-    max-width: min(404px, calc(100vw - 24px));
-  }
-}
-
 .about-intro-chat-reaction-picker[data-ending-style] {
-  animation: intro-picker-fold 280ms var(--ease-exit) forwards;
+  animation: intro-picker-fold var(--duration-quick) var(--ease-exit) forwards;
 }
 
 .about-intro-chat-reaction-choice {
@@ -316,8 +311,8 @@
   background: var(--intro-blue);
 }
 
-.about-intro-chat-reaction-choice[data-checked] > span {
-  animation: intro-pick-press 700ms linear both;
+.about-intro-chat-reaction-choice[data-selecting] > span {
+  animation: intro-pick-press var(--duration-quick) var(--intro-spring-snappy) both;
 }
 
 .about-intro-chat-reaction-choice:focus-visible {
@@ -349,9 +344,8 @@
 }
 
 @keyframes intro-pick-press {
-  0% { transform: scale(1); animation-timing-function: var(--ease-standard); }
-  30% { transform: scale(1.14); animation-timing-function: var(--intro-spring-snappy); }
-  100% { transform: scale(1); }
+  from { transform: none; }
+  to { transform: translateY(-2px) scale(1.14); }
 }
 
 .about-intro-chat .about-intro-chat-reaction-hint {
@@ -908,6 +902,8 @@
   .about-intro-chat-reaction-choice {
     transition: none;
     transform: none;
+    scale: none;
+    translate: none;
   }
 
   .about-intro-chat-received { transition: none; }

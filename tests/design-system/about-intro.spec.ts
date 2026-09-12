@@ -38,11 +38,11 @@ test("defers introduction assets until About and recording until play", async ({
   await intro(page).getByRole("button", { name: "Mute introduction" }).click()
   await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).muted)).toBe(true)
   await intro(page).getByRole("button", { name: "Close introduction" }).click()
-  await expect(intro(page).getByRole("button", { name: "Resume introduction", exact: true })).toBeFocused()
+  await expect(page.getByRole("region", { name: "Chat with Rafa" })).toBeFocused()
   await intro(page).getByRole("button", { name: "Resume introduction", exact: true }).click()
   await expect.poll(() => recording.evaluate(video => (video as HTMLVideoElement).currentTime)).toBeGreaterThan(2)
   await page.keyboard.press("Escape")
-  await expect(intro(page).getByRole("button", { name: "Resume introduction", exact: true })).toBeFocused()
+  await expect(page.getByRole("region", { name: "Chat with Rafa" })).toBeFocused()
 })
 
 for (const preference of ["reduced motion", "data saving"] as const) {

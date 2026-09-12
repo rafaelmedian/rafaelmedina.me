@@ -1954,7 +1954,7 @@ for (const width of [768, 1440]) {
 test("keeps the mobile profile and final content clear of the table of contents", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.goto("/")
-  const avatar = await page.getByRole("button", { name: "Ask about Rafael Medina" }).boundingBox()
+  const avatar = await page.getByRole("button", { name: "Watch Rafael Medina's introduction" }).boundingBox()
   expect(avatar!.y).toBeLessThan(96)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("03 Services")
@@ -2617,17 +2617,18 @@ test("left aligns the about introduction with the services reading axis", async 
   })
 })
 
-test("opens chat directly and focuses its email field from the avatar button", async ({ page }) => {
+test("opens the introduction player from the avatar button", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   const trigger = page.locator(".mosaic-avatar-button")
 
-  await expect(trigger).toHaveAccessibleName("Ask about Rafael Medina")
+  await expect(trigger).toHaveAccessibleName("Watch Rafael Medina's introduction")
   await trigger.focus()
   await trigger.press("Enter")
 
-  await expect(page.getByRole("dialog")).toBeVisible()
-  await expect(page.getByLabel("Your email")).toBeFocused()
+  await expect(page.getByRole("button", { name: "Play introduction", exact: true })).toBeFocused()
+  await page.getByRole("button", { name: "Close introduction", exact: true }).click()
+  await expect(trigger).toBeFocused()
 })
 
 test("keeps every project group together inside the takeover stage", async ({ page }) => {
@@ -2797,6 +2798,7 @@ test("keeps the takeover close wrapper at the compact design-system size", async
 
   expect(size.width).toBeCloseTo(51.2, 0)
   expect(size.height).toBeCloseTo(51.2, 0)
+  await expect(page.locator(".mosaic-takeover-close svg")).toHaveAttribute("stroke-width", "1.75")
 })
 
 test("returns to the top of the page from the takeover close", async ({ page }) => {
@@ -3060,7 +3062,7 @@ test("gives the takeover cue a full tap target and its own name", async ({ page 
 
   // Distinct from the avatar's chat action in a screen-reader rotor list.
   await expect(cue).toHaveAccessibleName("Continue to About")
-  await expect(page.getByRole("button", { name: "Ask about Rafael Medina" })).toHaveCount(1)
+  await expect(page.getByRole("button", { name: "Watch Rafael Medina's introduction" })).toHaveCount(1)
 })
 
 test("drops the takeover cue below the breakpoint that pins the gallery", async ({ page }) => {

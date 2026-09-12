@@ -54,6 +54,15 @@ test("does not mount the retired corner tuner on development pages", async ({ pa
   }
 })
 
+test("does not mount the retired contact shine tuner on development pages", async ({ page }) => {
+  for (const path of ["/", "/?tune=contact", "/__design_lab"]) {
+    await page.goto(path)
+    await page.waitForLoadState("networkidle")
+    await expect(page.getByText("Contact shine", { exact: true })).toHaveCount(0)
+    await expect(page.locator("html")).not.toHaveAttribute("data-contact-shine")
+  }
+})
+
 test("keeps internal case-study headings on the reading step", async ({ page }) => {
   await page.setViewportSize({ width: 2394, height: 1223 })
   await page.goto("/work/matcha-multiwallet-flow/")
@@ -218,11 +227,9 @@ test("documents component-specific motion curves that still ship", async ({ page
 
   const curves = await page.evaluate(() => {
     const firstBezier = (value: string) => value.match(/cubic-bezier\([^)]*\)/)?.[0] ?? ""
-    const avatar = getComputedStyle(document.querySelector(".mosaic-avatar-coin-inner") as Element)
     const workHistory = getComputedStyle(document.querySelector(".mosaic-work-history") as Element)
 
     return [
-      firstBezier(avatar.transitionTimingFunction),
       firstBezier(workHistory.getPropertyValue("--mosaic-popover-exit-ease")),
     ]
   })

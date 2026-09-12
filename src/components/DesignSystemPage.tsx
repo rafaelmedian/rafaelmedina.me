@@ -349,7 +349,7 @@ const ELEVATION = [
   {
     name: "Hairline",
     shadow: "inset 0 0 0 1px rgb(0 0 0 / 0.05)",
-    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits and the header avatar at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content; the header avatar's portrait zooms inside its crop, so its ring is an inset shadow on a layer over the photo instead.",
+    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits and the header avatar at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content; the header avatar uses an inset shadow above its portrait and greeting teaser.",
   },
   {
     name: "Resting control — --shadow-control",
@@ -381,13 +381,13 @@ const EASINGS_ENTRIES = [
     name: "Standard — --ease-standard",
     css: "--ease-standard",
     duration: "160–1200ms",
-    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place. Also the avatar coin, whose spin outgrew --ease-smooth: an expo-out puts three quarters of its travel in the first fifth of the duration, which over a whole rotation reads as a strobe rather than a spin.",
+    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
   },
   {
     name: "Smooth — --ease-smooth",
     css: "--ease-smooth",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the avatar's crop tightening under the pointer, the live-time roll, the personal-photo fan opening under a moving pointer, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the live-time roll, the personal-photo fan opening under a moving pointer, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
@@ -433,7 +433,6 @@ const DURATIONS_ENTRIES = [
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },
   { value: "410ms", use: "The personal-photo fan springing out of its pile the first time it scrolls into view, every print at once on the card-stack overshoot (see Easing). Taken whole from transitions.dev’s card stack hover, the fan-out beat there. --photo-deal-duration on the stack." },
-  { value: "1100ms / 1200ms / 240ms", use: "The avatar coin. One whole turn under the pointer over 1100ms, and a click adds another over 1200ms, then opens the profile chat 240ms in — long enough that the spin is what revealed it, short enough that the click still feels answered. Both are slow on purpose: a coin this small has to turn lazily to read as turning at all. JavaScript reads all three numbers from the coin's own custom properties." },
   { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
 ]
 
@@ -1721,9 +1720,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
                 low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
                 carries the press.
-                {" "}The development homepage, <code>/__design_lab</code>, and <code>/?tune=contact</code> offer
-                separate Resting B and Hovered C folders in DialKit. Each controls dark and light width and brightness,
-                highlight height, and dark blur, with shared speed and a held-hover preview. These overrides are dev-only.
               </p>
             </div>
 
@@ -1754,7 +1750,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   aria-label="Close about specimen"
                   style={{ position: "relative", inset: "auto", zIndex: "auto", transform: "none" }}
                 >
-                  <X aria-hidden="true" />
+                  <X strokeWidth={1.75} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -2050,37 +2046,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="avatar-coin"
-                data-ds-terms={terms("avatar coin flip spin rotateY 360deg hover click chat dialog email gate conversation composer 1100ms 1200ms 240ms crop zoom 1.12 object-fit cover composite add web animations preserve-3d backface hint arrow reduced motion")}
+                data-ds-terms={terms("avatar greeting teaser video hover focus play introduction reduced motion lightweight")}
               >
-                <strong>The avatar spins, and the spin opens a conversation.</strong>
+                <strong>The avatar greets you and opens the introduction.</strong>
                 <p>
-                  Pointing at the 52px portrait, or reaching it with the keyboard, turns it{" "}
-                  <code>360deg</code> &mdash; one whole turn, with the mirrored second face passing underneath and the
-                  first one coming back. The crop tightens at the same time: the circle keeps its size and the face
-                  inside it scales to <code>1.12</code> over <code>--duration-slow</code>, so the frame closes in rather
-                  than the avatar growing into the line of text beside it. Clicking adds another whole turn and,{" "}
-                  <code>240ms</code> later, opens a full-screen chat. The first visit asks for an email; the address is
-                  kept on the device and sent with each question to identify the rate-limited conversation, never to
-                  subscribe the visitor. Returning visitors go directly to the stored history. The conversation is a
-                  restrained version of the page: assistant answers sit directly on the canvas, questions use the dark
-                  primary surface, and a <code>--radius-md</code> squircle composer stays at the foot. Its inset send
-                  control and the email gate&rsquo;s button subtract the shared 6px padding from that radius to keep their
-                  corners concentric; navigation uses <code>--radius-md</code> and suggested questions use the squarer
-                  <code>--radius-sm</code>. The 52px portrait remains a true circle with <code>corner-shape: round</code>,
-                  distinct from those chat surfaces. The grey Handlee hint reads &ldquo;ask about me&rdquo; throughout; the
-                  accessible name is &ldquo;Ask about Rafael Medina.&rdquo;
-                </p>
-                <p>
-                  The click spin is a script animation with <code>composite: &quot;add&quot;</code>, not a keyframe
-                  rule. CSS transitions outrank CSS animations, so a keyframe spin would sit and wait out a hover flip
-                  already in flight, and a replacing one would snap the coin back to zero before starting; an additive
-                  script animation composes onto whatever the transition is doing on that frame. Every rotation is a
-                  whole number of half turns, which is what lets the animation end on the angle its underlying value
-                  already holds &mdash; nothing to see when the transform is handed back &mdash; and lets an
-                  interrupted coin only ever rest on a face. The crop is clipped by a frame around each portrait rather
-                  than by the coin, because the coin carries <code>preserve-3d</code> and any overflow but{" "}
-                  <code>visible</code> would flatten it and take the flip with it. Reduced motion holds the coin, the
-                  crop and the spin, and opens the chat at once.
+                  Hovering or focusing the 52px circular portrait mounts the silent, looping greeting teaser.
+                  It uses the existing MP4 in place of a heavier GIF and keeps the same crop and footprint.
+                  Leaving removes the teaser. Reduced motion and lightweight connections keep the still portrait.
+                  The Handlee hint reads &ldquo;play my intro&rdquo;, and the accessible name is
+                  &ldquo;Watch Rafael Medina&apos;s introduction&rdquo;.
+                  Clicking opens the shared introduction player with its controls visible before playback, where Play starts the full recording with
+                  sound and captions. Closing returns focus to the avatar. The portrait no longer spins or zooms.
                 </p>
               </div>
 
@@ -2163,9 +2139,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
                   Close crosses, navigation chevrons, external-link arrows and reply arrows share
-                  <code> NavigationIcons.tsx</code>: a 24-unit viewBox with rounded 2.5-unit strokes
-                  and joins, scaled to each control’s existing icon size. The close cross matches
-                  the intro player’s iOS-style mark; all wrappers and hit targets keep their own surface styles.
+                  <code> NavigationIcons.tsx</code>: a 24-unit viewBox with rounded strokes and joins,
+                  scaled to each control’s existing icon size. Navigation marks use a 2.5-unit stroke;
+                  the raised takeover close steps down to 1.75 units to match the lighter marks around
+                  the hero. The close cross matches the intro player’s iOS-style geometry; all wrappers
+                  and hit targets keep their own surface styles.
                   The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity and ink text,
                   with no close icon. The collapsed row shows a 16px upward chevron, which fades out over 160ms
                   on opening. Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
@@ -2328,8 +2306,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   172px with <code>--radius-lg</code> corners. Clicking or moving keyboard focus outside the desktop
                   conversation collapses it into the portrait; the portrait reopens it without resetting its content.
                   On mobile, the 64px speaking portrait stays fixed 12px from the left edge while the TOC remains centred.
-                  Whenever the conversation is collapsed, its current message total sits in an 18px red notification
-                  circle tucked 1px into the portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
+                  Whenever both the conversation and player are collapsed, its current message total sits in an 18px red notification
+                  circle offset 2px beyond the portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
                   15%-black hairline, 2px canvas-white halo and the shared control shadow. The badge enters
                   with the TOC’s 6px rise and blur; each previous number exits 4px upward while its replacement
                   enters from below over the shared quick duration.
@@ -2338,7 +2316,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   conversation remains 12px from both viewport edges; its email composer expands to 320px
                   toward the left and stays 12px above the enlarged portrait. A sticky 44px &ldquo;Play intro&rdquo;
                   pill at the conversation&rsquo;s top-right keeps the recording directly available on touch screens;
-                  it uses the shared full radius, ring and control shadows, and hands the surface from chat to player.
+                  it uses the shared full radius, ring and control shadows, hands the surface from chat to player,
+                  and returns to the preserved conversation and composer when the player closes.
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
                   into two 184px pills with a 12px gap. A and C keep their mobile reply row 80px above the safe-area edge to clear the TOC. B becomes a conversation anchored to a 64px portrait.
                   Three gray bubbles use 24px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
@@ -2354,25 +2333,26 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   The fixed-positioned picker begins with Apple&rsquo;s six classic choices — heart, thumbs up, thumbs down,
                   laughter, exclamation points and a question mark — then adds fire, applause, celebration and thinking.
                   Native emoji use Apple Color Emoji where available. The 17px glyphs keep accessible 40px targets
-                  inside a 2px-padded white pill with the shared ring and overlay shadow. Below 900px the pill caps at
-                  252px and scrolls horizontally without drawing a scrollbar, so the additional choices continue to
-                  the right without widening the chat. From 900px it opens to 404px, fitting every choice for a
-                  conventional mouse. The heart is pink;
+                  inside a 2px-padded white pill with the shared ring and overlay shadow. The pill caps at
+                  264px on every viewport, showing six full targets and half of the next to invite horizontal
+                  scrolling without drawing a scrollbar. Touch, trackpad and horizontal wheel scrolling reveal
+                  the additional choices without widening the chat. The heart is pink;
                   stacked HA HA, !! and ? use sculpted text treatments with blue (#8eeaff to #009bdf),
                   coral (#ffb59e to #f34b40) and purple (#dbbaff to #8a4ddd) gradients. These are local
                   approximations of the supplied Messages references, not shared interface colours.
                   It stays 12px inside the viewport and retains horizontal arrow-key navigation. The picker
                   springs from its bottom-right corner at 0.92 horizontal / 0.88 vertical scale and a 10px by 4px
                   offset over 360ms. Choices arrive from the right with a 10px slide, 0.72 scale and 2px blur,
-                  following 16ms apart from right to left on the snappy spring. Hover or keyboard highlight lifts a
+                  following 16ms apart outward from the sixth, message-side choice on the snappy spring. Hover or keyboard highlight lifts a
                   choice 2px at 1.08 scale over a soft gray surface and the shared control shadow. Choosing one swells
-                  its glyph to 1.14 over a 32px
-                  selection disc and fades the picker toward the bubble by 8px at 0.92 scale over 280ms.
+                  its glyph to 1.14 with a 2px lift over a 32px selection disc. The picker holds this selection beat
+                  for 160ms, then fades toward the bubble by 8px at 0.96 scale over the shared quick duration.
                   The chosen 14px glyph grows into a 27px blue disc with a fine 1px canvas ring and a two-dot trail,
                   mirrored onto the gray bubble’s top-right corner. Its 580ms snappy entrance follows the disc
                   by 80ms. The wrapper gains 12px above it so the
                   Tapback does not cover the prior message. A later choice replaces the earlier one; choosing the
-                  current Tapback again removes it. Reduced motion shows both surfaces at rest. The hint gives a
+                  current Tapback again removes it. Reduced motion shows both surfaces at rest and closes the
+                  picker immediately, without the selection beat. The hint gives a
                   polite applied or removed confirmation, and only applied reactions record the message index and
                   reaction name through the existing anonymous analytics path.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,

@@ -193,9 +193,9 @@ test("closing a locally opened About section consumes its history entry", async 
   await expect(page).toHaveURL(/\?from=previous$/)
 })
 
-test("the avatar opens chat without replacing the portfolio URL", async ({ page }) => {
+test("the avatar opens the introduction without replacing the portfolio URL", async ({ page }) => {
   await page.goto("/")
-  await page.getByRole("button", { name: "Ask about Rafael Medina" }).click()
-  await expect(page.getByRole("dialog")).toBeVisible()
+  await page.getByRole("button", { name: "Watch Rafael Medina's introduction" }).click()
+  await expect(page.getByRole("button", { name: "Close introduction", exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/$/)
 })

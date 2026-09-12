@@ -452,6 +452,7 @@
   background: linear-gradient(rgb(255 255 255 / 0.16) 0 0), rgb(0 0 0 / 0.36);
 }
 
+.about-intro[data-open="true"][data-started="false"] :is(.about-intro-controls, .about-intro-collapse),
 .about-intro[data-open="true"] .about-intro-surface:is(:hover, :has(:focus-visible)) :is(.about-intro-controls, .about-intro-collapse) {
   opacity: 1;
   pointer-events: auto;

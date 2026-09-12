@@ -18,6 +18,8 @@ class IntroBoundary extends Component<{ children: ReactNode }, { failed: boolean
 }
 
 export function AboutIntroDock(props: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onWork: () => void
   onAbout: () => void
   onServices: () => void
@@ -33,12 +35,12 @@ export function AboutIntroDock(props: {
   const [approached, setApproached] = useState(false)
   const [active, setActive] = useState(false)
   const [obscured, setObscured] = useState(false)
-  const [open, setOpen] = useState(false)
+  const { open, onOpenChange: setOpen } = props
   const [tocOpen, setTocOpen] = useState(false)
   const handleTocOpen = useCallback((next: boolean) => {
     setTocOpen(next)
     if (next) setOpen(false)
-  }, [])
+  }, [setOpen])
 
   useEffect(() => {
     const dock = dockRef.current
@@ -108,9 +110,9 @@ export function AboutIntroDock(props: {
   const visible = open || (active && !obscured)
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
-      data-intro-visible={Boolean(approached && visible)} data-toc-open={tocOpen}>
+      data-intro-visible={Boolean((approached || open) && visible)} data-toc-open={tocOpen}>
       <MobileTableOfContents {...props} onOpenChange={handleTocOpen} />
-      {approached && (
+      {(approached || open) && (
         <IntroBoundary>
           <Suspense fallback={null}>
             <AboutIntroLayer open={open}>
