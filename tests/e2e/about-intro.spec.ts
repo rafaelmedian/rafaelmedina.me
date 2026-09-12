@@ -35,4 +35,12 @@ test("compact chat keeps the personal introduction video discoverable", async ({
   const recording = intro.locator("video[data-recording]")
   await expect(recording).toHaveAttribute("src", "/about-intro/recording.mp4")
   await expect.poll(() => recording.evaluate(video => !(video as HTMLVideoElement).paused)).toBe(true)
+
+  const portrait = intro.locator(".about-intro-portrait-trigger")
+  const close = intro.getByRole("button", { name: "Close introduction" })
+  await close.focus()
+  await close.press("Enter")
+  await expect(chat).toBeHidden()
+  await expect(portrait).toBeVisible()
+  await expect(portrait).toBeFocused()
 })

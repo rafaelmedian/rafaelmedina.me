@@ -570,6 +570,24 @@ test('sizes the initial desktop conversation to the available viewport', async (
   await expect.poll(() => history.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
 })
 
+test('keeps a dismissed chat closed across the compact breakpoint', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/?tune=off')
+  await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+
+  await page.getByRole('button', { name: /Open .*messages? from Rafa/ }).click()
+  await expect(page.getByRole('dialog', { name: 'Chat with Rafa' })).toBeVisible()
+
+  await page.setViewportSize({ width: 1440, height: 844 })
+  await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toBeVisible()
+  await page.mouse.click(10, 10)
+  await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toHaveCount(0)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByRole('dialog', { name: 'Chat with Rafa' })).toHaveCount(0)
+})
+
 test('collapses the desktop chat outside and keeps its message count on the portrait', async ({ page }) => {
   await page.clock.install()
   await page.setViewportSize({ width: 1440, height: 800 })

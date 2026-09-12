@@ -1,5 +1,5 @@
 import { X } from "./NavigationIcons"
-import { type CSSProperties, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import { type CSSProperties, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 // Direct imports keep the deferred development chunk free of the full icon catalog.
 import BubbleChatIcon from "@hugeicons/core-free-icons/BubbleChatIcon"
@@ -99,6 +99,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const triggerRef = useRef<HTMLButtonElement>(null)
   const playRef = useRef<HTMLButtonElement>(null)
   const introRef = useRef<HTMLElement>(null)
+  const collapseFocusRef = useRef<HTMLElement | null>(null)
   const requestRef = useRef(0)
   const [started, setStarted] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -175,6 +176,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
       const chat = introRef.current?.querySelector(".about-intro-chat")
       if (event.target.closest(".about-intro-chat-reaction-positioner") || chat?.contains(event.target)) return
       setChatCollapsed(true)
+      setChatOpen(false)
     }
     document.addEventListener("pointerdown", outsideChat)
     document.addEventListener("focusin", outsideChat)
@@ -203,6 +205,16 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   useEffect(() => {
     if (open && visible) playRef.current?.focus({ preventScroll: true })
   }, [open, visible])
+
+  useLayoutEffect(() => {
+    if (open || !collapseFocusRef.current) return
+    const focusTarget = collapseFocusRef.current
+    collapseFocusRef.current = null
+    // React has removed inert now; wait until the activating key/click has
+    // finished so the disappearing close button cannot reclaim focus.
+    const frame = requestAnimationFrame(() => focusTarget.focus({ preventScroll: true }))
+    return () => cancelAnimationFrame(frame)
+  }, [open])
 
   const syncCaptions = () => {
     setCaptionMode(videoRef.current, captions)
@@ -240,13 +252,13 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   }
 
   const collapse = () => {
-    const focusTarget = triggerRef.current?.closest<HTMLElement>("[role='dialog'], dialog[open]") ?? triggerRef.current
+    const focusTarget = mobileChat
+      ? portraitRef.current
+      : triggerRef.current?.closest<HTMLElement>("[role='dialog'], dialog[open]") ?? triggerRef.current
     requestRef.current += 1
     videoRef.current?.pause()
+    collapseFocusRef.current = focusTarget
     onOpenChange(false)
-    // The trigger stays mounted through the morph; focus after React removes
-    // inert from it, with no transition timer to race a rapid reopen.
-    requestAnimationFrame(() => focusTarget?.focus({ preventScroll: true }))
   }
   const closeReply = useCallback((restoreFocus = true) => {
     const target = reply === "email" ? emailReplyRef : textReplyRef
@@ -284,6 +296,10 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const playFromChat = () => {
     closeChat(false)
     play()
+    // Leaving the compact chat for playback is a completed dismissal, not a
+    // request to reopen the modal when the recording closes.
+    setChatCollapsed(true)
+    setChatOpen(false)
   }
   const messageLabel = `${messageCount} ${messageCount === 1 ? "message" : "messages"}`
 
