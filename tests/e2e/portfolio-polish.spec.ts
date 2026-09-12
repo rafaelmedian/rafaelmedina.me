@@ -275,6 +275,15 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
 
   const edge = page.locator(".elastic-scroll-edge")
   const pullingState = await edge.evaluate((element) => {
+    const holdReleaseFade = (event: TransitionEvent) => {
+      if (event.propertyName !== "opacity" || element.getAttribute("data-pulling") !== "false") return
+      element.removeEventListener("transitionrun", holdReleaseFade)
+      element
+        .getAnimations()
+        .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")
+        ?.pause()
+    }
+    element.addEventListener("transitionrun", holdReleaseFade)
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
     return {
       pulling: element.getAttribute("data-pulling"),
@@ -285,10 +294,8 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0.12s" })
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
-  // Hold the release fade as soon as it starts so the opacity below is sampled
-  // at a known point in it. Sleeping 700ms instead measured from whenever the
-  // assertions in between happened to finish, which on CI is late enough that
-  // the fade has already dropped past the threshold.
+  // The transitionrun listener above holds the release fade inside the page,
+  // before a busy CI runner can finish it between Playwright round trips.
   await edge.evaluate((element) => {
     const fade = element
       .getAnimations()
