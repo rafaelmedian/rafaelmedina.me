@@ -156,31 +156,22 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   cursor: pointer;
 }
 
-/* Every rotation this coin performs is a whole number of half turns, so it can
-   only ever come to rest on one of the two faces however it is interrupted. */
+/* Preserve the stationary portrait entrance on the shared circular frame. */
 .mosaic-avatar-coin-inner {
   position: absolute;
   inset: 0;
   border-radius: inherit;
   corner-shape: inherit;
   transform-style: preserve-3d;
-  /* Read by SimpleFeed for the click spin: the turn it adds, and the beat it
-     holds before handing over to the chat. */
-  --avatar-flip-duration: 1100ms;
-  --avatar-spin-duration: 1200ms;
-  --avatar-spin-lead: 240ms;
-  transition: transform var(--avatar-flip-duration) var(--ease-standard);
-  will-change: transform;
 }
 
-/* A whole slow turn rather than the half turn this used to be: the second face
-   passes under the pointer and the first one comes back. The house entrance
-   curve (--ease-smooth, an expo-out) spends three quarters of its travel in the
-   first fifth of the duration, which over a full rotation reads as a strobe
-   rather than a spin; --ease-standard builds and settles instead. */
-.mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
-.mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
-  transform: rotateY(360deg);
+/* The greeting keeps the portrait's footprint and sits above its still. */
+.mosaic-avatar-teaser {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* The frame each portrait is cropped to. It clips rather than the coin itself:
@@ -200,8 +191,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 
 /* The quote portraits' 12% hairline, so the pale edges of the photo keep a
    line against the canvas. It rides on the frame rather than the portrait:
-   the portrait zooms under the pointer, and a ring on it would grow with it
-   and be cut off by this crop. Laid over the image because an inset
+   both the still and greeting share the same edge. Laid over the image because an inset
    box-shadow on the frame would paint beneath it. */
 .mosaic-avatar-face::after {
   content: "";
@@ -217,19 +207,11 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   transform: rotateY(180deg) scaleX(-1);
 }
 
-/* Pointing at the avatar tightens the crop, not the avatar: the circle keeps
-   its 52px and the face inside it grows into the frame. */
+/* Both the still and the greeting fill the same 52px circle. */
 .mosaic-avatar-portrait {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(var(--avatar-crop-zoom, 1));
-  transition: transform var(--duration-slow) var(--ease-smooth);
-}
-
-.mosaic-avatar-coin:hover,
-.mosaic-avatar-coin:focus-visible {
-  --avatar-crop-zoom: 1.12;
 }
 
 .mosaic-avatar-button {
@@ -305,17 +287,6 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mosaic-avatar-coin:hover .mosaic-avatar-coin-inner,
-  .mosaic-avatar-coin:focus-visible .mosaic-avatar-coin-inner {
-    transform: none;
-  }
-
-  /* The crop holds still too; the click spin is skipped in JavaScript, which
-     is the only way to stop an animation this file never declares. */
-  .mosaic-avatar-portrait {
-    transform: none;
-  }
-
   .mosaic-avatar-button,
   .mosaic-avatar-button:active {
     transform: none;

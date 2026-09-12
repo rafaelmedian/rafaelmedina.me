@@ -331,7 +331,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
         // next button. Keep the hovered target alive until its click completes.
         if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
       }}
-      data-open={open} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || (variant !== "a" && !open)) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
+      data-open={open} data-started={started} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || (variant !== "a" && !open)) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
         if (videoAvailable && event.key.toLowerCase() === "c" && open && !event.metaKey && !event.ctrlKey && !event.altKey &&
           !(event.target instanceof HTMLElement && event.target.matches("input, textarea, [contenteditable]"))) {

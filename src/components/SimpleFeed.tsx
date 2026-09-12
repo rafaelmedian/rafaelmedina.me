@@ -27,7 +27,7 @@ import { portfolioQuotes, teamQuotes, type PortfolioQuote } from "../data/quotes
 import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type QuoteSource, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
-import { cssTimeToMilliseconds } from "../lib/cssTime"
+import { aboutIntro } from "../data/aboutIntro"
 import { useHoverCard } from "../lib/hoverCard"
 import { visibleOriginRect } from "../lib/originMotion"
 import { revealGalleryEntry } from "../lib/galleryEntry"
@@ -41,7 +41,6 @@ import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl, usePortfolioItemUrl
 import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
 import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
-import { ProfileChat } from "./ProfileChat"
 
 type PreviewGalleryComponent = typeof import("./PreviewGalleryDialog").PreviewGalleryDialog
 
@@ -601,9 +600,19 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
   const { gridRef, runwayRef } = useWorkGridHeight()
   const { avatarRef, active: introActive } = useAvatarIntro()
-  const avatarSpinTimerRef = useRef<number | undefined>(undefined)
-  const [isProfileChatOpen, setIsProfileChatOpen] = useState(false)
-  useEffect(() => () => window.clearTimeout(avatarSpinTimerRef.current), [])
+  const [isIntroOpen, setIsIntroOpen] = useState(false)
+  const [avatarHovered, setAvatarHovered] = useState(false)
+  const [avatarFocused, setAvatarFocused] = useState(false)
+  const lightweightMedia = useLightweightMedia()
+  const showAvatarTeaser = (avatarHovered || avatarFocused) && !isIntroOpen && !prefersReducedMotion && !lightweightMedia
+  const introFromAvatar = useRef(false)
+  const handleIntroOpenChange = (open: boolean) => {
+    setIsIntroOpen(open)
+    if (!open && introFromAvatar.current) {
+      introFromAvatar.current = false
+      window.requestAnimationFrame(() => avatarRef.current?.focus({ preventScroll: true }))
+    }
+  }
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { itemId: galleryItemId, selectItem: selectGalleryItem, clearItem: clearGalleryItem } = useGalleryUrl()
@@ -892,35 +901,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     aboutPanel.focus({ preventScroll: true })
   }
 
-  // Clicking the avatar carries the turn the pointer already started round once
-  // more and then opens the chat, so the new surface reads as something the
-  // coin revealed rather than something that happened next to it.
-  //
-  // The spin is a script animation composed onto whatever the hover transition
-  // is doing at that instant: transitions outrank CSS animations, so a keyframe
-  // rule here would sit and wait out a flip already in flight, and a replacing
-  // animation would snap the coin back to zero before starting. Adding a whole
-  // turn also means the animation ends on the angle its underlying value is
-  // already at, so there is nothing to see when it hands the transform back.
-  const spinAvatarToChat = () => {
-    const coin = avatarRef.current?.querySelector<HTMLElement>(".mosaic-avatar-coin-inner")
-    if (!coin || prefersReducedMotion) {
-      setIsProfileChatOpen(true)
-      return
-    }
-    const style = getComputedStyle(coin)
-    coin.animate([{ transform: "rotateY(0deg)" }, { transform: "rotateY(360deg)" }], {
-      duration: cssTimeToMilliseconds(style.getPropertyValue("--avatar-spin-duration")),
-      easing: style.getPropertyValue("--ease-standard").trim(),
-      composite: "add",
-    })
-    window.clearTimeout(avatarSpinTimerRef.current)
-    avatarSpinTimerRef.current = window.setTimeout(
-      () => setIsProfileChatOpen(true),
-      cssTimeToMilliseconds(style.getPropertyValue("--avatar-spin-lead")),
-    )
-  }
-
   const closeAbout = () => {
     const url = new URL(window.location.href)
     url.hash = ""
@@ -950,19 +930,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       />
       <SocialCorner email={links.email} />
       <AboutIntroDock
+        open={isIntroOpen}
+        onOpenChange={handleIntroOpenChange}
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
         onServices={() => scrollToSection("toc_services", "about-panel-services")}
-      />
-      <ProfileChat
-        open={isProfileChatOpen}
-        name={profile.name}
-        photo={profile.photo}
-        links={links}
-        onClose={() => {
-          setIsProfileChatOpen(false)
-          window.requestAnimationFrame(() => avatarRef.current?.focus())
-        }}
       />
       <button
         type="button"
@@ -983,13 +955,23 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               ref={avatarRef}
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
-              aria-label={`Ask about ${profile.name}`}
-              aria-haspopup="dialog"
-              onClick={spinAvatarToChat}
+              aria-label={`Watch ${profile.name}'s introduction`}
+              aria-expanded={isIntroOpen}
+              onPointerEnter={() => setAvatarHovered(true)}
+              onPointerLeave={() => setAvatarHovered(false)}
+              onFocus={() => setAvatarFocused(true)}
+              onBlur={() => setAvatarFocused(false)}
+              onClick={() => {
+                introFromAvatar.current = true
+                setIsIntroOpen(true)
+              }}
             >
               <div className="mosaic-avatar-coin-inner">
                 <span className="mosaic-avatar-face mosaic-avatar-face-front">
                   <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-portrait" loading="eager" fetchPriority="high" decoding="async" />
+                  {showAvatarTeaser && <video className="mosaic-avatar-teaser" src={aboutIntro.assets.teaser}
+                    poster={aboutIntro.assets.poster} autoPlay muted loop playsInline aria-hidden="true"
+                    onError={event => { event.currentTarget.style.display = "none" }} />}
                 </span>
                 <span className="mosaic-avatar-face mosaic-avatar-face-back">
                   <img src={profile.photo} width="208" height="208" alt="" aria-hidden="true" className="mosaic-avatar-portrait" loading="eager" decoding="async" />
@@ -1010,7 +992,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   <path d="M33 5C23 4 11 7 4 15" />
                   <path d="M4 15 10.8 13.4M4 15 6.5 8.5" />
                 </svg>
-                <span className="mosaic-avatar-hint-label">ask about me</span>
+                <span className="mosaic-avatar-hint-label">play my intro</span>
               </span>
             </button>
             <div className="mosaic-profile-meta">

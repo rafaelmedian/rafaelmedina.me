@@ -349,7 +349,7 @@ const ELEVATION = [
   {
     name: "Hairline",
     shadow: "inset 0 0 0 1px rgb(0 0 0 / 0.05)",
-    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits and the header avatar at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content; the header avatar's portrait zooms inside its crop, so its ring is an inset shadow on a layer over the photo instead.",
+    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits and the header avatar at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content; the header avatar uses an inset shadow above its portrait and greeting teaser.",
   },
   {
     name: "Resting control — --shadow-control",
@@ -381,13 +381,13 @@ const EASINGS_ENTRIES = [
     name: "Standard — --ease-standard",
     css: "--ease-standard",
     duration: "160–1200ms",
-    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place. Also the avatar coin, whose spin outgrew --ease-smooth: an expo-out puts three quarters of its travel in the first fifth of the duration, which over a whole rotation reads as a strobe rather than a spin.",
+    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
   },
   {
     name: "Smooth — --ease-smooth",
     css: "--ease-smooth",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the avatar's crop tightening under the pointer, the live-time roll, the personal-photo fan opening under a moving pointer, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the live-time roll, the personal-photo fan opening under a moving pointer, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
@@ -2046,37 +2046,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="avatar-coin"
-                data-ds-terms={terms("avatar coin flip spin rotateY 360deg hover click chat dialog email gate conversation composer 1100ms 1200ms 240ms crop zoom 1.12 object-fit cover composite add web animations preserve-3d backface hint arrow reduced motion")}
+                data-ds-terms={terms("avatar greeting teaser video hover focus play introduction reduced motion lightweight")}
               >
-                <strong>The avatar spins, and the spin opens a conversation.</strong>
+                <strong>The avatar greets you and opens the introduction.</strong>
                 <p>
-                  Pointing at the 52px portrait, or reaching it with the keyboard, turns it{" "}
-                  <code>360deg</code> &mdash; one whole turn, with the mirrored second face passing underneath and the
-                  first one coming back. The crop tightens at the same time: the circle keeps its size and the face
-                  inside it scales to <code>1.12</code> over <code>--duration-slow</code>, so the frame closes in rather
-                  than the avatar growing into the line of text beside it. Clicking adds another whole turn and,{" "}
-                  <code>240ms</code> later, opens a full-screen chat. The first visit asks for an email; the address is
-                  kept on the device and sent with each question to identify the rate-limited conversation, never to
-                  subscribe the visitor. Returning visitors go directly to the stored history. The conversation is a
-                  restrained version of the page: assistant answers sit directly on the canvas, questions use the dark
-                  primary surface, and a <code>--radius-md</code> squircle composer stays at the foot. Its inset send
-                  control and the email gate&rsquo;s button subtract the shared 6px padding from that radius to keep their
-                  corners concentric; navigation uses <code>--radius-md</code> and suggested questions use the squarer
-                  <code>--radius-sm</code>. The 52px portrait remains a true circle with <code>corner-shape: round</code>,
-                  distinct from those chat surfaces. The grey Handlee hint reads &ldquo;ask about me&rdquo; throughout; the
-                  accessible name is &ldquo;Ask about Rafael Medina.&rdquo;
-                </p>
-                <p>
-                  The click spin is a script animation with <code>composite: &quot;add&quot;</code>, not a keyframe
-                  rule. CSS transitions outrank CSS animations, so a keyframe spin would sit and wait out a hover flip
-                  already in flight, and a replacing one would snap the coin back to zero before starting; an additive
-                  script animation composes onto whatever the transition is doing on that frame. Every rotation is a
-                  whole number of half turns, which is what lets the animation end on the angle its underlying value
-                  already holds &mdash; nothing to see when the transform is handed back &mdash; and lets an
-                  interrupted coin only ever rest on a face. The crop is clipped by a frame around each portrait rather
-                  than by the coin, because the coin carries <code>preserve-3d</code> and any overflow but{" "}
-                  <code>visible</code> would flatten it and take the flip with it. Reduced motion holds the coin, the
-                  crop and the spin, and opens the chat at once.
+                  Hovering or focusing the 52px circular portrait mounts the silent, looping greeting teaser.
+                  It uses the existing MP4 in place of a heavier GIF and keeps the same crop and footprint.
+                  Leaving removes the teaser. Reduced motion and lightweight connections keep the still portrait.
+                  The Handlee hint reads &ldquo;play my intro&rdquo;, and the accessible name is
+                  &ldquo;Watch Rafael Medina&apos;s introduction&rdquo;.
+                  Clicking opens the shared introduction player with its controls visible before playback, where Play starts the full recording with
+                  sound and captions. Closing returns focus to the avatar. The portrait no longer spins or zooms.
                 </p>
               </div>
 
