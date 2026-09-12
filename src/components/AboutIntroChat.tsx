@@ -66,7 +66,24 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
   text: string
 }) {
   const selected = visitorReactions.find(item => item.id === reactionId)
-  return <Menu.Root orientation="horizontal" modal={false}>
+  const menuActions = useRef<Menu.Root.Actions | null>(null)
+  const [selecting, setSelecting] = useState<VisitorReactionId | null>(null)
+  const reducedMotion = usePrefersReducedMotion()
+  useEffect(() => {
+    if (!selecting) return
+    // Let the selected glyph lift before folding the pill. Closing by Escape,
+    // outside press, or unmount cancels this beat, including on a quick reopen.
+    const timer = window.setTimeout(() => menuActions.current?.close(), reducedMotion ? 0 : 160)
+    return () => window.clearTimeout(timer)
+  }, [reducedMotion, selecting])
+  const chooseReaction = (choiceId: VisitorReactionId) => {
+    if (selecting) return
+    onReaction(messageIndex, choiceId)
+    if (reducedMotion) menuActions.current?.close()
+    else setSelecting(choiceId)
+  }
+  return <Menu.Root orientation="horizontal" modal={false} actionsRef={menuActions}
+    onOpenChange={() => setSelecting(null)}>
     <span className="about-intro-chat-received about-intro-chat-new"
       data-followup={followup || undefined} data-reacted={Boolean(selected) || undefined}>
       <Menu.Trigger className="about-intro-chat-bubble" aria-label={`React to “${text}”`}>{text}</Menu.Trigger>
@@ -86,9 +103,10 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
         side="top" align="end" sideOffset={4} collisionPadding={12}>
         <Menu.Popup className="about-intro-chat-reaction-picker" aria-label={`React to “${text}”`}>
           {visitorReactions.map((choice, choiceIndex) => <Menu.CheckboxItem key={choice.id} label={choice.label}
-              checked={reactionId === choice.id} onCheckedChange={() => onReaction(messageIndex, choice.id)}
-              closeOnClick className="about-intro-chat-reaction-choice" aria-label={choice.label}
-              style={{ "--intro-reaction-order": visitorReactions.length - choiceIndex - 1 } as CSSProperties}>
+              checked={reactionId === choice.id} onCheckedChange={() => chooseReaction(choice.id)}
+              closeOnClick={false} className="about-intro-chat-reaction-choice" aria-label={choice.label}
+              data-selecting={selecting === choice.id || undefined}
+              style={{ "--intro-reaction-order": Math.abs(5 - choiceIndex) } as CSSProperties}>
               <span aria-hidden="true"><ReactionGlyph reaction={choice} /></span>
             </Menu.CheckboxItem>)}
         </Menu.Popup>

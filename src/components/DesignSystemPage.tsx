@@ -2352,25 +2352,26 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   The fixed-positioned picker begins with Apple&rsquo;s six classic choices — heart, thumbs up, thumbs down,
                   laughter, exclamation points and a question mark — then adds fire, applause, celebration and thinking.
                   Native emoji use Apple Color Emoji where available. The 17px glyphs keep accessible 40px targets
-                  inside a 2px-padded white pill with the shared ring and overlay shadow. Below 900px the pill caps at
-                  252px and scrolls horizontally without drawing a scrollbar, so the additional choices continue to
-                  the right without widening the chat. From 900px it opens to 404px, fitting every choice for a
-                  conventional mouse. The heart is pink;
+                  inside a 2px-padded white pill with the shared ring and overlay shadow. The pill caps at
+                  264px on every viewport, showing six full targets and half of the next to invite horizontal
+                  scrolling without drawing a scrollbar. Touch, trackpad and horizontal wheel scrolling reveal
+                  the additional choices without widening the chat. The heart is pink;
                   stacked HA HA, !! and ? use sculpted text treatments with blue (#8eeaff to #009bdf),
                   coral (#ffb59e to #f34b40) and purple (#dbbaff to #8a4ddd) gradients. These are local
                   approximations of the supplied Messages references, not shared interface colours.
                   It stays 12px inside the viewport and retains horizontal arrow-key navigation. The picker
                   springs from its bottom-right corner at 0.92 horizontal / 0.88 vertical scale and a 10px by 4px
                   offset over 360ms. Choices arrive from the right with a 10px slide, 0.72 scale and 2px blur,
-                  following 16ms apart from right to left on the snappy spring. Hover or keyboard highlight lifts a
+                  following 16ms apart outward from the sixth, message-side choice on the snappy spring. Hover or keyboard highlight lifts a
                   choice 2px at 1.08 scale over a soft gray surface and the shared control shadow. Choosing one swells
-                  its glyph to 1.14 over a 32px
-                  selection disc and fades the picker toward the bubble by 8px at 0.92 scale over 280ms.
+                  its glyph to 1.14 with a 2px lift over a 32px selection disc. The picker holds this selection beat
+                  for 160ms, then fades toward the bubble by 8px at 0.96 scale over the shared quick duration.
                   The chosen 14px glyph grows into a 27px blue disc with a fine 1px canvas ring and a two-dot trail,
                   mirrored onto the gray bubble’s top-right corner. Its 580ms snappy entrance follows the disc
                   by 80ms. The wrapper gains 12px above it so the
                   Tapback does not cover the prior message. A later choice replaces the earlier one; choosing the
-                  current Tapback again removes it. Reduced motion shows both surfaces at rest. The hint gives a
+                  current Tapback again removes it. Reduced motion shows both surfaces at rest and closes the
+                  picker immediately, without the selection beat. The hint gives a
                   polite applied or removed confirmation, and only applied reactions record the message index and
                   reaction name through the existing anonymous analytics path.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
