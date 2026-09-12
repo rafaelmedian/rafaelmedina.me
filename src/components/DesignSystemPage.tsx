@@ -354,17 +354,17 @@ const ELEVATION = [
   {
     name: "Resting control — --shadow-control",
     shadow: "var(--shadow-control)",
-    use: "Light contact pills and the notes reader's like pill share --shadow-control, --shadow-control-hover, and --shadow-control-pressed. The same pill floating on a project preview's artwork takes the overlay tier instead. The dark email pill keeps its surface-specific shadow; the table of contents uses the overlay tier.",
+    use: "Light contact pills, the notes reader's like pill, and the compact gallery controls share --shadow-control, --shadow-control-hover, and --shadow-control-pressed. The same pill floating on a project preview's artwork takes the overlay tier instead. The dark email pill keeps its surface-specific shadow; the table of contents uses the overlay tier.",
   },
   {
     name: "Overlay — --shadow-overlay",
     shadow: "var(--shadow-overlay)",
-    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, the gallery arrows, the mobile table of contents, and the top edge of the About takeover. Surfaces without a border prepend --shadow-ring, the shared 6% hairline; the arrows draw theirs as a border instead. Chrome that reacts to the pointer deepens to --shadow-overlay-hover in place.",
+    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, the desktop gallery arrows, the mobile table of contents, and the top edge of the About takeover. Surfaces without a border prepend --shadow-ring, the shared 6% hairline; the desktop arrows draw theirs as a border instead. Chrome that reacts to the pointer deepens to --shadow-overlay-hover in place.",
   },
   {
     name: "Dialog",
     shadow: "0 1px 1px rgb(0 0 0 / 0.04), 0 18px 44px -18px rgb(0 0 0 / 0.28), 0 48px 92px -42px rgb(0 0 0 / 0.38)",
-    use: "The preview gallery card. Three layers, negative spread. Its arrows are not on this tier — they float over the page, so they wear the overlay recipe. Personal photos use the existing 46% dark scrim without blur; their prints wear --shadow-ring with --shadow-control-hover under a thin white border.",
+    use: "The preview gallery card. Three layers, negative spread. Its desktop arrows are not on this tier — they float over the page, so they wear the overlay recipe; compact arrows sit on a white header and use the control tier. Personal photos use the existing 46% dark scrim without blur; their prints wear --shadow-ring with --shadow-control-hover under a thin white border.",
   },
 ]
 
@@ -1183,8 +1183,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
-                  header at z-index 1. A compact position pill sits between the paging group and close,
-                  keeping both controls fixed. The current position swaps with the TOC's 4px slide and
+                  header at z-index 1. A compact position pill sits immediately before close, away from the
+                  paging group, keeping both control groups fixed. Those controls use <code>--shadow-ring</code> with
+                  the short control shadows instead of the desktop rail&rsquo;s broad overlay cast; the X sits 1px low in
+                  its box to balance that shadow&rsquo;s downward weight. The current position swaps with the TOC's 4px slide and
                   <code>--blur-reveal</code>: 120ms out on the exit curve, 160ms in on the standard curve.
                   Next sends it up, Previous down, including when the sequence wraps. The total stays still,
                   and the counter reserves enough digits for the full sequence. Reduced motion swaps instantly.
