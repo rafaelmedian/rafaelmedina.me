@@ -1462,9 +1462,17 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
   // reason. Clamp into the card, nearest the work history, which is the corner
   // a stacking regression would surface at.
   const clamp = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high)
+  const viewportHeight = page.viewportSize()!.height
   const overlapPoint = {
     x: clamp(workHistoryBox!.x + 8, cardBox!.x + 8, cardBox!.x + cardBox!.width - 8),
-    y: clamp(workHistoryBox!.y + 8, cardBox!.y + 8, cardBox!.y + cardBox!.height - 8),
+    // Locator hover scrolls the trigger into view, but the card may extend
+    // below a short viewport. elementFromPoint only accepts viewport
+    // coordinates, so keep the nearest card point inside the visible slice.
+    y: clamp(
+      workHistoryBox!.y + 8,
+      Math.max(cardBox!.y + 8, 8),
+      Math.min(cardBox!.y + cardBox!.height - 8, viewportHeight - 8),
+    ),
   }
   expect(
     await page.evaluate(

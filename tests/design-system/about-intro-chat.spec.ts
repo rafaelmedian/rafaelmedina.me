@@ -260,6 +260,10 @@ test('opens the Tapback picker from the right with staggered, tactile choices', 
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  // Opening a Tapback while the scripted greeting is still adding messages
+  // moves the portaled picker with its anchor. Wait for the final composer so
+  // the hover assertion measures a stable user-visible hit box.
+  await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
   const greeting = chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' })
   await greeting.click()
 
