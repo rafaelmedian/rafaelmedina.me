@@ -36,9 +36,9 @@ the inbox still process and retain mail according to their own settings.
    The site's next main-branch build reads that public URL. Deploy Worker changes
    explicitly with `contact:deploy`; the existing Pages workflow only builds the site.
 
-The widget remains a development preview until its real video is enabled. No
-live delivery has been tested or configured by this change. A missing sender/key
-returns a visible 503 error, never a simulated success.
+The production About chat requires this endpoint: the Pages workflow refuses to
+build when `VITE_CONTACT_API_URL` is missing. A missing sender/key returns a
+visible 503 error, never a simulated success.
 
 ## Local development
 

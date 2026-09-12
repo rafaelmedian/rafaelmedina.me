@@ -288,6 +288,8 @@ The Worker uses a fixed recipient, validates the request, rate-limits anonymous
 submissions, and keeps the provider key on the server. It has no message database
 and does not log request bodies. The mail provider and inbox still process and
 retain email under their own settings; this is not a zero-storage email system.
+The Pages deployment refuses to build the production chat unless its public
+Worker endpoint is configured in the `VITE_CONTACT_API_URL` repository variable.
 See [contact delivery setup](../workers/contact/README.md) for configuration.
 
 The portrait now stays at the dock baseline beside the final reply item,
