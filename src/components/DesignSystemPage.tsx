@@ -1721,9 +1721,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
                 low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
                 carries the press.
-                {" "}The development homepage, <code>/__design_lab</code>, and <code>/?tune=contact</code> offer
-                separate Resting B and Hovered C folders in DialKit. Each controls dark and light width and brightness,
-                highlight height, and dark blur, with shared speed and a held-hover preview. These overrides are dev-only.
               </p>
             </div>
 
