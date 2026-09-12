@@ -277,6 +277,7 @@ test('opens the Tapback picker from the right with staggered, tactile choices', 
   // Test the resting hit box: while the picker and first choice are both
   // translating in, a starved frame can move them out from under the pointer.
   await picker.evaluate(node => Promise.all(node.getAnimations({ subtree: true }).map(animation => animation.finished)))
+  expect(await picker.evaluate(node => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1)
   await choices.first().hover()
   await expect(choices.first()).toHaveCSS('translate', '0px -2px')
   await expect(choices.first()).toHaveCSS('scale', '1.08')

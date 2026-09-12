@@ -2354,9 +2354,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   The fixed-positioned picker begins with Apple&rsquo;s six classic choices — heart, thumbs up, thumbs down,
                   laughter, exclamation points and a question mark — then adds fire, applause, celebration and thinking.
                   Native emoji use Apple Color Emoji where available. The 17px glyphs keep accessible 40px targets
-                  inside a 2px-padded white pill with the shared ring and overlay shadow. The pill caps at 252px and
-                  scrolls horizontally without drawing a scrollbar, so the additional choices continue to the right
-                  without widening the chat. The heart is pink;
+                  inside a 2px-padded white pill with the shared ring and overlay shadow. Below 900px the pill caps at
+                  252px and scrolls horizontally without drawing a scrollbar, so the additional choices continue to
+                  the right without widening the chat. From 900px it opens to 404px, fitting every choice for a
+                  conventional mouse. The heart is pink;
                   stacked HA HA, !! and ? use sculpted text treatments with blue (#8eeaff to #009bdf),
                   coral (#ffb59e to #f34b40) and purple (#dbbaff to #8a4ddd) gradients. These are local
                   approximations of the supplied Messages references, not shared interface colours.

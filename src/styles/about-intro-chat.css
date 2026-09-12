@@ -267,6 +267,12 @@
   display: none;
 }
 
+@media (min-width: 900px) {
+  .about-intro-chat-reaction-picker {
+    max-width: min(404px, calc(100vw - 24px));
+  }
+}
+
 .about-intro-chat-reaction-picker[data-ending-style] {
   animation: intro-picker-fold 280ms var(--ease-exit) forwards;
 }
