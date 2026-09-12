@@ -255,13 +255,14 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   }
 
   const collapse = () => {
-    const restoreChat = restoreChatAfterVideoRef.current
+    const parentDialog = triggerRef.current?.closest<HTMLElement>("[role='dialog'], dialog[open]")
+    const restoreChat = restoreChatAfterVideoRef.current && !parentDialog && repliesAvailable
     restoreChatAfterVideoRef.current = false
-    const focusTarget = restoreChat
+    const focusTarget = parentDialog ?? (restoreChat
       ? introRef.current?.querySelector<HTMLElement>(".about-intro-chat") ?? null
       : mobileChat
         ? portraitRef.current
-        : triggerRef.current?.closest<HTMLElement>("[role='dialog'], dialog[open]") ?? triggerRef.current
+        : triggerRef.current)
     requestRef.current += 1
     videoRef.current?.pause()
     collapseFocusRef.current = focusTarget
