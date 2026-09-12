@@ -8,6 +8,8 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
 
   const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
   const notification = intro.locator('.about-intro-chat-notification')
+  await expect(intro).toBeVisible()
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
   await page.clock.runFor(900)
   await expect(notification).toHaveText('1')
   await expect(notification).toHaveCSS('animation-name', 'intro-notification-enter')
