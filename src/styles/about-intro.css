@@ -248,7 +248,8 @@
   transform: none;
 }
 
-.about-intro[data-actions-open="true"] .about-intro-trigger {
+.about-intro[data-actions-open="true"] .about-intro-trigger,
+.about-intro:focus-within .about-intro-trigger {
   pointer-events: auto;
 }
 

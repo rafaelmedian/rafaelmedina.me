@@ -11,6 +11,8 @@ import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 const greeting = ["Hey, I’m Rafa.", "How are you doing?", "Wanna share your email with me so I can reach out to you?"]
 // An empty first send still delivers the address; the bubble shows what arrives.
 const keepInTouch = "Hi Rafa, I’d like to keep in touch."
+const continueAfter = 3
+const messageLimit = 5
 const typingDuration = 900
 // Rafa hearts the sent address the way a received tapback arrives: it pops onto
 // the bubble's corner, then he starts typing. Each delay is a stage: the tapback
@@ -44,8 +46,8 @@ const tapbackShape = <>
   <circle className="about-intro-chat-tapback-trail" data-far="true" cx="8" cy="44" r="3.5" />
 </>
 
-// Editing the sent address unsends it with a Messages-style puff: the bubble
-// blurs away while its colour scatters as dots, then the email field returns.
+// Changing the address uses a Messages-style puff: the local bubble blurs away
+// while its colour scatters as dots, then the email field returns.
 const puffDuration = 480
 // A fixed scatter across the bubble (percent positions, from the R2 sequence so it
 // is even without falling into rows), drifting up and out like smoke. The right
@@ -72,7 +74,7 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
         aria-label={`You ${selected.announcement} “${text}”`}>
         <svg viewBox="0 0 52 50" width="52" height="50" aria-hidden="true">
           <g transform="translate(52 0) scale(-1 1)">
-            <g fill="var(--canvas)" stroke="var(--canvas)" strokeWidth="4">{tapbackShape}</g>
+            <g fill="var(--canvas)" stroke="var(--canvas)" strokeWidth="2">{tapbackShape}</g>
             <g fill="currentColor">{tapbackShape}</g>
           </g>
         </svg>
@@ -116,14 +118,18 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   const historyRef = useRef<HTMLDivElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
+  const composerRef = useRef<HTMLDivElement>(null)
   const [email, setEmail] = useState("")
   const [valid, setValid] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [message, setMessage] = useState("")
   // Each send is its own email and its own bubble; a retry reuses its request ID.
   const [outbox, setOutbox] = useState<(ContactMessage & { status: "sending" | "delivered" | "failed"; error?: string })[]>([])
-  // Once anything has gone out under this address, it can no longer be unsent.
   const locked = outbox.length > 0
+  const sending = outbox.some(item => item.status === "sending")
+  const [continued, setContinued] = useState(false)
+  const atCheckpoint = outbox.length === continueAfter && !continued
+  const atLimit = outbox.length >= messageLimit
   const [revealed, setRevealed] = useState(0)
   const [reaction, setReaction] = useState(0)
   const [visitorReaction, setVisitorReaction] = useState<Partial<Record<number, VisitorReactionId>>>({})
@@ -131,6 +137,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   const sentRef = useRef<HTMLDivElement>(null)
   // The unsent bubble's box within the history, where its dots scatter from.
   const [puff, setPuff] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
+  const resetAfterPuff = useRef(false)
   const puffing = puff !== null
   const reducedMotion = usePrefersReducedMotion()
   const skipTyping = reducedMotion || (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -190,7 +197,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   }, [confirmed, message])
 
   useEffect(() => {
-    // An unsend in progress holds the conversation where it is.
+    // An address reset in progress holds the conversation where it is.
     if (!active || puffing || revealed >= target) return
     const timer = window.setTimeout(() => setRevealed(count => skipTyping ? target : count + 1), skipTyping ? 0 : typingDuration)
     return () => window.clearTimeout(timer)
@@ -229,14 +236,35 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
     }
   }, [visible, confirmed, reactionShown, shown, outbox])
 
+  useEffect(() => {
+    if (reducedMotion || (outbox.length !== continueAfter && outbox.length !== messageLimit)) return
+    const composer = composerRef.current
+    if (!composer) return
+    const finish = () => composer.classList.remove("is-shaking")
+    composer.classList.remove("is-shaking")
+    void composer.offsetWidth
+    composer.classList.add("is-shaking")
+    composer.addEventListener("animationend", finish, { once: true })
+    return () => {
+      composer.removeEventListener("animationend", finish)
+      composer.classList.remove("is-shaking")
+    }
+  }, [outbox.length, reducedMotion])
+
+  useEffect(() => {
+    if (continued && outbox.length === continueAfter) messageRef.current?.focus({ preventScroll: true })
+  }, [continued, outbox.length])
+
   const confirmEmail = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!valid) return
     focusAfterTyping.current = true
     setConfirmed(true)
   }
-  const editEmail = () => {
+  const resetEmail = (restart = false) => {
+    if (puffing || sending) return
     const sent = sentRef.current
+    resetAfterPuff.current = restart
     setPuff({ top: sent?.offsetTop ?? 0, left: sent?.offsetLeft ?? 0, width: sent?.offsetWidth ?? 0, height: sent?.offsetHeight ?? 0 })
   }
 
@@ -252,13 +280,23 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   useEffect(() => {
     if (!puffing) return
     const timer = window.setTimeout(() => {
+      const restarting = resetAfterPuff.current
+      resetAfterPuff.current = false
       // Move off the disappearing address before the dialog's focus manager
       // sees its removal, then hand focus to the email field after it mounts.
       if (sentRef.current?.contains(document.activeElement)) chatRef.current?.focus({ preventScroll: true })
       setPuff(null)
       setConfirmed(false)
       setReaction(0)
-      requestAnimationFrame(() => emailRef.current?.focus({ preventScroll: true }))
+      if (restarting) {
+        setMessage("")
+        setOutbox([])
+        setContinued(false)
+      }
+      requestAnimationFrame(() => {
+        emailRef.current?.focus({ preventScroll: true })
+        if (restarting) emailRef.current?.select()
+      })
     }, skipTyping ? 0 : puffDuration)
     return () => window.clearTimeout(timer)
   }, [puffing, skipTyping])
@@ -278,7 +316,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   const submitMessage = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const text = message.trim()
-    if (!valid || (!text && outbox.length)) return
+    if (!valid || atCheckpoint || atLimit || (!text && outbox.length)) return
     const payload = { email: email.trim(), message: text || keepInTouch, requestId: crypto.randomUUID() }
     // The message moves into the conversation and the field clears for the next one.
     setOutbox(list => [...list, { ...payload, status: "sending" }])
@@ -286,7 +324,19 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
     messageRef.current?.focus({ preventScroll: true })
     void deliver(payload)
   }
+  const continueWriting = () => {
+    setContinued(true)
+  }
   const lastSent = outbox.at(-1)
+  const hasDelivered = outbox.some(item => item.status === "delivered")
+  const messagesLeft = messageLimit - outbox.length
+  const deliveryText = atLimit
+    ? "That’s enough"
+    : atCheckpoint
+      ? "Keep going? 2 left"
+      : continued && messagesLeft <= 2
+        ? `${messagesLeft} left`
+        : locked && hasDelivered ? "Sent messages stay delivered" : locked ? "Straight to my inbox" : "Optional · Straight to my inbox"
 
   return <Dialog.Root open={visible} modal={modal} disablePointerDismissal={!modal}
     onOpenChange={next => { if (!next && modal) onClose?.() }}>
@@ -306,11 +356,12 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
           reactionId={visitorReaction[messageIndex]} onReaction={reactToMessage} />)}
       {confirmed && <>
         <div ref={sentRef} className="about-intro-chat-sent about-intro-chat-new" data-reacted={reactionShown} data-puff={puffing}>
-          <button type="button" className="about-intro-chat-outgoing" onClick={puffing ? undefined : editEmail}
-            aria-label={`Edit email address: ${email}`} title="Edit your email" disabled={locked}>{email}</button>
+          <button type="button" className="about-intro-chat-outgoing" onClick={() => resetEmail(locked)}
+            aria-label={`${locked ? "Start over with" : "Change"} email address: ${email}`}
+            title={locked ? "Start over" : "Change email"} disabled={puffing || sending}>{email}</button>
           {reactionShown && <svg className="about-intro-chat-reaction" viewBox="0 0 52 50" width="52" height="50" role="img" aria-label="Loved by Rafa">
             <circle className="about-intro-chat-tapback-ripple" cx="32" cy="20" r="18" />
-            <g fill="var(--canvas)" stroke="var(--canvas)" strokeWidth="4">{tapbackShape}</g>
+            <g fill="var(--canvas)" stroke="var(--canvas)" strokeWidth="2">{tapbackShape}</g>
             <g fill="currentColor">{tapbackShape}</g>
             <g className="about-intro-chat-tapback-heart">
               <g transform="translate(21.8 9.6) scale(0.85)"><path className="about-intro-chat-heart" d={heartPath} /></g>
@@ -356,16 +407,28 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
         <ArrowUp size={24} aria-hidden="true" />
       </button>
     </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={submitMessage}>
-      <div className="about-intro-chat-composer">
+      <div ref={composerRef} className="about-intro-chat-composer">
         <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${fieldId}-delivery`} maxLength={2000}
-          rows={2} {...ignorePasswordManagers} placeholder={locked ? "Anything else?" : "Anything on your mind?"} value={message} onChange={event => setMessage(event.target.value)} />
-        <button type="submit" className="about-intro-send" aria-label="Send message" disabled={locked && !message.trim()} data-muted={!message.trim()}>
+          rows={2} {...ignorePasswordManagers} disabled={atCheckpoint || atLimit}
+          placeholder={atLimit ? "Five-message limit reached" : atCheckpoint ? "Continue below to send two more" : locked ? "Anything else?" : "Anything on your mind?"}
+          value={message} onChange={event => setMessage(event.target.value)} />
+        <button type="submit" className="about-intro-send" aria-label="Send message"
+          disabled={atCheckpoint || atLimit || (locked && !message.trim())} data-muted={!message.trim()}>
           <ArrowUp size={24} aria-hidden="true" />
         </button>
       </div>
-      <p id={`${fieldId}-delivery`} className="about-intro-chat-hint">
-        {locked ? "Each message goes straight to my inbox." : "Optional. Send straight to my inbox."}
-      </p>
+      <div className="about-intro-chat-footer">
+        <p id={`${fieldId}-delivery`} className="about-intro-chat-hint" aria-live="polite">{deliveryText}</p>
+        {atCheckpoint && <>
+          <span className="about-intro-chat-footer-separator" aria-hidden="true"> · </span>
+          <button type="button" className="about-intro-chat-footer-action" onClick={continueWriting}
+            disabled={sending || puffing}>Continue</button>
+        </>}
+        <span className="about-intro-chat-footer-separator" aria-hidden="true"> · </span>
+        <button type="button" className="about-intro-chat-footer-action" onClick={() => resetEmail(true)}
+          aria-label="Start over; sent messages stay delivered"
+          disabled={puffing || sending}>Start over</button>
+      </div>
     </form>}
       </Dialog.Popup>
     </Dialog.Portal>

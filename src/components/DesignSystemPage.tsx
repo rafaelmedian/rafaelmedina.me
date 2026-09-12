@@ -2279,10 +2279,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
                 <li data-ds-terms={terms("about introduction profile photo message prompt video teaser circle 112px 64px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion pip transitions.dev")}>
-                  <strong>The message prompt is anchored by Rafael&rsquo;s profile photo.</strong> The main site uses the
-                  self-hosted profile image without mounting a teaser, recording, playback control or media request.
+                  <strong>The message prompt is anchored by Rafael&rsquo;s video portrait.</strong> The main site uses the
+                  self-hosted production poster and only mounts the silent teaser as About approaches; the full recording waits for an explicit press.
                   It anchors the visible desktop conversation and opens the modal conversation when tapped at compact
-                  sizes. The preserved video prototype is available only through the explicit development preview.
+                  sizes. An explicit development preview keeps the longer fixture available for player testing.
                   Its 112px desktop true circle uses <code>corner-shape: round</code> rather than the site&rsquo;s squircle curve and
                   sits at the bottom-left on <code>--z-corner</code>, expanding to 240px with
                   <code> --radius-lg</code> corners, <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
@@ -2323,10 +2323,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Its input and 44px arrow enter after 80ms with an 8px slide, 0.97 scale and 2px cross-blur;
                   exiting content stays mounted, inert and hidden from assistive technology while it fades.
                   Text grows that surface upward to
-                  172px with <code>--radius-lg</code> corners. On mobile, the 64px speaking portrait stays fixed
-                  12px from the left edge while the TOC remains centred. Through the compact breakpoint at
-                  899.98px, Rafa’s greeting runs behind an 18px red notification circle tucked 1px into the
-                  portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
+                  172px with <code>--radius-lg</code> corners. Clicking or moving keyboard focus outside the desktop
+                  conversation collapses it into the portrait; the portrait reopens it without resetting its content.
+                  On mobile, the 64px speaking portrait stays fixed 12px from the left edge while the TOC remains centred.
+                  Whenever the conversation is collapsed, its current message total sits in an 18px red notification
+                  circle tucked 1px into the portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
                   15%-black hairline, 2px canvas-white halo and the shared control shadow. The badge enters
                   with the TOC’s 6px rise and blur; each previous number exits 4px upward while its replacement
                   enters from below over the shared quick duration.
@@ -2345,7 +2346,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
-                  Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint invites the visitor to tap.
+                  Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint in a compact gray pill invites the visitor to tap.
                   The fixed-positioned picker begins with Apple&rsquo;s six classic choices — heart, thumbs up, thumbs down,
                   laughter, exclamation points and a question mark — then adds fire, applause, celebration and thinking.
                   Native emoji use Apple Color Emoji where available. The 17px glyphs keep accessible 40px targets
@@ -2362,7 +2363,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   choice 2px at 1.08 scale over a soft gray surface and the shared control shadow. Choosing one swells
                   its glyph to 1.14 over a 32px
                   selection disc and fades the picker toward the bubble by 8px at 0.92 scale over 280ms.
-                  The chosen 14px glyph grows into a 27px blue, canvas-ringed disc with a two-dot trail,
+                  The chosen 14px glyph grows into a 27px blue disc with a fine 1px canvas ring and a two-dot trail,
                   mirrored onto the gray bubble’s top-right corner. Its 580ms snappy entrance follows the disc
                   by 80ms. The wrapper gains 12px above it so the
                   Tapback does not cover the prior message. A later choice replaces the earlier one; choosing the
@@ -2373,7 +2374,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Messages blue with white text and a mirrored tail on the right, which rises out of the field
                   from 20px below at 0.92 scale, anchored at its tail. At 900ms Rafa hearts it the way a received
                   tapback arrives: a 36px blue disc on the bubble’s top-left corner, with a pink #ff5f8f heart and
-                  two trailing dots, ringed 2px in canvas white. The disc springs out of a point, a ripple spreads
+                  two trailing dots, ringed 1px in canvas white. The disc springs out of a point, a ripple spreads
                   from its edge to 1.8 scale as it fades, the trail bubbles out 80ms and 140ms behind, and the heart
                   grows in at 120ms, then beats twice (1.24, a 0.96 rebound, 1.14) over 900ms. As it lands, the
                   bubble’s top margin grows from 8px to 28px, shifting the conversation up to make room. Typing for
@@ -2385,19 +2386,32 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   shows the same typing bubble before “Want to share anything else?” and reveals the optional
                   message field after 160ms. Hidden fields stay inert; their measured height offsets the history
                   so the typing bubble’s bottom edge rests level with the avatar’s. The history moves into its reply position
-                  over 360ms with the shared smooth curve as the field enters. Clicking the sent address unsends it
+                  over 360ms with the shared smooth curve as the field enters. The sent address carries an
+                  &ldquo;Change email&rdquo; tooltip before delivery and becomes a &ldquo;Start over&rdquo; control afterward; a visible &ldquo;Start over&rdquo;
+                  action below the composer offers the same route without requiring the visitor to discover the bubble.
+                  Before the first delivery this preserves the message draft. After a delivery, either route clears the
+                  local sent-message history and selects the current address so another email can replace it. Already delivered
+                  messages remain in the inbox, which the footer states explicitly. Both routes reset the local address bubble
                   with a puff: the bubble and its tapback blur 6px and grow to 1.08 as they fade over 240ms, while 24
                   dots of the bubble’s blue, 3–6px, pop in and drift up to 25px up and out over 420ms, staggered
                   within 70ms. At 480ms the email field returns with the address and takes focus; typing timers hold
                   during the puff. Reduced motion skips it. Timers
                   pause when the chat or tab is hidden, completed messages stay visible on return, and
                   reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
-                  The email field caps at 256px by 44px and matches the bubbles’ 14px text. It sits at the chat’s
-                  right edge and its center aligns vertically with the 64px face, moving the conversation above that row. Both composers keep
-                  <code>--radius-full</code> around the white canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
+                  The email field caps at 256px by 44px and uses 14px text on desktop, rising to 16px on mobile so
+                  focusing it cannot trigger iOS&rsquo;s visual-viewport zoom. It sits at the chat’s
+                  right edge and its center aligns vertically with the 64px face, moving the conversation above that row. The one-line email composer keeps
+                  <code>--radius-full</code>; the multiline message composer uses the 24px <code>--radius-lg</code> squircle so it reads as a writing surface rather than an oversized pill. Both keep the white canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
                   8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
                   The message textarea starts 88px high with 16px text and grows with each line up to seven lines
-                  (188px), or 30% of the viewport on short screens, before scrolling; the history gives up the room. The history uses the available space above the dock with a 12px top clearance, accounting for the
+                  (188px), or 30% of the viewport on short screens, before scrolling; the history gives up the room. The
+                  compact footer reads &ldquo;Sent messages stay delivered &middot; Start over&rdquo; after a successful send. Its muted,
+                  regular-weight, underlined action sits inline with the delivery note while keeping a 44px target and the standard
+                  0.96 pressed scale. After three distinct sends, the composer shakes 6px in either direction over
+                  <code> --duration-slow</code>, pauses, and changes that line to &ldquo;Keep going? 2 left &middot;
+                  Continue &middot; Start over.&rdquo; Continue restores focus and allows the last two sends; the fourth reads
+                  &ldquo;1 left,&rdquo; and the fifth disables the composer at &ldquo;That&rsquo;s enough.&rdquo;
+                  Reduced motion skips the shake. The history uses the available space above the dock with a 12px top clearance, accounting for the
                   actual form height; only short viewports scroll. Neither the history nor the growing message draws
                   a scrollbar, so a bubble’s entrance rise no longer flashes one. The composer stays below it. Focus deepens
                   the overlay shadow to <code>--shadow-overlay-hover</code> instead of drawing a stroke. The arrow starts gray,
@@ -2408,7 +2422,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   outgoing bubbles sits 2px apart and only the last keeps its tail. A 12px muted receipt under the latest
                   one reads Sending… then Delivered. A failed send keeps its bubble with a 20px #e5352b “!” disc on its
                   left and the error as its receipt; tapping the bubble retries with the same idempotency key. Once
-                  anything is sent the address can no longer be unsent. No address is sent when advancing to the message step.
+                  anything is sent, starting over waits for the active delivery to settle. No address is sent when advancing to the message step.
                   B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
                   The <a href="/intro-options">comparison page</a> shows all three together in separate 440px
                   stages, with contained 64px portraits and 240px players. It stacks its
@@ -2427,7 +2441,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   focus-ring-soft ring, avoiding a second pill outline inside the field. The placeholder is hello@example.com.
                   The arrow opens an email draft
                   for the visitor to review and send. The website does not collect the address.
-                  In the explicit video preview, media waits until within 200px of About; only a press requests the spoken recording.
+                  Media waits until within 200px of About; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
                   The transitions.dev icon-swap recipe keeps play/pause and volume glyphs
                   stacked in one cell: <code>--icon-swap-dur</code> (250ms), <code>--icon-swap-blur</code> (2px),
@@ -2438,10 +2452,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   In a dialog, the same player joins that dialog’s focus scope and uses a manual popover
                   in the browser top layer, keeping it above transformed content without a new z-index.
                   On mobile this floating player sits centered, 80px above the safe-area bottom edge.
-                  Closing it returns focus to the dialog. Append <code>?intro=preview</code> to the
-                  <a href="/?intro=preview#about-panel"> development homepage</a> to exercise the matching silent GIF,
-                  full recording and original-audio fixture. Ordinary development and production visits keep the
-                  profile-photo message prompt; the dormant video path remains available for the future recording.
+                  Closing it returns focus to the dialog. Ordinary development and production visits use the 8.24-second
+                  personal recording, its silent MP4 teaser, poster and captions. Append <code>?intro=preview</code> to the
+                  <a href="/?intro=preview#about-panel"> development homepage</a> to exercise the longer GIF-backed fixture,
+                  or <code>?intro=off</code> to inspect the chat without video.
                 </li>
                 <li data-ds-terms={terms("bottom fade progressive blur backdrop-filter 1.25rem gradient --canvas clamp(3rem, 8vh, 4.5rem) 3rem sticky safe area seam sheet notes card mask rounded clip")}>
                   <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet, notes card, and project previews

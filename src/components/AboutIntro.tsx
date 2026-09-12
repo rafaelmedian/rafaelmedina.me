@@ -70,8 +70,8 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const id = useId()
   const [actionsOpen, setActionsOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  const [chatCollapsed, setChatCollapsed] = useState(false)
   const [messageCount, setMessageCount] = useState(0)
-  const [readCount, setReadCount] = useState(0)
   const [notificationTransition, setNotificationTransition] = useState<{ current: number, leaving?: number }>({ current: 0 })
   const [reply, setReply] = useState<"email" | "text" | null>(null)
   const [replyLabel, setReplyLabel] = useState<"email" | "text" | null>(null)
@@ -98,6 +98,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const teaserRef = useRef<HTMLVideoElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const playRef = useRef<HTMLButtonElement>(null)
+  const introRef = useRef<HTMLElement>(null)
   const requestRef = useRef(0)
   const [started, setStarted] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -118,11 +119,13 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const mobileChat = mobileMessages && mobileViewport && variant === "b"
   const chatActive = visible && !open && repliesAvailable && !pageHidden
   const mobileChatOpen = mobileChat && chatActive && chatOpen
-  const chatVisible = chatActive && (!mobileChat || mobileChatOpen)
-  const unreadMessages = mobileChat && !mobileChatOpen ? Math.max(0, messageCount - readCount) : 0
-  if (notificationTransition.current !== unreadMessages) {
+  const desktopChatOpen = !mobileChat && variant === "b" && chatActive && !chatCollapsed
+  const chatExpanded = mobileChatOpen || desktopChatOpen
+  const chatVisible = chatExpanded
+  const collapsedMessageCount = !chatExpanded ? messageCount : 0
+  if (notificationTransition.current !== collapsedMessageCount) {
     setNotificationTransition({
-      current: unreadMessages,
+      current: collapsedMessageCount,
       leaving: notificationTransition.current || undefined,
     })
   }
@@ -158,12 +161,28 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
       if (event.key !== "Escape") return
       event.preventDefault()
       setChatOpen(false)
-      setReadCount(messageCount)
       requestAnimationFrame(() => portraitRef.current?.focus({ preventScroll: true }))
     }
     document.addEventListener("keydown", dismiss)
     return () => document.removeEventListener("keydown", dismiss)
-  }, [messageCount, mobileChatOpen])
+  }, [mobileChatOpen])
+
+  useEffect(() => {
+    if (!desktopChatOpen || !mobileMessages) return
+    const outsideChat = (event: Event) => {
+      if (!(event.target instanceof Element)) return
+      if (introRef.current?.dataset.chatOpen !== "true") return
+      const chat = introRef.current?.querySelector(".about-intro-chat")
+      if (event.target.closest(".about-intro-chat-reaction-positioner") || chat?.contains(event.target)) return
+      setChatCollapsed(true)
+    }
+    document.addEventListener("pointerdown", outsideChat)
+    document.addEventListener("focusin", outsideChat)
+    return () => {
+      document.removeEventListener("pointerdown", outsideChat)
+      document.removeEventListener("focusin", outsideChat)
+    }
+  }, [desktopChatOpen, mobileMessages])
 
   useEffect(() => {
     if (!notificationTransition.leaving) return
@@ -253,23 +272,30 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   }
   const action = error ? "Retry introduction" : ended ? "Replay introduction" : started ? "Resume introduction" : "Play introduction"
   const openChat = () => {
-    setReadCount(messageCount)
+    setChatCollapsed(false)
     setChatOpen(true)
     setActionsOpen(false)
   }
-  const closeChat = () => {
+  const closeChat = (restoreFocus = true) => {
+    setChatCollapsed(true)
     setChatOpen(false)
-    setReadCount(messageCount)
-    requestAnimationFrame(() => portraitRef.current?.focus({ preventScroll: true }))
+    if (restoreFocus) requestAnimationFrame(() => portraitRef.current?.focus({ preventScroll: true }))
   }
   const messageLabel = `${messageCount} ${messageCount === 1 ? "message" : "messages"}`
 
   return (
-    <section className="about-intro" aria-label="A quick hello from Rafael" data-visible={visible} data-variant={variant}
-      data-chat-open={mobileChatOpen}
-      onPointerEnter={event => { if (event.pointerType === "mouse" && !mobileChat && videoAvailable) setActionsOpen(true) }}
+    <section ref={introRef} className="about-intro" aria-label="A quick hello from Rafael" data-visible={visible} data-variant={variant}
+      data-chat-open={chatExpanded}
+      onPointerEnter={event => {
+        if (event.pointerType === "mouse" && !mobileChat && videoAvailable && !(variant === "b" && chatCollapsed)) {
+          setActionsOpen(true)
+        }
+      }}
       onPointerLeave={event => { if (!event.currentTarget.contains(document.activeElement)) setActionsOpen(false) }}
-      onFocusCapture={() => { if (!mobileChat) setActionsOpen(true) }}
+      onFocusCapture={event => {
+        const focusingVideo = event.target instanceof Element && event.target.closest(".about-intro-trigger")
+        if (!mobileChat && (!(variant === "b" && chatCollapsed) || focusingVideo)) setActionsOpen(true)
+      }}
       onBlurCapture={event => {
         if (restoringReplyFocus.current) return
         // Closing keeps the composer mounted for its fade. Its newly inert
@@ -323,10 +349,10 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
             {started && <track kind="captions" label="English" srcLang="en" src={media.assets.captions}
               default={captions} onLoad={syncCaptions} />}
           </video>}
-          {(mobileChat || videoAvailable) && <button ref={portraitRef} type="button" className="about-intro-portrait-trigger"
-            aria-label={mobileChat ? `Open ${messageCount ? messageLabel : "messages"} from Rafa` : "Show introduction actions"}
-            aria-expanded={mobileChat ? mobileChatOpen : actionsOpen} aria-controls={mobileChat ? `${id}-chat` : variant === "b" ? `${id}-chat` : `${id}-actions`}
-            onClick={mobileChat ? openChat : () => setActionsOpen(true)}
+          {(variant === "b" || videoAvailable) && <button ref={portraitRef} type="button" className="about-intro-portrait-trigger"
+            aria-label={variant === "b" && mobileMessages ? `Open ${messageCount ? messageLabel : "messages"} from Rafa` : "Show introduction actions"}
+            aria-expanded={variant === "b" && mobileMessages ? chatExpanded : actionsOpen} aria-controls={variant === "b" ? `${id}-chat` : `${id}-actions`}
+            onClick={variant === "b" && mobileMessages ? openChat : () => setActionsOpen(true)}
             inert={open} aria-hidden={open} />}
           {videoAvailable && <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
             aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
@@ -368,7 +394,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
             <span className="about-intro-status" role="status">{error ? "Couldn’t load video. Try again." : waiting ? "Loading introduction…" : ""}</span>
           </div>}
         </div>
-        {unreadMessages > 0 && <span className="about-intro-chat-notification" aria-hidden="true">
+        {collapsedMessageCount > 0 && <span className="about-intro-chat-notification" aria-hidden="true">
           {notificationTransition.leaving && <span className="about-intro-chat-notification-ghost">{notificationTransition.leaving}</span>}
           <span key={notificationTransition.current} className="about-intro-chat-notification-number">{notificationTransition.current}</span>
         </span>}
@@ -378,7 +404,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
       </div>
       {variant === "b" && <>
         <button type="button" className="about-intro-chat-backdrop" aria-label="Close messages"
-          inert={!mobileChatOpen} aria-hidden={!mobileChatOpen} onClick={closeChat} />
+          inert={!mobileChatOpen} aria-hidden={!mobileChatOpen} onClick={() => closeChat()} />
       </>}
       {variant === "b" ? <AboutIntroChat id={`${id}-chat`} active={chatActive} visible={chatVisible} modal={mobileChatOpen} onClose={closeChat} onMessageCount={setMessageCount} /> : <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
         <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}
