@@ -2797,6 +2797,7 @@ test("keeps the takeover close wrapper at the compact design-system size", async
 
   expect(size.width).toBeCloseTo(51.2, 0)
   expect(size.height).toBeCloseTo(51.2, 0)
+  await expect(page.locator(".mosaic-takeover-close svg")).toHaveAttribute("stroke-width", "1.75")
 })
 
 test("returns to the top of the page from the takeover close", async ({ page }) => {

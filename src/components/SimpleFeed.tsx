@@ -974,7 +974,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
         inert={!isTakeoverCloseVisible}
         onClick={closeAbout}
       >
-        <X aria-hidden="true" />
+        <X strokeWidth={1.75} aria-hidden="true" />
       </button>
       <header id="about" className="mosaic-hero">
         <div className="mosaic-hero-profile">

@@ -433,7 +433,6 @@ const DURATIONS_ENTRIES = [
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },
   { value: "410ms", use: "The personal-photo fan springing out of its pile the first time it scrolls into view, every print at once on the card-stack overshoot (see Easing). Taken whole from transitions.dev’s card stack hover, the fan-out beat there. --photo-deal-duration on the stack." },
-  { value: "1100ms / 1200ms / 240ms", use: "The avatar coin. One whole turn under the pointer over 1100ms, and a click adds another over 1200ms, then opens the profile chat 240ms in — long enough that the spin is what revealed it, short enough that the click still feels answered. Both are slow on purpose: a coin this small has to turn lazily to read as turning at all. JavaScript reads all three numbers from the coin's own custom properties." },
   { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
 ]
 
@@ -1751,7 +1750,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   aria-label="Close about specimen"
                   style={{ position: "relative", inset: "auto", zIndex: "auto", transform: "none" }}
                 >
-                  <X aria-hidden="true" />
+                  <X strokeWidth={1.75} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -2160,9 +2159,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
                   Close crosses, navigation chevrons, external-link arrows and reply arrows share
-                  <code> NavigationIcons.tsx</code>: a 24-unit viewBox with rounded 2.5-unit strokes
-                  and joins, scaled to each control’s existing icon size. The close cross matches
-                  the intro player’s iOS-style mark; all wrappers and hit targets keep their own surface styles.
+                  <code> NavigationIcons.tsx</code>: a 24-unit viewBox with rounded strokes and joins,
+                  scaled to each control’s existing icon size. Navigation marks use a 2.5-unit stroke;
+                  the raised takeover close steps down to 1.75 units to match the lighter marks around
+                  the hero. The close cross matches the intro player’s iOS-style geometry; all wrappers
+                  and hit targets keep their own surface styles.
                   The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity and ink text,
                   with no close icon. The collapsed row shows a 16px upward chevron, which fades out over 160ms
                   on opening. Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
