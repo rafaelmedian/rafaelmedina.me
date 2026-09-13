@@ -107,6 +107,12 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   const title = (await sheet(page).getByRole("heading", { name: "Notes and tools", exact: true }).boundingBox())!
   // On a sheet this wide the arrow hangs in the left gutter, clear of the title.
   expect(arrow.x + arrow.width).toBeLessThanOrEqual(title.x)
+  // Vertical placement belongs to the layout, not the independent `translate`
+  // property used by some browsers for transforms. If that newer property is
+  // unavailable, the chevron must still stay centred on the toolbar title.
+  await back.evaluate((element) => { element.style.translate = "none" })
+  const fallbackArrow = (await back.boundingBox())!
+  expect(fallbackArrow.y + fallbackArrow.height / 2).toBeCloseTo(title.y + title.height / 2, 0)
   await expect(sheet(page).getByRole("button", { name: "Next note", exact: true })).toBeVisible()
   await expect(sheet(page).getByRole("button", { name: "Next preview", exact: true })).toHaveCount(0)
 
