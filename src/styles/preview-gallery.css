@@ -1404,9 +1404,10 @@
 }
 .notes-gallery-back {
   position: absolute;
-  top: 50%;
+  /* Keep vertical placement in layout so losing the independent `translate`
+     property cannot drop the 44px control half its height below the title. */
+  top: calc(50% - 22px);
   right: calc(100% + 0.75rem);
-  translate: 0 -50%;
   border-color: transparent;
   box-shadow: none;
   visibility: hidden;
