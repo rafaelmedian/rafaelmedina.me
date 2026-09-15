@@ -143,6 +143,9 @@
   border-radius: var(--radius-lg);
   background: #fff;
   color: #2d2d2d;
+  /* Tab scrolls the card only as far as its bottom edge, which parked the key
+     hint under the floating contents dock (the viewport's bottom 60px). */
+  scroll-margin-bottom: 5rem;
 }
 
 .mosaic-quote blockquote {
@@ -425,14 +428,16 @@
   cursor: grabbing;
 }
 
-/* The advance button is the card, so the card wears its ring -- the work
-   tiles' one. On the button itself the card's overflow clipped the ring to its
-   bottom edge, a dark rule drawn across the card above the dots. */
 .mosaic-quote-next:focus-visible {
   outline: none;
 }
 
-.mosaic-quote:has(> .mosaic-quote-next:focus-visible) {
+/* The card is the Tab stop and wears the work tiles' ring, and keeps it while
+   focus is inside it, so the author's own ring reads as a step in, not a new
+   place. Drawn on the card rather than the advance button it used to be: the
+   card's overflow clipped the button's ring to a rule above the dots. */
+.mosaic-quote:focus-visible,
+.mosaic-quote[data-inside="true"] {
   outline: 2px solid var(--focus-ring-soft);
   outline-offset: 3px;
 }
@@ -443,6 +448,33 @@
   display: flex;
   flex-shrink: 0;
   justify-content: center;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+/* The keyboard's controls take the pointer's place: the hint sits in the dots'
+   40px strip and the dots fade out under it. The top of the card was the other
+   candidate, but the author's preview opens over it. */
+.mosaic-quote-keys {
+  position: absolute;
+  bottom: 0;
+  z-index: 2;
+  height: 40px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-quote:focus-visible .mosaic-quote-keys,
+.mosaic-quote[data-inside="true"]:focus-within .mosaic-quote-keys {
+  opacity: 1;
+  transform: none;
+}
+
+.mosaic-quote:focus-visible .mosaic-quote-dots,
+.mosaic-quote[data-inside="true"]:focus-within .mosaic-quote-dots {
+  opacity: 0;
 }
 
 .mosaic-quote-dot {
@@ -482,8 +514,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mosaic-quote-slide,
+  .mosaic-quote-dots,
+  .mosaic-quote-keys,
   .mosaic-quote-dot span {
     transition: none;
+  }
+
+  .mosaic-quote-keys {
+    transform: none;
   }
 }
 

@@ -1521,6 +1521,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 rather than hovering, add an invisible 40px-tall pseudo-element behind the name.
                 Previews show the full X display name, handle, available bio, Follow action, and following/follower counts.
                 Empty bios stay omitted. Missing portraits use an initial avatar. Unlinked authors remain plain text; offscreen slides are inert.
+                From the keyboard the whole card is one Tab stop, the name, the preview, and the dots included.
+                The left and right arrows step through the quotes; Enter goes in to the author&rsquo;s name, which
+                opens the preview, and a second Enter goes in to the preview&rsquo;s links. Each Escape comes back
+                out one level, and Tab from any level moves on to the next tile. While the card holds keyboard focus a
+                key hint (<code>KeyboardHint</code>) takes the dots&rsquo; place in their 40px strip &mdash; the keys
+                for the level focus is on, as white keycaps with --shadow-ring and --shadow-control beside --text-xs
+                labels in --muted &mdash; and the dots fade out under it over --duration-quick. A pointer never sees it.
+                The card carries the same words as its accessible description, and a 5rem bottom scroll margin so
+                Tab does not park the hint under the contents dock. The team card has no author to go in to, so its
+                hint offers only the arrows.
                 Click the card outside the identity to advance, select a dot, or drag horizontally in either direction.
                 The active and adjacent slides follow the pointer together without easing. Six pixels both start the
                 drag and commit it: past that the card follows the pointer, and letting go selects the adjacent quote
@@ -2560,10 +2570,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 light grey because 1.4.11 wants 3:1 against the adjacent surface. The work tiles are the one exception
                 to the colour, not to the shape: they take the same single ring in{" "}
                 <code>--focus-ring-soft</code> (<code>#8a8a8a</code>, 3.4:1 on the page background), because at tile
-                scale <code>#2d2d2d</code> frames the artwork instead of marking a selection. The quote card wears
-                that ring too, drawn on the card for the advance button that covers it, since the card's clip would
-                cut the button's own ring down to a line. Nothing stacks a second ring, a border darkening, or a halo
-                behind the outline.
+                scale <code>#2d2d2d</code> frames the artwork instead of marking a selection. The quote card, which
+                is itself the Tab stop, wears that ring too, and keeps it while focus is inside it. Nothing stacks a
+                second ring, a border darkening, or a halo behind the outline.
               </li>
               <li data-ds-terms={terms("tabindex -1 landing container hash #work skip link outline none focus ring")}>
                 <strong>Landing containers take focus without taking a ring.</strong> Sections that receive focus
@@ -2594,6 +2603,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 behind it. A pointer still clicks them, and the trigger itself already goes where most of them
                 lead. They used to be the next stops, which put anyone tabbing past the Follow pill five links
                 deep in a profile they had not asked to open.
+              </li>
+              <li data-ds-terms={terms("composite widget carousel quote card one tab stop enter escape arrow keys roving key hint keyboardhint kbd keycap aria-describedby narration")}>
+                <strong>A widget with parts is one Tab stop, and it says how to go in.</strong> The quote cards take
+                one Tab each: the arrows work the card, Enter goes in a level, Escape comes back out one, and Tab
+                from anywhere inside moves on. Walking past either card used to take ten stops. On keyboard focus a <code>KeyboardHint</code> shows the keys for the level focus is on,
+                and the same instructions are the widget&rsquo;s <code>aria-describedby</code>, in words rather than
+                glyphs, so a screen reader announces them on arrival without anyone reaching for a system setting.
               </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>
                 <strong>Hover-only content has a non-hover fate.</strong> Social-pill hover cards are hidden on
