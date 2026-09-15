@@ -226,3 +226,77 @@ test("Wall repeats in every direction without growing its DOM, and each copy sel
   await expect(dialog).toBeVisible()
   await expect(wall.locator(".personal-photos-slide[data-held]")).toHaveCount(0)
 })
+
+for (const width of [1440, 390]) {
+  test(`Wall arrows shift the composition around the next centred photo at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto("/")
+    await page.locator(".personal-photos-label").click()
+    const dialog = page.getByRole("dialog", { name: "Personal photos" })
+    await dialog.getByRole("button", { name: "Wall", exact: true }).click()
+    await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
+    const wall = page.getByRole("region", { name: "Photo wall" })
+    const first = wall.locator('[data-photo-id="office"]')
+    const neighbour = wall.locator('[data-photo-id="night-portrait"]')
+    const before = (await neighbour.boundingBox())!
+    await first.click()
+    await expect(first).toHaveAttribute("data-held", "")
+    // The surrounding composition moves too, rather than leaving the wall
+    // fixed underneath an enlarged overlay.
+    await expect.poll(async () => Math.abs((await neighbour.boundingBox())!.x - before.x)).toBeGreaterThan(30)
+    const next = dialog.getByRole("button", { name: "Next photo", exact: true })
+    const previous = dialog.getByRole("button", { name: "Previous photo", exact: true })
+    await next.click()
+    const main = wall.locator(".personal-photos-slide[data-held]")
+    await expect(main).toHaveCount(1)
+    await expect(main).toHaveAttribute("data-photo-source", "night-portrait")
+    await expect.poll(async () => {
+      const box = (await main.boundingBox())!
+      return Math.hypot(box.x + box.width / 2 - width / 2, box.y + box.height / 2 - 450)
+    }).toBeLessThan(2)
+    // Interrupt the return animation; selecting the earlier photo again
+    // must still use its resting slot rather than its in-flight rectangle.
+    await previous.click()
+    await page.keyboard.press("ArrowRight")
+    await page.keyboard.press("ArrowLeft")
+    await expect(main).toHaveAttribute("data-photo-source", "office")
+    await expect.poll(async () => {
+      const box = (await main.boundingBox())!
+      return Math.hypot(box.x + box.width / 2 - width / 2, box.y + box.height / 2 - 450)
+    }).toBeLessThan(2)
+    await page.keyboard.press("Escape")
+    await expect(dialog).toBeVisible()
+    await expect(main).toHaveCount(0)
+  })
+}
+
+
+test("Wall arrows start at the nearest photo and wrap the collection", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.locator(".personal-photos-label").click()
+  const dialog = page.getByRole("dialog", { name: "Personal photos" })
+  await dialog.getByRole("button", { name: "Wall", exact: true }).click()
+  const wall = page.getByRole("region", { name: "Photo wall" })
+  const nearest = await wall.locator(".personal-photos-slide").evaluateAll(slides => slides.map(slide => {
+    const r = slide.getBoundingClientRect()
+    return { instance: (slide as HTMLElement).dataset.photoInstance, distance: Math.hypot(r.x + r.width / 2 - innerWidth / 2, r.y + r.height / 2 - innerHeight / 2) }
+  }).sort((a, b) => a.distance - b.distance)[0].instance)
+  await dialog.getByRole("button", { name: "Next photo", exact: true }).click()
+  const main = wall.locator(".personal-photos-slide[data-held]")
+  await expect(main).toHaveAttribute("data-photo-instance", nearest!)
+  await page.keyboard.press("Escape")
+  await wall.locator('[data-photo-id="office"]').click()
+  await dialog.getByRole("button", { name: "Previous photo", exact: true }).click()
+  await expect(main).toHaveAttribute("data-photo-source", "rainy-night")
+  await expect(dialog.locator('[aria-live="polite"]')).toContainText(await main.locator("figcaption").innerText())
+  for (let i = 0; i < 27; i++) {
+    await dialog.getByRole("button", { name: "Next photo", exact: true }).click()
+    await expect.poll(async () => {
+      const box = (await main.boundingBox())!
+      return Math.hypot(box.x + box.width / 2 - 195, box.y + box.height / 2 - 450)
+    }).toBeLessThan(2)
+  }
+  await expect(main).toHaveAttribute("data-photo-source", "rainy-night")
+})
