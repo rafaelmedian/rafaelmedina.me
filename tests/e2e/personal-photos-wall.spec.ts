@@ -16,7 +16,7 @@ for (const width of [1440, 390]) {
     await expect(page.locator(".personal-photos-backdrop")).toHaveCSS("background-color", "rgb(255, 255, 255)")
     await background.click()
     await expect(background).toHaveAttribute("aria-pressed", "false")
-    await expect(page.locator(".personal-photos-backdrop")).toHaveCSS("background-color", "rgba(18, 18, 18, 0.6)")
+    await expect(page.locator(".personal-photos-backdrop")).toHaveCSS("background-color", "rgba(18, 18, 18, 0.8)")
     const photos = wall.locator(".personal-photos-slide")
     const first = photos.first()
     const before = (await first.boundingBox())!

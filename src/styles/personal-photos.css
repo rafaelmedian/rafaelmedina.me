@@ -747,7 +747,11 @@
 /* Wall: a loose, edge-to-edge arrangement using the grid's selection and
    flight machinery. Its canvas can disappear without changing photo geometry. */
 .personal-photos-backdrop[data-wall-background="on"] { background: var(--canvas); }
-.personal-photos-backdrop[data-wall-background="off"] { background: rgb(18 18 18 / 0.6); }
+.personal-photos-backdrop[data-wall-background="off"] {
+  background: rgb(18 18 18 / 0.8);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
 .personal-photos-wall-tools {
   width: max-content;
   white-space: nowrap;
