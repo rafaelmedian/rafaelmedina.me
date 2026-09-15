@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "./NavigationIcons"
 import type { OpenPhoto } from "./PersonalPhotosPreview"
 import { Dialog } from "@base-ui/react/dialog"
 import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
@@ -54,7 +55,8 @@ const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
     the move and growth that carry it there from where it lies. */
-type GridHold = { id: string; instance: string; caption: string; dx: number; dy: number; scale: number; layoutGap: number; left: number; top: number; width: number; height: number; captionTop: number; scrollTop: number }
+type WallSlot = { left: number; top: number; width: number; height: number }
+type GridHold = { wallSlot?: WallSlot; wallFocus?: { x: number; y: number }; id: string; instance: string; caption: string; dx: number; dy: number; scale: number; layoutGap: number; left: number; top: number; width: number; height: number; captionTop: number; scrollTop: number }
 /** How much of the stage a held grid photo fills, on its longer side. */
 const gridHoldShare = 0.7
 // The middle panel owns the accessible originals and gallery flights. Eight
@@ -87,6 +89,24 @@ function rewindSheet(sheet: HTMLDivElement, halt: { cancelled: boolean }) {
   })
 }
 
+/** Read layout slots, not animated photo rectangles, so interrupted selections
+    always converge on the same centre. Cache column reads before writing shifts. */
+function wallSlotReader(sheet: HTMLElement, scale: number) {
+  const plane = sheet.querySelector<HTMLElement>(".personal-photos-masonry")!
+  const translation = getComputedStyle(plane).translate.split(" ").map(Number.parseFloat)
+  const x = translation[0] || 0
+  const y = translation[1] || 0
+  const columns = new Map<Element, DOMRect>()
+  return (slide: HTMLElement): WallSlot => {
+    const column = slide.offsetParent as HTMLElement
+    let rect = columns.get(column)
+    if (!rect) { rect = column.getBoundingClientRect(); columns.set(column, rect) }
+    const style = getComputedStyle(slide)
+    return { left: rect.left - x + slide.offsetLeft * scale, top: rect.top - y + slide.offsetTop * scale,
+      width: parseFloat(style.width) * scale, height: parseFloat(style.height) * scale }
+  }
+}
+
 function PhotoColumns({ panel = "0,0", gridColumns, held, previewCount, layout, toggleHold, onSlideKeyDown }: {
   panel?: string
   gridColumns: { photo: typeof photos[number]; index: number }[][]
@@ -106,6 +126,7 @@ function PhotoColumns({ panel = "0,0", gridColumns, held, previewCount, layout, 
           <figure
             className="personal-photos-slide"
             data-photo-id={copy ? undefined : photo.id}
+            data-photo-source={photo.id}
             data-photo-instance={instance}
             data-photo-copy={copy ? "" : undefined}
             data-photo-retained={!copy && index < previewCount ? "" : undefined}
@@ -235,6 +256,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     const width = parseFloat(frame.width)
     const height = parseFloat(frame.height)
     const cameraScale = layout === "wall" ? wall.current.scale() : 1
+    const slot = layout === "wall" ? wallSlotReader(sheet, cameraScale)(slide) : undefined
     const scale = Math.min(gridHoldShare * sheet.clientWidth / width, gridHoldShare * sheet.clientHeight / height) / cameraScale
     // Keep the preview mat's drawn thickness. Account for the changed padding
     // before centring, so portrait and landscape photos keep their ratio.
@@ -248,8 +270,10 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
       id: photo.id,
       instance: slide.dataset.photoInstance ?? photo.id,
       caption: photo.caption,
-      dx: (stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2)) / cameraScale,
-      dy: (stage.top + sheet.clientHeight / 2 - (rect.top + framedHeight * cameraScale / 2)) / cameraScale,
+      wallSlot: slot,
+      wallFocus: slot ? { x: stage.left + sheet.clientWidth / 2 - slot.left - slot.width / 2, y: stage.top + sheet.clientHeight / 2 - slot.top - slot.height / 2 } : undefined,
+      dx: slot ? 0 : (stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2)) / cameraScale,
+      dy: slot ? 0 : (stage.top + sheet.clientHeight / 2 - (rect.top + framedHeight * cameraScale / 2)) / cameraScale,
       scale,
       // Preserve the column height so scroll anchoring cannot release the hold.
       layoutGap: height - framedHeight,
@@ -273,6 +297,45 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   }, [resetGridTilt])
   const wall = usePhotoWall(layout === "wall" ? sheetNode : null, open, releaseHeld)
   usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
+
+  useLayoutEffect(() => {
+    if (layout !== "wall" || !sheetNode) return
+    const scale = wall.current.scale()
+    const readSlot = wallSlotReader(sheetNode, scale)
+    const selected = held?.wallSlot
+    const shifts = Array.from(sheetNode.querySelectorAll<HTMLElement>(".personal-photos-slide"), slide => {
+      const slot = readSlot(slide)
+      const columnDistance = selected ? slot.left + slot.width / 2 - selected.left - selected.width / 2 : 0
+      const sameColumn = selected && Math.abs(columnDistance) < selected.width / 2
+      const x = selected && !sameColumn ? Math.sign(columnDistance) * Math.max(0, (held.width - selected.width) / 2) / scale : 0
+      const y = selected && sameColumn && slide.dataset.photoInstance !== held.instance
+        ? Math.sign(slot.top - selected.top) * Math.max(0, (held.height - selected.height) / 2) / scale : 0
+      return { slide, x, y }
+    })
+    for (const { slide, x, y } of shifts) {
+      slide.style.setProperty("--wall-shift-x", `${x}px`)
+      slide.style.setProperty("--wall-shift-y", `${y}px`)
+    }
+  }, [held, layout, sheetNode, wall])
+
+  const browseWall = (direction: number) => {
+    const sheet = sheetRef.current
+    if (!sheet) return
+    endLayoutFlight()
+    const current = heldRef.current
+    const photo = current ? photos[(photos.findIndex(photo => photo.id === current.id) + direction + photos.length) % photos.length] : undefined
+    const readSlot = wallSlotReader(sheet, wall.current.scale())
+    const stage = sheet.getBoundingClientRect()
+    const candidates = Array.from(sheet.querySelectorAll<HTMLElement>(".personal-photos-slide"))
+      .filter(slide => !photo || slide.dataset.photoSource === photo.id)
+      .map(slide => {
+        const slot = readSlot(slide)
+        return { slide, distance: Math.hypot(slot.left + slot.width / 2 - stage.left - sheet.clientWidth / 2, slot.top + slot.height / 2 - stage.top - sheet.clientHeight / 2) }
+      }).sort((a, b) => a.distance - b.distance)
+    const target = candidates[0]?.slide
+    const targetPhoto = photo ?? photos.find(photo => photo.id === target?.dataset.photoSource)
+    if (target && targetPhoto) holdSlide(target, targetPhoto)
+  }
 
   const toggleHold = (slide: HTMLElement, photo: typeof photos[number]) => {
     if (heldRef.current?.instance === (slide.dataset.photoInstance ?? photo.id)) releaseHeld()
@@ -441,13 +504,18 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     <Dialog.Root open={open} onOpenChange={onOpenChange} actionsRef={dialogActions}>
       <Dialog.Portal>
         <Dialog.Backdrop className="personal-photos-backdrop" data-wall-background={layout === "wall" ? (wallBackground ? "on" : "off") : undefined} />
-        <Dialog.Popup initialFocus={sheetRef} finalFocus={() => opener} className="personal-photos-dialog" data-layout={layout}>
+        <Dialog.Popup initialFocus={sheetRef} finalFocus={() => opener} className="personal-photos-dialog" data-layout={layout} onKeyDown={event => {
+          if (layout !== "wall" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return
+          event.preventDefault()
+          browseWall(event.key === "ArrowRight" ? 1 : -1)
+        }}>
           <Dialog.Title className="sr-only">Personal photos</Dialog.Title>
           <Dialog.Description className="sr-only">
             {layout === "sphere"
               ? "A few moments outside the portfolio, on a slowly turning globe of prints. Drag, scroll, or use the arrow keys to turn it; Tab brings each photo to the front. Escape or a click beside the globe returns to the page."
               : layout === "wall"
-                ? "Drag or scroll in any direction to explore the photo wall. Pinch or use the zoom buttons to zoom. Arrow keys pan; plus and minus zoom; zero resets. Click or press Enter to enlarge a photo. Escape returns it, then closes the viewer."
+                ? "Drag or scroll in any direction to explore the photo wall. Pinch or use the zoom buttons to zoom. Left and right arrows browse photos; up and down pan; Shift with left and right pans horizontally. Plus and minus zoom; zero resets. Click or press Enter to enlarge a photo. Escape returns it, then closes the viewer."
               : "A few moments outside the portfolio, laid out on one sheet. Scroll to browse; Enter or a click holds a photo large and lets it go again. Escape or a click on the margin returns to the page."}
           </Dialog.Description>
           {/* Outside the stage, which captures every press on the globe for
@@ -472,6 +540,13 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
               <button type="button" aria-label="Reset view" onClick={() => wall.current.reset()}>Reset</button>
               <button type="button" aria-label="Zoom in" onClick={() => wall.current.zoom(1.2)}>+</button>
               <button type="button" onClick={() => dialogActions.current?.close()}>Close</button>
+            </div>
+          )}
+          {layout === "wall" && (
+            <div className="personal-photos-wall-navigation" role="group" aria-label="Photo navigation">
+              <button type="button" aria-label="Previous photo" onClick={() => browseWall(-1)}><ChevronLeft size={20} /></button>
+              <span aria-live="polite" aria-atomic="true">{held ? `${photos.findIndex(photo => photo.id === held.id) + 1} / ${photos.length}` : "Browse photos"}{held && <span className="sr-only">: {held.caption}</span>}</span>
+              <button type="button" aria-label="Next photo" onClick={() => browseWall(1)}><ChevronRight size={20} /></button>
             </div>
           )}
           {/* On the globe the stage takes every press: a drag anywhere turns
@@ -533,7 +608,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
               </Fragment>
             ) : (
               <Fragment key={layout}>
-                <div className="personal-photos-masonry">
+                <div className="personal-photos-masonry" style={held?.wallFocus ? { "--wall-focus-x": `${held.wallFocus.x}px`, "--wall-focus-y": `${held.wallFocus.y}px` } as CSSProperties : undefined}>
                   {layout === "wall" ? wallPanels.map(({ x, y }) => (
                     <div className="personal-photos-wall-panel" data-wall-x={x} data-wall-y={y} aria-hidden={x !== 0 || y !== 0 ? true : undefined} key={`${x},${y}`}>
                       <PhotoColumns panel={`${x},${y}`} gridColumns={gridColumns} held={held} previewCount={previewCount} layout={layout} toggleHold={toggleHold} onSlideKeyDown={onSlideKeyDown} />

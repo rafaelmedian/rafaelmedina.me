@@ -137,7 +137,7 @@ for (const width of [1440, 390]) {
     await page.keyboard.press("Escape")
     await wall.focus()
     const left = (await first.boundingBox())!.x
-    await page.keyboard.press("ArrowRight")
+    await page.keyboard.press("Shift+ArrowRight")
     expect((await first.boundingBox())!.x).toBeLessThan(left)
     await dialog.getByRole("button", { name: "Close", exact: true }).click()
     await expect(dialog).toBeHidden()

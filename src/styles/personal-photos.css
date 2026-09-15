@@ -346,6 +346,7 @@
    wears the control shadow as well as the ring, so the two translucent layers
    remain distinct against either a bright photograph or the dark scrim. */
 .personal-photos-layout,
+.personal-photos-wall-navigation,
 .personal-photos-wall-tools {
   position: absolute;
   top: max(1.25rem, env(safe-area-inset-top));
@@ -383,6 +384,7 @@
   transition: translate var(--duration-fast) var(--ease-smooth), width var(--duration-fast) var(--ease-smooth);
 }
 .personal-photos-layout button,
+.personal-photos-wall-navigation button,
 .personal-photos-wall-tools button {
   position: relative;
   z-index: 1;
@@ -406,6 +408,7 @@
 /* The house ring, just inside the segment: it reads on the white thumb and
    on the grey bar alike. */
 .personal-photos-layout button:focus-visible,
+.personal-photos-wall-navigation button:focus-visible,
 .personal-photos-wall-tools button:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
@@ -769,7 +772,8 @@
   width: max(80rem, 125vw);
   margin: 0;
   transform-origin: 0 0;
-  transition: none;
+  translate: var(--wall-focus-x, 0px) var(--wall-focus-y, 0px);
+  transition: translate var(--grid-focus-duration) var(--ease-smooth);
   gap: clamp(1.5rem, 4vw, 5rem);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column {
@@ -847,3 +851,21 @@
 /* Recycled rows share a horizontal panel box. Empty portions of a later
    panel must not intercept a photo in an earlier one. */
 .personal-photos-wall-panel .personal-photos-slide { pointer-events: auto; }
+
+.personal-photos-wall-navigation {
+  top: auto;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  align-items: center;
+  white-space: nowrap;
+}
+.personal-photos-wall-navigation button {
+  display: grid;
+  place-items: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  color: var(--ink);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide:not([data-held]) {
+  transform: translate(var(--wall-shift-x, 0px), var(--wall-shift-y, 0px));
+}
+.personal-photos-sheet[data-layout="wall"][data-hold-snap] .personal-photos-masonry { transition: none; }

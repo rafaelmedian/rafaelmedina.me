@@ -139,8 +139,8 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       if (!active.current || event.ctrlKey || event.metaKey || event.altKey) return
       const step = 80
       switch (event.key) {
-        case "ArrowLeft": pan(step, 0); break
-        case "ArrowRight": pan(-step, 0); break
+        case "ArrowLeft": if (!event.shiftKey) return; pan(step, 0); break
+        case "ArrowRight": if (!event.shiftKey) return; pan(-step, 0); break
         case "ArrowUp": pan(0, step); break
         case "ArrowDown": pan(0, -step); break
         case "+": case "=": zoomCentre(1.2); break
