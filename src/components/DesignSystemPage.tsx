@@ -1151,7 +1151,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>corner-shape</code> fall back to the same four circular radii without changing layout. Pills,
                 dots, avatars, the photo globe's circular hit area, and its layout control remain geometrically round. In development, the homepage shows the live curve,
                 0.5–2× shared radius-scale, and independent 0–64px CV illustration radius tuners by default; <a href="/?tune=corners">/?tune=corners</a> remains their explicit route. The
-                stylesheet remains the production source of truth; the tuners start at the shipped 1.3× scale and the illustration&rsquo;s 24px comp radius.
+                stylesheet remains the production source of truth; the tuners start at exponent 1.25, a 1.55× scale, and a 33px CV illustration radius.
               </p>
               <div
                 className="ds-rule"

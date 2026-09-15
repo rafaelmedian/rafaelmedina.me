@@ -25,9 +25,9 @@ const RESUME_RADIUS_PROPERTIES = [
     removes its inline overrides and restores the production tokens. */
 export default function CornerCurveTuner() {
   const { exponent, radiusScale, cvIllustrationRadius } = useDialKit("Continuous corners", {
-    exponent: [1.3, 1, 4, 0.05],
-    radiusScale: [1.3, 0.5, 2, 0.05],
-    cvIllustrationRadius: [24, 0, 64, 1],
+    exponent: [1.25, 1, 4, 0.05],
+    radiusScale: [1.55, 0.5, 2, 0.05],
+    cvIllustrationRadius: [33, 0, 64, 1],
   })
 
   useEffect(() => {

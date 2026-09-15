@@ -51,10 +51,10 @@ test("corner tuner changes the shared curve and radius scale without reshaping c
   const radiusScale = page.getByRole("slider", { name: "Radius Scale" })
   await expect(curve).toBeVisible()
   await expect(radiusScale).toBeVisible()
-  await expect(curve).toHaveAttribute("aria-valuenow", "1.3")
-  await expect(radiusScale).toHaveAttribute("aria-valuenow", "1.3")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.3)")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "31.2px")
+  await expect(curve).toHaveAttribute("aria-valuenow", "1.25")
+  await expect(radiusScale).toHaveAttribute("aria-valuenow", "1.55")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.25)")
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "37.2px")
 
   await curve.press("End")
   await radiusScale.press("End")
@@ -94,7 +94,7 @@ test("corner tuner changes the CV illustration independently of the shared radiu
     })
 
   await expect(cvRadius).toBeVisible()
-  await expect(cvRadius).toHaveAttribute("aria-valuenow", "24")
+  await expect(cvRadius).toHaveAttribute("aria-valuenow", "33")
   const initialCorners = await readPaperCorners()
 
   await radiusScale.press("End")
@@ -102,7 +102,7 @@ test("corner tuner changes the CV illustration independently of the shared radiu
 
   await cvRadius.press("End")
   const tunedCorners = await readPaperCorners()
-  expect(tunedCorners.outerX).toBeGreaterThan(initialCorners.outerX * 2)
+  expect(tunedCorners.outerX).toBeGreaterThan(initialCorners.outerX * 1.8)
   expect(tunedCorners.outerY).toBeCloseTo(tunedCorners.outerX, 0)
   expect(tunedCorners.innerX).toBeCloseTo(tunedCorners.outerX - 1, 0)
   expect(tunedCorners.innerY).toBeCloseTo(tunedCorners.outerY - 1, 0)
