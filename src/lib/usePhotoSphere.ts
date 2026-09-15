@@ -114,17 +114,12 @@ const clickSlop = 6
 const keyStep = Math.PI / 6
 /** How long a photo brought to the front stays there before the spin takes it on. */
 const frontDwell = 4000
-/** How much a clicked photo grows, at the centre, over its size at the front.
-    Exported so the responsive image hint advertises the same largest draw. */
-export const photoSphereHoldGrowth = 2.7
-/** How much a photo under the pointer grows, to say it can be clicked. */
-const hoverGrowth = 1.08
-/** A small lean at the card edge: enough to answer the pointer without
-    breaking the globe's upright billboard illusion. */
+/** Share of the stage available to a focused print, matching Grid. */
+export const photoSphereHoldShare = 0.7
+/** A small lean at the card edge answers the pointer. */
 const hoverTilt = 3
-/** The hover is the first stretch of the same growth a hold makes, so a
-    click carries on from it instead of dropping it while the hold begins. */
-const hoverShare = (hoverGrowth - 1) / (photoSphereHoldGrowth - 1)
+/** Hover occupies a short first stretch of the interruptible focus spring. */
+const hoverShare = 0.08 / 1.7
 /** How much the rest of the globe shrinks back while one photo is held. */
 const zoomRecede = 0.22
 /** The caption's distance below the held photo, and how far it rises as it
@@ -201,6 +196,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     let orientation = identity
     let radius = 0
     let stageSize = { width: 0, height: 0 }
+    let captionBottom = 0
     let boxes: { width: number; height: number }[] = []
     let dirty = true
     let frame = 0
@@ -217,6 +213,8 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
     const measure = () => {
       radius = sphere.offsetWidth * Number(tokens.getPropertyValue("--sphere-radius"))
       stageSize = { width: stage.clientWidth, height: stage.clientHeight }
+      const toggle = stage.parentElement?.querySelector(".personal-photos-layout")
+      captionBottom = toggle ? toggle.getBoundingClientRect().top - stage.getBoundingClientRect().top : stageSize.height
       // Every slide is the same width; a slide on the far side of the globe
       // is display: none and has no box of its own, so it takes the width of
       // one that is showing and its height from its own photo's ratio. Read
@@ -300,12 +298,14 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         // half-way to either state is drawn half-way, so the two moves cross
         // smoothly when the hold changes hands.
         const zoom = zooms[index]
-        const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + zoom * (photoSphereHoldGrowth - 1)) * (1 - recede * zoomRecede * (1 - zoom))
+        const fitScale = Math.min(stageSize.width * photoSphereHoldShare / boxes[index].width, stageSize.height * photoSphereHoldShare / boxes[index].height)
+        const growth = zoom <= hoverShare ? zoom / hoverShare * 0.08 : 0.08 + (zoom - hoverShare) / (1 - hoverShare) * (fitScale - 1.08)
+        const scale = perspective * (0.28 + 0.72 * depth ** 2.2) * 0.75 * (0.6 + 0.4 * rim) * (1 + growth) * (1 - recede * zoomRecede * (1 - zoom))
         // Keep the growing print's paper edge near its resting visual weight,
         // and land its drawn corner on the house's 24px media radius. These
         // values compensate for the transform scale: without that, the frame
         // and radius are enlarged along with the photo.
-        slide.style.setProperty("--sphere-frame-share", (0.035 - zoom * 0.022).toFixed(4))
+        slide.style.setProperty("--sphere-frame-share", (0.035 * (1 - zoom) + 0.035 / fitScale * zoom).toFixed(4))
         const cornerRadius = `calc(var(--radius-md) * ${(1 - zoom).toFixed(4)} + var(--radius-lg) * ${(zoom / scale).toFixed(4)})`
         slide.style.setProperty("--sphere-corner-radius", cornerRadius)
         slide.style.borderRadius = cornerRadius
@@ -346,9 +346,8 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
         const fade = rim * rim
         slide.style.setProperty("--sphere-fade", fade.toFixed(3))
         slide.toggleAttribute("data-sphere-hidden", fade === 0)
-        // Only the face of the sphere answers the pointer; a click on a photo
-        // on its way out round the rim would bring one back nobody can see.
-        slide.toggleAttribute("data-sphere-far", z < -0.2)
+        // Every visible print answers a click, including the fading rim.
+        slide.toggleAttribute("data-sphere-far", fade === 0)
       })
       // One caption, under the held photo. It is placed from the photo's
       // drawn box and shown by the photo's zoom — the last two fifths of
@@ -366,7 +365,7 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
           const rise = (1 - opacity) * captionRise
           let top = captionBox.y + captionBox.halfHeight + captionGap + rise
           // Above the photo instead when the screen ends below it, never on it.
-          if (top + caption.offsetHeight > stageSize.height - captionGap) top = captionBox.y - captionBox.halfHeight - captionGap - caption.offsetHeight - rise
+          if (top + caption.offsetHeight > captionBottom - captionGap) top = captionBox.y - captionBox.halfHeight - captionGap - caption.offsetHeight - rise
           caption.style.setProperty("--stage-caption-x", `${captionBox.x.toFixed(1)}px`)
           caption.style.setProperty("--stage-caption-y", `${top.toFixed(1)}px`)
           caption.style.setProperty("--stage-caption-opacity", opacity.toFixed(3))
@@ -613,13 +612,9 @@ export function usePhotoSphere(stage: HTMLDivElement | null, {
       // A drag that stopped before release carries nothing on.
       if (event.timeStamp - ended.lastTime > 80) velocity = { pitch: 0, yaw: 0 }
       if (ended.moved || event.type === "pointercancel") return
-      // While a photo is held, any click lets it go — on the photo itself,
-      // on a neighbour, or on the stage — and the next click is free to hold
-      // another. Clicking a neighbour used to hand the hold straight over,
-      // which read as the big photo refusing to shrink. With nothing held, a
-      // click on a photo holds it, and a click on the margin closes the globe.
-      if (held !== null) release()
-      else if (ended.slide && !ended.slide.hasAttribute("data-sphere-far")) hold(ended.slide)
+      // A neighbour takes focus directly; the held print or margin releases.
+      if (ended.slide && !ended.slide.hasAttribute("data-sphere-far")) hold(ended.slide)
+      else if (held !== null) release()
       else if (ended.onStage && event.target === stage) onStageClickRef.current()
     }
     const onPointerLeave = () => {

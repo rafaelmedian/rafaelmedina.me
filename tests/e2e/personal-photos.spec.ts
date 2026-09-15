@@ -563,7 +563,7 @@ test("the globe carries every photo at least three times, larger at the front th
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
 })
 
-test("a drag turns the globe and lets a held photo go; a click holds a photo at the centre and the next click, anywhere, lets it go", async ({ page }) => {
+test("a drag turns the globe and lets a held photo go; a click holds a photo at the centre and a neighbouring photo takes focus directly", async ({ page }) => {
   test.slow()
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
@@ -596,14 +596,24 @@ test("a drag turns the globe and lets a held photo go; a click holds a photo at 
   const others = (await readTiles(page)).filter((tile) => tile.id !== target.id)
   expect(Math.max(...others.map((tile) => tile.width))).toBeLessThan(held.width / 2)
 
-  // A click on a neighbouring photo does not hand the hold over; it lets the
-  // held photo go, and the globe stays open.
-  const neighbour = others.filter((tile) => tile.depth > 600).sort((a, b) => Math.hypot(a.x, a.y) - Math.hypot(b.x, b.y))[0]
-  await page.mouse.click(innerCentre(1440) + neighbour.x, innerCentre(900) + neighbour.y)
-  await page.mouse.move(5, 5)
-  await expect.poll(async () => Math.max(...(await readTiles(page)).map((tile) => tile.width)), motion).toBeLessThan(target.width * 1.3)
+  // Click an exposed part of a neighbour, outside the enlarged photo.
+  const neighbour = await stage(page).evaluate((root) => {
+    for (const slide of root.querySelectorAll<HTMLElement>(".personal-photos-slide:not([data-sphere-held]):not([data-sphere-hidden])")) {
+      const box = slide.getBoundingClientRect()
+      for (const fraction of [0.2, 0.5, 0.8]) {
+        const x = box.x + box.width * fraction, y = box.y + box.height / 2
+        if (document.elementFromPoint(x, y)?.closest(".personal-photos-slide") === slide) {
+          slide.setAttribute("data-test-neighbour", "")
+          return { x, y }
+        }
+      }
+    }
+    throw new Error("No exposed neighbour")
+  })
+  await page.mouse.click(neighbour.x, neighbour.y)
+  await expect(stage(page).locator("[data-test-neighbour]")).toHaveAttribute("data-sphere-held", "")
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  // The caption went with it.
+  await page.keyboard.press("Escape")
   await expect(caption).toHaveText("")
 
   // A drag turns it: the front changes hands. A drag also lets a held photo go.

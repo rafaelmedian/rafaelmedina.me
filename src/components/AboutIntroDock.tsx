@@ -88,7 +88,6 @@ export function AboutIntroDock(props: {
   }, [])
 
   useEffect(() => {
-    if (!approached) return
     // Dialogs live in several independently owned portals. Observe their
     // semantic state instead of coupling every gallery/booking/photo reader
     // to this optional player. Ignore persistent, closed Base UI popups.
@@ -105,12 +104,12 @@ export function AboutIntroDock(props: {
     })
     sync()
     return () => observer.disconnect()
-  }, [approached])
+  }, [])
 
   const visible = open || (active && !obscured)
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
-      data-intro-visible={Boolean((approached || open) && visible)} data-toc-open={tocOpen}>
+      data-obscured={obscured} data-intro-visible={Boolean((approached || open) && visible)} data-toc-open={tocOpen}>
       <MobileTableOfContents {...props} onOpenChange={handleTocOpen} />
       {(approached || open) && (
         <IntroBoundary>

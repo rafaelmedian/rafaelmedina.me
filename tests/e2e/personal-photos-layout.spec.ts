@@ -377,7 +377,7 @@ test("a scrolled grid glides back to its first row before the prints fly home", 
   await expect(dialog(page)).toBeHidden()
 })
 
-test("on a phone the grid keeps two columns and the toggle clears the first row", async ({ page }) => {
+test("on a phone the grid keeps two columns and the toggle sits below the first row", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.setViewportSize({ width: 390, height: 844 })
   await openHome(page)
@@ -399,7 +399,8 @@ test("on a phone the grid keeps two columns and the toggle clears the first row"
     }
   })
   expect(columns).toBe(2)
-  expect(toggleBottom).toBeLessThan(firstRowTop)
+  expect(toggleBottom).toBeGreaterThan(780)
+  expect(firstRowTop).toBeLessThan(50)
   expect(sideways).toBeLessThanOrEqual(0)
 })
 
