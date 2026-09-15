@@ -158,7 +158,9 @@ test("a press outside a note closes the gallery once, with the note still on it"
   await folder.click()
   await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
-  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
+  await page.evaluate(() => document.getAnimations().forEach(animation => {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+  }))
   const before = await sounds()
 
   // The note stays on the card while it shrinks: turning back to the list on
@@ -240,7 +242,9 @@ test("the nested reader grows downward without replacing its dialog", async ({ p
   const dialog = popup(page)
   await expect(dialog.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
-  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
+  await page.evaluate(() => document.getAnimations().forEach(animation => {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+  }))
   const listBox = (await dialog.boundingBox())!
   const original = await dialog.elementHandle()
   await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()

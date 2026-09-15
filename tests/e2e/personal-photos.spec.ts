@@ -616,19 +616,22 @@ test("a drag turns the globe and lets a held photo go; a click holds a photo at 
   await page.keyboard.press("Escape")
   await expect(caption).toHaveText("")
 
-  // A drag turns it: the front changes hands. A drag also lets a held photo go.
-  // The globe turned to bring the target to the centre and stays there once it
-  // is let go, so the target is clicked where it is now, not where it was dealt.
-  const moved = (await readTiles(page)).find((tile) => tile.id === target.id)!
-  await page.mouse.click(innerCentre(1440) + moved.x, innerCentre(900) + moved.y)
-  await expect.poll(async () => (await readTiles(page)).find((tile) => tile.id === target.id)?.width ?? 0, motion).toBeGreaterThan(target.width * 1.8)
+  // The neighbour is now at the front. Let its release settle before
+  // selecting it again; the previous target may be obscured after this turn.
+  await page.mouse.move(5, 5)
+  const selected = stage(page).locator("[data-test-neighbour]")
+  await expect.poll(() => selected.evaluate(slide => Number(slide.style.getPropertyValue("--sphere-zoom"))), motion).toBeLessThan(0.01)
+  await selected.click()
+  await expect(selected).toHaveAttribute("data-sphere-held", "")
+  await expect.poll(() => selected.evaluate(slide => Number(slide.style.getPropertyValue("--sphere-zoom"))), motion).toBeGreaterThan(0.99)
+  const beforeDrag = (await frontTile(page)).id
   await page.mouse.move(400, 450)
   await page.mouse.down()
   for (let step = 1; step <= 12; step++) await page.mouse.move(400 + step * 30, 450 + step * 5)
   await page.mouse.up()
   await page.mouse.move(5, 5)
   await expect.poll(async () => Math.max(...(await readTiles(page)).map((tile) => tile.width)), motion).toBeLessThan(target.width * 1.3)
-  expect((await frontTile(page)).id).not.toBe(target.id)
+  expect((await frontTile(page)).id).not.toBe(beforeDrag)
 
   // With nothing held, a click on the margin closes and hands focus back.
   await page.mouse.click(30, 450)
