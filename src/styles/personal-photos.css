@@ -828,6 +828,7 @@
 /* A fixed ring fills an endless wall. Columns repeat on their own height
    so a shorter column never leaves a blank band below its last photograph. */
 .personal-photos-wall-panel {
+  pointer-events: none;
   position: absolute;
   top: 0;
   display: flex;
@@ -843,3 +844,6 @@
   position: relative;
   padding-bottom: clamp(1.5rem, 4vw, 5rem);
 }
+/* Recycled rows share a horizontal panel box. Empty portions of a later
+   panel must not intercept a photo in an earlier one. */
+.personal-photos-wall-panel .personal-photos-slide { pointer-events: auto; }
