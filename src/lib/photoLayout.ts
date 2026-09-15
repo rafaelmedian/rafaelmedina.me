@@ -21,7 +21,7 @@ export function useSheetColumns() {
 
 /** How the open sheet lays the photos out: turned on a globe, or dealt into
     scrolling columns. */
-export type PhotoSheetLayout = "sphere" | "grid"
+export type PhotoSheetLayout = "sphere" | "grid" | "wall"
 const sheetLayoutKey = "personal-photos-layout"
 
 /** The layout the visitor last picked, so the next visit opens the way they
@@ -29,7 +29,8 @@ const sheetLayoutKey = "personal-photos-layout"
     globe is the default either way. */
 export function readSheetLayout(): PhotoSheetLayout {
   try {
-    return localStorage.getItem(sheetLayoutKey) === "grid" ? "grid" : "sphere"
+    const saved = localStorage.getItem(sheetLayoutKey)
+    return saved === "grid" || saved === "wall" ? saved : "sphere"
   } catch {
     return "sphere"
   }
@@ -40,5 +41,23 @@ export function saveSheetLayout(layout: PhotoSheetLayout) {
     localStorage.setItem(sheetLayoutKey, layout)
   } catch {
     // Unsaved only means the next visit opens on the globe.
+  }
+}
+
+/** Wall backdrop is independent of the layout, so trying another view does
+    not discard the visitor's comparison. */
+export function readWallBackground(): boolean {
+  try {
+    return localStorage.getItem("personal-photos-wall-background") !== "off"
+  } catch {
+    return true
+  }
+}
+
+export function saveWallBackground(enabled: boolean) {
+  try {
+    localStorage.setItem("personal-photos-wall-background", enabled ? "on" : "off")
+  } catch {
+    // The current visit still uses the selected background.
   }
 }

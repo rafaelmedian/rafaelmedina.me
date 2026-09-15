@@ -345,7 +345,8 @@
    --ease-smooth, and the labels change colour on the same clock. The thumb
    wears the control shadow as well as the ring, so the two translucent layers
    remain distinct against either a bright photograph or the dark scrim. */
-.personal-photos-layout {
+.personal-photos-layout,
+.personal-photos-wall-tools {
   position: absolute;
   top: max(1.25rem, env(safe-area-inset-top));
   left: 50%;
@@ -381,7 +382,8 @@
   box-shadow: var(--shadow-ring), var(--shadow-control), inset 0 1px 0 rgb(255 255 255 / 0.82);
   transition: translate var(--duration-fast) var(--ease-smooth), width var(--duration-fast) var(--ease-smooth);
 }
-.personal-photos-layout button {
+.personal-photos-layout button,
+.personal-photos-wall-tools button {
   position: relative;
   z-index: 1;
   display: inline-flex;
@@ -403,7 +405,8 @@
 }
 /* The house ring, just inside the segment: it reads on the white thumb and
    on the grey bar alike. */
-.personal-photos-layout button:focus-visible {
+.personal-photos-layout button:focus-visible,
+.personal-photos-wall-tools button:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
@@ -428,7 +431,7 @@
    keys — with nothing snapping or dragging; the margin around the masonry
    dismisses. Room above the first row for the toggle, and below the last
    for its caption and shadow. */
-.personal-photos-sheet[data-layout="grid"] {
+.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"]) {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
@@ -437,7 +440,7 @@
   cursor: auto;
   scrollbar-width: none;
 }
-.personal-photos-sheet[data-layout="grid"]::-webkit-scrollbar { display: none; }
+.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"])::-webkit-scrollbar { display: none; }
 
 /* Columns the component fills itself, rather than a CSS multi-column. Both
    lay out the same, but `columns` fills the first column top to bottom before
@@ -516,7 +519,7 @@
 .personal-photos-column:has(> [data-held]) { z-index: 1; }
 /* A close asked for over a held photo, or inside its glide back, snaps the
    grid to rest so the flight measures the slides where they will stay. */
-.personal-photos-sheet[data-hold-snap] .personal-photos-slide { transition: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .personal-photos-masonry .personal-photos-slide[data-held] {
     transform: translate(var(--hold-dx, 0px), var(--hold-dy, 0px)) scale(var(--hold-scale, 1));
@@ -618,13 +621,13 @@
 /* On the grid the caption's fade is a transition rather than a frame-by-
    frame value: in, once the photo is most of the way to the centre; out,
    at once. */
-.personal-photos-sheet[data-layout="grid"] .personal-photos-stage-caption {
+.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"]) .personal-photos-stage-caption {
   /* The component hands over the held photo's bottom edge; the gap is the
      stylesheet's, as the globe's is. */
   top: calc(var(--stage-caption-y, 100%) + var(--stage-caption-gap));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
-.personal-photos-sheet[data-layout="grid"][data-held] .personal-photos-stage-caption {
+.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"])[data-held] .personal-photos-stage-caption {
   transition: opacity var(--duration-base) var(--ease-smooth) calc(var(--grid-focus-duration) / 2);
 }
 
@@ -737,3 +740,67 @@
   .personal-photos-stage-caption,
   .personal-photos-layout::before { transition: none; }
 }
+
+/* Wall: a loose, edge-to-edge arrangement using the grid's selection and
+   flight machinery. Its canvas can disappear without changing photo geometry. */
+.personal-photos-backdrop[data-wall-background="on"] { background: var(--canvas); }
+.personal-photos-backdrop[data-wall-background="off"] { background: transparent; }
+.personal-photos-wall-tools {
+  top: calc(max(1.25rem, env(safe-area-inset-top)) + 3rem);
+}
+.personal-photos-wall-tools button {
+  min-height: 2.5rem;
+  color: var(--ink);
+}
+.personal-photos-sheet[data-layout="wall"] {
+  padding-top: 8rem;
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-masonry {
+  width: 100%;
+  gap: clamp(1.5rem, 4vw, 5rem);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-column {
+  gap: clamp(1.5rem, 4vw, 5rem);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(even) {
+  padding-top: 6rem;
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(3n) {
+  padding-top: 3rem;
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
+  --photo-padding: 0px;
+  --photo-radius: var(--radius-sm);
+  width: 88%;
+  box-shadow: var(--shadow-ring);
+  transition: transform var(--grid-focus-duration) var(--ease-smooth), scale var(--duration-base) var(--ease-smooth);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide:nth-child(even) {
+  align-self: flex-end;
+  width: 100%;
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
+.personal-photos-sheet[data-layout="wall"][data-held] .personal-photos-slide:not([data-held]) {
+  opacity: 0.25;
+  /* Only selection fades. Flights hide their destinations synchronously. */
+  transition: transform var(--grid-focus-duration) var(--ease-smooth), scale var(--duration-base) var(--ease-smooth), opacity var(--duration-base) var(--ease-smooth);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] {
+  --photo-radius: calc(var(--radius-sm) / var(--hold-scale, 1));
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-stage-caption {
+  width: auto;
+  max-width: calc(100% - 2 * var(--photo-gutter));
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-ring);
+  text-shadow: none;
+}
+
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide:focus-visible {
+  outline-color: var(--focus-ring);
+}
+/* Must win over the wall's selection transitions before measuring a close. */
+.personal-photos-sheet[data-hold-snap] .personal-photos-slide { transition: none; }

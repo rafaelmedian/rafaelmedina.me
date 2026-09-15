@@ -7,7 +7,7 @@ import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOr
 import { photoSphereHoldGrowth, usePhotoSphere } from "../lib/usePhotoSphere"
 import { flyBetweenLayouts, snapshotSlides } from "../lib/photoLayoutSwitch"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
-import { readSheetLayout, saveSheetLayout, usePreviewCount, useSheetColumns, type PhotoSheetLayout } from "../lib/photoLayout"
+import { readSheetLayout, readWallBackground, saveWallBackground, saveSheetLayout, usePreviewCount, useSheetColumns, type PhotoSheetLayout } from "../lib/photoLayout"
 
 export type PersonalPhotosSheetHandle = {
   /** Opens the sheet; on the globe, with a photo id, holds that photo at the
@@ -57,6 +57,7 @@ const gridHoldShare = 0.7
 const layoutOptions = [
   { layout: "grid", label: "Grid" },
   { layout: "sphere", label: "Sphere" },
+  { layout: "wall", label: "Wall" },
 ] as const
 
 /** Glides a scrolled grid back to its first row, where the prints were
@@ -81,8 +82,10 @@ function rewindSheet(sheet: HTMLDivElement, halt: { cancelled: boolean }) {
 export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<PersonalPhotosSheetHandle>; onPreviewImagesChange: (images: Record<string, string>) => void }) {
   const [open, setOpen] = useState(false)
   const [layout, setLayout] = useState<PhotoSheetLayout>(readSheetLayout)
+  const [wallBackground, setWallBackground] = useState(readWallBackground)
   const previewCount = usePreviewCount()
-  const columnCount = useSheetColumns()
+  const sheetColumns = useSheetColumns()
+  const columnCount = layout === "wall" && sheetColumns === 3 ? 5 : sheetColumns
   // The first photos are the prints, so dealing them round-robin puts them
   // across the top of the grid rather than down its left-hand column.
   const gridColumns = Array.from({ length: columnCount }, (_, column) =>
@@ -218,7 +221,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   // the previous viewport and grid. A scroll that has already happened by the
   // time of the click — its event arrives a frame late — moved nothing.
   useEffect(() => {
-    if (!sheetNode || layout !== "grid") return
+    if (!sheetNode || layout === "sphere") return
     const onScroll = () => { if (heldRef.current && sheetNode.scrollTop !== heldRef.current.scrollTop) releaseHeld() }
     const onResize = () => { releaseHeld() }
     sheetNode.addEventListener("scroll", onScroll, { passive: true })
@@ -327,7 +330,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
       // A close asked for over a held photo — or inside its glide back —
       // snaps the grid to rest first, so the flight measures the slides
       // where they will stay.
-      if (sheet && layout === "grid") {
+      if (sheet && layout !== "sphere") {
         releaseHeld()
         sheet.setAttribute("data-hold-snap", "")
       }
@@ -371,8 +374,8 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange} actionsRef={dialogActions}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="personal-photos-backdrop" />
-        <Dialog.Popup initialFocus={sheetRef} finalFocus={() => opener} className="personal-photos-dialog">
+        <Dialog.Backdrop className="personal-photos-backdrop" data-wall-background={layout === "wall" ? (wallBackground ? "on" : "off") : undefined} />
+        <Dialog.Popup initialFocus={sheetRef} finalFocus={() => opener} className="personal-photos-dialog" data-layout={layout}>
           <Dialog.Title className="sr-only">Personal photos</Dialog.Title>
           <Dialog.Description className="sr-only">
             {layout === "sphere"
@@ -388,6 +391,18 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
               </button>
             ))}
           </div>
+          {layout === "wall" && (
+            <div className="personal-photos-wall-tools">
+              <button type="button" aria-label="Background" aria-pressed={wallBackground} onClick={() => {
+                const enabled = !wallBackground
+                setWallBackground(enabled)
+                saveWallBackground(enabled)
+              }}>
+                Background {wallBackground ? "on" : "off"}
+              </button>
+              <button type="button" onClick={() => dialogActions.current?.close()}>Close</button>
+            </div>
+          )}
           {/* On the globe the stage takes every press: a drag anywhere turns
               it, a click on a photo brings it to the front, and only a click
               on the margin around the globe closes. */}
@@ -396,13 +411,13 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
             className="personal-photos-sheet"
             data-layout={layout}
             role="region"
-            aria-label={layout === "sphere" ? "Photo globe" : "Photo sheet"}
-            data-held={layout === "grid" && held ? "" : undefined}
+            aria-label={layout === "sphere" ? "Photo globe" : layout === "wall" ? "Photo wall" : "Photo sheet"}
+            data-held={layout !== "sphere" && held ? "" : undefined}
             tabIndex={0}
-            onPointerDown={layout === "grid" ? onPointerDown : undefined}
-            onPointerMove={layout === "grid" ? onGridPointerMove : undefined}
-            onPointerLeave={layout === "grid" ? resetGridTilt : undefined}
-            onClick={layout === "grid" ? onSheetClick : undefined}
+            onPointerDown={layout !== "sphere" ? onPointerDown : undefined}
+            onPointerMove={layout !== "sphere" ? onGridPointerMove : undefined}
+            onPointerLeave={layout !== "sphere" ? resetGridTilt : undefined}
+            onClick={layout !== "sphere" ? onSheetClick : undefined}
           >
             {/* Keyed, so a switch builds the other layout afresh: an unkeyed
                 fragment is flattened, and the grid then took over the globe's
@@ -446,7 +461,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                 <p className="personal-photos-stage-caption" aria-hidden="true" />
               </Fragment>
             ) : (
-              <Fragment key="grid">
+              <Fragment key={layout}>
                 <div className="personal-photos-masonry">
                   {gridColumns.map((column, columnIndex) => (
                     <div className="personal-photos-column" key={columnIndex}>
@@ -470,7 +485,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                             // Held, the photo is drawn far larger than its
                             // column: say so, and the browser fetches the
                             // larger candidate for it.
-                            sizes={held?.id === photo.id ? `${Math.round(held.width)}px` : gridPhotoSizes}
+                            sizes={held?.id === photo.id ? `${Math.round(held.width)}px` : layout === "wall" ? "(max-width: 699.98px) 45vw, 20vw" : gridPhotoSizes}
                             loading={index < previewCount ? "eager" : "lazy"}
                             alt={photo.alt}
                             width={photo.width}
