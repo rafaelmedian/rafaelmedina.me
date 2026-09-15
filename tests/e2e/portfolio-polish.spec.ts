@@ -1612,8 +1612,8 @@ test("keeps the static Punta Cana map when the interactive map chunk fails", asy
 test("matches the local-time trigger corners to its card", async ({ page }) => {
   await page.goto("/#about-panel")
 
-  await expect(page.locator(".mosaic-social-time")).toHaveCSS("border-radius", "16px")
-  await expect(page.locator(".mosaic-about-local-time .mosaic-local-time-card")).toHaveCSS("border-radius", "16px")
+  await expect(page.locator(".mosaic-social-time")).toHaveCSS("border-radius", "20.8px")
+  await expect(page.locator(".mosaic-about-local-time .mosaic-local-time-card")).toHaveCSS("border-radius", "20.8px")
 })
 
 test("keeps the local-time hover highlight compact without shrinking its hover target", async ({ page }) => {
@@ -1899,7 +1899,7 @@ test("the TOC contains all three rows in one inset card", async ({ page }) => {
   const surface = page.locator(".mosaic-mobile-toc-surface")
   const trigger = page.getByRole("button", { name: /^Table of contents:/ })
   await trigger.click()
-  await expect(surface).toHaveCSS("border-radius", "24px")
+  await expect(surface).toHaveCSS("border-radius", "31.2px")
   await expect(surface).toHaveCSS("backdrop-filter", "blur(16px)")
   await expect(surface).not.toHaveCSS("box-shadow", "none")
   const card = (await surface.boundingBox())!
@@ -1910,7 +1910,7 @@ test("the TOC contains all three rows in one inset card", async ({ page }) => {
     expect(bounds.width).toBeCloseTo(card.width - 16, 0)
     expect(bounds.y).toBeCloseTo(card.y + 8 + index * 48, 0)
     expect(bounds.height).toBe(48)
-    await expect(row).toHaveCSS("border-radius", "16px")
+    await expect(row).toHaveCSS("border-radius", "20.8px")
     await expect(row).toHaveCSS("box-shadow", "none")
   }
   await page.keyboard.press("Escape")
@@ -2431,7 +2431,7 @@ test("keeps the section links compact with the hero tooltip-link corners", async
   await expect(links).toHaveCount(2)
   for (const link of await links.all()) {
     await expect(link).toHaveCSS("min-height", "32px")
-    await expect(link).toHaveCSS("border-radius", "8px")
+    await expect(link).toHaveCSS("border-radius", "10.4px")
   }
 })
 
@@ -4450,8 +4450,8 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   await expect(next).toHaveAttribute("aria-keyshortcuts", "ArrowDown ArrowRight")
   // --radius-lg. The dialog's bottom corners used to be a 28px one-off; they
   // were folded into the four-step radius scale (see /design-system).
-  await expect(card).toHaveCSS("border-bottom-left-radius", "24px")
-  await expect(card).toHaveCSS("border-bottom-right-radius", "24px")
+  await expect(card).toHaveCSS("border-bottom-left-radius", "31.2px")
+  await expect(card).toHaveCSS("border-bottom-right-radius", "31.2px")
 
   // One control per side, level with each other and 16px clear of the card.
   const placement = async () => {

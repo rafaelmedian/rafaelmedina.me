@@ -214,7 +214,7 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     expect(reading.y).toBeCloseTo(top, 0)
     // An article is taller than the room, so the sheet takes all of it.
     expect(reading.height).toBeCloseTo(room, 0)
-    expect(await dialog.evaluate((element) => getComputedStyle(element).borderBottomLeftRadius)).toBe("24px")
+    expect(await dialog.evaluate((element) => getComputedStyle(element).borderBottomLeftRadius)).toBe("31.2px")
     // Growing is the only sizing there is: no expand control.
     await expect(dialog.getByRole("button", { name: /Expand modal|Restore modal size/ })).toHaveCount(0)
     const reader = dialog.locator(".writings-scroll")
