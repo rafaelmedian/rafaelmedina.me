@@ -1,8 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useEffect, useRef, useState, type RefObject } from "react"
 
-import { isTuningCornerCurve } from "../lib/developmentTuning"
-
 type BookingDialogProps = {
   /** Cal.com event type, e.g. `https://cal.com/rafaelmedian/30min`. */
   bookingUrl: string
@@ -41,8 +39,6 @@ export function BookingDialog({ bookingUrl, availabilityLabel, open, onOpenChang
   // been, so the fallback is a clock rather than an event.
   const [hasStalled, setHasStalled] = useState(false)
   const popupRef = useRef<HTMLDivElement | null>(null)
-  const tuningCornerCurve = isTuningCornerCurve()
-
   useEffect(() => {
     if (!open || isCalendarReady) return
     const timer = window.setTimeout(() => setHasStalled(true), STALL_MS)
@@ -50,8 +46,7 @@ export function BookingDialog({ bookingUrl, availabilityLabel, open, onOpenChang
   }, [isCalendarReady, open])
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}
-      modal={!tuningCornerCurve} disablePointerDismissal={tuningCornerCurve}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Backdrop className="booking-backdrop" />
         <div

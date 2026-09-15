@@ -107,6 +107,12 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   const title = (await sheet(page).getByRole("heading", { name: "Notes and tools", exact: true }).boundingBox())!
   // On a sheet this wide the arrow hangs in the left gutter, clear of the title.
   expect(arrow.x + arrow.width).toBeLessThanOrEqual(title.x)
+  // Vertical placement belongs to the layout, not the independent `translate`
+  // property used by some browsers for transforms. If that newer property is
+  // unavailable, the chevron must still stay centred on the toolbar title.
+  await back.evaluate((element) => { element.style.translate = "none" })
+  const fallbackArrow = (await back.boundingBox())!
+  expect(fallbackArrow.y + fallbackArrow.height / 2).toBeCloseTo(title.y + title.height / 2, 0)
   await expect(sheet(page).getByRole("button", { name: "Next note", exact: true })).toBeVisible()
   await expect(sheet(page).getByRole("button", { name: "Next preview", exact: true })).toHaveCount(0)
 
@@ -152,7 +158,9 @@ test("a press outside a note closes the gallery once, with the note still on it"
   await folder.click()
   await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
-  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
+  await page.evaluate(() => document.getAnimations().forEach(animation => {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+  }))
   const before = await sounds()
 
   // The note stays on the card while it shrinks: turning back to the list on
@@ -200,9 +208,9 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     await waitForSettledDialog()
     const reading = (await dialog.boundingBox())!
     // The sheet hangs from the line a project preview opens on -- 8vh, and
-    // 5vh from 1320px where the preview goes wide -- over a 1rem bottom gutter.
+    // 5vh from 1320px where the preview goes wide -- with a matching bottom gutter.
     const top = viewport.height * (viewport.width >= 1320 ? 0.05 : 0.08)
-    const room = viewport.height - top - 16
+    const room = viewport.height - 2 * top
     expect(reading.y).toBeCloseTo(top, 0)
     // An article is taller than the room, so the sheet takes all of it.
     expect(reading.height).toBeCloseTo(room, 0)
@@ -234,12 +242,14 @@ test("the nested reader grows downward without replacing its dialog", async ({ p
   const dialog = popup(page)
   await expect(dialog.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
-  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
+  await page.evaluate(() => document.getAnimations().forEach(animation => {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+  }))
   const listBox = (await dialog.boundingBox())!
   const original = await dialog.elementHandle()
   await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
   await expect(dialog).toHaveAttribute("data-reading-note", "true")
-  await expect.poll(async () => (await dialog.boundingBox())!.height).toBeCloseTo(934, 0)
+  await expect.poll(async () => (await dialog.boundingBox())!.height).toBeCloseTo(900, 0)
   const readingBox = (await dialog.boundingBox())!
   expect(readingBox.x).toBe(listBox.x)
   expect(readingBox.y).toBe(listBox.y)
@@ -280,21 +290,22 @@ test("the phone reader keeps the gallery's full-height frame and reachable contr
   }
 })
 
-test("the toolbar divider appears only once the article has scrolled", async ({ page }) => {
+test("the toolbar keeps a hairline while the article is scrolled", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 520 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/designing-matcha/")
   const dialog = sheet(page)
   const toolbar = dialog.locator(".writings-toolbar")
   const shadow = () => toolbar.evaluate((element) => getComputedStyle(element).boxShadow)
-  // The line and its shadow are both fully transparent while the article rests at its top.
+  // The hairline is fully transparent while the article rests at its top.
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0)")
   const reader = dialog.locator(".writings-scroll")
   await reader.evaluate((element) => element.scrollTo(0, 20))
   await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
+  await expect.poll(shadow).not.toContain("10px")
   await reader.evaluate((element) => element.scrollTo(0, 400))
   await expect(dialog.locator('.writing-contents')).toHaveAttribute('data-stuck', 'true')
-  await expect.poll(shadow).not.toContain("rgba(0, 0, 0, 0.05)")
+  await expect.poll(shadow).toContain("rgba(0, 0, 0, 0.05)")
   // Turning to the next note resets the reader to the top, so the divider goes with it.
   await dialog.getByRole("button", { name: "Next note", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "Designing for active traders", exact: true })).toBeVisible()
@@ -549,12 +560,17 @@ test("the contents open from one horizontal row and jump without adding history"
 
   // The compact control is one row between the article header and body, on
   // the reading column rather than in either marginalia gutter.
-  const [contentsBox, header] = await Promise.all([
-    contents.boundingBox(),
-    dialog.locator(".writing-reader-header").boundingBox(),
-  ])
-  expect(Math.round(contentsBox!.x)).toBe(Math.round(header!.x))
-  expect(Math.round(contentsBox!.width)).toBe(Math.round(header!.width))
+  const readerHeader = dialog.locator(".writing-reader-header")
+  // A direct note URL hydrates into the gallery; wait for that layout handoff
+  // rather than sampling the contents rail in its transient prerender width.
+  await expect.poll(async () => {
+    const [contentsBox, header] = await Promise.all([contents.boundingBox(), readerHeader.boundingBox()])
+    return [
+      Math.round(contentsBox!.x) - Math.round(header!.x),
+      Math.round(contentsBox!.width) - Math.round(header!.width),
+    ]
+  }).toEqual([0, 0])
+  const [contentsBox, header] = await Promise.all([contents.boundingBox(), readerHeader.boundingBox()])
   expect(contentsBox!.y).toBeGreaterThanOrEqual(header!.y + header!.height)
   expect(await contents.evaluate((element) => getComputedStyle(element).borderBottomWidth)).toBe("1px")
 

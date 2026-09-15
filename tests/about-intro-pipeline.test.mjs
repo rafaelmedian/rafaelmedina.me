@@ -9,6 +9,15 @@ import ffmpegPath from "ffmpeg-static"
 const root = path.resolve(import.meta.dirname, "..")
 const script = path.join(root, "scripts/build-about-intro.mjs")
 
+test("keeps the shipped intro metadata in step with its public manifest", async () => {
+  const [{ aboutIntroProduction }, manifestText] = await Promise.all([
+    import("../src/data/aboutIntroProduction.ts"),
+    readFile(path.join(root, "public/about-intro/manifest.json"), "utf8"),
+  ])
+
+  assert.deepEqual(aboutIntroProduction, JSON.parse(manifestText))
+})
+
 function run(command, args) {
   return spawnSync(command, args, { cwd: root, encoding: "utf8" })
 }

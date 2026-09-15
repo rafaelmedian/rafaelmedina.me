@@ -18,16 +18,14 @@ class IntroBoundary extends Component<{ children: ReactNode }, { failed: boolean
 }
 
 export function AboutIntroDock(props: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onWork: () => void
   onAbout: () => void
   onServices: () => void
 }) {
-  const [videoEnabled] = useState(() => {
-    if (!import.meta.env.DEV || typeof window === "undefined") return false
-    const params = new URLSearchParams(window.location.search)
-    return params.get("intro") === "preview" || params.has("introStyle")
-  })
-  const [media] = useState(() => videoEnabled ? getAboutIntro() : null)
+  const [media] = useState(() => getAboutIntro())
+  const videoEnabled = Boolean(media)
   const [option] = useState<IntroOption>(() => {
     const requested = import.meta.env.DEV && typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("introStyle") : null
@@ -37,12 +35,12 @@ export function AboutIntroDock(props: {
   const [approached, setApproached] = useState(false)
   const [active, setActive] = useState(false)
   const [obscured, setObscured] = useState(false)
-  const [open, setOpen] = useState(false)
+  const { open, onOpenChange: setOpen } = props
   const [tocOpen, setTocOpen] = useState(false)
   const handleTocOpen = useCallback((next: boolean) => {
     setTocOpen(next)
     if (next) setOpen(false)
-  }, [])
+  }, [setOpen])
 
   useEffect(() => {
     const dock = dockRef.current
@@ -57,11 +55,20 @@ export function AboutIntroDock(props: {
   useEffect(() => {
     const about = document.getElementById("about-panel")
     if (!about) return
+    const resume = document.querySelector(".mosaic-tile-resume")
+    let resumeReached = false
     let frame = 0
     const sync = () => {
       frame = 0
       const bounds = about.getBoundingClientRect()
-      const nowActive = bounds.top <= window.innerHeight * 0.31 && bounds.bottom > 0
+      const cv = resume?.getBoundingClientRect()
+      // Keep initial visits media-free, even when a tall viewport includes CV.
+      // Once half the tile is seen after scrolling, retain the intro through
+      // the grid-to-About handoff. Scrolling back to the hero hides it again.
+      const visibleHeight = cv ? Math.max(0, Math.min(cv.bottom, window.innerHeight) - Math.max(cv.top, 0)) : 0
+      if (window.scrollY > 96 && cv && visibleHeight >= cv.height * 0.5) resumeReached = true
+      const nowActive = bounds.bottom > 0 && (bounds.top <= window.innerHeight * 0.31 || (resumeReached && window.scrollY > 96))
+      if (resumeReached) setApproached(true)
       // Geometry fallback also covers restored scroll positions and browsers
       // without IntersectionObserver; no media URL exists above this boundary.
       if (bounds.top <= window.innerHeight + 200 && bounds.bottom >= -200) setApproached(true)
@@ -76,6 +83,9 @@ export function AboutIntroDock(props: {
         }
       }, { rootMargin: "200px" }) : null
     observer?.observe(about)
+    const resumeObserver = resume && "IntersectionObserver" in window
+      ? new IntersectionObserver(schedule, { threshold: 0.5 }) : null
+    if (resume) resumeObserver?.observe(resume)
     sync()
     window.addEventListener("scroll", schedule, { passive: true })
     window.addEventListener("resize", schedule)
@@ -83,6 +93,7 @@ export function AboutIntroDock(props: {
     return () => {
       cancelAnimationFrame(frame)
       observer?.disconnect()
+      resumeObserver?.disconnect()
       window.removeEventListener("scroll", schedule)
       window.removeEventListener("resize", schedule)
       window.removeEventListener("pageshow", schedule)
@@ -90,7 +101,6 @@ export function AboutIntroDock(props: {
   }, [])
 
   useEffect(() => {
-    if (!approached) return
     // Dialogs live in several independently owned portals. Observe their
     // semantic state instead of coupling every gallery/booking/photo reader
     // to this optional player. Ignore persistent, closed Base UI popups.
@@ -107,14 +117,14 @@ export function AboutIntroDock(props: {
     })
     sync()
     return () => observer.disconnect()
-  }, [approached])
+  }, [])
 
   const visible = open || (active && !obscured)
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
-      data-intro-visible={Boolean(approached && visible)} data-toc-open={tocOpen}>
+      data-obscured={obscured} data-intro-visible={Boolean((approached || open) && visible)} data-toc-open={tocOpen}>
       <MobileTableOfContents {...props} onOpenChange={handleTocOpen} />
-      {approached && (
+      {(approached || open) && (
         <IntroBoundary>
           <Suspense fallback={null}>
             <AboutIntroLayer open={open}>

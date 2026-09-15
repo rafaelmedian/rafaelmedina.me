@@ -30,6 +30,15 @@ jobs:
 
       - run: npm ci
 
+      - name: Require contact delivery endpoint
+        env:
+          VITE_CONTACT_API_URL: ${{ vars.VITE_CONTACT_API_URL }}
+        run: |
+          if [ -z "$VITE_CONTACT_API_URL" ]; then
+            echo "::error::The production About chat requires the VITE_CONTACT_API_URL repository variable described in workers/contact/README.md."
+            exit 1
+          fi
+
       # Opt in after the one-time Cloudflare setup. Deploy before the site so
       # newly published note IDs are already accepted by the API.
       - name: Update portfolio API

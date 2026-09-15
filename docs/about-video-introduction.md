@@ -1,10 +1,9 @@
 # About video introduction
 
-The About introduction is designed for a short, face-only recording. Local
-development shows a portrait teaser and a sample recording so the interaction
-can be reviewed before that recording exists. Production stays disabled until
-the real recording, captions, and transcript have been reviewed and generated
-into `public/about-intro/`. Running the asset script does not enable production.
+The About introduction is a short, face-only recording attached to the chat
+portrait. Production uses the reviewed recording, captions, transcript, poster,
+and teaser in `public/about-intro/`; the separate development preview remains
+available for testing the player with longer fixture media.
 
 ## Record it
 
@@ -91,32 +90,37 @@ node scripts/build-about-intro.mjs \
   --teaser-format gif
 ```
 
-Before enabling production, play the generated `recording.mp4` with captions in
+Before replacing the production recording, play the generated `recording.mp4` with captions in
 a browser. Listen once without reading, then replay while following every cue.
 Confirm the square crop throughout the take, legible caption breaks, synchronized
 starts and ends, clear audio, and a poster and silent teaser that still look like
 the same recording.
 
-After running `npm run dev`, `http://localhost:5173/` shows the portrait teaser and sample
-recording by default. Use `http://localhost:5173/?intro=off` when the widget
-would get in the way of other development work. The placeholder code and query
-switch are development-only and cannot enable the widget in a production build.
+After running `npm run dev`, `http://localhost:5173/` shows the production chat
+recording. Use `http://localhost:5173/?intro=preview` for the longer fixture or
+`http://localhost:5173/?intro=off` when the player would get in the way. Both
+query switches are development-only.
 
-Once the real media and captions are approved, import the generated manifest at
-the top of `src/data/aboutIntro.ts`:
-
-```ts
-import aboutIntroManifest from "../../public/about-intro/manifest.json"
-```
-
-Then replace the disabled value with the imported, typed manifest:
+Mirror the generated manifest in the typed production entry in
+`src/data/aboutIntro.ts` (Vite intentionally warns when source imports a file
+from `public/` directly):
 
 ```ts
-export const aboutIntro: AboutIntroMedia = aboutIntroManifest
+export const aboutIntro: AboutIntroMedia = {
+  duration: 35.04,
+  transcript: "The complete spoken transcript…",
+  assets: { /* the generated /about-intro/ URLs */ },
+}
 ```
 
-Run lint, build, and the About intro browser tests before committing that
-activation with the generated files.
+Run lint, build, and the About intro browser tests whenever the recording and
+generated files change.
+
+The current production source is the supplied 8.24-second 1920×1080 HEVC take.
+The pipeline crops it around the face and ships a 720px H.264/AAC recording at
+813 KB, a 30 KB silent MP4 teaser, and a 25 KB WebP poster. Its synchronized
+captions and transcript read: “Hey, hi, my name is Rafael. You already know a
+little bit about me. I’m a designer, obviously.”
 
 ## Speaking preview and minimal replies
 
@@ -140,8 +144,9 @@ to fit the duration and audio within the 5 MB budget. It generates
 `src/data/aboutIntroPreview.ts` with the encoded duration and asset paths so the
 hover duration cannot drift from the recording. It keeps the largest GIF that
 fits the 150 KB budget and checks both media sizes before replacing the fixtures.
-The original remains a local input. Generated files stay in `tests/fixtures/`,
-and production remains disabled until the introduction is ready to publish.
+The original remains a local input. Generated fixture files stay in
+`tests/fixtures/` and never replace the production recording unless its manifest
+is explicitly selected in `src/data/aboutIntro.ts`.
 
 Hover or focus the portrait to reveal play in its center and two small reply
 controls beside it. Hover or focus an icon to expand it into a labeled button:
@@ -189,7 +194,7 @@ Opening the TOC still collapses it, and background tabs still pause playback.
 
 B is the selected default on the main page. The A/B/C switcher has been removed;
 the development comparison page and explicit `?introStyle=a` / `c` links remain
-available for reference. Production still waits for the final personal recording.
+available for reference. Production uses the personal recording above.
 
 - **A — Compact pill:** the alternative hover-expanding icon buttons.
 - **B — Chat bubble:** a staggered greeting, then an email field. Confirming the
@@ -266,10 +271,12 @@ mobile. When the field appears, history shifts over the shared 360ms smooth
 transition. The white reply surface uses the shared hairline and overlay shadow,
 with an 8px visual gap below the last message. Reduced motion skips the shift.
 
-Clicking the sent address to edit it unsends it with a Messages-style puff: the
+Clicking the sent address to edit it changes the local conversation with a Messages-style puff: the
 bubble and its tapback blur out while dots of its blue drift up and away, and
 after 480ms the email field returns with the address and takes focus. Reduced
-motion goes straight back to the field.
+motion goes straight back to the field. Before delivery the control is labelled
+“Change email”; afterward it becomes “Start over.” Starting over clears only the
+local conversation; messages already delivered to the inbox remain delivered.
 
 ## Direct website replies
 
@@ -281,6 +288,8 @@ The Worker uses a fixed recipient, validates the request, rate-limits anonymous
 submissions, and keeps the provider key on the server. It has no message database
 and does not log request bodies. The mail provider and inbox still process and
 retain email under their own settings; this is not a zero-storage email system.
+The Pages deployment refuses to build the production chat unless its public
+Worker endpoint is configured in the `VITE_CONTACT_API_URL` repository variable.
 See [contact delivery setup](../workers/contact/README.md) for configuration.
 
 The portrait now stays at the dock baseline beside the final reply item,

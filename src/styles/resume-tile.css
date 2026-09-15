@@ -27,12 +27,10 @@
   width: min(64%, 15rem);
   aspect-ratio: 237 / 280;
   overflow: hidden;
-  /* 24px corners on the 237x280 comp by default. Percent radii resolve against
-     width and height separately, so the slash form keeps them circular; cqw
-     cannot be used here because the paper is the container itself. */
-  border-radius:
-    var(--resume-paper-radius-x, 10.127%) /
-    var(--resume-paper-radius-y, 8.571%);
+  /* 24px corners on the 237x280 comp. Percent radii resolve against width and
+     height separately, so the slash form keeps them circular; cqw cannot be used
+     here because the paper is the container itself. */
+  border-radius: 10.127% / 8.571%;
   filter: drop-shadow(0 4px 21px rgb(0 0 0 / 0.06)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.05));
   transition: transform var(--duration-base) var(--ease-smooth);
 }
@@ -56,7 +54,7 @@
   inset: 1px;
   display: block;
   overflow: hidden;
-  border-radius: max(0px, calc(var(--resume-sheet-radius, 10.13cqw) - 1px));
+  border-radius: calc(10.13cqw - 1px);
   background: var(--canvas);
 }
 

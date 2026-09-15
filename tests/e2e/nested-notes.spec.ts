@@ -146,8 +146,8 @@ test("the list keeps its scroll position and the reader adapts without another d
     await page.setViewportSize({ width, height: 900 })
     await expect.poll(async () => {
       const box = (await popup.boundingBox())!
-      return box.y + box.height
-    }).toBeCloseTo(width < 700 ? 900 : 884, 0)
+      return box.y - (900 - box.y - box.height)
+    }).toBeCloseTo(0, 0)
     expect(await original!.evaluate(element => element === document.querySelector('[role="dialog"]'))).toBe(true)
     await expect.poll(() => scroller.evaluate(element => element.scrollWidth - element.clientWidth)).toBe(0)
   }

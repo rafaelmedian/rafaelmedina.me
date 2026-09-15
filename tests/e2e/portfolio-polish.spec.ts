@@ -28,11 +28,11 @@ const getPreviousCompanyLink = (page: Page, name: string) =>
 
 // Wait for finite tile interactions before measuring a preview origin.
 // Safe from hanging: the gallery's View Timeline lives on the parent stage,
-// outside this subtree, while every animation inside `.mosaic-rows` finishes.
+// outside this subtree. An interrupted tile transition is settled too.
 const settleWorkCards = (page: Page) =>
   page
     .locator(".mosaic-rows")
-    .evaluate((element) => Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+    .evaluate((element) => Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
 
 // The reveal keyframes are held by `data-avatar-intro`, and they land on the
 // hero's children rather than the hero itself -- so waiting on an ancestor's
@@ -275,6 +275,15 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
 
   const edge = page.locator(".elastic-scroll-edge")
   const pullingState = await edge.evaluate((element) => {
+    const holdReleaseFade = (event: TransitionEvent) => {
+      if (event.propertyName !== "opacity" || element.getAttribute("data-pulling") !== "false") return
+      element.removeEventListener("transitionrun", holdReleaseFade)
+      element
+        .getAnimations()
+        .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")
+        ?.pause()
+    }
+    element.addEventListener("transitionrun", holdReleaseFade)
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
     return {
       pulling: element.getAttribute("data-pulling"),
@@ -285,17 +294,18 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0.12s" })
 
   await expect(edge).toHaveAttribute("data-pulling", "false")
-  // Hold the release fade as soon as it starts so the opacity below is sampled
-  // at a known point in it. Sleeping 700ms instead measured from whenever the
-  // assertions in between happened to finish, which on CI is late enough that
-  // the fade has already dropped past the threshold.
-  await edge.evaluate((element) => {
+  // The transitionrun listener above holds the release fade inside the page,
+  // before a busy CI runner can finish it between Playwright round trips. The
+  // resting target itself is written on the next animation frame, so wait for
+  // that frame to create the transition before sampling it.
+  await expect.poll(() => edge.evaluate((element) => {
     const fade = element
       .getAnimations()
       .find((animation) => (animation as CSSTransition).transitionProperty === "opacity")
-    if (!fade) throw new Error("The release fade did not start")
+    if (!fade) return false
     fade.pause()
-  })
+    return true
+  })).toBe(true)
   await expect(edge).toHaveCSS("transition-duration", "1.26s")
   await expect(edge).toHaveCSS("transition-timing-function", "ease-in-out")
   const curtains = edge.locator(".elastic-scroll-edge-curtain")
@@ -859,12 +869,10 @@ test("sets the whole About sheet on the reading step under one heading step", as
   // it -- the same pairing the notes reader uses.
   expect(sizes).toEqual(["14px", "16px"])
 
-  // The lede, "Worked with", "How I work", "Services" and the questions that
-  // close it are the sheet's section headings and are set identically, so none
-  // reads as ranking above another.
+  // Only the opening title is larger; supporting headings use reading size.
   await expect(sectionHeading).toHaveCount(4)
   for (const heading of [...(await sectionHeading.all()), lede]) {
-    await expect(heading).toHaveCSS("font-size", "16px")
+    await expect(heading).toHaveCSS("font-size", heading === lede ? "16px" : "14px")
     await expect(heading).toHaveCSS("font-weight", "600")
     await expect(heading).toHaveCSS("color", "rgb(45, 45, 45)")
   }
@@ -1309,14 +1317,41 @@ test("sends every X preview control to the right profile", async ({ page }) => {
   await expect(mentions.nth(0)).toHaveAttribute("href", "https://x.com/0xproject")
   await expect(mentions.nth(1)).toHaveAttribute("href", "https://x.com/matchaxyz")
 
-  // Focus reaches the card's own links, and leaving the pair puts it away.
+  // The card is a preview, not a stop: Tab passes over its five links to the
+  // next control, and the card goes away with the focus that opened it.
   await page.keyboard.press("Tab")
-  await expect(card.locator(".mosaic-x-card-avatar-link")).toBeFocused()
-  await expect(card).toHaveAttribute("data-state", "open")
+  await expect(page.getByRole("link", { name: /preview 1 of/ })).toBeFocused()
+  await expect(card).toHaveAttribute("data-state", "closed")
 
+  await page.keyboard.press("Shift+Tab")
+  await expect(card).toHaveAttribute("data-state", "open")
   await page.keyboard.press("Escape")
   await expect(card).toHaveAttribute("data-state", "closed")
   await expect(xAction).toBeFocused()
+})
+
+test("keeps the links inside focus-opened cards out of the tab order", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+
+  // Each of these opens a card on focus. The card's links used to be the next
+  // Tab stops, so passing the clock or the last company chip landed inside a
+  // preview nobody asked to enter.
+  const location = page.locator(".mosaic-profile-location-place")
+  // Focus that lands before hydration opens nothing; retry until the card answers.
+  await expect(async () => {
+    await location.blur()
+    await location.focus()
+    await expect(page.locator(".mosaic-profile-location-card")).toHaveAttribute("data-state", "open", { timeout: 500 })
+  }).toPass()
+  await page.keyboard.press("Tab")
+  await expect(page.locator(".mosaic-last-updated")).toBeFocused()
+
+  const lastChip = page.locator(".mosaic-work-history-chip").last()
+  await lastChip.focus()
+  await expect(page.locator(".mosaic-work-history-popover")).toHaveAttribute("data-open", "true")
+  await page.keyboard.press("Tab")
+  await expect(location).toBeFocused()
 })
 
 test("keeps the X preview card inside a narrow hover-capable viewport", async ({ page }) => {
@@ -1457,9 +1492,17 @@ test("shows an interactive OpenStreetMap view of Punta Cana while local time is 
   // reason. Clamp into the card, nearest the work history, which is the corner
   // a stacking regression would surface at.
   const clamp = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high)
+  const viewportHeight = page.viewportSize()!.height
   const overlapPoint = {
     x: clamp(workHistoryBox!.x + 8, cardBox!.x + 8, cardBox!.x + cardBox!.width - 8),
-    y: clamp(workHistoryBox!.y + 8, cardBox!.y + 8, cardBox!.y + cardBox!.height - 8),
+    // Locator hover scrolls the trigger into view, but the card may extend
+    // below a short viewport. elementFromPoint only accepts viewport
+    // coordinates, so keep the nearest card point inside the visible slice.
+    y: clamp(
+      workHistoryBox!.y + 8,
+      Math.max(cardBox!.y + 8, 8),
+      Math.min(cardBox!.y + cardBox!.height - 8, viewportHeight - 8),
+    ),
   }
   expect(
     await page.evaluate(
@@ -1938,7 +1981,7 @@ for (const width of [768, 1440]) {
 test("keeps the mobile profile and final content clear of the table of contents", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.goto("/")
-  const avatar = await page.getByRole("button", { name: "Ask about Rafael Medina" }).boundingBox()
+  const avatar = await page.getByRole("button", { name: "Watch Rafael Medina's introduction" }).boundingBox()
   expect(avatar!.y).toBeLessThan(96)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("03 Services")
@@ -2601,17 +2644,18 @@ test("left aligns the about introduction with the services reading axis", async 
   })
 })
 
-test("opens chat directly and focuses its email field from the avatar button", async ({ page }) => {
+test("opens the introduction player from the avatar button", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   const trigger = page.locator(".mosaic-avatar-button")
 
-  await expect(trigger).toHaveAccessibleName("Ask about Rafael Medina")
+  await expect(trigger).toHaveAccessibleName("Watch Rafael Medina's introduction")
   await trigger.focus()
   await trigger.press("Enter")
 
-  await expect(page.getByRole("dialog")).toBeVisible()
-  await expect(page.getByLabel("Your email")).toBeFocused()
+  await expect(page.getByRole("button", { name: "Play introduction", exact: true })).toBeFocused()
+  await page.getByRole("button", { name: "Close introduction", exact: true }).click()
+  await expect(trigger).toBeFocused()
 })
 
 test("keeps every project group together inside the takeover stage", async ({ page }) => {
@@ -2781,6 +2825,7 @@ test("keeps the takeover close wrapper at the compact design-system size", async
 
   expect(size.width).toBeCloseTo(51.2, 0)
   expect(size.height).toBeCloseTo(51.2, 0)
+  await expect(page.locator(".mosaic-takeover-close svg")).toHaveAttribute("stroke-width", "1.75")
 })
 
 test("returns to the top of the page from the takeover close", async ({ page }) => {
@@ -3044,7 +3089,7 @@ test("gives the takeover cue a full tap target and its own name", async ({ page 
 
   // Distinct from the avatar's chat action in a screen-reader rotor list.
   await expect(cue).toHaveAccessibleName("Continue to About")
-  await expect(page.getByRole("button", { name: "Ask about Rafael Medina" })).toHaveCount(1)
+  await expect(page.getByRole("button", { name: "Watch Rafael Medina's introduction" })).toHaveCount(1)
 })
 
 test("drops the takeover cue below the breakpoint that pins the gallery", async ({ page }) => {
@@ -3926,7 +3971,8 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   }
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
-  // The visible counter fits between paging and close without moving either.
+  // The visible counter sits with close, away from the paging controls, without
+  // moving either end of the toolbar.
   const [prevBox, nextBox, closeBox] = await Promise.all(
     ["Previous preview", "Next preview", "Close preview"].map((name) =>
       dialog.getByRole("button", { name }).boundingBox(),
@@ -3939,9 +3985,43 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(countBox.width).toBeGreaterThan(32)
   expect(countBox.height).toBeGreaterThanOrEqual(32)
   expect(countBox.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
-  expect(countBox.x + countBox.width).toBeLessThan(closeBox!.x)
+  expect(closeBox!.x - (countBox.x + countBox.width)).toBeCloseTo(12, 0)
+  expect(countBox.x).toBeGreaterThan(mobileViewport.width / 2)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
+
+  // Compact chrome stays crisp on white instead of wearing the desktop rail's
+  // broad 32px ambient shadow.
+  const compactShadow = await dialog.getByRole("button", { name: "Close preview" }).evaluate((element) =>
+    getComputedStyle(element).boxShadow,
+  )
+  expect(compactShadow).toContain("5px")
+  expect(compactShadow).not.toContain("32px")
+})
+
+test("optically centers the compact close icon", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+
+  await page
+    .locator(".preview-gallery-origin-wrap")
+    .evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  const centers = await page.getByRole("button", { name: "Close preview" }).evaluate((button) => {
+    const icon = button.querySelector("svg")!
+    const buttonBox = button.getBoundingClientRect()
+    const iconBox = icon.getBoundingClientRect()
+    return {
+      buttonY: buttonBox.y + buttonBox.height / 2,
+      iconY: iconBox.y + iconBox.height / 2,
+    }
+  })
+
+  // The downward cast adds visual weight under the circle, so the symmetric X
+  // sits one pixel below its geometric center to balance the whole control.
+  expect(centers.iconY - centers.buttonY).toBeCloseTo(1, 1)
 })
 
 test("treats a mostly vertical touch gesture as scrolling rather than gallery paging", async ({ browser }) => {
@@ -5268,7 +5348,7 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
   await expect(page.locator(".mosaic-row-card video.mosaic-row-media").first()).toHaveJSProperty("paused", true)
 })
 
-test("puts teammates before Rafael in unlabelled credits below the description", async ({ page }) => {
+test("keeps Matcha authors below the summary with signatures disabled", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
@@ -5276,7 +5356,9 @@ test("puts teammates before Rafael in unlabelled credits below the description",
   const dialog = page.getByRole("dialog")
   const description = dialog.locator(".preview-gallery-description")
   const team = dialog.getByRole("list", { name: "Collaborators" })
+  const signatures = dialog.locator(".project-case-study-signatures")
   await expect(team.getByRole("link")).toHaveText(["Simon Rico", "Rafael Medina"])
+  await expect(signatures).toHaveCount(0)
   await expect(description).toContainText("I mapped and designed")
   await expect(description).toContainText("without losing their quote or inputs")
   await expect(dialog.locator("dl")).toHaveCount(0)
@@ -5305,7 +5387,10 @@ test("puts teammates before Rafael in unlabelled credits below the description",
       await expect(description).not.toBeEmpty()
       await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined)|sole product designer/)
       await expect(dialog.locator("dl")).toHaveCount(0)
-      if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
+      if (await dialog.locator(".project-case-study").count()) {
+        await expect(team.getByRole("link").last()).toHaveText("Rafael Medina")
+        await expect(signatures).toHaveCount(0)
+      } else if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
         await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
       }
     }
@@ -5313,7 +5398,7 @@ test("puts teammates before Rafael in unlabelled credits below the description",
   }
 })
 
-test("reveals a new teammate from the left when paging from solo work", async ({ page }) => {
+test("updates Matcha authors when paging from solo work", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
@@ -5333,13 +5418,7 @@ test("reveals a new teammate from the left when paging from solo work", async ({
   await next.click()
   await expect(counter).toHaveText("10 / 14")
   await expect(team.getByRole("link")).toHaveText(["Jakub Antalik", "Rafael Medina"])
-  const teammateMotion = await team.getByRole("link", { name: "Jakub Antalik" }).locator("..").evaluate((item) =>
-    item.getAnimations().map((animation) => ({
-      name: (animation as CSSAnimation).animationName,
-      firstTransform: animation.effect?.getKeyframes()[0]?.transform,
-    })),
-  )
-  expect(teammateMotion).toContainEqual({ name: "preview-gallery-person-in", firstTransform: "translate(-12px)" })
+  await expect(dialog.locator(".project-case-study-signatures")).toHaveCount(0)
 })
 
 test("shows a bottom fade while a laptop preview has more content to scroll", async ({ page }) => {
@@ -5351,12 +5430,15 @@ test("shows a bottom fade while a laptop preview has more content to scroll", as
   const card = page.getByRole("dialog").locator(".preview-gallery-card")
   const cue = page.locator(".preview-gallery-scroll-cue")
   await expect(cue).toHaveAttribute("data-visible", "true")
-  await expect(cue).toHaveCSS("opacity", "1")
-  expect(await cue.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain("linear-gradient")
+  const layers = cue.locator("span")
+  await expect(layers).toHaveCount(4)
+  await expect(layers.first()).toHaveCSS("opacity", "1")
+  await expect(layers.last()).toHaveCSS("backdrop-filter", "blur(20px)")
+  expect(await cue.evaluate((element) => getComputedStyle(element, "::after").backgroundImage)).toContain("linear-gradient")
 
   await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
   await expect(cue).not.toHaveAttribute("data-visible", "true")
-  await expect(cue).toHaveCSS("opacity", "0")
+  await expect(layers.first()).toHaveCSS("opacity", "0")
 })
 
 const expectPreviewContributionFits = async (page: Page, viewportHeight: number) => {

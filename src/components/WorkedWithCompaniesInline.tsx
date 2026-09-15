@@ -376,12 +376,17 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
                 </span>
               </div>
               <p className="mosaic-work-history-popover-description">{shownCompany.description}</p>
+              {/* For touch, where the chip's first tap only opens this panel.
+                  A keyboard's chip already goes to the same site, so this copy
+                  stays out of the tab order -- after the last chip it was the
+                  next stop, inside a panel the chip had opened on focus. */}
               <a
                 href={shownCompany.href}
                 target="_blank"
                 rel="noreferrer"
                 className="mosaic-work-history-popover-link"
                 aria-label={`Visit ${shownCompanyHostname}`}
+                tabIndex={-1}
               >
                 {shownCompanyHostname}
                 <span aria-hidden="true">›</span>

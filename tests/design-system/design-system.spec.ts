@@ -45,75 +45,30 @@ test("keeps the caption blur outside the card's squircle clip", async ({ page })
   await expect(card.locator(":scope > .mosaic-row-card-scrim")).toHaveCount(1)
 })
 
-test("corner tuner changes the shared curve and radius scale without reshaping circles", async ({ page }) => {
-  await page.goto("/?tune=corners")
-  const curve = page.getByRole("slider", { name: "Exponent" })
-  const radiusScale = page.getByRole("slider", { name: "Radius Scale" })
-  await expect(curve).toBeVisible()
-  await expect(radiusScale).toBeVisible()
-  await expect(curve).toHaveAttribute("aria-valuenow", "1.25")
-  await expect(radiusScale).toHaveAttribute("aria-valuenow", "1.55")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(1.25)")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "37.2px")
-
-  await curve.press("End")
-  await radiusScale.press("End")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(4)")
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "48px")
-  await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("link").first()).toHaveCSS("border-radius", "16px")
-  await expect(page.locator(".mosaic-avatar")).toHaveCSS("corner-shape", "superellipse(1)")
-
-  await page.locator(".mosaic-row-card").first().click()
-  await expect(page.locator(".preview-gallery-card")).toHaveCSS("corner-shape", "superellipse(4)")
-  await expect(curve).toBeVisible()
+test("does not mount the retired corner tuner on development pages", async ({ page }) => {
+  for (const path of ["/", "/?tune=corners"]) {
+    await page.goto(path)
+    await page.waitForLoadState("networkidle")
+    await expect(page.getByRole("slider", { name: "Exponent" })).toHaveCount(0)
+    await expect(page.getByText("Continuous corners", { exact: true })).toHaveCount(0)
+  }
 })
 
-test("corner tuner changes the CV illustration independently of the shared radius scale", async ({ page }) => {
-  await page.goto("/?tune=corners")
-  const radiusScale = page.getByRole("slider", { name: "Radius Scale" })
-  const cvRadius = page.getByRole("slider", { name: /CV Illustration Radius/i })
-  const paper = page.locator(".resume-tile-paper")
-
-  const readPaperCorners = () =>
-    paper.evaluate((element) => {
-      const sheet = element.querySelector<HTMLElement>(".resume-tile-sheet")
-      if (!sheet) throw new Error("The CV illustration sheet is missing")
-
-      const outerBox = element.getBoundingClientRect()
-      const toPixels = (value: string, size: number) =>
-        value.endsWith("%") ? (Number.parseFloat(value) / 100) * size : Number.parseFloat(value)
-      const [outerX, outerY = outerX] = getComputedStyle(element).borderTopLeftRadius.split(" ")
-      const [innerX, innerY = innerX] = getComputedStyle(sheet).borderTopLeftRadius.split(" ")
-
-      return {
-        outerX: toPixels(outerX, outerBox.width),
-        outerY: toPixels(outerY, outerBox.height),
-        innerX: toPixels(innerX, outerBox.width),
-        innerY: toPixels(innerY, outerBox.height),
-      }
-    })
-
-  await expect(cvRadius).toBeVisible()
-  await expect(cvRadius).toHaveAttribute("aria-valuenow", "33")
-  const initialCorners = await readPaperCorners()
-
-  await radiusScale.press("End")
-  expect((await readPaperCorners()).outerX).toBeCloseTo(initialCorners.outerX, 1)
-
-  await cvRadius.press("End")
-  const tunedCorners = await readPaperCorners()
-  expect(tunedCorners.outerX).toBeGreaterThan(initialCorners.outerX * 1.8)
-  expect(tunedCorners.outerY).toBeCloseTo(tunedCorners.outerX, 0)
-  expect(tunedCorners.innerX).toBeCloseTo(tunedCorners.outerX - 1, 0)
-  expect(tunedCorners.innerY).toBeCloseTo(tunedCorners.outerY - 1, 0)
-  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "48px")
+test("does not mount the retired contact shine tuner on development pages", async ({ page }) => {
+  for (const path of ["/", "/?tune=contact", "/__design_lab"]) {
+    await page.goto(path)
+    await page.waitForLoadState("networkidle")
+    await expect(page.getByText("Contact shine", { exact: true })).toHaveCount(0)
+    await expect(page.locator("html")).not.toHaveAttribute("data-contact-shine")
+  }
 })
 
-test("keeps contact shine fixed instead of exposing a development tuner", async ({ page }) => {
-  await page.goto("/")
+test("keeps internal case-study headings on the reading step", async ({ page }) => {
+  await page.setViewportSize({ width: 2394, height: 1223 })
+  await page.goto("/work/matcha-multiwallet-flow/")
 
-  await expect(page.getByRole("button", { name: "Continuous corners" })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Contact shine" })).toHaveCount(0)
+  const title = page.getByRole("heading", { level: 2, name: "Connecting wallets without losing the trade" })
+  await expect(title).toHaveCSS("font-size", "14px")
 })
 
 const customPropertyPattern = /^--[\w-]+$/
@@ -272,11 +227,9 @@ test("documents component-specific motion curves that still ship", async ({ page
 
   const curves = await page.evaluate(() => {
     const firstBezier = (value: string) => value.match(/cubic-bezier\([^)]*\)/)?.[0] ?? ""
-    const avatar = getComputedStyle(document.querySelector(".mosaic-avatar-coin-inner") as Element)
     const workHistory = getComputedStyle(document.querySelector(".mosaic-work-history") as Element)
 
     return [
-      firstBezier(avatar.transitionTimingFunction),
       firstBezier(workHistory.getPropertyValue("--mosaic-popover-exit-ease")),
     ]
   })

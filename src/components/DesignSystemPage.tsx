@@ -228,7 +228,7 @@ const INK_ENTRIES = [
   { token: "--focus-ring", use: "Primary UI labels, hover states, and every focus ring" },
   { hex: "#363636", token: "—", use: "Inline links on hover" },
   { hex: "#4a4a4a", token: "—", use: "Inline links at rest" },
-  { hex: "#545454", token: "—", use: "About-panel prose and article prose" },
+  { hex: "#545454", token: "—", use: "Standard project-preview prose; About and case studies use #2d2d2d" },
   { token: "--muted", use: "Secondary copy: subtitles, captions, dialog descriptions, work-history chip labels at rest, and both halves of the avatar hint — its Handlee line and the arrow beside it, which used to be the site's one red" },
   { token: "--muted-soft", use: "Tertiary labels: corner nav, the About sheet's local time, definition terms, and hobby notes" },
 ]
@@ -279,13 +279,13 @@ const TYPE_SCALE_ENTRIES = [
   {
     token: "--text-sm",
     sample: "I'm a designer who ships products.",
-    where: "The whole hero — name, subtitle, work history, location, contact pills — and the corner nav above it. Also body copy, detail rows, hover-card text, mobile table-of-contents labels, wider project captions, the notes reader's prose, headings, contents rows, and entry rows, and every line of the About sheet below its two section headings, the worked-with wall included",
+    where: "The whole hero and corner nav, body copy, detail rows, hover-card text, mobile contents labels, wider project captions, and the notes reader. About and case-study prose and supporting headings also use this step; weight distinguishes their headings.",
     style: { fontSize: "var(--text-sm)", lineHeight: "1.25rem", letterSpacing: "-0.00563rem" },
   },
   {
     token: "--text-md",
     sample: "Senior Product Designer",
-    where: "Longer quotes, labels, section headings, card titles, metadata, the Notes toolbar title, the About sheet's two section headings, and the avatar hint's Handlee display line",
+    where: "Longer quotes, labels, card titles, metadata, the Notes toolbar title, the opening About and project titles, and the avatar hint's Handlee display line",
     style: { fontSize: "var(--text-md)", lineHeight: 1.5, letterSpacing: "-0.005rem", fontWeight: 600 },
   },
   {
@@ -349,22 +349,22 @@ const ELEVATION = [
   {
     name: "Hairline",
     shadow: "inset 0 0 0 1px rgb(0 0 0 / 0.05)",
-    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits and the header avatar at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content; the header avatar's portrait zooms inside its crop, so its ring is an inset shadow on a layer over the photo instead.",
+    use: "Logo chips at 0.05, dialog media frames at 0.06, quote portraits and the header avatar at 0.12. Reads as an edge, not a lift. Images get theirs as a -1px outline, since an inset shadow paints under replaced content; the header avatar uses an inset shadow above its portrait and greeting teaser.",
   },
   {
     name: "Resting control — --shadow-control",
     shadow: "var(--shadow-control)",
-    use: "Light contact pills and the notes reader's like pill share --shadow-control, --shadow-control-hover, and --shadow-control-pressed. The same pill floating on a project preview's artwork takes the overlay tier instead. The dark email pill keeps its surface-specific shadow; the table of contents uses the overlay tier.",
+    use: "Light contact pills, the notes reader's like pill, and the compact gallery controls share --shadow-control, --shadow-control-hover, and --shadow-control-pressed. The same pill floating on a project preview's artwork takes the overlay tier instead. The dark email pill keeps its surface-specific shadow; the table of contents uses the overlay tier.",
   },
   {
     name: "Overlay — --shadow-overlay",
     shadow: "var(--shadow-overlay)",
-    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, the gallery arrows, the mobile table of contents, and the top edge of the About takeover. Surfaces without a border prepend --shadow-ring, the shared 6% hairline; the arrows draw theirs as a border instead. Chrome that reacts to the pointer deepens to --shadow-overlay-hover in place.",
+    use: "The floating-surface tier: LinkedIn and X cards, the work-history popover, the local-time card, the takeover close, the desktop gallery arrows, the mobile table of contents, and the top edge of the About takeover. Surfaces without a border prepend --shadow-ring, the shared 6% hairline; the desktop arrows draw theirs as a border instead. Chrome that reacts to the pointer deepens to --shadow-overlay-hover in place.",
   },
   {
     name: "Dialog",
     shadow: "0 1px 1px rgb(0 0 0 / 0.04), 0 18px 44px -18px rgb(0 0 0 / 0.28), 0 48px 92px -42px rgb(0 0 0 / 0.38)",
-    use: "The preview gallery card. Three layers, negative spread. Its arrows are not on this tier — they float over the page, so they wear the overlay recipe. Personal photos use the existing 46% dark scrim without blur; their prints wear --shadow-ring with --shadow-control-hover under a thin white border.",
+    use: "The preview gallery card. Three layers, negative spread. Its desktop arrows are not on this tier — they float over the page, so they wear the overlay recipe; compact arrows sit on a white header and use the control tier. Personal photos use the existing 46% dark scrim without blur; their prints wear --shadow-ring with --shadow-control-hover under a thin white border.",
   },
 ]
 
@@ -381,13 +381,13 @@ const EASINGS_ENTRIES = [
     name: "Standard — --ease-standard",
     css: "--ease-standard",
     duration: "160–1200ms",
-    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place. Also the avatar coin, whose spin outgrew --ease-smooth: an expo-out puts three quarters of its travel in the first fifth of the duration, which over a whole rotation reads as a strobe rather than a spin.",
+    use: "The house curve, and the default for a bare timing function. Chips, icons, card-title reveals, and every hover that changes colour, shadow, or underline — anything changing state in place.",
   },
   {
     name: "Smooth — --ease-smooth",
     css: "--ease-smooth",
     duration: "160–700ms",
-    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the avatar's crop tightening under the pointer, the live-time roll, the personal-photo fan opening under a moving pointer, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
+    use: "Fast out of the gate, long settle. Overlays arriving, content appearing after the avatar intro, the live-time roll, the personal-photo fan opening under a moving pointer, and a photo showing itself as it comes out of a borrowed print. Used to be three near-identical expo-outs; they are one token now.",
   },
   {
     name: "Exit — --ease-exit",
@@ -433,7 +433,6 @@ const DURATIONS_ENTRIES = [
   { value: "440ms", use: "Each About copy block rising in the first time it scrolls into the sheet, staggered 60ms per block on screen. Longer than the homepage entrance because the travel is longer: 1.75rem against 0.75rem." },
   { value: "700ms", use: "The page-end content nudge settling." },
   { value: "410ms", use: "The personal-photo fan springing out of its pile the first time it scrolls into view, every print at once on the card-stack overshoot (see Easing). Taken whole from transitions.dev’s card stack hover, the fan-out beat there. --photo-deal-duration on the stack." },
-  { value: "1100ms / 1200ms / 240ms", use: "The avatar coin. One whole turn under the pointer over 1100ms, and a click adds another over 1200ms, then opens the profile chat 240ms in — long enough that the spin is what revealed it, short enough that the click still feels answered. Both are slow on purpose: a coin this small has to turn lazily to read as turning at all. JavaScript reads all three numbers from the coin's own custom properties." },
   { value: "40ms / 700ms / 1260ms", use: "The page-end curtains stagger by 40ms (240ms total), rise over 700ms, and share the 1260ms glow release." },
 ]
 
@@ -449,7 +448,7 @@ const BREAKPOINTS = [
   { at: "≥ 900px", change: "The mosaic becomes four named desktop groups with independent container-relative heights and the shell drops its inline padding." },
   {
     at: "≥ 1320px",
-    change: "Project previews open in the wide view with a 5vh top inset: at most 981px, and narrower when the media’s height cap gives a 4:3 preview less width to fill.",
+    change: "Project previews open in the wide view with matching 5vh top and bottom gutters: at most 981px, and narrower when the media’s height cap gives a 4:3 preview less width to fill. Compact desktop previews use matching 8vh gutters; short cards keep their natural height.",
   },
 ]
 
@@ -925,7 +924,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <h2>Typography</h2>
               <p>
                 Interface text uses one face, four sizes, and four weights. The handwriting face — the avatar hint
-                and marginalia in Handlee — and the draggable hobby emoji are deliberate display exceptions.
+                and marginalia in Handlee, with La Belle Aurore and Caveat for project signatures — and the draggable hobby emoji are deliberate display exceptions.
               </p>
             </div>
 
@@ -1149,9 +1148,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Rounded rectangular surfaces use <code>--corner-curve: squircle</code>, the exact{" "}
                 <code>superellipse(2)</code> curve from CSS Borders Level 4. Browsers that do not support{" "}
                 <code>corner-shape</code> fall back to the same four circular radii without changing layout. Pills,
-                dots, avatars, the photo globe's circular hit area, and its layout control remain geometrically round. In development, the homepage shows the live curve,
-                0.5–2× shared radius-scale, and independent 0–64px CV illustration radius tuners by default; <a href="/?tune=corners">/?tune=corners</a> remains their explicit route. The
-                stylesheet remains the production source of truth; the tuners start at exponent 1.25, a 1.55× scale, and a 33px CV illustration radius.
+                dots, avatars, the photo globe's circular hit area, and its layout control remain geometrically round.
+                The stylesheet is the source of truth for the shared curve and radii.
               </p>
               <div
                 className="ds-rule"
@@ -1182,8 +1180,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
                   insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
-                  header at z-index 1. A compact position pill sits between the paging group and close,
-                  keeping both controls fixed. The current position swaps with the TOC's 4px slide and
+                  header at z-index 1. A compact position pill sits immediately before close, away from the
+                  paging group, keeping both control groups fixed. Those controls use <code>--shadow-ring</code> with
+                  the short control shadows instead of the desktop rail&rsquo;s broad overlay cast; the X sits 1px low in
+                  its box to balance that shadow&rsquo;s downward weight. The current position swaps with the TOC's 4px slide and
                   <code>--blur-reveal</code>: 120ms out on the exit curve, 160ms in on the standard curve.
                   Next sends it up, Previous down, including when the sequence wraps. The total stays still,
                   and the counter reserves enough digits for the full sequence. Reduced motion swaps instantly.
@@ -1195,7 +1195,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   photograph rather than sitting on a page. Taking no room in the flow is the point: a row of its own
                   under the title would push every description down whether or not anyone ever taps it.
                   Below the artwork, the project title and a single description cover the product, contribution,
-                  and result. On fine-pointer desktop layouts, a 3.5rem white wash fades over the card&rsquo;s bottom
+                  and result. On fine-pointer desktop layouts, the shared four-layer progressive blur and canvas fade
+                  cover a 3.5rem band over the card&rsquo;s bottom
                   edge only while more project content remains below it, making a short laptop viewport&rsquo;s hidden
                   overflow visible without adding a scrollbar. The wash shares the card&rsquo;s paging motion so it
                   never remains over the backdrop between slides. Left-aligned collaborator avatar links follow the
@@ -1208,6 +1209,31 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   maximum width with 1.5rem of padding on all four sides, and 1.25rem side padding below 700px.
                   The notes reader keeps a narrower column of its own, because it is read rather than scanned.
                   The dialog has no project-site link, metadata table, or row dividers.
+                  The main project title uses the same <code>--text-md</code> heading step as the About section.
+                  Multi-section case studies share the Notes horizontal 44px sticky contents control, revealed
+                  only after the first story section passes the top of the viewport. In the project modal,
+                  the bar offsets the card's top padding to pin flush to its top edge. An inline-size container on the card's
+                  inner content supplies the width, so its background reaches both modal edges while its text stays on the story measure.
+                  Its negative row-height
+                  bottom margin avoids reserving an empty row above the introduction and keeps the reveal from shifting the story. It shows the current
+                  section and a dropdown built from that project's sections, without repeating the project title.
+                  Each Matcha project and Protector has its own editorial content in projectCaseStudies.ts. The introduction and all story sections
+                  use concise lists with small middle-dot markers in --muted, a 0.5rem left inset, and balanced wrapping
+                  on each short bullet to avoid sparse final lines. The summary and lists use About's --text-sm reading step
+                  and -0.00563rem tracking in #2d2d2d ink, with 1.6 line height for the case-study copy and 1.5 for its headings.
+                  All headings inside a case study use --text-sm at weight 600; only the project title above it retains --text-md.
+                  Stories vary from one to three sections, with brief introductions and uneven bullet counts. Single-section stories omit Contents.
+                  The case-study label and dates are omitted. Each case study keeps its main preview artwork at the top; the sections below are text only for now.
+                  The optional media layout is retained for later: a single image spans the column, and pairs sit side by side
+                  before stacking below 700px. Author avatars and names sit below the opening project summary. The signature row
+                  is currently disabled; its component and styling are retained behind the optional showSignatures field. When enabled, it contains
+                  only linked handwritten names in #0550ae blue ink: Rafael uses La Belle Aurore and Simon keeps Caveat.
+                  As a display exception, the --text-lg lettering follows gently curved SVG baselines in a 160 × 56 viewBox,
+                  rendered 208px wide for Rafael and 184px for Simon, with a 3rem column gap and 1.5rem row gap.
+                  Rafael rises -4deg, skews -6deg and sits 2px higher; Simon leans 2deg, skews -3deg and sits 2px lower.
+                  Rafael's regular lettering carries a 0.12-unit ink stroke; Simon uses weight 500. Curved underlines use
+                  rounded 0.65- and 0.85-unit strokes, respectively, with a second light pass under Simon's name.
+                  Only the SVG transforms, keeping the named links' hit areas stable. The fonts are self-hosted Latin subsets under SIL OFL.
                 </p>
               </div>
             </div>
@@ -1296,7 +1322,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The blue folder uses two Figma layers, a half-large (12px) front crop, and three live papers
                 with 10.4px corners and reader-sized 14px type scaled to one third. Papers fan over 360ms with smooth easing.
                 The reader is a sheet up to 56rem wide that hangs from the line a project preview opens on — 8vh
-                from the top of the viewport, 5vh from 1320px — and runs to 1rem above the bottom, with room for the navigation
+                from the top of the viewport, 5vh in the wide layout — and reserves the same inset at the bottom, with room for the navigation
                 rail, white, overlay elevation, and 31.2px corners.
                 Rows are grouped under Tools, Notes, and, when it has entries, Misc; categories keep that order and dates sort newest first within each one.
                 Category labels sit above their rows so the titles keep the full measure, and empty categories do not render.
@@ -1365,10 +1391,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 scrolls without adding history. Once its natural position passes the top of the reader, the row pins
                 directly beneath Notes, then eases through the gutters and card padding to the modal edges over
                 --duration-slow (360ms) with --ease-smooth while its 5% upper hairline and short lower shadow resolve over the
-                same beat. The scroll viewport reaches the card edges so it cannot clip the rail or its shadow.
-                The shadow fades on a separate layer, replacing the Notes toolbar shadow while pinned.
+                same beat and the shadow&rsquo;s opacity follows that smooth curve on a separate layer. The scroll viewport
+                reaches the card edges so it cannot clip the rail or its shadow.
                 Reduced motion makes the disclosure and pinned transition immediate too.
-                The toolbar's own 5% black divider and short shadow appear only while scrolled, over 160ms.
+                The toolbar above keeps only its 5% black hairline while scrolled, appearing over 160ms; it never gains a
+                second drop shadow above the pinned contents rail.
                 The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes and tools" title on the same column
                 edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
@@ -1481,8 +1508,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 carry a 12% black hairline inside the crop so pale photos keep an edge on the card.
                 Confirmed authors' names are buttons. Hovering for
                 260ms, focusing, or tapping the button opens the full X profile popover above the name, centered on the button and portaled
-                beyond the carousel clip with viewport collision handling at --z-overlay. The preview
-                stays interactive by pointer and keyboard, closes on Escape, restores focus, and uses the shared hover-card motion tokens.
+                beyond the carousel clip with viewport collision handling at --z-overlay. The preview&rsquo;s
+                links answer the pointer only &mdash; Tab passes over them, since the name already goes to the
+                profile &mdash; and it closes on Escape, restores focus, and uses the shared hover-card motion tokens.
                 The name takes the hero's inline treatment: no underline, and a --mosaic-card-surface fill on
                 --radius-sm over its own line box on hover or keyboard focus, with 6px of side padding cancelled by an
                 equal negative margin — so the fill grows around the name while the name stays on the caption's
@@ -1491,6 +1519,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 rather than hovering, add an invisible 40px-tall pseudo-element behind the name.
                 Previews show the full X display name, handle, available bio, Follow action, and following/follower counts.
                 Empty bios stay omitted. Missing portraits use an initial avatar. Unlinked authors remain plain text; offscreen slides are inert.
+                From the keyboard the whole card is one Tab stop, the name, the preview, and the dots included.
+                The left and right arrows step through the quotes; Enter goes in to the author&rsquo;s name, which
+                opens the preview, and a second Enter goes in to the preview&rsquo;s links. Each Escape comes back
+                out one level, and Tab from any level moves on to the next tile. While the card holds keyboard focus a
+                key hint (<code>KeyboardHint</code>) takes the dots&rsquo; place in their 40px strip &mdash; the keys
+                for the level focus is on, as white keycaps with --shadow-ring and --shadow-control beside --text-xs
+                labels in --muted &mdash; and the dots fade out under it over --duration-quick. A pointer never sees it.
+                The card carries the same words as its accessible description, and a 5rem bottom scroll margin so
+                Tab does not park the hint under the contents dock. The team card has no author to go in to, so its
+                hint offers only the arrows.
                 Click the card outside the identity to advance, select a dot, or drag horizontally in either direction.
                 The active and adjacent slides follow the pointer together without easing. Six pixels both start the
                 drag and commit it: past that the card follows the pointer, and letting go selects the adjacent quote
@@ -1508,7 +1546,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 centered 18px above the bottom edge. Their buttons remain 10px wide and 40px tall;
                 the whole-card Advance quote button is the larger alternative target.
                 Dots use --muted-soft at 30% opacity, increasing to 75% when selected without changing size.
-                Dot focus rings sit inside the target so the card edge cannot clip them.
+                A focused dot rings the 6px dot itself at a 1px offset rather than its 10x40 target, which drew
+                a 4x34px capsule narrower than the dot it marked.
                 Quotes travel one card width left or right over --duration-slow with --ease-smooth, with no crossfade.
                 Selecting a distant dot first positions only the hidden destination beside the current quote;
                 incoming and outgoing quotes animate while other hidden slides reposition instantly.
@@ -1558,8 +1597,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 link&rsquo;s accessible name describes its action. They are set in Inter Medium at 12px on the
                 comp&rsquo;s 237px sheet, so 5.06cqw here, with a 1.5 line height, 12px between roles and 8px inside
                 one, in the comp&rsquo;s #2d2d2d and #838383; that illustrative scale and palette is the only
-                exception to the UI type ramp. In development, the CV illustration radius has its own DialKit control,
-                independent of the shared radius scale; it keeps the outer paper and inset sheet concentric. On hover or focus, the paper rises 4px and the corner scales to 1.4&times; from its lower-right
+                exception to the UI type ramp. On hover or focus, the paper rises 4px and the corner scales to 1.4&times; from its lower-right
                 anchor, both over <code>--duration-base</code> with <code>--ease-smooth</code>, so the page peels
                 further open like a book; reduced motion removes both. The reader is a slide of the
                 preview gallery rather than a modal of its own: the tile is one of
@@ -1618,9 +1656,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
 
             <div className="ds-block" data-ds-terms={terms("personal photos tile fan arc stack print white border frame globe sphere modal shadow radius grid masonry toggle layout hold caption")}>
               <p className="ds-subhead">Personal photos</p>
-              <p>The preview is a tile in the work grid, the band under the quote and Security that closes the portraits group, on the writings folder’s chrome: a 1px 8% black border, --radius-lg corners, the --mosaic-card-surface fill, and a --text-sm “Personal life” label under the fan. The square-cropped prints number four below 700px and five at 700px and above, each advancing half its own width so the fan overlaps hard. They are always the first photos: no visit reshuffles the stack, so the sheet always opens at its first row and always folds back into the same prints. The count also updates when the viewport changes. Prints stay at most 35% of the fan’s width and shrink to fit the five-print row; a shorter row centres rather than hanging off the left. The fan is capped at 27rem (20rem below 700px) and centred in the tile, with a 2.25rem gap below it (1.5rem on phones) so the outer prints’ corners clear the label. They are loosely placed along a shallow arc rather than plotted on a rigid curve: the underlying lean still runs from -2deg at the left edge to +2deg at the right and the squared drop reaches at most 3% of a print's height, but every print also gets its own fixed sideways nudge of up to 2.2% of its width plus the small angle and height wobble below. The flex row and hit regions stay regular underneath; only the visible prints shift, so the arrangement feels hand-placed without becoming messy. The middle print sits at the front of the pile with each one behind it stepping back, so the fan opens outwards instead of shingling left to right. The tile appears with the work grid after the avatar intro, and the first time it scrolls into view the hand fans itself out, after transitions.dev’s card stack hover: below the fold the prints wait gathered in one level pile on the middle print, leaning half their dealt angle, every print under the top one at 50% opacity, and they spring out along the arc all at once over 410ms on cubic-bezier(0.31, 1.84, 0.64, 1), swinging a little past their slots and settling back. A fan already on screen when the page loads, or above it, has been seen and stays put; it is dealt once per visit; a click that opens the sheet mid-deal snaps the hand to rest before the flights measure it; and reduced motion never holds it back. A pointer moving over the tile opens the whole hand at once: every print swings out to its fanned angle — the same arc widened to -16deg and +16deg with the drop deepened to 16% — over --duration-slow (360ms) on --ease-smooth. Only travel opens it: the hand never opens on :hover or on the focus the sheet hands back, so it is at rest at both ends of a flight and stays at rest after a close until the pointer moves again, and keyboard focus shows the house ring alone. Nothing changes hands under the pointer and the region each print answers to never moves. Each print wears the globe’s frame — a --canvas border 3.5% of its width, 4px corners, --shadow-ring with --shadow-control-hover — and its 1:1 image crop sits slightly above center to keep faces in view. Clicking or tapping a print opens the globe holding that photo at its centre; a click beside the prints, or Enter, opens it as it lies. A fine pointer can pull a print first: pressed, it follows the pointer with a rubber band's resistance (a pull of p pixels moves it p x 48 / (48 + p) — 100px pulls 32, 200px 39) and turns up to 8deg with the pull; let go, its photo takes off for the globe from where the pointer left it while the print springs back into the hand over --duration-slow on --ease-smooth. Touch and reduced motion keep the plain tap. Opening turns every photo into a tile on a globe — the photo globe, a Fibonacci-sphere layout after 21st.dev’s img-sphere, with every photo a small print rather than in circles. Every photo appears at least three times (copies are decoration: no id, aria-hidden, out of the Tab order); the repeated hands are rotated before taking their Fibonacci-spiral points, so copies of one photo stay dispersed instead of appearing together. The count of copies is Math.max(3, round(54 / photos)). The globe is min(96vw, 92vh, 60rem) wide (min(136vw, 80vh) on phones, overhanging both edges equally) with the sphere at 0.44 of that (0.4 on phones); each tile at the front is 0.225 × sqrt(54 / tile count) of the globe’s width (1.3x on phones), keeping the denser set near the former card size so the extra repeats make the sphere genuinely more crowded. A camera four radii out draws the front a third larger than the middle, and each tile shrinks further towards the rim (0.28 + 0.72 x depth^2.2, taken down from its own size so nothing is upscaled). The far side is hidden, not seen through: past the rim a tile fades on the square of its remaining distance and shrinks to 60%, then is display: none, so no flight aims at it; only the face answers the pointer. Every resting tile keeps the fan’s white photo-print frame: a --canvas border 3.5% of its own width all round (--photo-frame, which each layout sets), --radius-md squircle corners on both sphere and grid previews, with concentric image corners inside the paper, and --shadow-ring with --shadow-control-hover. Expanded grid photos preserve their preview’s drawn white-mat thickness (3.5% of the grid column width, divided by the hold scale), with --radius-lg outer corners and concentric inner corners, both compensated for the hold scale; their centring accounts for the thinner mat, and an equal margin adjustment preserves their column’s height so bottom-row selections do not change the scroll position. As a sphere tile is held, its frame tapers to keep roughly the resting visual weight instead of scaling to three times its thickness, and its outer corner grows concentrically to a drawn --radius-lg while the image follows inside it. It was picked over an Instax card, a WebGL glass pebble and a glass edge, compared side by side on the fan and the globe. The far side darkens with depth ((1 - depth)^1.6 x 0.72) rather than going transparent. The page behind is dimmed by a 60% #121212 scrim with no live backdrop filter: traces showed the former 18px full-screen blur dropping compositor frames during open and close. Motion: the globe spins on its own at 0.16 rad/s (a turn in about 40s), easing in and out; it waits out the open flight (200ms), stops under a pointer resting on a photo, while a photo is focused from the keyboard or held, and for 4s after a photo is brought to the front. A drag anywhere on the stage turns it about the screen’s own axes (0.006 rad/px) with momentum decaying at 0.94 per 60th of a second; the wheel and a trackpad turn it too; the arrow keys step it 30deg over --sphere-focus-duration (--duration-base, 200ms, ease-out cubic), which is also the settle time of the hold's spring. A press that travels more than 6px is a drag, never a click. Hovering a photo on the face grows it 8% over --sphere-hover-duration (--duration-fast, 120ms), leans it up to 3deg toward the pointer, and brings it forward of its neighbours — the first 6% of the way to its held size, so a click carries on from it. Clicking a photo holds it on one critically damped spring, settling to 95% in --sphere-focus-duration (200ms, about 24/s): the turn to the centre, the growth to 2.7x its front size, the rest of the globe receding 22%, and the restacking all ride the same value, so they start from rest together and land together, and the spring keeps its speed through a change of mind, so a photo let go or handed over mid-way turns round rather than stopping first. Under a fine pointer, the held photo keeps the same parallax tilt and moving top-left glass reflection as a held grid photo; reduced motion leaves both still. While a photo is held, the next click anywhere — the photo, a neighbour, or the margin — lets it go; a drag lets it go too. With nothing held, a click on the margin closes the globe. Tab moves through the originals in photo order and turns each to the front; Escape lets a held photo go, and closes otherwise. One caption names the held photo, just under it (above it when the screen ends below), in --font-ui at --text-md (--text-sm on phones) weight 500 in --canvas, with a tight 0 1px 2px / 72% black edge and a broader 0 3px 10px / 58% black cast for contrast over bright photos: placed from the photo’s drawn box every frame and faded in over the last two fifths of the photo’s zoom, so it rises 8px into place as the hold lands and is gone the moment a release starts the photo back; nothing is named while nothing is held. Each tile’s own figcaption stays for assistive tech. The open and close flights are the fan’s: every print flies to its slot on the face of the globe and back, and the other photos on screen borrow the nearest print, over --photo-open-duration / --photo-close-duration (200ms, --photo-motion-ease); the globe holds still from the moment a close begins so the flights are measured against slots that do not move, and a flight lands on a slide drawn at whatever scale the globe gives it. Reduced motion removes the spin, the momentum and the eased turns (a drag still turns it, and the hold and the arrow steps take effect at once), the parallax gloss, and the flights.</p>
+              <p>The preview is a tile in the work grid, the band under the quote and Security that closes the portraits group, on the writings folder’s chrome: a 1px 8% black border, --radius-lg corners, the --mosaic-card-surface fill, and a --text-sm “Personal life” label under the fan. The square-cropped prints number four below 700px and five at 700px and above, each advancing half its own width so the fan overlaps hard. They are always the first photos: no visit reshuffles the stack, so the sheet always opens at its first row and always folds back into the same prints. The count also updates when the viewport changes. Prints stay at most 35% of the fan’s width and shrink to fit the five-print row; a shorter row centres rather than hanging off the left. The fan is capped at 27rem (20rem below 700px) and centred in the tile, with a 2.25rem gap below it (1.5rem on phones) so the outer prints’ corners clear the label. They are loosely placed along a shallow arc rather than plotted on a rigid curve: the underlying lean still runs from -2deg at the left edge to +2deg at the right and the squared drop reaches at most 3% of a print's height, but every print also gets its own fixed sideways nudge of up to 2.2% of its width plus the small angle and height wobble below. The flex row and hit regions stay regular underneath; only the visible prints shift, so the arrangement feels hand-placed without becoming messy. The middle print sits at the front of the pile with each one behind it stepping back, so the fan opens outwards instead of shingling left to right. The tile appears with the work grid after the avatar intro, and the first time it scrolls into view the hand fans itself out, after transitions.dev’s card stack hover: below the fold the prints wait gathered in one level pile on the middle print, leaning half their dealt angle, every print under the top one at 50% opacity, and they spring out along the arc all at once over 410ms on cubic-bezier(0.31, 1.84, 0.64, 1), swinging a little past their slots and settling back. A fan already on screen when the page loads, or above it, has been seen and stays put; it is dealt once per visit; a click that opens the sheet mid-deal snaps the hand to rest before the flights measure it; and reduced motion never holds it back. A pointer moving over the tile opens the whole hand at once: every print swings out to its fanned angle — the same arc widened to -16deg and +16deg with the drop deepened to 16% — over --duration-slow (360ms) on --ease-smooth. Only travel opens it: the hand never opens on :hover or on the focus the sheet hands back, so it is at rest at both ends of a flight and stays at rest after a close until the pointer moves again, and keyboard focus shows the house ring alone. Nothing changes hands under the pointer and the region each print answers to never moves. Each print wears the globe’s frame — a --canvas border 3.5% of its width, 4px corners, --shadow-ring with --shadow-control-hover — and its 1:1 image crop sits slightly above center to keep faces in view. Clicking or tapping a print opens the globe holding that photo at its centre; a click beside the prints, or Enter, opens it as it lies. A fine pointer can pull a print first: pressed, it follows the pointer with a rubber band's resistance (a pull of p pixels moves it p x 48 / (48 + p) — 100px pulls 32, 200px 39) and turns up to 8deg with the pull; let go, its photo takes off for the globe from where the pointer left it while the print springs back into the hand over --duration-slow on --ease-smooth. Touch and reduced motion keep the plain tap. Opening turns every photo into a tile on a globe — the photo globe, a Fibonacci-sphere layout after 21st.dev’s img-sphere, with every photo a small print rather than in circles. Every photo appears at least three times (copies are decoration: no id, aria-hidden, out of the Tab order); the repeated hands are rotated before taking their Fibonacci-spiral points, so copies of one photo stay dispersed instead of appearing together. The count of copies is Math.max(3, round(54 / photos)). The globe is min(96vw, 92vh, 60rem) wide (min(136vw, 80vh) on phones, overhanging both edges equally) with the sphere at 0.44 of that (0.4 on phones); each tile at the front is 0.225 × sqrt(54 / tile count) of the globe’s width (1.3x on phones), keeping the denser set near the former card size so the extra repeats make the sphere genuinely more crowded. A camera four radii out draws the front a third larger than the middle, and each tile shrinks further towards the rim (0.28 + 0.72 x depth^2.2, taken down from its own size so nothing is upscaled). The far side is hidden, not seen through: past the rim a tile fades on the square of its remaining distance and shrinks to 60%, then is display: none, so no flight aims at it; every partly visible print answers the pointer, including the fading rim. Every resting tile keeps the fan’s white photo-print frame: a --canvas border 3.5% of its own width all round (--photo-frame, which each layout sets), --radius-md squircle corners on both sphere and grid previews, with concentric image corners inside the paper, and --shadow-ring with --shadow-control-hover. Expanded grid photos preserve their preview’s drawn white-mat thickness (3.5% of the grid column width, divided by the hold scale), with --radius-lg outer corners and concentric inner corners, both compensated for the hold scale; their centring accounts for the thinner mat, and an equal margin adjustment preserves their column’s height so bottom-row selections do not change the scroll position. As a sphere tile is held, its frame tapers to keep roughly the resting visual weight by compensating for its fitted scale, and its outer corner grows concentrically to a drawn --radius-lg while the image follows inside it. It was picked over an Instax card, a WebGL glass pebble and a glass edge, compared side by side on the fan and the globe. The far side darkens with depth ((1 - depth)^1.6 x 0.72) rather than going transparent. The page behind is dimmed by a 60% #121212 scrim with no live backdrop filter: traces showed the former 18px full-screen blur dropping compositor frames during open and close. Motion: the globe spins on its own at 0.16 rad/s (a turn in about 40s), easing in and out; it waits out the open flight (200ms), stops under a pointer resting on a photo, while a photo is focused from the keyboard or held, and for 4s after a photo is brought to the front. A drag anywhere on the stage turns it about the screen’s own axes (0.006 rad/px) with momentum decaying at 0.94 per 60th of a second; the wheel and a trackpad turn it too; the arrow keys step it 30deg over --sphere-focus-duration (--duration-base, 200ms, ease-out cubic), which is also the settle time of the hold's spring. A press that travels more than 6px is a drag, never a click. Hovering a photo on the face grows it 8% over --sphere-hover-duration (--duration-fast, 120ms), leans it up to 3deg toward the pointer, and brings it forward of its neighbours — a short first stretch of the focus spring, so a click carries on from it. Clicking a photo holds it on one critically damped spring, settling to 95% in --sphere-focus-duration (200ms, about 24/s): the turn to the centre, the growth to fit within 70% of the stage width and height, the rest of the globe receding 22%, and the restacking all ride the same value, so they start from rest together and land together, and the spring keeps its speed through a change of mind, so a photo let go or handed over mid-way turns round rather than stopping first. Under a fine pointer, the held photo keeps the same parallax tilt and moving top-left glass reflection as a held grid photo; reduced motion leaves both still. While a photo is held, clicking another photo hands focus directly to it; clicking the held photo or the margin lets it go, as does a drag. With nothing held, a click on the margin closes the globe. Tab moves through the originals in photo order and turns each to the front; Escape lets a held photo go, and closes otherwise. One caption names the held photo, just under it (above it when it would reach the bottom layout toggle), in --font-ui at --text-md (--text-sm on phones) weight 500 in --canvas, with a tight 0 1px 2px / 72% black edge and a broader 0 3px 10px / 58% black cast for contrast over bright photos: placed from the photo’s drawn box every frame and faded in over the last two fifths of the photo’s zoom, so it rises 8px into place as the hold lands and is gone the moment a release starts the photo back; nothing is named while nothing is held. Each tile’s own figcaption stays for assistive tech. The open and close flights are the fan’s: every print flies to its slot on the face of the globe and back, and the other photos on screen borrow the nearest print, over --photo-open-duration / --photo-close-duration (200ms, --photo-motion-ease); the globe holds still from the moment a close begins so the flights are measured against slots that do not move, and a flight lands on a slide drawn at whatever scale the globe gives it. Reduced motion removes the spin, the momentum and the eased turns (a drag still turns it, and the hold and the arrow steps take effect at once), the parallax gloss, and the flights.</p>
               <p>The homepage fan also tilts toward a fine pointer, with 1000px perspective: as one hand, up to 6deg on each axis, while the pointer is over the label or the margin, and over a print that print alone, up to 5deg at its edge — the hand lies back flat and the print under the pointer turns on the individual rotate property, about an axis square to the pointer's offset from its own centre, so the lean and the drop on transform and the lift on translate are untouched. Its stationary outer wrapper supplies the pointer coordinates; the hand and the print follow over --duration-base (200ms) and return over --duration-slow (360ms), both on --ease-smooth. Each print keeps its original depth throughout, and the one print under a fine pointer slides up on its own by about a tenth of its height (--print-lift, -11% with a per-print wobble of up to 1.2%) over --duration-slow on --ease-smooth, with its hit area extended down over where it rose from so a pointer near its bottom edge does not lose it; nothing is scaled or reordered. At rest every print already sits off the even arc by its fixed wobble (up to 0.8deg and 0.4% of its height), so the hand reads as dealt rather than printed. The tilt resets synchronously before opening the globe, stays flat while its photos are away, and also resets on scroll, resize, pointer cancellation, or window blur. Touch keeps native scrolling and reduced motion disables this tilt.</p>
-              <p>The open sheet has two layouts, picked by a Grid | Sphere toggle centred at the top of the stage (max(1.25rem, safe-area-inset-top) down), after transitions.dev’s sliding tabs: a frosted bar in 78% --mosaic-card-surface over a 16px, 1.15x-saturated backdrop blur, with a white inset highlight along its top edge, on --shadow-ring plus --shadow-overlay, --radius-full, --font-ui at --text-sm weight 500, with 3px of padding and a 3px gap, 32px text-only segments, and an 88% --canvas thumb with its own softer inset highlight on --shadow-ring plus --shadow-control. The thumb is sized and placed from the picked segment’s own box (a layout effect and a ResizeObserver write --thumb-x and --thumb-w from its offsetLeft and offsetWidth) and slides and resizes over --duration-fast on --ease-smooth (at once under reduced motion). The picked label reads --ink and the other --muted, darkening to --ink on hover, on the same clock; the house --focus-ring sits 2px inside the segment, where it reads on the thumb and the bar alike. It is a group of two aria-pressed buttons, outside the stage so the globe’s drag never swallows its click. The globe is the default; the choice is kept in localStorage, so a visitor returns to the layout they left. A switch keeps the same stage — it never replays the open flight — starts the new layout at its top, and reorganises the photos: every photo on screen flies from where the old layout left it to where the new one has put it, as a copy of its slide over the stage carrying its own bitmap (the open and close flights’ clone), over --photo-layout-duration (--duration-quick, 160ms) on --ease-smooth with its corner morphing between the two layouts’ radii, while the slide underneath waits hidden; the stage stays fully opaque and the globe holds still for the length of the flight before it turns. The globe’s decorative copies, and anything off screen at both ends, appear in the new layout while the visible originals make the spatial handoff. A close or another switch mid-flight lands everything at once; reduced motion switches at once. The grid is the sheet before the globe: every photo once, dealt round-robin into three columns (two below 700px) so the prints run across the first row, 64rem wide at most inside a clamp(1.25rem, 4vw, 5rem) gutter, with 5rem above for the toggle and 6rem below. Columns and rows sit 1.5rem apart (1rem on phones); the captions are read out, not shown, until a photo is held. Each photo keeps its own aspect ratio and the globe’s print frame, its border 3.5% of the column’s width. Every grid print carries a quiet glass-like highlight from the upper left: a screen-blended white radial and diagonal sheen at 18% opacity, painted over the photo rather than filtering it so the bitmap stays crisp. A photo under a fine pointer grows 4% over --duration-fast without changing its stacking level, so it cannot cross over a selected neighbour; a click, Enter or Space holds it: it glides from where it lies to the centre of the stage over --grid-focus-duration (--duration-slow, 360ms) on --ease-smooth and grows to fill 70% of the stage on its longer side, while a release returns it over --duration-base (200ms). Held, the sheen strengthens to 48%; under a fine pointer the photo also turns by at most 4deg on each axis inside 1000px perspective, following over --duration-fast and easing flat over --grid-focus-duration. Its small radial reflection shifts against the turn but stays in the upper-left light field, so the light reads as directional rather than attached to the cursor. The sheet's flat stage tracks the pointer against the held box measured on selection, so rotating edges cannot flicker the effect and pointer travel performs no layout reads. Touch and reduced motion keep the held photo flat while retaining its static glaze. Picking a different photo hands the centre directly from one to the other on those same interruptible transitions, without an empty state between them. The move and growth are measured against the stage’s client box, so a photo at an edge or below the fold comes to the middle of the screen, with its caption 0.75rem under it in the same face as the globe’s, fading in once the glide is half done and out at once. Escape, a click on the held photo, any empty gap between grid prints, the outer margin, or a scroll lets it go without closing; with nothing held, only the outer margin closes; a close asked for over a held photo snaps the grid to rest before the flights measure it. The grid scrolls natively, and its margin closes when nothing is held. A scrolled grid glides back to its first row over --photo-rewind-duration (--duration-slow) before the prints fly home.</p>
+              <p>The open sheet has two layouts, picked by a Grid | Sphere toggle centred at the bottom of the stage (max(1.25rem, safe-area-inset-bottom) up), with the navigation pill hidden while a dialog is open, after transitions.dev’s sliding tabs: a frosted bar in 78% --mosaic-card-surface over a 16px, 1.15x-saturated backdrop blur, with a white inset highlight along its top edge, on --shadow-ring plus --shadow-overlay, --radius-full, --font-ui at --text-sm weight 500, with 3px of padding and a 3px gap, 32px text-only segments, and an 88% --canvas thumb with its own softer inset highlight on --shadow-ring plus --shadow-control. The thumb is sized and placed from the picked segment’s own box (a layout effect and a ResizeObserver write --thumb-x and --thumb-w from its offsetLeft and offsetWidth) and slides and resizes over --duration-fast on --ease-smooth (at once under reduced motion). The picked label reads --ink and the other --muted, darkening to --ink on hover, on the same clock; the house --focus-ring sits 2px inside the segment, where it reads on the thumb and the bar alike. It is a group of two aria-pressed buttons, outside the stage so the globe’s drag never swallows its click. The globe is the default; the choice is kept in localStorage, so a visitor returns to the layout they left. A switch keeps the same stage — it never replays the open flight — starts the new layout at its top, and reorganises the photos: every photo on screen flies from where the old layout left it to where the new one has put it, as a copy of its slide over the stage carrying its own bitmap (the open and close flights’ clone), over --photo-layout-duration (--duration-quick, 160ms) on --ease-smooth with its corner morphing between the two layouts’ radii, while the slide underneath waits hidden; the stage stays fully opaque and the globe holds still for the length of the flight before it turns. The globe’s decorative copies, and anything off screen at both ends, appear in the new layout while the visible originals make the spatial handoff. A close or another switch mid-flight lands everything at once; reduced motion switches at once. The grid is the sheet before the globe: every photo once, dealt round-robin into three columns (two below 700px) so the prints run across the first row, 64rem wide at most inside a clamp(1.25rem, 4vw, 5rem) gutter, with 2rem above and 8rem below to clear the toggle. Columns and rows sit 1.5rem apart (1rem on phones); the captions are read out, not shown, until a photo is held. Each photo keeps its own aspect ratio and the globe’s print frame, its border 3.5% of the column’s width. Every grid print carries a quiet glass-like highlight from the upper left: a screen-blended white radial and diagonal sheen at 18% opacity, painted over the photo rather than filtering it so the bitmap stays crisp. A photo under a fine pointer grows 4% over --duration-fast without changing its stacking level, so it cannot cross over a selected neighbour; a click, Enter or Space holds it: it glides from where it lies to the centre of the stage over --grid-focus-duration (--duration-slow, 360ms) on --ease-smooth and grows to fill 70% of the stage on its longer side, while a release returns it over --duration-base (200ms). Held, the sheen strengthens to 48%; under a fine pointer the photo also turns by at most 4deg on each axis inside 1000px perspective, following over --duration-fast and easing flat over --grid-focus-duration. Its small radial reflection shifts against the turn but stays in the upper-left light field, so the light reads as directional rather than attached to the cursor. The sheet's flat stage tracks the pointer against the held box measured on selection, so rotating edges cannot flicker the effect and pointer travel performs no layout reads. Touch and reduced motion keep the held photo flat while retaining its static glaze. Picking a different photo hands the centre directly from one to the other on those same interruptible transitions, without an empty state between them. The move and growth are measured against the stage’s client box, so a photo at an edge or below the fold comes to the middle of the screen, with its caption 0.75rem under it (above it when the bottom toggle would cover it) in the same face as the globe’s, fading in once the glide is half done and out at once. Escape, a click on the held photo, any empty gap between grid prints, the outer margin, or a scroll lets it go without closing; with nothing held, only the outer margin closes; a close asked for over a held photo snaps the grid to rest before the flights measure it. The grid scrolls natively, and its margin closes when nothing is held. A scrolled grid glides back to its first row over --photo-rewind-duration (--duration-slow) before the prints fly home.</p>
               <PersonalPhotos />
             </div>
 
@@ -1693,7 +1731,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
                 low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
                 carries the press.
-                The fixed resting and hovered recipes in <code>contact.css</code> are the source of truth.
               </p>
             </div>
 
@@ -1724,7 +1761,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   aria-label="Close about specimen"
                   style={{ position: "relative", inset: "auto", zIndex: "auto", transform: "none" }}
                 >
-                  <X aria-hidden="true" />
+                  <X strokeWidth={1.75} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -2020,33 +2057,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="avatar-coin"
-                data-ds-terms={terms("avatar coin flip spin rotateY 360deg hover click chat dialog email gate conversation composer 1100ms 1200ms 240ms crop zoom 1.12 object-fit cover composite add web animations preserve-3d backface hint arrow reduced motion")}
+                data-ds-terms={terms("avatar greeting teaser video hover focus play introduction reduced motion lightweight")}
               >
-                <strong>The avatar spins, and the spin opens a conversation.</strong>
+                <strong>The avatar greets you and opens the introduction.</strong>
                 <p>
-                  Pointing at the 52px portrait, or reaching it with the keyboard, turns it{" "}
-                  <code>360deg</code> &mdash; one whole turn, with the mirrored second face passing underneath and the
-                  first one coming back. The crop tightens at the same time: the circle keeps its size and the face
-                  inside it scales to <code>1.12</code> over <code>--duration-slow</code>, so the frame closes in rather
-                  than the avatar growing into the line of text beside it. Clicking adds another whole turn and,{" "}
-                  <code>240ms</code> later, opens a full-screen chat. The first visit asks for an email; the address is
-                  kept on the device and sent with each question to identify the rate-limited conversation, never to
-                  subscribe the visitor. Returning visitors go directly to the stored history. The conversation is a
-                  restrained version of the page: assistant answers sit directly on the canvas, questions use the dark
-                  primary surface, and a pill composer stays at the foot. The grey Handlee hint reads &ldquo;ask about
-                  me&rdquo; throughout; the accessible name is &ldquo;Ask about Rafael Medina.&rdquo;
-                </p>
-                <p>
-                  The click spin is a script animation with <code>composite: &quot;add&quot;</code>, not a keyframe
-                  rule. CSS transitions outrank CSS animations, so a keyframe spin would sit and wait out a hover flip
-                  already in flight, and a replacing one would snap the coin back to zero before starting; an additive
-                  script animation composes onto whatever the transition is doing on that frame. Every rotation is a
-                  whole number of half turns, which is what lets the animation end on the angle its underlying value
-                  already holds &mdash; nothing to see when the transform is handed back &mdash; and lets an
-                  interrupted coin only ever rest on a face. The crop is clipped by a frame around each portrait rather
-                  than by the coin, because the coin carries <code>preserve-3d</code> and any overflow but{" "}
-                  <code>visible</code> would flatten it and take the flip with it. Reduced motion holds the coin, the
-                  crop and the spin, and opens the chat at once.
+                  Hovering or focusing the 52px circular portrait mounts the silent, looping greeting teaser.
+                  It uses the existing MP4 in place of a heavier GIF and keeps the same crop and footprint.
+                  Leaving removes the teaser. Reduced motion and lightweight connections keep the still portrait.
+                  The Handlee hint reads &ldquo;play my intro&rdquo;, and the accessible name is
+                  &ldquo;Watch Rafael Medina&apos;s introduction&rdquo;.
+                  Clicking opens the shared introduction player with its controls visible before playback, where Play starts the full recording with
+                  sound and captions. Closing returns focus to the avatar. The portrait no longer spins or zooms.
                 </p>
               </div>
 
@@ -2129,9 +2150,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
                   Close crosses, navigation chevrons, external-link arrows and reply arrows share
-                  <code> NavigationIcons.tsx</code>: a 24-unit viewBox with rounded 2.5-unit strokes
-                  and joins, scaled to each control’s existing icon size. The close cross matches
-                  the intro player’s iOS-style mark; all wrappers and hit targets keep their own surface styles.
+                  <code> NavigationIcons.tsx</code>: a 24-unit viewBox with rounded strokes and joins,
+                  scaled to each control’s existing icon size. Navigation marks use a 2.5-unit stroke;
+                  the raised takeover close steps down to 1.75 units to match the lighter marks around
+                  the hero. The close cross matches the intro player’s iOS-style geometry; all wrappers
+                  and hit targets keep their own surface styles.
                   The current row becomes the toggle: chip active gray (#e9e9e9) at 92% opacity and ink text,
                   with no close icon. The collapsed row shows a 16px upward chevron, which fades out over 160ms
                   on opening. Transitions retarget during rapid taps; reduced motion makes them instant and drops the outgoing
@@ -2247,11 +2270,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   exposed as an interactive control because the takeover itself is disabled.
                 </li>
                 <li data-ds-terms={terms("about introduction profile photo message prompt video teaser circle 112px 64px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion pip transitions.dev")}>
-                  <strong>The message prompt is anchored by Rafael&rsquo;s profile photo.</strong> The main site uses the
-                  self-hosted profile image without mounting a teaser, recording, playback control or media request.
+                  <strong>The message prompt is anchored by Rafael&rsquo;s video portrait.</strong> The main site uses the
+                  self-hosted production poster and only mounts the silent teaser after half the CV tile appears following a scroll beyond 96px, or as About approaches; the full recording waits for an explicit press.
                   It anchors the visible desktop conversation and opens the modal conversation when tapped at compact
-                  sizes. The preserved video prototype is available only through the explicit development preview.
-                  Its 112px desktop circle
+                  sizes. An explicit development preview keeps the longer fixture available for player testing.
+                  Its 112px desktop true circle uses <code>corner-shape: round</code> rather than the site&rsquo;s squircle curve and
                   sits at the bottom-left on <code>--z-corner</code>, expanding to 240px with
                   <code> --radius-lg</code> corners, <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
                   Below 700px a 64px circle shares the centered TOC row with a 12px gap on
@@ -2282,7 +2305,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls use Hugeicons rounded strokes at 1.5px; email and text are 24px
                   dark icons on transparent buttons. The focused play triangle uses a white outline.
                   The desktop “A quick hello” and duration tooltip is hidden until hover or focus.
-                  Fine-pointer hover scales the portrait to 1.04. The action pill settles from an 8px horizontal offset and 0.97 scale over
+                  The portrait itself stays still on fine-pointer hover. The action pill settles from an 8px horizontal offset and 0.97 scale over
                   <code> --duration-quick</code>. The hello tooltip uses an 80ms intent delay only on entry,
                   and the hello label settles from 0.98 scale. Reduced motion removes the movement.
                   The same white surface expands to a 320px-wide, 52px-high email field, 12px to the
@@ -2291,17 +2314,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Its input and 44px arrow enter after 80ms with an 8px slide, 0.97 scale and 2px cross-blur;
                   exiting content stays mounted, inert and hidden from assistive technology while it fades.
                   Text grows that surface upward to
-                  172px with <code>--radius-lg</code> corners. On mobile, the 64px speaking portrait stays fixed
-                  12px from the left edge while the TOC remains centred. Through the compact breakpoint at
-                  899.98px, Rafa’s greeting runs behind an 18px red notification circle tucked 1px into the
-                  portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
+                  172px with <code>--radius-lg</code> corners. Clicking or moving keyboard focus outside the desktop
+                  conversation collapses it into the portrait; the portrait reopens it without resetting its content.
+                  On mobile, the 64px speaking portrait stays fixed 12px from the left edge while the TOC remains centred.
+                  Whenever both the conversation and player are collapsed, its current message total sits in an 18px red notification
+                  circle offset 2px beyond the portrait’s top-right corner. It shows only the numbers 1–3 in tabular numerals, with a
                   15%-black hairline, 2px canvas-white halo and the shared control shadow. The badge enters
                   with the TOC’s 6px rise and blur; each previous number exits 4px upward while its replacement
                   enters from below over the shared quick duration.
                   Tapping the portrait or count fades in the shared 42%-black dialog backdrop over
                   <code>--duration-slow</code>, hides the TOC and grows the portrait from 64px to 80px. The
                   conversation remains 12px from both viewport edges; its email composer expands to 320px
-                  toward the left and stays 12px above the enlarged portrait.
+                  toward the left and stays 12px above the enlarged portrait. A sticky 44px &ldquo;Play intro&rdquo;
+                  pill at the conversation&rsquo;s top-right keeps the recording directly available on touch screens;
+                  it uses the shared full radius, ring and control shadows, hands the surface from chat to player,
+                  and returns to the preserved conversation and composer when the player closes.
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
                   into two 184px pills with a 12px gap. A and C keep their mobile reply row 80px above the safe-area edge to clear the TOC. B becomes a conversation anchored to a 64px portrait.
                   Three gray bubbles use 31.2px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
@@ -2313,29 +2340,37 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
-                  Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint invites the visitor to tap.
-                  The fixed-positioned picker uses Apple’s six classic choices — heart, thumbs up, thumbs down,
-                  laughter, exclamation points and a question mark — as 18px glyphs in adjacent 40px targets
-                  inside a 4px-padded white pill with the shared ring and overlay shadow. The heart is pink;
+                  Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint in a compact gray pill invites the visitor to tap.
+                  The fixed-positioned picker begins with Apple&rsquo;s six classic choices — heart, thumbs up, thumbs down,
+                  laughter, exclamation points and a question mark — then adds fire, applause, celebration and thinking.
+                  Native emoji use Apple Color Emoji where available. The 17px glyphs keep accessible 40px targets
+                  inside a 2px-padded white pill with the shared ring and overlay shadow. The pill caps at
+                  264px on every viewport, showing six full targets and half of the next to invite horizontal
+                  scrolling without drawing a scrollbar. Touch, trackpad and horizontal wheel scrolling reveal
+                  the additional choices without widening the chat. The heart is pink;
                   stacked HA HA, !! and ? use sculpted text treatments with blue (#8eeaff to #009bdf),
                   coral (#ffb59e to #f34b40) and purple (#dbbaff to #8a4ddd) gradients. These are local
                   approximations of the supplied Messages references, not shared interface colours.
                   It stays 12px inside the viewport and retains horizontal arrow-key navigation. The picker
-                  springs from 0.75 horizontal / 0.6 vertical scale and an 8px offset over 580ms; choices
-                  follow 24ms apart on the snappy spring. Choosing one swells its glyph to 1.14 over a 32px
-                  selection disc and fades the picker toward the bubble by 8px at 0.92 scale over 280ms.
-                  The chosen 14px glyph grows into a 27px blue, canvas-ringed disc with a two-dot trail,
+                  springs from its bottom-right corner at 0.92 horizontal / 0.88 vertical scale and a 10px by 4px
+                  offset over 360ms. Choices arrive from the right with a 10px slide, 0.72 scale and 2px blur,
+                  following 16ms apart outward from the sixth, message-side choice on the snappy spring. Hover or keyboard highlight lifts a
+                  choice 2px at 1.08 scale over a soft gray surface and the shared control shadow. Choosing one swells
+                  its glyph to 1.14 with a 2px lift over a 32px selection disc. The picker holds this selection beat
+                  for 160ms, then fades toward the bubble by 8px at 0.96 scale over the shared quick duration.
+                  The chosen 14px glyph grows into a 27px blue disc with a fine 1px canvas ring and a two-dot trail,
                   mirrored onto the gray bubble’s top-right corner. Its 580ms snappy entrance follows the disc
                   by 80ms. The wrapper gains 12px above it so the
                   Tapback does not cover the prior message. A later choice replaces the earlier one; choosing the
-                  current Tapback again removes it. Reduced motion shows both surfaces at rest. The hint gives a
+                  current Tapback again removes it. Reduced motion shows both surfaces at rest and closes the
+                  picker immediately, without the selection beat. The hint gives a
                   polite applied or removed confirmation, and only applied reactions record the message index and
                   reaction name through the existing anonymous analytics path.
                   Confirming a valid email keeps it in local component state, adds an editable outgoing bubble,
                   Messages blue with white text and a mirrored tail on the right, which rises out of the field
                   from 20px below at 0.92 scale, anchored at its tail. At 900ms Rafa hearts it the way a received
                   tapback arrives: a 36px blue disc on the bubble’s top-left corner, with a pink #ff5f8f heart and
-                  two trailing dots, ringed 2px in canvas white. The disc springs out of a point, a ripple spreads
+                  two trailing dots, ringed 1px in canvas white. The disc springs out of a point, a ripple spreads
                   from its edge to 1.8 scale as it fades, the trail bubbles out 80ms and 140ms behind, and the heart
                   grows in at 120ms, then beats twice (1.24, a 0.96 rebound, 1.14) over 900ms. As it lands, the
                   bubble’s top margin grows from 8px to 28px, shifting the conversation up to make room. Typing for
@@ -2347,19 +2382,32 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   shows the same typing bubble before “Want to share anything else?” and reveals the optional
                   message field after 160ms. Hidden fields stay inert; their measured height offsets the history
                   so the typing bubble’s bottom edge rests level with the avatar’s. The history moves into its reply position
-                  over 360ms with the shared smooth curve as the field enters. Clicking the sent address unsends it
+                  over 360ms with the shared smooth curve as the field enters. The sent address carries an
+                  &ldquo;Change email&rdquo; tooltip before delivery and becomes a &ldquo;Start over&rdquo; control afterward; a visible &ldquo;Start over&rdquo;
+                  action below the composer offers the same route without requiring the visitor to discover the bubble.
+                  Before the first delivery this preserves the message draft. After a delivery, either route clears the
+                  local sent-message history and selects the current address so another email can replace it. Already delivered
+                  messages remain in the inbox, which the footer states explicitly. Both routes reset the local address bubble
                   with a puff: the bubble and its tapback blur 6px and grow to 1.08 as they fade over 240ms, while 24
                   dots of the bubble’s blue, 3–6px, pop in and drift up to 25px up and out over 420ms, staggered
                   within 70ms. At 480ms the email field returns with the address and takes focus; typing timers hold
                   during the puff. Reduced motion skips it. Timers
                   pause when the chat or tab is hidden, completed messages stay visible on return, and
                   reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
-                  The email field caps at 256px by 44px and matches the bubbles’ 14px text. It sits at the chat’s
-                  right edge and its center aligns vertically with the 64px face, moving the conversation above that row. Both composers use the white
-                  canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
+                  The email field caps at 256px by 44px and uses 14px text on desktop, rising to 16px on mobile so
+                  focusing it cannot trigger iOS&rsquo;s visual-viewport zoom. It sits at the chat’s
+                  right edge and its center aligns vertically with the 64px face, moving the conversation above that row. The one-line email composer keeps
+                  <code>--radius-full</code>; the multiline message composer uses the 31.2px <code>--radius-lg</code> squircle so it reads as a writing surface rather than an oversized pill. Both keep the white canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
                   8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
                   The message textarea starts 88px high with 16px text and grows with each line up to seven lines
-                  (188px), or 30% of the viewport on short screens, before scrolling; the history gives up the room. The history uses the available space above the dock with a 12px top clearance, accounting for the
+                  (188px), or 30% of the viewport on short screens, before scrolling; the history gives up the room. The
+                  compact footer reads &ldquo;Sent messages stay delivered &middot; Start over&rdquo; after a successful send. Its muted,
+                  regular-weight, underlined action sits inline with the delivery note while keeping a 44px target and the standard
+                  0.96 pressed scale. After three distinct sends, the composer shakes 6px in either direction over
+                  <code> --duration-slow</code>, pauses, and changes that line to &ldquo;Keep going? 2 left &middot;
+                  Continue &middot; Start over.&rdquo; Continue restores focus and allows the last two sends; the fourth reads
+                  &ldquo;1 left,&rdquo; and the fifth disables the composer at &ldquo;That&rsquo;s enough.&rdquo;
+                  Reduced motion skips the shake. The history uses the available space above the dock with a 12px top clearance, accounting for the
                   actual form height; only short viewports scroll. Neither the history nor the growing message draws
                   a scrollbar, so a bubble’s entrance rise no longer flashes one. The composer stays below it. Focus deepens
                   the overlay shadow to <code>--shadow-overlay-hover</code> instead of drawing a stroke. The arrow starts gray,
@@ -2370,7 +2418,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   outgoing bubbles sits 2px apart and only the last keeps its tail. A 12px muted receipt under the latest
                   one reads Sending… then Delivered. A failed send keeps its bubble with a 20px #e5352b “!” disc on its
                   left and the error as its receipt; tapping the bubble retries with the same idempotency key. Once
-                  anything is sent the address can no longer be unsent. No address is sent when advancing to the message step.
+                  anything is sent, starting over waits for the active delivery to settle. No address is sent when advancing to the message step.
                   B is the selected default, with no design switcher on the main page. Development links can still preview an alternative using <code>?introStyle=a</code>, <code>b</code> or <code>c</code>.
                   The <a href="/intro-options">comparison page</a> shows all three together in separate 440px
                   stages, with contained 64px portraits and 240px players. It stacks its
@@ -2389,7 +2437,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   focus-ring-soft ring, avoiding a second pill outline inside the field. The placeholder is hello@example.com.
                   The arrow opens an email draft
                   for the visitor to review and send. The website does not collect the address.
-                  In the explicit video preview, media waits until within 200px of About; only a press requests the spoken recording.
+                  Media waits until half the CV tile is visible after scrolling beyond 96px, or until within 200px of About. The chat remains visible from the CV through About and hides behind dialogs; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
                   The transitions.dev icon-swap recipe keeps play/pause and volume glyphs
                   stacked in one cell: <code>--icon-swap-dur</code> (250ms), <code>--icon-swap-blur</code> (2px),
@@ -2400,16 +2448,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   In a dialog, the same player joins that dialog’s focus scope and uses a manual popover
                   in the browser top layer, keeping it above transformed content without a new z-index.
                   On mobile this floating player sits centered, 80px above the safe-area bottom edge.
-                  Closing it returns focus to the dialog. Append <code>?intro=preview</code> to the
-                  <a href="/?intro=preview#about-panel"> development homepage</a> to exercise the matching silent GIF,
-                  full recording and original-audio fixture. Ordinary development and production visits keep the
-                  profile-photo message prompt; the dormant video path remains available for the future recording.
+                  Closing it returns focus to the dialog. Ordinary development and production visits use the 8.24-second
+                  personal recording, its silent MP4 teaser, poster and captions. Append <code>?intro=preview</code> to the
+                  <a href="/?intro=preview#about-panel"> development homepage</a> to exercise the longer GIF-backed fixture,
+                  or <code>?intro=off</code> to inspect the chat without video.
                 </li>
                 <li data-ds-terms={terms("bottom fade progressive blur backdrop-filter 1.25rem gradient --canvas clamp(3rem, 8vh, 4.5rem) 3rem sticky safe area seam sheet notes card mask rounded clip")}>
-                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet and the notes card
+                  <strong>The reading surfaces blur and fade into their foot.</strong> The About sheet, notes card, and project previews
                   soften their copy as it sinks, with the work tiles&rsquo; caption blur rescaled to the strip: four
                   masked layers stepping the radius from 0.12 of <code>1.25rem</code> up to all of it, under an eased
-                  ramp into <code>--canvas</code>. The project grid and the previews do not fade. The sheet&rsquo;s
+                  ramp into <code>--canvas</code>. Project previews use a 3.5rem band on fine-pointer desktops only while
+                  more content remains below; opacity changes on the individual layers preserve their backdrop. The project grid does not fade. The sheet&rsquo;s
                   fade covers the bottom <code>clamp(3rem, 8vh, 4.5rem)</code> of the viewport plus the safe-area
                   inset, sticky to the viewport&rsquo;s foot. It is the sheet&rsquo;s last child and pulls itself back
                   over the panel&rsquo;s bottom padding, so it adds no height, never paints outside the sheet&rsquo;s
@@ -2520,10 +2569,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 light grey because 1.4.11 wants 3:1 against the adjacent surface. The work tiles are the one exception
                 to the colour, not to the shape: they take the same single ring in{" "}
                 <code>--focus-ring-soft</code> (<code>#8a8a8a</code>, 3.4:1 on the page background), because at tile
-                scale <code>#2d2d2d</code> frames the artwork instead of marking a selection. The quote card wears
-                that ring too, drawn on the card for the advance button that covers it, since the card's clip would
-                cut the button's own ring down to a line. Nothing stacks a second ring, a border darkening, or a halo
-                behind the outline.
+                scale <code>#2d2d2d</code> frames the artwork instead of marking a selection. The quote card, which
+                is itself the Tab stop, wears that ring too, and keeps it while focus is inside it. Nothing stacks a
+                second ring, a border darkening, or a halo behind the outline.
               </li>
               <li data-ds-terms={terms("tabindex -1 landing container hash #work skip link outline none focus ring")}>
                 <strong>Landing containers take focus without taking a ring.</strong> Sections that receive focus
@@ -2546,6 +2594,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Separately, the folded résumé work tile is a link to <code>/resume/</code> whose plain click opens
                 the reader as a gallery slide: it traps focus, closes on Escape, a backdrop press, or the compact
                 toolbar close, returns focus to the tile, and keeps the PDF as its final link.
+              </li>
+              <li data-ds-terms={terms("hover card preview tab order tabindex -1 x card map attribution openstreetmap work-history popover link focus")}>
+                <strong>A card that opens on focus is a preview, not a stop.</strong> The X card, the Punta Cana
+                map, and the work-history popover open when their trigger takes focus, so their links are{" "}
+                <code>tabindex="-1"</code>: the next Tab goes to the next control on the page and the card closes
+                behind it. A pointer still clicks them, and the trigger itself already goes where most of them
+                lead. They used to be the next stops, which put anyone tabbing past the Follow pill five links
+                deep in a profile they had not asked to open.
+              </li>
+              <li data-ds-terms={terms("composite widget carousel quote card one tab stop enter escape arrow keys roving key hint keyboardhint kbd keycap aria-describedby narration")}>
+                <strong>A widget with parts is one Tab stop, and it says how to go in.</strong> The quote cards take
+                one Tab each: the arrows work the card, Enter goes in a level, Escape comes back out one, and Tab
+                from anywhere inside moves on. Walking past either card used to take ten stops. On keyboard focus a <code>KeyboardHint</code> shows the keys for the level focus is on,
+                and the same instructions are the widget&rsquo;s <code>aria-describedby</code>, in words rather than
+                glyphs, so a screen reader announces them on arrival without anyone reaching for a system setting.
               </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>
                 <strong>Hover-only content has a non-hover fate.</strong> Social-pill hover cards are hidden on

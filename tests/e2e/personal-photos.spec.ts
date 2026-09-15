@@ -278,6 +278,18 @@ async function holdFlights(page: Page) {
   })
 }
 
+async function finishFlights(flights: Locator) {
+  // Closing builds a screenful of clones in a layout effect. Under a starved
+  // runner, another clone can mount after a one-shot snapshot; keep finishing
+  // the current set until every return flight has completed and unmounted.
+  await expect.poll(async () => {
+    await flights.evaluateAll((elements) => elements
+      .flatMap((element) => element.getAnimations({ subtree: true }))
+      .forEach((animation) => animation.finish()))
+    return flights.count()
+  }, { timeout: 5000 }).toBe(0)
+}
+
 test("the hand comes to rest when the sheet closes and only opens again for a moving pointer", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
@@ -307,9 +319,8 @@ test("the hand comes to rest when the sheet closes and only opens again for a mo
   // pointer, which read as a print still picked after the close.
   expect(await rects()).toEqual(resting)
 
-  await flights.evaluateAll((elements) => elements.flatMap((element) => element.getAnimations({ subtree: true })).forEach((animation) => animation.finish()))
+  await finishFlights(flights)
   await expect(dialog(page)).toBeHidden()
-  await expect(flights).toHaveCount(0)
   await expect(trigger).toBeFocused()
   // The pointer is still over the tile and the tile holds focus; neither is
   // intent, so nothing opens, lifts, or glides on.
@@ -552,7 +563,7 @@ test("the globe carries every photo at least three times, larger at the front th
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
 })
 
-test("a drag turns the globe and lets a held photo go; a click holds a photo at the centre and the next click, anywhere, lets it go", async ({ page }) => {
+test("a drag turns the globe and lets a held photo go; a click holds a photo at the centre and a neighbouring photo takes focus directly", async ({ page }) => {
   test.slow()
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
@@ -585,29 +596,42 @@ test("a drag turns the globe and lets a held photo go; a click holds a photo at 
   const others = (await readTiles(page)).filter((tile) => tile.id !== target.id)
   expect(Math.max(...others.map((tile) => tile.width))).toBeLessThan(held.width / 2)
 
-  // A click on a neighbouring photo does not hand the hold over; it lets the
-  // held photo go, and the globe stays open.
-  const neighbour = others.filter((tile) => tile.depth > 600).sort((a, b) => Math.hypot(a.x, a.y) - Math.hypot(b.x, b.y))[0]
-  await page.mouse.click(innerCentre(1440) + neighbour.x, innerCentre(900) + neighbour.y)
-  await page.mouse.move(5, 5)
-  await expect.poll(async () => Math.max(...(await readTiles(page)).map((tile) => tile.width)), motion).toBeLessThan(target.width * 1.3)
+  // Click an exposed part of a neighbour, outside the enlarged photo.
+  const neighbour = await stage(page).evaluate((root) => {
+    for (const slide of root.querySelectorAll<HTMLElement>(".personal-photos-slide:not([data-sphere-held]):not([data-sphere-hidden])")) {
+      const box = slide.getBoundingClientRect()
+      for (const fraction of [0.2, 0.5, 0.8]) {
+        const x = box.x + box.width * fraction, y = box.y + box.height / 2
+        if (document.elementFromPoint(x, y)?.closest(".personal-photos-slide") === slide) {
+          slide.setAttribute("data-test-neighbour", "")
+          return { x, y }
+        }
+      }
+    }
+    throw new Error("No exposed neighbour")
+  })
+  await page.mouse.click(neighbour.x, neighbour.y)
+  await expect(stage(page).locator("[data-test-neighbour]")).toHaveAttribute("data-sphere-held", "")
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  // The caption went with it.
+  await page.keyboard.press("Escape")
   await expect(caption).toHaveText("")
 
-  // A drag turns it: the front changes hands. A drag also lets a held photo go.
-  // The globe turned to bring the target to the centre and stays there once it
-  // is let go, so the target is clicked where it is now, not where it was dealt.
-  const moved = (await readTiles(page)).find((tile) => tile.id === target.id)!
-  await page.mouse.click(innerCentre(1440) + moved.x, innerCentre(900) + moved.y)
-  await expect.poll(async () => (await readTiles(page)).find((tile) => tile.id === target.id)?.width ?? 0, motion).toBeGreaterThan(target.width * 1.8)
+  // The neighbour is now at the front. Let its release settle before
+  // selecting it again; the previous target may be obscured after this turn.
+  await page.mouse.move(5, 5)
+  const selected = stage(page).locator("[data-test-neighbour]")
+  await expect.poll(() => selected.evaluate(slide => Number(slide.style.getPropertyValue("--sphere-zoom"))), motion).toBeLessThan(0.01)
+  await selected.click()
+  await expect(selected).toHaveAttribute("data-sphere-held", "")
+  await expect.poll(() => selected.evaluate(slide => Number(slide.style.getPropertyValue("--sphere-zoom"))), motion).toBeGreaterThan(0.99)
+  const beforeDrag = (await frontTile(page)).id
   await page.mouse.move(400, 450)
   await page.mouse.down()
   for (let step = 1; step <= 12; step++) await page.mouse.move(400 + step * 30, 450 + step * 5)
   await page.mouse.up()
   await page.mouse.move(5, 5)
   await expect.poll(async () => Math.max(...(await readTiles(page)).map((tile) => tile.width)), motion).toBeLessThan(target.width * 1.3)
-  expect((await frontTile(page)).id).not.toBe(target.id)
+  expect((await frontTile(page)).id).not.toBe(beforeDrag)
 
   // With nothing held, a click on the margin closes and hands focus back.
   await page.mouse.click(30, 450)

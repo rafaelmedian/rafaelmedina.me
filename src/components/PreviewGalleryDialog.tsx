@@ -17,11 +17,11 @@ import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
 import { InlineSwap } from "./InlineSwap"
 import { PreviewMedia } from "./PreviewMedia"
+import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
 import type { WritingsReaderStatus } from "./WritingsFolder"
 import { backSound, closeSound, nextSound, openSound } from "../lib/sounds"
-import { isTuningCornerCurve } from "../lib/developmentTuning"
 
 type PreviewGalleryDialogProps = {
   items: GalleryItem[]
@@ -562,11 +562,8 @@ export function PreviewGalleryDialog({
     switchPhase === "idle" ? "" : ` preview-gallery-card-switch-${switchPhase}-${switchDirection}`
   const prevKeyshortcuts = isReaderSlide ? "ArrowLeft" : "ArrowUp ArrowLeft"
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
-  const tuningCornerCurve = isTuningCornerCurve()
-
   return (
     <Dialog.Root open={present && !leavingNote} onOpenChange={handleOpenChange}
-      modal={!tuningCornerCurve} disablePointerDismissal={tuningCornerCurve}
       onOpenChangeComplete={(isOpen) => { if (!isOpen) setLeavingNote(null) }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
@@ -578,6 +575,7 @@ export function PreviewGalleryDialog({
           // derives. Set on the shell because the width is a custom property
           // the wrap and the popup both inherit.
           data-kind={activeItem.kind}
+          data-case-study={activeCard?.caseStudy ? "true" : undefined}
           data-wide={isWide ? "true" : undefined}
           data-reading-note={readingNote ? "true" : undefined}
           style={galleryMotionVars}
@@ -604,6 +602,7 @@ export function PreviewGalleryDialog({
               // Mirrors `mosaic-row-card-${id}` on the tile: a hook for the one
               // artwork whose framing the shared rules get wrong.
               data-preview-id={activeItem.id}
+              data-case-study={activeCard?.caseStudy ? "true" : undefined}
               data-origin-motion={originMotionEnabled ? "true" : undefined}
               data-wide={isWide ? "true" : undefined}
               // No aria-label here: it would override the aria-labelledby Base UI
@@ -757,6 +756,7 @@ export function PreviewGalleryDialog({
                             </ul>
                           </div>
                         ) : null}
+                        <ProjectCaseStudy card={activeCard} />
                       </div>
                     </>
                   ) : activeItem.kind === "writings" ? (
@@ -846,7 +846,9 @@ export function PreviewGalleryDialog({
                   className={`preview-gallery-scroll-cue-wrap${switchClassName}`}
                   aria-hidden="true"
                 >
-                  <div className="preview-gallery-scroll-cue" data-visible={showScrollCue ? "true" : undefined} />
+                  <div className="preview-gallery-scroll-cue" data-visible={showScrollCue ? "true" : undefined}>
+                    <span /><span /><span /><span />
+                  </div>
                 </div>
               ) : null}
 

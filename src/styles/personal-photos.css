@@ -334,7 +334,7 @@
   transition-duration: var(--photo-close-duration);
 }
 
-/* Grid or sphere: a frosted bar over the top of the stage, after
+/* Grid or sphere: a frosted bar at the bottom of the stage, after
    transitions.dev's sliding tabs — the site's tile grey made translucent
    over a small, saturated blur, with a white highlight catching its top edge
    and a glass-white thumb under the picked label. The thumb is sized and
@@ -347,7 +347,7 @@
    remain distinct against either a bright photograph or the dark scrim. */
 .personal-photos-layout {
   position: absolute;
-  top: max(1.25rem, env(safe-area-inset-top));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
   left: 50%;
   z-index: 1;
   display: inline-grid;
@@ -432,7 +432,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
-  padding: 5rem var(--photo-gutter) 6rem;
+  padding: 2rem var(--photo-gutter) 8rem;
   touch-action: auto;
   cursor: auto;
   scrollbar-width: none;
@@ -577,9 +577,8 @@
   opacity: calc(var(--sphere-zoom, 0) * 0.48);
 }
 .personal-photos-sphere .personal-photos-slide[data-sphere-hidden] { display: none; }
-/* A photo on the face of the globe can be clicked, and says so. The far side
-   is behind the face, so it lets presses through to the stage rather than
-   bringing round a photo nobody can see. */
+/* Every visible photo can be clicked; only fully hidden prints let presses
+   through to the stage. */
 .personal-photos-sphere .personal-photos-slide[data-sphere-far] { pointer-events: none; }
 
 /* Keep the globe's circular hit area and pill controls round under the
@@ -619,9 +618,9 @@
    frame value: in, once the photo is most of the way to the centre; out,
    at once. */
 .personal-photos-sheet[data-layout="grid"] .personal-photos-stage-caption {
-  /* The component hands over the held photo's bottom edge; the gap is the
-     stylesheet's, as the globe's is. */
-  top: calc(var(--stage-caption-y, 100%) + var(--stage-caption-gap));
+  /* The component measures this resolved gap when choosing above or below
+     the photo, then offsets its anchor by the same margin. */
+  margin-top: var(--stage-caption-gap);
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .personal-photos-sheet[data-layout="grid"][data-held] .personal-photos-stage-caption {

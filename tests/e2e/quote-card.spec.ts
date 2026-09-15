@@ -93,6 +93,17 @@ test("exposes 10 by 40 dot targets with 4px gaps and selected emphasis", async (
   await expect(carousel(page).locator('.mosaic-quote-dot[aria-pressed="false"] span').first()).toHaveCSS("opacity", "0.3")
 })
 
+test("a focused dot rings the dot it draws, not its tall target", async ({ page }) => {
+  await openHome(page)
+  const dot = carousel(page).locator(".mosaic-quote-dot").nth(2)
+  // Off the Tab path, but a screen reader's cursor still moves focus here.
+  await page.keyboard.press("Tab")
+  await dot.focus()
+  await expect(dot).toHaveCSS("outline-style", "none")
+  await expect(dot.locator("span")).toHaveCSS("outline-style", "solid")
+  await expect(dot.locator("span")).toHaveCSS("outline-offset", "1px")
+})
+
 test("swiping backward wraps and tapping the card advances one quote", async ({ page }) => {
   await openHome(page)
   const surface = carousel(page).getByRole("button", { name: "Advance quote" })
@@ -250,8 +261,8 @@ test("the focused quote author opens the full X preview and Escape closes it", a
   await expect(preview.getByRole("link", { name: "Follow" })).toBeVisible()
   await expect(page.locator(".mosaic-quote-profile-positioner")).toHaveAttribute("data-side", "top")
   await expect(preview).toContainText(/Following|Followers/)
-  await page.keyboard.press("Tab")
-  await expect(preview.getByRole("link", { name: "MW on X" })).toBeFocused()
+  // The preview's links are the pointer's; the name already goes to the profile.
+  await expect(preview.getByRole("link", { name: "MW on X" })).toHaveAttribute("tabindex", "-1")
   await page.keyboard.press("Escape")
   await expect(preview).toBeHidden()
   await expect(author).toBeFocused()
@@ -281,6 +292,82 @@ test("the focused quote author opens the full X preview and Escape closes it", a
   await carousel(page).getByRole("button", { name: /Show quote from Phil Liao/ }).click()
   await active(page).getByRole("button", { name: "Phil Liao on X" }).focus()
   await expect(page.locator(".mosaic-quote-profile-popup .mosaic-x-card")).toContainText("Phil 🍵")
+})
+
+test("the quote card is one Tab stop that the arrows browse", async ({ page }) => {
+  await openHome(page)
+  const card = carousel(page)
+  const hint = card.locator(".mosaic-quote-keys")
+  await page.getByRole("link", { name: /Open Protector booking preview/ }).focus()
+  await page.keyboard.press("Tab")
+  await expect(card).toBeFocused()
+  // The keys it answers to, in the dots' place, and in words for a screen reader.
+  await expect(hint).toHaveCSS("opacity", "1")
+  await expect(hint).toHaveText("←→BrowseEnterGo in")
+  await expect(card).toHaveAccessibleDescription(/arrow keys.*Enter/)
+  await page.keyboard.press("ArrowRight")
+  await expect(active(page)).toContainText("BASED FLOYD VIII")
+  await page.keyboard.press("ArrowLeft")
+  await expect(active(page)).toContainText("Michael Wong")
+  // The name, the preview, and the dots are not stops of their own: the next
+  // Tab is the next tile, and Shift+Tab comes straight back to the card.
+  await page.keyboard.press("Tab")
+  await expect(page.getByRole("link", { name: /Open Matcha security audit preview/ })).toBeFocused()
+  await page.keyboard.press("Shift+Tab")
+  await expect(card).toBeFocused()
+})
+
+test("Enter goes in to the author and Escape comes back out a level at a time", async ({ page }) => {
+  await openHome(page)
+  const card = carousel(page)
+  const author = active(page).getByRole("button", { name: "Michael Wong on X" })
+  const preview = page.locator(".mosaic-quote-profile-popup .mosaic-x-card")
+  await page.getByRole("link", { name: /Open Protector booking preview/ }).focus()
+  await page.keyboard.press("Tab")
+  await page.keyboard.press("Enter")
+  await expect(author).toBeFocused()
+  await expect(preview).toBeVisible()
+  await expect(card.locator(".mosaic-quote-keys")).toHaveText("EnterProfileEscBack")
+  // Enter again takes focus into the preview, whose links are stops only now.
+  await page.keyboard.press("Enter")
+  await expect(preview.getByRole("link", { name: "MW on X" })).toBeFocused()
+  await page.keyboard.press("Tab")
+  await expect(preview.getByRole("link", { name: "Follow" })).toBeFocused()
+  // Out of the preview to the name, then out of the name to the card.
+  await page.keyboard.press("Escape")
+  await expect(preview).toBeHidden()
+  await expect(author).toBeFocused()
+  await page.keyboard.press("Escape")
+  await expect(card).toBeFocused()
+  await expect(card).toHaveAttribute("data-inside", "false")
+  // With the preview only showing, one Escape from the name is the whole way out.
+  await page.keyboard.press("Enter")
+  await expect(preview).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(card).toBeFocused()
+  await expect(preview).toBeHidden()
+})
+
+test("the team quotes, with no author to go in to, offer only the arrows", async ({ page }) => {
+  await openHome(page)
+  const card = teamCarousel(page)
+  await page.getByRole("link", { name: /Open Matcha Rewards preview/ }).focus()
+  await page.keyboard.press("Tab")
+  await expect(card).toBeFocused()
+  await expect(card.locator(".mosaic-quote-keys")).toHaveText("←→Browse")
+  await page.keyboard.press("Enter")
+  await expect(card).toBeFocused()
+  await page.keyboard.press("ArrowRight")
+  await expect(card.locator('.mosaic-quote-slide[data-active="true"]')).toContainText("Cristina Pieretti")
+})
+
+test("a pointer never sees the key hint", async ({ page }) => {
+  await openHome(page)
+  const card = carousel(page)
+  await card.getByRole("button", { name: "Advance quote" }).click({ position: { x: 30, y: 30 } })
+  await expect(active(page)).toContainText("BASED FLOYD VIII")
+  await expect(card.locator(".mosaic-quote-keys")).toHaveCSS("opacity", "0")
+  await expect(card.locator(".mosaic-quote-dots")).toHaveCSS("opacity", "1")
 })
 
 test("opens the interactive profile popover on touch", async ({ browser }) => {
