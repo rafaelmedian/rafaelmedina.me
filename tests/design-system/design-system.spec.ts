@@ -109,6 +109,13 @@ test("corner tuner changes the CV illustration independently of the shared radiu
   await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "48px")
 })
 
+test("keeps contact shine fixed instead of exposing a development tuner", async ({ page }) => {
+  await page.goto("/")
+
+  await expect(page.getByRole("button", { name: "Continuous corners" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Contact shine" })).toHaveCount(0)
+})
+
 const customPropertyPattern = /^--[\w-]+$/
 const cssVariablePattern = /var\((--[\w-]+)/g
 
