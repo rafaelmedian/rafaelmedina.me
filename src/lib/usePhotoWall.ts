@@ -4,7 +4,7 @@ type Point = { x: number; y: number }
 type Camera = Point & { scale: number }
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
 
-/** A camera over a finite photo wall. Pointer and wheel events change only
+/** A camera over a repeating photo wall. Pointer and wheel events change only
  * its transform; React still owns selection, captions, and the dialog. */
 export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigate: () => void) {
   const camera = useRef<Camera>({ x: 0, y: 0, scale: 1 })
@@ -15,15 +15,34 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
   useLayoutEffect(() => {
     const plane = stage?.querySelector<HTMLElement>(".personal-photos-masonry")
     if (!stage || !plane) return
+    const panels = Array.from(plane.querySelectorAll<HTMLElement>(".personal-photos-wall-panel"))
+    const columns = panels.map(panel => Array.from(panel.querySelectorAll<HTMLElement>(".personal-photos-column")))
     const pointers = new Map<number, Point>()
     let origin: Point | null = null
     let dragged = false
     let suppressClick = false
+    let placement = ""
     const paint = () => {
       const pose = camera.current
-      // Keep at least a portion of the collection within reach at every zoom.
-      pose.x = clamp(pose.x, -plane.offsetWidth * pose.scale + stage.clientWidth * 0.25, stage.clientWidth * 0.75)
-      pose.y = clamp(pose.y, -plane.offsetHeight * pose.scale + stage.clientHeight * 0.25, stage.clientHeight * 0.75)
+      const width = plane.offsetWidth
+      const heights = columns[0]?.map(column => column.offsetHeight) ?? []
+      // Recycle horizontally by a complete collection, and vertically by
+      // each column's own period. Unequal photo ratios cannot leave a blank
+      // band below a short column when its taller neighbour repeats.
+      if (width && heights.every(height => height > 0)) {
+        const column = Math.floor((stage.clientWidth / 2 - pose.x) / (width * pose.scale))
+        const rows = heights.map(height => Math.floor((stage.clientHeight / 2 - pose.y) / (height * pose.scale)))
+        const nextPlacement = `${column},${rows},${width},${heights}`
+        if (nextPlacement !== placement) {
+          placement = nextPlacement
+          panels.forEach((panel, panelIndex) => {
+            panel.style.left = `${(column + Number(panel.dataset.wallX)) * width}px`
+            columns[panelIndex].forEach((item, index) => {
+              item.style.top = `${(rows[index] + Number(panel.dataset.wallY)) * heights[index]}px`
+            })
+          })
+        }
+      }
       plane.style.transform = `translate(${pose.x}px, ${pose.y}px) scale(${pose.scale})`
     }
     const local = (point: Point) => {

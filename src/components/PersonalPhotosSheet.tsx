@@ -49,14 +49,18 @@ const spherePhotoSizes = `(max-width: 699.98px) calc(min(136vw, 80vh) * ${(spher
 // columns, as --photo-gutter and --photo-column-gap set them.
 // Like the globe, advertise the largest camera zoom before a gesture so
 // enlarging the wall never waits for a sharper bitmap to arrive.
-const wallPhotoSizes = "calc((max(80rem, 125vw) - 4 * clamp(1.5rem, 4vw, 5rem)) / 5 * 2.5)"
+const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * clamp(1.5rem, 4vw, 5rem)) / 5 * 2.5)"
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
     the move and growth that carry it there from where it lies. */
-type GridHold = { id: string; caption: string; dx: number; dy: number; scale: number; layoutGap: number; left: number; top: number; width: number; height: number; captionTop: number; scrollTop: number }
+type GridHold = { id: string; instance: string; caption: string; dx: number; dy: number; scale: number; layoutGap: number; left: number; top: number; width: number; height: number; captionTop: number; scrollTop: number }
 /** How much of the stage a held grid photo fills, on its longer side. */
 const gridHoldShare = 0.7
+// The middle panel owns the accessible originals and gallery flights. Eight
+// identical neighbours fill the viewport as the camera recycles their cells.
+const wallPanels = [{ x: 0, y: 0 }, ...[-1, 0, 1].flatMap(y =>
+  [-1, 0, 1].filter(x => x !== 0 || y !== 0).map(x => ({ x, y })))]
 
 const layoutOptions = [
   { layout: "grid", label: "Grid" },
@@ -81,6 +85,60 @@ function rewindSheet(sheet: HTMLDivElement, halt: { cancelled: boolean }) {
     }
     requestAnimationFrame(step)
   })
+}
+
+function PhotoColumns({ panel = "0,0", gridColumns, held, previewCount, layout, toggleHold, onSlideKeyDown }: {
+  panel?: string
+  gridColumns: { photo: typeof photos[number]; index: number }[][]
+  held: GridHold | null
+  previewCount: number
+  layout: PhotoSheetLayout
+  toggleHold: (slide: HTMLElement, photo: typeof photos[number]) => void
+  onSlideKeyDown: (event: ReactKeyboardEvent<HTMLElement>, photo: typeof photos[number]) => void
+}) {
+  const copy = panel !== "0,0"
+  return gridColumns.map((column, columnIndex) => (
+    <div className="personal-photos-column" key={columnIndex}>
+      {column.map(({ photo, index }) => {
+        const instance = copy ? `${panel}:${photo.id}` : photo.id
+        const selected = held?.instance === instance
+        return (
+          <figure
+            className="personal-photos-slide"
+            data-photo-id={copy ? undefined : photo.id}
+            data-photo-instance={instance}
+            data-photo-copy={copy ? "" : undefined}
+            data-photo-retained={!copy && index < previewCount ? "" : undefined}
+            data-held={selected ? "" : undefined}
+            style={selected ? { "--hold-dx": `${held.dx.toFixed(1)}px`, "--hold-dy": `${held.dy.toFixed(1)}px`, "--hold-scale": held.scale.toFixed(4), "--hold-layout-gap": `${held.layoutGap.toFixed(3)}px` } as CSSProperties : undefined}
+            key={photo.id}
+            role="group"
+            aria-label={`${index + 1} of ${photos.length}`}
+            tabIndex={copy ? undefined : 0}
+            onClick={(event) => toggleHold(event.currentTarget, photo)}
+            onKeyDown={(event) => onSlideKeyDown(event, photo)}
+          >
+            <img
+              src={`/images/personal/${photo.name}.webp`}
+              srcSet={`/images/personal/${photo.name}-400w.webp 400w, /images/personal/${photo.name}-800w.webp 800w, /images/personal/${photo.name}.webp ${photo.width}w`}
+              // Held, the photo is drawn far larger than its
+              // column: say so, and the browser fetches the
+              // larger candidate for it.
+              sizes={selected ? `${Math.round(held.width)}px` : layout === "wall" ? wallPhotoSizes : gridPhotoSizes}
+              loading={layout === "wall" || index < previewCount ? "eager" : "lazy"}
+              alt={copy ? "" : photo.alt}
+              width={photo.width}
+              height={photo.height}
+              decoding="async"
+              draggable={false}
+              style={{ aspectRatio: `${photo.width} / ${photo.height}`, backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
+            />
+            <figcaption>{photo.caption}</figcaption>
+          </figure>
+        )
+      })}
+    </div>
+  ))
 }
 
 export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<PersonalPhotosSheetHandle>; onPreviewImagesChange: (images: Record<string, string>) => void }) {
@@ -188,6 +246,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     const top = stage.top + (sheet.clientHeight - heldHeight) / 2
     heldRef.current = {
       id: photo.id,
+      instance: slide.dataset.photoInstance ?? photo.id,
       caption: photo.caption,
       dx: (stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2)) / cameraScale,
       dy: (stage.top + sheet.clientHeight / 2 - (rect.top + framedHeight * cameraScale / 2)) / cameraScale,
@@ -216,7 +275,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
   const toggleHold = (slide: HTMLElement, photo: typeof photos[number]) => {
-    if (heldRef.current?.id === photo.id) releaseHeld()
+    if (heldRef.current?.instance === (slide.dataset.photoInstance ?? photo.id)) releaseHeld()
     else holdSlide(slide, photo)
   }
   const onSlideKeyDown = (event: ReactKeyboardEvent<HTMLElement>, photo: typeof photos[number]) => {
@@ -475,42 +534,11 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
             ) : (
               <Fragment key={layout}>
                 <div className="personal-photos-masonry">
-                  {gridColumns.map((column, columnIndex) => (
-                    <div className="personal-photos-column" key={columnIndex}>
-                      {column.map(({ photo, index }) => (
-                        <figure
-                          className="personal-photos-slide"
-                          data-photo-id={photo.id}
-                          data-photo-retained={index < previewCount ? "" : undefined}
-                          data-held={held?.id === photo.id ? "" : undefined}
-                          style={held?.id === photo.id ? { "--hold-dx": `${held.dx.toFixed(1)}px`, "--hold-dy": `${held.dy.toFixed(1)}px`, "--hold-scale": held.scale.toFixed(4), "--hold-layout-gap": `${held.layoutGap.toFixed(3)}px` } as CSSProperties : undefined}
-                          key={photo.id}
-                          role="group"
-                          aria-label={`${index + 1} of ${photos.length}`}
-                          tabIndex={0}
-                          onClick={(event) => toggleHold(event.currentTarget, photo)}
-                          onKeyDown={(event) => onSlideKeyDown(event, photo)}
-                        >
-                          <img
-                            src={`/images/personal/${photo.name}.webp`}
-                            srcSet={`/images/personal/${photo.name}-400w.webp 400w, /images/personal/${photo.name}-800w.webp 800w, /images/personal/${photo.name}.webp ${photo.width}w`}
-                            // Held, the photo is drawn far larger than its
-                            // column: say so, and the browser fetches the
-                            // larger candidate for it.
-                            sizes={held?.id === photo.id ? `${Math.round(held.width)}px` : layout === "wall" ? wallPhotoSizes : gridPhotoSizes}
-                            loading={layout === "wall" || index < previewCount ? "eager" : "lazy"}
-                            alt={photo.alt}
-                            width={photo.width}
-                            height={photo.height}
-                            decoding="async"
-                            draggable={false}
-                            style={{ aspectRatio: `${photo.width} / ${photo.height}`, backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
-                          />
-                          <figcaption>{photo.caption}</figcaption>
-                        </figure>
-                      ))}
+                  {layout === "wall" ? wallPanels.map(({ x, y }) => (
+                    <div className="personal-photos-wall-panel" data-wall-x={x} data-wall-y={y} aria-hidden={x !== 0 || y !== 0 ? true : undefined} key={`${x},${y}`}>
+                      <PhotoColumns panel={`${x},${y}`} gridColumns={gridColumns} held={held} previewCount={previewCount} layout={layout} toggleHold={toggleHold} onSlideKeyDown={onSlideKeyDown} />
                     </div>
-                  ))}
+                  )) : <PhotoColumns gridColumns={gridColumns} held={held} previewCount={previewCount} layout={layout} toggleHold={toggleHold} onSlideKeyDown={onSlideKeyDown} />}
                 </div>
                 {/* The held photo's name, under it, as on the globe; the
                     figcaptions stay for assistive tech. */}

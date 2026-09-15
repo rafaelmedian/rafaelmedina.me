@@ -765,6 +765,7 @@
   position: absolute;
   top: 0;
   left: 0;
+  display: block;
   width: max(80rem, 125vw);
   margin: 0;
   transform-origin: 0 0;
@@ -822,4 +823,23 @@
 @media (max-width: 699.98px) {
   .personal-photos-wall-tools { gap: 0; }
   .personal-photos-wall-tools button { padding-inline: 0.5rem; }
+}
+
+/* A fixed ring fills an endless wall. Columns repeat on their own height
+   so a shorter column never leaves a blank band below its last photograph. */
+.personal-photos-wall-panel {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1.5rem, 4vw, 5rem);
+  width: 100%;
+  padding-right: clamp(1.5rem, 4vw, 5rem);
+}
+.personal-photos-wall-panel:first-child { position: relative; }
+.personal-photos-wall-panel:has(.personal-photos-slide[data-held]) { z-index: 1; }
+
+.personal-photos-wall-panel .personal-photos-column {
+  position: relative;
+  padding-bottom: clamp(1.5rem, 4vw, 5rem);
 }

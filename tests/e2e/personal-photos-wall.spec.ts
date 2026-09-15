@@ -185,3 +185,44 @@ test("a photo partly outside the viewport can be selected on its visible edge", 
   await page.mouse.click((box.x + 390) / 2, box.y + 20)
   await expect(edge).toHaveAttribute("data-held", "")
 })
+
+test("Wall repeats in every direction without growing its DOM, and each copy selects independently", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.locator(".personal-photos-label").click()
+  const dialog = page.getByRole("dialog", { name: "Personal photos" })
+  await dialog.getByRole("button", { name: "Wall", exact: true }).click()
+  const wall = page.getByRole("region", { name: "Photo wall" })
+  const copies = wall.locator(".personal-photos-slide[data-photo-copy]")
+  expect(await copies.count()).toBeGreaterThan(0)
+  const total = await wall.locator(".personal-photos-slide").count()
+  expect(await wall.getByRole("group").count()).toBe(await wall.locator(".personal-photos-slide[data-photo-id]").count())
+  for (let i = 0; i < 5; i++) await dialog.getByRole("button", { name: "Zoom out", exact: true }).click()
+  for (const [dx, dy] of [[8000, 8000], [-16000, 0], [0, -16000], [16000, 16000]]) {
+    await page.mouse.move(700, 450)
+    const plane = wall.locator(".personal-photos-masonry")
+    const before = await plane.evaluate(el => getComputedStyle(el).transform)
+    await page.mouse.wheel(dx, dy)
+    await expect.poll(() => plane.evaluate(el => getComputedStyle(el).transform)).not.toBe(before)
+    await expect.poll(() => wall.locator(".personal-photos-slide").evaluateAll(slides => slides.filter(slide => {
+      const r = slide.getBoundingClientRect()
+      return r.right > 0 && r.left < innerWidth && r.bottom > 144 && r.top < innerHeight
+    }).length)).toBeGreaterThan(12)
+  }
+  expect(await wall.locator(".personal-photos-slide").count()).toBe(total)
+  const target = await copies.evaluateAll(slides => {
+    for (const slide of slides) {
+      const r = slide.getBoundingClientRect()
+      if (r.left > 10 && r.right < innerWidth - 10 && r.top > 160 && r.bottom < innerHeight - 10)
+        return { instance: (slide as HTMLElement).dataset.photoInstance!, x: r.x + r.width / 2, y: r.y + r.height / 2 }
+    }
+    throw new Error("No complete repeated photo in view")
+  })
+  await page.mouse.click(target.x, target.y)
+  await expect(wall.locator(".personal-photos-slide[data-held]")).toHaveCount(1)
+  await expect(wall.locator(`[data-photo-instance="${target.instance}"]`)).toHaveAttribute("data-held", "")
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeVisible()
+  await expect(wall.locator(".personal-photos-slide[data-held]")).toHaveCount(0)
+})
