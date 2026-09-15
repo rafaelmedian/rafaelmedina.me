@@ -2261,7 +2261,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </li>
                 <li data-ds-terms={terms("about introduction profile photo message prompt video teaser circle 112px 64px 240px 256px captions 360ms 160ms 24px 12px deferred reduced motion pip transitions.dev")}>
                   <strong>The message prompt is anchored by Rafael&rsquo;s video portrait.</strong> The main site uses the
-                  self-hosted production poster and only mounts the silent teaser as About approaches; the full recording waits for an explicit press.
+                  self-hosted production poster and only mounts the silent teaser after half the CV tile appears following a scroll beyond 96px, or as About approaches; the full recording waits for an explicit press.
                   It anchors the visible desktop conversation and opens the modal conversation when tapped at compact
                   sizes. An explicit development preview keeps the longer fixture available for player testing.
                   Its 112px desktop true circle uses <code>corner-shape: round</code> rather than the site&rsquo;s squircle curve and
@@ -2427,7 +2427,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   focus-ring-soft ring, avoiding a second pill outline inside the field. The placeholder is hello@example.com.
                   The arrow opens an email draft
                   for the visitor to review and send. The website does not collect the address.
-                  Media waits until within 200px of About; only a press requests the spoken recording.
+                  Media waits until half the CV tile is visible after scrolling beyond 96px, or until within 200px of About. The chat remains visible from the CV through About and hides behind dialogs; only a press requests the spoken recording.
                   Reduced motion and lightweight connections use the poster instead of the silent teaser.
                   The transitions.dev icon-swap recipe keeps play/pause and volume glyphs
                   stacked in one cell: <code>--icon-swap-dur</code> (250ms), <code>--icon-swap-blur</code> (2px),

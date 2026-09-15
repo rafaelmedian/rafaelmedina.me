@@ -55,11 +55,20 @@ export function AboutIntroDock(props: {
   useEffect(() => {
     const about = document.getElementById("about-panel")
     if (!about) return
+    const resume = document.querySelector(".mosaic-tile-resume")
+    let resumeReached = false
     let frame = 0
     const sync = () => {
       frame = 0
       const bounds = about.getBoundingClientRect()
-      const nowActive = bounds.top <= window.innerHeight * 0.31 && bounds.bottom > 0
+      const cv = resume?.getBoundingClientRect()
+      // Keep initial visits media-free, even when a tall viewport includes CV.
+      // Once half the tile is seen after scrolling, retain the intro through
+      // the grid-to-About handoff. Scrolling back to the hero hides it again.
+      const visibleHeight = cv ? Math.max(0, Math.min(cv.bottom, window.innerHeight) - Math.max(cv.top, 0)) : 0
+      if (window.scrollY > 96 && cv && visibleHeight >= cv.height * 0.5) resumeReached = true
+      const nowActive = bounds.bottom > 0 && (bounds.top <= window.innerHeight * 0.31 || (resumeReached && window.scrollY > 96))
+      if (resumeReached) setApproached(true)
       // Geometry fallback also covers restored scroll positions and browsers
       // without IntersectionObserver; no media URL exists above this boundary.
       if (bounds.top <= window.innerHeight + 200 && bounds.bottom >= -200) setApproached(true)
@@ -74,6 +83,9 @@ export function AboutIntroDock(props: {
         }
       }, { rootMargin: "200px" }) : null
     observer?.observe(about)
+    const resumeObserver = resume && "IntersectionObserver" in window
+      ? new IntersectionObserver(schedule, { threshold: 0.5 }) : null
+    if (resume) resumeObserver?.observe(resume)
     sync()
     window.addEventListener("scroll", schedule, { passive: true })
     window.addEventListener("resize", schedule)
@@ -81,6 +93,7 @@ export function AboutIntroDock(props: {
     return () => {
       cancelAnimationFrame(frame)
       observer?.disconnect()
+      resumeObserver?.disconnect()
       window.removeEventListener("scroll", schedule)
       window.removeEventListener("resize", schedule)
       window.removeEventListener("pageshow", schedule)
