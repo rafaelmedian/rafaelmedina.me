@@ -1149,9 +1149,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Rounded rectangular surfaces use <code>--corner-curve: squircle</code>, the exact{" "}
                 <code>superellipse(2)</code> curve from CSS Borders Level 4. Browsers that do not support{" "}
                 <code>corner-shape</code> fall back to the same four circular radii without changing layout. Pills,
-                dots, avatars, the photo globe's circular hit area, and its layout control remain geometrically round. In development, the homepage shows the live curve
-                and 0.5–2× radius-scale tuner by default; <a href="/?tune=corners">/?tune=corners</a> remains its explicit route. The
-                stylesheet remains the production source of truth; the tuner starts at the shipped 1.3× scale.
+                dots, avatars, the photo globe's circular hit area, and its layout control remain geometrically round. In development, the homepage shows the live curve,
+                0.5–2× shared radius-scale, and independent 0–64px CV illustration radius tuners by default; <a href="/?tune=corners">/?tune=corners</a> remains their explicit route. The
+                stylesheet remains the production source of truth; the tuners start at the shipped 1.3× scale and the illustration&rsquo;s 24px comp radius.
               </p>
               <div
                 className="ds-rule"
@@ -1558,7 +1558,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 link&rsquo;s accessible name describes its action. They are set in Inter Medium at 12px on the
                 comp&rsquo;s 237px sheet, so 5.06cqw here, with a 1.5 line height, 12px between roles and 8px inside
                 one, in the comp&rsquo;s #2d2d2d and #838383; that illustrative scale and palette is the only
-                exception to the UI type ramp. On hover or focus, the paper rises 4px and the corner scales to 1.4&times; from its lower-right
+                exception to the UI type ramp. In development, the CV illustration radius has its own DialKit control,
+                independent of the shared radius scale; it keeps the outer paper and inset sheet concentric. On hover or focus, the paper rises 4px and the corner scales to 1.4&times; from its lower-right
                 anchor, both over <code>--duration-base</code> with <code>--ease-smooth</code>, so the page peels
                 further open like a book; reduced motion removes both. The reader is a slide of the
                 preview gallery rather than a modal of its own: the tile is one of

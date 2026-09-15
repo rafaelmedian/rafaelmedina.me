@@ -68,6 +68,47 @@ test("corner tuner changes the shared curve and radius scale without reshaping c
   await expect(curve).toBeVisible()
 })
 
+test("corner tuner changes the CV illustration independently of the shared radius scale", async ({ page }) => {
+  await page.goto("/?tune=corners")
+  const radiusScale = page.getByRole("slider", { name: "Radius Scale" })
+  const cvRadius = page.getByRole("slider", { name: /CV Illustration Radius/i })
+  const paper = page.locator(".resume-tile-paper")
+
+  const readPaperCorners = () =>
+    paper.evaluate((element) => {
+      const sheet = element.querySelector<HTMLElement>(".resume-tile-sheet")
+      if (!sheet) throw new Error("The CV illustration sheet is missing")
+
+      const outerBox = element.getBoundingClientRect()
+      const toPixels = (value: string, size: number) =>
+        value.endsWith("%") ? (Number.parseFloat(value) / 100) * size : Number.parseFloat(value)
+      const [outerX, outerY = outerX] = getComputedStyle(element).borderTopLeftRadius.split(" ")
+      const [innerX, innerY = innerX] = getComputedStyle(sheet).borderTopLeftRadius.split(" ")
+
+      return {
+        outerX: toPixels(outerX, outerBox.width),
+        outerY: toPixels(outerY, outerBox.height),
+        innerX: toPixels(innerX, outerBox.width),
+        innerY: toPixels(innerY, outerBox.height),
+      }
+    })
+
+  await expect(cvRadius).toBeVisible()
+  await expect(cvRadius).toHaveAttribute("aria-valuenow", "24")
+  const initialCorners = await readPaperCorners()
+
+  await radiusScale.press("End")
+  expect((await readPaperCorners()).outerX).toBeCloseTo(initialCorners.outerX, 1)
+
+  await cvRadius.press("End")
+  const tunedCorners = await readPaperCorners()
+  expect(tunedCorners.outerX).toBeGreaterThan(initialCorners.outerX * 2)
+  expect(tunedCorners.outerY).toBeCloseTo(tunedCorners.outerX, 0)
+  expect(tunedCorners.innerX).toBeCloseTo(tunedCorners.outerX - 1, 0)
+  expect(tunedCorners.innerY).toBeCloseTo(tunedCorners.outerY - 1, 0)
+  await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("border-radius", "48px")
+})
+
 const customPropertyPattern = /^--[\w-]+$/
 const cssVariablePattern = /var\((--[\w-]+)/g
 

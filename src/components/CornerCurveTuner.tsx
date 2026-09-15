@@ -8,14 +8,26 @@ const RADIUS_BASES = {
   "--radius-lg": 24,
 } as const
 
+const RESUME_PAPER_SIZE = {
+  width: 237,
+  height: 280,
+} as const
+
+const RESUME_RADIUS_PROPERTIES = [
+  "--resume-paper-radius-x",
+  "--resume-paper-radius-y",
+  "--resume-sheet-radius",
+] as const
+
 /** Dev-only controls for the shared rounded-rectangle curve and radius scale.
     It is the default homepage tuner; `/?tune=corners` remains an explicit
     route. The stylesheet remains the source of truth; removing the tuner
     removes its inline overrides and restores the production tokens. */
 export default function CornerCurveTuner() {
-  const { exponent, radiusScale } = useDialKit("Continuous corners", {
+  const { exponent, radiusScale, cvIllustrationRadius } = useDialKit("Continuous corners", {
     exponent: [1.3, 1, 4, 0.05],
     radiusScale: [1.3, 0.5, 2, 0.05],
+    cvIllustrationRadius: [24, 0, 64, 1],
   })
 
   useEffect(() => {
@@ -25,11 +37,24 @@ export default function CornerCurveTuner() {
       const radius = Number((base * radiusScale).toFixed(2))
       root.style.setProperty(token, `${radius}px`)
     }
+    root.style.setProperty(
+      "--resume-paper-radius-x",
+      `${Number(((cvIllustrationRadius / RESUME_PAPER_SIZE.width) * 100).toFixed(3))}%`,
+    )
+    root.style.setProperty(
+      "--resume-paper-radius-y",
+      `${Number(((cvIllustrationRadius / RESUME_PAPER_SIZE.height) * 100).toFixed(3))}%`,
+    )
+    root.style.setProperty(
+      "--resume-sheet-radius",
+      `${Number(((cvIllustrationRadius / RESUME_PAPER_SIZE.width) * 100).toFixed(3))}cqw`,
+    )
     return () => {
       root.style.removeProperty("--corner-curve")
       for (const token of Object.keys(RADIUS_BASES)) root.style.removeProperty(token)
+      for (const property of RESUME_RADIUS_PROPERTIES) root.style.removeProperty(property)
     }
-  }, [exponent, radiusScale])
+  }, [cvIllustrationRadius, exponent, radiusScale])
 
   return <DialRoot position="bottom-left" theme="light" />
 }
