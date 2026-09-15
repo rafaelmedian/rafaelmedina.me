@@ -83,7 +83,12 @@ export function flyBetweenLayouts(stage: HTMLElement, from: Map<string, SlideSna
       image.style.backgroundImage = "none"
     }
     image.decoding = "sync"
-    Object.assign(clone.style, { left: `${target.left + target.width / 2}px`, top: `${target.top + target.height / 2}px`, width: `${layoutWidth}px` })
+    // Clones leave their layout's ancestor selectors when appended to body.
+    // Carry its computed frame, including Wall's zero mat, into the flight.
+    const frame = getComputedStyle(slide)
+    const imageFrame = getComputedStyle(slideImage)
+    Object.assign(image.style, { borderRadius: imageFrame.borderRadius })
+    Object.assign(clone.style, { padding: frame.padding, boxShadow: frame.boxShadow, left: `${target.left + target.width / 2}px`, top: `${target.top + target.height / 2}px`, width: `${layoutWidth}px` })
     const dx = start.rect.left + start.rect.width / 2 - (target.left + target.width / 2)
     const dy = start.rect.top + start.rect.height / 2 - (target.top + target.height / 2)
     document.body.appendChild(clone)
