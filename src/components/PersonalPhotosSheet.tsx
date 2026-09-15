@@ -300,6 +300,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
 
   useLayoutEffect(() => {
     if (layout !== "wall" || !sheetNode) return
+    wall.current.followFocus(held?.wallFocus?.x ?? 0, held?.wallFocus?.y ?? 0)
     const scale = wall.current.scale()
     const readSlot = wallSlotReader(sheetNode, scale)
     const selected = held?.wallSlot
@@ -330,8 +331,12 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
       .filter(slide => !photo || slide.dataset.photoSource === photo.id)
       .map(slide => {
         const slot = readSlot(slide)
-        return { slide, distance: Math.hypot(slot.left + slot.width / 2 - stage.left - sheet.clientWidth / 2, slot.top + slot.height / 2 - stage.top - sheet.clientHeight / 2) }
-      }).sort((a, b) => a.distance - b.distance)
+        const centreX = current?.wallSlot ? current.wallSlot.left + current.wallSlot.width / 2 : stage.left + sheet.clientWidth / 2
+        const centreY = current?.wallSlot ? current.wallSlot.top + current.wallSlot.height / 2 : stage.top + sheet.clientHeight / 2
+        const dx = slot.left + slot.width / 2 - centreX
+        const dy = slot.top + slot.height / 2 - centreY
+        return { slide, ahead: !current || direction * dx > 1, distance: Math.hypot(dx, dy) }
+      }).filter(candidate => candidate.ahead).sort((a, b) => a.distance - b.distance)
     const target = candidates[0]?.slide
     const targetPhoto = photo ?? photos.find(photo => photo.id === target?.dataset.photoSource)
     if (target && targetPhoto) holdSlide(target, targetPhoto)

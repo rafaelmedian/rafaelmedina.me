@@ -9,7 +9,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigate: () => void) {
   const camera = useRef<Camera>({ x: 0, y: 0, scale: 1 })
   const active = useRef(open)
-  const controls = useRef<{ zoom: (factor: number) => void; reset: () => void; scale: () => number }>({ zoom: () => {}, reset: () => {}, scale: () => camera.current.scale })
+  const controls = useRef<{ zoom: (factor: number) => void; reset: () => void; scale: () => number; followFocus: (x: number, y: number) => void }>({ zoom: () => {}, reset: () => {}, scale: () => camera.current.scale, followFocus: () => {} })
   useLayoutEffect(() => { active.current = open }, [open])
 
   useLayoutEffect(() => {
@@ -22,6 +22,10 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     let dragged = false
     let suppressClick = false
     let placement = ""
+    let focus = { x: 0, y: 0 }
+    // Keep each physical panel in its own modulo-three cell. Only a panel
+    // leaving the surrounding ring moves; visible neighbours keep their slots.
+    const recycledCell = (centre: number, offset: number) => centre + ((offset - centre + 1) % 3 + 3) % 3 - 1
     const paint = () => {
       const pose = camera.current
       const width = plane.offsetWidth
@@ -30,15 +34,15 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       // each column's own period. Unequal photo ratios cannot leave a blank
       // band below a short column when its taller neighbour repeats.
       if (width && heights.every(height => height > 0)) {
-        const column = Math.floor((stage.clientWidth / 2 - pose.x) / (width * pose.scale))
-        const rows = heights.map(height => Math.floor((stage.clientHeight / 2 - pose.y) / (height * pose.scale)))
+        const column = Math.floor((stage.clientWidth / 2 - pose.x - focus.x) / (width * pose.scale))
+        const rows = heights.map(height => Math.floor((stage.clientHeight / 2 - pose.y - focus.y) / (height * pose.scale)))
         const nextPlacement = `${column},${rows},${width},${heights}`
         if (nextPlacement !== placement) {
           placement = nextPlacement
           panels.forEach((panel, panelIndex) => {
-            panel.style.left = `${(column + Number(panel.dataset.wallX)) * width}px`
+            panel.style.left = `${recycledCell(column, Number(panel.dataset.wallX)) * width}px`
             columns[panelIndex].forEach((item, index) => {
-              item.style.top = `${(rows[index] + Number(panel.dataset.wallY)) * heights[index]}px`
+              item.style.top = `${recycledCell(rows[index], Number(panel.dataset.wallY)) * heights[index]}px`
             })
           })
         }
@@ -51,6 +55,7 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     }
     const zoom = (factor: number, from: Point, to = from) => {
       onNavigate()
+      focus = { x: 0, y: 0 }
       const pose = camera.current
       const scale = clamp(pose.scale * factor, 0.4, 2.5)
       const ratio = scale / pose.scale
@@ -61,17 +66,19 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     }
     const pan = (dx: number, dy: number) => {
       onNavigate()
+      focus = { x: 0, y: 0 }
       camera.current.x += dx
       camera.current.y += dy
       paint()
     }
     const reset = () => {
       onNavigate()
+      focus = { x: 0, y: 0 }
       camera.current = { x: 20, y: 144, scale: stage.clientWidth < 700 ? 0.65 : 1 }
       paint()
     }
     const zoomCentre = (factor: number) => zoom(factor, { x: stage.clientWidth / 2, y: stage.clientHeight / 2 })
-    controls.current = { zoom: zoomCentre, reset, scale: () => camera.current.scale }
+    controls.current = { zoom: zoomCentre, reset, scale: () => camera.current.scale, followFocus: (x, y) => { focus = { x, y }; paint() } }
     reset()
 
     const wheel = (event: WheelEvent) => {
@@ -150,7 +157,7 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       }
       event.preventDefault()
     }
-    const focus = (event: FocusEvent) => {
+    const focusIn = (event: FocusEvent) => {
       const slide = (event.target as Element).closest<HTMLElement>(".personal-photos-slide")
       if (!slide || slide.hasAttribute("data-held") || !slide.matches(":focus-visible")) return
       // Only keyboard focus moves the camera. Pointer focus must leave an
@@ -176,7 +183,7 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     stage.addEventListener("lostpointercapture", lostCapture)
     stage.addEventListener("click", click, true)
     stage.addEventListener("keydown", key)
-    stage.addEventListener("focusin", focus)
+    stage.addEventListener("focusin", focusIn)
     window.addEventListener("blur", cancel)
     return () => {
       cancel()
@@ -190,9 +197,9 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       stage.removeEventListener("lostpointercapture", lostCapture)
       stage.removeEventListener("click", click, true)
       stage.removeEventListener("keydown", key)
-      stage.removeEventListener("focusin", focus)
+      stage.removeEventListener("focusin", focusIn)
       window.removeEventListener("blur", cancel)
-      controls.current = { zoom: () => {}, reset: () => {}, scale: () => 1 }
+      controls.current = { zoom: () => {}, reset: () => {}, scale: () => 1, followFocus: () => {} }
     }
   }, [stage, onNavigate])
   return controls

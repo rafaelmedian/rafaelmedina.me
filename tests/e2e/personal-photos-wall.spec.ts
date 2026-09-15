@@ -291,12 +291,29 @@ test("Wall arrows start at the nearest photo and wrap the collection", async ({ 
   await dialog.getByRole("button", { name: "Previous photo", exact: true }).click()
   await expect(main).toHaveAttribute("data-photo-source", "rainy-night")
   await expect(dialog.locator('[aria-live="polite"]')).toContainText(await main.locator("figcaption").innerText())
-  for (let i = 0; i < 27; i++) {
+  const plane = wall.locator(".personal-photos-masonry")
+  let previousX = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
+  const tileCount = await wall.locator(".personal-photos-slide").count()
+  for (let i = 0; i < 54; i++) {
     await dialog.getByRole("button", { name: "Next photo", exact: true }).click()
     await expect.poll(async () => {
       const box = (await main.boundingBox())!
       return Math.hypot(box.x + box.width / 2 - 195, box.y + box.height / 2 - 450)
     }).toBeLessThan(2)
+    const x = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
+    expect(x).toBeLessThan(previousX)
+    previousX = x
   }
+  for (let i = 0; i < 27; i++) {
+    await dialog.getByRole("button", { name: "Previous photo", exact: true }).click()
+    const x = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
+    expect(x).toBeGreaterThan(previousX)
+    previousX = x
+    await expect.poll(async () => {
+      const box = (await main.boundingBox())!
+      return Math.hypot(box.x + box.width / 2 - 195, box.y + box.height / 2 - 450)
+    }).toBeLessThan(2)
+  }
+  expect(await wall.locator(".personal-photos-slide").count()).toBe(tileCount)
   await expect(main).toHaveAttribute("data-photo-source", "rainy-night")
 })
