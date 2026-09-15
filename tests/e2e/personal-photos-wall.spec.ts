@@ -16,7 +16,7 @@ for (const width of [1440, 390]) {
     await expect(page.locator(".personal-photos-backdrop")).toHaveCSS("background-color", "rgb(255, 255, 255)")
     await background.click()
     await expect(background).toHaveAttribute("aria-pressed", "false")
-    await expect(page.locator(".personal-photos-backdrop")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+    await expect(page.locator(".personal-photos-backdrop")).toHaveCSS("background-color", "rgba(18, 18, 18, 0.6)")
     const photos = wall.locator(".personal-photos-slide")
     const first = photos.first()
     const before = (await first.boundingBox())!
@@ -98,4 +98,90 @@ test("switching into Wall hides the destinations and preserves their frameless p
   await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
   await expect(flight).toHaveCount(0)
   await expect(target).toHaveCSS("opacity", "1")
+})
+
+for (const width of [1440, 390]) {
+  test(`Wall pans on both axes, zooms, and selects at the transformed position at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/")
+    await page.locator(".personal-photos-label").click()
+    const dialog = page.getByRole("dialog", { name: "Personal photos" })
+    await dialog.getByRole("button", { name: "Wall", exact: true }).click()
+    const wall = page.getByRole("region", { name: "Photo wall" })
+    const first = wall.locator(".personal-photos-slide").first()
+    const before = (await first.boundingBox())!
+    await page.mouse.move(width / 2, 500)
+    await page.mouse.wheel(120, 100)
+    await expect.poll(async () => (await first.boundingBox())!.x).toBeLessThan(before.x - 80)
+    await expect.poll(async () => (await first.boundingBox())!.y).toBeLessThan(before.y - 60)
+    await dialog.getByRole("button", { name: "Reset view", exact: true }).click()
+    await page.mouse.move(40, 550)
+    await page.mouse.down()
+    await page.mouse.move(140, 650, { steps: 8 })
+    await page.mouse.up()
+    expect((await first.boundingBox())!.x).toBeGreaterThan(before.x + 80)
+    expect((await first.boundingBox())!.y).toBeGreaterThan(before.y + 80)
+    await expect(dialog).toBeVisible()
+    await expect(wall.locator(".personal-photos-slide[data-held]")).toHaveCount(0)
+    await dialog.getByRole("button", { name: "Reset view", exact: true }).click()
+    await dialog.getByRole("button", { name: "Zoom in", exact: true }).click()
+    expect((await first.boundingBox())!.width).toBeGreaterThan(before.width * 1.1)
+    await first.focus()
+    await page.keyboard.press("Enter")
+    await expect(first).toHaveAttribute("data-held", "")
+    await expect.poll(async () => {
+      const box = (await first.boundingBox())!
+      return Math.abs(box.x + box.width / 2 - width / 2)
+    }).toBeLessThan(2)
+    await page.keyboard.press("Escape")
+    await wall.focus()
+    const left = (await first.boundingBox())!.x
+    await page.keyboard.press("ArrowRight")
+    expect((await first.boundingBox())!.x).toBeLessThan(left)
+    await dialog.getByRole("button", { name: "Close", exact: true }).click()
+    await expect(dialog).toBeHidden()
+  })
+}
+
+test("touch can pinch then continue panning without selecting or closing", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.locator(".personal-photos-label").click()
+  const dialog = page.getByRole("dialog", { name: "Personal photos" })
+  await dialog.getByRole("button", { name: "Wall", exact: true }).click()
+  const first = dialog.locator(".personal-photos-slide").first()
+  const before = (await first.boundingBox())!
+  const session = await page.context().newCDPSession(page)
+  await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 100, y: 400, id: 0 }, { x: 250, y: 400, id: 1 }] })
+  for (let step = 1; step <= 5; step++) {
+    await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 100 - step * 8, y: 400, id: 0 }, { x: 250 + step * 8, y: 400, id: 1 }] })
+  }
+  await expect.poll(async () => (await first.boundingBox())!.width).toBeGreaterThan(before.width * 1.4)
+  await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+  const zoomed = (await first.boundingBox())!
+  await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 80, y: 500, id: 2 }] })
+  for (let step = 1; step <= 5; step++) {
+    await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 80 + step * 15, y: 500 + step * 10, id: 2 }] })
+  }
+  await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+  await expect.poll(async () => (await first.boundingBox())!.x).toBeGreaterThan(zoomed.x + 50)
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator(".personal-photos-slide[data-held]")).toHaveCount(0)
+})
+
+test("a photo partly outside the viewport can be selected on its visible edge", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.locator(".personal-photos-label").click()
+  const dialog = page.getByRole("dialog", { name: "Personal photos" })
+  await dialog.getByRole("button", { name: "Wall", exact: true }).click()
+  const edge = dialog.locator(".personal-photos-column").nth(2).locator(".personal-photos-slide").first()
+  const box = (await edge.boundingBox())!
+  expect(box.x).toBeLessThan(390)
+  expect(box.x + box.width).toBeGreaterThan(390)
+  await page.mouse.click((box.x + 390) / 2, box.y + 20)
+  await expect(edge).toHaveAttribute("data-held", "")
 })

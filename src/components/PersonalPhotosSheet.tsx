@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect,
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
+import { usePhotoWall } from "../lib/usePhotoWall"
 import { photoSphereHoldGrowth, usePhotoSphere } from "../lib/usePhotoSphere"
 import { flyBetweenLayouts, snapshotSlides } from "../lib/photoLayoutSwitch"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
@@ -46,6 +47,9 @@ const sphereCardShare = 0.225 * Math.sqrt(sphereCoverageTarget / sphereTiles.len
 const spherePhotoSizes = `(max-width: 699.98px) calc(min(136vw, 80vh) * ${(sphereCardShare * 1.3 * photoSphereHoldGrowth).toFixed(3)}), calc(min(96vw, 92vh, 60rem) * ${(sphereCardShare * photoSphereHoldGrowth).toFixed(3)})`
 // One column's width: the sheet less its gutters and the gaps between the
 // columns, as --photo-gutter and --photo-column-gap set them.
+// Like the globe, advertise the largest camera zoom before a gesture so
+// enlarging the wall never waits for a sharper bitmap to arrive.
+const wallPhotoSizes = "calc((max(80rem, 125vw) - 4 * clamp(1.5rem, 4vw, 5rem)) / 5 * 2.5)"
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
@@ -85,7 +89,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const [wallBackground, setWallBackground] = useState(readWallBackground)
   const previewCount = usePreviewCount()
   const sheetColumns = useSheetColumns()
-  const columnCount = layout === "wall" && sheetColumns === 3 ? 5 : sheetColumns
+  const columnCount = layout === "wall" ? 5 : sheetColumns
   // The first photos are the prints, so dealing them round-robin puts them
   // across the top of the grid rather than down its left-hand column.
   const gridColumns = Array.from({ length: columnCount }, (_, column) =>
@@ -143,7 +147,6 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     rewinding.current.cancelled = true
     rewinding.current = null
   }, [open])
-  usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
   /** Returns the selected grid print to its flat pose. The figure itself is
       the stable hit area; only its composed transform turns, so its moving
@@ -173,20 +176,21 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     const frame = getComputedStyle(slide)
     const width = parseFloat(frame.width)
     const height = parseFloat(frame.height)
-    const scale = Math.min(gridHoldShare * sheet.clientWidth / width, gridHoldShare * sheet.clientHeight / height)
+    const cameraScale = layout === "wall" ? wall.current.scale() : 1
+    const scale = Math.min(gridHoldShare * sheet.clientWidth / width, gridHoldShare * sheet.clientHeight / height) / cameraScale
     // Keep the preview mat's drawn thickness. Account for the changed padding
     // before centring, so portrait and landscape photos keep their ratio.
     const padding = parseFloat(frame.paddingTop) / scale
     const framedHeight = (width - padding * 2) * photo.height / photo.width + padding * 2
-    const heldWidth = width * scale
-    const heldHeight = framedHeight * scale
+    const heldWidth = width * scale * cameraScale
+    const heldHeight = framedHeight * scale * cameraScale
     const left = stage.left + (sheet.clientWidth - heldWidth) / 2
     const top = stage.top + (sheet.clientHeight - heldHeight) / 2
     heldRef.current = {
       id: photo.id,
       caption: photo.caption,
-      dx: stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2),
-      dy: stage.top + sheet.clientHeight / 2 - (rect.top + framedHeight / 2),
+      dx: (stage.left + sheet.clientWidth / 2 - (rect.left + rect.width / 2)) / cameraScale,
+      dy: (stage.top + sheet.clientHeight / 2 - (rect.top + framedHeight * cameraScale / 2)) / cameraScale,
       scale,
       // Preserve the column height so scroll anchoring cannot release the hold.
       layoutGap: height - framedHeight,
@@ -208,6 +212,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     setHeld(null)
     return true
   }, [resetGridTilt])
+  const wall = usePhotoWall(layout === "wall" ? sheetNode : null, open, releaseHeld)
+  usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
+
   const toggleHold = (slide: HTMLElement, photo: typeof photos[number]) => {
     if (heldRef.current?.id === photo.id) releaseHeld()
     else holdSlide(slide, photo)
@@ -314,7 +321,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     // Empty gaps only answer while a photo is held. With the grid at rest,
     // keep requiring the outer sheet margin so browsing between rows cannot
     // close the gallery by accident.
-    if (event.target !== event.currentTarget) return
+    if (event.target !== event.currentTarget || layout === "wall") return
     dialogActions.current?.close()
   }
 
@@ -380,6 +387,8 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
           <Dialog.Description className="sr-only">
             {layout === "sphere"
               ? "A few moments outside the portfolio, on a slowly turning globe of prints. Drag, scroll, or use the arrow keys to turn it; Tab brings each photo to the front. Escape or a click beside the globe returns to the page."
+              : layout === "wall"
+                ? "Drag or scroll in any direction to explore the photo wall. Pinch or use the zoom buttons to zoom. Arrow keys pan; plus and minus zoom; zero resets. Click or press Enter to enlarge a photo. Escape returns it, then closes the viewer."
               : "A few moments outside the portfolio, laid out on one sheet. Scroll to browse; Enter or a click holds a photo large and lets it go again. Escape or a click on the margin returns to the page."}
           </Dialog.Description>
           {/* Outside the stage, which captures every press on the globe for
@@ -400,6 +409,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
               }}>
                 Background {wallBackground ? "on" : "off"}
               </button>
+              <button type="button" aria-label="Zoom out" onClick={() => wall.current.zoom(1 / 1.2)}>−</button>
+              <button type="button" aria-label="Reset view" onClick={() => wall.current.reset()}>Reset</button>
+              <button type="button" aria-label="Zoom in" onClick={() => wall.current.zoom(1.2)}>+</button>
               <button type="button" onClick={() => dialogActions.current?.close()}>Close</button>
             </div>
           )}
@@ -415,7 +427,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
             data-held={layout !== "sphere" && held ? "" : undefined}
             tabIndex={0}
             onPointerDown={layout !== "sphere" ? onPointerDown : undefined}
-            onPointerMove={layout !== "sphere" ? onGridPointerMove : undefined}
+            onPointerMove={layout === "grid" ? onGridPointerMove : undefined}
             onPointerLeave={layout !== "sphere" ? resetGridTilt : undefined}
             onClick={layout !== "sphere" ? onSheetClick : undefined}
           >
@@ -485,8 +497,8 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                             // Held, the photo is drawn far larger than its
                             // column: say so, and the browser fetches the
                             // larger candidate for it.
-                            sizes={held?.id === photo.id ? `${Math.round(held.width)}px` : layout === "wall" ? "(max-width: 699.98px) 45vw, 20vw" : gridPhotoSizes}
-                            loading={index < previewCount ? "eager" : "lazy"}
+                            sizes={held?.id === photo.id ? `${Math.round(held.width)}px` : layout === "wall" ? wallPhotoSizes : gridPhotoSizes}
+                            loading={layout === "wall" || index < previewCount ? "eager" : "lazy"}
                             alt={photo.alt}
                             width={photo.width}
                             height={photo.height}
