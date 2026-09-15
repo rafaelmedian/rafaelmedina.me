@@ -93,6 +93,17 @@ test("exposes 10 by 40 dot targets with 4px gaps and selected emphasis", async (
   await expect(carousel(page).locator('.mosaic-quote-dot[aria-pressed="false"] span').first()).toHaveCSS("opacity", "0.3")
 })
 
+test("a focused dot rings the dot it draws, not its tall target", async ({ page }) => {
+  await openHome(page)
+  const dot = carousel(page).locator(".mosaic-quote-dot").nth(2)
+  // Off the Tab path, but a screen reader's cursor still moves focus here.
+  await page.keyboard.press("Tab")
+  await dot.focus()
+  await expect(dot).toHaveCSS("outline-style", "none")
+  await expect(dot.locator("span")).toHaveCSS("outline-style", "solid")
+  await expect(dot.locator("span")).toHaveCSS("outline-offset", "1px")
+})
+
 test("swiping backward wraps and tapping the card advances one quote", async ({ page }) => {
   await openHome(page)
   const surface = carousel(page).getByRole("button", { name: "Advance quote" })

@@ -1548,7 +1548,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 centered 18px above the bottom edge. Their buttons remain 10px wide and 40px tall;
                 the whole-card Advance quote button is the larger alternative target.
                 Dots use --muted-soft at 30% opacity, increasing to 75% when selected without changing size.
-                Dot focus rings sit inside the target so the card edge cannot clip them.
+                A focused dot rings the 6px dot itself at a 1px offset rather than its 10x40 target, which drew
+                a 4x34px capsule narrower than the dot it marked.
                 Quotes travel one card width left or right over --duration-slow with --ease-smooth, with no crossfade.
                 Selecting a distant dot first positions only the hidden destination beside the current quote;
                 incoming and outgoing quotes animate while other hidden slides reposition instantly.

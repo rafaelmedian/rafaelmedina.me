@@ -493,9 +493,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* The ring goes round the dot it draws, not the 10x40 target around it: inset
+   on the button it was a 4x34px capsule, narrower than the dot it marked. Tab no longer
+   reaches the dots, but a screen reader's cursor still moves focus onto them.
+   1px of offset keeps the ring clear of the neighbouring dots 4px away. */
 .mosaic-quote-dot:focus-visible {
+  outline: none;
+}
+
+.mosaic-quote-dot:focus-visible span {
   outline: 2px solid var(--focus-ring);
-  outline-offset: -3px;
+  outline-offset: 1px;
+  opacity: 0.75;
 }
 
 .mosaic-quote-dot span {
