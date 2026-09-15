@@ -61,12 +61,16 @@ export function PuntaCanaLocationCard({
             <PuntaCanaMap onReady={handleMapReady} />
           </Suspense>
         ) : null}
+        {/* The attribution has to be visible, not tabbable. The card opens on
+            focus, and a link inside it made every pass over the clock or the
+            location line stop on a credit nobody tabbed there to read. */}
         <a
           className="mosaic-local-time-map-attribution"
           href="https://www.openstreetmap.org/copyright"
           target="_blank"
           rel="noreferrer"
           aria-label="OpenStreetMap contributors"
+          tabIndex={-1}
         >
           © OpenStreetMap contributors
         </a>

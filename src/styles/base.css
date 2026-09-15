@@ -226,6 +226,42 @@ body {
   outline: none;
 }
 
+/* The keys a focused widget answers to (KeyboardHint). Quiet by design: muted
+   labels beside white keycaps in the light controls' elevation, so it reads as
+   a caption on the widget rather than another control. The widget decides
+   where it sits and when it shows -- only for keyboard focus. */
+.keyboard-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.keyboard-hint-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.keyboard-hint kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+}
+
 :where(h1, h2, h3, h4, h5, h6, #about, #feed, #work, #contact, #cv) {
   scroll-margin-top: 5rem;
 }
