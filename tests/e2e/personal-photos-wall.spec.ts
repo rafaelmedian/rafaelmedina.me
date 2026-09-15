@@ -317,3 +317,41 @@ test("Wall arrows start at the nearest photo and wrap the collection", async ({ 
   expect(await wall.locator(".personal-photos-slide").count()).toBe(tileCount)
   await expect(main).toHaveAttribute("data-photo-source", "rainy-night")
 })
+
+
+for (const width of [1440, 390]) {
+  test(`Wall vertical arrows keep selecting in their direction at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/")
+    await page.locator(".personal-photos-label").click()
+    const dialog = page.getByRole("dialog", { name: "Personal photos" })
+    await dialog.getByRole("button", { name: "Wall", exact: true }).click()
+    const wall = page.getByRole("region", { name: "Photo wall" })
+    await wall.locator('[data-photo-id="office"]').click()
+    const main = wall.locator(".personal-photos-slide[data-held]")
+    const plane = wall.locator(".personal-photos-masonry")
+    let previousY = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-y")))
+    const count = await wall.locator(".personal-photos-slide").count()
+    for (const key of ["ArrowDown", "ArrowUp"]) {
+      for (let i = 0; i < 27; i++) {
+        await page.keyboard.press(key)
+        await expect(main).toHaveCount(1)
+        const y = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-y")))
+        expect((y - previousY) * (key === "ArrowDown" ? -1 : 1)).toBeGreaterThan(1)
+        previousY = y
+        await expect.poll(async () => {
+          const box = (await main.boundingBox())!
+          return Math.hypot(box.x + box.width / 2 - width / 2, box.y + box.height / 2 - 450)
+        }).toBeLessThan(2)
+      }
+      await expect(main).toHaveAttribute("data-photo-source", "office")
+    }
+    expect(await wall.locator(".personal-photos-slide").count()).toBe(count)
+    await wall.focus()
+    const before = await plane.evaluate(el => getComputedStyle(el).transform)
+    await page.keyboard.press("Shift+ArrowDown")
+    await expect(main).toHaveCount(0)
+    await expect.poll(() => plane.evaluate(el => getComputedStyle(el).transform)).not.toBe(before)
+  })
+}

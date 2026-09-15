@@ -148,8 +148,8 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       switch (event.key) {
         case "ArrowLeft": if (!event.shiftKey) return; pan(step, 0); break
         case "ArrowRight": if (!event.shiftKey) return; pan(-step, 0); break
-        case "ArrowUp": pan(0, step); break
-        case "ArrowDown": pan(0, -step); break
+        case "ArrowUp": if (!event.shiftKey) return; pan(0, step); break
+        case "ArrowDown": if (!event.shiftKey) return; pan(0, -step); break
         case "+": case "=": zoomCentre(1.2); break
         case "-": zoomCentre(1 / 1.2); break
         case "0": reset(); break

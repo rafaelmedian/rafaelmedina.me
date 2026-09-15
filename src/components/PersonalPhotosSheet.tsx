@@ -319,7 +319,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     }
   }, [held, layout, sheetNode, wall])
 
-  const browseWall = (direction: number) => {
+  const browseWall = (direction: number, axis: "x" | "y" = "x") => {
     const sheet = sheetRef.current
     if (!sheet) return
     endLayoutFlight()
@@ -335,7 +335,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
         const centreY = current?.wallSlot ? current.wallSlot.top + current.wallSlot.height / 2 : stage.top + sheet.clientHeight / 2
         const dx = slot.left + slot.width / 2 - centreX
         const dy = slot.top + slot.height / 2 - centreY
-        return { slide, ahead: !current || direction * dx > 1, distance: Math.hypot(dx, dy) }
+        return { slide, ahead: !current || direction * (axis === "x" ? dx : dy) > 1, distance: Math.hypot(dx, dy) }
       }).filter(candidate => candidate.ahead).sort((a, b) => a.distance - b.distance)
     const target = candidates[0]?.slide
     const targetPhoto = photo ?? photos.find(photo => photo.id === target?.dataset.photoSource)
@@ -511,16 +511,16 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
         <Dialog.Backdrop className="personal-photos-backdrop" data-wall-background={layout === "wall" ? (wallBackground ? "on" : "off") : undefined} />
         <Dialog.Popup initialFocus={sheetRef} finalFocus={() => opener} className="personal-photos-dialog" data-layout={layout} onKeyDown={event => {
           if (layout !== "wall" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
-          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return
+          if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return
           event.preventDefault()
-          browseWall(event.key === "ArrowRight" ? 1 : -1)
+          browseWall(event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1, event.key === "ArrowUp" || event.key === "ArrowDown" ? "y" : "x")
         }}>
           <Dialog.Title className="sr-only">Personal photos</Dialog.Title>
           <Dialog.Description className="sr-only">
             {layout === "sphere"
               ? "A few moments outside the portfolio, on a slowly turning globe of prints. Drag, scroll, or use the arrow keys to turn it; Tab brings each photo to the front. Escape or a click beside the globe returns to the page."
               : layout === "wall"
-                ? "Drag or scroll in any direction to explore the photo wall. Pinch or use the zoom buttons to zoom. Left and right arrows browse photos; up and down pan; Shift with left and right pans horizontally. Plus and minus zoom; zero resets. Click or press Enter to enlarge a photo. Escape returns it, then closes the viewer."
+                ? "Drag or scroll in any direction to explore the photo wall. Pinch or use the zoom buttons to zoom. Arrow keys browse photos in that direction; Shift with an arrow key pans. Plus and minus zoom; zero resets. Click or press Enter to enlarge a photo. Escape returns it, then closes the viewer."
               : "A few moments outside the portfolio, laid out on one sheet. Scroll to browse; Enter or a click holds a photo large and lets it go again. Escape or a click on the margin returns to the page."}
           </Dialog.Description>
           {/* Outside the stage, which captures every press on the globe for
