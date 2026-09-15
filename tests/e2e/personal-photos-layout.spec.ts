@@ -427,3 +427,20 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     await expect(photo).not.toHaveAttribute("data-held", "")
   })
 }
+
+test("a held grid caption clears the bottom toggle in phone landscape", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.setViewportSize({ width: 844, height: 390 })
+  await preferGrid(page)
+  await openHome(page)
+  await openFromLabel(page)
+  await grid(page).locator(".personal-photos-slide").first().click()
+  const caption = grid(page).locator(".personal-photos-stage-caption")
+  await expect(caption).toHaveText("Office days")
+  const captionBox = (await caption.boundingBox())!
+  const controlBox = (await dialog(page).getByRole("group", { name: "Layout" }).boundingBox())!
+  const photoBox = (await grid(page).locator(".personal-photos-slide").first().boundingBox())!
+  expect(captionBox.y).toBeGreaterThanOrEqual(0)
+  expect(captionBox.y + captionBox.height).toBeLessThan(controlBox.y)
+  expect(captionBox.y + captionBox.height).toBeLessThan(photoBox.y)
+})
