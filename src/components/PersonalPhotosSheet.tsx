@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect,
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
-import { photoSphereHoldGrowth, usePhotoSphere } from "../lib/usePhotoSphere"
+import { photoSphereHoldShare, usePhotoSphere } from "../lib/usePhotoSphere"
 import { flyBetweenLayouts, snapshotSlides } from "../lib/photoLayoutSwitch"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 import { readSheetLayout, saveSheetLayout, usePreviewCount, useSheetColumns, type PhotoSheetLayout } from "../lib/photoLayout"
@@ -40,17 +40,15 @@ const sphereTiles = Array.from({ length: sphereCopies }, (_, copy) => {
     adjustment keeps the crowded set near the former cards' size instead of
     cancelling the added density by making every repeat much smaller. */
 const sphereCardShare = 0.225 * Math.sqrt(sphereCoverageTarget / sphereTiles.length)
-/** The sphere controller can grow any print to 2.7x without a React render.
-    Advertise that largest drawn size up front so a 2x screen does not keep
-    the 400px candidate after the photo has been held. */
-const spherePhotoSizes = `(max-width: 699.98px) calc(min(136vw, 80vh) * ${(sphereCardShare * 1.3 * photoSphereHoldGrowth).toFixed(3)}), calc(min(96vw, 92vh, 60rem) * ${(sphereCardShare * photoSphereHoldGrowth).toFixed(3)})`
+/** Reserve enough source pixels for a focused print before it is selected. */
+const spherePhotoSizes = `${photoSphereHoldShare * 100}vw`
 // One column's width: the sheet less its gutters and the gaps between the
 // columns, as --photo-gutter and --photo-column-gap set them.
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((min(100vw - 2 * clamp(1.25rem, 4vw, 5rem), 64rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
     the move and growth that carry it there from where it lies. */
-type GridHold = { id: string; caption: string; dx: number; dy: number; scale: number; layoutGap: number; left: number; top: number; width: number; height: number; captionTop: number; scrollTop: number }
+type GridHold = { id: string; caption: string; dx: number; dy: number; scale: number; layoutGap: number; left: number; top: number; width: number; height: number; scrollTop: number }
 /** How much of the stage a held grid photo fills, on its longer side. */
 const gridHoldShare = 0.7
 
@@ -191,12 +189,32 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
       top,
       width: heldWidth,
       height: heldHeight,
-      // In the sheet's own scrolled coordinates: it is the scroll container.
-      captionTop: sheet.scrollTop + sheet.clientHeight / 2 + heldHeight / 2,
       scrollTop: sheet.scrollTop,
     }
     setHeld(heldRef.current)
   }
+  // Measure the current caption after React renders its text, before paint.
+  // Like Sphere, use the space above the photo when the toggle blocks below.
+  useLayoutEffect(() => {
+    const sheet = sheetRef.current
+    const caption = sheet?.querySelector<HTMLElement>(".personal-photos-stage-caption")
+    if (!sheet || !caption || !held) return
+    const placeCaption = () => {
+      const stage = sheet.getBoundingClientRect()
+      const toggle = sheet.parentElement?.querySelector(".personal-photos-layout")
+      const bottom = toggle?.getBoundingClientRect().top ?? stage.bottom
+      // Read the resolved gap in pixels (the shared token is authored in rem).
+      const spacing = parseFloat(getComputedStyle(caption).marginTop)
+      let top = held.top + held.height + spacing
+      if (top + caption.offsetHeight > bottom - spacing) top = held.top - spacing - caption.offsetHeight
+      caption.style.setProperty("--stage-caption-y", `${(sheet.scrollTop + top - stage.top - spacing).toFixed(1)}px`)
+    }
+    placeCaption()
+    const observer = new ResizeObserver(placeCaption)
+    observer.observe(caption)
+    return () => observer.disconnect()
+  }, [held])
+
   /** Lets a held grid photo go. True if one was held. */
   const releaseHeld = useCallback(() => {
     if (!heldRef.current) return false
@@ -487,7 +505,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                 </div>
                 {/* The held photo's name, under it, as on the globe; the
                     figcaptions stay for assistive tech. */}
-                <p className="personal-photos-stage-caption" aria-hidden="true" style={held ? { "--stage-caption-y": `${held.captionTop.toFixed(1)}px`, "--stage-caption-opacity": 1 } as CSSProperties : undefined}>{held?.caption}</p>
+                <p className="personal-photos-stage-caption" aria-hidden="true" style={held ? { "--stage-caption-opacity": 1 } as CSSProperties : undefined}>{held?.caption}</p>
               </Fragment>
             )}
           </div>

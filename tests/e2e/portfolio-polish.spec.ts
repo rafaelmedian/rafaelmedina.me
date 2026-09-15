@@ -28,11 +28,11 @@ const getPreviousCompanyLink = (page: Page, name: string) =>
 
 // Wait for finite tile interactions before measuring a preview origin.
 // Safe from hanging: the gallery's View Timeline lives on the parent stage,
-// outside this subtree, while every animation inside `.mosaic-rows` finishes.
+// outside this subtree. An interrupted tile transition is settled too.
 const settleWorkCards = (page: Page) =>
   page
     .locator(".mosaic-rows")
-    .evaluate((element) => Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+    .evaluate((element) => Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
 
 // The reveal keyframes are held by `data-avatar-intro`, and they land on the
 // hero's children rather than the hero itself -- so waiting on an ancestor's

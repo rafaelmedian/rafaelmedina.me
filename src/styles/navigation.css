@@ -175,6 +175,12 @@
   transition-delay: 0s;
 }
 
+.about-intro-dock[data-obscured="true"] .mosaic-mobile-toc {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* One continuous card grows upward around the section rows. */
 .mosaic-mobile-toc-surface {
   --toc-resize-duration: var(--duration-base);
