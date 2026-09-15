@@ -1317,14 +1317,41 @@ test("sends every X preview control to the right profile", async ({ page }) => {
   await expect(mentions.nth(0)).toHaveAttribute("href", "https://x.com/0xproject")
   await expect(mentions.nth(1)).toHaveAttribute("href", "https://x.com/matchaxyz")
 
-  // Focus reaches the card's own links, and leaving the pair puts it away.
+  // The card is a preview, not a stop: Tab passes over its five links to the
+  // next control, and the card goes away with the focus that opened it.
   await page.keyboard.press("Tab")
-  await expect(card.locator(".mosaic-x-card-avatar-link")).toBeFocused()
-  await expect(card).toHaveAttribute("data-state", "open")
+  await expect(page.getByRole("link", { name: /preview 1 of/ })).toBeFocused()
+  await expect(card).toHaveAttribute("data-state", "closed")
 
+  await page.keyboard.press("Shift+Tab")
+  await expect(card).toHaveAttribute("data-state", "open")
   await page.keyboard.press("Escape")
   await expect(card).toHaveAttribute("data-state", "closed")
   await expect(xAction).toBeFocused()
+})
+
+test("keeps the links inside focus-opened cards out of the tab order", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+
+  // Each of these opens a card on focus. The card's links used to be the next
+  // Tab stops, so passing the clock or the last company chip landed inside a
+  // preview nobody asked to enter.
+  const location = page.locator(".mosaic-profile-location-place")
+  // Focus that lands before hydration opens nothing; retry until the card answers.
+  await expect(async () => {
+    await location.blur()
+    await location.focus()
+    await expect(page.locator(".mosaic-profile-location-card")).toHaveAttribute("data-state", "open", { timeout: 500 })
+  }).toPass()
+  await page.keyboard.press("Tab")
+  await expect(page.locator(".mosaic-last-updated")).toBeFocused()
+
+  const lastChip = page.locator(".mosaic-work-history-chip").last()
+  await lastChip.focus()
+  await expect(page.locator(".mosaic-work-history-popover")).toHaveAttribute("data-open", "true")
+  await page.keyboard.press("Tab")
+  await expect(location).toBeFocused()
 })
 
 test("keeps the X preview card inside a narrow hover-capable viewport", async ({ page }) => {

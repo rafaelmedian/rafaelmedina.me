@@ -1510,8 +1510,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 carry a 12% black hairline inside the crop so pale photos keep an edge on the card.
                 Confirmed authors' names are buttons. Hovering for
                 260ms, focusing, or tapping the button opens the full X profile popover above the name, centered on the button and portaled
-                beyond the carousel clip with viewport collision handling at --z-overlay. The preview
-                stays interactive by pointer and keyboard, closes on Escape, restores focus, and uses the shared hover-card motion tokens.
+                beyond the carousel clip with viewport collision handling at --z-overlay. The preview&rsquo;s
+                links answer the pointer only &mdash; Tab passes over them, since the name already goes to the
+                profile &mdash; and it closes on Escape, restores focus, and uses the shared hover-card motion tokens.
                 The name takes the hero's inline treatment: no underline, and a --mosaic-card-surface fill on
                 --radius-sm over its own line box on hover or keyboard focus, with 6px of side padding cancelled by an
                 equal negative margin — so the fill grows around the name while the name stays on the caption's
@@ -2585,6 +2586,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Separately, the folded résumé work tile is a link to <code>/resume/</code> whose plain click opens
                 the reader as a gallery slide: it traps focus, closes on Escape, a backdrop press, or the compact
                 toolbar close, returns focus to the tile, and keeps the PDF as its final link.
+              </li>
+              <li data-ds-terms={terms("hover card preview tab order tabindex -1 x card map attribution openstreetmap work-history popover link focus")}>
+                <strong>A card that opens on focus is a preview, not a stop.</strong> The X card, the Punta Cana
+                map, and the work-history popover open when their trigger takes focus, so their links are{" "}
+                <code>tabindex="-1"</code>: the next Tab goes to the next control on the page and the card closes
+                behind it. A pointer still clicks them, and the trigger itself already goes where most of them
+                lead. They used to be the next stops, which put anyone tabbing past the Follow pill five links
+                deep in a profile they had not asked to open.
               </li>
               <li data-ds-terms={terms("hover none display none touch project card image only assistive")}>
                 <strong>Hover-only content has a non-hover fate.</strong> Social-pill hover cards are hidden on

@@ -250,8 +250,8 @@ test("the focused quote author opens the full X preview and Escape closes it", a
   await expect(preview.getByRole("link", { name: "Follow" })).toBeVisible()
   await expect(page.locator(".mosaic-quote-profile-positioner")).toHaveAttribute("data-side", "top")
   await expect(preview).toContainText(/Following|Followers/)
-  await page.keyboard.press("Tab")
-  await expect(preview.getByRole("link", { name: "MW on X" })).toBeFocused()
+  // The preview's links are the pointer's; the name already goes to the profile.
+  await expect(preview.getByRole("link", { name: "MW on X" })).toHaveAttribute("tabindex", "-1")
   await page.keyboard.press("Escape")
   await expect(preview).toBeHidden()
   await expect(author).toBeFocused()

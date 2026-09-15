@@ -19,6 +19,7 @@ function renderBio(bio: string) {
         target="_blank"
         rel="noreferrer"
         className="mosaic-x-card-mention"
+        tabIndex={-1}
       >
         {part}
       </a>
@@ -37,12 +38,15 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
       className={`mosaic-hover-card mosaic-x-card${isOpen ? " is-open" : ""}`}
       data-state={isOpen ? "open" : "closed"}
       // Closed, the card is still painted for its exit transition, so `inert`
-      // keeps its links out of the tab order and off screen readers.
+      // keeps its links off screen readers. Open, it is still a preview: its
+      // links are tabIndex -1, so Tab moves on to the next control rather than
+      // wading through up to five links -- three of them the profile the
+      // trigger already opens -- whenever focus passes the name.
       inert={!isOpen}
     >
       <div className="mosaic-x-card-top">
         {profile.photo ? (
-          <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-avatar-link">
+          <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-avatar-link" tabIndex={-1}>
             <img
               src={profile.photo}
               alt=""
@@ -59,11 +63,11 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
             {avatarFallback}
           </span>
         )}
-        <a href={followHref} target="_blank" rel="noreferrer" className="mosaic-x-card-follow">
+        <a href={followHref} target="_blank" rel="noreferrer" className="mosaic-x-card-follow" tabIndex={-1}>
           Follow
         </a>
       </div>
-      <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-identity">
+      <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-identity" tabIndex={-1}>
         <span className="mosaic-x-card-name">
           {profile.name}
           {profile.verified ? (
