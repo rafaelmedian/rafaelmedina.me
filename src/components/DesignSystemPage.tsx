@@ -2347,7 +2347,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Messages then enter in order, followed by the email field at 240ms. Each settles over 360ms with the shared smooth curve, an 8px rise,
                   0.98 scale and 2px blur. Reduced motion reveals them immediately. Scrolling into About triggers
                   the greeting; comparison previews observe their own stage. No field takes focus on arrival.
-                  Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint in a compact gray pill invites the visitor to tap.
+                  Each delivered gray message is a Tapback trigger, darkening to the existing <code>#e4e4e6</code> neutral on hover. A 12px muted hint in a compact canvas-white pill reads “Tap a message to react”.
                   The fixed-positioned picker begins with Apple&rsquo;s six classic choices — heart, thumbs up, thumbs down,
                   laughter, exclamation points and a question mark — then adds fire, applause, celebration and thinking.
                   Native emoji use Apple Color Emoji where available. The 17px glyphs keep accessible 40px targets

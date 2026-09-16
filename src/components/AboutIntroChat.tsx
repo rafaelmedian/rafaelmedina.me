@@ -153,7 +153,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   const [revealed, setRevealed] = useState(0)
   const [reaction, setReaction] = useState(0)
   const [visitorReaction, setVisitorReaction] = useState<Partial<Record<number, VisitorReactionId>>>({})
-  const [reactionFeedback, setReactionFeedback] = useState("Tap a message to react — I’ll see what lands.")
+  const [reactionFeedback, setReactionFeedback] = useState("Tap a message to react")
   const sentRef = useRef<HTMLDivElement>(null)
   // The unsent bubble's box within the history, where its dots scatter from.
   const [puff, setPuff] = useState<{ top: number; left: number; width: number; height: number } | null>(null)

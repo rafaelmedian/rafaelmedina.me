@@ -204,9 +204,9 @@ test('offers a compact, horizontally scrollable Apple-style reaction row', async
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   await page.getByRole('button', { name: /Open \d+ messages? from Rafa/ }).click()
   const chat = page.getByRole('dialog', { name: 'Chat with Rafa' })
-  const hint = chat.getByText('Tap a message to react — I’ll see what lands.')
+  const hint = chat.getByText('Tap a message to react', { exact: true })
   await expect(hint).toBeVisible()
-  await expect(hint).toHaveCSS('background-color', 'rgb(236, 236, 238)')
+  await expect(hint).toHaveCSS('background-color', 'rgb(255, 255, 255)')
   await expect(hint).toHaveCSS('border-radius', '999px')
   await expect(hint).toHaveCSS('padding', '4px 10px')
 
