@@ -1730,6 +1730,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>--ease-standard</code>. Both states use 1.12 horizontal scale; height grows from 22px to 28px.
                 The dark shell’s blur grows from 2px to 4px and its effective white opacity from 0.48 to 0.6.
                 A <code>::after</code> ring of inset shadows provides the bottom bevel.
+                Pressing the dark booking pill flattens its outer shadow to <code>--shadow-control-pressed</code>,
+                dims the top shine to 0.2 opacity at 22px height and 2px blur, and reverses the bevel into a
+                2px-deep inner shadow with a thin 1px lower highlight. The inset shadows transition on the same quick timing.
                 Labels are trimmed with{" "}
                 <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
                 low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
