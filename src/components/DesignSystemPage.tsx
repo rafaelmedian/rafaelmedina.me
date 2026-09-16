@@ -327,7 +327,7 @@ const RADII_ENTRIES = [
 const SPACE = [
   { value: "0.25rem", use: "Icon-to-label, chip rows, and the worked-with wall's mark-to-label step" },
   { value: "0.375rem", use: "Inside pills and stat groups" },
-  { value: "0.5rem", use: "Hobby lists, X card internals" },
+  { value: "0.5rem", use: "Hobby lists, X card internals, mobile mosaic gap below 700px" },
   { value: "0.625rem", use: "The contact action row" },
   { value: "0.75rem", use: "Work-history description offset and compact floating offsets" },
   { value: "1.25rem", use: "Maximum mobile contact-pill side padding" },
@@ -337,7 +337,7 @@ const SPACE = [
   { value: "6rem", use: "Bottom clearance around the personal-photo sheet shadows" },
   { value: "8.75rem", use: "Maximum About inset" },
   { value: "8px", use: "Mobile page gutter and row-video side inset below 700px" },
-  { value: "1rem", use: "Mosaic row and column gap — the layout unit" },
+  { value: "1rem", use: "Desktop mosaic row and column gap — the layout unit" },
   { value: "clamp(16px, 3vw, 32px)", use: "Grid inset from 900px up and the Cal.com frame's equal side gutters; compact tablet uses 1rem" },
   { value: "clamp(1.25rem, 4vw, 5rem)", use: "Personal-photo sheet side gutters" },
   { value: "clamp(12rem, 30vh, 18rem)", use: "Desktop white runway before the About takeover" },
@@ -1420,7 +1420,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 sits 7 to 17px outside the column, and leans up to 2.4 degrees either way. Notes sharing one offset drew
                 a second column down each edge, and a fixed cycle of three only moved that pattern rather than breaking it.
                 The gutters only exist from a 48rem Notes container; below that a note folds into the
-                column under its paragraph, bracket first. Nothing interrupts the prose itself: beyond the contents and
+                column under its paragraph. Below 700px the decorative bracket and its indentation disappear. Nothing interrupts the prose itself: beyond the contents and
                 section-heading hairlines, the reader has no rules and no interjections between paragraphs.
                 Notes are ordinary text in the reading order: a gutter note reads after its paragraph, and it is never
                 announced as a separate landmark or the only place a point is made.
@@ -1478,8 +1478,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Rows have 12px vertical padding, category headings sit 4px above their entries, and groups are separated by 48px on desktop or 32px on mobile.
                 Reader headers have a 24px bottom margin. Side padding follows the gallery in each responsive layout.
                 The outer gallery opens in 200ms and closes in 160ms, including for a direct note link.
-                A visible tile supplies its origin: scale 0.92 and travel capped at 44px; an offscreen tile falls
-                back to the existing 20px lift at scale 0.96. Nested Notes navigation only turns content and resizes
+                On desktop, a visible tile supplies its origin: scale 0.92 and travel capped at 44px; an offscreen tile falls
+                back to the existing 20px lift at scale 0.96. In the full-screen layout (below 700px, no hover, or a coarse
+                pointer), the gallery lifts 20px on opening and lowers on closing, without sideways travel or scaling.
+                Nested Notes navigation only turns content and resizes
                 the card. URLs remain /notes/ and /notes/&lt;id&gt;/, and article code and prose remain deferred.
                 Pending rows keep the list visible and support cancellation and retry. Reduced motion removes page,
                 resize, and back-button transitions. Controls keep their 44px targets.
@@ -2167,7 +2169,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
                 </li>
-                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 320px 420px 536px 660px 600px 900px personal photos band compact two columns display contents protector quote span both 10px tablet 32px total inset 16px mobile gap 8px outer radius 20.8px 31.2px contain letterbox zero mat family stories rewards wallet homepage security token pro trade mobile flat backdrop rgb(63 62 68) rgb(231 231 233) background pair center bottom minmax(0, 1fr)")}>
+                <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 320px 420px 536px 660px 600px 900px personal photos band compact two columns display contents protector quote span both 10px tablet 32px total inset 8px mobile gap 8px outer radius 20.8px 31.2px contain letterbox zero mat family stories rewards wallet homepage security token pro trade mobile flat backdrop rgb(63 62 68) rgb(231 231 233) background pair center bottom minmax(0, 1fr)")}>
                   <strong>The mosaic is four named groups.</strong> At 900px and above, Opening is a 3:6:3 row
                   and Closing is three equal columns; each is <code>clamp(260px, 28.075cqw, 420px)</code> tall.
                   Portraits uses 3:5:4 columns and two internal rows within
@@ -2180,7 +2182,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Below 900px the group wrappers become <code>display: contents</code> and their areas form one
                   two-column grid without changing DOM order. The résumé, Protector, the quote, and the personal-photo band span both columns. From 700px
                   to 899px the gap is 10px and the grid provides 32px total horizontal inset; below 700px
-                  the gap is 16px and the shell supplies the 8px outer gutter. Every compact tile uses a 20.8px radius;
+                  the gap is 8px and the shell supplies the matching 8px outer gutter. Every compact tile uses a 20.8px radius;
                   desktop tiles use 31.2px. Contained artwork letterboxes inside the card: the card's grid
                   and its inner artwork clip each get one <code>minmax(0, 1fr)</code> track so the media's <code>max-height: 100%</code> has a definite
                   height to resolve against, and the inset drops to <code>0.375rem</code>. The dealership dashboard is

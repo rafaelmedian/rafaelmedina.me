@@ -3330,7 +3330,7 @@ test("uses a full-bleed white viewport surface for about on desktop", async ({ p
   })
 })
 
-test("matches the selected-work bottom padding to the card spacing on mobile", async ({ page }) => {
+test("uses an 8px mobile card gap with 16px bottom clearance", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
@@ -3339,7 +3339,7 @@ test("matches the selected-work bottom padding to the card spacing on mobile", a
     return { bottomPadding: styles.paddingBottom, cardGap: styles.rowGap }
   })
 
-  expect(spacing).toEqual({ bottomPadding: "16px", cardGap: "16px" })
+  expect(spacing).toEqual({ bottomPadding: "16px", cardGap: "8px" })
 })
 
 test("shows every project immediately on mobile", async ({ page }) => {

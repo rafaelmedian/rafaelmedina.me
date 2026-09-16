@@ -1549,7 +1549,7 @@
 @media (max-width: 699.98px) {
   .mosaic-rows {
     --compact-insets: 16px;
-    --row-gap: 1rem;
+    --row-gap: 0.5rem;
     padding-inline: 0;
   }
 }

@@ -544,6 +544,8 @@
 
 .writings-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 5rem 1rem; text-align: center; color: var(--muted); }
 @media (max-width: 699.98px) {
+  .writing-margin-note-bracket { display: none; }
+  .writing-margin-note { padding-inline-start: 0; }
   /* A phone is narrower than the sample's longest line, and a sideways scroll
      inside a vertical read is a poor way to hide a third of a file: the lines
      wrap here instead. A status file is prose in a list, not code whose
