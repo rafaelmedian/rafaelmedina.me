@@ -1733,6 +1733,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Pressing the dark booking pill flattens its outer shadow to <code>--shadow-control-pressed</code>,
                 dims the top shine to 0.2 opacity at 22px height and 2px blur, and reverses the bevel into a
                 2px-deep inner shadow with a thin 1px lower highlight. The inset shadows transition on the same quick timing.
+                Development-only <a href="/?tune=booking">booking dials</a> tune the outer shadow, shine, and three
+                bevel layers independently for rest, hover, and press; the preview selector holds a state while editing.
                 Labels are trimmed with{" "}
                 <code>text-box: trim-both cap alphabetic</code> so the flex centring centres the cap box — SF rides
                 low in its em box, so an untrimmed label sits about half a pixel below centre. Shadow, not scale,
