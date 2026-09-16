@@ -151,9 +151,9 @@
      rule (outer = inner + the padding between them) rather than becoming a
      fifth value -- that is why hover-card media uses calc(), not a new token. */
   --corner-curve: squircle;
-  --radius-sm: 8px; /* chips, nav targets, focus rings */
-  --radius-md: 16px; /* hover cards, popovers, the local-time card */
-  --radius-lg: 24px; /* work tiles, dialog media and corners */
+  --radius-sm: 10.4px; /* chips, nav targets, focus rings */
+  --radius-md: 20.8px; /* hover cards, popovers, the local-time card */
+  --radius-lg: 31.2px; /* work tiles, dialog media and corners */
   --radius-full: 999px; /* pills, dots, avatars, nav buttons */
   color-scheme: light;
   text-rendering: optimizeLegibility;
@@ -224,6 +224,42 @@ body {
    focus still lands; only the ring goes. Real controls keep the ring above. */
 :where([tabindex="-1"]):focus {
   outline: none;
+}
+
+/* The keys a focused widget answers to (KeyboardHint). Quiet by design: muted
+   labels beside white keycaps in the light controls' elevation, so it reads as
+   a caption on the widget rather than another control. The widget decides
+   where it sits and when it shows -- only for keyboard focus. */
+.keyboard-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.keyboard-hint-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.keyboard-hint kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
 }
 
 :where(h1, h2, h3, h4, h5, h6, #about, #feed, #work, #contact, #cv) {

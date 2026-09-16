@@ -3,13 +3,15 @@ import type { XProfilePreview } from "../data/portfolio"
 type XProfileHoverCardProps = {
   profile: XProfilePreview
   isOpen: boolean
+  /** Focus has been taken into the card on purpose (Enter on its trigger). */
+  linksTabbable?: boolean
 }
 
 // Splits on @mentions and keeps them as capture groups, so the plain-text bio in
 // the data file stays editable without markup.
 const MENTION_PATTERN = /(@[A-Za-z0-9_]{1,15})/g
 
-function renderBio(bio: string) {
+function renderBio(bio: string, tabIndex: number) {
   return bio.split(MENTION_PATTERN).map((part, index) => {
     if (!part.startsWith("@")) return part
     return (
@@ -19,6 +21,7 @@ function renderBio(bio: string) {
         target="_blank"
         rel="noreferrer"
         className="mosaic-x-card-mention"
+        tabIndex={tabIndex}
       >
         {part}
       </a>
@@ -26,7 +29,8 @@ function renderBio(bio: string) {
   })
 }
 
-export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
+export function XProfileHoverCard({ profile, isOpen, linksTabbable = false }: XProfileHoverCardProps) {
+  const tabIndex = linksTabbable ? 0 : -1
   const hasCounts = Boolean(profile.following || profile.followers)
   const handle = profile.handle.replace(/^@/, "")
   const followHref = `https://x.com/intent/follow?screen_name=${encodeURIComponent(handle)}`
@@ -37,12 +41,16 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
       className={`mosaic-hover-card mosaic-x-card${isOpen ? " is-open" : ""}`}
       data-state={isOpen ? "open" : "closed"}
       // Closed, the card is still painted for its exit transition, so `inert`
-      // keeps its links out of the tab order and off screen readers.
+      // keeps its links off screen readers. Open, it is still a preview: its
+      // links stay out of the tab order, so Tab moves on to the next control
+      // rather than wading through up to five links -- three of them the
+      // profile the trigger already opens -- whenever focus passes by. Only a
+      // trigger that is asked to go in (the quote author, on Enter) opens them.
       inert={!isOpen}
     >
       <div className="mosaic-x-card-top">
         {profile.photo ? (
-          <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-avatar-link">
+          <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-avatar-link" tabIndex={tabIndex}>
             <img
               src={profile.photo}
               alt=""
@@ -59,11 +67,11 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
             {avatarFallback}
           </span>
         )}
-        <a href={followHref} target="_blank" rel="noreferrer" className="mosaic-x-card-follow">
+        <a href={followHref} target="_blank" rel="noreferrer" className="mosaic-x-card-follow" tabIndex={tabIndex}>
           Follow
         </a>
       </div>
-      <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-identity">
+      <a href={profile.href} target="_blank" rel="noreferrer" className="mosaic-x-card-identity" tabIndex={tabIndex}>
         <span className="mosaic-x-card-name">
           {profile.name}
           {profile.verified ? (
@@ -84,7 +92,7 @@ export function XProfileHoverCard({ profile, isOpen }: XProfileHoverCardProps) {
         </span>
         <span className="mosaic-x-card-handle">{profile.handle}</span>
       </a>
-      {profile.bio ? <p className="mosaic-x-card-bio">{renderBio(profile.bio)}</p> : null}
+      {profile.bio ? <p className="mosaic-x-card-bio">{renderBio(profile.bio, tabIndex)}</p> : null}
       {hasCounts ? (
         <p className="mosaic-x-card-stats">
           {profile.following ? (

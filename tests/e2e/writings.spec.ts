@@ -158,7 +158,9 @@ test("a press outside a note closes the gallery once, with the note still on it"
   await folder.click()
   await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
-  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
+  await page.evaluate(() => document.getAnimations().forEach(animation => {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+  }))
   const before = await sounds()
 
   // The note stays on the card while it shrinks: turning back to the list on
@@ -212,7 +214,7 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     expect(reading.y).toBeCloseTo(top, 0)
     // An article is taller than the room, so the sheet takes all of it.
     expect(reading.height).toBeCloseTo(room, 0)
-    expect(await dialog.evaluate((element) => getComputedStyle(element).borderBottomLeftRadius)).toBe("24px")
+    expect(await dialog.evaluate((element) => getComputedStyle(element).borderBottomLeftRadius)).toBe("31.2px")
     // Growing is the only sizing there is: no expand control.
     await expect(dialog.getByRole("button", { name: /Expand modal|Restore modal size/ })).toHaveCount(0)
     const reader = dialog.locator(".writings-scroll")
@@ -240,7 +242,9 @@ test("the nested reader grows downward without replacing its dialog", async ({ p
   const dialog = popup(page)
   await expect(dialog.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
-  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()))
+  await page.evaluate(() => document.getAnimations().forEach(animation => {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+  }))
   const listBox = (await dialog.boundingBox())!
   const original = await dialog.elementHandle()
   await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()

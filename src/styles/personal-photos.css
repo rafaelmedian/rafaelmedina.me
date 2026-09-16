@@ -619,9 +619,8 @@
   opacity: calc(var(--sphere-zoom, 0) * 0.48);
 }
 .personal-photos-sphere .personal-photos-slide[data-sphere-hidden] { display: none; }
-/* A photo on the face of the globe can be clicked, and says so. The far side
-   is behind the face, so it lets presses through to the stage rather than
-   bringing round a photo nobody can see. */
+/* Every visible photo can be clicked; only fully hidden prints let presses
+   through to the stage. */
 .personal-photos-sphere .personal-photos-slide[data-sphere-far] { pointer-events: none; }
 
 /* Keep the globe's circular hit area and pill controls round under the

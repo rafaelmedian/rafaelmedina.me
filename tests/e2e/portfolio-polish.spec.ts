@@ -28,11 +28,11 @@ const getPreviousCompanyLink = (page: Page, name: string) =>
 
 // Wait for finite tile interactions before measuring a preview origin.
 // Safe from hanging: the gallery's View Timeline lives on the parent stage,
-// outside this subtree, while every animation inside `.mosaic-rows` finishes.
+// outside this subtree. An interrupted tile transition is settled too.
 const settleWorkCards = (page: Page) =>
   page
     .locator(".mosaic-rows")
-    .evaluate((element) => Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+    .evaluate((element) => Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
 
 // The reveal keyframes are held by `data-avatar-intro`, and they land on the
 // hero's children rather than the hero itself -- so waiting on an ancestor's
@@ -1326,14 +1326,41 @@ test("sends every X preview control to the right profile", async ({ page }) => {
   await expect(mentions.nth(0)).toHaveAttribute("href", "https://x.com/0xproject")
   await expect(mentions.nth(1)).toHaveAttribute("href", "https://x.com/matchaxyz")
 
-  // Focus reaches the card's own links, and leaving the pair puts it away.
+  // The card is a preview, not a stop: Tab passes over its five links to the
+  // next control, and the card goes away with the focus that opened it.
   await page.keyboard.press("Tab")
-  await expect(card.locator(".mosaic-x-card-avatar-link")).toBeFocused()
-  await expect(card).toHaveAttribute("data-state", "open")
+  await expect(page.getByRole("link", { name: /preview 1 of/ })).toBeFocused()
+  await expect(card).toHaveAttribute("data-state", "closed")
 
+  await page.keyboard.press("Shift+Tab")
+  await expect(card).toHaveAttribute("data-state", "open")
   await page.keyboard.press("Escape")
   await expect(card).toHaveAttribute("data-state", "closed")
   await expect(xAction).toBeFocused()
+})
+
+test("keeps the links inside focus-opened cards out of the tab order", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+
+  // Each of these opens a card on focus. The card's links used to be the next
+  // Tab stops, so passing the clock or the last company chip landed inside a
+  // preview nobody asked to enter.
+  const location = page.locator(".mosaic-profile-location-place")
+  // Focus that lands before hydration opens nothing; retry until the card answers.
+  await expect(async () => {
+    await location.blur()
+    await location.focus()
+    await expect(page.locator(".mosaic-profile-location-card")).toHaveAttribute("data-state", "open", { timeout: 500 })
+  }).toPass()
+  await page.keyboard.press("Tab")
+  await expect(page.locator(".mosaic-last-updated")).toBeFocused()
+
+  const lastChip = page.locator(".mosaic-work-history-chip").last()
+  await lastChip.focus()
+  await expect(page.locator(".mosaic-work-history-popover")).toHaveAttribute("data-open", "true")
+  await page.keyboard.press("Tab")
+  await expect(location).toBeFocused()
 })
 
 test("keeps the X preview card inside a narrow hover-capable viewport", async ({ page }) => {
@@ -1594,8 +1621,8 @@ test("keeps the static Punta Cana map when the interactive map chunk fails", asy
 test("matches the local-time trigger corners to its card", async ({ page }) => {
   await page.goto("/#about-panel")
 
-  await expect(page.locator(".mosaic-social-time")).toHaveCSS("border-radius", "16px")
-  await expect(page.locator(".mosaic-about-local-time .mosaic-local-time-card")).toHaveCSS("border-radius", "16px")
+  await expect(page.locator(".mosaic-social-time")).toHaveCSS("border-radius", "20.8px")
+  await expect(page.locator(".mosaic-about-local-time .mosaic-local-time-card")).toHaveCSS("border-radius", "20.8px")
 })
 
 test("keeps the local-time hover highlight compact without shrinking its hover target", async ({ page }) => {
@@ -1881,7 +1908,7 @@ test("the TOC contains all three rows in one inset card", async ({ page }) => {
   const surface = page.locator(".mosaic-mobile-toc-surface")
   const trigger = page.getByRole("button", { name: /^Table of contents:/ })
   await trigger.click()
-  await expect(surface).toHaveCSS("border-radius", "24px")
+  await expect(surface).toHaveCSS("border-radius", "31.2px")
   await expect(surface).toHaveCSS("backdrop-filter", "blur(16px)")
   await expect(surface).not.toHaveCSS("box-shadow", "none")
   const card = (await surface.boundingBox())!
@@ -1892,7 +1919,7 @@ test("the TOC contains all three rows in one inset card", async ({ page }) => {
     expect(bounds.width).toBeCloseTo(card.width - 16, 0)
     expect(bounds.y).toBeCloseTo(card.y + 8 + index * 48, 0)
     expect(bounds.height).toBe(48)
-    await expect(row).toHaveCSS("border-radius", "16px")
+    await expect(row).toHaveCSS("border-radius", "20.8px")
     await expect(row).toHaveCSS("box-shadow", "none")
   }
   await page.keyboard.press("Escape")
@@ -2413,7 +2440,7 @@ test("keeps the section links compact with the hero tooltip-link corners", async
   await expect(links).toHaveCount(2)
   for (const link of await links.all()) {
     await expect(link).toHaveCSS("min-height", "32px")
-    await expect(link).toHaveCSS("border-radius", "8px")
+    await expect(link).toHaveCSS("border-radius", "10.4px")
   }
 })
 
@@ -4432,8 +4459,8 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   await expect(next).toHaveAttribute("aria-keyshortcuts", "ArrowDown ArrowRight")
   // --radius-lg. The dialog's bottom corners used to be a 28px one-off; they
   // were folded into the four-step radius scale (see /design-system).
-  await expect(card).toHaveCSS("border-bottom-left-radius", "24px")
-  await expect(card).toHaveCSS("border-bottom-right-radius", "24px")
+  await expect(card).toHaveCSS("border-bottom-left-radius", "31.2px")
+  await expect(card).toHaveCSS("border-bottom-right-radius", "31.2px")
 
   // One control per side, level with each other and 16px clear of the card.
   const placement = async () => {

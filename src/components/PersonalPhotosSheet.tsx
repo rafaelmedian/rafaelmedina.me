@@ -9,7 +9,7 @@ import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
 import { usePhotoWall } from "../lib/usePhotoWall"
 import { usePhotoWallCaption } from "../lib/usePhotoWallCaption"
-import { photoSphereHoldGrowth, usePhotoSphere } from "../lib/usePhotoSphere"
+import { photoSphereHoldShare, usePhotoSphere } from "../lib/usePhotoSphere"
 import { flyBetweenLayouts, snapshotSlides } from "../lib/photoLayoutSwitch"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
 import { readSheetLayout, usePreviewCount, useSheetColumns, type PhotoSheetLayout } from "../lib/photoLayout"
@@ -45,10 +45,8 @@ const sphereTiles = Array.from({ length: sphereCopies }, (_, copy) => {
     adjustment keeps the crowded set near the former cards' size instead of
     cancelling the added density by making every repeat much smaller. */
 const sphereCardShare = 0.225 * Math.sqrt(sphereCoverageTarget / sphereTiles.length)
-/** The sphere controller can grow any print to 2.7x without a React render.
-    Advertise that largest drawn size up front so a 2x screen does not keep
-    the 400px candidate after the photo has been held. */
-const spherePhotoSizes = `(max-width: 699.98px) calc(min(136vw, 80vh) * ${(sphereCardShare * 1.3 * photoSphereHoldGrowth).toFixed(3)}), calc(min(96vw, 92vh, 60rem) * ${(sphereCardShare * photoSphereHoldGrowth).toFixed(3)})`
+/** Reserve enough source pixels for a focused print before it is selected. */
+const spherePhotoSizes = `${photoSphereHoldShare * 100}vw`
 // One column's width: the sheet less its gutters and the gaps between the
 // columns, as --photo-gutter and --photo-column-gap set them.
 // Like the globe, advertise the largest camera zoom before a gesture so

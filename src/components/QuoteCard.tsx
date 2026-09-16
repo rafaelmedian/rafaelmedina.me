@@ -1,5 +1,6 @@
-import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react"
 import { Popover } from "@base-ui/react/popover"
+import { KeyboardHint } from "./KeyboardHint"
 import { XProfileHoverCard } from "./XProfileHoverCard"
 import type { PortfolioQuote } from "../data/quotes"
 
@@ -20,12 +21,28 @@ const VERTICAL_INTENT = 1.5
 // not swiped, and the click advances the quote as it would from a still finger.
 const TAP_DISTANCE = 10
 
-function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean }) {
+function QuoteCredit({
+  quote,
+  active,
+  interactive,
+  keysId,
+}: {
+  quote: PortfolioQuote
+  active: boolean
+  /** The card has been entered from the keyboard, so the name is a Tab stop. */
+  interactive: boolean
+  keysId: string
+}) {
   const [open, setOpen] = useState(false)
+  // Enter on the name, not Tab, is what takes focus into the preview. Until
+  // then its links stay out of the tab order like every other hover card's.
+  const [entered, setEntered] = useState(false)
   const skipNextFocusOpen = useRef(false)
   const pointerFocus = useRef(false)
+  const popupRef = useRef<HTMLDivElement>(null)
   const triggerId = useId()
   const href = quote.xHandle ? `https://x.com/${quote.xHandle}` : undefined
+  const previewOpen = active && open
 
   return (
     <figcaption className="mosaic-quote-credit">
@@ -34,9 +51,10 @@ function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean
         <span className="mosaic-quote-attribution">
           {href ? (
             <Popover.Root
-              open={active && open}
+              open={previewOpen}
               onOpenChange={(nextOpen, details) => {
                 if (!nextOpen && details.reason === "escape-key") skipNextFocusOpen.current = true
+                if (!nextOpen) setEntered(false)
                 setOpen(nextOpen)
               }}
               triggerId={triggerId}
@@ -48,6 +66,25 @@ function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean
                 }}
                 onClick={() => {
                   pointerFocus.current = false
+                }}
+                onKeyDown={(event) => {
+                  // Entered from the card, Escape goes back out to it in one
+                  // press. The popover's own Escape would stop here, closing
+                  // the preview and leaving focus on the name.
+                  if (event.key === "Escape" && interactive) {
+                    event.preventBaseUIHandler()
+                    setOpen(false)
+                    setEntered(false)
+                    return
+                  }
+                  // Focus already opened the preview, so Enter used to toggle
+                  // it shut. It goes in instead, opening it first if an Escape
+                  // had put it away.
+                  if (event.key !== "Enter") return
+                  event.preventDefault()
+                  setEntered(true)
+                  if (previewOpen) popupRef.current?.querySelector<HTMLElement>("a")?.focus()
+                  else setOpen(true)
                 }}
                 onFocus={() => {
                   if (pointerFocus.current) {
@@ -62,7 +99,8 @@ function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean
                 }}
                 className="mosaic-quote-profile-link mosaic-quote-name"
                 aria-label={`${quote.attribution} on X`}
-                tabIndex={active ? 0 : -1}
+                aria-describedby={keysId}
+                tabIndex={active && interactive ? 0 : -1}
                 openOnHover
                 delay={260}
                 closeDelay={140}
@@ -72,12 +110,16 @@ function QuoteCredit({ quote, active }: { quote: PortfolioQuote; active: boolean
               <Popover.Portal>
                 <Popover.Positioner className="mosaic-quote-profile-positioner" side="top" align="center" sideOffset={10} collisionPadding={20}>
                   <Popover.Popup
+                    ref={popupRef}
                     className="mosaic-quote-profile-popup"
-                    initialFocus={false}
+                    // Only an Enter on the name moves focus in; a hover or the
+                    // focus that opened it leaves focus where it was.
+                    initialFocus={() => (entered ? popupRef.current?.querySelector<HTMLElement>("a") ?? true : false)}
                     aria-label={`${quote.attribution} X profile`}
                   >
                     <XProfileHoverCard
-                      isOpen={active && open}
+                      isOpen={previewOpen}
+                      linksTabbable={entered}
                       profile={{ name: quote.attribution, handle: `@${quote.xHandle}`, href, photo: quote.photo ?? "", bio: "", ...quote.xProfile }}
                     />
                   </Popover.Popup>
@@ -115,12 +157,41 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     axis: "x" | "y" | null
   } | null>(null)
   const suppressClick = useRef(false)
+  // The card is one Tab stop. Enter takes focus in to the author's name, and
+  // Escape brings it back out; until then nothing inside is in the tab order.
+  const [inside, setInside] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
   const sliderId = useId()
+  const keysId = `${sliderId}-keys`
+  const authorKeysId = `${sliderId}-author-keys`
   const activeQuote = quotes[activeIndex]
 
   // A direct selection primes its hidden destination beside the current quote.
   // Release that measured start after React commits the new destination, so CSS
   // animates exactly one width instead of crossing the intervening quotes.
+  // Leaving is watched on the document rather than by the card's blur. The
+  // preview is portaled, so going into it leaves the card's DOM without
+  // leaving the card, and an Escape there blurs to nothing: the preview goes
+  // inert under its focused link before the popover hands focus back to the
+  // name. Only focus or a press landing somewhere else counts as leaving.
+  useEffect(() => {
+    if (!inside) return
+    // The popover's focus guards sit either side of the portaled preview, and
+    // Tab passes through one on its way in.
+    const isOwn = (node: EventTarget | null) =>
+      node instanceof Element &&
+      Boolean(cardRef.current?.contains(node) || node.closest(".mosaic-quote-profile-popup") || node.hasAttribute("data-base-ui-focus-guard"))
+    const leave = (event: Event) => {
+      if (!isOwn(event.target)) setInside(false)
+    }
+    document.addEventListener("focusin", leave)
+    document.addEventListener("pointerdown", leave)
+    return () => {
+      document.removeEventListener("focusin", leave)
+      document.removeEventListener("pointerdown", leave)
+    }
+  }, [inside])
+
   useLayoutEffect(() => {
     const slide = preparedSlide.current
     if (!slide) return
@@ -238,20 +309,67 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     }
   }
 
+  const canGoIn = Boolean(activeQuote.xHandle)
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const card = event.currentTarget
+    const target = event.target as HTMLElement
+    const onCard = target === card || target.classList.contains("mosaic-quote-next")
+
+    if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && onCard) {
+      event.preventDefault()
+      moveQuote(event.key === "ArrowRight" ? 1 : -1, "quick")
+      return
+    }
+
+    if (event.key === "Enter" && target === card) {
+      const author = card.querySelector<HTMLElement>('.mosaic-quote-slide[data-active="true"] .mosaic-quote-profile-link')
+      if (!author) return
+      event.preventDefault()
+      setInside(true)
+      author.focus()
+      return
+    }
+
+    // One level per Escape. Inside the preview, the popover closes itself and
+    // hands focus back to the name; from the name, Escape comes out to the card.
+    if (event.key === "Escape" && inside && target !== card && !target.closest(".mosaic-quote-profile-popup")) {
+      event.preventDefault()
+      // The popover would otherwise take this Escape as its own and refuse to
+      // reopen when Enter brings focus back to the name.
+      event.stopPropagation()
+      setInside(false)
+      card.focus()
+    }
+  }
+
   return (
     <div
+      ref={cardRef}
       className="mosaic-quote"
       role="group"
       aria-roledescription="carousel"
       aria-label="Quotes"
+      aria-describedby={keysId}
+      tabIndex={0}
       data-dragging={isDragging}
       data-settle={settle}
+      data-inside={inside}
       style={{ "--quote-drag-x": `${dragOffset}px` } as CSSProperties}
+      onKeyDown={handleKeyDown}
+      onFocus={(event) => {
+        // Shift+Tab back from the name lands here, and so does Escape.
+        if (event.target === event.currentTarget) setInside(false)
+      }}
     >
+      {/* The card surface for a pointer. The keyboard has the arrows, so this
+          stays out of the tab order rather than being a second stop that
+          only does what the card already does. */}
       <button
         type="button"
         className="mosaic-quote-next"
         aria-label="Advance quote"
+        tabIndex={-1}
         onPointerDown={startDrag}
         onPointerMove={moveDrag}
         onPointerUp={(event) => finishDrag(event)}
@@ -287,7 +405,7 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
             <blockquote>
               <p>“{quote.text} <strong>{quote.emphasis}</strong>”</p>
             </blockquote>
-            <QuoteCredit quote={quote} active={index === activeIndex} />
+            <QuoteCredit quote={quote} active={index === activeIndex} interactive={inside} keysId={authorKeysId} />
           </figure>
         ))}
         {(["left", "right"] as const).map((side) => (
@@ -308,12 +426,30 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
               aria-label={`Show quote from ${quote.attribution}`}
               aria-pressed={index === activeIndex}
               aria-controls={`${sliderId}-${quote.id}`}
+              // The pointer's way to a distant quote. The keyboard steps with
+              // the arrows from the card, so the dots are not nine more stops.
+              tabIndex={-1}
               onClick={() => selectQuote(index)}
             >
               <span aria-hidden="true" />
             </button>
           ))}
       </div>
+      {/* Where the dots are, and in their place, once the card has keyboard
+          focus: the keys it answers to at the level focus is on. */}
+      <KeyboardHint
+        className="mosaic-quote-keys"
+        items={inside
+          ? [{ keys: ["Enter"], label: "Profile" }, { keys: ["Esc"], label: "Back" }]
+          : [{ keys: ["←", "→"], label: "Browse" }, ...(canGoIn ? [{ keys: ["Enter"], label: "Go in" }] : [])]}
+      />
+      <span id={keysId} className="sr-only">
+        Use the left and right arrow keys to change the quote.
+        {canGoIn ? " Press Enter to go in to the author's profile." : ""}
+      </span>
+      <span id={authorKeysId} className="sr-only">
+        Press Enter to go in to the profile card, or Escape to go back to the quotes.
+      </span>
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {activeIndex + 1} of {quotes.length}. {activeQuote.attribution}. {activeQuote.caption}: {activeQuote.text} {activeQuote.emphasis}.
       </p>
