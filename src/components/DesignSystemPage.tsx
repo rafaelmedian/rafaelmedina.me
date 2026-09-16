@@ -1019,6 +1019,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Line-height is not part of the token — it is set per role: <code>1</code> for a pill label whose box
                   must optically centre, <code>1.25–1.35</code> for dense rows, <code>1.5–1.6</code> for lists, and{" "}
                   <code>1.5–1.7</code> for prose — the notes reader takes the low end because it reads at 14px.
+                  The hero name and role also use <code>1.5</code> so the two lines read as one identity block.
                   The Notes toolbar title uses <code>-0.015rem</code> tracking and a note's own 18px title
                   <code>-0.02rem</code>; everything on the reading step, prose and section headings included, uses{" "}
                   <code>-0.00563rem</code>. The writings dialog explicitly enables font kerning.
