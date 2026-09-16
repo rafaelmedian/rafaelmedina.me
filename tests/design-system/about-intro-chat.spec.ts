@@ -78,9 +78,8 @@ for (const width of [320, 1440]) {
     await page.goto('/?tune=off')
     await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toHaveCount(0)
     await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
-    if (width === 320) {
-      await page.getByRole('button', { name: /Open \d+ messages? from Rafa/ }).click()
-    }
+    await expect(page.getByRole(width === 320 ? 'dialog' : 'region', { name: 'Chat with Rafa' })).toHaveCount(0)
+    await page.locator('.about-intro-portrait-trigger').click()
     const chat = page.getByRole(width === 320 ? 'dialog' : 'region', { name: 'Chat with Rafa' })
     await expect(chat.getByText('Hey, I’m Rafa.')).toHaveCSS('opacity', '1')
     await expect(chat.getByText('How are you doing?')).toBeVisible()
@@ -180,7 +179,7 @@ for (const width of [320, 1440]) {
   })
 }
 
-test('starts the comparison chat when its card comes into view and respects reduced motion', async ({ page }) => {
+test('keeps comparison chat collapsed until keyboard activation and respects reduced motion', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/intro-options')
@@ -188,6 +187,11 @@ test('starts the comparison chat when its card comes into view and respects redu
   await expect(card.locator('.about-intro-chat')).toHaveAttribute('data-active', 'false')
   await card.scrollIntoViewIfNeeded()
   const chat = card.getByRole('region', { name: 'Chat with Rafa' })
+  await expect(chat).toHaveCount(0)
+  const portrait = card.locator('.about-intro-portrait-trigger')
+  await portrait.hover()
+  await expect(chat).toHaveCount(0)
+  await portrait.press('Enter')
   await expect(chat).toBeVisible()
   await expect(chat.getByText('Hey, I’m Rafa.')).toHaveCSS('transform', 'none')
   await expect(chat.getByRole('textbox', { name: 'Your email' })).not.toBeFocused()
@@ -262,6 +266,7 @@ test('keeps desktop reactions compact and reveals the remaining choices by scrol
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
   await chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' }).click()
@@ -298,6 +303,7 @@ test('opens the Tapback picker from the right and holds a selection beat before 
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   // Opening a Tapback while the scripted greeting is still adding messages
   // moves the portaled picker with its anchor. Wait for the final composer so
@@ -333,6 +339,7 @@ test('shows three typing dots before each greeting and pauses the sequence in a 
   await page.clock.install()
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   const typing = chat.getByRole('status', { name: 'Rafa is typing' })
   await expect(typing).toBeVisible()
@@ -382,6 +389,7 @@ test('changes the address with a puff before reopening the email field', async (
   await page.clock.install()
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await expect(chat.getByRole('status', { name: 'Rafa is typing' })).toBeVisible()
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
@@ -422,6 +430,7 @@ test('sends each message as a bubble, keeps failed ones and reuses the retry key
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
   await chat.getByRole('button', { name: 'Continue with email' }).click()
@@ -468,6 +477,7 @@ test('starts over after delivery and accepts another email address', async ({ pa
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   const email = chat.getByRole('textbox', { name: 'Your email' })
   await email.fill('first@example.com')
@@ -545,6 +555,7 @@ test('an empty first send delivers the address with a keep-in-touch bubble', asy
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
   await chat.getByRole('button', { name: 'Continue with email' }).click()
@@ -558,6 +569,7 @@ test('rejects an incomplete email before confirmation and allows correction', as
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const email = page.getByRole('textbox', { name: 'Your email', exact: true })
   await email.fill('visitor@gmail')
   await expect(page.getByRole('button', { name: 'Continue with email' })).toBeDisabled()
@@ -605,6 +617,7 @@ test('sizes the initial desktop conversation to the available viewport', async (
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+  await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
   const history = chat.locator('.about-intro-chat-history')
@@ -638,6 +651,8 @@ test('collapses the desktop chat outside and keeps its message count on the port
 
   const intro = page.getByRole('region', { name: 'A quick hello from Rafael' })
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
+  await expect(chat).toHaveCount(0)
+  await intro.locator('.about-intro-portrait-trigger').press('Enter')
   await expect(chat).toBeVisible()
   await page.clock.runFor(2700)
 

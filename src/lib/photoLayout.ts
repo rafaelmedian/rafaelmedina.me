@@ -21,18 +21,12 @@ export function useSheetColumns() {
 
 /** How the open sheet lays the photos out: turned on a globe, or dealt into
     scrolling columns. */
-export type PhotoSheetLayout = "sphere" | "grid"
+export type PhotoSheetLayout = "sphere" | "grid" | "wall"
 const sheetLayoutKey = "personal-photos-layout"
 
-/** The layout the visitor last picked, so the next visit opens the way they
-    left it. Storage can throw (disabled, or a private window at quota); the
-    globe is the default either way. */
+/** Wall is the only offered layout; older saved preferences are ignored. */
 export function readSheetLayout(): PhotoSheetLayout {
-  try {
-    return localStorage.getItem(sheetLayoutKey) === "grid" ? "grid" : "sphere"
-  } catch {
-    return "sphere"
-  }
+  return "wall"
 }
 
 export function saveSheetLayout(layout: PhotoSheetLayout) {

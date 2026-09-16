@@ -70,7 +70,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const id = useId()
   const [actionsOpen, setActionsOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
-  const [chatCollapsed, setChatCollapsed] = useState(false)
+  const [chatCollapsed, setChatCollapsed] = useState(true)
   const [messageCount, setMessageCount] = useState(0)
   const [notificationTransition, setNotificationTransition] = useState<{ current: number, leaving?: number }>({ current: 0 })
   const [reply, setReply] = useState<"email" | "text" | null>(null)
@@ -84,6 +84,8 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   if (wasAvailable !== available) {
     setWasAvailable(available)
     if (!available) {
+      setChatCollapsed(true)
+      setChatOpen(false)
       setReply(null)
       setReturnedReply(null)
       setReplyLabel(null)
@@ -378,8 +380,8 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
           </video>}
           {(variant === "b" || videoAvailable) && <button ref={portraitRef} type="button" className="about-intro-portrait-trigger"
             aria-label={variant === "b" && mobileMessages ? `Open ${messageCount ? messageLabel : "messages"} from Rafa` : "Show introduction actions"}
-            aria-expanded={variant === "b" && mobileMessages ? chatExpanded : actionsOpen} aria-controls={variant === "b" ? `${id}-chat` : `${id}-actions`}
-            onClick={variant === "b" && mobileMessages ? openChat : () => setActionsOpen(true)}
+            aria-expanded={variant === "b" ? chatExpanded : actionsOpen} aria-controls={variant === "b" ? `${id}-chat` : `${id}-actions`}
+            onClick={variant === "b" ? openChat : () => setActionsOpen(true)}
             inert={open} aria-hidden={open} />}
           {videoAvailable && <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
             aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>

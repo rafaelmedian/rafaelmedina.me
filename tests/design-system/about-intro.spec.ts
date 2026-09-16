@@ -4,7 +4,9 @@ const intro = (page: Page) => page.getByRole("region", { name: "A quick hello fr
 const openAbout = async (page: Page) => {
   await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
   await expect(intro(page)).toBeVisible()
-  await intro(page).locator(".about-intro-portrait-trigger").focus()
+  await intro(page).locator(".about-intro-portrait-trigger").press("Enter")
+  await expect(page.getByRole("region", { name: "Chat with Rafa" })).toBeVisible()
+  await intro(page).getByRole("button", { name: /^(Play|Resume) introduction$/ }).focus()
 }
 
 test("defers introduction assets until About and recording until play", async ({ page }) => {

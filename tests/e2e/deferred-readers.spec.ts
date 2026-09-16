@@ -145,14 +145,14 @@ for (const destination of ["project", "other reader"]) {
       const personalLife = page.getByRole("button", { name: "Personal life", exact: true })
       // A pointer click in the trigger's centre selects the middle print, so
       // its first Escape releases that photo. Keyboard activation deliberately
-      // opens the globe without a selection and makes this close assertion
+      // opens the wall without a selection and makes this close assertion
       // independent of whether the opening flight has finished.
       await personalLife.focus()
       await page.keyboard.press("Enter")
       await expect(page.getByRole("dialog", { name: "Personal photos", exact: true })).toBeVisible()
       // Visibility precedes the modal's focus handoff. Send Escape only once
       // the replacement reader owns keyboard input.
-      await expect(page.getByRole("region", { name: "Photo globe" })).toBeFocused()
+      await expect(page.getByRole("region", { name: "Photo wall" })).toBeFocused()
     }
     release()
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)

@@ -306,14 +306,15 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
    it matches the corner nav above it. Nothing here ranks by size: the name
    leads because it is the darkest ink and the only 600 in the block, the work
    history and location sit on --muted, and the nav sits lighter still. Tracking
-   follows the size per /design-system -- 14px takes -0.00563rem. */
+   follows the size per /design-system -- 14px takes -0.00563rem. The name and
+   role use the compact 1.5 line-height so they read as one identity block. */
 .mosaic-profile-meta h1 {
   margin: 0;
   font-family: var(--font-ui);
   font-style: normal;
   font-weight: 600;
   font-size: var(--text-sm);
-  line-height: 1.7;
+  line-height: 1.5;
   letter-spacing: -0.00563rem;
   color: #2d2d2d;
 }
@@ -326,7 +327,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   flex-wrap: wrap;
   justify-content: center;
   font-size: var(--text-sm);
-  line-height: 1.7;
+  line-height: 1.5;
   letter-spacing: -0.00563rem;
   color: var(--muted);
 }

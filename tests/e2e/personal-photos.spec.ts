@@ -10,9 +10,7 @@ async function openHome(page: Page) {
 test("returning photos match the thumbnail crop and frame before the handoff", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
-  // Opened beside the prints rather than on one, so no photo is held and a
-  // single Escape closes. A click on a print holds its photo, and the first
-  // Escape only lets it go.
+  // Opening the wall leaves every photo at rest, so one Escape closes.
   await page.locator(".personal-photos-label").click()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCSS("opacity", "1")
@@ -174,94 +172,25 @@ function readAngles(elements: Element[]) {
 }
 
 
-test("a click on a print opens the globe holding that photo; Enter opens it as it lies", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await openHome(page)
-  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
-  await trigger.scrollIntoViewIfNeeded()
-  // Scrolled in, the hand springs out of a pile on the middle print; measured
-  // before it lands, the click meant for this print lands on the middle one.
-  await expect(page.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
-  const print = trigger.locator(".personal-photos-print").nth(3)
-  const photoId = await print.getAttribute("data-photo-id")
-  const largest = () => largestSlide(page)
-
-  // The part of the print the middle one leaves showing, as a visitor would.
-  const box = (await print.boundingBox())!
-  await page.mouse.click(box.x + box.width * 0.8, box.y + box.height / 2)
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  // The hold waits for the open flight to land and then turns and grows over
-  // --sphere-focus-duration; under a full parallel run that takes longer than
-  // the default 5s poll.
-  await expect.poll(async () => {
-    const { id, lead } = await largest()
-    return id === photoId && lead > 1.5
-  }, { timeout: 15_000 }).toBe(true)
-  // Escape lets the photo go first, then closes.
-  await page.keyboard.press("Escape")
-  await page.keyboard.press("Escape")
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeHidden()
-
-  // The keyboard reaches the tile as one stop and opens the globe with
-  // nothing held; Tab brings a photo to the front from there.
-  await trigger.focus()
-  await page.keyboard.press("Enter")
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCSS("opacity", "1", { timeout: 15_000 })
-  await page.waitForTimeout(600)
-  expect((await largest()).lead).toBeLessThan(1.5)
-})
-
-test("a print pulled from the fan follows the pointer with resistance and opens on release", async ({ page }) => {
+test("a print and keyboard activation both open the wall without a selection", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
   const trigger = page.getByRole("button", { name: "Personal life", exact: true })
   await trigger.scrollIntoViewIfNeeded()
   await expect(page.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
-  // By class, not through the trigger's role: the open sheet hides the tile
-  // from the accessibility tree, and the print is read again behind it.
-  const prints = page.locator(".personal-photos-print")
-  const print = prints.nth(3)
-  const photoId = await print.getAttribute("data-photo-id")
-  const box = (await print.boundingBox())!
-  const start = { x: box.x + box.width * 0.8, y: box.y + box.height / 2 }
-  await page.mouse.move(start.x, start.y)
-  await page.mouse.down()
-  for (let step = 1; step <= 8; step++) await page.mouse.move(start.x + 25 * step, start.y)
-  // A 200px pull moves the print about 39px — p x 48 / (48 + p) — and turns
-  // it; the rest of the hand stays where it was dealt.
-  const pull = () => print.evaluate((element) => parseFloat(getComputedStyle(element).translate))
-  await expect.poll(pull).toBeGreaterThan(34)
-  expect(await pull()).toBeLessThan(44)
-  await expect(print).toHaveAttribute("data-print-drag", "")
-  expect(await print.evaluate((element) => getComputedStyle(element).rotate)).not.toBe("none")
-  expect(await prints.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).translate).filter((_, index) => index !== 3))).toEqual(["none", "none", "none", "none"])
-
-  // Let go: the click it was opens the globe holding that photo, and the
-  // print springs back into the hand behind the sheet.
-  await page.mouse.up()
-  await expect(dialog(page)).toBeVisible()
-  await expect.poll(async () => {
-    const { id, lead } = await largestSlide(page)
-    return id === photoId && lead > 1.5
-  }, { timeout: 15_000 }).toBe(true)
-  await expect.poll(() => print.evaluate((element) => getComputedStyle(element).translate)).toBe("none")
-  await page.keyboard.press("Escape")
+  await trigger.locator(".personal-photos-print").nth(3).click()
+  const wall = page.getByRole("region", { name: "Photo wall" })
+  await expect(wall).toBeVisible()
+  await expect(wall.locator("[data-held]")).toHaveCount(0)
   await page.keyboard.press("Escape")
   await expect(dialog(page)).toBeHidden()
+  await expect(trigger).toBeFocused()
+  await page.keyboard.press("Enter")
+  await expect(wall).toBeVisible()
+  await expect(wall.locator("[data-held]")).toHaveCount(0)
 })
 
 const dialog = (page: Page) => page.getByRole("dialog", { name: "Personal photos" })
-
-/** The slide drawn largest, and so furthest forward: the held photo grows at
-    the centre while the rest of the globe steps back. */
-const largestSlide = (page: Page) => page.evaluate(() => {
-  const slides = Array.from(document.querySelectorAll<HTMLElement>(".personal-photos-sphere .personal-photos-slide"))
-  const widths = slides.map((slide) => slide.getBoundingClientRect().width)
-  const widest = widths.indexOf(Math.max(...widths))
-  const runnerUp = Math.max(...widths.filter((_, index) => index !== widest))
-  return { id: slides[widest].dataset.photoId, lead: widths[widest] / runnerUp }
-})
-
 
 /** Pause every flight at its first frame so the deal can be inspected. */
 async function holdFlights(page: Page) {
@@ -306,7 +235,7 @@ test("the hand comes to rest when the sheet closes and only opens again for a mo
   const resting = await rects()
 
   // Opened from the tile's label, with the pointer left where it clicked —
-  // over the tile — the way a click on the globe's margin leaves it.
+  // over the tile throughout the return flight.
   await trigger.locator(".personal-photos-label").click()
   await expect(dialog(page)).toBeVisible()
   await holdFlights(page)
@@ -336,78 +265,54 @@ test("the hand comes to rest when the sheet closes and only opens again for a mo
   await expect.poll(rects).not.toEqual(resting)
 })
 
-test("the fan is dealt with a wobble, opens as a hand, and lifts the one print under the pointer", async ({ page }) => {
+test("the fan is dealt with a wobble and only changes its angles on card hover", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 500 })
   await openHome(page)
 
   const preview = page.locator(".personal-photos")
   await preview.scrollIntoViewIfNeeded()
-  // The deal rides on `translate`, which the lift below reads.
   await expect(preview.locator(".personal-photos-stack")).not.toHaveAttribute("data-deal")
 
   const prints = preview.locator(".personal-photos-print")
   // Almost flat: a few degrees at the ends of the row, with a little of each
-  // print's fixed wobble in — the lean is left for the pointer.
+  // print's fixed wobble.
   const rest = [-3, -1, 1, 0, 3]
   expect(await prints.evaluateAll(readAngles)).toEqual(rest)
-  const restWidth = await preview.locator(".personal-photos-stack").evaluate((element) => {
-    const boxes = Array.from(element.querySelectorAll(".personal-photos-print")).map((print) => print.getBoundingClientRect())
-    return Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.left))
-  })
   const readDrops = (elements: Element[]) => elements.map((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).f)
   const restDrops = await prints.evaluateAll(readDrops)
 
-  // Pointing at the tile, but at no print — its label — swings every print
-  // out to its fanned angle together, wider and with more wobble than at rest.
+  // Pointing at the tile, but at no print — its label — only changes the
+  // prints' angles by a degree or two.
   // The pointer is moved by hand throughout so the page holds one scroll
   // position; hover() would scroll first.
   const label = (await preview.locator(".personal-photos-label").boundingBox())!
   await page.mouse.move(label.x + label.width / 2, label.y + label.height / 2)
-  const open = [-18, -7, 2, 6, 18]
+  // Wait for the authored destination, not merely the first frame within
+  // the allowed range; that frame can still round to a different angle.
+  const open = await prints.evaluateAll(elements => elements.map(element =>
+    Math.round(parseFloat(getComputedStyle(element).getPropertyValue("--print-hover-tilt")))))
   await expect.poll(() => prints.evaluateAll(readAngles)).toEqual(open)
+  expect(open.every((angle, index) => {
+    const change = Math.abs(angle - rest[index])
+    return change >= 1 && change <= 3
+  })).toBe(true)
   const openDrops = await prints.evaluateAll(readDrops)
-  openDrops.forEach((drop, index) => expect(drop).toBeGreaterThan(restDrops[index]))
-  const openWidth = await preview.locator(".personal-photos-stack").evaluate((element) => {
-    const boxes = Array.from(element.querySelectorAll(".personal-photos-print")).map((print) => print.getBoundingClientRect())
-    return Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.left))
-  })
-  expect(openWidth).toBeGreaterThan(restWidth)
+  expect(openDrops).toEqual(restDrops)
 
   // The pile keeps its order: the middle print is the front of the fan and
   // every print behind it steps back.
   const depths = () => prints.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).zIndex))
   expect(await depths()).toEqual(["1", "3", "5", "3", "1"])
 
-  // The one print under the pointer slides up, on `translate` so the lean
-  // and the drop stay where they are; nothing else moves, grows, or changes
-  // hands. Pointed at near its bottom edge — where a print that rose out
-  // from under the pointer used to lose it and fall back — it stays lifted.
-  const lifts = () => prints.evaluateAll((elements) => elements.map((element) => {
-    const translate = getComputedStyle(element).translate
-    return translate === "none" ? 0 : Math.round(parseFloat(translate.split(" ")[1] ?? "0"))
-  }))
-  const growth = () => prints.evaluateAll((elements) => elements.map((element) => {
-    const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform)
-    return Math.round(Math.hypot(matrix.a, matrix.b) * 100) / 100
-  }))
+  // Crossing onto a print keeps the same card-level response: no lift,
+  // individual 3D turn, scaling, or depth shuffle.
   const box = (await prints.nth(1).boundingBox())!
   await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.9)
-  await expect.poll(async () => (await lifts())[1]).toBeLessThan(-4)
-  expect((await lifts()).filter((_, index) => index !== 1)).toEqual([0, 0, 0, 0])
-  await page.waitForTimeout(400)
-  expect(await prints.nth(1).evaluate((element) => element.matches(":hover"))).toBe(true)
-  expect(await prints.evaluateAll(readAngles)).toEqual(open)
-  expect(await growth()).toEqual([1, 1, 1, 1, 1])
+  await expect.poll(() => prints.evaluateAll(readAngles)).toEqual(open)
+  expect(await prints.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).translate))).toEqual(Array(5).fill("none"))
+  expect(await prints.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).rotate))).toEqual(Array(5).fill("none"))
   expect(await depths()).toEqual(["1", "3", "5", "3", "1"])
-  // Over a print the hand lies flat and the print alone turns toward the
-  // pointer, on `rotate`, so the lean it was dealt with is untouched.
-  const turns = () => prints.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).rotate !== "none"))
-  await expect.poll(turns).toEqual([false, true, false, false, false])
   await expect(preview.locator(".personal-photos-stack-tilt")).toHaveCSS("transform", "none")
-  expect(await prints.evaluateAll(readAngles)).toEqual(open)
-  await page.mouse.move(label.x + label.width / 2, label.y + label.height / 2)
-  await expect.poll(lifts).toEqual([0, 0, 0, 0, 0])
-  await expect.poll(turns).toEqual([false, false, false, false, false])
 })
 
 /** Records each print's centre, relative to the stack's, halfway through the
@@ -504,208 +409,4 @@ test("opening the sheet mid-deal snaps the hand to rest before the flights measu
   await expect(dialog(page)).toBeVisible()
   await expect(stack).not.toHaveAttribute("data-deal")
   expect(await stack.locator(".personal-photos-print").evaluateAll((elements) => elements.map((element) => getComputedStyle(element).translate))).toEqual(Array(5).fill("none"))
-})
-
-/** The budget for anything that waits on the globe's own motion. A turn
-    takes 360ms and the zoom settles in about a third of a second, but the
-    globe advances by at most 50ms of motion per frame, so under a full
-    parallel run — eight Chromiums each drawing a WebGL globe — a starved tab
-    turns slowly in wall time and the default 5s poll missed. Fifteen seconds
-    is well past anything the globe needs and well short of the test timeout. */
-const motion = { timeout: 15_000 }
-
-/** The globe's stage, and the tiles on it that are not hidden round the back. */
-const stage = (page: Page) => page.getByRole("region", { name: "Photo globe" })
-const shownTiles = (page: Page) => stage(page).locator(".personal-photos-slide:not([data-sphere-hidden])")
-/** Each shown tile's centre relative to the stage's, its width, and its depth. */
-const readTiles = (page: Page) => shownTiles(page).evaluateAll((elements) => elements.map((element) => {
-  const rect = element.getBoundingClientRect()
-  return {
-    id: (element as HTMLElement).dataset.photoId ?? null,
-    x: Math.round(rect.left + rect.width / 2 - innerWidth / 2), y: Math.round(rect.top + rect.height / 2 - innerHeight / 2),
-    width: Math.round(rect.width), depth: Number((element as HTMLElement).style.getPropertyValue("--sphere-depth")),
-  }
-}))
-const frontTile = async (page: Page) => (await readTiles(page)).sort((a, b) => b.depth - a.depth)[0]
-
-test("the globe carries every photo at least three times, larger at the front than the rim, hides its far side, and turns on its own", async ({ page }) => {
-  test.slow()
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await openHome(page)
-  await page.locator(".personal-photos-label").click()
-  await page.mouse.move(5, 5)
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  const tiles = stage(page).locator(".personal-photos-slide")
-  const originals = await stage(page).locator(".personal-photos-slide[data-photo-id]").count()
-  expect(originals).toBeGreaterThan(10)
-  // The copies are decoration: no id, no group, hidden from assistive tech
-  // and from Tab.
-  expect(await tiles.count()).toBeGreaterThanOrEqual(originals * 3)
-  expect(await stage(page).locator('.personal-photos-slide:not([data-photo-id])[aria-hidden="true"][tabindex="-1"]').count()).toBe(await tiles.count() - originals)
-  // The far side is a dome's: gone, not showing through.
-  await expect.poll(() => stage(page).locator(".personal-photos-slide[data-sphere-hidden]").count(), motion).toBeGreaterThan(5)
-  const layout = await readTiles(page)
-  const byDepth = [...layout].sort((a, b) => b.depth - a.depth)
-  expect(byDepth[0].width).toBeGreaterThan(byDepth[byDepth.length - 1].width * 1.5)
-  // Every photo is a print: a white border, the same all round.
-  expect(await tiles.first().evaluate((slide) => {
-    const style = getComputedStyle(slide)
-    return { paper: style.backgroundColor, even: parseFloat(style.paddingTop) > 0 && style.paddingTop === style.paddingBottom && style.paddingLeft === style.paddingTop }
-  })).toEqual({ paper: "rgb(255, 255, 255)", even: true })
-  // A slow spin of its own, once the open flight has landed: the photo at
-  // the front moves off it.
-  const before = await frontTile(page)
-  await expect.poll(async () => {
-    const after = (await readTiles(page)).find((tile) => tile.id === before.id)
-    return after === undefined || after.x !== before.x || after.depth !== before.depth
-  }, motion).toBe(true)
-  await page.keyboard.press("Escape")
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
-})
-
-test("a drag turns the globe and lets a held photo go; a click holds a photo at the centre and a neighbouring photo takes focus directly", async ({ page }) => {
-  test.slow()
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await openHome(page)
-  await page.locator(".personal-photos-label").click()
-  await page.mouse.move(5, 5)
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  await page.waitForTimeout(400)
-
-  // A click on a photo turns it to the centre and grows it; the caption
-  // under the globe names it.
-  const target = (await readTiles(page)).filter((tile) => tile.id).sort((a, b) => b.depth - a.depth)[2]
-  await page.mouse.click(innerCentre(1440) + target.x, innerCentre(900) + target.y)
-  await page.mouse.move(5, 5)
-  // Within a couple of pixels: the globe is centred on a half-pixel at some
-  // viewport sizes.
-  const centred = async (id: string) => { const tile = (await readTiles(page)).find((candidate) => candidate.id === id); return tile ? Math.max(Math.abs(tile.x), Math.abs(tile.y)) : NaN }
-  await expect.poll(() => centred(target.id), motion).toBeLessThanOrEqual(2)
-  const held = (await readTiles(page)).find((tile) => tile.id === target.id)!
-  expect(held.width).toBeGreaterThan(target.width * 1.8)
-  // The caption names it, just under it, once the hold has landed.
-  const caption = page.locator(".personal-photos-stage-caption")
-  await expect(caption).toHaveText(await stage(page).locator(`.personal-photos-slide[data-photo-id="${target.id}"] figcaption`).innerText())
-  await expect.poll(() => caption.evaluate((element) => getComputedStyle(element).opacity), motion).toBe("1")
-  const heldBox = (await stage(page).locator(`.personal-photos-slide[data-photo-id="${target.id}"]`).boundingBox())!
-  const captionBox = (await caption.boundingBox())!
-  expect(captionBox.y - (heldBox.y + heldBox.height)).toBeGreaterThan(4)
-  expect(captionBox.y - (heldBox.y + heldBox.height)).toBeLessThan(32)
-  expect(Math.abs(captionBox.x + captionBox.width / 2 - (heldBox.x + heldBox.width / 2))).toBeLessThan(3)
-  // While one photo is held the rest of the globe steps back a little.
-  const others = (await readTiles(page)).filter((tile) => tile.id !== target.id)
-  expect(Math.max(...others.map((tile) => tile.width))).toBeLessThan(held.width / 2)
-
-  // Click an exposed part of a neighbour, outside the enlarged photo.
-  const neighbour = await stage(page).evaluate((root) => {
-    for (const slide of root.querySelectorAll<HTMLElement>(".personal-photos-slide:not([data-sphere-held]):not([data-sphere-hidden])")) {
-      const box = slide.getBoundingClientRect()
-      for (const fraction of [0.2, 0.5, 0.8]) {
-        const x = box.x + box.width * fraction, y = box.y + box.height / 2
-        if (document.elementFromPoint(x, y)?.closest(".personal-photos-slide") === slide) {
-          slide.setAttribute("data-test-neighbour", "")
-          return { x, y }
-        }
-      }
-    }
-    throw new Error("No exposed neighbour")
-  })
-  await page.mouse.click(neighbour.x, neighbour.y)
-  await expect(stage(page).locator("[data-test-neighbour]")).toHaveAttribute("data-sphere-held", "")
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  await page.keyboard.press("Escape")
-  await expect(caption).toHaveText("")
-
-  // The neighbour is now at the front. Let its release settle before
-  // selecting it again; the previous target may be obscured after this turn.
-  await page.mouse.move(5, 5)
-  const selected = stage(page).locator("[data-test-neighbour]")
-  await expect.poll(() => selected.evaluate(slide => Number(slide.style.getPropertyValue("--sphere-zoom"))), motion).toBeLessThan(0.01)
-  await selected.click()
-  await expect(selected).toHaveAttribute("data-sphere-held", "")
-  await expect.poll(() => selected.evaluate(slide => Number(slide.style.getPropertyValue("--sphere-zoom"))), motion).toBeGreaterThan(0.99)
-  const beforeDrag = (await frontTile(page)).id
-  await page.mouse.move(400, 450)
-  await page.mouse.down()
-  for (let step = 1; step <= 12; step++) await page.mouse.move(400 + step * 30, 450 + step * 5)
-  await page.mouse.up()
-  await page.mouse.move(5, 5)
-  await expect.poll(async () => Math.max(...(await readTiles(page)).map((tile) => tile.width)), motion).toBeLessThan(target.width * 1.3)
-  expect((await frontTile(page)).id).not.toBe(beforeDrag)
-
-  // With nothing held, a click on the margin closes and hands focus back.
-  await page.mouse.click(30, 450)
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
-  await expect(page.getByRole("button", { name: "Personal life", exact: true })).toBeFocused()
-})
-
-function innerCentre(size: number) { return size / 2 }
-
-test("hovering a photo on the globe grows it a little under a pointer cursor", async ({ page }) => {
-  test.slow()
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await openHome(page)
-  await page.locator(".personal-photos-label").click()
-  await page.mouse.move(5, 5)
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  await page.waitForTimeout(400)
-  const target = (await readTiles(page)).filter((tile) => tile.id).sort((a, b) => b.depth - a.depth)[1]
-  const tile = stage(page).locator(`.personal-photos-slide[data-photo-id="${target.id}"]`)
-  await expect(tile).toHaveCSS("cursor", "pointer")
-  await page.mouse.move(innerCentre(1440) + target.x, innerCentre(900) + target.y)
-  await expect.poll(() => tile.evaluate((element) => element.getBoundingClientRect().width), motion).toBeGreaterThan(target.width * 1.05)
-  await page.mouse.move(5, 5)
-  await expect.poll(() => tile.evaluate((element) => element.getBoundingClientRect().width), motion).toBeLessThan(target.width * 1.02)
-  await page.keyboard.press("Escape")
-})
-
-test("the keyboard turns the globe: Tab brings a photo to the front, the arrows step it round, and Escape lets a held photo go before it closes", async ({ page }) => {
-  test.slow()
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await openHome(page)
-  await page.locator(".personal-photos-label").click()
-  await page.mouse.move(5, 5)
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  await page.keyboard.press("Tab")
-  await page.keyboard.press("Tab")
-  const focused = page.locator(".personal-photos-slide:focus")
-  await expect(focused).toHaveAttribute("data-photo-id", /./)
-  const id = (await focused.getAttribute("data-photo-id"))!
-  await expect.poll(async () => { const tile = (await readTiles(page)).find((candidate) => candidate.id === id); return tile ? Math.max(Math.abs(tile.x), Math.abs(tile.y)) : NaN }, motion).toBeLessThanOrEqual(2)
-  const before = (await readTiles(page)).find((tile) => tile.id === id)!
-  await page.keyboard.press("ArrowRight")
-  await expect.poll(async () => (await readTiles(page)).find((tile) => tile.id === id)?.x ?? NaN, motion).not.toBe(before.x)
-  // Hold one from the pointer, then Escape twice: release, then close.
-  await page.mouse.click(innerCentre(1440) + before.x + 1, innerCentre(900) + before.y)
-  await page.mouse.move(5, 5)
-  await page.keyboard.press("Escape")
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  await page.keyboard.press("Escape")
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
-})
-
-test("on a phone the globe overhangs the screen, holds still with reduced motion, and a tap beside it closes", async ({ browser }) => {
-  test.slow()
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" })
-  const page = await context.newPage()
-  await openHome(page)
-  const trigger = page.getByRole("button", { name: "Personal life", exact: true })
-  await trigger.scrollIntoViewIfNeeded()
-  await page.locator(".personal-photos-label").tap()
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
-  // Wider than the screen, overhanging both edges equally, and the page does
-  // not scroll sideways for it.
-  const globe = await page.locator(".personal-photos-sphere").evaluate((element) => element.getBoundingClientRect().toJSON())
-  expect(globe.width).toBeGreaterThan(390)
-  expect(Math.abs(globe.left + globe.right - 390)).toBeLessThan(2)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  // No spin of its own under reduced motion.
-  const before = await readTiles(page)
-  await page.waitForTimeout(800)
-  expect(await readTiles(page)).toEqual(before)
-  await page.touchscreen.tap(10, 30)
-  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
-  // No focus check here: a touch never gave the trigger focus, so there is
-  // nothing for the dialog to hand back. The desktop tests cover the return.
-  await context.close()
 })

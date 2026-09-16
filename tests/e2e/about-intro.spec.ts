@@ -11,7 +11,7 @@ test("production chat offers the personal introduction video", async ({ page }) 
   const intro = page.getByRole("region", { name: "A quick hello from Rafael" })
   await expect(intro).toBeVisible()
   await expect(intro.locator("img.about-intro-poster")).toHaveAttribute("src", "/about-intro/poster.webp")
-  await intro.locator(".about-intro-portrait-trigger").focus()
+  await intro.locator(".about-intro-portrait-trigger").click()
   const chat = page.getByRole("region", { name: "Chat with Rafa" })
   const email = chat.getByRole("textbox", { name: "Your email" })
   await expect(chat).toBeVisible()
@@ -56,8 +56,29 @@ test("compact chat returns after playing the personal introduction", async ({ pa
   await expect.poll(() => chat.evaluate(node => node.contains(document.activeElement))).toBe(true)
 })
 
+test("chat waits for activation and returns collapsed with its draft", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.getByRole("link", { name: "About", exact: true }).click()
+  const intro = page.getByRole("region", { name: "A quick hello from Rafael" })
+  const portrait = intro.locator(".about-intro-portrait-trigger")
+  const chat = page.getByRole("region", { name: "Chat with Rafa" })
+  await expect(chat).toBeHidden()
+  await expect(intro.locator(".about-intro-chat-notification")).toBeVisible()
+  await portrait.hover()
+  await expect(chat).toBeHidden()
+  await portrait.click()
+  await expect(chat).toBeVisible()
+  await chat.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com")
+  await page.getByRole("button", { name: "Close about", exact: true }).click()
+  await page.getByRole("link", { name: "About", exact: true }).click()
+  await expect(chat).toBeHidden()
+  await portrait.press("Enter")
+  await expect(chat.getByRole("textbox", { name: "Your email" })).toHaveValue("visitor@example.com")
+})
+
 for (const width of [390, 768, 1440]) {
-  test(`chat appears at the CV tile after scroll at ${width}px`, async ({ page }) => {
+  test(`collapsed chat appears at the CV tile after scroll at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: "reduce" })
     const requests: string[] = []
@@ -70,6 +91,7 @@ for (const width of [390, 768, 1440]) {
     await page.locator(".mosaic-tile-resume").scrollIntoViewIfNeeded()
     const intro = page.getByRole("region", { name: "A quick hello from Rafael" })
     await expect(intro).toBeVisible()
+    await expect(page.getByRole(width < 900 ? "dialog" : "region", { name: "Chat with Rafa" })).toBeHidden()
     expect(await page.locator("#about-panel").evaluate(node => node.getBoundingClientRect().top)).toBeGreaterThan(900 * 0.31)
     await page.locator(".personal-photos-label").scrollIntoViewIfNeeded()
     await expect(intro).toBeVisible()

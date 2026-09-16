@@ -34,6 +34,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Closing the wall restores logical focus to its opener so keyboard order
+   resumes in the right place. That automatic handoff is not a new selection;
+   the marker clears on blur, and ordinary keyboard focus keeps the house ring. */
+.personal-photos-trigger[data-photo-focus-return]:focus { outline: none; }
+
 .personal-photos-label {
   font-size: var(--text-sm);
   line-height: 1.7;
@@ -64,18 +69,6 @@
   justify-content: center;
   width: 100%;
   transform: none;
-  transition: transform var(--duration-slow) var(--ease-smooth);
-}
-
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  .personal-photos-stack-tilt {
-    /* One camera over the hand, for the print that turns on its own below. */
-    perspective: 1000px;
-  }
-  .personal-photos-stack-tilt[data-tilt-active] {
-    transform: perspective(1000px) rotateX(var(--photo-stack-rotate-x, 0deg)) rotateY(var(--photo-stack-rotate-y, 0deg));
-    transition-duration: var(--duration-base);
-  }
 }
 
 .personal-photos-stack-tilt[data-tilt-reset],
@@ -92,10 +85,7 @@
 .personal-photos-print {
   --print-tilt: -7deg;
   --print-offset-y: 0rem;
-  /* The opened hand. `arcPlacement` sets all four per print; these are the
-     fallbacks that keep a print on the arc if it ever renders without them. */
-  --print-fan-tilt: var(--print-tilt);
-  --print-fan-offset-y: var(--print-offset-y);
+  --print-hover-tilt: var(--print-tilt);
   /* The middle of the fan is the front of the pile; `arcPlacement` steps the
      depth down towards both ends. */
   --print-depth: 0;
@@ -114,64 +104,7 @@
   background: var(--canvas);
   box-shadow: var(--shadow-ring), var(--shadow-control-hover);
   transform: translate(var(--print-offset-x, 0%), var(--print-offset-y)) rotate(var(--print-tilt));
-  /* The settle curve, not the carousel's: it starts moving the instant the
-     pointer crosses onto a print and eases out long, so sweeping across the
-     row reads as one print handing off to the next rather than each one
-     waiting a beat before it stirs. Each print keeps its assigned depth. The
-     lift rides on `translate`, apart from the transform that carries the lean
-     and the drop, so the two compose without either rule rewriting the other;
-     the turn toward the pointer rides on `rotate`, apart from both. */
-  transition: transform var(--duration-slow) var(--ease-smooth), translate var(--duration-slow) var(--ease-smooth), rotate var(--duration-base) var(--ease-smooth);
-}
-
-/* The print under the pointer turns toward it on its own, about an axis
-   square to the pointer's offset from the print's centre, up to 5deg at
-   its edge — a gentle lean, as the whole hand takes over the label (6deg),
-   given to one print — while the hand itself lies flat (usePhotoStackTilt lets it
-   down the moment the pointer crosses onto a print). It rides on the
-   individual `rotate` property, so the lean and the drop on `transform` and
-   the lift on `translate` are untouched, and the flight's measurement of
-   `transform` still reads a plain 2D lean. The reset before a flight turns
-   it flat in the same frame as everything else. */
-@media (prefers-reduced-motion: no-preference) {
-  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-tilt] {
-    rotate: var(--print-rotate, none);
-  }
-}
-
-/* The print under the pointer slides up out of the hand, by its own
-   --print-lift, and stays in its place in the pile — a card lifted from a
-   hand rises above the others' edges, it does not come out in front of them.
-   Which print that is comes from pointer travel (`data-print-hover`, set by
-   usePhotoStackTilt), not from `:hover`: when the sheet closed over a
-   resting pointer the browser re-evaluated `:hover` with nothing moving, and
-   a print rose on its own, as if still picked. The hit area reaches down over
-   the spot the print rose from: without that a pointer resting near a print's
-   bottom edge lost it as it rose, the print fell back under the pointer, and
-   the two chased each other. An away print sits out the lift like everything
-   else, so the return flight lands on a frame that has not moved. */
-@media (prefers-reduced-motion: no-preference) {
-  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-hover] {
-    translate: 0 var(--print-lift, -11%);
-  }
-  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-hover]::after {
-    content: "";
-    position: absolute;
-    inset: 0 0 var(--print-lift, -11%);
-  }
-  /* A pressed print is pulled: it follows the pointer with a rubber band's
-     resistance, on the same `translate` as the lift with the pull on top,
-     and turns further as it goes (the tilt rule below, given more reach).
-     Neither waits on a transition while the press lasts, and the lean and
-     the drop snap too, so the reset before a flight still measures the hand
-     at rest in one frame. Let go, the print springs back into the hand:
-     usePhotoStackTilt animates the way home itself, since the print becomes
-     the flight's placeholder a beat later and the placeholder has no
-     transition to carry it. */
-  .personal-photos-trigger:not([data-photo-away]) .personal-photos-print[data-print-drag] {
-    translate: var(--print-drag-x, 0px) calc(var(--print-lift, -11%) + var(--print-drag-y, 0px));
-    transition: translate 0s, rotate 0s;
-  }
+  transition: transform var(--duration-slow) var(--ease-smooth);
 }
 
 .personal-photos-print:first-child { margin-left: 0; }
@@ -185,7 +118,7 @@
    `arcPlacement`) on `translate`, which cancels the print's place in the
    row, and half its lean taken back on `rotate`, so the lean and the drop on
    `transform` are the arc from the first frame; the `backwards` fill hands
-   both back to the lift and the pointer's turn the moment a print lands.
+   both back to the resting print styles the moment a print lands.
    `usePhotoFanDeal` holds a fan that is still below the fold in the pile and
    lets it go. While the deal runs `translate` and `rotate` carry no
    transition, or the pile letting go would start one alongside the spring. */
@@ -212,9 +145,9 @@
 
 /* Leave a quiet card-shaped marker where each expanded photo belongs. It
    holds still: the return flight is aimed at the rect this print has when the
-   close is measured, and anything that would carry it past that point — the
-   un-lift after a click on a hovered print, or a new resting tilt when the
-   preview re-anchors on close and the photo lands in another slot — has to
+   close is measured, and anything that would carry it past that point — a
+   hover angle returning to rest, or a new resting tilt when the preview
+   re-anchors on close and the photo lands in another slot — has to
    snap rather than glide, or the photo comes down beside its frame. */
 .personal-photos-print[data-photo-away] {
   background: #f2f2f2;
@@ -242,13 +175,9 @@
   border-radius: 1px;
 }
 
-/* A pointer moving over the tile leans every print a little further out and
-   settles the whole hand a few percent down its own curve. Each print takes
-   its lean off the arc by its own wobble, so the row loosens the way a hand
-   of prints does rather than stepping through even angles. Pointer movement
-   tilts the whole hand, and the one print under the pointer slides up (the
-   lift rule above); nothing is enlarged or reordered, so the middle remains
-   in front throughout.
+/* A pointer moving over the tile only nudges each print's existing angle by
+   its own small wobble. Position, scale and depth do not change, so the card
+   responds without opening the fan or pulling one print out of the hand.
 
    `data-fan-open` is set by usePhotoStackTilt on pointer travel and cleared
    when the pointer leaves, so the hand never opens on `:hover` or on the
@@ -259,7 +188,7 @@
    a transition, like everything else it does while its photo is out. */
 @media (prefers-reduced-motion: no-preference) {
   .personal-photos-trigger[data-fan-open]:not([data-photo-away]) .personal-photos-print {
-    transform: translateY(var(--print-fan-offset-y)) rotate(var(--print-fan-tilt));
+    transform: translate(var(--print-offset-x, 0%), var(--print-offset-y)) rotate(var(--print-hover-tilt));
   }
 }
 
@@ -275,9 +204,10 @@
 .personal-photos,
 .personal-photos-backdrop,
 .personal-photos-dialog {
-  /* Apple's CAMediaTimingFunction.default, with a quick, unified gallery reveal.
+  /* Apple's CAMediaTimingFunction.default: a slower reveal lets the photos
+     ease into place together; closing keeps its quick return.
      https://developer.apple.com/documentation/quartzcore/camediatimingfunctionname/default */
-  --photo-open-duration: var(--duration-base);
+  --photo-open-duration: var(--duration-slow);
   --photo-close-duration: var(--duration-base);
   --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
@@ -334,7 +264,7 @@
   transition-duration: var(--photo-close-duration);
 }
 
-/* Grid or sphere: a frosted bar at the bottom of the stage, after
+/* A frosted layout bar over the bottom of the stage, after
    transitions.dev's sliding tabs — the site's tile grey made translucent
    over a small, saturated blur, with a white highlight catching its top edge
    and a glass-white thumb under the picked label. The thumb is sized and
@@ -387,7 +317,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2rem;
+  min-height: 2.5rem;
   padding: 0 0.75rem;
   border: 0;
   border-radius: inherit;
@@ -408,6 +338,40 @@
   outline-offset: -2px;
 }
 
+.personal-photos-wall-close {
+  position: absolute;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 44px;
+  height: 44px;
+  padding: 12px 1rem;
+  translate: -50% 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  scale: 1;
+  transition: scale var(--duration-fast) var(--ease-smooth);
+}
+.personal-photos-wall-close svg { flex: 0 0 auto; }
+.personal-photos-wall-close:active { scale: 0.96; }
+.personal-photos-wall-close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 /* The stage: the whole screen takes the drag, so a turn can start anywhere,
    and a click on its own margin — outside the globe — dismisses. Nothing
    scrolls; the wheel and a swipe turn the globe instead. */
@@ -426,18 +390,96 @@
 
 /* The grid: one sheet of every photo. It scrolls natively — wheel, swipe,
    keys — with nothing snapping or dragging; the margin around the masonry
-   dismisses. Room above the first row for the toggle, and below the last
-   for its caption and shadow. */
-.personal-photos-sheet[data-layout="grid"] {
+   dismisses. Room below the last row for its caption, shadow, and the layout
+   picker; the first row only needs the normal stage gutter. */
+.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"]) {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
-  padding: 2rem var(--photo-gutter) 8rem;
+  padding: 1.25rem var(--photo-gutter) 6rem;
   touch-action: auto;
   cursor: auto;
   scrollbar-width: none;
+  top: 10dvh;
+  right: 0.25rem;
+  left: 0.25rem;
+  padding-top: 4.5rem;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--canvas);
+  box-shadow: var(--shadow-overlay);
+  translate: 0 var(--sheet-drag-y, 0);
+  transition: translate var(--duration-base) var(--ease-smooth);
 }
-.personal-photos-sheet[data-layout="grid"]::-webkit-scrollbar { display: none; }
+.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"])::-webkit-scrollbar { display: none; }
+
+.personal-photos-grid-chrome {
+  position: absolute;
+  top: calc(10dvh + 0.5rem);
+  right: 0.75rem;
+  left: 0.75rem;
+  z-index: 2;
+  height: 2.5rem;
+  translate: 0 var(--sheet-drag-y, 0);
+  pointer-events: none;
+  transition: translate var(--duration-base) var(--ease-smooth);
+}
+.personal-photos-sheet-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 2.5rem;
+  padding: 0;
+  translate: -50% 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  pointer-events: auto;
+}
+.personal-photos-sheet-handle span {
+  width: 2.25rem;
+  height: 0.25rem;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--muted) 48%, transparent);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+}
+.personal-photos-sheet-handle:hover span { background: var(--muted); }
+.personal-photos-sheet-handle:active { cursor: grabbing; }
+.personal-photos-sheet-handle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.personal-photos-grid-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+  color: var(--ink);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background-color var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-smooth);
+}
+.personal-photos-grid-close:hover { background: var(--mosaic-card-surface); }
+.personal-photos-grid-close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.personal-photos-grid-close:active { transform: scale(0.96); }
+.personal-photos-dialog[data-sheet-dragging] .personal-photos-sheet,
+.personal-photos-dialog[data-sheet-dragging] .personal-photos-grid-chrome { transition: none; }
+.personal-photos-dialog[data-sheet-dragging] .personal-photos-sheet-handle { cursor: grabbing; }
 
 /* Columns the component fills itself, rather than a CSS multi-column. Both
    lay out the same, but `columns` fills the first column top to bottom before
@@ -448,7 +490,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--photo-column-gap);
-  width: min(100%, 64rem);
+  width: 100%;
   margin-inline: auto;
 }
 
@@ -516,7 +558,7 @@
 .personal-photos-column:has(> [data-held]) { z-index: 1; }
 /* A close asked for over a held photo, or inside its glide back, snaps the
    grid to rest so the flight measures the slides where they will stay. */
-.personal-photos-sheet[data-hold-snap] .personal-photos-slide { transition: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .personal-photos-masonry .personal-photos-slide[data-held] {
     transform: translate(var(--hold-dx, 0px), var(--hold-dy, 0px)) scale(var(--hold-scale, 1));
@@ -586,7 +628,10 @@
 .personal-photos-sphere,
 .personal-photos-layout,
 .personal-photos-layout::before,
-.personal-photos-layout button { corner-shape: round; }
+.personal-photos-layout button,
+.personal-photos-grid-close,
+.personal-photos-wall-close,
+.personal-photos-sheet-handle { corner-shape: round; }
 
 /* The held photo's name, just under it. usePhotoSphere places it from the
    photo's drawn box every frame and fades it with the photo's own zoom, so
@@ -617,10 +662,10 @@
 /* On the grid the caption's fade is a transition rather than a frame-by-
    frame value: in, once the photo is most of the way to the centre; out,
    at once. */
-.personal-photos-sheet[data-layout="grid"] .personal-photos-stage-caption {
-  /* The component measures this resolved gap when choosing above or below
-     the photo, then offsets its anchor by the same margin. */
-  margin-top: var(--stage-caption-gap);
+.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"]) .personal-photos-stage-caption {
+  /* The component hands over the held photo's bottom edge; the gap is the
+     stylesheet's, as the globe's is. */
+  top: calc(var(--stage-caption-y, 100%) + var(--stage-caption-gap));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .personal-photos-sheet[data-layout="grid"][data-held] .personal-photos-stage-caption {
@@ -667,6 +712,16 @@
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
+}
+/* Level the distant waterline, which falls about 32px over 600px in the
+   source. The 1.09 scale covers the rotated corners at its 3:2 aspect ratio. */
+.personal-photo-level {
+  display: block;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.personal-photo-level img {
+  transform: rotate(-3deg) scale(1.09);
 }
 .personal-photos-sphere .personal-photos-slide img {
   border-radius: max(1px, calc(var(--sphere-corner-radius, var(--radius-md)) - var(--photo-frame) * var(--sphere-frame-share, 0.035)));
@@ -732,7 +787,314 @@
   .personal-photos-stack,
   .personal-photos-backdrop,
   .personal-photos-dialog,
+  .personal-photos-wall-close,
+  .personal-photos-grid-chrome,
+  .personal-photos-sheet,
   .personal-photos-masonry .personal-photos-slide,
   .personal-photos-stage-caption,
   .personal-photos-layout::before { transition: none; }
 }
+
+/* Wall: a loose, edge-to-edge arrangement using the grid's selection and
+   flight machinery. */
+.personal-photos-backdrop[data-layout="wall"] { background: var(--canvas); }
+.personal-photos-sheet[data-layout="wall"] {
+  --wall-release-duration: var(--duration-base);
+  /* The backdrop owns the white canvas. A second surface here would cover
+     borrowed flights, which travel below the popup and above the backdrop. */
+  background: transparent;
+  inset: 0;
+  border-radius: 0;
+  box-shadow: none;
+  translate: none;
+  padding: 0;
+  /* The camera owns panning; focusing caption controls must not scroll the stage. */
+  overflow: clip;
+  touch-action: none;
+  cursor: grab;
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-masonry {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: max(80rem, 125vw);
+  margin: 0;
+  transform-origin: 0 0;
+  translate: var(--wall-focus-x, 0px) var(--wall-focus-y, 0px);
+  transition: translate var(--grid-focus-duration) var(--ease-smooth);
+  gap: clamp(1.5rem, 4vw, 5rem);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-column {
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 5rem);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(even) {
+  padding-top: 6rem;
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(3n) {
+  padding-top: 3rem;
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
+  --photo-padding: 0px;
+  --photo-radius: var(--radius-md);
+  width: 88%;
+  box-shadow: var(--shadow-ring);
+  transition: transform var(--wall-release-duration) var(--ease-standard), scale var(--wall-release-duration) var(--ease-standard);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide:nth-child(even) {
+  width: 100%;
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
+.personal-photos-sheet[data-layout="wall"][data-held] .personal-photos-slide:not([data-held]) {
+  opacity: 0.12;
+  /* Only selection fades. Flights hide their destinations synchronously. */
+  transition: transform var(--grid-focus-duration) var(--ease-smooth), scale var(--grid-focus-duration) var(--ease-smooth), opacity var(--grid-focus-duration) var(--ease-smooth);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] {
+  --photo-radius: calc(var(--radius-md) / var(--hold-scale, 1));
+  transition-duration: var(--grid-focus-duration), var(--duration-base);
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-stage-caption {
+  visibility: var(--photo-label-visibility, hidden);
+  font-size: var(--text-sm);
+  /* Position follows the drawn photo each frame, visible from selection. */
+  transition: opacity var(--duration-fast) var(--ease-standard);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--photo-gutter));
+  padding: 0;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-ring);
+  text-shadow: none;
+}
+
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide:focus-visible {
+  outline-color: var(--focus-ring);
+}
+/* Must win over the wall's selection transitions before measuring a close. */
+.personal-photos-sheet[data-hold-snap] .personal-photos-slide { transition: none; }
+
+.personal-photos-sheet[data-wall-dragging],
+.personal-photos-sheet[data-wall-dragging] .personal-photos-slide { cursor: grabbing; }
+/* A fixed ring fills an endless wall. Columns repeat on their own height
+   so a shorter column never leaves a blank band below its last photograph. */
+.personal-photos-wall-panel {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1.5rem, 4vw, 5rem);
+  width: 100%;
+  padding-right: clamp(1.5rem, 4vw, 5rem);
+}
+.personal-photos-wall-panel:first-child { position: relative; }
+.personal-photos-wall-panel:has(.personal-photos-slide[data-held]) { z-index: 1; }
+
+.personal-photos-wall-panel .personal-photos-column {
+  position: relative;
+  padding-bottom: clamp(1.5rem, 4vw, 5rem);
+}
+/* Recycled rows share a horizontal panel box. Empty portions of a later
+   panel must not intercept a photo in an earlier one. */
+.personal-photos-wall-panel .personal-photos-slide { pointer-events: auto; }
+
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide:not([data-held]) {
+  transform: translate(var(--wall-shift-x, 0px), var(--wall-shift-y, 0px));
+}
+.personal-photos-sheet[data-layout="wall"][data-hold-snap] .personal-photos-masonry { transition: none; }
+
+/* Inspector controls live outside the draggable stage so reading and browsing
+   never starts a camera gesture. Their placement follows the held print. */
+.personal-photo-inspector {
+  visibility: var(--photo-label-visibility, hidden);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+.personal-photo-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  color: var(--ink);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: scale var(--duration-fast) var(--ease-smooth);
+}
+.personal-photo-control:active { scale: 0.96; }
+.personal-photo-control:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.personal-photo-book {
+  gap: 0.25rem;
+  min-width: 2.5rem;
+  position: relative;
+  min-height: 2rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  box-sizing: border-box;
+  font: inherit;
+  background: transparent;
+  color: inherit;
+  transition: background-color var(--duration-quick) var(--ease-standard), scale var(--duration-fast) var(--ease-smooth);
+}
+.personal-photo-book::before {
+  content: "";
+  position: absolute;
+  inset: -0.25rem 0;
+}
+@media (hover: hover) {
+  .personal-photo-book:hover { background-color: var(--mosaic-card-surface); }
+}
+.personal-photo-book[aria-expanded="true"] { color: var(--muted); }
+/* Metadata sits within the print; only the backdrop fades toward its top. */
+.personal-photo-details {
+  position: absolute;
+  left: var(--detail-photo-left);
+  top: var(--detail-photo-bottom);
+  translate: 0 -100%;
+  width: var(--detail-photo-width);
+  max-height: var(--detail-photo-height);
+  overflow: auto;
+  isolation: isolate;
+  padding: 6rem 1.5rem 1.5rem;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  color: white;
+  pointer-events: auto;
+}
+.personal-photo-details-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+/* Aligned image copies avoid sampling the inspector's own animated text.
+   Each softer layer reaches less far upward, following the reading fades. */
+.personal-photo-details-backdrop > span {
+  position: absolute;
+  inset: 0;
+  mask-image: var(--photo-detail-blur-mask);
+  -webkit-mask-image: var(--photo-detail-blur-mask);
+}
+.personal-photo-details-backdrop > span::before {
+  content: "";
+  position: absolute;
+  inset: -36px;
+  background-image: var(--detail-photo-image);
+  background-size: var(--detail-photo-width) var(--detail-photo-height);
+  background-position: center calc(100% - 36px);
+  background-repeat: no-repeat;
+  filter: blur(var(--photo-detail-blur));
+}
+.personal-photo-details-backdrop > span:nth-child(1) {
+  --photo-detail-blur: calc(12px * 0.12);
+  --photo-detail-blur-mask: linear-gradient(to top, #000 48%, rgb(0 0 0 / 0.54) 65.8%, rgb(0 0 0 / 0.28) 77.5%, rgb(0 0 0 / 0.13) 85.9%, rgb(0 0 0 / 0.04) 92.6%, transparent 100%);
+}
+.personal-photo-details-backdrop > span:nth-child(2) {
+  --photo-detail-blur: calc(12px * 0.3);
+  --photo-detail-blur-mask: linear-gradient(to top, #000 30%, rgb(0 0 0 / 0.54) 45%, rgb(0 0 0 / 0.28) 55%, rgb(0 0 0 / 0.13) 62.1%, rgb(0 0 0 / 0.04) 67.8%, transparent 74%);
+}
+.personal-photo-details-backdrop > span:nth-child(3) {
+  --photo-detail-blur: calc(12px * 0.62);
+  --photo-detail-blur-mask: linear-gradient(to top, #000 17%, rgb(0 0 0 / 0.54) 29%, rgb(0 0 0 / 0.28) 36.8%, rgb(0 0 0 / 0.13) 42.5%, rgb(0 0 0 / 0.04) 47%, transparent 52%);
+}
+.personal-photo-details-backdrop > span:nth-child(4) {
+  --photo-detail-blur: calc(12px * 1);
+  --photo-detail-blur-mask: linear-gradient(to top, #000 0%, rgb(0 0 0 / 0.54) 11.3%, rgb(0 0 0 / 0.28) 18.7%, rgb(0 0 0 / 0.13) 24.1%, rgb(0 0 0 / 0.04) 28.3%, transparent 33%);
+}
+.personal-photo-details-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    rgb(0 0 0 / 0.04) 10%,
+    rgb(0 0 0 / 0.14) 20%,
+    rgb(0 0 0 / 0.29) 30%,
+    rgb(0 0 0 / 0.45) 40%,
+    rgb(0 0 0 / 0.58) 50%,
+    rgb(0 0 0 / 0.66) 65%,
+    rgb(0 0 0 / 0.71) 80%,
+    rgb(0 0 0 / 0.72) 100%);
+}
+/* One reveal keeps every line readable together, with no delayed text.
+   Replay on disclosure open while the image and overlay geometry stay fixed. */
+.personal-photo-details:not([hidden]) > :is(h2, .personal-photo-description, dl) {
+  animation: personal-photo-details-rise var(--duration-base) var(--ease-standard) both;
+}
+.personal-photo-details:not([hidden]) > .personal-photo-details-backdrop {
+  animation: personal-photo-details-fade var(--duration-base) var(--ease-standard) both;
+}
+@keyframes personal-photo-details-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes personal-photo-details-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.personal-photo-details h2 { margin: 0; font-size: var(--text-sm); font-weight: 500; }
+.personal-photo-description { margin: 0.25rem 0 0; line-height: 1.6; text-wrap: pretty; }
+.personal-photo-details dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0 0; line-height: 1.5; }
+.personal-photo-details dt { font-size: var(--text-xs); }
+.personal-photo-details dd { margin: 0.5rem 0 0; font-size: var(--text-xs); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+@media (max-width: 699.98px) {
+  .personal-photo-details { padding: 4rem 1rem 1rem; }
+  .personal-photo-details dl { gap: 0.75rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .personal-photo-control, .personal-photo-book, .personal-photo-details { transition: none; }
+  .personal-photo-details:not([hidden]) > * { animation: none; }
+}
+
+/* Guidance and Close sit outside the draggable photo wall. */
+.personal-photos-wall-controls {
+  position: absolute;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 1;
+  translate: -50% 0;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  pointer-events: none;
+}
+.personal-photos-wall-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.personal-photos-wall-toolbar .personal-photos-wall-close {
+  position: static;
+  translate: none;
+}
+.personal-photos-wall-hint {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+.personal-photo-details-chevron {
+  flex: 0 0 auto;
+  transition: rotate var(--duration-fast) var(--ease-smooth);
+}
+.personal-photo-book[aria-expanded="true"] .personal-photo-details-chevron { rotate: 180deg; }

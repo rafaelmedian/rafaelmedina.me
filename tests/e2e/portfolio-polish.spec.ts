@@ -61,6 +61,15 @@ test("hydrates the prerendered portfolio without browser errors", async ({ page,
   expect(errors).toEqual([])
 })
 
+test("keeps the profile name and role visually connected", async ({ page }) => {
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const meta = await page.locator(".mosaic-profile-meta").boundingBox()
+  expect(meta).not.toBeNull()
+  expect(meta!.height).toBeLessThanOrEqual(43)
+})
+
 test("compresses a luminous layered gradient into view with a fresh palette for each pull", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
