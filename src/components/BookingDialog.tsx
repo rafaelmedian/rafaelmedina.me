@@ -1,4 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog"
+import { X } from "lucide-react"
 import { useEffect, useRef, useState, type RefObject } from "react"
 
 type BookingDialogProps = {
@@ -56,16 +57,15 @@ export function BookingDialog({ bookingUrl, availabilityLabel, open, onOpenChang
           }}
         >
           <Dialog.Popup className="booking-popup" ref={popupRef} initialFocus={popupRef} finalFocus={returnFocus}>
-            {/* The dialog wears no chrome: the calendar it frames has its own
-                title, its own month, and its own everything, and a header
-                above it was a second set of the same. The title and subtitle
-                stay as text a screen reader can reach, because a dialog still
-                has to say what it is — they are just not drawn. Escape and a
-                press outside close it. */}
+            {/* The calendar supplies its own heading. Keep a visible way out
+                above the iframe, including while it loads or scrolls. */}
             <Dialog.Title className="sr-only">Book a call</Dialog.Title>
             <Dialog.Description className="sr-only">
               {availabilityLabel} · 30 minutes, on Cal.com
             </Dialog.Description>
+            <Dialog.Close className="preview-gallery-nav booking-close" aria-label="Close booking">
+              <X className="preview-gallery-nav-icon" aria-hidden="true" />
+            </Dialog.Close>
 
             <div
               className={`booking-frame t-skel${isCalendarReady ? " is-revealed" : ""}`}

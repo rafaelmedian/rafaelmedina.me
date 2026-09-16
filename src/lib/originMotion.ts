@@ -31,6 +31,10 @@ const originScaleMin = 0.92
 const originScaleMax = 1
 // Used when the anchor is off-screen: a plain 20px lift, no travel.
 const originFallback = { dx: 0, dy: 20, scale: 0.96 }
+// Match the gallery's full-screen layout. Its entrance lifts and its exit
+// lowers, independent of the tile's position, without scaling the viewport.
+const verticalTravelQuery = "(max-width: 699.98px), (hover: none), (pointer: coarse)"
+const verticalOffset = { dx: 0, dy: originFallback.dy, scale: 1 }
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 
@@ -167,8 +171,11 @@ export function useOriginTravel(options: OriginTravelOptions) {
 
     // The node sits at rest here (any in-flight animation was cancelled), so
     // this is its untransformed target geometry.
-    const originRect = getOriginRect()
-    const offset = (originRect && getOriginOffset(originRect, node.getBoundingClientRect())) ?? originFallback
+    const verticalOnly = window.matchMedia(verticalTravelQuery).matches
+    const originRect = verticalOnly ? null : getOriginRect()
+    const offset = verticalOnly
+      ? verticalOffset
+      : (originRect && getOriginOffset(originRect, node.getBoundingClientRect())) ?? originFallback
     const durationProperty = mode === "open" ? openDurationProperty : closeDurationProperty
 
     const flight = node.animate(buildOriginKeyframes(mode, offset), {

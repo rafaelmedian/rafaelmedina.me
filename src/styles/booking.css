@@ -74,6 +74,13 @@
   transition-duration: var(--duration-quick);
 }
 
+.booking-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1;
+}
+
 /* The last resort inside the loading line, once the frame has had its six
    seconds and shown nothing. It used to sit in a header above the calendar. */
 .booking-external {
@@ -97,6 +104,7 @@
   --reveal-blur: var(--blur-reveal);
   --reveal-ease: var(--ease-standard);
   position: relative;
+  isolation: isolate;
   display: grid;
   min-height: 0;
   /* Cal.com paints this same neutral above and below its calendar. Extending it

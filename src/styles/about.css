@@ -357,11 +357,8 @@
 
 /* --------------------------------------------------- about sheet services --- */
 
-/* The closing block, set as a sibling of the work history stack: same column
-   width, same entry grid, same reading step. What changes is the left column
-   -- an engagement shape where the résumé carries dates -- so a reader who has
-   just scanned the history recognises the shape and reads only the right-hand
-   side. */
+/* The closing block shares the process stack's column and reading step.
+   Each engagement shape sits above its title and description on one left edge. */
 .mosaic-about-services {
   position: relative;
   width: 100%;
@@ -394,7 +391,7 @@
   gap: 3rem;
 }
 
-/* The dates column's ink and step, under its own name: this column holds how
+/* The dates column's ink and step, under its own name: this label holds how
    long an engagement runs, not when one happened. */
 .mosaic-about-body .mosaic-about-service-shape {
   font-size: var(--text-sm);
@@ -585,10 +582,8 @@
 /* ---------------------------------------------------- about sheet process --- */
 
 /* What the weeks between the marks and the price list look like, set as a
-   third sibling of those two stacks: same 36rem column, same two-column entry
-   grid, same reading step. The left column carries the step's number -- the
-   same 01/02/03 the table of contents numbers the page with -- where Services
-   carries a shape and the résumé carries dates. */
+   third sibling of those two stacks: same 36rem column and reading step.
+   Each number sits above its title and description on one left edge. */
 .mosaic-about-process {
   position: relative;
   width: 100%;
@@ -616,6 +611,12 @@
 .mosaic-about-process-list {
   margin-top: 1.5rem;
   gap: 2rem;
+}
+
+.mosaic-about-process-list > .mosaic-about-work-entry,
+.mosaic-about-services-list > .mosaic-about-work-entry {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.35rem;
 }
 
 .mosaic-about-body .mosaic-about-process-step {

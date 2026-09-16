@@ -4,6 +4,7 @@ import type { WritingId } from "./writingIds"
 import { portfolioCards } from "./portfolio"
 
 export type WritingImage = {
+  sourceUrl?: string
   src: string
   alt: string
   width?: number
@@ -103,6 +104,44 @@ export const writings: Writing[] = [
       { at: 0, place: "right", text: "The diff says what. I still need the why." },
     ],
     sections: [
+      {
+        heading: "Three ways to use it",
+        paragraphs: [
+          "For a visual fix, try: `Use review-ready-prs to prepare this mobile toolbar fix for review. Capture the same viewport before and after, explain the alignment change, and report the checks that actually ran.` The result should let someone compare the UI and understand the reason for the change without running the branch.",
+          "For a refactor, try: `Use review-ready-prs to separate this data-loading refactor from the behavior change. Explain the old and new request paths, and keep each commit independently reviewable.` A small flow diagram is more useful here than a screenshot of an unchanged page.",
+          "For a branch that is already finished, try: `Use review-ready-prs to audit this branch and draft its PR description. Match the summary to the commits, identify missing evidence, and do not push or rewrite history.` This makes the skill useful as a final review pass as well as a guide while building.",
+        ],
+      },
+      {
+        heading: "A small fix on GitHub",
+        paragraphs: [
+          "The notes Back-button fix is a compact example of these conventions. Its description names the visible problem, separates the layout correction from the regression test, and reports both the targeted pass and the failures in the wider suite. That last detail lets the reviewer distinguish what was verified from what still needs attention.",
+          "These screenshots show real pull requests from this site. They illustrate the review format; they are not a claim that the skill generated those earlier descriptions.",
+        ],
+        image: {
+          src: "/writings/review-ready-prs/github-small-fix.webp",
+          alt: "GitHub PR 190 description with two numbered changes and verification that distinguishes the passing targeted test from failures in the full suite.",
+          width: 1268,
+          height: 514,
+          caption: "Read PR #190: the layout fix, its regression test, and the verification results.",
+          sourceUrl: "https://github.com/rafaelmedian/rafaelmedina.me/pull/190",
+        },
+      },
+      {
+        heading: "A larger change on GitHub",
+        paragraphs: [
+          "The photo-wall PR needs more room. Its opening describes the finished interaction, then the ordered list traces the changes that made it possible. A reviewer can follow framing, layout, gestures, and tests as separate decisions instead of unpacking one large implementation summary.",
+          "For a change like this, I would also ask the skill for a short recording of selecting, panning, and closing the wall. The commit list explains the work; a recording shows whether the interaction holds together.",
+        ],
+        image: {
+          src: "/writings/review-ready-prs/github-feature.webp",
+          alt: "Excerpt of GitHub PR 194 showing the photo-wall overview followed by changes listed in commit order.",
+          width: 1268,
+          height: 1100,
+          caption: "Read PR #194: an excerpt of the photo-wall overview and ordered changes.",
+          sourceUrl: "https://github.com/rafaelmedian/rafaelmedina.me/pull/194",
+        },
+      },
       {
         heading: "The story starts in the commits",
         paragraphs: [

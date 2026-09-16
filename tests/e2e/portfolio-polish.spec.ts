@@ -3330,7 +3330,7 @@ test("uses a full-bleed white viewport surface for about on desktop", async ({ p
   })
 })
 
-test("matches the selected-work bottom padding to the card spacing on mobile", async ({ page }) => {
+test("uses an 8px mobile card gap with 16px bottom clearance", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
@@ -3339,7 +3339,7 @@ test("matches the selected-work bottom padding to the card spacing on mobile", a
     return { bottomPadding: styles.paddingBottom, cardGap: styles.rowGap }
   })
 
-  expect(spacing).toEqual({ bottomPadding: "16px", cardGap: "16px" })
+  expect(spacing).toEqual({ bottomPadding: "16px", cardGap: "8px" })
 })
 
 test("shows every project immediately on mobile", async ({ page }) => {
@@ -3990,12 +3990,8 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(prevBox!.x).toBeLessThan(nextBox!.x)
   expect(nextBox!.x + nextBox!.width).toBeLessThan(mobileViewport.width / 2)
   expect(closeBox!.x).toBeGreaterThan(mobileViewport.width / 2)
-  const countBox = (await dialog.locator(".preview-gallery-count").boundingBox())!
-  expect(countBox.width).toBeGreaterThan(32)
-  expect(countBox.height).toBeGreaterThanOrEqual(32)
-  expect(countBox.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
-  expect(closeBox!.x - (countBox.x + countBox.width)).toBeCloseTo(12, 0)
-  expect(countBox.x).toBeGreaterThan(mobileViewport.width / 2)
+  // Position is available to screen readers without a visible pill.
+  await expect(dialog.locator(".preview-gallery-count")).toHaveClass(/sr-only/)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
 

@@ -356,7 +356,7 @@
   margin: 0 4px;
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  background: var(--mosaic-card-surface);
+  background: var(--canvas);
   color: var(--muted);
   font-size: var(--text-xs);
   line-height: 1.5;
