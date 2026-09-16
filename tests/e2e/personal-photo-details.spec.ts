@@ -134,14 +134,23 @@ for (const dx of [-120, 120]) {
       await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished.catch(() => {})))
     })
     const before = (await photo.boundingBox())!
+    if (motion === "no-preference") {
+      // Capture the transition as it starts; an assertion round trip can
+      // outlast its entire 200ms lifetime when the full suite is busy.
+      await photo.evaluate(element => {
+        const record = (event: Event) => {
+          if (event.target !== element || (event as TransitionEvent).propertyName !== "transform") return
+          const transition = element.getAnimations().find(animation =>
+            animation instanceof CSSTransition && animation.transitionProperty === "transform")
+          element.setAttribute("data-test-release-duration", String(transition?.effect?.getTiming().duration))
+          element.removeEventListener("transitionrun", record)
+        }
+        element.addEventListener("transitionrun", record)
+      })
+    }
     await dialog.locator(".personal-photos-sheet").dispatchEvent("wheel", { deltaX: dx, deltaY: 0 })
     await expect(photo).not.toHaveAttribute("data-held", "")
-    if (motion === "no-preference") {
-      const duration = await photo.evaluate(element => element.getAnimations()
-        .filter(animation => animation instanceof CSSTransition && animation.transitionProperty === "transform")
-        .map(animation => Number(animation.effect?.getTiming().duration))[0])
-      expect(duration).toBe(200)
-    }
+    if (motion === "no-preference") await expect(photo).toHaveAttribute("data-test-release-duration", "200")
     await photo.evaluate(async element => {
       await Promise.all(element.getAnimations().map(animation => animation.finished.catch(() => {})))
     })

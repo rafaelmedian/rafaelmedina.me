@@ -287,14 +287,15 @@ test("the fan is dealt with a wobble and only changes its angles on card hover",
   // position; hover() would scroll first.
   const label = (await preview.locator(".personal-photos-label").boundingBox())!
   await page.mouse.move(label.x + label.width / 2, label.y + label.height / 2)
-  await expect.poll(async () => {
-    const angles = await prints.evaluateAll(readAngles)
-    return angles.every((angle, index) => {
-      const change = Math.abs(angle - rest[index])
-      return change >= 1 && change <= 3
-    })
-  }).toBe(true)
-  const open = await prints.evaluateAll(readAngles)
+  // Wait for the authored destination, not merely the first frame within
+  // the allowed range; that frame can still round to a different angle.
+  const open = await prints.evaluateAll(elements => elements.map(element =>
+    Math.round(parseFloat(getComputedStyle(element).getPropertyValue("--print-hover-tilt")))))
+  await expect.poll(() => prints.evaluateAll(readAngles)).toEqual(open)
+  expect(open.every((angle, index) => {
+    const change = Math.abs(angle - rest[index])
+    return change >= 1 && change <= 3
+  })).toBe(true)
   const openDrops = await prints.evaluateAll(readDrops)
   expect(openDrops).toEqual(restDrops)
 
