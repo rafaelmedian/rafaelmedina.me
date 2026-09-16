@@ -797,7 +797,11 @@
 
 /* Wall: a loose, edge-to-edge arrangement using the grid's selection and
    flight machinery. */
-.personal-photos-backdrop[data-layout="wall"] { background: var(--canvas); }
+.personal-photos-backdrop[data-layout="wall"] {
+  /* Cover Safari chrome and rubber-band exposure outside the visual viewport. */
+  inset-block: -100lvh;
+  background: var(--canvas);
+}
 .personal-photos-sheet[data-layout="wall"] {
   --wall-release-duration: var(--duration-base);
   /* The backdrop owns the white canvas. A second surface here would cover
@@ -830,20 +834,17 @@
   gap: clamp(1.5rem, 4vw, 5rem);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(even) {
-  padding-top: 6rem;
+  margin-top: 6rem;
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(3n) {
-  padding-top: 3rem;
+  margin-top: 3rem;
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
   --photo-padding: 0px;
   --photo-radius: var(--radius-md);
-  width: 88%;
+  width: 100%;
   box-shadow: var(--shadow-ring);
   transition: transform var(--wall-release-duration) var(--ease-standard), scale var(--wall-release-duration) var(--ease-standard);
-}
-.personal-photos-sheet[data-layout="wall"] .personal-photos-slide:nth-child(even) {
-  width: 100%;
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
 .personal-photos-sheet[data-layout="wall"][data-held] .personal-photos-slide:not([data-held]) {
