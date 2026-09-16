@@ -52,6 +52,7 @@ test("records the visitor reaction that lands on a chat message", async ({ page 
   await page.goto(analyticsBaseUrl)
   await page.locator("#about-panel").evaluate(node => node.scrollIntoView({ behavior: "instant" }))
 
+  await page.locator(".about-intro-portrait-trigger").click()
   const chat = page.getByRole("region", { name: "Chat with Rafa" })
   await chat.getByRole("button", { name: "React to “Hey, I’m Rafa.”" }).click()
   await page.getByRole("menu", { name: "React to “Hey, I’m Rafa.”" })

@@ -14,6 +14,8 @@ for (const width of [320, 1440]) {
       expect(frame!.x).toBeGreaterThanOrEqual(12)
       expect(frame!.x + frame!.width).toBeLessThanOrEqual(width - 12)
       if (name === 'Chat bubble') {
+        await expect(card.getByRole('region', { name: 'Chat with Rafa' })).toHaveCount(0)
+        await card.locator('.about-intro-portrait-trigger').click()
         await expect(card.getByRole('textbox', { name: 'Your email' })).toBeVisible()
         continue
       }
@@ -38,7 +40,8 @@ test('plays one comparison video at a time and keeps the players inside their ca
   await page.goto('/intro-options')
   for (const name of ['Compact pill', 'Chat bubble', 'Stacked buttons']) {
     const card = page.getByRole('region', { name, exact: true })
-    await card.getByRole('button', { name: 'Show introduction actions' }).focus()
+    if (name === 'Chat bubble') await card.locator('.about-intro-portrait-trigger').click()
+    await card.getByRole('button', { name: 'Play introduction', exact: true }).focus()
     await card.getByRole('button', { name: 'Play introduction', exact: true }).click()
     await expect.poll(() => page.locator('video[data-recording]').evaluateAll(videos =>
       videos.filter(video => !(video as HTMLVideoElement).paused).length)).toBe(1)
