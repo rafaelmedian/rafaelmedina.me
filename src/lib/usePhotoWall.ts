@@ -6,7 +6,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 
 /** A camera over a repeating photo wall. Pointer and wheel events change only
  * its transform; React still owns selection, captions, and the dialog. */
-export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigate: () => void) {
+export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigate: () => boolean, onInteract: () => void) {
   const camera = useRef<Camera>({ x: 0, y: 0, scale: 1 })
   const active = useRef(open)
   const controls = useRef<{ zoom: (factor: number) => void; reset: () => void; scale: () => number; followFocus: (x: number, y: number) => void }>({ zoom: () => {}, reset: () => {}, scale: () => camera.current.scale, followFocus: () => {} })
@@ -26,14 +26,15 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     // Keep each physical panel in its own modulo-three cell. Only a panel
     // leaving the surrounding ring moves; visible neighbours keep their slots.
     const recycledCell = (centre: number, offset: number) => centre + ((offset - centre + 1) % 3 + 3) % 3 - 1
-    const paint = () => {
+    let focusRevision = 0
+    const paint = (recycle = true) => {
       const pose = camera.current
       const width = plane.offsetWidth
       const heights = columns[0]?.map(column => column.offsetHeight) ?? []
       // Recycle horizontally by a complete collection, and vertically by
       // each column's own period. Unequal photo ratios cannot leave a blank
       // band below a short column when its taller neighbour repeats.
-      if (width && heights.every(height => height > 0)) {
+      if (recycle && width && heights.every(height => height > 0)) {
         const column = Math.floor((stage.clientWidth / 2 - pose.x - focus.x) / (width * pose.scale))
         const rows = heights.map(height => Math.floor((stage.clientHeight / 2 - pose.y - focus.y) / (height * pose.scale)))
         const nextPlacement = `${column},${rows},${width},${heights}`
@@ -53,9 +54,21 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       const rect = stage.getBoundingClientRect()
       return { x: point.x - rect.left, y: point.y - rect.top }
     }
-    const zoom = (factor: number, from: Point, to = from) => {
-      onNavigate()
+    const releaseForNavigation = () => {
+      // Transfer the drawn selection offset into the camera before releasing.
+      // This keeps panning and zooming anchored to the visible wall.
+      const drawnFocus = getComputedStyle(plane).translate.split(" ").map(Number.parseFloat)
+      if (onNavigate()) {
+        camera.current.x += Number.isFinite(drawnFocus[0]) ? drawnFocus[0] : 0
+        camera.current.y += Number.isFinite(drawnFocus[1]) ? drawnFocus[1] : 0
+        plane.style.transition = "none"
+        plane.style.translate = "0px 0px"
+      }
       focus = { x: 0, y: 0 }
+    }
+    const zoom = (factor: number, from: Point, to = from) => {
+      onInteract()
+      releaseForNavigation()
       const pose = camera.current
       const scale = clamp(pose.scale * factor, 0.4, 2.5)
       const ratio = scale / pose.scale
@@ -63,23 +76,54 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       pose.y = to.y - (from.y - pose.y) * ratio
       pose.scale = scale
       paint()
+      if (plane.style.transition === "none") void plane.offsetWidth
     }
-    const pan = (dx: number, dy: number) => {
-      onNavigate()
-      focus = { x: 0, y: 0 }
+    const pan = (dx: number, dy: number, userInitiated = true) => {
+      if (userInitiated && (dx || dy)) onInteract()
+      releaseForNavigation()
       camera.current.x += dx
       camera.current.y += dy
       paint()
+      // Commit the equivalent camera pose without animating the offset twice.
+      if (plane.style.transition === "none") void plane.offsetWidth
     }
-    const reset = () => {
+    const reset = (userInitiated = true) => {
+      if (userInitiated) onInteract()
       onNavigate()
       focus = { x: 0, y: 0 }
       camera.current = { x: 20, y: 144, scale: stage.clientWidth < 700 ? 0.65 : 1 }
       paint()
     }
     const zoomCentre = (factor: number) => zoom(factor, { x: stage.clientWidth / 2, y: stage.clientHeight / 2 })
-    controls.current = { zoom: zoomCentre, reset, scale: () => camera.current.scale, followFocus: (x, y) => { focus = { x, y }; paint() } }
-    reset()
+    controls.current = { zoom: zoomCentre, reset, scale: () => camera.current.scale, followFocus: (x, y) => {
+      const releasing = x === 0 && y === 0 && (focus.x !== 0 || focus.y !== 0)
+      const revision = ++focusRevision
+      if (releasing) {
+        // Selection moved the wall to this photo. Keep that drawn position
+        // as the camera's new home, so zooming out only shrinks the photo.
+        const drawn = getComputedStyle(plane).translate.split(" ").map(Number.parseFloat)
+        camera.current.x += drawn[0] || 0
+        camera.current.y += drawn[1] || 0
+        plane.style.transition = "none"
+        plane.style.translate = "0px 0px"
+        paint(false)
+        void plane.offsetWidth
+      }
+      focus = { x, y }
+      plane.style.removeProperty("translate")
+      plane.style.removeProperty("transition")
+      paint(!releasing)
+      if (releasing) {
+        // Do not move a repeating panel under the photo while it shrinks.
+        // Reading animations flushes the shrink transitions; reduced
+        // motion has no transition and recycles immediately in the microtask.
+        const transitions = plane.getAnimations({ subtree: true })
+        void Promise.allSettled(transitions.map(animation => animation.finished)).then(() => {
+          if (revision === focusRevision) paint()
+        })
+      }
+    } }
+    reset(false)
 
     const wheel = (event: WheelEvent) => {
       if (!active.current) return
@@ -168,7 +212,7 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       const box = slide.getBoundingClientRect()
       const bounds = stage.getBoundingClientRect()
       if (box.left < bounds.left || box.right > bounds.right || box.top < bounds.top + 144 || box.bottom > bounds.bottom) {
-        pan(bounds.left + stage.clientWidth / 2 - (box.left + box.width / 2), bounds.top + stage.clientHeight / 2 - (box.top + box.height / 2))
+        pan(bounds.left + stage.clientWidth / 2 - (box.left + box.width / 2), bounds.top + stage.clientHeight / 2 - (box.top + box.height / 2), false)
       }
     }
     const resize = () => { onNavigate(); paint() }
@@ -186,9 +230,12 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     stage.addEventListener("focusin", focusIn)
     window.addEventListener("blur", cancel)
     return () => {
+      focusRevision++
       cancel()
       observer.disconnect()
       plane.style.removeProperty("transform")
+      plane.style.removeProperty("translate")
+      plane.style.removeProperty("transition")
       stage.removeEventListener("wheel", wheel)
       stage.removeEventListener("pointerdown", down)
       stage.removeEventListener("pointermove", move)
@@ -201,6 +248,6 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       window.removeEventListener("blur", cancel)
       controls.current = { zoom: () => {}, reset: () => {}, scale: () => 1, followFocus: () => {} }
     }
-  }, [stage, onNavigate])
+  }, [stage, onNavigate, onInteract])
   return controls
 }

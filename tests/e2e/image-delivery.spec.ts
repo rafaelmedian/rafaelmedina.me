@@ -2,31 +2,30 @@ import { expect, test } from "@playwright/test"
 import sharp from "sharp"
 import path from "node:path"
 
-// The globe advertises the held size up front: its initial candidate must
+// The wall advertises the held size up front: its initial candidate must
 // have enough pixels when a visitor enlarges the photo on a 2x display.
 for (const width of [390, 1440]) {
-  test(`photo globe chooses responsive sources at ${width}px`, async ({ browser }) => {
+  test(`photo wall chooses responsive sources at ${width}px`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 2, reducedMotion: "reduce" })
     const page = await context.newPage()
     await page.goto("/")
     await page.locator(".personal-photos-label").click()
     const photo = page.locator(".personal-photos-slide img").first()
-    // Twenty-seven photos load at once when the globe opens; under a full
+    // Twenty-seven photos load at once when the wall opens; under a full
     // parallel run the first can take longer than the default 5s to arrive.
     await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).naturalWidth), { timeout: 15_000 }).toBeGreaterThan(0)
     const source = await photo.evaluate((img) => (img as HTMLImageElement).currentSrc)
     // Read the bitmap itself: naturalWidth on a srcset image is corrected
     // for density, rather than reporting the file's available pixels.
     const bitmap = await sharp(path.resolve("public", new URL(source).pathname.slice(1))).metadata()
-    const slide = page.locator(".personal-photos-sphere .personal-photos-slide[data-photo-id]").first()
+    const slide = page.locator(".personal-photos-sheet .personal-photos-slide[data-photo-id]").first()
     await slide.focus()
     await page.keyboard.press("Enter")
-    await expect(slide).toHaveAttribute("data-sphere-held", "")
+    await expect(slide).toHaveAttribute("data-held", "")
     const required = await photo.evaluate((img) => img.getBoundingClientRect().width * devicePixelRatio)
     expect(bitmap.width).toBeGreaterThanOrEqual(required)
-    // Every tile loads eagerly: a lazy one on the far side of the globe
-    // (display: none never loads) came round to the front still blank.
-    await expect(page.locator('.personal-photos-sphere img[loading="lazy"]')).toHaveCount(0)
+    // Every tile loads eagerly so panning never reveals an unloaded photo.
+    await expect(page.locator('.personal-photos-sheet img[loading="lazy"]')).toHaveCount(0)
     await context.close()
   })
 }

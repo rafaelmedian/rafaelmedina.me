@@ -18,7 +18,7 @@ async function countAnimationFrames(page: Page) {
 async function expectAnimationFramesToSleep(page: Page, count: () => Promise<number>) {
   // The counter sees every page-wide callback, including a one-off late image
   // or ResizeObserver update. Require a sustained quiet window so continuous
-  // sphere animation still fails without sampling before the page is settled.
+  // animation loops still fail without sampling before the page is settled.
   await expect(async () => {
     const before = await count()
     await page.waitForTimeout(500)
@@ -26,48 +26,22 @@ async function expectAnimationFramesToSleep(page: Page, count: () => Promise<num
   }).toPass({ timeout: 5000 })
 }
 
-test("a settled reduced-motion globe stops animation callbacks and wakes for input", async ({ page }) => {
+test("the idle wall sleeps and keyboard panning does not start a continuous loop", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   const count = await countAnimationFrames(page)
   await openHome(page)
   await page.locator(".personal-photos-label").click()
-  const globe = page.getByRole("region", { name: "Photo globe" })
-  await expect(globe).toBeVisible()
-  // Let image uploads, the fan's handoff and dialog effects finish first.
-  await page.waitForTimeout(2000)
+  const wall = page.getByRole("region", { name: "Photo wall" })
+  await expect(wall).toBeVisible()
   await expectAnimationFramesToSleep(page, count)
-
-  const photo = globe.locator(".personal-photos-slide").first()
-  const pose = await photo.getAttribute("style")
-  await globe.focus()
-  await page.keyboard.press("ArrowRight")
-  await expect(photo).not.toHaveAttribute("style", pose!)
-  await page.waitForTimeout(250)
+  const plane = wall.locator(".personal-photos-masonry")
+  const before = await plane.evaluate(element => getComputedStyle(element).transform)
+  await wall.focus()
+  await page.keyboard.press("Shift+ArrowRight")
+  await expect.poll(() => plane.evaluate(element => getComputedStyle(element).transform)).not.toBe(before)
   await expectAnimationFramesToSleep(page, count)
   await page.keyboard.press("Escape")
-  await expect(globe).toHaveCount(0)
-})
-
-test("a held globe sleeps after its springs settle and resumes spinning after release", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  const count = await countAnimationFrames(page)
-  await openHome(page)
-  await page.locator(".personal-photos-print").nth(2).click()
-  const globe = page.getByRole("region", { name: "Photo globe" })
-  await expect(globe).toBeVisible()
-  await page.mouse.move(5, 5)
-  await page.waitForTimeout(2500)
-  await expectAnimationFramesToSleep(page, count)
-
-  await page.mouse.click(5, 5)
-  await expect(globe).toBeVisible()
-  // Beyond the front dwell, the timer must restart the idle spin.
-  await page.waitForTimeout(4500)
-  const photo = globe.locator(".personal-photos-slide").first()
-  const pose = await photo.getAttribute("style")
-  await expect(photo).not.toHaveAttribute("style", pose!)
-  await page.keyboard.press("Escape")
-  await expect(globe).toHaveCount(0)
+  await expect(wall).toHaveCount(0)
 })
 
 test("scrolling to the fan fetches only its previews until opening intent", async ({ page }) => {

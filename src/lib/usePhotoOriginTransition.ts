@@ -167,6 +167,7 @@ export function usePhotoOriginTransition(
     // of its card in a single move. Dealing them out one after another read as
     // the fan scattering rather than as one thing opening.
     const timing: KeyframeAnimationOptions = { duration, easing, fill: "both" }
+    const opaqueWall = strip.dataset.layout === "wall"
     const previousFlights = flights.current
     const returning = new Set<string | undefined>()
     flights.current = []
@@ -270,9 +271,12 @@ export function usePhotoOriginTransition(
       const currentCaptionOpacity = getComputedStyle(caption).opacity
       previous?.animations.forEach((animation) => animation.cancel())
       slide.style.opacity = "0"
-      const animations = own ? [
-        clone.animate([open ? originFrame(own) : currentFrame, open ? targetFrame : originFrame(own)], timing),
-        image.animate([open ? originImage(own) : currentImage, open ? targetImage : originImage(own)], timing),
+      // Every wall photo borrows its destination print's frame and crop,
+      // including photos tucked behind the five visible fan prints. They
+      // stay opaque and gain the same mat as they collapse into the hand.
+      const animations = own || opaqueWall ? [
+        clone.animate([open ? originFrame(source) : currentFrame, open ? targetFrame : originFrame(source)], timing),
+        image.animate([open ? originImage(source) : currentImage, open ? targetImage : originImage(source)], timing),
         caption.animate([{ opacity: open ? 0 : currentCaptionOpacity }, { opacity: open ? 1 : 0 }], timing),
       ] : open ? [
         // The same trip, run backwards. There is no print-shaped frame for
@@ -298,11 +302,6 @@ export function usePhotoOriginTransition(
       ]
       const flight = { slide, clone, animations }
       flights.current.push(flight)
-      animations[0].onfinish = () => {
-        if (!open && own) own.element.removeAttribute("data-photo-away")
-        removeFlight(flight)
-        flights.current = flights.current.filter((item) => item !== flight)
-      }
     })
 
     if (!open) {
@@ -313,12 +312,18 @@ export function usePhotoOriginTransition(
     }
 
     let disposed = false
-    if (!open) {
-      const animations = [...flights.current.flatMap((flight) => flight.animations), ...sourceFades.current]
-      void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
-        if (!disposed) onCloseComplete()
-      })
-    }
+    const batch = [...flights.current]
+    const animations = [...batch.flatMap(flight => flight.animations), ...sourceFades.current]
+    // Keep the complete stack in the flight layer until its last animation
+    // lands. Removing an early front print exposes the borrowed photos behind
+    // it: its real thumbnail lives below every flight in the page's layer.
+    void Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
+      if (disposed) return
+      if (!open) sources.forEach(({ element }) => element.removeAttribute("data-photo-away"))
+      batch.forEach(removeFlight)
+      flights.current = flights.current.filter(flight => !batch.includes(flight))
+      if (!open) onCloseComplete()
+    })
 
     const startingScrollTop = strip.scrollTop
     const interruptOnScroll = () => {

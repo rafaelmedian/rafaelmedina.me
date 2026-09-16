@@ -24,16 +24,9 @@ export function useSheetColumns() {
 export type PhotoSheetLayout = "sphere" | "grid" | "wall"
 const sheetLayoutKey = "personal-photos-layout"
 
-/** The layout the visitor last picked, so the next visit opens the way they
-    left it. Storage can throw (disabled, or a private window at quota); the
-    globe is the default either way. */
+/** Wall is the only offered layout; older saved preferences are ignored. */
 export function readSheetLayout(): PhotoSheetLayout {
-  try {
-    const saved = localStorage.getItem(sheetLayoutKey)
-    return saved === "grid" || saved === "wall" ? saved : "sphere"
-  } catch {
-    return "sphere"
-  }
+  return "wall"
 }
 
 export function saveSheetLayout(layout: PhotoSheetLayout) {
@@ -41,23 +34,5 @@ export function saveSheetLayout(layout: PhotoSheetLayout) {
     localStorage.setItem(sheetLayoutKey, layout)
   } catch {
     // Unsaved only means the next visit opens on the globe.
-  }
-}
-
-/** Wall backdrop is independent of the layout, so trying another view does
-    not discard the visitor's comparison. */
-export function readWallBackground(): boolean {
-  try {
-    return localStorage.getItem("personal-photos-wall-background") !== "off"
-  } catch {
-    return true
-  }
-}
-
-export function saveWallBackground(enabled: boolean) {
-  try {
-    localStorage.setItem("personal-photos-wall-background", enabled ? "on" : "off")
-  } catch {
-    // The current visit still uses the selected background.
   }
 }
