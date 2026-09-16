@@ -33,6 +33,9 @@ const ElasticEdgeTuner = import.meta.env.DEV
 const PhotoPrintTuner = import.meta.env.DEV
   ? lazy(() => import("./components/PhotoPrintTuner"))
   : null
+const BookingButtonTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/BookingButtonTuner"))
+  : null
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -106,6 +109,11 @@ function App({ pathname }: { pathname?: string }) {
         {isTuningPhotos && PhotoPrintTuner ? (
           <Suspense fallback={null}>
             <PhotoPrintTuner />
+          </Suspense>
+        ) : null}
+        {tuning === "booking" && BookingButtonTuner ? (
+          <Suspense fallback={null}>
+            <BookingButtonTuner />
           </Suspense>
         ) : null}
     </div>
