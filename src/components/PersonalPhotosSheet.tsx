@@ -243,8 +243,8 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
 
   /** Holds a grid photo: it glides from where it lies to the centre of the
       stage and grows to fill most of it, its caption under it. Measured
-      from the slide's layout box and its centre — the centre holds still
-      under the hover growth — against the stage's client box, so a photo
+      from the slide's layout box and its centre against the stage's client
+      box, so a photo
       at an edge or below the fold comes to the middle of the screen rather
       than growing in place off it. */
   const holdSlide = (slide: HTMLElement, photo: typeof photos[number]) => {

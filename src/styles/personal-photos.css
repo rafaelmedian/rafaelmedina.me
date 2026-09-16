@@ -504,9 +504,8 @@
   container-type: inline-size;
 }
 
-/* The same print as the globe's, at a column's width. A photo under a fine
-   pointer grows 4% in its existing stack, to say it can be held without
-   crossing over a selected neighbour; a click, Enter or Space holds it: it
+/* The same print as the globe's, at a column's width. Photos stay still on
+   hover and use the pointer cursor; a click, Enter or Space holds one: it
    glides to the centre of the stage and grows to fill
    most of it (--hold-dx/--hold-dy/--hold-scale, measured by the component)
    over the slower --grid-focus-duration, then returns on --duration-base,
@@ -522,11 +521,6 @@
   cursor: pointer;
   transform-style: preserve-3d;
   transition: transform var(--sphere-focus-duration) var(--ease-smooth), scale var(--duration-base) var(--ease-smooth);
-}
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  .personal-photos-masonry .personal-photos-slide:hover:not([data-held]) {
-    scale: 1.04;
-  }
 }
 .personal-photos-masonry .personal-photos-slide[data-held] {
   --photo-padding: calc(var(--photo-frame) * 0.035 / var(--hold-scale, 1));
