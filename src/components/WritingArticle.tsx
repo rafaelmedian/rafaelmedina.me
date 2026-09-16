@@ -152,7 +152,7 @@ function NoteImage({ image }: { image: WritingImage }) {
   return (
     <figure className="writing-reader-figure">
       <img src={image.src} alt={image.alt} width={image.width} height={image.height} loading="lazy" decoding="async" />
-      {image.caption ? <figcaption>{image.caption}</figcaption> : null}
+      {image.caption ? <figcaption>{image.sourceUrl ? <a href={image.sourceUrl} target="_blank" rel="noreferrer">{image.caption}</a> : image.caption}</figcaption> : null}
     </figure>
   )
 }
@@ -166,10 +166,6 @@ function ToolInstallCard({ tool }: { tool: WritingTool }) {
   return (
     <section className="writing-tool" aria-label={`Install ${tool.package.split("@").at(-1)}`}>
       <div className="writing-tool-heading">
-        <div>
-          <h3>Install the skill</h3>
-          <p>Use it in any agent that supports the open skills format.</p>
-        </div>
         <a href={tool.sourceUrl} target="_blank" rel="noreferrer">
           View source <ArrowUpRight size={14} aria-hidden="true" />
         </a>

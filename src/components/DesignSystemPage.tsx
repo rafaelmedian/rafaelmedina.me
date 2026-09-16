@@ -1353,7 +1353,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Tool articles place an install card after their opening paragraphs: 20px padding on --mosaic-card-surface with --radius-md and the
                 shared 5% inset hairline. Its source link keeps a 40px target. The command sits in a white --radius-sm inset at --text-xs monospace;
                 the 40px copy control uses the archive surface, swaps Copy for Copied with InlineSwap, and announces confirmation separately while
-                keeping the accessible name “Copy install command”. On phones the heading and source link stack, then the command and copy control stack.
+                keeping the accessible name “Copy install command”. The card omits a redundant heading and description. On phones the command and copy control stack.
                 Every note owns that address: `/notes/&lt;id&gt;/` is prerendered with the article, its own title, description and
                 canonical, and listed in the sitemap, the way a project owns `/work/&lt;slug&gt;/`.
                 The standalone article shares the reader's 34rem prose measure, but keeps annotations below their
