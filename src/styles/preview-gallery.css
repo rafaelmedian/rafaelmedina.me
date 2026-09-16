@@ -941,21 +941,6 @@
   text-wrap: pretty;
 }
 
-.preview-gallery-count {
-  flex: none;
-  min-height: 2rem;
-  display: inline-flex;
-  align-items: center;
-  border-radius: var(--radius-full);
-  corner-shape: round;
-  background: #f4f4f4;
-  padding: 0 0.65rem;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  white-space: pre;
-}
 
 .preview-gallery-details {
   margin: 0;
@@ -1163,6 +1148,12 @@
 }
 
 @media (max-width: 699.98px), (hover: none), (pointer: coarse) {
+  .preview-gallery-backdrop {
+    inset-block: -100lvh;
+    background: var(--canvas);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
   .preview-gallery-shell,
   .preview-gallery-shell[data-wide="true"] {
     --preview-gallery-fixed-top: env(safe-area-inset-top);
@@ -1210,15 +1201,6 @@
     column-gap: 0.75rem;
     padding: var(--preview-gallery-card-padding);
     background: var(--canvas);
-  }
-
-  /* The position belongs to the exit end of the toolbar, immediately before
-     close. Its reserved digit width keeps both control groups fixed while the
-     number swaps. */
-  .preview-gallery-count {
-    grid-column: 2;
-    grid-row: 1;
-    justify-self: end;
   }
 
   .preview-gallery-controls {

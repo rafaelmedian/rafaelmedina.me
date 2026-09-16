@@ -1180,14 +1180,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   shell adds that clearance to its own gutter wherever the pair is shown, since it hides horizontal
                   overflow and a clipped control has no way back.
                   On mobile and touch screens the preview fills the viewport with square outer corners and safe-area
-                  insets; its counter and 44px previous, next, and close controls stay pinned above the media on a white
-                  header at z-index 1. A compact position pill sits immediately before close, away from the
-                  paging group, keeping both control groups fixed. Those controls use <code>--shadow-ring</code> with
-                  the short control shadows instead of the desktop rail&rsquo;s broad overlay cast; the X sits 1px low in
-                  its box to balance that shadow&rsquo;s downward weight. The current position swaps with the TOC's 4px slide and
-                  <code>--blur-reveal</code>: 120ms out on the exit curve, 160ms in on the standard curve.
-                  Next sends it up, Previous down, including when the sequence wraps. The total stays still,
-                  and the counter reserves enough digits for the full sequence. Reduced motion swaps instantly.
+                  insets; its 44px previous, next, and close controls stay pinned above the media on a white
+                  header at z-index 1. Position is screen-reader-only on every preview, with no visible counter pill.
+                  Those controls use <code>--shadow-ring</code> with the short control shadows instead of the desktop
+                  rail&rsquo;s broad overlay cast; the X sits 1px low to balance its shadow. On mobile, an opaque
+                  --canvas backdrop extends one large viewport height above and below the screen to cover Safari chrome
+                  and rubber-band exposure without revealing the underlying page.
                   The like pill rides the line where the artwork stops: a zero-height row centres it on that
                   boundary, 1.25rem in from the card&rsquo;s right edge, half over the shot and half over the white
                   below it. It is the notes reader&rsquo;s control on the overlay tier instead of the control
@@ -1398,7 +1396,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The toolbar above keeps only its 5% black hairline while scrolled, appearing over 160ms; it never gains a
                 second drop shadow above the pinned contents rail.
                 The list slide takes the résumé's 34rem measure in the gallery card, under a "Notes and tools" title on the same column
-                edge, and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
+                edge (the mobile list adds no second horizontal inset), and hangs its pencil objects in the width the card leaves either side — a container query on the slide,
                 open from 48rem, so the compact card below 1320px lists without them however wide the window is.
                 Every note carries marginalia in Handlee on --muted, authored per paragraph rather than generated: a
                 short phrase pinned to the gutter beside the paragraph it belongs to. Two an article, one early and one
@@ -2481,8 +2479,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the photo row are separated identically and none reads as belonging to its neighbour.
                   Work history and Education are not repeated here: the résumé tile in the portraits group opens them as a
                   gallery slide, so the sheet reads as an introduction and closes on what can be bought.
-                  How I work and Services both reuse the résumé&rsquo;s two-column entry grid, changing only the left
-                  column: a step number where Services carries an engagement shape and the résumé carries dates.
+                  How I work and Services stack each step number or engagement shape above its title and
+                  description on one left edge, with a 0.35rem gap below the label.
                   The cost answer explains weekly or monthly billing based on estimated scope and duration,
                   with an optional whole-scope quote paid monthly across an agreed timeline.
                   Services ends on a nested block of common questions — hairline-separated

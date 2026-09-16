@@ -15,7 +15,6 @@ import { groupWritingsByCategory } from "../lib/writings"
 import { useGalleryPage, type GalleryPageDirection } from "../lib/useGalleryPage"
 import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
-import { InlineSwap } from "./InlineSwap"
 import { PreviewMedia } from "./PreviewMedia"
 import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
@@ -612,13 +611,11 @@ export function PreviewGalleryDialog({
                   than its first child: the card carries the paging transition,
                   and a control that slid and faded under the finger that
                   pressed it read as the button leaving rather than the slide.
-                  Outside the animated surface the counter turns over in place
-                  while the artwork and prose page behind it. */}
+                  Position remains available to assistive technology without
+                  adding a visible counter to every preview. */}
               <div className="preview-gallery-toolbar">
-                <span className="preview-gallery-count">
-                  <InlineSwap value={safeIndex + 1} direction={switchDirection === "next" ? "up" : "down"}
-                    reserve={"0".repeat(String(items.length).length)} />
-                  <span> / {items.length}</span>
+                <span className="preview-gallery-count sr-only">
+                  {safeIndex + 1} / {items.length}
                 </span>
 
                 <div className="preview-gallery-controls" role="group" aria-label="Preview controls">

@@ -3990,12 +3990,8 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(prevBox!.x).toBeLessThan(nextBox!.x)
   expect(nextBox!.x + nextBox!.width).toBeLessThan(mobileViewport.width / 2)
   expect(closeBox!.x).toBeGreaterThan(mobileViewport.width / 2)
-  const countBox = (await dialog.locator(".preview-gallery-count").boundingBox())!
-  expect(countBox.width).toBeGreaterThan(32)
-  expect(countBox.height).toBeGreaterThanOrEqual(32)
-  expect(countBox.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
-  expect(closeBox!.x - (countBox.x + countBox.width)).toBeCloseTo(12, 0)
-  expect(countBox.x).toBeGreaterThan(mobileViewport.width / 2)
+  // Position is available to screen readers without a visible pill.
+  await expect(dialog.locator(".preview-gallery-count")).toHaveClass(/sr-only/)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
 
