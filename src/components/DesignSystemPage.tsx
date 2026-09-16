@@ -1784,6 +1784,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <SiteLastUpdated />
               </div>
               <p className="ds-caption">
+                The booking dialog keeps a 44px shared round close control pinned 0.75rem from its top-right
+                corner, above the calendar during loading and scrolling.
                 Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.07)</code> hairline, labelled in <code>--muted</code> so the hero name keeps the only dark ink in that block.
                 All chips fill to <code>#e9e9e9</code>{" "}
                 for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
