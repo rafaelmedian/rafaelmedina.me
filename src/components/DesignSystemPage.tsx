@@ -2187,9 +2187,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   the deliberate crop: it is 112% of the content width, anchored at the top centre, and shows roughly
                   its upper half before continuing through the card&rsquo;s lower edge. The card keeps its top and side
                   inset but removes it below, so the crop lands on the edge rather than against an inner grey strip.
+                  Below 900px the dashboard centres vertically in its taller portrait slot with equal 0.375rem insets.
                   Nine compositions remove the pale mat entirely: Family Stories, Matcha Rewards, Matcha Token,
                   Matcha Pro, Matcha trade page, Matcha on mobile, Wallet, Homepage, and
                   Security. Family Stories anchors to <code>center bottom</code> so its devices meet the lower edge.
+                  Below 900px it scales to 1.3 around that bottom centre, enlarging the phones inside the tile.
                   Rewards positions its two complete banners independently — diagonal on desktop and stacked below
                   900px — so their rounded ends remain inside the card at every slot ratio. Token, Pro, the trade page,
                   and Matcha on mobile keep their 4:3 exports contained while the card is painted the flat colour the
