@@ -1,5 +1,4 @@
 import { useEffect } from "react"
-import { ArrowUpRight } from "./NavigationIcons"
 
 import { siteLinks } from "../data/portfolio"
 import { resumeItemId, updatePageMetadata } from "../lib/projectMetadata"
@@ -21,7 +20,7 @@ export function ResumePage() {
         <a href={`mailto:${siteLinks.email}`}>Contact Rafael</a>
       </nav>
       <header>
-        <h1 className="standalone-title">Résumé</h1>
+        <h1 className="standalone-title">Resume</h1>
         <p className="standalone-description">
           Ten years of product design across web3, fintech, and consumer products.
         </p>
@@ -30,7 +29,7 @@ export function ResumePage() {
         <ResumeContent level={2} />
         <p className="mosaic-about-resume-download">
           <a href={siteLinks.resumePdf} target="_blank" rel="noreferrer" className="mosaic-about-link">
-            View resume PDF <ArrowUpRight size={16} aria-hidden="true" />
+            View PDF
           </a>
         </p>
       </div>

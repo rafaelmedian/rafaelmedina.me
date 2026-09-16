@@ -1612,39 +1612,27 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 which the rail&rsquo;s <code>aria-keyshortcuts</code> narrow to match. Opening focuses the card
                 rather than the popup on every slide, because the card is the surface that scrolls.
                 Work history and Education use the same live <code>cv.ts</code> content
-                as About, under a “Résumé” title with no repeated body heading. The title stays pinned to the
+                as About, under a “Resume” title with no repeated body heading. The title stays pinned to the
                 card&rsquo;s top edge while its document scrolls and picks up the same quiet divider shadow as the
                 Notes toolbar once content passes beneath it. Its opaque background extends through the card&rsquo;s
                 top padding so scrolling content cannot reappear above the title; Education uses weight 600. A project print pages the
                 gallery to that project rather than leaving for its page.
-                “View resume PDF” opens the canonical PDF in a new tab and sits at the right of the sticky résumé
+                “View PDF” opens the canonical PDF in a new tab and sits at the right of the sticky résumé
                 heading, so it remains available while the document scrolls.
                 Education follows the same institution-and-date heading, credential, location, and description
                 structure as the work entries. About no longer carries a résumé at all — the sheet keeps its
                 introduction and Services, and this reader is the only place the history is set.
               </p>
               <p>
-                In the reader, company logos sit inline with each company title in 2rem circular white badges with 0.45rem
-                padding, overlapping by 0.26rem like the work-history popover&rsquo;s logo group. Work entries keep the
-                2.5rem spacing step without individual hairlines; one established 8% hairline separates the complete
-                work history from Education.
-                Company names retain their external links but omit the prose-link underline in the résumé; the logo
-                badges keep <code>--radius-full</code>, <code>--shadow-ring</code>, and <code>--shadow-control</code>.
+                In the reader, company titles appear without logo badges. Work entries use 1.5rem block padding
+                (3rem between entries), with no top padding on the first entry and no individual hairlines;
+                one established 8% hairline separates the complete work history from Education.
+                Company names retain their external links but omit the prose-link underline in the résumé.
                 Company names, dates, locations, and descriptions reuse the shared résumé styles in
                 <code>about.css</code>: <code>--text-sm</code>, weight 400, 1.5 line-height, and -0.00563rem tracking.
                 Each role and location share one wrapping metadata row, separated by a muted middle dot.
-                Four selected Matcha screenshots sit below the description as loose photo prints. They are sized by
-                image height — <code>clamp(2.8rem, 12vw, 4.4rem)</code>, so the row shrinks to fit a phone — and each
-                width follows its own 4:3 crop, which is what keeps the pile on the sheet&rsquo;s measure at every
-                size. They lap over each other by 35% of that height, at -7, 2, -2, and
-                -5 degree tilts. Each print carries a 0.25rem white mat in <code>--canvas</code>, with
-                <code>--radius-sm</code> outer corners and an inner image radius of
-                <code>calc(var(--radius-sm) - 0.25rem)</code>. The mat carries <code>--shadow-ring</code> and
-                <code>--shadow-control-hover</code>. Keyboard focus raises a print above its neighbours to keep
-                its focus ring visible; hover keeps the pile&rsquo;s stacking order, lifts it 0.25rem, and straightens it
-                to 0 degrees over <code>--duration-quick</code>, which reduced motion removes.
-                They load the same <code>-480w</code>/<code>-960w</code> variants the grid tiles do, declared against
-                that rendered width rather than a full-width slot. At wide reader widths, a pencil, cup, and sheet
+                Multi-point descriptions use disc bullets with a 1.25rem inset and 0.6rem between points.
+                At wide reader widths, a pencil (3rem), cup (3.5rem), and sheet (3.25rem)
                 reuse the Notes archive&rsquo;s generated three-frame masks in the otherwise empty margins. Their rail
                 begins 2.5rem beyond the reading column and distributes each object through the remaining gutter, so
                 the marks stay clear of the copy on both sides. Hovering or focusing their adjacent role retraces the

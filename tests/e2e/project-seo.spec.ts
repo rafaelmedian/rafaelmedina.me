@@ -82,11 +82,11 @@ test("the resume page ships its own metadata and the whole history without JavaS
   // The page's own h1 is "Résumé", so the entries under it are h2 and
   // the schools h3: the same component sits under an h2 in the About sheet,
   // where it renders one level down.
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Résumé")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Resume")
   await expect(page.getByRole("heading", { level: 2, name: "Senior Product Designer at 0x Project" })).toBeVisible()
   await expect(page.getByRole("heading", { level: 2, name: "Education" })).toBeVisible()
   await expect(page.getByRole("heading", { level: 3 })).toHaveCount(2)
-  await expect(page.getByRole("link", { name: "View resume PDF" })).toHaveAttribute("href", "/rafael-medina-resume.pdf")
+  await expect(page.getByRole("link", { name: "View PDF" })).toHaveAttribute("href", "/rafael-medina-resume.pdf")
   await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")
 
   const sitemap = await (await request.get("/sitemap.xml")).text()
