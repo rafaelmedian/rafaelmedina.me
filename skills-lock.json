@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "craft-design-engineering": {
+      "source": "gustavo-fior/craft",
+      "sourceType": "github",
+      "skillPath": "skills/craft-design-engineering/SKILL.md",
+      "computedHash": "b09301f416f2d1e890b922e44e511e5a896c7c597525ac97c4ae197d0920813d"
+    },
     "make-interfaces-feel-better": {
       "source": "jakubkrehel/make-interfaces-feel-better",
       "sourceType": "github",
