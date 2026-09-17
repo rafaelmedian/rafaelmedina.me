@@ -20,7 +20,7 @@ and the global reduced-motion policy last.
 - `contact.css`: contact pills, the booking pill, and social hover cards.
 - `work-grid.css`: project rows, captions, media, and About takeover choreography.
 - `resume-tile.css`: folded-paper résumé tile artwork, reader modal, and responsive interaction.
-- `resume-content.css`: company logos, work history entries, and selected project screenshots in the reader.
+- `resume-content.css`: work history entries and margin drawings in the reader.
 - `likes.css`: the like pill shared by the notes reader and the project preview.
 - `personal-photos.css`: photo stack and carousel dialog.
 - `preview-gallery.css`: shared gallery dialog, nested Notes pages, and card motion.

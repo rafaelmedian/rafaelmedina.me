@@ -10,8 +10,6 @@ export type CvExperience = {
   /** Primary company link and decorative logo tooltip. */
   href?: string
   logoUrls?: string[]
-  /** Selected portfolio examples shown in the illustrated resume reader. */
-  projectIds?: string[]
 }
 
 export type CvExperienceClient = {
@@ -49,7 +47,6 @@ export const cvExperience: CvExperience[] = [
     // Every print here has to be a card the home grid lays out -- the reader
     // hands the click back to the feed, and a card with no tile has no preview
     // to open. `preview-shot-19` and `preview-shot-22` are off the grid.
-    projectIds: ["preview-shot-16", "preview-shot-21", "preview-shot-1", "preview-shot-14"],
     highlight: [
       "Redesigned Matcha.xyz from scratch.",
       "Introduced the monetization flows that generated sustainable revenue.",

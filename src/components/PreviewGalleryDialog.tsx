@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { useSound } from "@web-kits/audio/react"
-import { ArrowUpRight, ChevronRight, ChevronLeft, X } from "./NavigationIcons"
+import { ChevronRight, ChevronLeft, X } from "./NavigationIcons"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from "../data/portfolio"
@@ -8,7 +8,7 @@ import { isVideoSource } from "../lib/media"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
 import { revealGalleryEntry } from "../lib/galleryEntry"
-import { galleryItemTitle, resumeItemTitle, writingsItemTitle, type GalleryItem } from "../lib/galleryItems"
+import { resumeItemTitle, writingsItemTitle, type GalleryItem } from "../lib/galleryItems"
 import { originCloseEasePoints, originOpenEasePoints, toCssEasing, useOriginTravel } from "../lib/originMotion"
 import { writingSummaries } from "../data/writingIndex"
 import { groupWritingsByCategory } from "../lib/writings"
@@ -388,13 +388,7 @@ export function PreviewGalleryDialog({
     [cancelSwitchTransition, onOpenChange, playClose, playBack, runOriginAnimation, writingId, onBackFromWriting, notesPage.displayed, leavingNote],
   )
 
-  // One step of the strip, in either direction, and the only way the selection
-  // ever changes while the gallery is open: `moveBy` walks to a neighbour and
-  // `selectItemId` jumps to a named item, and both land here so a jump gets the
-  // same paging transition a neighbour does rather than a bare swap. It reports
-  // whether it moved, because a caller standing in for a link -- the résumé
-  // slide's project prints -- has to know whether to swallow the click it
-  // intercepted or hand it back to the browser.
+  // Move to a neighbouring gallery item with the shared paging transition.
   const goToIndex = useCallback(
     (nextIndex: number, nextDirection: PreviewSwitchDirection) => {
       if (switchPhase !== "idle") return false
@@ -461,34 +455,6 @@ export function PreviewGalleryDialog({
       goToIndex(wrapIndex(safeIndex + direction, items.length), direction < 0 ? "prev" : "next")
     },
     [goToIndex, items.length, safeIndex, writingId, orderedNotes, pageNote, playNext, playBack],
-  )
-
-  // The résumé slide's project prints page the gallery to that project instead
-  // of leaving for its own page: the reader is inside the gallery now, so the
-  // work it cites is one slide away rather than one navigation away.
-  const selectItemId = useCallback(
-    (id: string) => {
-      const nextIndex = items.findIndex((item) => item.id === id)
-      if (nextIndex < 0) return false
-      // A click that lands mid-transition is refused. It is still swallowed --
-      // a double-click on a print is the common way to land here, and a full
-      // page load answers that worse than doing nothing does -- but it is not
-      // recorded, because no slide opened.
-      if (!goToIndex(nextIndex, nextIndex < safeIndex ? "prev" : "next")) return true
-
-      const nextItem = items[nextIndex]
-      // The grid is not the only surface that opens a preview: the résumé slide
-      // cites projects too, and those opens have to be told apart rather than
-      // going unrecorded.
-      trackEvent("work_preview_open", {
-        preview_id: nextItem.id,
-        preview_title: galleryItemTitle(nextItem),
-        preview_index: nextIndex + 1,
-        preview_placement: "resume_reader",
-      })
-      return true
-    },
-    [goToIndex, items, safeIndex],
   )
 
   useEffect(() => {
@@ -822,7 +788,7 @@ export function PreviewGalleryDialog({
                                 })
                               }}
                             >
-                              View resume PDF <ArrowUpRight size={16} aria-hidden="true" />
+                              View PDF
                             </a>
                           </p>
                         </div>
@@ -831,7 +797,7 @@ export function PreviewGalleryDialog({
                         Rafael Medina's work history and education, with a link to the PDF résumé.
                       </Dialog.Description>
                       <div className="preview-gallery-resume-body mosaic-about-body">
-                        <ResumeContent onSelectProject={selectItemId} />
+                        <ResumeContent />
                       </div>
                     </div>
                   )}

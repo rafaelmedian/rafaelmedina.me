@@ -47,7 +47,7 @@
 }
 
 .resume-experience-list > .resume-experience {
-  padding-block: 2.5rem;
+  padding-block: 1.5rem;
 }
 
 .resume-experience-list > .resume-experience:first-child {
@@ -58,36 +58,6 @@
   margin-top: 0;
   padding-top: 4rem;
   border-top: 1px solid rgb(0 0 0 / 0.08);
-}
-
-.resume-experience-logos {
-  display: flex;
-  align-items: center;
-  flex: none;
-}
-
-.resume-experience-logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 2rem;
-  width: 2rem;
-  height: 2rem;
-  padding: 0.45rem;
-  border-radius: var(--radius-full);
-  corner-shape: round;
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-control);
-}
-
-.resume-experience-logo + .resume-experience-logo {
-  margin-left: -0.26rem;
-}
-
-.resume-experience-logo img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 .resume-experience-details { min-width: 0; }
@@ -112,8 +82,7 @@
   min-width: 0;
 }
 
-/* Company names remain external links, but the résumé's logo-and-title rows
-   provide the affordance without the inline prose treatment's underline. */
+/* Company names retain the résumé's unadorned external-link treatment. */
 .resume-content .mosaic-company-inline-link {
   text-decoration-line: none;
 }
@@ -139,97 +108,13 @@
   color: var(--muted-soft);
 }
 
-/* An entry that carries two points stays a list for screen readers, but reads
-   as consecutive paragraphs: no markers and no gutter, so every point starts on
-   the same left edge as the rest of the entry. The gap is the paragraph break —
-   wide enough to separate the points, short of the space above the entry. */
+/* Keep multi-point descriptions visibly distinct with native bullet markers. */
 .mosaic-about-body ul.mosaic-about-resume-description {
-  list-style: none;
-  padding: 0;
+  list-style: disc;
+  padding-left: 1.25rem;
   margin-bottom: 0;
   display: grid;
   gap: 0.6rem;
-}
-
-.resume-experience-projects {
-  /* The pile has to fit the sheet's measure at every width, so the prints are
-     sized off the viewport and the overlap tracks their height. Every step of
-     the clamp is the same fraction of what it was, so the prints shrink without
-     the pile changing shape or the breakpoints moving. */
-  --resume-print-height: clamp(2.8rem, 12vw, 4.4rem);
-  display: flex;
-  align-items: flex-start;
-  /* The tilt and the shadows both reach past the images, so the group carries
-     its own room rather than clipping into the entry above and below. */
-  margin-top: 1.75rem;
-  padding: 0.75rem 0.5rem 1rem;
-}
-
-/* Loose prints dropped on the page: each one tilted off the last and lapping
-   over its neighbour, wearing the same white mat as the photo pile on the home
-   grid. The border of page around the shot is what makes a screenshot read as
-   something printed and dropped here rather than an image pasted in, and it
-   holds the prints apart from each other where they overlap. */
-.resume-project {
-  display: block;
-  /* Never let the row squeeze a print: the height is fixed, so shrinking is
-     width-only and `cover` would quietly crop the shot. */
-  flex: 0 0 auto;
-  padding: 0.25rem;
-  border-radius: var(--radius-sm);
-  background: var(--canvas);
-  /* The mat carries the shadow now: on the image it drew a line inside the
-     white edge instead of around the print. */
-  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
-  text-decoration: none;
-  transform: rotate(-7deg);
-  transition:
-    transform var(--duration-quick) var(--ease-standard),
-    filter var(--duration-quick) var(--ease-standard);
-}
-
-.resume-project + .resume-project {
-  margin-left: calc(var(--resume-print-height) * -0.35);
-  transform: translateY(0.25rem) rotate(2deg);
-}
-
-.resume-project:nth-child(3) { transform: translateY(-0.35rem) rotate(-2deg); }
-.resume-project:nth-child(4) { transform: translateY(0.2rem) rotate(-5deg); }
-
-/* Hovering straightens a print where it lies, so the pile keeps its order. Only
-   keyboard focus lifts one out, since the next print would cover its ring. */
-.resume-project:focus-visible {
-  z-index: 1;
-}
-
-@media (hover: hover) {
-  .resume-project:hover {
-    transform: translateY(-0.25rem) rotate(0deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .resume-project {
-    transition: none;
-  }
-
-  .resume-project:hover {
-    transform: none;
-  }
-}
-
-/* Each shot keeps its own aspect at a shared height, so portrait and landscape
-   prints lie in one pile without the mat squaring them up: the white border
-   follows each shot's own shape. The inner radius is the outer one less the
-   mat, so the two curves stay concentric. */
-.resume-project img {
-  display: block;
-  height: var(--resume-print-height);
-  width: auto;
-  max-width: 100%;
-  object-fit: cover;
-  border-radius: calc(var(--radius-sm) - 0.25rem);
-  background: var(--mosaic-card-surface);
 }
 
 /* Three quiet objects punctuate the long sheet. They are the generated pencil
