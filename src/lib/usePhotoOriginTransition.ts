@@ -175,8 +175,24 @@ export function usePhotoOriginTransition(
     const slides = Array.from(strip.querySelectorAll<HTMLElement>(".personal-photos-slide"))
     const bounds = strip.getBoundingClientRect()
 
-    slides.forEach((slide) => {
-      const target = slide.getBoundingClientRect()
+    // Snapshot all destinations before mounting or hiding any flight. Mixing
+    // these reads with each clone's writes forces layout once per photo.
+    const destinations = slides.map(slide => ({
+      slide,
+      target: slide.getBoundingClientRect(),
+      layoutWidth: slide.offsetWidth,
+      layoutHeight: slide.offsetHeight,
+    })).map(destination => {
+      const { slide, target } = destination
+      const visible = target.right > bounds.left && target.left < bounds.right && target.bottom > bounds.top && target.top < bounds.bottom
+      return { ...destination,
+        frame: visible ? readStyles(slide, frameProperties) : {},
+        image: visible ? readStyles(slide.querySelector("img")!, imageProperties) : {},
+      }
+    })
+    const sourceWidths = new Map(sources.map(source => [source, source.element.offsetWidth]))
+
+    destinations.forEach(({ slide, target, layoutWidth, layoutHeight, frame, image: imageStyles }) => {
       const previous = previousFlights.find((flight) => flight.slide === slide)
       // A photo flies only while its slot is on screen: a card bound for a slot
       // a screen away would have to cross all of it inside one 200ms beat,
@@ -207,7 +223,6 @@ export function usePhotoOriginTransition(
       // carries the print's at the other end. Read at the drawn size instead,
       // the frame's padding and caption kept their full size inside a card
       // that had shrunk around them.
-      const layoutWidth = slide.offsetWidth
       const slideScale = target.width / layoutWidth
       const dx = source.rect.left + source.rect.width / 2 - (target.left + target.width / 2)
       const dy = source.rect.top + source.rect.height / 2 - (target.top + target.height / 2)
@@ -217,11 +232,11 @@ export function usePhotoOriginTransition(
       // it borrowed, or it hangs out past the edges of the very card that is
       // meant to hide it. Its slot is the taller shape, so the print's height
       // is usually what it has to fit rather than the print's width.
-      const tuckedTransform = homeTransform(Math.min(source.width / layoutWidth, source.height / slide.offsetHeight))
+      const tuckedTransform = homeTransform(Math.min(source.width / layoutWidth, source.height / layoutHeight))
       const restingTransform = `translate(-50%, -50%) rotate(0deg) scale(${slideScale})`
-      const targetFrame = { ...readStyles(slide, frameProperties), transform: restingTransform }
+      const targetFrame = { ...frame, transform: restingTransform }
       const slideImage = slide.querySelector("img")!
-      const targetImage = readStyles(slideImage, imageProperties)
+      const targetImage = imageStyles
       const clone = previous?.clone ?? slide.cloneNode(true) as HTMLElement
       const image = clone.querySelector("img")!
       const caption = clone.querySelector("figcaption")!
@@ -261,14 +276,14 @@ export function usePhotoOriginTransition(
 
       // The print's own frame and crop, expressed at the size the slide is now.
       const originFrame = (print: PhotoOrigin) => ({
-        ...scalePixels(print.frame, layoutWidth / print.element.offsetWidth), transform: originTransform,
+        ...scalePixels(print.frame, layoutWidth / sourceWidths.get(print)!), transform: originTransform,
       })
-      const originImage = (print: PhotoOrigin) => scalePixels(print.imageStyles, layoutWidth / print.element.offsetWidth)
-      const currentTransform = readFlightTransform(clone)
-      const currentFrame = { ...readStyles(clone, frameProperties), transform: currentTransform }
-      const currentImage = readStyles(image, imageProperties)
-      const currentOpacity = getComputedStyle(clone).opacity
-      const currentCaptionOpacity = getComputedStyle(caption).opacity
+      const originImage = (print: PhotoOrigin) => scalePixels(print.imageStyles, layoutWidth / sourceWidths.get(print)!)
+      const currentTransform = previous ? readFlightTransform(clone) : restingTransform
+      const currentFrame = previous ? { ...readStyles(clone, frameProperties), transform: currentTransform } : targetFrame
+      const currentImage = previous ? readStyles(image, imageProperties) : targetImage
+      const currentOpacity = previous ? getComputedStyle(clone).opacity : "1"
+      const currentCaptionOpacity = previous ? getComputedStyle(caption).opacity : "1"
       previous?.animations.forEach((animation) => animation.cancel())
       slide.style.opacity = "0"
       // Every wall photo borrows its destination print's frame and crop,
