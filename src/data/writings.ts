@@ -62,6 +62,8 @@ export type Writing = {
   code?: WritingCode
   /** An installable skill or utility presented inside the article. */
   tool?: WritingTool
+  /** A curated list of resources, shared by the reader and static page. */
+  links?: { title: string; href: string; description: string }[]
   sections?: WritingSection[]
   /** Publication or editorial edition date, YYYY-MM-DD. Project samples use illustrative dates. */
   publishedAt?: string
@@ -89,6 +91,29 @@ function projectImage(id: string): WritingImage | undefined {
 
 // Curated public selection. Full omitted entries live in docs/archive/writings.md.
 export const writings: Writing[] = [
+  {
+    ...writingFields("skills-i-reach-for"),
+    paragraphs: [
+      "A few skills I keep close when working with coding agents. Each helps with a different part of the work, from the details of an interface to the way a change gets reviewed.",
+    ],
+    links: [
+      {
+        title: "Craft",
+        href: "https://craft.gustavofior.com/",
+        description: "Gustavo Fior’s collection of design engineering concepts, with a companion skill. Small details in typography, layout, and motion that add up across an interface.",
+      },
+      {
+        title: "Superpowers",
+        href: "https://github.com/obra/superpowers",
+        description: "A set of development skills for coding agents: working through an idea, making a plan, testing, debugging, and reviewing the result.",
+      },
+      {
+        title: "Review-ready PRs",
+        href: "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
+        description: "My own skill for keeping a change’s reasoning, commits, and verification together so the pull request is easier to review.",
+      },
+    ],
+  },
   {
     ...writingFields("review-ready-pull-requests"),
     tool: {

@@ -342,7 +342,13 @@ test("the review-ready tool can be installed and links to its source", async ({ 
   )
   await install.getByRole("button", { name: "Copy install command", exact: true }).click()
   await expect(install.getByRole("status")).toHaveText("Install command copied")
-  await expect(dialog.getByRole("region", { name: "More tools" })).toHaveCount(0)
+  const skills = dialog.getByRole("region", { name: "More tools" }).getByRole("button", { name: "Skills I reach for", exact: true })
+  await skills.click()
+  await expect(page).toHaveURL(/\/notes\/skills-i-reach-for\/$/)
+  const resources = dialog.getByRole("list", { name: "Resources" })
+  await expect(resources.getByRole("link", { name: "Craft", exact: true })).toHaveAttribute("href", "https://craft.gustavofior.com/")
+  await expect(resources.getByRole("link", { name: "Superpowers", exact: true })).toHaveAttribute("href", "https://github.com/obra/superpowers")
+  await expect(resources.getByRole("link", { name: "Review-ready PRs", exact: true })).toHaveAttribute("href", "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs")
 })
 
 test("note navigation follows the archive and resets the reader scroll", async ({ page }) => {

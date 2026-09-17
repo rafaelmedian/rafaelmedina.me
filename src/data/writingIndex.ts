@@ -31,6 +31,13 @@ export type WritingSummary = {
 // Newest first, the order `writings.ts` declares its articles in.
 export const writingSummaries = [
   {
+    id: "skills-i-reach-for",
+    title: "Skills I reach for",
+    category: "Tools",
+    description: "A short list of skills I use for interface craft, development, and getting work ready for review.",
+    publishedAt: "2026-09-17",
+  },
+  {
     id: "review-ready-pull-requests",
     title: "Make pull requests easier to review",
     category: "Tools",

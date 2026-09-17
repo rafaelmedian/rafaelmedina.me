@@ -339,6 +339,12 @@
   padding: 0;
   margin: 0 auto;
 }
+.writing-resource-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .writing-contents a {
   display: flex;
   align-items: center;

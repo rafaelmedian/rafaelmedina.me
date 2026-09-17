@@ -321,6 +321,15 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
         {writing.cover ? <NoteImage image={writing.cover} /> : null}
         <div className="writing-reader-prose">
           <NoteProse paragraphs={writing.paragraphs} annotations={writing.annotations} />
+          {writing.links ? (
+            <ul className="writing-resource-list" aria-label="Resources">
+              {writing.links.map(link => (
+                <li key={link.href}>
+                  <p><a href={link.href} target="_blank" rel="noreferrer">{link.title} <ArrowUpRight size={16} aria-hidden="true" /></a><br />{link.description}</p>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {writing.tool ? <ToolInstallCard tool={writing.tool} /> : null}
           {writing.code ? <NoteCode code={writing.code} /> : null}
           {writing.image ? <NoteImage image={writing.image} /> : null}
