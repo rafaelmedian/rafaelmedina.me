@@ -330,7 +330,6 @@ const SPACE = [
   { value: "0.5rem", use: "Hobby lists, X card internals, mobile mosaic gap below 700px" },
   { value: "0.625rem", use: "The contact action row" },
   { value: "0.75rem", use: "Work-history description offset and compact floating offsets" },
-  { value: "1.25rem", use: "Maximum mobile contact-pill side padding" },
   { value: "1.5rem", use: "Takeover close offset from the right viewport edge" },
   { value: "2.5rem", use: "Takeover close offset from the top viewport edge and the mobile whitespace before the worked-with wall and Services" },
   { value: "5rem", use: "Minimum About inset and the desktop whitespace before the worked-with wall and Services" },
@@ -1711,8 +1710,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </table>
               </div>
               <p className="ds-caption">
-                All three use a 2.125rem fine-pointer height and <code>--radius-full</code>; below 700px, touch inputs keep a
-                44px target. They share the same physical build: an outer shadow, a{" "}
+                All three keep a 2.125rem visible height and <code>--radius-full</code> at every width.
+                Below 700px, a transparent child extends the touch target to 44px; 5px block margins reserve
+                that space when rows wrap. Fine pointers from 480px keep the compact desktop target.
+                Side padding stays on the shared 0.75rem–1rem clamp, reducing to 0.625rem below 328px. They share the same physical build: an outer shadow, a{" "}
                 <code>::before</code> white gradient pill inside the top edge: B’s fully expanded shine at rest,
                 growing into C’s fuller glow on hover or keyboard focus over <code>--duration-quick</code> with
                 <code>--ease-standard</code>. Both states use 1.12 horizontal scale; height grows from 22px to 28px.
