@@ -212,6 +212,16 @@
   --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
+/* Longer screen-spanning flights on compact screens keep the fan's journey
+   readable, while the close remains shorter than the opening. */
+@media (max-width: 699.98px) {
+  .personal-photos-backdrop[data-layout="wall"],
+  .personal-photos-dialog[data-layout="wall"] {
+    --photo-open-duration: 480ms;
+    --photo-close-duration: var(--duration-slow);
+  }
+}
+
 /* The globe floats over the work grid rather than covering it the way the
    old sheet of prints did. A solid scrim separates the two without a live
    full-screen backdrop filter, which dropped compositor frames during the

@@ -38,6 +38,7 @@ export function ContactActionRow({
           aria-label="Message on LinkedIn"
           className="mosaic-contact-pill mosaic-contact-pill-linkedin"
         >
+          <span className="mosaic-contact-pill-hit-area" aria-hidden="true" />
           <span className="mosaic-contact-pill-content mosaic-contact-pill-content-linkedin">
             <img
               src="/icons/linkedin.svg"
@@ -63,6 +64,7 @@ export function ContactActionRow({
             aria-label="Follow on X"
             className="mosaic-contact-pill mosaic-contact-pill-follow"
           >
+            <span className="mosaic-contact-pill-hit-area" aria-hidden="true" />
             <span className="mosaic-contact-pill-content mosaic-contact-pill-content-x">
               <img
                 src="/icons/x.svg"

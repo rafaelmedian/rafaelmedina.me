@@ -515,16 +515,18 @@
   }
 
   .mosaic-contact-pill {
+    /* Preserve the bevel's desktop proportions; the transparent child keeps
+       the touch target tall without stretching the visible shell. */
+    margin-block: 5px;
+    overflow: visible;
+  }
+
+  .mosaic-contact-pill-hit-area {
+    position: absolute;
+    inset: calc(50% - 22px) 0 auto;
     height: 44px;
-    min-height: 44px;
   }
 
-}
-
-@media (min-width: 328px) and (max-width: 479.98px) {
-  .mosaic-contact-pill {
-    padding-inline: clamp(1rem, 5vw, 1.25rem);
-  }
 }
 
 @media (max-width: 327.98px) {
@@ -558,7 +560,7 @@
 @media (min-width: 480px) and (max-width: 699.98px) and (hover: hover) and (pointer: fine) {
 
   .mosaic-contact-pill {
-    height: 2.125rem;
-    min-height: 2.125rem;
+    margin-block: 0;
+    overflow: hidden;
   }
 }

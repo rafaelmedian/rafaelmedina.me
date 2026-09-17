@@ -52,6 +52,7 @@ export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingPr
             trackEvent("booking_open", { booking_open_trigger: "press" })
           }}
         >
+          <span className="mosaic-contact-pill-hit-area" aria-hidden="true" />
           <span className="mosaic-contact-pill-content">
             <span className="mosaic-contact-pill-dark-label">Book a call</span>
           </span>

@@ -1194,12 +1194,16 @@
     display: none;
   }
 
+  .preview-gallery-popup[data-preview-kind="resume"] .preview-gallery-card {
+    padding-top: 0.75rem;
+  }
+
   .preview-gallery-toolbar {
     flex: none;
     display: grid;
     grid-template-columns: auto 1fr auto;
     column-gap: 0.75rem;
-    padding: var(--preview-gallery-card-padding);
+    padding: 0.75rem var(--preview-gallery-card-padding);
     background: var(--canvas);
   }
 
@@ -1211,11 +1215,6 @@
   .preview-gallery-close {
     grid-column: 3;
     grid-row: 1;
-  }
-
-  /* Balance the control's downward shadow without moving its hit area. */
-  .preview-gallery-close .preview-gallery-nav-icon {
-    translate: 0 1px;
   }
 
   /* On a white header these controls need an edge and a small lift, not the
@@ -1285,8 +1284,12 @@
 }
 
 @media (max-width: 699.98px) {
+  .preview-gallery-popup[data-preview-kind="project"] {
+    --preview-gallery-card-padding: 1rem;
+  }
+
   .preview-gallery-content {
-    padding-inline: 1.25rem;
+    padding-inline: 0;
   }
 
   .project-case-study-media[data-layout="pair"] {

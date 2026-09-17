@@ -779,7 +779,14 @@ test("keeps comfortable contact targets on wide touch viewports", async ({ brows
   for (const action of await actions.all()) {
     const box = await action.boundingBox()
     expect(box).not.toBeNull()
-    expect(box!.height).toBeGreaterThanOrEqual(44)
+    expect(box!.height).toBe(34)
+    const target = await action.locator(".mosaic-contact-pill-hit-area").boundingBox()
+    expect(target!.height).toBeGreaterThanOrEqual(44)
+    // The transparent extension must actually hit the action, not just measure tall.
+    expect(await action.evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      return element.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y - 4))
+    })).toBe(true)
   }
 
   await context.close()
@@ -813,7 +820,7 @@ test("wraps primary contact actions when their mobile container is too narrow", 
 
   expect(boxes).toHaveLength(3)
   expect(new Set(boxes.map(({ y }) => Math.round(y))).size).toBeGreaterThan(1)
-  for (const box of boxes) expect(box.height).toBeCloseTo(44, 1)
+  for (const box of boxes) expect(box.height).toBeCloseTo(34, 1)
 })
 
 test("centers a wrapped contact action on narrow mobile widths", async ({ page }) => {
@@ -821,6 +828,7 @@ test("centers a wrapped contact action on narrow mobile widths", async ({ page }
   await page.goto("/")
 
   const actions = page.getByRole("group", { name: "Profile contact actions" })
+  await actions.evaluate((element) => { element.style.width = "220px" })
   const [actionsBox, firstActionBox, followBox] = await Promise.all([
     actions.boundingBox(),
     actions.locator(".mosaic-contact-pill").first().boundingBox(),
@@ -915,7 +923,7 @@ test("sets the whole About sheet on the reading step under one heading step", as
   expect(servicesSizes).toEqual(["14px", "16px"])
 })
 
-test("gives mobile contact actions generous horizontal padding", async ({ page }) => {
+test("keeps mobile contact padding within the desktop range", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
   await expect(page.getByRole("group", { name: "Profile contact actions" })).toBeVisible()
@@ -933,7 +941,8 @@ test("gives mobile contact actions generous horizontal padding", async ({ page }
   expect(sidePadding).toHaveLength(3)
   for (const [left, right] of sidePadding) {
     expect(left).toBeCloseTo(right, 5)
-    expect(left).toBeGreaterThanOrEqual(19)
+    expect(left).toBeGreaterThanOrEqual(12)
+    expect(left).toBeLessThanOrEqual(16)
   }
 })
 
@@ -4004,7 +4013,7 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(compactShadow).not.toContain("32px")
 })
 
-test("optically centers the compact close icon", async ({ page }) => {
+test("centers the compact close icon in its control", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
   await settleWorkCards(page)
@@ -4024,9 +4033,8 @@ test("optically centers the compact close icon", async ({ page }) => {
     }
   })
 
-  // The downward cast adds visual weight under the circle, so the symmetric X
-  // sits one pixel below its geometric center to balance the whole control.
-  expect(centers.iconY - centers.buttonY).toBeCloseTo(1, 1)
+  // The symmetric X stays on the geometric centre of its control.
+  expect(centers.iconY - centers.buttonY).toBeCloseTo(0, 1)
 })
 
 test("treats a mostly vertical touch gesture as scrolling rather than gallery paging", async ({ browser }) => {
