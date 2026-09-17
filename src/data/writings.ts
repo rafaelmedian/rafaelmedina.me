@@ -108,6 +108,31 @@ export const writings: Writing[] = [
         description: "A set of development skills for coding agents: working through an idea, making a plan, testing, debugging, and reviewing the result.",
       },
       {
+        title: "Make Interfaces Feel Better",
+        href: "https://github.com/jakubkrehel/make-interfaces-feel-better",
+        description: "Jakub Krehel’s skill for the finishing details: optical alignment, typography, shadows, hit areas, and how a control responds when pressed.",
+      },
+      {
+        title: "Transitions",
+        href: "https://transitions.dev/",
+        description: "UI transition recipes and motion guidance. I use the transitions-dev and transitions-polish skills to build interactions and refine their timing, easing, and distance.",
+      },
+      {
+        title: "Interface Craft",
+        href: "https://www.interfacecraft.dev/",
+        description: "Josh Puckett’s toolkit for interface work. The skill brings together animation storyboards, design critique, and DialKit controls for tuning values while looking at the result.",
+      },
+      {
+        title: "Fixing Motion Performance",
+        href: "https://github.com/ibelick/ui-skills",
+        description: "Part of ibelick’s UI Skills collection. A focused pass for animations that stutter or do too much layout and paint work.",
+      },
+      {
+        title: "Emil’s Design Engineering",
+        href: "https://emilkowal.ski/skill",
+        description: "Emil Kowalski’s design engineering guidance, with particular care for motion and interface details. A reference I return to when a transition or interaction needs more attention.",
+      },
+      {
         title: "Review-ready PRs",
         href: "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
         description: "My own skill for keeping a change’s reasoning, commits, and verification together so the pull request is easier to review.",
