@@ -4013,7 +4013,7 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(compactShadow).not.toContain("32px")
 })
 
-test("optically centers the compact close icon", async ({ page }) => {
+test("centers the compact close icon in its control", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
   await settleWorkCards(page)
@@ -4033,9 +4033,8 @@ test("optically centers the compact close icon", async ({ page }) => {
     }
   })
 
-  // The downward cast adds visual weight under the circle, so the symmetric X
-  // sits one pixel below its geometric center to balance the whole control.
-  expect(centers.iconY - centers.buttonY).toBeCloseTo(1, 1)
+  // The symmetric X stays on the geometric centre of its control.
+  expect(centers.iconY - centers.buttonY).toBeCloseTo(0, 1)
 })
 
 test("treats a mostly vertical touch gesture as scrolling rather than gallery paging", async ({ browser }) => {

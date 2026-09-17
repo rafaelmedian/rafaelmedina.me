@@ -1182,7 +1182,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   insets; its 44px previous, next, and close controls stay pinned above the media on a white
                   header at z-index 1. Position is screen-reader-only on every preview, with no visible counter pill.
                   Those controls use <code>--shadow-ring</code> with the short control shadows instead of the desktop
-                  rail&rsquo;s broad overlay cast; the X sits 1px low to balance its shadow. On mobile, an opaque
+                  rail&rsquo;s broad overlay cast; the X is centred in its control. The toolbar uses 12px vertical
+                  padding while keeping the card&rsquo;s horizontal inset, bringing the résumé heading closer to the top. On mobile, an opaque
                   --canvas backdrop extends one large viewport height above and below the screen to cover Safari chrome
                   and rubber-band exposure without revealing the underlying page.
                   The like pill rides the line where the artwork stops: a zero-height row centres it on that
@@ -1204,7 +1205,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   The description uses <code>--text-md</code>, a 1.6 line height, the existing prose colour
                   <code>#545454</code>, and a 46rem maximum measure. Credits use <code>--text-sm</code>
                   with 1.5rem of space above them. The text column is a centered 48rem
-                  maximum width with 1.5rem of padding on all four sides, and 1.25rem side padding below 700px.
+                  maximum width with 4rem top padding and 1.5rem side and bottom padding. Below 700px,
+                  the project card supplies the full 1rem (16px) side inset and the text column adds no side padding.
                   The notes reader keeps a narrower column of its own, because it is read rather than scanned.
                   The dialog has no project-site link, metadata table, or row dividers.
                   The main project title uses the same <code>--text-md</code> heading step as the About section.
@@ -1617,7 +1619,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 top padding so scrolling content cannot reappear above the title; Education uses weight 600. A project print pages the
                 gallery to that project rather than leaving for its page.
                 “View PDF” opens the canonical PDF in a new tab and sits at the right of the sticky résumé
-                heading, so it remains available while the document scrolls.
+                heading, so it remains available while the document scrolls. In compact layouts, the résumé
+                card uses a 0.75rem top inset to keep that heading close to the action toolbar.
                 Education follows the same institution-and-date heading, credential, location, and description
                 structure as the work entries. About no longer carries a résumé at all — the sheet keeps its
                 introduction and Services, and this reader is the only place the history is set.
