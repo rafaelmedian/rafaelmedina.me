@@ -324,9 +324,10 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
           {writing.links ? (
             <ul className="writing-resource-list" aria-label="Resources">
               {writing.links.map(link => (
-                  <li key={link.href}>
-                    <p><a href={link.href} target="_blank" rel="noreferrer"><img src={link.favicon} width={16} height={16} alt="" />{link.title}</a><br />{link.description}</p>
-                  </li>
+                <li key={link.href}>
+                  <a href={link.href} target="_blank" rel="noreferrer"><img src={link.favicon} width={16} height={16} alt="" />{link.title}</a>
+                  <p>{link.description}</p>
+                </li>
               ))}
             </ul>
           ) : null}
