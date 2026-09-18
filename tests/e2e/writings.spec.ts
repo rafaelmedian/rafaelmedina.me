@@ -342,7 +342,7 @@ test("the review-ready tool can be installed and links to its source", async ({ 
   )
   await install.getByRole("button", { name: "Copy install command", exact: true }).click()
   await expect(install.getByRole("status")).toHaveText("Install command copied")
-  const skills = dialog.getByRole("region", { name: "More tools" }).getByRole("button", { name: "Skills I reach for", exact: true })
+  const skills = dialog.getByRole("region", { name: "More tools" }).getByRole("button", { name: "Skills for craft and code", exact: true })
   await skills.click()
   await expect(page).toHaveURL(/\/notes\/skills-i-reach-for\/$/)
   const resources = dialog.getByRole("list", { name: "Resources" })

@@ -32,7 +32,7 @@ export type WritingSummary = {
 export const writingSummaries = [
   {
     id: "skills-i-reach-for",
-    title: "Skills I reach for",
+    title: "Skills for craft and code",
     category: "Tools",
     description: "A short list of skills I use for interface craft, development, and getting work ready for review.",
     publishedAt: "2026-09-17",
