@@ -1449,7 +1449,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 Resource lists use each linked website’s self-hosted 16px favicon before its title, with a 0.5rem gap.
                 Titles keep the prose size at weight 500 on --ink, with a 44px minimum-height link
                 and 0.5rem top spacing. Descriptions wrap naturally below; icons do not shrink,
-                and resource links have no trailing arrows or added motion.
+                and resource links have no underlines, trailing arrows, or added motion.
                 An article can print a fenced sample: monospace from the system stack at --text-xs on
                 --mosaic-card-surface, --radius-md with the same 5% inset hairline the reader's figures take, over a
                 --text-xs grey caption. There is one such sample and it is Markdown, so the highlighter is thirty lines
