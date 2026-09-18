@@ -1326,6 +1326,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 rail, white, overlay elevation, and 31.2px corners.
                 Rows are grouped under Tools, Notes, and, when it has entries, Misc; categories keep that order and dates sort newest first within each one.
                 Category labels sit above their rows so the titles keep the full measure, and empty categories do not render.
+                Row highlights change instantly so scanning the archive never leaves a fade trailing the pointer.
                 Each row carries its title and, on the right, a compact month, day, and two-digit year as tabular --muted figures; a note kept only as an
                 archive year leaves that column empty. The date is hidden from assistive technology so a row
                 is still named by its title alone; the reader's own header carries the full date.
@@ -1798,8 +1799,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 overlay shadow over <code>--shadow-ring</code> and <code>--radius-full</code>; it enters only after the About sheet passes 70% of
                 its viewport crossing. Booking is the dark pill and the contact row's primary action; it carries its
                 label alone, the green status dot that used to ride inside it having been the hero's only chromatic
-                pixel for a month the hint already names. A 260ms intent delay reveals that one-line hint with the
-                live availability month, and a press opens the Cal.com dialog — which wears no chrome of its own: no header, no
+                pixel for a month the accessible description already names. Hover immediately reveals the Kermit reaction card
+                with no intent delay; the availability month remains in the accessible description. A press opens the Cal.com dialog — which wears no chrome of its own: no header, no
                 close button, only the calendar on an even mat, because that page already has a title and a month of its own
                 and a second set above it was the same thing twice. Escape and a press outside close it; the dialog's
                 responsive <code>clamp(16px, 3vw, 32px)</code> side gutters preserve the embed's 1040px desktop canvas
@@ -2149,7 +2150,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   sends the label up; scrolling back sends it down. The chip keeps its 48px height throughout and
                   only its width eases to the new label.
                   Open, the control is one continuous card with three rows. The surface expands from the measured
-                  label width to 17rem and from 48px to 160px — three adjacent 48px rows with an 8px outer inset —
+                  label width to 17rem and from 48px to 164px — three 48px rows with 2px gaps and an 8px outer inset —
                   keeping its bottom edge fixed. The card has 31.2px corners and the inset rows have concentric 20.8px
                   corners; labels are 14px and section numbers 12px. Its white fill is 92% opaque over a 16px backdrop
                   blur, with a 5% hairline and <code>--shadow-overlay</code> around the whole card.
@@ -2168,7 +2169,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   label. Other rows are inert and
                   hidden from assistive technology when closed; keyboard focus rings sit 2px inside the row.
                   Selection, outside click, Escape, or focus leaving the control closes it. Resizing preserves its open state.
-                  Selection scrolls and focuses the section. Colour changes use 160ms standard easing;
+                  Selection scrolls and focuses the section. Hover on a fine pointer and keyboard focus fill
+                  the whole row with the same #e9e9e9 gray at 50% opacity and bring its label to ink;
+                  the current row retains its stronger 92% fill. Touch does not retain a hover fill.
+                  Row colour changes are instant so the highlight keeps up with the pointer;
                   pressing scales the trigger content to 0.96 over 120ms, keeping the shadow stable.
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.

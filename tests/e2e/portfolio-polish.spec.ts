@@ -1926,7 +1926,7 @@ test("the TOC contains all three rows in one inset card", async ({ page }) => {
     const bounds = (await row.boundingBox())!
     expect(bounds.x).toBeCloseTo(card.x + 8, 0)
     expect(bounds.width).toBeCloseTo(card.width - 16, 0)
-    expect(bounds.y).toBeCloseTo(card.y + 8 + index * 48, 0)
+    expect(bounds.y).toBeCloseTo(card.y + 8 + index * (48 + 2), 0)
     expect(bounds.height).toBe(48)
     await expect(row).toHaveCSS("border-radius", "20.8px")
     await expect(row).toHaveCSS("box-shadow", "none")
