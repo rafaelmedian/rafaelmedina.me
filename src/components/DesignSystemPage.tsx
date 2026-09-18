@@ -1446,7 +1446,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 gallery's own sounds. Three keys differ in pitch and brightness and never repeat back to back, keys
                 are at least 45ms apart, and a row scrolled under a still pointer stays silent. Touch, pen, reduced
                 motion, and a page not yet pressed play nothing.
-                Resource lists use a distinct 16px Lucide icon before each title, with a 0.5rem gap.
+                Resource lists use each linked website’s self-hosted 16px favicon before its title, with a 0.5rem gap.
                 Titles keep the prose size at weight 500 on --ink, with a 44px minimum-height link
                 and 0.5rem top spacing. Descriptions wrap naturally below; icons do not shrink,
                 and resource links have no trailing arrows or added motion.

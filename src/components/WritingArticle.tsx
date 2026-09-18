@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check, Copy, Gauge, GitPullRequest, Link2, PenTool, Ruler, SlidersHorizontal, Sparkles, Waves, Zap } from "lucide-react"
+import { ArrowUpRight, Check, Copy, Link2 } from "lucide-react"
 import {
   useEffect,
   useLayoutEffect,
@@ -10,24 +10,13 @@ import {
 } from "react"
 
 import { writingSummaries } from "../data/writingIndex"
-import type { Writing, WritingAnnotation, WritingCode, WritingImage, WritingResourceIcon, WritingTool } from "../data/writings"
+import type { Writing, WritingAnnotation, WritingCode, WritingImage, WritingTool } from "../data/writings"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { noteHash, pickFrom } from "../lib/writings"
 import { siteOrigin, writingPath } from "../lib/projectMetadata"
 import { LikeButton } from "./LikeButton"
 import { ArticleContents } from "./ArticleContents"
 import { InlineSwap } from "./InlineSwap"
-
-const resourceIcons = {
-  craft: PenTool,
-  superpowers: Zap,
-  polish: Sparkles,
-  transitions: Waves,
-  controls: SlidersHorizontal,
-  performance: Gauge,
-  engineering: Ruler,
-  review: GitPullRequest,
-} satisfies Record<WritingResourceIcon, typeof PenTool>
 
 function inlineProse(text: string) {
   return text.split(/`([^`]+)`/).map((part, index) => (index % 2 ? <code className="writing-code" key={index}>{part}</code> : part))
@@ -334,14 +323,11 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
           <NoteProse paragraphs={writing.paragraphs} annotations={writing.annotations} />
           {writing.links ? (
             <ul className="writing-resource-list" aria-label="Resources">
-              {writing.links.map(link => {
-                const Icon = resourceIcons[link.icon]
-                return (
+              {writing.links.map(link => (
                   <li key={link.href}>
-                    <p><a href={link.href} target="_blank" rel="noreferrer"><Icon size={16} aria-hidden="true" />{link.title}</a><br />{link.description}</p>
+                    <p><a href={link.href} target="_blank" rel="noreferrer"><img src={link.favicon} width={16} height={16} alt="" />{link.title}</a><br />{link.description}</p>
                   </li>
-                )
-              })}
+              ))}
             </ul>
           ) : null}
           {writing.tool ? <ToolInstallCard tool={writing.tool} /> : null}

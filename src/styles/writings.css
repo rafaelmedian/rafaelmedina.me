@@ -353,7 +353,7 @@
   font-weight: 500;
 }
 
-.writing-resource-list svg { flex-shrink: 0; }
+.writing-resource-list img { flex-shrink: 0; object-fit: contain; }
 .writing-resource-list p { text-wrap: pretty; }
 
 .writing-contents a {

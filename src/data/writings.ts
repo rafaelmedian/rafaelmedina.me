@@ -28,8 +28,6 @@ export type WritingTool = {
   sourceUrl: string
 }
 
-export type WritingResourceIcon = "craft" | "superpowers" | "polish" | "transitions" | "controls" | "performance" | "engineering" | "review"
-
 export type WritingSection = {
   heading: string
   paragraphs: string[]
@@ -65,7 +63,7 @@ export type Writing = {
   /** An installable skill or utility presented inside the article. */
   tool?: WritingTool
   /** A curated list of resources, shared by the reader and static page. */
-  links?: { title: string; href: string; description: string; icon: WritingResourceIcon }[]
+  links?: { title: string; href: string; description: string; favicon: string }[]
   sections?: WritingSection[]
   /** Publication or editorial edition date, YYYY-MM-DD. Project samples use illustrative dates. */
   publishedAt?: string
@@ -101,49 +99,49 @@ export const writings: Writing[] = [
     links: [
       {
         title: "Craft",
-        icon: "craft",
+        favicon: "/writings/favicons/craft.png",
         href: "https://craft.gustavofior.com/",
         description: "Gustavo Fior’s collection of design engineering concepts, with a companion skill. Small details in typography, layout, and motion that add up across an interface.",
       },
       {
         title: "Superpowers",
-        icon: "superpowers",
+        favicon: "/writings/favicons/github.png",
         href: "https://github.com/obra/superpowers",
         description: "A set of development skills for coding agents: working through an idea, making a plan, testing, debugging, and reviewing the result.",
       },
       {
         title: "Make Interfaces Feel Better",
-        icon: "polish",
+        favicon: "/writings/favicons/github.png",
         href: "https://github.com/jakubkrehel/make-interfaces-feel-better",
         description: "Jakub Krehel’s skill for the finishing details: optical alignment, typography, shadows, hit areas, and how a control responds when pressed.",
       },
       {
         title: "Transitions",
-        icon: "transitions",
+        favicon: "/writings/favicons/transitions.png",
         href: "https://transitions.dev/",
         description: "UI transition recipes and motion guidance. I use the transitions-dev and transitions-polish skills to build interactions and refine their timing, easing, and distance.",
       },
       {
         title: "Interface Craft",
-        icon: "controls",
+        favicon: "/writings/favicons/interface-craft.png",
         href: "https://www.interfacecraft.dev/",
         description: "Josh Puckett’s toolkit for interface work. The skill brings together animation storyboards, design critique, and DialKit controls for tuning values while looking at the result.",
       },
       {
         title: "Fixing Motion Performance",
-        icon: "performance",
+        favicon: "/writings/favicons/github.png",
         href: "https://github.com/ibelick/ui-skills",
         description: "Part of ibelick’s UI Skills collection. A focused pass for animations that stutter or do too much layout and paint work.",
       },
       {
         title: "Emil’s Design Engineering",
-        icon: "engineering",
+        favicon: "/writings/favicons/emil.png",
         href: "https://emilkowal.ski/skill",
         description: "Emil Kowalski’s design engineering guidance, with particular care for motion and interface details. A reference I return to when a transition or interaction needs more attention.",
       },
       {
         title: "Review-ready PRs",
-        icon: "review",
+        favicon: "/writings/favicons/github.png",
         href: "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
         description: "My own skill for keeping a change’s reasoning, commits, and verification together so the pull request is easier to review.",
       },
