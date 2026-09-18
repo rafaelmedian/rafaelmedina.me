@@ -62,6 +62,8 @@ export type Writing = {
   code?: WritingCode
   /** An installable skill or utility presented inside the article. */
   tool?: WritingTool
+  /** A curated list of resources, shared by the reader and static page. */
+  links?: { title: string; href: string; description: string; favicon: string }[]
   sections?: WritingSection[]
   /** Publication or editorial edition date, YYYY-MM-DD. Project samples use illustrative dates. */
   publishedAt?: string
@@ -89,6 +91,62 @@ function projectImage(id: string): WritingImage | undefined {
 
 // Curated public selection. Full omitted entries live in docs/archive/writings.md.
 export const writings: Writing[] = [
+  {
+    ...writingFields("skills-i-reach-for"),
+    paragraphs: [
+      "A few skills I keep close when working with coding agents. Each helps with a different part of the work, from the details of an interface to the way a change gets reviewed.",
+    ],
+    links: [
+      {
+        title: "Craft",
+        favicon: "/writings/favicons/craft.png",
+        href: "https://craft.gustavofior.com/",
+        description: "Design engineering details for typography, layout, and motion.",
+      },
+      {
+        title: "Superpowers",
+        favicon: "/writings/favicons/github.png",
+        href: "https://github.com/obra/superpowers",
+        description: "Plan, build, test, and review with coding agents.",
+      },
+      {
+        title: "Make Interfaces Feel Better",
+        favicon: "/writings/favicons/jakub.png",
+        href: "https://github.com/jakubkrehel/make-interfaces-feel-better",
+        description: "Polish alignment, typography, shadows, and interactions.",
+      },
+      {
+        title: "Transitions",
+        favicon: "/writings/favicons/transitions.png",
+        href: "https://transitions.dev/",
+        description: "Build transitions and fine-tune their motion.",
+      },
+      {
+        title: "Interface Craft",
+        favicon: "/writings/favicons/interface-craft.png",
+        href: "https://www.interfacecraft.dev/",
+        description: "Storyboards, design critique, and live animation controls.",
+      },
+      {
+        title: "Fixing Motion Performance",
+        favicon: "/writings/favicons/ibelick.png",
+        href: "https://github.com/ibelick/ui-skills",
+        description: "Find and fix sluggish UI animations.",
+      },
+      {
+        title: "Emil’s Design Engineering",
+        favicon: "/writings/favicons/emil.png",
+        href: "https://emilkowal.ski/skill",
+        description: "Practical guidance for thoughtful interfaces and motion.",
+      },
+      {
+        title: "Review-ready PRs",
+        favicon: "/favicon-32.png",
+        href: "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
+        description: "Keep commits, reasoning, and verification ready for review.",
+      },
+    ],
+  },
   {
     ...writingFields("review-ready-pull-requests"),
     tool: {

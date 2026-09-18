@@ -1866,7 +1866,7 @@ test("the TOC keeps its collapsed height while scrolling between sections", asyn
     for (const height of heights) expect(height).toBeCloseTo(48, 0)
     await trigger.click()
     await expect(page.locator(".mosaic-mobile-toc-row")).toHaveText(["01 Work", "02 About", "03 Services"])
-    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(160, 0)
+    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(164, 0)
     await trigger.click()
     await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(48, 0)
   }
@@ -1926,7 +1926,7 @@ test("the TOC contains all three rows in one inset card", async ({ page }) => {
     const bounds = (await row.boundingBox())!
     expect(bounds.x).toBeCloseTo(card.x + 8, 0)
     expect(bounds.width).toBeCloseTo(card.width - 16, 0)
-    expect(bounds.y).toBeCloseTo(card.y + 8 + index * 48, 0)
+    expect(bounds.y).toBeCloseTo(card.y + 8 + index * (48 + 2), 0)
     expect(bounds.height).toBe(48)
     await expect(row).toHaveCSS("border-radius", "20.8px")
     await expect(row).toHaveCSS("box-shadow", "none")

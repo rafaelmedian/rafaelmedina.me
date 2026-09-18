@@ -162,8 +162,8 @@ test("the notes list ships its own page with a link to every note", async ({ bro
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/notes/")
   // Tools lead the category order, then notes; dates sort within each shelf.
   const rows = page.locator(".writings-category a.writing-entry-trigger")
-  await expect(rows).toHaveCount(9)
-  await expect(rows.first()).toHaveAttribute("href", "/notes/review-ready-pull-requests/")
+  await expect(rows).toHaveCount(10)
+  await expect(rows.first()).toHaveAttribute("href", "/notes/skills-i-reach-for/")
   await expect(page.getByRole("link", { name: "All work" })).toHaveAttribute("href", "/#work")
   expect(await (await request.get("/sitemap.xml")).text()).toContain("https://rafaelmedina.me/notes/")
   await context.close()

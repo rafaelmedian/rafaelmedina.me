@@ -38,7 +38,7 @@ export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingPr
       <Tooltip.Root disabled={isOpen}>
         <Tooltip.Trigger
           ref={triggerRef}
-          delay={260}
+          delay={0}
           closeDelay={120}
           className="mosaic-contact-pill mosaic-contact-pill-dark mosaic-booking-pill"
           aria-label={`Book a call — ${label}`}

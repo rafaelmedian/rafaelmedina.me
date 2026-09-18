@@ -147,6 +147,7 @@
 
 .mosaic-mobile-toc {
   --toc-row-height: 48px;
+  --toc-row-gap: 2px;
   --toc-inset: 8px;
   /* Fallback only: MobileTableOfContents sets this from `SECTIONS.length` on
      the root, so the open card's height always matches the rows it renders. */
@@ -204,7 +205,7 @@
 .mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-surface {
   --toc-resize-duration: var(--duration-slow);
   width: min(17rem, calc(100vw - 2rem));
-  height: calc(var(--toc-slot-count) * var(--toc-row-height) + 2 * var(--toc-inset));
+  height: calc(var(--toc-slot-count) * var(--toc-row-height) + (var(--toc-slot-count) - 1) * var(--toc-row-gap) + 2 * var(--toc-inset));
 }
 
 /* Keep the development feedback control clear of the expanded contents. */
@@ -247,7 +248,7 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   right: var(--toc-inset);
   opacity: 1;
   filter: blur(0);
-  transform: translateY(calc(var(--toc-slot) * var(--toc-row-height) * -1 - var(--toc-inset)));
+  transform: translateY(calc(var(--toc-slot) * (var(--toc-row-height) + var(--toc-row-gap)) * -1 - var(--toc-inset)));
 }
 
 .mosaic-mobile-toc-row {
@@ -269,16 +270,23 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
-  transition: background-color var(--duration-quick) var(--ease-standard), color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-mobile-toc-row:focus-visible {
+  background: rgb(233 233 233 / 0.5);
   outline-offset: -2px;
 }
 
 .mosaic-mobile-toc-trigger,
-.mosaic-mobile-toc-row:hover {
+.mosaic-mobile-toc-row:focus-visible {
   color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mosaic-mobile-toc-row:hover {
+    background: rgb(233 233 233 / 0.5);
+    color: var(--ink);
+  }
 }
 
 .mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-trigger {
