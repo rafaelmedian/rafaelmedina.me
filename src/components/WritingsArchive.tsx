@@ -2,6 +2,7 @@ import { useSound } from "@web-kits/audio/react"
 import { useRef, type CSSProperties, type PointerEvent } from "react"
 
 import { writingSummaries, type WritingSummary } from "../data/writingIndex"
+import { archiveDate } from "../lib/writingDate"
 import { writingPath } from "../lib/projectMetadata"
 import { keyClickSounds } from "../lib/sounds"
 import { groupWritingsByCategory, noteHash, pickFrom } from "../lib/writings"
@@ -97,18 +98,6 @@ function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
       "--writings-drawing-tilt": drawing.tilt,
     } as CSSProperties} />
   )
-}
-
-// Dates are stored as plain YYYY-MM-DD, so they are read at UTC midnight rather
-// than in the reader's zone, where a western offset would roll them back a day.
-const noteDate = (publishedAt: string) => new Date(`${publishedAt}T00:00:00Z`)
-// Category headings no longer supply a year, so the compact row date carries it.
-const archiveDateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "2-digit", timeZone: "UTC" })
-
-function archiveDate(publishedAt: string) {
-  return archiveDateFormat.formatToParts(noteDate(publishedAt)).map((part) =>
-    part.type === "year" ? `'${part.value}` : part.type === "literal" && part.value.includes(",") ? " " : part.value,
-  ).join("").replace(/\s+/g, " ").trim()
 }
 
 // One row of either list: the title, and the date it was written on the right.

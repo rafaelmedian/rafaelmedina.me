@@ -786,7 +786,7 @@ test("More notes show the archive dates beside their titles", async ({ page }) =
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/room-to-figure-it-out/")
   const more = sheet(page).getByRole("region", { name: "More notes" })
-  await expect(more.locator("time")).toHaveText(["07/09", "29/07", "16/06"])
+  await expect(more.locator("time")).toHaveText(["Sep 7 '26", "Jul 29 '26", "Jun 16 '26"])
   await expect(more.locator("time").first()).toHaveAttribute("aria-hidden", "true")
 })
 
