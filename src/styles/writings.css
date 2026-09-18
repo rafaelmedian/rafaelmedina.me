@@ -346,7 +346,6 @@
 }
 
 .writing-resource-list a {
-  min-height: 44px;
   gap: 0.5rem;
   margin-top: 0.5rem;
   color: var(--ink);
