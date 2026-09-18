@@ -1477,7 +1477,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The reader date uses --text-xs, 1.5 line height, and no tracking, 4px above the title; row dates sit on the entry's own --text-sm.
                 Category headings use --text-xs. Font kerning is enabled throughout the dialog.
                 Inline images retain their intrinsic
-                aspect ratio, fill the reading column, load lazily, and use 20.8px corners. Optional image captions are --text-xs.
+                aspect ratio, fill the reading column, load lazily, and use 20.8px corners with a 1px, 10% black
+                inset outline painted above the image. Optional image captions are --text-xs.
                 The gallery supplies padding around a 34rem (544px) reading measure, about 68 characters
                 on the 14px step. Prose uses #2d2d2d, dark enough to hold at that size; secondary text uses --muted.
                 Archive and reader begin 32px below the heading; the article ends with 48px of breathing room.
