@@ -202,7 +202,7 @@ const SURFACES_ENTRIES = [
   {
     token: "--body-bg",
     name: "Beneath",
-    note: "Set on <body>, then covered by the wrapper's --canvas. Visible only in overscroll. The contrast comments in styles/base.css cite it; the difference is under 0.1:1, but measure against white.",
+    note: "Set on <html> and <body> so the root canvas is painted explicitly, then covered by the wrapper's --canvas. Visible only in overscroll. The contrast comments in styles/base.css cite it; the difference is under 0.1:1, but measure against white.",
   },
   {
     token: "--mosaic-card-surface",

@@ -170,6 +170,10 @@
   corner-shape: var(--corner-curve);
 }
 
+html {
+  background: var(--body-bg);
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);
