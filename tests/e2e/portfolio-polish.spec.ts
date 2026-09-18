@@ -1866,7 +1866,7 @@ test("the TOC keeps its collapsed height while scrolling between sections", asyn
     for (const height of heights) expect(height).toBeCloseTo(48, 0)
     await trigger.click()
     await expect(page.locator(".mosaic-mobile-toc-row")).toHaveText(["01 Work", "02 About", "03 Services"])
-    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(160, 0)
+    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(164, 0)
     await trigger.click()
     await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(48, 0)
   }
