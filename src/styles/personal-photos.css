@@ -1068,7 +1068,7 @@
   .personal-photo-details:not([hidden]) > * { animation: none; }
 }
 
-/* Guidance and Close sit outside the draggable photo wall. */
+/* Close sits outside the draggable photo wall. */
 .personal-photos-wall-controls {
   position: absolute;
   bottom: max(1.25rem, env(safe-area-inset-bottom));
@@ -1087,16 +1087,6 @@
 .personal-photos-wall-toolbar .personal-photos-wall-close {
   position: static;
   translate: none;
-}
-.personal-photos-wall-hint {
-  margin: 0 0 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  text-align: center;
 }
 .personal-photo-details-chevron {
   flex: 0 0 auto;
