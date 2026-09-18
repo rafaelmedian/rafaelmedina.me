@@ -111,7 +111,7 @@ export const writings: Writing[] = [
       },
       {
         title: "Make Interfaces Feel Better",
-        favicon: "/writings/favicons/github.png",
+        favicon: "/writings/favicons/jakub.png",
         href: "https://github.com/jakubkrehel/make-interfaces-feel-better",
         description: "Jakub Krehel’s skill for the finishing details: optical alignment, typography, shadows, hit areas, and how a control responds when pressed.",
       },
@@ -129,7 +129,7 @@ export const writings: Writing[] = [
       },
       {
         title: "Fixing Motion Performance",
-        favicon: "/writings/favicons/github.png",
+        favicon: "/writings/favicons/ibelick.png",
         href: "https://github.com/ibelick/ui-skills",
         description: "Part of ibelick’s UI Skills collection. A focused pass for animations that stutter or do too much layout and paint work.",
       },
@@ -141,7 +141,7 @@ export const writings: Writing[] = [
       },
       {
         title: "Review-ready PRs",
-        favicon: "/writings/favicons/github.png",
+        favicon: "/favicon-32.png",
         href: "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
         description: "My own skill for keeping a change’s reasoning, commits, and verification together so the pull request is easier to review.",
       },
