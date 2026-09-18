@@ -1,7 +1,7 @@
 import type { OpenPhoto } from "./PersonalPhotosPreview"
 import { X } from "./NavigationIcons"
 import { ChevronDown } from "lucide-react"
-import { PhotoWallControls, type PhotoWallGuidanceHandle } from "./PhotoWallControls"
+import { PhotoWallControls } from "./PhotoWallControls"
 import { Dialog } from "@base-ui/react/dialog"
 import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
@@ -174,8 +174,6 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const [held, setHeld] = useState<GridHold | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const detailsButton = useRef<HTMLButtonElement>(null)
-  const wallGuidance = useRef<PhotoWallGuidanceHandle>(null)
-  const noteWallInteraction = useCallback(() => wallGuidance.current?.interact(), [])
   const selectedPhoto = photos.find(photo => photo.id === held?.id)
   /** The hold as the handlers see it, ahead of the render. */
   const heldRef = useRef<GridHold | null>(null)
@@ -250,7 +248,6 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const holdSlide = (slide: HTMLElement, photo: typeof photos[number]) => {
     const sheet = sheetRef.current
     if (!sheet) return
-    if (layout === "wall") noteWallInteraction()
     resetGridTilt()
     const rect = slide.getBoundingClientRect()
     const stage = sheet.getBoundingClientRect()
@@ -304,7 +301,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     setHeld(null)
     return true
   }, [resetGridTilt])
-  const wall = usePhotoWall(layout === "wall" ? sheetNode : null, open, releaseHeld, noteWallInteraction)
+  const wall = usePhotoWall(layout === "wall" ? sheetNode : null, open, releaseHeld)
   usePhotoWallCaption(layout === "wall" ? sheetNode : null, held?.instance, held?.caption, reducedMotion)
   usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
@@ -523,7 +520,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
           </Dialog.Description>
           {/* Outside the stage, which captures every press on the globe for
               the drag: a button inside it would never see its own click. */}
-          {layout === "wall" ? <PhotoWallControls ref={wallGuidance} /> : <Dialog.Close className="personal-photos-wall-close" aria-label="Close photo wall">
+          {layout === "wall" ? <PhotoWallControls /> : <Dialog.Close className="personal-photos-wall-close" aria-label="Close photo wall">
             <X size={16} strokeWidth={1.75} aria-hidden="true" />
             <span className="personal-photos-wall-close-label">Close</span>
           </Dialog.Close>}
