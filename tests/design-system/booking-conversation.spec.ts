@@ -138,3 +138,38 @@ test('replays staggered greetings on open and skips motion when requested', asyn
   await expect(dialog.locator('.booking-bubble').first()).toHaveCSS('animation-name', 'none')
   await expect(dialog.locator('.booking-bubble').first()).toHaveCSS('opacity', '1')
 })
+
+for (const width of [390, 1542]) {
+  test(`opens contact info and returns to the draft at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/?tune=off')
+    await page.locator('.mosaic-booking-pill').click()
+    const chat = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
+    await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+    await chat.getByRole('button', { name: 'Continue with email' }).click()
+    await chat.getByRole('textbox', { name: 'Your message' }).fill('Keep my draft')
+    const name = chat.getByRole('button', { name: 'Rafael Medina contact info' })
+    await name.click()
+    const contact = page.getByRole('dialog', { name: 'Rafael Medina', exact: true })
+    await expect(contact).toBeVisible()
+    await expect(contact.getByRole('button', { name: 'Close contact info' })).toBeFocused()
+    await expect(contact.getByRole('link', { name: 'Email Rafael' })).toHaveAttribute('href', 'mailto:hey@rafaelmedina.me')
+    await expect(contact.getByRole('link', { name: /LinkedIn/ })).toHaveAttribute('href', 'https://www.linkedin.com/in/rafaelmedian')
+    const bounds = await contact.boundingBox()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+    for (let index = 0; index < 7; index++) {
+      await page.keyboard.press('Tab')
+      await expect.poll(() => contact.evaluate(node => node.contains(document.activeElement))).toBe(true)
+    }
+    await page.keyboard.press('Escape')
+    await expect(contact).toBeHidden()
+    await expect(chat).toBeVisible()
+    await expect(name).toBeFocused()
+    await expect(chat.getByRole('textbox', { name: 'Your message' })).toHaveValue('Keep my draft')
+    await name.click()
+    await contact.getByRole('button', { name: 'Close contact info' }).click()
+    await expect(name).toBeFocused()
+  })
+}
