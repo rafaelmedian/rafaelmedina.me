@@ -24,7 +24,9 @@ for (const width of [390, 1440]) {
     await expect(dialog.getByRole('textbox', { name: 'Your message' })).toHaveValue('Let’s talk about a design project.')
     const bounds = await dialog.boundingBox()
     expect(bounds!.x + bounds!.width / 2).toBeCloseTo(width / 2, 0)
-    expect(bounds!.y + bounds!.height / 2).toBeCloseTo(450, 0)
+    const identity = await dialog.locator('.booking-identity').boundingBox()
+    expect(identity!.y).toBe(20)
+    expect(bounds!.y).toBeGreaterThan(identity!.y + identity!.height)
     expect(bounds!.x).toBeGreaterThanOrEqual(0)
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
   })
@@ -163,6 +165,9 @@ for (const width of [390, 1542]) {
       const chatBounds = await chat.boundingBox()
       expect(chatBounds!.x + chatBounds!.width / 2).toBeCloseTo(width / 4, 0)
       expect(bounds!.width).toBeCloseTo(width / 2 - 24, 0)
+      const identity = await chat.locator(".booking-identity").boundingBox()
+      expect(identity!.y).toBe(20)
+      expect(identity!.x + identity!.width / 2).toBeCloseTo(width / 4, 0)
     }
     for (let index = 0; index < 7; index++) {
       await page.keyboard.press('Tab')

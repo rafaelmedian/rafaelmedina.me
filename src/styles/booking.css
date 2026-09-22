@@ -30,7 +30,7 @@
   pointer-events: none;
   transition: padding-right var(--duration-slow) var(--ease-smooth);
   padding:
-    max(2.5rem, env(safe-area-inset-top))
+    max(10rem, calc(env(safe-area-inset-top) + 8rem))
     max(1.25rem, env(safe-area-inset-right))
     max(2.5rem, env(safe-area-inset-bottom))
     max(1.25rem, env(safe-area-inset-left));
@@ -316,7 +316,7 @@
 
   .booking-shell {
     padding:
-      max(1rem, env(safe-area-inset-top))
+      max(9rem, calc(env(safe-area-inset-top) + 8rem))
       max(0.75rem, env(safe-area-inset-right))
       max(1rem, env(safe-area-inset-bottom))
       max(0.75rem, env(safe-area-inset-left));
@@ -390,11 +390,16 @@
 }
 
 .booking-identity {
+  position: fixed;
+  top: max(1.25rem, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  transition: left var(--duration-slow) var(--ease-smooth);
   flex: none;
   display: flex;
   align-items: center;
   flex-direction: column;
-  padding: 0.5rem 0 1.25rem;
+  padding: 0;
 }
 
 .booking-identity img {
@@ -447,9 +452,9 @@
 }
 
 .booking-back {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
+  position: fixed;
+  top: max(1.25rem, env(safe-area-inset-top));
+  left: max(1.25rem, env(safe-area-inset-left));
 }
 
 .booking-conversation {
@@ -669,14 +674,13 @@
 .booking-calendar-stage[hidden] { display: none; }
 
 @media (max-width: 639.98px) {
-  .booking-identity { padding-block: 0.5rem 0.75rem; }
   .booking-history { padding-inline: 0.5rem; }
   .booking-compose-area { padding: 0.5rem; }
   .booking-popup[data-calendar="true"] { height: 100%; }
 }
 
 @media (max-height: 600px) {
-  .booking-identity { padding-block: 0.75rem; }
+  .booking-shell { padding-top: max(8rem, calc(env(safe-area-inset-top) + 7rem)); }
   .booking-identity img { width: 48px; height: 48px; }
   .booking-compose-area { padding-block: 0.5rem; }
 }
@@ -801,6 +805,7 @@
 
 @media (min-width: 900px) {
   .booking-contact-panel { width: calc(50% - 1.5rem); }
+  .booking-shell:has(.booking-name-tag[aria-expanded="true"]) .booking-identity { left: 25%; }
   .booking-shell:has(.booking-name-tag[aria-expanded="true"]) {
     padding-right: calc(50% + 1.25rem);
   }
