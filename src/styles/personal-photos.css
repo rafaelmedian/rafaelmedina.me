@@ -367,26 +367,28 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   min-width: 44px;
-  height: 44px;
+  height: 48px;
   padding: 12px 1rem;
   translate: -50% 0;
   border: 0;
-  border-radius: var(--radius-full);
-  background: var(--canvas);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.92);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
   color: var(--ink);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
-  font-weight: 500;
-  line-height: 1;
+  font-weight: 400;
+  line-height: 1.25;
   cursor: pointer;
   pointer-events: auto;
   scale: 1;
   transition: scale var(--duration-fast) var(--ease-smooth);
 }
-.personal-photos-wall-close svg { flex: 0 0 auto; }
+.personal-photos-wall-close svg { flex: 0 0 auto; color: var(--muted); }
 .personal-photos-wall-close:active { scale: 0.96; }
 .personal-photos-wall-close:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -645,7 +647,6 @@
 .personal-photos-layout::before,
 .personal-photos-layout button,
 .personal-photos-grid-close,
-.personal-photos-wall-close,
 .personal-photos-sheet-handle { corner-shape: round; }
 
 /* The held photo's name, just under it. usePhotoSphere places it from the
