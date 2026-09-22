@@ -51,7 +51,6 @@
   color-scheme: light;
   transition:
     opacity var(--duration-base) var(--ease-standard),
-    transform var(--duration-base) var(--ease-smooth),
     width var(--duration-slow) var(--ease-standard),
     height var(--duration-slow) var(--ease-standard);
 }
@@ -59,7 +58,6 @@
 .booking-popup[data-starting-style],
 .booking-popup[data-ending-style] {
   opacity: 0;
-  transform: translateY(10px) scale(0.98);
 }
 
 .booking-popup[data-ending-style] {
@@ -430,6 +428,12 @@
   color: var(--ink);
   box-shadow: var(--shadow-ring), var(--shadow-control);
   cursor: pointer;
+}
+
+.booking-close {
+  position: fixed;
+  top: max(1.25rem, env(safe-area-inset-top));
+  right: max(1.25rem, env(safe-area-inset-right));
 }
 
 .booking-back {

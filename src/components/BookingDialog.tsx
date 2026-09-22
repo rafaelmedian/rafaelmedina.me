@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { ArrowLeft, ArrowUp, CalendarDays } from "lucide-react"
+import { ArrowLeft, ArrowUp, CalendarDays, X } from "lucide-react"
 import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
@@ -83,6 +83,9 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
       <div className="booking-shell">
         <Dialog.Popup className="booking-popup" data-calendar={calendar} ref={popupRef}
           initialFocus={popupRef} finalFocus={returnFocus}>
+          <Dialog.Close className="booking-icon-button booking-close" aria-label="Close conversation">
+            <X size={20} aria-hidden="true" />
+          </Dialog.Close>
           <Dialog.Title className="sr-only">Chat with Rafael Medina</Dialog.Title>
           <Dialog.Description className="sr-only">Send Rafael a message, then choose a time for a 30-minute call.</Dialog.Description>
           {calendar && <button ref={backRef} type="button" className="booking-icon-button booking-back"

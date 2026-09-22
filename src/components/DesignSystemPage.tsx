@@ -1788,7 +1788,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <SiteLastUpdated />
               </div>
               <p className="ds-caption">
-                The booking conversation has no visible close control; clicking the backdrop or pressing Escape dismisses it.
+                The booking conversation has a fixed 44px close control at the top-right of the white backdrop, using the same ring and control shadow as its calendar Back button; clicking the backdrop or pressing Escape also dismisses it.
                 Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.07)</code> hairline, labelled in <code>--muted</code> so the hero name keeps the only dark ink in that block.
                 All chips fill to <code>#e9e9e9</code>{" "}
                 for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
@@ -1813,7 +1813,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 and centers a light Cal.com calendar with the email prefilled. Back restores the conversation and draft.
                 Calendar loading keeps a skeleton and offers a direct link, including the email, after six seconds.
                 Escape or an outside press dismisses the conversation and restores the opening trigger.
-                The conversation stays in memory across entry points; reduced motion removes the entrance transform and bubble animations.
+                The conversation stays in memory across entry points; the popup fades without moving its fixed close control, and reduced motion removes bubble animations.
                 The address is the page's top-right corner, opposite the section
                 links, where the local time used to be — a clock is ambient and an address is what a visitor came
                 for, so only one of them earns that spot, and the clock moved into the About sheet. Below 700px the
