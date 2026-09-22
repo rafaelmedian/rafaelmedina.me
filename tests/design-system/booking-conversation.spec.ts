@@ -106,3 +106,35 @@ test('grows the centered conversation then scrolls history while holding the pag
   expect(await page.evaluate(() => window.scrollY)).toBe(0)
   await expect(dialog).toBeVisible()
 })
+
+test('replays staggered greetings on open and skips motion when requested', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/?tune=off')
+  const trigger = page.locator('.mosaic-booking-pill')
+  const dialog = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
+  for (let opening = 0; opening < 2; opening++) {
+    await trigger.click()
+    await expect(dialog).toBeVisible()
+    const entrances = await dialog.locator('.booking-history > .booking-bubble').evaluateAll(nodes =>
+      nodes.map(node => {
+        const animation = node.getAnimations()[0]
+        animation.pause()
+        animation.currentTime = 100
+        const hidden = getComputedStyle(node).opacity
+        const delay = animation.effect!.getTiming().delay
+        animation.currentTime = 1000
+        return { delay, hidden, visible: getComputedStyle(node).opacity }
+      }))
+    expect(entrances).toEqual([
+      { delay: 200, hidden: '0', visible: '1' },
+      { delay: 360, hidden: '0', visible: '1' },
+      { delay: 520, hidden: '0', visible: '1' },
+    ])
+    await dialog.getByRole('button', { name: 'Close conversation' }).click()
+    await expect(dialog).toBeHidden()
+  }
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await trigger.click()
+  await expect(dialog.locator('.booking-bubble').first()).toHaveCSS('animation-name', 'none')
+  await expect(dialog.locator('.booking-bubble').first()).toHaveCSS('opacity', '1')
+})

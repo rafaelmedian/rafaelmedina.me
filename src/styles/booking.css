@@ -519,7 +519,7 @@
 }
 
 .booking-compose-area {
-  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) 160ms both;
+  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) 680ms both;
   flex: none;
   padding: 0.5rem;
 }
@@ -669,10 +669,16 @@
   .booking-compose-area { padding-block: 0.5rem; }
 }
 
-/* Match the side chat's rise, small scale, and blur, staged per message. */
-.booking-history > .booking-bubble:nth-child(2),
+/* Let the popup appear first, then greet the visitor one bubble at a time. */
+.booking-history > .booking-bubble:nth-child(1) { animation-delay: var(--duration-base); }
+.booking-history > .booking-bubble:nth-child(2) { animation-delay: var(--duration-slow); }
+.booking-history > .booking-bubble:nth-child(3) { animation-delay: 520ms; }
 .booking-email-confirmation + .booking-bubble { animation-delay: 80ms; }
-.booking-history > .booking-bubble:nth-child(3) { animation-delay: 160ms; }
+
+/* Reset even if the dialog is reopened before its exit finishes. */
+.booking-popup[data-conversation-open="false"] :is(.booking-bubble, .booking-compose-area) {
+  animation: none;
+}
 
 @keyframes booking-bubble-enter {
   from {

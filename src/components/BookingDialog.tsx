@@ -81,7 +81,7 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
     <Dialog.Portal>
       <Dialog.Backdrop className="booking-backdrop" />
       <div className="booking-shell">
-        <Dialog.Popup className="booking-popup" data-calendar={calendar} ref={popupRef}
+        <Dialog.Popup className="booking-popup" data-calendar={calendar} data-conversation-open={open && !calendar} ref={popupRef}
           initialFocus={popupRef} finalFocus={returnFocus}>
           <Dialog.Close className="booking-icon-button booking-close" aria-label="Close conversation">
             <X size={20} aria-hidden="true" />
