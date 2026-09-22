@@ -808,6 +808,9 @@
 }
 .personal-photos-sheet[data-layout="wall"] {
   --wall-release-duration: var(--duration-base);
+  --wall-curve-angle: 16;
+  --wall-curve-power: 1.35;
+  --wall-curve-perspective: 1000px;
   /* The backdrop owns the white canvas. A second surface here would cover
      borrowed flights, which travel below the popup and above the backdrop. */
   background: transparent;
@@ -846,8 +849,10 @@
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
   --photo-padding: 0px;
   --photo-radius: var(--radius-md);
+  transform-style: flat;
+  background: transparent;
   width: 100%;
-  box-shadow: var(--shadow-ring);
+  box-shadow: none;
   transition: transform var(--wall-release-duration) var(--ease-standard), scale var(--wall-release-duration) var(--ease-standard);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
@@ -1093,3 +1098,19 @@
   transition: rotate var(--duration-fast) var(--ease-smooth);
 }
 .personal-photo-book[aria-expanded="true"] .personal-photo-details-chevron { rotate: 180deg; }
+
+/* Curve only the print surface: layout boxes stay flat for camera recycling,
+   selection centring, and keyboard navigation. */
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span {
+  display: block;
+  border-radius: inherit;
+  box-shadow: var(--shadow-ring);
+  transform: perspective(var(--wall-curve-perspective)) rotateX(var(--wall-curve-x, 0deg)) rotateY(var(--wall-curve-y, 0deg));
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] > span {
+  transform: perspective(var(--wall-curve-perspective)) rotateX(0deg) rotateY(0deg);
+  transition: transform var(--grid-focus-duration) var(--ease-smooth);
+}
+@media (prefers-reduced-motion: reduce) {
+  .personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span { transform: none; }
+}

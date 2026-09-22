@@ -17,6 +17,32 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     if (!stage || !plane) return
     const panels = Array.from(plane.querySelectorAll<HTMLElement>(".personal-photos-wall-panel"))
     const columns = panels.map(panel => Array.from(panel.querySelectorAll<HTMLElement>(".personal-photos-column")))
+    const slides = Array.from(plane.querySelectorAll<HTMLElement>(".personal-photos-slide"))
+    let curvatureFrame = 0
+    // Gesture -> sample flat layout boxes -> tilt toward the plate rim.
+    // Selection -> flatten the print; reduced motion -> keep the wall flat.
+    // Batch all reads before writes, and coalesce wheel/pointer events per frame.
+    const curve = () => {
+      curvatureFrame = 0
+      const bounds = stage.getBoundingClientRect()
+      const settings = getComputedStyle(stage)
+      const angle = parseFloat(settings.getPropertyValue("--wall-curve-angle")) || 0
+      const power = parseFloat(settings.getPropertyValue("--wall-curve-power")) || 1
+      const poses = slides.map(slide => {
+        const rect = slide.getBoundingClientRect()
+        const x = clamp((rect.left + rect.width / 2 - bounds.left - bounds.width / 2) / (bounds.width / 2), -1, 1)
+        const y = clamp((rect.top + rect.height / 2 - bounds.top - bounds.height / 2) / (bounds.height / 2), -1, 1)
+        const bend = (value: number) => Math.sign(value) * Math.abs(value) ** power * angle
+        return { slide, x: bend(y), y: -bend(x) }
+      })
+      for (const { slide, x, y } of poses) {
+        slide.style.setProperty("--wall-curve-x", `${x.toFixed(3)}deg`)
+        slide.style.setProperty("--wall-curve-y", `${y.toFixed(3)}deg`)
+      }
+    }
+    const requestCurve = () => {
+      if (!curvatureFrame) curvatureFrame = requestAnimationFrame(curve)
+    }
     const pointers = new Map<number, Point>()
     let origin: Point | null = null
     let dragged = false
@@ -49,6 +75,7 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
         }
       }
       plane.style.transform = `translate(${pose.x}px, ${pose.y}px) scale(${pose.scale})`
+      requestCurve()
     }
     const local = (point: Point) => {
       const rect = stage.getBoundingClientRect()
@@ -226,7 +253,12 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     stage.addEventListener("keydown", key)
     stage.addEventListener("focusin", focusIn)
     window.addEventListener("blur", cancel)
+    window.addEventListener("photo-wall-curve-change", requestCurve)
+    plane.addEventListener("transitionend", requestCurve)
     return () => {
+      cancelAnimationFrame(curvatureFrame)
+      window.removeEventListener("photo-wall-curve-change", requestCurve)
+      plane.removeEventListener("transitionend", requestCurve)
       focusRevision++
       cancel()
       observer.disconnect()
