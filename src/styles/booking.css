@@ -6,7 +6,9 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog-backdrop);
-  background: rgb(18 18 18 / 0.42);
+  background: rgb(18 18 18 / 0.6);
+  backdrop-filter: blur(10px) saturate(0.92);
+  -webkit-backdrop-filter: blur(10px) saturate(0.92);
   transition: opacity var(--duration-base) var(--ease-standard);
 }
 

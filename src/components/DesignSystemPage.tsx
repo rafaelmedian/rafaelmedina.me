@@ -1802,7 +1802,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 label alone, the green status dot that used to ride inside it having been the hero's only chromatic
                 pixel for a month the accessible description already names. Hover immediately reveals the Kermit reaction card
                 with no intent delay; the availability month remains in the accessible description. A press opens the same floating conversation as the hero portrait and inline booking links.
-                The bubbles have no enclosing card. A full-screen <code>rgb(18 18 18 / 0.42)</code> scrim dims the page,
+                The bubbles have no enclosing card. A full-screen <code>rgb(18 18 18 / 0.6)</code> scrim dims the page with
+                <code>blur(10px) saturate(0.92)</code> behind the bubbles,
                 with focus and scrolling held inside the conversation until it closes.
                 The 440px-wide conversation stays centered in the viewport, grows with its messages, and scrolls its history
                 at the viewport limit. Hints and receipts keep white backgrounds so they stay readable over artwork. White incoming bubbles use <code>--canvas</code> with <code>--ink</code> text;
