@@ -95,7 +95,7 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
               requestAnimationFrame(() => bookRef.current?.focus({ preventScroll: true }))
             }}><ArrowLeft size={20} /></button>}
           <header className="booking-identity">
-            <img src={siteProfile.photo} width="64" height="64" alt="" />
+            <img src={siteProfile.photo} width="48" height="48" alt="" />
             <span className="booking-name-tag">{siteProfile.name}</span>
           </header>
           <section className="booking-conversation" hidden={calendar} aria-label="Conversation with Rafael">
