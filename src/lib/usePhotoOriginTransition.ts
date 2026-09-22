@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 
 import { cssTimeToMilliseconds } from "./cssTime"
+import { curvedPhotoWallStages } from "./photoWallWarp"
+import { activePhotoWallFlights, materializePhotoWallFlight, type PhotoWallFlight } from "./photoWallFlights"
 
 const useClientLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 const frameProperties = ["height", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderRadius", "boxShadow"] as const
@@ -84,7 +86,7 @@ function nearestPrint(sources: PhotoOrigin[], target: DOMRect) {
   return sources.reduce((closest, source) => distance(source) < distance(closest) ? source : closest)
 }
 
-type Flight = { slide: HTMLElement; clone: HTMLElement; animations: Animation[] }
+type Flight = { slide: HTMLElement; clone: HTMLElement; animations: Animation[]; gpu?: PhotoWallFlight }
 
 function removeFlight({ slide, clone, animations }: Flight) {
   animations.forEach((animation) => animation.cancel())
@@ -103,6 +105,7 @@ export function usePhotoOriginTransition(
 ) {
   const flights = useRef<Flight[]>([])
   const sourceFades = useRef<Animation[]>([])
+
 
   useClientLayoutEffect(() => {
     if (!strip || !opener) return
@@ -128,6 +131,7 @@ export function usePhotoOriginTransition(
     const clear = () => {
       flights.current.forEach(removeFlight)
       flights.current = []
+      if (strip) activePhotoWallFlights.delete(strip)
       sourceFades.current.forEach((animation) => animation.cancel())
       sourceFades.current = []
     }
@@ -191,6 +195,10 @@ export function usePhotoOriginTransition(
       }
     })
     const sourceWidths = new Map(sources.map(source => [source, source.element.offsetWidth]))
+    const curved = Boolean(parseFloat(tokens.getPropertyValue("--wall-bend")) || parseFloat(tokens.getPropertyValue("--wall-rim")))
+    const gpuOpening = open && opaqueWall && curved && curvedPhotoWallStages.has(strip)
+    previousFlights.forEach(flight => { if (flight.gpu) materializePhotoWallFlight(flight.gpu) })
+    activePhotoWallFlights.delete(strip)
 
     destinations.forEach(({ slide, target, layoutWidth, layoutHeight, frame, image: imageStyles }) => {
       const previous = previousFlights.find((flight) => flight.slide === slide)
@@ -234,7 +242,11 @@ export function usePhotoOriginTransition(
       // is usually what it has to fit rather than the print's width.
       const tuckedTransform = homeTransform(Math.min(source.width / layoutWidth, source.height / layoutHeight))
       const restingTransform = `translate(-50%, -50%) rotate(0deg) scale(${slideScale})`
-      const targetFrame = { ...frame, transform: restingTransform }
+      // Only the fan's own prints cast a shadow. Borrowed photos occupy the
+      // same small frames, so duplicating that shadow makes a dark halo on
+      // press and again just before the return hands back to the fan.
+      const shadow = opaqueWall && !own ? { boxShadow: "none" } : {}
+      const targetFrame = { ...frame, ...shadow, transform: restingTransform }
       const slideImage = slide.querySelector("img")!
       const targetImage = imageStyles
       const clone = previous?.clone ?? slide.cloneNode(true) as HTMLElement
@@ -268,7 +280,9 @@ export function usePhotoOriginTransition(
         if (imageLoaded || own) {
           image.src = imageLoaded ? slideImage.currentSrc : own!.image.currentSrc
           image.removeAttribute("srcset")
-          image.style.backgroundImage = "none"
+          // A cached source can be complete before this new element has
+          // decoded it for paint. Keep the warmed thumbnail behind the copy
+          // so handing off from the focused fan never exposes a blank mat.
         }
         image.decoding = "sync"
         document.body.appendChild(clone)
@@ -276,7 +290,7 @@ export function usePhotoOriginTransition(
 
       // The print's own frame and crop, expressed at the size the slide is now.
       const originFrame = (print: PhotoOrigin) => ({
-        ...scalePixels(print.frame, layoutWidth / sourceWidths.get(print)!), transform: originTransform,
+        ...scalePixels(print.frame, layoutWidth / sourceWidths.get(print)!), ...shadow, transform: originTransform,
       })
       const originImage = (print: PhotoOrigin) => scalePixels(print.imageStyles, layoutWidth / sourceWidths.get(print)!)
       const currentTransform = previous ? readFlightTransform(clone) : restingTransform
@@ -289,7 +303,10 @@ export function usePhotoOriginTransition(
       // Every wall photo borrows its destination print's frame and crop,
       // including photos tucked behind the five visible fan prints. They
       // stay opaque and gain the same mat as they collapse into the hand.
-      const animations = own || opaqueWall ? [
+      // The GPU owns geometry during opening. A no-op opacity animation keeps
+      // the existing clock, cancellation and completion semantics without
+      // animating DOM height, padding, radius, or a full-screen SVG filter.
+      const animations = gpuOpening ? [clone.animate([{ opacity: 1 }, { opacity: 1 }], timing)] : own || opaqueWall ? [
         clone.animate([open ? originFrame(source) : currentFrame, open ? targetFrame : originFrame(source)], timing),
         image.animate([open ? originImage(source) : currentImage, open ? targetImage : originImage(source)], timing),
         caption.animate([{ opacity: open ? 0 : currentCaptionOpacity }, { opacity: open ? 1 : 0 }], timing),
@@ -315,9 +332,47 @@ export function usePhotoOriginTransition(
         clone.animate([{ transform: currentTransform }, { transform: tuckedTransform }], timing),
         clone.animate([{ opacity: currentOpacity }, { opacity: 0, offset: 0.85 }], { ...timing, easing: fadeEasing }),
       ]
-      const flight = { slide, clone, animations }
+      const flight: Flight = { slide, clone, animations }
+      if (gpuOpening) {
+        const sourceScale = source.width / sourceWidths.get(source)!
+        const position = (value: string) => value.split(" ").map(part => parseFloat(part) / 100)
+        const startPosition = position(source.imageStyles.objectPosition)
+        const endPosition = position(imageStyles.objectPosition)
+        // The fan may retain a larger image from a previous visit. Keep
+        // reopening on thumbnails too, rather than uploading those originals.
+        const placeholder = new Image()
+        placeholder.src = slideImage.style.backgroundImage.slice(5, -2)
+        flight.gpu = {
+          clone, image: slideImage, placeholder, clock: animations[0],
+          waitingForPaint: animations[0].playState === "running",
+          depth: own ? own.depth : -1,
+          level: Boolean(slide.querySelector(".personal-photo-level")),
+          from: { x: source.rect.left + source.rect.width / 2, y: source.rect.top + source.rect.height / 2,
+            width: source.width, height: source.height,
+            padding: parseFloat(source.frame.paddingTop) * sourceScale,
+            radius: parseFloat(source.frame.borderRadius) * sourceScale, angle: source.angle,
+            positionX: startPosition[0], positionY: startPosition[1] },
+          to: { x: target.left + target.width / 2, y: target.top + target.height / 2,
+            width: target.width, height: target.height,
+            padding: parseFloat(frame.paddingTop) * slideScale,
+            radius: parseFloat(frame.borderRadius) * slideScale, angle: 0,
+            positionX: endPosition[0], positionY: endPosition[1] },
+        }
+        // Loading and uploading the first textures must not consume flight time.
+        // Preserve an externally paused clock (for inspection or reduced playback).
+        if (flight.gpu.waitingForPaint) {
+          flight.gpu.clock.pause()
+          flight.gpu.clock.currentTime = 0
+        }
+        materializePhotoWallFlight(flight.gpu)
+      }
       flights.current.push(flight)
     })
+
+    if (gpuOpening) {
+      activePhotoWallFlights.set(strip, flights.current.flatMap(flight => flight.gpu ? [flight.gpu] : []))
+      strip.dispatchEvent(new Event("photo-wall-paint"))
+    }
 
     if (!open) {
       sourceFades.current = sources.filter((source) => !returning.has(source.id)).map(({ element, image }) => {
@@ -336,6 +391,8 @@ export function usePhotoOriginTransition(
       if (disposed) return
       if (!open) sources.forEach(({ element }) => element.removeAttribute("data-photo-away"))
       batch.forEach(removeFlight)
+      activePhotoWallFlights.delete(strip)
+      strip.dispatchEvent(new Event("photo-wall-paint"))
       flights.current = flights.current.filter(flight => !batch.includes(flight))
       if (!open) onCloseComplete()
     })
@@ -360,6 +417,7 @@ export function usePhotoOriginTransition(
   useEffect(() => () => {
     flights.current.forEach(removeFlight)
     flights.current = []
+
     sourceFades.current.forEach((animation) => animation.cancel())
     sourceFades.current = []
   }, [])

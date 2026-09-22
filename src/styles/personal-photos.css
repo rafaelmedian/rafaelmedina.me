@@ -212,12 +212,16 @@
   --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-/* Longer screen-spanning flights on compact screens keep the fan's journey
-   readable, while the close remains shorter than the opening. */
+/* Give the screen-spanning wall opening one readable beat at every size. */
+.personal-photos-backdrop[data-layout="wall"],
+.personal-photos-dialog[data-layout="wall"] {
+  --photo-open-duration: 480ms;
+}
+
+/* Compact screens retain their longer return journey. */
 @media (max-width: 699.98px) {
   .personal-photos-backdrop[data-layout="wall"],
   .personal-photos-dialog[data-layout="wall"] {
-    --photo-open-duration: 480ms;
     --photo-close-duration: var(--duration-slow);
   }
 }
@@ -269,6 +273,13 @@
 }
 
 .personal-photos-dialog[data-starting-style] { opacity: 0; }
+/* Flights own the reveal. Keep their destination and the white canvas opaque
+   so the page never shows through as the photos grow and hand off. */
+.personal-photos-backdrop[data-layout="wall"]:not([data-ending-style]),
+.personal-photos-dialog[data-layout="wall"]:not([data-ending-style]) {
+  opacity: 1;
+  transition: none;
+}
 .personal-photos-dialog[data-ending-style] {
   opacity: 0;
   transition-duration: var(--photo-close-duration);
@@ -356,26 +367,28 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   min-width: 44px;
-  height: 44px;
+  height: 48px;
   padding: 12px 1rem;
   translate: -50% 0;
   border: 0;
-  border-radius: var(--radius-full);
-  background: var(--canvas);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.92);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
   color: var(--ink);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
-  font-weight: 500;
-  line-height: 1;
+  font-weight: 400;
+  line-height: 1.25;
   cursor: pointer;
   pointer-events: auto;
   scale: 1;
   transition: scale var(--duration-fast) var(--ease-smooth);
 }
-.personal-photos-wall-close svg { flex: 0 0 auto; }
+.personal-photos-wall-close svg { flex: 0 0 auto; color: var(--muted); }
 .personal-photos-wall-close:active { scale: 0.96; }
 .personal-photos-wall-close:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -634,7 +647,6 @@
 .personal-photos-layout::before,
 .personal-photos-layout button,
 .personal-photos-grid-close,
-.personal-photos-wall-close,
 .personal-photos-sheet-handle { corner-shape: round; }
 
 /* The held photo's name, just under it. usePhotoSphere places it from the
@@ -808,6 +820,11 @@
 }
 .personal-photos-sheet[data-layout="wall"] {
   --wall-release-duration: var(--duration-base);
+  --wall-watch-shrink: 0;
+  --wall-watch-power: 1.35;
+  --wall-bend: 0;
+  --wall-rim: 0.46;
+  --wall-gap: 0.5rem;
   /* The backdrop owns the white canvas. A second surface here would cover
      borrowed flights, which travel below the popup and above the backdrop. */
   background: transparent;
@@ -831,11 +848,11 @@
   transform-origin: 0 0;
   translate: var(--wall-focus-x, 0px) var(--wall-focus-y, 0px);
   transition: translate var(--grid-focus-duration) var(--ease-smooth);
-  gap: clamp(1.5rem, 4vw, 5rem);
+  gap: var(--wall-gap);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column {
   align-items: center;
-  gap: clamp(1.5rem, 4vw, 5rem);
+  gap: var(--wall-gap);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(even) {
   margin-top: 6rem;
@@ -846,8 +863,10 @@
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
   --photo-padding: 0px;
   --photo-radius: var(--radius-md);
+  transform-style: flat;
+  background: transparent;
   width: 100%;
-  box-shadow: var(--shadow-ring);
+  box-shadow: none;
   transition: transform var(--wall-release-duration) var(--ease-standard), scale var(--wall-release-duration) var(--ease-standard);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
@@ -894,16 +913,16 @@
   top: 0;
   display: flex;
   align-items: flex-start;
-  gap: clamp(1.5rem, 4vw, 5rem);
+  gap: var(--wall-gap);
   width: 100%;
-  padding-right: clamp(1.5rem, 4vw, 5rem);
+  padding-right: var(--wall-gap);
 }
 .personal-photos-wall-panel:first-child { position: relative; }
 .personal-photos-wall-panel:has(.personal-photos-slide[data-held]) { z-index: 1; }
 
 .personal-photos-wall-panel .personal-photos-column {
   position: relative;
-  padding-bottom: clamp(1.5rem, 4vw, 5rem);
+  padding-bottom: var(--wall-gap);
 }
 /* Recycled rows share a horizontal panel box. Empty portions of a later
    panel must not intercept a photo in an earlier one. */
@@ -1093,3 +1112,47 @@
   transition: rotate var(--duration-fast) var(--ease-smooth);
 }
 .personal-photo-book[aria-expanded="true"] .personal-photo-details-chevron { rotate: 180deg; }
+
+/* Watch retains its independent scale treatment. The default curved surface
+   bends the complete composition in one render pass below. */
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span {
+  display: block;
+  border-radius: inherit;
+  box-shadow: var(--shadow-ring);
+  transform: scale(var(--wall-watch-scale, 1));
+}
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] > span {
+  transform: none;
+  transition: transform var(--grid-focus-duration) var(--ease-smooth);
+}
+@media (prefers-reduced-motion: reduce) {
+  .personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span { transform: none; }
+}
+
+.personal-photos-wall-surface { position: absolute; inset: 0; }
+.personal-photos-wall-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+.personal-photos-wall-surface[data-warp-ready] .personal-photos-masonry { opacity: 0; }
+.personal-photos-wall-surface[data-warp-ready] .personal-photos-wall-canvas { display: block; }
+
+/* Keep the morphing control opaque while the photo stage retreats. */
+.personal-photos-dialog[data-layout="wall"][data-ending-style] { opacity: 1; }
+.personal-photos-dialog[data-layout="wall"][data-ending-style] .personal-photos-sheet {
+  opacity: 0;
+  transition: opacity var(--photo-close-duration) var(--photo-motion-ease);
+}
+.personal-photos-wall-close-content {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  white-space: nowrap;
+}
+.personal-photos-control-morph-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  pointer-events: none;
+  white-space: nowrap;
+}

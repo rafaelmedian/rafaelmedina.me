@@ -1,3 +1,4 @@
+import { PhotoWallSurface } from "./PhotoWallSurface"
 import type { OpenPhoto } from "./PersonalPhotosPreview"
 import { X } from "./NavigationIcons"
 import { ChevronDown } from "lucide-react"
@@ -49,9 +50,9 @@ const sphereCardShare = 0.225 * Math.sqrt(sphereCoverageTarget / sphereTiles.len
 const spherePhotoSizes = `${photoSphereHoldShare * 100}vw`
 // One column's width: the sheet less its gutters and the gaps between the
 // columns, as --photo-gutter and --photo-column-gap set them.
-// Like the globe, advertise the largest camera zoom before a gesture so
-// enlarging the wall never waits for a sharper bitmap to arrive.
-const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * clamp(1.5rem, 4vw, 5rem)) / 5 * 2.5)"
+// Start at the actual column width. The camera upgrades sizes as it zooms,
+// rather than decoding maximum-zoom originals for every initial tile.
+const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * 0.5rem) / 5)"
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
@@ -520,7 +521,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
           </Dialog.Description>
           {/* Outside the stage, which captures every press on the globe for
               the drag: a button inside it would never see its own click. */}
-          {layout === "wall" ? <PhotoWallControls /> : <Dialog.Close className="personal-photos-wall-close" aria-label="Close photo wall">
+          {layout === "wall" ? <PhotoWallControls open={open} /> : <Dialog.Close className="personal-photos-wall-close" aria-label="Close photo wall">
             <X size={16} strokeWidth={1.75} aria-hidden="true" />
             <span className="personal-photos-wall-close-label">Close</span>
           </Dialog.Close>}
@@ -585,6 +586,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
               </Fragment>
             ) : (
               <Fragment key={layout}>
+                <PhotoWallSurface wall={layout === "wall"}>
                 <div className="personal-photos-masonry" style={held?.wallFocus ? { "--wall-focus-x": `${held.wallFocus.x}px`, "--wall-focus-y": `${held.wallFocus.y}px` } as CSSProperties : undefined}>
                   {layout === "wall" ? wallPanels.map(({ x, y }) => (
                     <div className="personal-photos-wall-panel" data-wall-x={x} data-wall-y={y} aria-hidden={x !== 0 || y !== 0 ? true : undefined} key={`${x},${y}`}>
@@ -592,6 +594,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
                     </div>
                   )) : <PhotoColumns gridColumns={gridColumns} held={held} previewCount={previewCount} layout={layout} toggleHold={toggleHold} onSlideKeyDown={onSlideKeyDown} />}
                 </div>
+                </PhotoWallSurface>
                 {/* The held photo's name, under it, as on the globe; the
                     figcaptions stay for assistive tech. */}
                 <p className="personal-photos-stage-caption" aria-hidden={layout === "wall" ? undefined : true} style={layout !== "wall" && held ? { "--stage-caption-x": `${held.left + held.width / 2}px`, "--stage-caption-y": `${held.captionTop.toFixed(1)}px`, "--stage-caption-opacity": 1 } as CSSProperties : undefined}>
