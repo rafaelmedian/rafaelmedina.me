@@ -23,6 +23,8 @@ for (const width of [390, 1440]) {
     await page.locator('.mosaic-booking-pill').click()
     await expect(dialog.getByRole('textbox', { name: 'Your message' })).toHaveValue('Let’s talk about a design project.')
     const bounds = await dialog.boundingBox()
+    expect(bounds!.x + bounds!.width / 2).toBeCloseTo(width / 2, 0)
+    expect(bounds!.y + bounds!.height / 2).toBeCloseTo(450, 0)
     expect(bounds!.x).toBeGreaterThanOrEqual(0)
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
   })
@@ -64,8 +66,12 @@ test('validates email and keeps controls reachable in a short mobile viewport', 
   await dialog.getByRole('button', { name: 'Change email' }).click()
   await expect(email).toBeFocused()
   await expect(email).toHaveValue('visitor@example.com')
-  await expect(dialog).not.toHaveAttribute('aria-modal', 'true')
-  await expect(page.locator('.booking-backdrop')).toHaveCount(0)
+  for (let index = 0; index < 4; index++) {
+    await page.keyboard.press('Tab')
+    await expect.poll(() => dialog.evaluate(node => node.contains(document.activeElement))).toBe(true)
+  }
+  await expect(page.locator('.booking-backdrop')).toBeVisible()
+  await expect(page.locator('.booking-backdrop')).toHaveCSS('background-color', 'rgba(18, 18, 18, 0.42)')
   await expect(dialog).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   const box = await dialog.getByRole('button', { name: 'Continue with email' }).boundingBox()
   expect(box!.y + box!.height).toBeLessThan(480)
@@ -73,7 +79,7 @@ test('validates email and keeps controls reachable in a short mobile viewport', 
   await expect(page.locator('.mosaic-booking-pill')).toBeFocused()
 })
 
-test('grows the floating conversation then scrolls history without locking the page', async ({ page }) => {
+test('grows the centered conversation then scrolls history while holding the page', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.route('**/contact', route => route.fulfill({ json: { sent: true } }))
@@ -96,6 +102,6 @@ test('grows the floating conversation then scrolls history without locking the p
   expect(composer!.y + composer!.height).toBeLessThan(900)
   await page.mouse.move(50, 300)
   await page.mouse.wheel(0, 300)
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
   await expect(dialog).toBeVisible()
 })

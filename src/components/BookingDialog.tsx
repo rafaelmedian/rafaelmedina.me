@@ -65,8 +65,9 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
     void deliver(item)
   }
 
-  return <Dialog.Root open={open} onOpenChange={onOpenChange} modal={false}>
+  return <Dialog.Root open={open} onOpenChange={onOpenChange}>
     <Dialog.Portal>
+      <Dialog.Backdrop className="booking-backdrop" />
       <div className="booking-shell">
         <Dialog.Popup className="booking-popup" data-calendar={calendar} ref={popupRef}
           initialFocus={popupRef} finalFocus={returnFocus}>

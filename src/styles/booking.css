@@ -1,7 +1,23 @@
 /* --------------------------------------------------- booking dialog --- */
 
-/* A nonmodal conversation: individual bubbles float above the page. The
-   surrounding shell never blocks pointer events or locks document scrolling. */
+/* Individual bubbles stay unboxed above a full-screen translucent scrim. */
+
+.booking-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog-backdrop);
+  background: rgb(18 18 18 / 0.42);
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+.booking-backdrop[data-starting-style],
+.booking-backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.booking-backdrop[data-ending-style] {
+  transition-duration: var(--duration-quick);
+}
 
 .booking-shell {
   position: fixed;
@@ -10,7 +26,7 @@
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   grid-template-columns: minmax(0, 1fr);
-  place-items: end;
+  place-items: center;
   pointer-events: none;
   padding:
     max(2.5rem, env(safe-area-inset-top))
