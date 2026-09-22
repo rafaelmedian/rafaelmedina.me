@@ -8,10 +8,10 @@ export default function PhotoWallTuner() {
     style: { type: "select", options: [{ value: "plate", label: "Curved surface" }, { value: "watch", label: "Watch" }], default: "plate" },
     enabled: true,
     bend: [0, 0, 1, 0.01],
-    rim: [0.46, 0, 1, 0.01],
+    rim: [0.13, 0, 1, 0.01],
     gap: [8, 8, 64, 1],
-    watchShrink: [0.65, 0, 0.9, 0.05],
-    watchFalloff: [1.35, 1, 3, 0.05],
+    watchShrink: [0.3, 0, 0.9, 0.05],
+    watchFalloff: [1.3, 1, 3, 0.05],
     open: { type: "action", label: "Open photo wall" },
   }, {
     onAction: action => {
