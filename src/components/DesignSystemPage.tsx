@@ -1805,11 +1805,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>blur(10px) saturate(0.92)</code> behind the bubbles,
                 with focus and scrolling held inside the conversation until it closes.
                 The compact 360px conversation stays centered, grows with its messages, and scrolls its history
-                at the viewport limit. Hints and receipts use white text directly on the dark backdrop. Incoming bubbles use the side chat’s <code>--mosaic-card-surface</code> with <code>--ink</code> text and no shadow;
+                at the viewport limit. Hints and receipts use white text directly on the dark backdrop. Incoming bubbles use <code>--canvas</code> with <code>--ink</code> text and no shadow;
                 right-aligned replies use the existing Messages blue <code>#0071e3</code> with white text.
-                A 64px circular portrait uses <code>corner-shape: round</code> above a white name tag.
+                A 64px circular portrait uses <code>corner-shape: round</code> above a white name tag raised with <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
                 Bubbles use <code>--text-sm</code> with <code>--radius-lg</code> corners and 8px gaps, borrowing the original side chat’s compact scale. Fields stay on <code>--text-md</code> (16px, including on phones). The compact booking pill uses <code>--text-sm</code>; the name tag and hints use <code>--text-xs</code>.
-                The white composer uses the original side chat’s <code>--shadow-ring</code> and <code>--shadow-overlay</code>, lifting to <code>--shadow-overlay-hover</code> on focus rather than drawing a dark outline. The message field grows from one line to <code>min(188px, 30dvh)</code>, then scrolls. Its 44px send target holds a 36px inset surface, gray while disabled and blue when ready. Email comes first, then optional messages delivered to Rafael’s inbox with receipts and retries.
+                The white composer uses the original side chat’s <code>--shadow-ring</code> and <code>--shadow-overlay</code>, lifting to <code>--shadow-overlay-hover</code> on focus rather than drawing a dark outline. The message field grows from one line to <code>min(188px, 30dvh)</code>, then scrolls. Its 44px send target holds a 36px inset surface, gray while disabled and blue when ready. Email comes first, with Change email directly beneath the submitted blue address. Optional messages follow with receipts and retries; the message composer has no inbox caption.
                 Book a time expands the same floating surface to 1104px over <code>--duration-slow</code>
                 and centers a light Cal.com calendar with the email prefilled. Back restores the conversation and draft.
                 Calendar loading keeps a skeleton and offers a direct link, including the email, after six seconds.

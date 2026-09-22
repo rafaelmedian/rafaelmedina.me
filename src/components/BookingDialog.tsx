@@ -100,7 +100,14 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
               <div className="booking-bubble"><p>Hey, I’m Rafa.</p><p>Have something in mind?</p></div>
               <div className="booking-bubble">Leave your email so I can get back to you.</div>
               {confirmedEmail && <>
-                <div className="booking-bubble booking-outgoing">{confirmedEmail}</div>
+                <div className="booking-email-confirmation">
+                  <div className="booking-bubble booking-outgoing">{confirmedEmail}</div>
+                  <button className="booking-change-email" type="button" disabled={sending} onClick={() => {
+                    popupRef.current?.focus({ preventScroll: true })
+                    setConfirmedEmail("")
+                    requestAnimationFrame(() => popupRef.current?.querySelector<HTMLInputElement>('input[type="email"]')?.focus())
+                  }}>Change email</button>
+                </div>
                 <div className="booking-bubble">Tell me a little about it. Or let’s find a time to talk.</div>
               </>}
               {outbox.map(item => <div className="booking-delivery" key={item.requestId}>
@@ -123,12 +130,12 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
             </form> : <div className="booking-compose-area">
               <form onSubmit={send}>
                 <div className="booking-composer">
-                  <textarea ref={messageRef} aria-label="Your message" aria-describedby={hintId} rows={1} maxLength={2000}
+                  <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : undefined} rows={1} maxLength={2000}
                     {...ignorePasswordManagers} placeholder="Tell me a little about it…" value={message}
                     onChange={event => setMessage(event.target.value)} disabled={atLimit} />
                   <button className="booking-send" type="submit" aria-label="Send message" disabled={!message.trim() || sending || atLimit}><ArrowUp size={24} /></button>
                 </div>
-                <p className="booking-hint" id={hintId}>{atLimit ? "Five messages sent. Let’s find a time to talk." : "Straight to my inbox. I’ll reply by email."}</p>
+                {atLimit && <p className="sr-only" id={hintId} role="status">Message limit reached. You can still book a time.</p>}
               </form>
               <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" onClick={() => {
                 popupRef.current?.focus({ preventScroll: true })
@@ -136,11 +143,6 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
                 setCalendar(true)
                 requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
               }}><CalendarDays size={18} aria-hidden="true" />Book a time<span>30 min</span></button>
-              <button className="booking-change-email" type="button" disabled={sending} onClick={() => {
-                popupRef.current?.focus({ preventScroll: true })
-                setConfirmedEmail("")
-                requestAnimationFrame(() => popupRef.current?.querySelector<HTMLInputElement>('input[type="email"]')?.focus())
-              }}>Change email</button>
             </div>}
           </section>
           {calendarEmail !== null && <section className="booking-calendar-stage" hidden={!calendar} aria-label="Choose a time">

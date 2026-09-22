@@ -418,7 +418,7 @@
   color: var(--ink);
   font-size: var(--text-xs);
   font-weight: 600;
-  box-shadow: var(--shadow-ring), var(--shadow-control);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
 }
 
 .booking-icon-button {
@@ -466,7 +466,7 @@
   margin: 0;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-lg);
-  background: var(--mosaic-card-surface);
+  background: var(--canvas);
   color: var(--ink);
   font-size: var(--text-sm);
   line-height: 1.5;
@@ -484,6 +484,7 @@
   color: var(--canvas);
 }
 
+.booking-email-confirmation,
 .booking-delivery {
   display: flex;
   flex-direction: column;
@@ -623,8 +624,10 @@
 
 .booking-change-email {
   display: block;
-  margin: 0.5rem auto -0.5rem;
-  padding: 0.5rem 0.75rem;
+  align-self: flex-end;
+  margin: 0 0.5rem 0 0;
+  padding: 0.5rem;
+  min-height: 36px;
   background: transparent;
   border-radius: var(--radius-full);
   color: var(--canvas);
