@@ -406,6 +406,12 @@
 }
 
 .booking-name-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 44px;
+  border: 0;
+  cursor: pointer;
   position: relative;
   margin-top: -0.5rem;
   padding: 0.5rem 0.75rem;
@@ -702,4 +708,132 @@
 @media (prefers-reduced-motion: reduce) {
   .booking-bubble,
   .booking-compose-area { animation: none; }
+}
+
+/* A nested contact sheet keeps the conversation and its draft underneath. */
+.booking-name-tag svg { color: var(--muted); }
+
+.booking-contact-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  background: rgb(0 0 0 / 0.06);
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+.booking-contact-backdrop[data-starting-style],
+.booking-contact-backdrop[data-ending-style] { opacity: 0; }
+
+.booking-contact-panel {
+  position: fixed;
+  z-index: var(--z-dialog);
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  width: min(360px, calc(100% - 1.5rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--mosaic-card-surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  transition: transform var(--duration-slow) var(--ease-smooth), opacity var(--duration-base) var(--ease-standard);
+}
+
+.booking-contact-panel[data-starting-style],
+.booking-contact-panel[data-ending-style] {
+  opacity: 0;
+  transform: translateX(calc(100% + 1.5rem));
+}
+
+.booking-contact-panel[data-ending-style] { transition-duration: var(--duration-quick); }
+
+.booking-contact-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.booking-contact-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.booking-contact-heading img {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 0.75rem;
+  border-radius: var(--radius-full);
+  corner-shape: round;
+  box-shadow: var(--shadow-ring);
+}
+
+.booking-contact-heading h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.booking-contact-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.booking-contact-mail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  color: #0071e3;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.booking-contact-group {
+  margin-top: 1rem;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+}
+
+.booking-contact-group a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 48px;
+  padding: 0.875rem 1rem;
+  color: #0071e3;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.booking-contact-group a + a { border-top: 1px solid var(--mosaic-card-surface); }
+.booking-contact-group svg { flex: none; color: var(--muted); }
+.booking-contact-group small {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--ink);
+  font-size: var(--text-xs);
+}
+
+.booking-contact-panel a:hover { background: var(--mosaic-card-surface); }
+.booking-contact-panel :focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booking-contact-panel[data-starting-style],
+  .booking-contact-panel[data-ending-style] { transform: none; }
 }

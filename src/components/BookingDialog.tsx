@@ -6,6 +6,7 @@ import { isContactEmail } from "../lib/contactEmail"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
 import { sendContact, type ContactMessage } from "../lib/sendContact"
 import { BookingCalendar } from "./BookingCalendar"
+import { BookingContactPanel } from "./BookingContactPanel"
 
 type Delivery = ContactMessage & { status: "sending" | "delivered" | "failed"; error?: string }
 
@@ -96,7 +97,7 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
             }}><ArrowLeft size={20} /></button>}
           <header className="booking-identity">
             <img src={siteProfile.photo} width="64" height="64" alt="" />
-            <span className="booking-name-tag">{siteProfile.name}</span>
+            <BookingContactPanel />
           </header>
           <section className="booking-conversation" hidden={calendar} aria-label="Conversation with Rafael">
             <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open && !calendar ? "polite" : "off"}>
