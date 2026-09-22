@@ -73,7 +73,11 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     const settings = getComputedStyle(stage)
     const bend = parseFloat(settings.getPropertyValue("--wall-bend")) || 0
     const rim = parseFloat(settings.getPropertyValue("--wall-rim")) || 0
-    const enabled = !reduced.matches && Boolean(bend || rim) && !stage.hasAttribute("data-held") && !stage.hasAttribute("data-hold-snap") && !surface.querySelector(".personal-photos-slide:focus-visible")
+    // Flights temporarily hide their destination slides. Keep the DOM handoff
+    // visible until a complete wall can be composited, rather than presenting
+    // the previous canvas frame with transparent holes after flights land.
+    const flying = slides.some(slide => slide.style.opacity === "0")
+    const enabled = !flying && !reduced.matches && Boolean(bend || rim) && !stage.hasAttribute("data-held") && !stage.hasAttribute("data-hold-snap") && !surface.querySelector(".personal-photos-slide:focus-visible")
     surface.toggleAttribute("data-warp-ready", enabled)
     if (!enabled) return
     const bounds = stage.getBoundingClientRect()

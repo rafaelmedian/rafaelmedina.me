@@ -212,12 +212,16 @@
   --photo-motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-/* Longer screen-spanning flights on compact screens keep the fan's journey
-   readable, while the close remains shorter than the opening. */
+/* Give the screen-spanning wall opening one readable beat at every size. */
+.personal-photos-backdrop[data-layout="wall"],
+.personal-photos-dialog[data-layout="wall"] {
+  --photo-open-duration: 480ms;
+}
+
+/* Compact screens retain their longer return journey. */
 @media (max-width: 699.98px) {
   .personal-photos-backdrop[data-layout="wall"],
   .personal-photos-dialog[data-layout="wall"] {
-    --photo-open-duration: 480ms;
     --photo-close-duration: var(--duration-slow);
   }
 }
@@ -269,6 +273,13 @@
 }
 
 .personal-photos-dialog[data-starting-style] { opacity: 0; }
+/* Flights own the reveal. Keep their destination and the white canvas opaque
+   so the page never shows through as the photos grow and hand off. */
+.personal-photos-backdrop[data-layout="wall"]:not([data-ending-style]),
+.personal-photos-dialog[data-layout="wall"]:not([data-ending-style]) {
+  opacity: 1;
+  transition: none;
+}
 .personal-photos-dialog[data-ending-style] {
   opacity: 0;
   transition-duration: var(--photo-close-duration);

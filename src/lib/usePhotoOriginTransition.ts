@@ -234,7 +234,11 @@ export function usePhotoOriginTransition(
       // is usually what it has to fit rather than the print's width.
       const tuckedTransform = homeTransform(Math.min(source.width / layoutWidth, source.height / layoutHeight))
       const restingTransform = `translate(-50%, -50%) rotate(0deg) scale(${slideScale})`
-      const targetFrame = { ...frame, transform: restingTransform }
+      // Only the fan's own prints cast a shadow. Borrowed photos occupy the
+      // same small frames, so duplicating that shadow makes a dark halo on
+      // press and again just before the return hands back to the fan.
+      const shadow = opaqueWall && !own ? { boxShadow: "none" } : {}
+      const targetFrame = { ...frame, ...shadow, transform: restingTransform }
       const slideImage = slide.querySelector("img")!
       const targetImage = imageStyles
       const clone = previous?.clone ?? slide.cloneNode(true) as HTMLElement
@@ -278,7 +282,7 @@ export function usePhotoOriginTransition(
 
       // The print's own frame and crop, expressed at the size the slide is now.
       const originFrame = (print: PhotoOrigin) => ({
-        ...scalePixels(print.frame, layoutWidth / sourceWidths.get(print)!), transform: originTransform,
+        ...scalePixels(print.frame, layoutWidth / sourceWidths.get(print)!), ...shadow, transform: originTransform,
       })
       const originImage = (print: PhotoOrigin) => scalePixels(print.imageStyles, layoutWidth / sourceWidths.get(print)!)
       const currentTransform = previous ? readFlightTransform(clone) : restingTransform
