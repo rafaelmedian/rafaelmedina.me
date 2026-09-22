@@ -30,6 +30,9 @@ const Agentation = import.meta.env.DEV
 const ElasticEdgeTuner = import.meta.env.DEV
   ? lazy(() => import("./components/ElasticEdgeTuner"))
   : null
+const PhotoWallTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/PhotoWallTuner"))
+  : null
 const PhotoPrintTuner = import.meta.env.DEV
   ? lazy(() => import("./components/PhotoPrintTuner"))
   : null
@@ -105,6 +108,9 @@ function App({ pathname }: { pathname?: string }) {
           <Suspense fallback={null}>
             <ElasticEdgeTuner />
           </Suspense>
+        ) : null}
+        {tuning === "wall" && PhotoWallTuner ? (
+          <Suspense fallback={null}><PhotoWallTuner /></Suspense>
         ) : null}
         {isTuningPhotos && PhotoPrintTuner ? (
           <Suspense fallback={null}>
