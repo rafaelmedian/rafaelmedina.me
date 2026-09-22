@@ -132,12 +132,14 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, scene, 0)
     }
     let pendingImage = false
+    let failedImage = false
     const corner = CSS.supports("corner-shape", "squircle") && settings.getPropertyValue("--corner-curve").trim() === "squircle" ? 4 : 2
     const visible = flights?.length ? [...flights].sort((a,b) => a.depth-b.depth).map(flight => {
       // Keep lightweight thumbnails for the whole opening. Uploading newly
       // loaded originals mid-flight stalls the very frame they should animate.
       const img = flight.placeholder.complete && flight.placeholder.naturalWidth ? flight.placeholder : flight.image
       if (!img.complete || !img.naturalWidth) pendingImage = true
+      if (flight.placeholder.complete && !flight.placeholder.naturalWidth && flight.image.complete && !flight.image.naturalWidth) failedImage = true
       return { ...samplePhotoWallFlight(flight), img, preview: flight.placeholder, opacity: 1, level: flight.level }
     }) : slides.flatMap(slide => {
       const box = slide.getBoundingClientRect()
@@ -157,7 +159,10 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
       renderedPhotoWallCurves.delete(stage)
       // Placeholder Images live outside the surface, so its load listener
       // cannot wake this renderer when a cold thumbnail finishes.
-      if (flights?.length) request()
+      // A terminal failure cannot produce the first GPU paint. Complete the
+      // group so its normal cleanup reveals the usable DOM wall instead.
+      if (failedImage) flights?.forEach(flight => flight.clock.finish())
+      else if (flights?.length) request()
       return
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
