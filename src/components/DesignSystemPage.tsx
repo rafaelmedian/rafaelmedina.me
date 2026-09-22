@@ -1789,7 +1789,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
               <p className="ds-caption">
                 The booking dialog keeps a 44px shared round close control pinned 0.75rem from its top-right
-                corner, above the calendar during loading and scrolling.
+                corner, above both conversation and calendar during loading and scrolling.
                 Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.07)</code> hairline, labelled in <code>--muted</code> so the hero name keeps the only dark ink in that block.
                 All chips fill to <code>#e9e9e9</code>{" "}
                 for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
@@ -1801,21 +1801,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 its viewport crossing. Booking is the dark pill and the contact row's primary action; it carries its
                 label alone, the green status dot that used to ride inside it having been the hero's only chromatic
                 pixel for a month the accessible description already names. Hover immediately reveals the Kermit reaction card
-                with no intent delay; the availability month remains in the accessible description. A press opens the Cal.com dialog — which wears no chrome of its own: no header, no
-                close button, only the calendar on an even mat, because that page already has a title and a month of its own
-                and a second set above it was the same thing twice. Escape and a press outside close it; the dialog's
-                responsive <code>clamp(16px, 3vw, 32px)</code> side gutters preserve the embed's 1040px desktop canvas
-                and extend Cal.com's <code>#fafafa</code> top-and-bottom field to both sides. Before that third-party
-                page paints, an <code>aria-hidden</code> calendar skeleton sits on the iframe's centre line but keeps
-                the 760px-wide stage Cal.com uses while booting: profile, month grid, and time rail on desktop, then
-                the month grid alone on phones. The live calendar can expand into the full 1040px canvas without the
-                preload beginning wider than the state it hands off to. Its neutral blocks pulse
-                once over two slow-duration steps, then cross-fade and cross-blur into the calendar over
-                <code>--duration-slow</code>; reduced motion swaps the layers immediately. The loading status remains
-                available to assistive technology and becomes visible only if the six-second failure threshold is met. The dialog's
-                name and description are still there as <code>sr-only</code> text, and the &ldquo;open it on
-                cal.com&rdquo; escape hatch waits inside the loading line for the six seconds it takes to know a
-                third-party frame has been blocked rather than sitting in a header from the start. The address is the page's top-right corner, opposite the section
+                with no intent delay; the availability month remains in the accessible description. A press opens the same floating conversation as the hero portrait and inline booking links.
+                It is nonmodal: there is no scrim or enclosing card, and the page remains scrollable and interactive.
+                The 440px-wide conversation sits at the lower right, grows with its messages, and scrolls its history
+                at the viewport limit. Hints and receipts keep white backgrounds so they stay readable over artwork. White incoming bubbles use <code>--canvas</code> with <code>--ink</code> text;
+                right-aligned replies use the existing Messages blue <code>#0071e3</code> with white text.
+                An 80px circular portrait uses <code>corner-shape: round</code> above a white name tag.
+                Message text and fields use <code>--text-md</code> (16px, including on phones), the name and
+                booking action use <code>--text-sm</code>, and hints use <code>--text-xs</code>.
+                Email comes first, then optional messages delivered to Rafael’s inbox with receipts and retries.
+                Book a time expands the same floating surface to 1104px over <code>--duration-slow</code>
+                and opens a light Cal.com calendar with the email prefilled. Back restores the conversation and draft.
+                Calendar loading keeps a skeleton and offers a direct link, including the email, after six seconds.
+                Escape, close, or an outside press dismisses the conversation and restores the opening trigger.
+                The conversation stays in memory across entry points; reduced motion removes the entrance transform.
+                The address is the page's top-right corner, opposite the section
                 links, where the local time used to be — a clock is ambient and an address is what a visitor came
                 for, so only one of them earns that spot, and the clock moved into the About sheet. Below 700px the
                 corner is not drawn at all and the address falls back into the hero's location line; it is one
@@ -2068,15 +2068,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 id="avatar-coin"
                 data-ds-terms={terms("avatar greeting teaser video hover focus play introduction reduced motion lightweight")}
               >
-                <strong>The avatar greets you and opens the introduction.</strong>
+                <strong>The avatar greets you and opens the conversation.</strong>
                 <p>
                   Hovering or focusing the 52px circular portrait mounts the silent, looping greeting teaser.
                   It uses the existing MP4 in place of a heavier GIF and keeps the same crop and footprint.
                   Leaving removes the teaser. Reduced motion and lightweight connections keep the still portrait.
-                  The Handlee hint reads &ldquo;play my intro&rdquo;, and the accessible name is
-                  &ldquo;Watch Rafael Medina&apos;s introduction&rdquo;.
-                  Clicking opens the shared introduction player with its controls visible before playback, where Play starts the full recording with
-                  sound and captions. Closing returns focus to the avatar. The portrait no longer spins or zooms.
+                  The Handlee hint reads &ldquo;let’s talk&rdquo;, and the accessible name is
+                  &ldquo;Chat with Rafael Medina&rdquo;.
+                  Clicking opens the shared floating conversation and booking interface. The introduction recording remains available in the left-side dock. Closing returns focus to the avatar. The portrait no longer spins or zooms.
                 </p>
               </div>
 
@@ -2271,7 +2270,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <strong>The cue is also the shortcut.</strong> It is a 44px button that lands the About sheet at the
                   top of the viewport and moves focus into it — a tap finishes a crossing the reader has already
                   committed to. It is named &ldquo;Continue to About&rdquo;, distinct from the avatar&rsquo;s
-                  &ldquo;Ask about Rafael Medina&rdquo; chat action, so they stay distinguishable in a list of controls. The
+                  &ldquo;Chat with Rafael Medina&rdquo; chat action, so they stay distinguishable in a list of controls. The
                   button owns the target and the focus ring; the chevron inside owns the blend, because a ring drawn on
                   the blended element would invert along with the stroke.
                 </li>

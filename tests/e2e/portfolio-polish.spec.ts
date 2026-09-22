@@ -1999,7 +1999,7 @@ for (const width of [768, 1440]) {
 test("keeps the mobile profile and final content clear of the table of contents", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.goto("/")
-  const avatar = await page.getByRole("button", { name: "Watch Rafael Medina's introduction" }).boundingBox()
+  const avatar = await page.getByRole("button", { name: "Chat with Rafael Medina" }).boundingBox()
   expect(avatar!.y).toBeLessThan(96)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("03 Services")
@@ -2268,6 +2268,9 @@ test("hints at booking on hover and opens the calendar only on click", async ({ 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
   await expect(tooltip).toBeHidden()
+  await dialog.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com")
+  await dialog.getByRole("button", { name: "Continue with email" }).click()
+  await dialog.getByRole("button", { name: "Book a time", exact: true }).click()
   await expect(dialog.locator("iframe.booking-iframe")).toHaveAttribute("src", /embed=true/)
   await page.keyboard.press("Escape")
   await expect(dialog).toBeHidden()
@@ -2277,10 +2280,8 @@ test("hints at booking on hover and opens the calendar only on click", async ({ 
 // Touch and keyboard have no hover to rest in, so the same line is a plain
 // button for them. Focus alone must not open it: tabbing past the hero would
 // otherwise trap the visitor in a calendar they never asked for.
-// The dialog is the calendar and nothing else: no header, no close button, no
-// second title over a page that already has one. What a header was carrying that
-// still matters — the dialog's name, and the way out — had to go somewhere else.
-test("frames the calendar without chrome and still says what it is", async ({ page }) => {
+// Identity and dismissal stay available when conversation turns into booking.
+test("keeps Rafael’s identity above the calendar", async ({ page }) => {
   await page.route("https://cal.com/**", (route) =>
     route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Cal</title>" }),
   )
@@ -2290,17 +2291,11 @@ test("frames the calendar without chrome and still says what it is", async ({ pa
 
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
-  await expect(dialog.locator(".booking-header")).toHaveCount(0)
-  await expect(dialog.getByRole("button", { name: "Close booking calendar" })).toHaveCount(0)
-
-  // Named and described for screen readers even with nothing drawn.
-  await expect(dialog).toHaveAccessibleName("Book a call")
-  await expect(dialog).toHaveAccessibleDescription(/^Available in \w+ · 30 minutes, on Cal\.com$/)
-  // And neither is painted: sr-only text is in the accessibility tree and out of
-  // the layout, so the title's box collapses to nothing over the calendar.
-  const titleBox = await dialog.getByText("Book a call", { exact: true }).boundingBox()
-  expect(titleBox!.width).toBeLessThanOrEqual(1)
-  expect(titleBox!.height).toBeLessThanOrEqual(1)
+  await expect(dialog).toHaveAccessibleName("Chat with Rafael Medina")
+  await expect(dialog.locator(".booking-name-tag")).toHaveText("Rafael Medina")
+  await dialog.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com")
+  await dialog.getByRole("button", { name: "Continue with email" }).click()
+  await dialog.getByRole("button", { name: "Book a time", exact: true }).click()
 
   // Cal.com supplies the neutral field above and below its calendar. The host
   // extends that same field evenly along both sides instead of letting the
@@ -2334,6 +2329,9 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   await page.goto("/")
   await settleAvatarIntro(page)
   await page.locator(".mosaic-booking-pill").click()
+  await page.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com")
+  await page.getByRole("button", { name: "Continue with email" }).click()
+  await page.getByRole("button", { name: "Book a time", exact: true }).click()
 
   const frame = page.getByRole("dialog").locator(".booking-frame")
   const skeleton = frame.locator(".booking-skeleton")
@@ -2342,6 +2340,8 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   await expect(skeleton.locator(".booking-skeleton-day")).toHaveCount(35)
   await expect(skeleton).toHaveCSS("opacity", "1")
   await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "0")
+  // The floating chat expands into the calendar; measure after that transition.
+  await expect.poll(async () => (await frame.locator(".booking-iframe").boundingBox())!.width).toBeCloseTo(1040, 0)
   const skeletonPanel = await skeleton.locator(".booking-skeleton-panel").boundingBox()
   const iframe = await frame.locator(".booking-iframe").boundingBox()
   expect(skeletonPanel!.width).toBeCloseTo(760, 0)
@@ -2365,6 +2365,9 @@ test("offers cal.com directly when the embedded calendar never loads", async ({ 
   await page.goto("/")
   await settleAvatarIntro(page)
   await page.locator(".mosaic-booking-pill").click()
+  await page.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com")
+  await page.getByRole("button", { name: "Continue with email" }).click()
+  await page.getByRole("button", { name: "Book a time", exact: true }).click()
 
   const status = page.getByRole("dialog").locator(".booking-loading")
   await expect(status).toHaveText("Loading calendar…")
@@ -2373,7 +2376,7 @@ test("offers cal.com directly when the embedded calendar never loads", async ({ 
   await page.clock.fastForward(6_000)
   await expect(status).toContainText("The calendar didn\u2019t load.")
   const escape = status.getByRole("link", { name: "Open it on cal.com" })
-  await expect(escape).toHaveAttribute("href", "https://cal.com/rafaelmedian/30min")
+  await expect(escape).toHaveAttribute("href", "https://cal.com/rafaelmedian/30min?email=visitor%40example.com")
   await expect(escape).toHaveAttribute("target", "_blank")
 })
 
@@ -2662,17 +2665,17 @@ test("left aligns the about introduction with the services reading axis", async 
   })
 })
 
-test("opens the introduction player from the avatar button", async ({ page }) => {
+test("opens the conversation from the avatar button", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   const trigger = page.locator(".mosaic-avatar-button")
 
-  await expect(trigger).toHaveAccessibleName("Watch Rafael Medina's introduction")
+  await expect(trigger).toHaveAccessibleName("Chat with Rafael Medina")
   await trigger.focus()
   await trigger.press("Enter")
 
-  await expect(page.getByRole("button", { name: "Play introduction", exact: true })).toBeFocused()
-  await page.getByRole("button", { name: "Close introduction", exact: true }).click()
+  await expect(page.getByRole("dialog", { name: "Chat with Rafael Medina" })).toBeVisible()
+  await page.getByRole("button", { name: "Close conversation", exact: true }).click()
   await expect(trigger).toBeFocused()
 })
 
@@ -3107,7 +3110,7 @@ test("gives the takeover cue a full tap target and its own name", async ({ page 
 
   // Distinct from the avatar's chat action in a screen-reader rotor list.
   await expect(cue).toHaveAccessibleName("Continue to About")
-  await expect(page.getByRole("button", { name: "Watch Rafael Medina's introduction" })).toHaveCount(1)
+  await expect(page.getByRole("button", { name: "Chat with Rafael Medina" })).toHaveCount(1)
 })
 
 test("drops the takeover cue below the breakpoint that pins the gallery", async ({ page }) => {

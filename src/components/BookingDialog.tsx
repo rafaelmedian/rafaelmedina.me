@@ -1,138 +1,141 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { X } from "lucide-react"
-import { useEffect, useRef, useState, type RefObject } from "react"
+import { ArrowLeft, ArrowUp, CalendarDays, X } from "lucide-react"
+import { useEffect, useId, useRef, useState, type FormEvent, type RefObject } from "react"
+import { siteProfile } from "../data/portfolio"
+import { isContactEmail } from "../lib/contactEmail"
+import { ignorePasswordManagers } from "../lib/passwordManagers"
+import { sendContact, type ContactMessage } from "../lib/sendContact"
+import { BookingCalendar } from "./BookingCalendar"
+
+type Delivery = ContactMessage & { status: "sending" | "delivered" | "failed"; error?: string }
 
 type BookingDialogProps = {
-  /** Cal.com event type, e.g. `https://cal.com/rafaelmedian/30min`. */
   bookingUrl: string
-  /** The availability line that opened this, echoed as the dialog's subtitle. */
-  availabilityLabel: string
-  returnFocus: RefObject<HTMLButtonElement | null>
   open: boolean
   onOpenChange: (open: boolean) => void
+  returnFocus: RefObject<HTMLButtonElement | null>
 }
 
-// Long enough that a slow connection is not accused of being a blocked one,
-// short enough that nobody sits in front of a blank rectangle wondering.
-const STALL_MS = 6000
-const SKELETON_WEEKDAYS = Array.from({ length: 7 })
-const SKELETON_DAYS = Array.from({ length: 35 })
-const SKELETON_TIMES = Array.from({ length: 7 })
+export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: BookingDialogProps) {
+  const [email, setEmail] = useState("")
+  const [confirmedEmail, setConfirmedEmail] = useState("")
+  const [message, setMessage] = useState("")
+  const [outbox, setOutbox] = useState<Delivery[]>([])
+  const [calendar, setCalendar] = useState(false)
+  const [calendarEmail, setCalendarEmail] = useState<string | null>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
+  const messageRef = useRef<HTMLTextAreaElement>(null)
+  const backRef = useRef<HTMLButtonElement>(null)
+  const bookRef = useRef<HTMLButtonElement>(null)
+  const historyRef = useRef<HTMLDivElement>(null)
+  const hintId = useId()
+  const sending = outbox.some(item => item.status === "sending")
+  const atLimit = outbox.length >= 5
 
-// Cal.com renders its booking page without the marketing chrome when it is
-// asked for the embed view, so the iframe carries only the calendar itself.
-function toEmbedUrl(bookingUrl: string) {
-  const url = new URL(bookingUrl)
-  url.searchParams.set("embed", "true")
-  url.searchParams.set("layout", "month_view")
-  url.searchParams.set("theme", "light")
-  return url.href
-}
-
-export function BookingDialog({ bookingUrl, availabilityLabel, open, onOpenChange, returnFocus }: BookingDialogProps) {
-  // The calendar is a third-party page over the network. Until it paints, the
-  // iframe is an empty white rectangle, so it is held transparent behind a
-  // status line rather than shown blank inside a surface that has already
-  // finished animating in.
-  const [isCalendarReady, setIsCalendarReady] = useState(false)
-  // A frame a browser refuses to load never fires `onError` — it just sits
-  // there. Nothing distinguishes "blocked" from "slow" except how long it has
-  // been, so the fallback is a clock rather than an event.
-  const [hasStalled, setHasStalled] = useState(false)
-  const popupRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
-    if (!open || isCalendarReady) return
-    const timer = window.setTimeout(() => setHasStalled(true), STALL_MS)
-    return () => window.clearTimeout(timer)
-  }, [isCalendarReady, open])
+    if (open && !calendar) historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight })
+  }, [outbox, confirmedEmail, calendar, open])
 
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Backdrop className="booking-backdrop" />
-        <div
-          className="booking-shell"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) onOpenChange(false)
-          }}
-        >
-          <Dialog.Popup className="booking-popup" ref={popupRef} initialFocus={popupRef} finalFocus={returnFocus}>
-            {/* The calendar supplies its own heading. Keep a visible way out
-                above the iframe, including while it loads or scrolls. */}
-            <Dialog.Title className="sr-only">Book a call</Dialog.Title>
-            <Dialog.Description className="sr-only">
-              {availabilityLabel} · 30 minutes, on Cal.com
-            </Dialog.Description>
-            <Dialog.Close className="preview-gallery-nav booking-close" aria-label="Close booking">
-              <X className="preview-gallery-nav-icon" aria-hidden="true" />
-            </Dialog.Close>
+  const confirmEmail = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!isContactEmail(email)) return
+    // Move focus before removing the active field so the dialog does not
+    // schedule its own fallback focus after our next-step handoff.
+    popupRef.current?.focus({ preventScroll: true })
+    setConfirmedEmail(email.trim())
+    requestAnimationFrame(() => messageRef.current?.focus({ preventScroll: true }))
+  }
+  const deliver = async (item: ContactMessage) => {
+    const update = (change: Partial<Delivery>) => setOutbox(list => list.map(entry =>
+      entry.requestId === item.requestId ? { ...entry, ...change } : entry))
+    update({ status: "sending", error: undefined })
+    try {
+      await sendContact(item)
+      update({ status: "delivered" })
+    } catch (error) {
+      update({ status: "failed", error: error instanceof Error ? error.message : "Couldn't send. Please retry." })
+    }
+  }
+  const send = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!message.trim() || !confirmedEmail || sending || atLimit) return
+    const item = { email: confirmedEmail, message: message.trim(), requestId: crypto.randomUUID() }
+    setOutbox(list => [...list, { ...item, status: "sending" }])
+    setMessage("")
+    void deliver(item)
+  }
 
-            <div
-              className={`booking-frame t-skel${isCalendarReady ? " is-revealed" : ""}`}
-              data-ready={isCalendarReady ? "true" : undefined}
-              data-stalled={hasStalled ? "true" : undefined}
-            >
-              <div className="booking-skeleton t-skel-skeleton is-pulsing" aria-hidden="true">
-                <div className="booking-skeleton-panel">
-                  <div className="booking-skeleton-profile">
-                    <span className="booking-skeleton-avatar" />
-                    <span className="booking-skeleton-line booking-skeleton-line-name" />
-                    <span className="booking-skeleton-line booking-skeleton-line-title" />
-                    <span className="booking-skeleton-line booking-skeleton-line-detail" />
-                    <span className="booking-skeleton-line booking-skeleton-line-detail" />
-                    <span className="booking-skeleton-line booking-skeleton-line-zone" />
-                  </div>
-                  <div className="booking-skeleton-calendar">
-                    <div className="booking-skeleton-month">
-                      <span className="booking-skeleton-line booking-skeleton-line-month" />
-                      <span className="booking-skeleton-arrows" />
-                    </div>
-                    <div className="booking-skeleton-weekdays">
-                      {SKELETON_WEEKDAYS.map((_, index) => <span key={index} />)}
-                    </div>
-                    <div className="booking-skeleton-days">
-                      {SKELETON_DAYS.map((_, index) => <span className="booking-skeleton-day" key={index} />)}
-                    </div>
-                  </div>
-                  <div className="booking-skeleton-times">
-                    <span className="booking-skeleton-line booking-skeleton-line-times" />
-                    {SKELETON_TIMES.map((_, index) => <span className="booking-skeleton-time" key={index} />)}
-                  </div>
-                </div>
-              </div>
-              {isCalendarReady ? null : (
-                <p className={hasStalled ? "booking-loading" : "booking-loading sr-only"} role="status">
-                  {hasStalled ? (
-                    <>
-                      {/* The header used to carry this link from the start. It
-                          is the only way through a browser that blocks
-                          third-party frames, so it still has to exist — it just
-                          waits until there is something to escape from. */}
-                      The calendar didn&rsquo;t load.{" "}
-                      <a className="booking-external" href={bookingUrl} target="_blank" rel="noreferrer">
-                        Open it on cal.com
-                      </a>
-                    </>
-                  ) : (
-                    "Loading calendar…"
-                  )}
-                </p>
-              )}
-              <iframe
-                className="booking-iframe t-skel-content"
-                src={toEmbedUrl(bookingUrl)}
-                title="Book a call on Cal.com"
-                loading="lazy"
-                onLoad={() => setIsCalendarReady(true)}
-                // The calendar needs its own scrolling and its Google/Outlook
-                // sign-in popups; nothing else.
-                allow="clipboard-write; payment"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+  return <Dialog.Root open={open} onOpenChange={onOpenChange} modal={false}>
+    <Dialog.Portal>
+      <div className="booking-shell">
+        <Dialog.Popup className="booking-popup" data-calendar={calendar} ref={popupRef}
+          initialFocus={popupRef} finalFocus={returnFocus}>
+          <Dialog.Title className="sr-only">Chat with Rafael Medina</Dialog.Title>
+          <Dialog.Description className="sr-only">Send Rafael a message, then choose a time for a 30-minute call.</Dialog.Description>
+          <Dialog.Close className="booking-icon-button booking-close" aria-label="Close conversation"><X size={20} /></Dialog.Close>
+          {calendar && <button ref={backRef} type="button" className="booking-icon-button booking-back"
+            aria-label="Back to conversation" onClick={() => {
+              popupRef.current?.focus({ preventScroll: true })
+              setCalendar(false)
+              requestAnimationFrame(() => bookRef.current?.focus({ preventScroll: true }))
+            }}><ArrowLeft size={20} /></button>}
+          <header className="booking-identity">
+            <img src={siteProfile.photo} width="80" height="80" alt="" />
+            <span className="booking-name-tag">{siteProfile.name}</span>
+          </header>
+          <section className="booking-conversation" hidden={calendar} aria-label="Conversation with Rafael">
+            <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open && !calendar ? "polite" : "off"}>
+              <div className="booking-bubble"><p>Hey, I’m Rafa.</p><p>Have a project in mind, or just want to say hello?</p></div>
+              <div className="booking-bubble">Leave your email so I can get back to you.</div>
+              {confirmedEmail && <>
+                <div className="booking-bubble booking-outgoing">{confirmedEmail}</div>
+                <div className="booking-bubble">What’s on your mind? Leave me a message, or pick a time to talk.</div>
+              </>}
+              {outbox.map(item => <div className="booking-delivery" key={item.requestId}>
+                <p className="booking-bubble booking-outgoing">{item.message}</p>
+                {item.status === "failed" ? <div className="booking-receipt" role="alert">
+                  {item.error} <button type="button" onClick={() => void deliver({ email: item.email, message: item.message, requestId: item.requestId })}
+                    disabled={sending}>Retry message</button>
+                </div> : <p className="booking-receipt" role="status">{item.status === "sending" ? "Sending…" : "Delivered"}</p>}
+              </div>)}
             </div>
-          </Dialog.Popup>
-        </div>
-      </Dialog.Portal>
-    </Dialog.Root>
-  )
+            {!confirmedEmail ? <form className="booking-compose-area" onSubmit={confirmEmail}>
+              <label className="sr-only" htmlFor={`${hintId}-email`}>Your email</label>
+              <div className="booking-composer">
+                <input id={`${hintId}-email`} type="email" autoComplete="email" required maxLength={254}
+                  {...ignorePasswordManagers} placeholder="Your email address" value={email}
+                  onChange={event => setEmail(event.target.value)} aria-describedby={hintId} />
+                <button className="booking-send" type="submit" aria-label="Continue with email" disabled={!isContactEmail(email)}><ArrowUp size={20} /></button>
+              </div>
+              <p className="booking-hint" id={hintId}>Just for our conversation. No mailing list.</p>
+            </form> : <div className="booking-compose-area">
+              <form onSubmit={send}>
+                <div className="booking-composer">
+                  <textarea ref={messageRef} aria-label="Your message" aria-describedby={hintId} rows={2} maxLength={2000}
+                    {...ignorePasswordManagers} placeholder="Tell me a little about it…" value={message}
+                    onChange={event => setMessage(event.target.value)} disabled={atLimit} />
+                  <button className="booking-send" type="submit" aria-label="Send message" disabled={!message.trim() || sending || atLimit}><ArrowUp size={20} /></button>
+                </div>
+                <p className="booking-hint" id={hintId}>{atLimit ? "Five messages sent. Let’s find a time to talk." : "Straight to my inbox. I’ll reply by email."}</p>
+              </form>
+              <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" onClick={() => {
+                popupRef.current?.focus({ preventScroll: true })
+                setCalendarEmail(confirmedEmail)
+                setCalendar(true)
+                requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
+              }}><CalendarDays size={18} aria-hidden="true" />Book a time<span>30 min</span></button>
+              <button className="booking-change-email" type="button" disabled={sending} onClick={() => {
+                popupRef.current?.focus({ preventScroll: true })
+                setConfirmedEmail("")
+                requestAnimationFrame(() => popupRef.current?.querySelector<HTMLInputElement>('input[type="email"]')?.focus())
+              }}>Change email</button>
+            </div>}
+          </section>
+          {calendarEmail !== null && <section className="booking-calendar-stage" hidden={!calendar} aria-label="Choose a time">
+            <BookingCalendar key={calendarEmail} bookingUrl={bookingUrl} email={calendarEmail} active={open && calendar} />
+          </section>}
+        </Dialog.Popup>
+      </div>
+    </Dialog.Portal>
+  </Dialog.Root>
 }

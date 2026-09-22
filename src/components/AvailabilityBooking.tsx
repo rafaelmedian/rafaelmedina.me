@@ -1,8 +1,7 @@
-import { beginDialogIntent } from "../lib/dialogIntent"
+import { useBooking } from "../lib/bookingContext"
 import { Tooltip } from "@base-ui/react/tooltip"
-import { lazy, Suspense, useId, useRef, useState } from "react"
+import { useId } from "react"
 
-import { trackEvent } from "../lib/analytics"
 import { ReactionCard, type Reaction } from "./ReactionCard"
 
 // Kermit on the phone, from a 1987 Christmas special by way of Giphy
@@ -18,10 +17,6 @@ const BOOKING_REACTION: Reaction = {
   height: 300,
 }
 
-const BookingDialog = lazy(() =>
-  import("./BookingDialog").then((module) => ({ default: module.BookingDialog })),
-)
-
 type AvailabilityBookingProps = {
   label: string
   bookingUrl: string
@@ -29,15 +24,12 @@ type AvailabilityBookingProps = {
 
 export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingProps) {
   const hintId = useId()
-  const [isOpen, setIsOpen] = useState(false)
-  const [hasOpened, setHasOpened] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const { open: isOpen, openBooking } = useBooking()
 
   return (
     <>
       <Tooltip.Root disabled={isOpen}>
         <Tooltip.Trigger
-          ref={triggerRef}
           delay={0}
           closeDelay={120}
           className="mosaic-contact-pill mosaic-contact-pill-dark mosaic-booking-pill"
@@ -45,12 +37,7 @@ export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingPr
           aria-describedby={isOpen ? undefined : hintId}
           aria-haspopup="dialog"
           aria-expanded={isOpen}
-          onClick={() => {
-            beginDialogIntent("booking")
-            setHasOpened(true)
-            setIsOpen(true)
-            trackEvent("booking_open", { booking_open_trigger: "press" })
-          }}
+          onClick={event => openBooking(event.currentTarget, "press", bookingUrl)}
         >
           <span className="mosaic-contact-pill-hit-area" aria-hidden="true" />
           <span className="mosaic-contact-pill-content">
@@ -74,17 +61,6 @@ export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingPr
       <span id={hintId} className="sr-only">
         {label} · 30 minutes in my calendar
       </span>
-      {hasOpened ? (
-        <Suspense fallback={null}>
-          <BookingDialog
-            bookingUrl={bookingUrl}
-            availabilityLabel={label}
-            open={isOpen}
-            onOpenChange={setIsOpen}
-            returnFocus={triggerRef}
-          />
-        </Suspense>
-      ) : null}
     </>
   )
 }

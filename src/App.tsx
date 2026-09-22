@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useSyncExternalStore } from "react"
 
+import { BookingProvider } from "./components/BookingProvider"
 import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
 import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
@@ -72,6 +73,7 @@ function App({ pathname }: { pathname?: string }) {
   const isTuningPhotos = PhotoPrintTuner !== null && tuning === "photos"
 
   return (
+    <BookingProvider>
     <div className="relative isolate min-h-dvh overflow-x-clip bg-canvas text-ink">
         <a href="#main-content" className="skip-link">
           Skip to content
@@ -117,6 +119,7 @@ function App({ pathname }: { pathname?: string }) {
           </Suspense>
         ) : null}
     </div>
+    </BookingProvider>
   )
 }
 
