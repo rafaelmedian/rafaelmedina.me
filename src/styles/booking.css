@@ -390,6 +390,7 @@
 }
 
 .booking-identity {
+  isolation: isolate;
   position: fixed;
   top: max(1.25rem, env(safe-area-inset-top));
   left: 50%;
@@ -403,6 +404,8 @@
 }
 
 .booking-identity img {
+  position: relative;
+  z-index: 1;
   width: 64px;
   height: 64px;
   corner-shape: round;
@@ -424,7 +427,7 @@
   corner-shape: round;
   border-radius: var(--radius-full);
   background: var(--canvas);
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
   white-space: nowrap;
   color: var(--ink);
   font-size: var(--text-sm);

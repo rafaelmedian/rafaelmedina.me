@@ -8,7 +8,7 @@ export function BookingContactPanel() {
 
   return <Dialog.Root>
     <Dialog.Trigger className="booking-name-tag" aria-label="Rafael Medina contact info">
-      {siteProfile.name}<ChevronRight size={14} aria-hidden="true" />
+      Rafael<ChevronRight size={14} aria-hidden="true" />
     </Dialog.Trigger>
     <Dialog.Portal>
       <Dialog.Backdrop className="booking-contact-backdrop" />
