@@ -1,7 +1,8 @@
+import { activePhotoWallFlights, materializePhotoWallFlight, samplePhotoWallFlight } from "./photoWallFlights"
 import { PHOTO_WALL_WARP_SCALE, renderedPhotoWallCurves, curvedPhotoWallStages } from "./photoWallWarp"
 
-/** Composite visible photographs into one texture, then bend that entire
- * texture. No per-photo rotation or deformation is involved. */
+/** Composite the captured opening poses or resting photographs into one
+ * texture, then bend that entire surface with the same curve. */
 export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, surface: HTMLElement) {
   const gl = canvas.getContext("webgl", { alpha: true, antialias: false, premultipliedAlpha: true })
   if (!gl) return null
@@ -19,18 +20,34 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) { gl.deleteProgram(program); return null }
     return program
   }
-  const photo = makeProgram(`precision mediump float; varying vec2 uv;
-    uniform sampler2D image; uniform vec2 size; uniform float radius; uniform float level; uniform float opacity;
+  const photo = makeProgram(`precision highp float; varying vec2 uv;
+    uniform sampler2D image;
+    uniform vec2 size; uniform vec2 viewportSize; uniform vec2 imageSize; uniform vec2 objectPosition;
+    uniform float radius; uniform float padding; uniform float angle; uniform float corner;
+    uniform float level; uniform float opacity;
+    float edge(vec2 p, vec2 dimensions, float r){
+      vec2 q=abs(p)-(dimensions*.5-r);
+      vec2 outside=max(q,0.);
+      vec2 squared=outside*outside;
+      float distance=(corner>2. ? sqrt(sqrt(dot(squared,squared))) : length(outside))
+        +min(max(q.x,q.y),0.)-r;
+      return 1.-smoothstep(-.6,.6,distance);
+    }
     void main(){
-      vec2 point=(uv-.5)*size;
-      vec2 q=abs(point)-(size*.5-radius);
-      float d=length(max(q,0.))+min(max(q.x,q.y),0.)-radius;
-      float alpha=1.-smoothstep(-.6,.6,d);
-      vec2 sampleUV=uv;
-      if(level>0.){float a=-.05236; vec2 p=(uv-.5)*size;
-        sampleUV=(mat2(cos(a),-sin(a),sin(a),cos(a))*p/1.09)/size+.5;}
+      vec2 point=(uv-.5)*viewportSize;
+      float c=cos(angle),s=sin(angle);
+      point=vec2(c*point.x-s*point.y,s*point.x+c*point.y);
+      float alpha=edge(point,size,radius);
+      vec2 inner=max(size-padding*2.,vec2(1.));
+      vec2 sampleUV=point/inner+.5;
+      float aspect=inner.x/inner.y, imageAspect=imageSize.x/imageSize.y;
+      vec2 crop=vec2(min(1.,aspect/imageAspect),min(1.,imageAspect/aspect));
+      sampleUV=sampleUV*crop+(1.-crop)*vec2(objectPosition.x,1.-objectPosition.y);
+      if(level>0.){float a=-.05236; vec2 p=(sampleUV-.5)*inner;
+        sampleUV=(mat2(cos(a),-sin(a),sin(a),cos(a))*p/1.09)/inner+.5;}
       vec4 color=texture2D(image,sampleUV);
-      gl_FragColor=vec4(color.rgb,color.a*alpha*opacity);
+      float imageAlpha=padding>0. ? edge(point,inner,max(0.,radius-padding)) : 1.;
+      gl_FragColor=vec4(mix(vec3(1.),color.rgb,imageAlpha),alpha*opacity);
     }`)
   const warp = makeProgram(`precision highp float; varying vec2 uv;
     uniform sampler2D image; uniform vec2 size; uniform float bend; uniform float rim;
@@ -74,11 +91,12 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     const settings = getComputedStyle(stage)
     const bend = parseFloat(settings.getPropertyValue("--wall-bend")) || 0
     const rim = parseFloat(settings.getPropertyValue("--wall-rim")) || 0
-    // Flights temporarily hide their destination slides. Keep the DOM handoff
-    // visible until a complete wall can be composited, rather than presenting
-    // the previous canvas frame with transparent holes after flights land.
+    // Opening flights are drawn by this same renderer. Ordinary DOM return
+    // flights still hide their destinations, so keep the canvas out of their
+    // way rather than compositing a wall with transparent holes.
+    const flights = activePhotoWallFlights.get(stage)
     const flying = slides.some(slide => slide.style.opacity === "0")
-    const enabled = !flying && !reduced.matches && Boolean(bend || rim) && !stage.hasAttribute("data-held") && !stage.hasAttribute("data-hold-snap") && !surface.querySelector(".personal-photos-slide:focus-visible")
+    const enabled = (!flying || Boolean(flights?.length)) && !reduced.matches && Boolean(bend || rim) && !stage.hasAttribute("data-held") && !stage.hasAttribute("data-hold-snap") && !surface.querySelector(".personal-photos-slide:focus-visible")
     surface.toggleAttribute("data-warp-ready", enabled)
     if (!enabled) {
       renderedPhotoWallCurves.delete(stage)
@@ -95,13 +113,21 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, scene, 0)
     }
     let pendingImage = false
-    const visible = slides.flatMap(slide => {
+    const corner = CSS.supports("corner-shape", "squircle") && settings.getPropertyValue("--corner-curve").trim() === "squircle" ? 4 : 2
+    const visible = flights?.length ? [...flights].sort((a,b) => a.depth-b.depth).map(flight => {
+      const img = flight.image.complete && flight.image.naturalWidth ? flight.image : flight.placeholder
+      if (!img.complete || !img.naturalWidth) pendingImage = true
+      return { ...samplePhotoWallFlight(flight), img, opacity: 1, level: flight.level }
+    }) : slides.flatMap(slide => {
       const box = slide.getBoundingClientRect()
       if (box.right < bounds.left || box.left > bounds.right || box.bottom < bounds.top || box.top > bounds.bottom) return []
       const img = slide.querySelector("img")!
       if (!img.complete || !img.naturalWidth) { pendingImage = true; return [] }
       const style = getComputedStyle(slide)
-      return [{ img, box, opacity: parseFloat(style.opacity), radius: parseFloat(style.borderTopLeftRadius) * box.width / slide.offsetWidth, level: Boolean(slide.querySelector(".personal-photo-level")) }]
+      return [{ img, x: box.left + box.width / 2, y: box.top + box.height / 2,
+        width: box.width, height: box.height, angle: 0, padding: 0, positionX: .5, positionY: .5,
+        opacity: parseFloat(style.opacity), radius: parseFloat(style.borderTopLeftRadius) * box.width / slide.offsetWidth,
+        level: Boolean(slide.querySelector(".personal-photo-level")) }]
     })
     if (pendingImage) {
       surface.removeAttribute("data-warp-ready")
@@ -112,7 +138,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT)
     gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     bindProgram(photo)
-    for (const { img, box, opacity, radius, level } of visible) {
+    for (const { img, x, y, width: photoWidth, height: photoHeight, angle, padding, positionX, positionY, opacity, radius, level } of visible) {
       let bitmap = textures.get(img.currentSrc)
       if (!bitmap) {
         bitmap = texture()
@@ -121,9 +147,18 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
         textures.set(img.currentSrc, bitmap)
       }
       gl.bindTexture(gl.TEXTURE_2D, bitmap)
-      gl.viewport(Math.round((box.left-bounds.left)*ratio),Math.round((bounds.bottom-box.bottom)*ratio),Math.round(box.width*ratio),Math.round(box.height*ratio))
-      gl.uniform2f(gl.getUniformLocation(photo,"size"),box.width,box.height)
+      const radians = angle * Math.PI / 180
+      const boxWidth = Math.abs(Math.cos(radians)) * photoWidth + Math.abs(Math.sin(radians)) * photoHeight
+      const boxHeight = Math.abs(Math.sin(radians)) * photoWidth + Math.abs(Math.cos(radians)) * photoHeight
+      gl.viewport(Math.round((x-boxWidth/2-bounds.left)*ratio),Math.round((bounds.bottom-y-boxHeight/2)*ratio),Math.round(boxWidth*ratio),Math.round(boxHeight*ratio))
+      gl.uniform2f(gl.getUniformLocation(photo,"size"),photoWidth,photoHeight)
+      gl.uniform2f(gl.getUniformLocation(photo,"viewportSize"),boxWidth,boxHeight)
+      gl.uniform2f(gl.getUniformLocation(photo,"imageSize"),img.naturalWidth,img.naturalHeight)
+      gl.uniform2f(gl.getUniformLocation(photo,"objectPosition"),positionX,positionY)
       gl.uniform1f(gl.getUniformLocation(photo,"radius"),radius)
+      gl.uniform1f(gl.getUniformLocation(photo,"padding"),padding)
+      gl.uniform1f(gl.getUniformLocation(photo,"angle"),radians)
+      gl.uniform1f(gl.getUniformLocation(photo,"corner"),corner)
       gl.uniform1f(gl.getUniformLocation(photo,"level"),level?1:0)
       gl.uniform1f(gl.getUniformLocation(photo,"opacity"),opacity)
       gl.drawArrays(gl.TRIANGLES,0,6)
@@ -140,8 +175,11 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     gl.uniform1f(gl.getUniformLocation(warp,"rim"),drawn.rim)
     gl.drawArrays(gl.TRIANGLES,0,6)
     renderedPhotoWallCurves.set(stage, drawn)
+    flights?.forEach(flight => {
+      if (flight.clone.style.visibility !== "hidden") flight.clone.style.visibility = "hidden"
+    })
     // Selection/release transitions run briefly; the idle wall has no loop.
-    if (surface.getAnimations({subtree:true}).some(animation=>animation.playState === "running")) request()
+    if (flights?.some(flight => flight.clock.playState === "running") || surface.getAnimations({subtree:true}).some(animation=>animation.playState === "running")) request()
   }
   const request = () => { if (!disposed && !contextLost && !frame) frame = requestAnimationFrame(paint) }
   const observer = new ResizeObserver(request)
@@ -160,6 +198,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     // Restoration invalidates every GPU resource. Keep this viewing session
     // on the DOM fallback; reopening mounts a fresh renderer.
     contextLost = true
+    activePhotoWallFlights.get(stage)?.forEach(materializePhotoWallFlight)
     curvedPhotoWallStages.delete(stage)
     renderedPhotoWallCurves.delete(stage)
     cancelAnimationFrame(frame)
@@ -171,6 +210,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
   return () => {
     disposed=true; cancelAnimationFrame(frame); observer.disconnect(); mutations.disconnect()
     curvedPhotoWallStages.delete(stage)
+    activePhotoWallFlights.delete(stage)
     renderedPhotoWallCurves.delete(stage)
     surface.removeAttribute("data-warp-ready")
     surface.removeEventListener("focusin",request); surface.removeEventListener("focusout",request)

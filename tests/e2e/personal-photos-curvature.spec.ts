@@ -113,3 +113,46 @@ test("the opening curve is already at full strength on its first frame", async (
   expect(values.length).toBeGreaterThan(0)
   expect(values.every(value => value === 0.46)).toBe(true)
 })
+
+test("opening and resting photos keep the same rendered corner mask", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.closest(".personal-photos-flight")) { animation.pause(); animation.currentTime = 0 }
+      return animation
+    }
+  })
+  await page.locator(".personal-photos-label").click()
+  const wall = page.getByRole("region", { name: "Photo wall" })
+  await wall.locator("img").evaluateAll(images => Promise.all(images.map(image => image.decode())))
+  await page.locator(".personal-photos-flight").evaluateAll(async flights => {
+    const animations = flights.flatMap(flight => flight.getAnimations({ subtree: true }))
+    await Promise.all(animations.map(animation => animation.ready))
+    animations.forEach(animation => {
+      animation.currentTime = Number(animation.effect!.getTiming().duration) - 0.001
+    })
+  })
+  const cornerMask = () => wall.evaluate(async stage => {
+    stage.dispatchEvent(new Event("photo-wall-paint"))
+    return new Promise<number[]>(resolve => requestAnimationFrame(() => {
+      const canvas = stage.querySelector("canvas")!
+      const gl = canvas.getContext("webgl")!
+      const photo = stage.querySelector('[data-photo-id="office"]')!.getBoundingClientRect()
+      const scale = canvas.width / stage.clientWidth
+      const pixels = new Uint8Array(64 * 64 * 4)
+      gl.readPixels(Math.round(Math.max(0, photo.left - 16) * scale), Math.round(canvas.height - (photo.top - 16) * scale - 64), 64, 64, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+      resolve(Array.from({ length: 64 * 64 }, (_, index) => pixels[index * 4 + 3]))
+    }))
+  })
+  const before = await cornerMask()
+  expect(before.some(alpha => alpha === 0)).toBe(true)
+  expect(before.some(alpha => alpha === 255)).toBe(true)
+  await page.locator(".personal-photos-flight").evaluateAll(flights => flights.forEach(flight =>
+    flight.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
+  await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
+  const after = await cornerMask()
+  expect(before.filter((alpha, index) => Math.abs(alpha - after[index]) > 2).length).toBeLessThanOrEqual(8)
+})

@@ -21,9 +21,13 @@ for (const width of [1440, 390]) {
     const flights = page.locator(".personal-photos-flight")
     await expect(flights.first()).toBeAttached()
     expect(await flights.first().evaluate(flight => flight.getAnimations()[0].effect!.getTiming().duration)).toBe(480)
-    await expect(page.locator("[data-photo-flight-curve]")).toHaveCount(1)
-    await expect(page.locator("[data-photo-flight-curve]")).not.toHaveCSS("filter", "none")
-    await expect(page.locator(".personal-photos-wall-surface[data-warp-ready]")).toHaveCount(0)
+    await expect(page.locator("[data-photo-flight-curve]")).toHaveCount(0)
+    await expect(page.locator(".personal-photos-wall-surface[data-warp-ready]")).toHaveCount(1)
+    const movingLayout = await flights.evaluateAll(elements => elements.flatMap(element =>
+      element.getAnimations({ subtree: true }).flatMap(animation =>
+        (animation.effect as KeyframeEffect).getKeyframes().flatMap(frame =>
+          Object.keys(frame).filter(key => ["height", "width", "padding", "paddingTop", "borderRadius", "boxShadow"].includes(key))))))
+    expect(movingLayout, "GPU opening must not animate DOM layout or paint").toEqual([])
     for (const direction of ["open", "close"]) {
       const frames = await page.evaluate(async () => {
         const flights = Array.from(document.querySelectorAll<HTMLElement>(".personal-photos-flight"))
@@ -125,4 +129,34 @@ test("the opening wall stays opaque through the flight handoff", async ({ page }
   const samples = await page.evaluate(() => (window as unknown as { openingOpacity: number[] }).openingOpacity)
   expect(samples.length).toBeGreaterThan(1)
   expect(Math.min(...samples)).toBe(1)
+})
+
+test("closing during a GPU opening returns the photos to their fan slots", async ({ page }) => {
+  await page.goto("/")
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.closest(".personal-photos-flight")) { animation.pause(); animation.currentTime = 0 }
+      return animation
+    }
+  })
+  await page.locator(".personal-photos-label").click()
+  await expect(page.locator(".personal-photos-wall-surface[data-warp-ready]")).toHaveCount(1)
+  await page.locator(".personal-photos-flight").evaluateAll(flights => flights.forEach(flight =>
+    flight.getAnimations({ subtree: true }).forEach(animation => { animation.currentTime = Number(animation.effect!.getTiming().duration) / 2 })))
+  await page.keyboard.press("Escape")
+  const error = await page.locator(".personal-photos-flight:not([data-photo-trailing])").first().evaluate(async flight => {
+    const animations = flight.getAnimations({ subtree: true })
+    await Promise.all(animations.map(animation => animation.ready))
+    animations.forEach(animation => { animation.currentTime = Number(animation.effect!.getTiming().duration) - 0.001 })
+    const source = document.querySelector(`.personal-photos-print[data-photo-id="${(flight as HTMLElement).dataset.photoId}"]`)!
+    const actual = flight.getBoundingClientRect(), expected = source.getBoundingClientRect()
+    return Math.max(Math.abs(actual.x - expected.x), Math.abs(actual.y - expected.y), Math.abs(actual.width - expected.width), Math.abs(actual.height - expected.height))
+  })
+  expect(error).toBeLessThan(1)
+  await page.locator(".personal-photos-flight").evaluateAll(flights => flights.forEach(flight =>
+    flight.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
+  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
 })
