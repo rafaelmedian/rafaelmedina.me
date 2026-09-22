@@ -521,7 +521,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
           </Dialog.Description>
           {/* Outside the stage, which captures every press on the globe for
               the drag: a button inside it would never see its own click. */}
-          {layout === "wall" ? <PhotoWallControls /> : <Dialog.Close className="personal-photos-wall-close" aria-label="Close photo wall">
+          {layout === "wall" ? <PhotoWallControls open={open} /> : <Dialog.Close className="personal-photos-wall-close" aria-label="Close photo wall">
             <X size={16} strokeWidth={1.75} aria-hidden="true" />
             <span className="personal-photos-wall-close-label">Close</span>
           </Dialog.Close>}

@@ -1133,3 +1133,26 @@
 .personal-photos-wall-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
 .personal-photos-wall-surface[data-warp-ready] .personal-photos-masonry { opacity: 0; }
 .personal-photos-wall-surface[data-warp-ready] .personal-photos-wall-canvas { display: block; }
+
+/* Keep the morphing control opaque while the photo stage retreats. */
+.personal-photos-dialog[data-layout="wall"][data-ending-style] { opacity: 1; }
+.personal-photos-dialog[data-layout="wall"][data-ending-style] .personal-photos-sheet {
+  opacity: 0;
+  transition: opacity var(--photo-close-duration) var(--photo-motion-ease);
+}
+.personal-photos-wall-close-content {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  white-space: nowrap;
+}
+.personal-photos-control-morph-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  pointer-events: none;
+  white-space: nowrap;
+}

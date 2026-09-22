@@ -443,3 +443,6 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
     bottom: calc(6rem + env(safe-area-inset-bottom)) !important;
   }
 }
+
+/* The photo Close surface has already animated into this resting control. */
+.mosaic-mobile-toc[data-photo-returning] { transition: none; }
