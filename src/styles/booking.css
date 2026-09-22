@@ -670,6 +670,7 @@
 /* Match the side chat's rise, small scale, and blur, staged per message. */
 .booking-history > .booking-bubble:nth-child(2),
 .booking-email-confirmation + .booking-bubble { animation-delay: 80ms; }
+.booking-history > .booking-bubble:nth-child(3) { animation-delay: 160ms; }
 
 @keyframes booking-bubble-enter {
   from {
