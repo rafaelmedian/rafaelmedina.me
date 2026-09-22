@@ -71,7 +71,7 @@ test('validates email and keeps controls reachable in a short mobile viewport', 
     await expect.poll(() => dialog.evaluate(node => node.contains(document.activeElement))).toBe(true)
   }
   await expect(page.locator('.booking-backdrop')).toBeVisible()
-  await expect(page.locator('.booking-backdrop')).toHaveCSS('background-color', 'rgba(18, 18, 18, 0.6)')
+  await expect(page.locator('.booking-backdrop')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
   await expect(dialog).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   const box = await dialog.getByRole('button', { name: 'Continue with email' }).boundingBox()
   expect(box!.y + box!.height).toBeLessThan(480)

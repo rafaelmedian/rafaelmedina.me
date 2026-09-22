@@ -1801,20 +1801,19 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 label alone, the green status dot that used to ride inside it having been the hero's only chromatic
                 pixel for a month the accessible description already names. Hover immediately reveals the Kermit reaction card
                 with no intent delay; the availability month remains in the accessible description. A press opens the same floating conversation as the hero portrait and inline booking links.
-                The bubbles have no enclosing card. A full-screen <code>rgb(18 18 18 / 0.6)</code> scrim dims the page with
-                <code>blur(10px) saturate(0.92)</code> behind the bubbles,
+                The bubbles have no enclosing card. A full-screen white <code>--canvas</code> backdrop covers the page,
                 with focus and scrolling held inside the conversation until it closes.
                 The compact 360px conversation stays centered, grows with its messages, and scrolls its history
-                at the viewport limit. Hints and receipts use white text directly on the dark backdrop. Incoming bubbles use <code>--canvas</code> with <code>--ink</code> text and no shadow;
+                at the viewport limit. Hints, email editing, and receipts use <code>--muted</code> text. Incoming bubbles use <code>--canvas</code> with <code>--ink</code> text, a <code>--shadow-ring</code> hairline, and <code>--shadow-control</code> elevation;
                 right-aligned replies use the existing Messages blue <code>#0071e3</code> with white text.
                 A 64px circular portrait uses <code>corner-shape: round</code> above a white name tag raised with <code>--shadow-ring</code> and <code>--shadow-overlay</code>.
-                Bubbles use <code>--text-sm</code> with <code>--radius-lg</code> corners and 8px gaps, borrowing the original side chat’s compact scale. Fields stay on <code>--text-md</code> (16px, including on phones). The compact booking pill uses <code>--text-sm</code>; the name tag and hints use <code>--text-xs</code>.
+                Bubbles use <code>--text-sm</code> with <code>--radius-md</code> corners, a <code>--radius-sm</code> bottom corner on the sender’s side, and 8px gaps. They borrow the side chat’s 8px rise, 0.98 scale, and 2px blur over <code>--duration-slow</code> with <code>--ease-smooth</code>: follow-up bubbles wait 80ms and the composer 160ms. New replies enter individually; delivery updates do not replay them. Fields stay on <code>--text-md</code> (16px, including on phones). The compact booking pill uses <code>--text-sm</code>; the name tag and hints use <code>--text-xs</code>.
                 The white composer uses the original side chat’s <code>--shadow-ring</code> and <code>--shadow-overlay</code>, lifting to <code>--shadow-overlay-hover</code> on focus rather than drawing a dark outline. The message field grows from one line to <code>min(188px, 30dvh)</code>, then scrolls. Its 44px send target holds a 36px inset surface, gray while disabled and blue when ready. Email comes first, with Change email directly beneath the submitted blue address. Optional messages follow with receipts and retries; the message composer has no inbox caption.
                 Book a time expands the same floating surface to 1104px over <code>--duration-slow</code>
                 and centers a light Cal.com calendar with the email prefilled. Back restores the conversation and draft.
                 Calendar loading keeps a skeleton and offers a direct link, including the email, after six seconds.
                 Escape or an outside press dismisses the conversation and restores the opening trigger.
-                The conversation stays in memory across entry points; reduced motion removes the entrance transform.
+                The conversation stays in memory across entry points; reduced motion removes the entrance transform and bubble animations.
                 The address is the page's top-right corner, opposite the section
                 links, where the local time used to be — a clock is ambient and an address is what a visitor came
                 for, so only one of them earns that spot, and the clock moved into the About sheet. Below 700px the

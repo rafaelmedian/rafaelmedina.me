@@ -1,14 +1,12 @@
 /* --------------------------------------------------- booking dialog --- */
 
-/* Individual bubbles stay unboxed above a full-screen translucent scrim. */
+/* Individual bubbles stay unboxed above a full-screen white backdrop. */
 
 .booking-backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog-backdrop);
-  background: rgb(18 18 18 / 0.6);
-  backdrop-filter: blur(10px) saturate(0.92);
-  -webkit-backdrop-filter: blur(10px) saturate(0.92);
+  background: var(--canvas);
   transition: opacity var(--duration-base) var(--ease-standard);
 }
 
@@ -462,13 +460,18 @@
 }
 
 .booking-bubble {
+  transform-origin: left bottom;
+  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) both;
   max-width: 90%;
   margin: 0;
   padding: 0.75rem 1rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
+  border-bottom-left-radius: var(--radius-sm);
   background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
   color: var(--ink);
   font-size: var(--text-sm);
+  text-wrap: pretty;
   line-height: 1.5;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -479,7 +482,10 @@
 .booking-bubble p + p { margin-top: 0.5rem; }
 
 .booking-outgoing {
+  transform-origin: right bottom;
   align-self: flex-end;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-sm);
   background: var(--booking-blue);
   color: var(--canvas);
 }
@@ -499,7 +505,7 @@
   padding: 0.25rem 0.5rem;
   background: transparent;
   border-radius: var(--radius-sm);
-  color: var(--canvas);
+  color: var(--muted);
   text-align: right;
   font-size: var(--text-xs);
 }
@@ -511,6 +517,7 @@
 }
 
 .booking-compose-area {
+  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) 160ms both;
   flex: none;
   padding: 0.5rem;
 }
@@ -595,7 +602,7 @@
   padding: 0.25rem 0.5rem;
   background: transparent;
   border-radius: var(--radius-full);
-  color: var(--canvas);
+  color: var(--muted);
   font-size: var(--text-xs);
   line-height: 1.5;
   text-align: center;
@@ -630,7 +637,7 @@
   min-height: 36px;
   background: transparent;
   border-radius: var(--radius-full);
-  color: var(--canvas);
+  color: var(--muted);
   font-size: var(--text-xs);
   cursor: pointer;
 }
@@ -658,4 +665,27 @@
   .booking-identity { padding-block: 0.75rem; }
   .booking-identity img { width: 48px; height: 48px; }
   .booking-compose-area { padding-block: 0.5rem; }
+}
+
+/* Match the side chat's rise, small scale, and blur, staged per message. */
+.booking-history > .booking-bubble:nth-child(2),
+.booking-email-confirmation + .booking-bubble { animation-delay: 80ms; }
+
+@keyframes booking-bubble-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    filter: blur(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booking-bubble,
+  .booking-compose-area { animation: none; }
 }
