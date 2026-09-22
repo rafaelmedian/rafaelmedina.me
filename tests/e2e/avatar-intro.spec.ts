@@ -120,7 +120,7 @@ test("avatar greeting plays on hover and opens the conversation on request", asy
   await avatar.click()
   await expect(page.getByRole("dialog", { name: "Chat with Rafael Medina" })).toBeVisible()
   await expect(page.locator("video[data-recording][src]")).toHaveCount(0)
-  await page.getByRole("button", { name: "Close conversation", exact: true }).click()
+  await page.keyboard.press("Escape")
   await expect(avatar).toBeFocused()
 })
 

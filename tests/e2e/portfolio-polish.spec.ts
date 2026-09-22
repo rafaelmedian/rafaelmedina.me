@@ -2675,7 +2675,7 @@ test("opens the conversation from the avatar button", async ({ page }) => {
   await trigger.press("Enter")
 
   await expect(page.getByRole("dialog", { name: "Chat with Rafael Medina" })).toBeVisible()
-  await page.getByRole("button", { name: "Close conversation", exact: true }).click()
+  await page.keyboard.press("Escape")
   await expect(trigger).toBeFocused()
 })
 

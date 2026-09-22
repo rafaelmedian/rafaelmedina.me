@@ -75,7 +75,8 @@ test('validates email and keeps controls reachable in a short mobile viewport', 
   await expect(dialog).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   const box = await dialog.getByRole('button', { name: 'Continue with email' }).boundingBox()
   expect(box!.y + box!.height).toBeLessThan(480)
-  await dialog.getByRole('button', { name: 'Close conversation' }).click()
+  await page.mouse.click(4, 4)
+  await expect(dialog).toBeHidden()
   await expect(page.locator('.mosaic-booking-pill')).toBeFocused()
 })
 

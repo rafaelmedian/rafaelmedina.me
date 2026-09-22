@@ -1788,8 +1788,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <SiteLastUpdated />
               </div>
               <p className="ds-caption">
-                The booking dialog keeps a 44px shared round close control pinned 0.75rem from its top-right
-                corner, above both conversation and calendar during loading and scrolling.
+                The booking conversation has no visible close control; clicking the backdrop or pressing Escape dismisses it.
                 Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.07)</code> hairline, labelled in <code>--muted</code> so the hero name keeps the only dark ink in that block.
                 All chips fill to <code>#e9e9e9</code>{" "}
                 for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
@@ -1805,17 +1804,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 The bubbles have no enclosing card. A full-screen <code>rgb(18 18 18 / 0.6)</code> scrim dims the page with
                 <code>blur(10px) saturate(0.92)</code> behind the bubbles,
                 with focus and scrolling held inside the conversation until it closes.
-                The 440px-wide conversation stays centered in the viewport, grows with its messages, and scrolls its history
-                at the viewport limit. Hints and receipts keep white backgrounds so they stay readable over artwork. White incoming bubbles use <code>--canvas</code> with <code>--ink</code> text;
+                The compact 360px conversation stays centered, grows with its messages, and scrolls its history
+                at the viewport limit. Hints and receipts use white text directly on the dark backdrop. Incoming bubbles use the side chat’s <code>--mosaic-card-surface</code> with <code>--ink</code> text and no shadow;
                 right-aligned replies use the existing Messages blue <code>#0071e3</code> with white text.
-                An 80px circular portrait uses <code>corner-shape: round</code> above a white name tag.
-                Message text and fields use <code>--text-md</code> (16px, including on phones), the name and
-                booking action use <code>--text-sm</code>, and hints use <code>--text-xs</code>.
-                Email comes first, then optional messages delivered to Rafael’s inbox with receipts and retries.
+                A 64px circular portrait uses <code>corner-shape: round</code> above a white name tag.
+                Bubbles use <code>--text-sm</code> with <code>--radius-lg</code> corners and 8px gaps, borrowing the original side chat’s compact scale. Fields stay on <code>--text-md</code> (16px, including on phones). The compact booking pill uses <code>--text-sm</code>; the name tag and hints use <code>--text-xs</code>.
+                The white composer uses the original side chat’s <code>--shadow-ring</code> and <code>--shadow-overlay</code>, lifting to <code>--shadow-overlay-hover</code> on focus rather than drawing a dark outline. The message field grows from one line to <code>min(188px, 30dvh)</code>, then scrolls. Its 44px send target holds a 36px inset surface, gray while disabled and blue when ready. Email comes first, then optional messages delivered to Rafael’s inbox with receipts and retries.
                 Book a time expands the same floating surface to 1104px over <code>--duration-slow</code>
-                and opens a light Cal.com calendar with the email prefilled. Back restores the conversation and draft.
+                and centers a light Cal.com calendar with the email prefilled. Back restores the conversation and draft.
                 Calendar loading keeps a skeleton and offers a direct link, including the email, after six seconds.
-                Escape, close, or an outside press dismisses the conversation and restores the opening trigger.
+                Escape or an outside press dismisses the conversation and restores the opening trigger.
                 The conversation stays in memory across entry points; reduced motion removes the entrance transform.
                 The address is the page's top-right corner, opposite the section
                 links, where the local time used to be — a clock is ambient and an address is what a visitor came

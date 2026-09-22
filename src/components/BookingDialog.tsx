@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { ArrowLeft, ArrowUp, CalendarDays, X } from "lucide-react"
-import { useEffect, useId, useRef, useState, type FormEvent, type RefObject } from "react"
+import { ArrowLeft, ArrowUp, CalendarDays } from "lucide-react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
@@ -35,6 +35,18 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
   useEffect(() => {
     if (open && !calendar) historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight })
   }, [outbox, confirmedEmail, calendar, open])
+
+  useLayoutEffect(() => {
+    const field = messageRef.current
+    if (!field || calendar || !open) return
+    const fit = () => {
+      field.style.height = "auto"
+      field.style.height = `${field.scrollHeight}px`
+    }
+    fit()
+    window.addEventListener("resize", fit)
+    return () => window.removeEventListener("resize", fit)
+  }, [message, confirmedEmail, calendar, open])
 
   const confirmEmail = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -73,7 +85,6 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
           initialFocus={popupRef} finalFocus={returnFocus}>
           <Dialog.Title className="sr-only">Chat with Rafael Medina</Dialog.Title>
           <Dialog.Description className="sr-only">Send Rafael a message, then choose a time for a 30-minute call.</Dialog.Description>
-          <Dialog.Close className="booking-icon-button booking-close" aria-label="Close conversation"><X size={20} /></Dialog.Close>
           {calendar && <button ref={backRef} type="button" className="booking-icon-button booking-back"
             aria-label="Back to conversation" onClick={() => {
               popupRef.current?.focus({ preventScroll: true })
@@ -81,16 +92,16 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
               requestAnimationFrame(() => bookRef.current?.focus({ preventScroll: true }))
             }}><ArrowLeft size={20} /></button>}
           <header className="booking-identity">
-            <img src={siteProfile.photo} width="80" height="80" alt="" />
+            <img src={siteProfile.photo} width="64" height="64" alt="" />
             <span className="booking-name-tag">{siteProfile.name}</span>
           </header>
           <section className="booking-conversation" hidden={calendar} aria-label="Conversation with Rafael">
             <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open && !calendar ? "polite" : "off"}>
-              <div className="booking-bubble"><p>Hey, I’m Rafa.</p><p>Have a project in mind, or just want to say hello?</p></div>
+              <div className="booking-bubble"><p>Hey, I’m Rafa.</p><p>Have something in mind?</p></div>
               <div className="booking-bubble">Leave your email so I can get back to you.</div>
               {confirmedEmail && <>
                 <div className="booking-bubble booking-outgoing">{confirmedEmail}</div>
-                <div className="booking-bubble">What’s on your mind? Leave me a message, or pick a time to talk.</div>
+                <div className="booking-bubble">Tell me a little about it. Or let’s find a time to talk.</div>
               </>}
               {outbox.map(item => <div className="booking-delivery" key={item.requestId}>
                 <p className="booking-bubble booking-outgoing">{item.message}</p>
@@ -106,16 +117,16 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
                 <input id={`${hintId}-email`} type="email" autoComplete="email" required maxLength={254}
                   {...ignorePasswordManagers} placeholder="Your email address" value={email}
                   onChange={event => setEmail(event.target.value)} aria-describedby={hintId} />
-                <button className="booking-send" type="submit" aria-label="Continue with email" disabled={!isContactEmail(email)}><ArrowUp size={20} /></button>
+                <button className="booking-send" type="submit" aria-label="Continue with email" disabled={!isContactEmail(email)}><ArrowUp size={24} /></button>
               </div>
               <p className="booking-hint" id={hintId}>Just for our conversation. No mailing list.</p>
             </form> : <div className="booking-compose-area">
               <form onSubmit={send}>
                 <div className="booking-composer">
-                  <textarea ref={messageRef} aria-label="Your message" aria-describedby={hintId} rows={2} maxLength={2000}
+                  <textarea ref={messageRef} aria-label="Your message" aria-describedby={hintId} rows={1} maxLength={2000}
                     {...ignorePasswordManagers} placeholder="Tell me a little about it…" value={message}
                     onChange={event => setMessage(event.target.value)} disabled={atLimit} />
-                  <button className="booking-send" type="submit" aria-label="Send message" disabled={!message.trim() || sending || atLimit}><ArrowUp size={20} /></button>
+                  <button className="booking-send" type="submit" aria-label="Send message" disabled={!message.trim() || sending || atLimit}><ArrowUp size={24} /></button>
                 </div>
                 <p className="booking-hint" id={hintId}>{atLimit ? "Five messages sent. Let’s find a time to talk." : "Straight to my inbox. I’ll reply by email."}</p>
               </form>
