@@ -28,6 +28,7 @@
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
   pointer-events: none;
+  transition: padding-right var(--duration-slow) var(--ease-smooth);
   padding:
     max(2.5rem, env(safe-area-inset-top))
     max(1.25rem, env(safe-area-inset-right))
@@ -733,11 +734,11 @@
   width: min(360px, calc(100% - 1.5rem));
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 1rem;
+  display: flex;
+  padding: 4.5rem 1.5rem 2rem;
   border-radius: var(--radius-lg);
-  background: var(--mosaic-card-surface);
+  background: color-mix(in srgb, var(--mosaic-card-surface) 45%, var(--canvas));
   color: var(--ink);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
   transition: transform var(--duration-slow) var(--ease-smooth), opacity var(--duration-base) var(--ease-standard);
 }
 
@@ -749,82 +750,60 @@
 
 .booking-contact-panel[data-ending-style] { transition-duration: var(--duration-quick); }
 
-.booking-contact-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
-.booking-contact-heading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1.5rem 0;
-  text-align: center;
-}
-
-.booking-contact-heading img {
-  width: 96px;
-  height: 96px;
-  margin-bottom: 0.75rem;
-  border-radius: var(--radius-full);
+.booking-contact-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
   corner-shape: round;
-  box-shadow: var(--shadow-ring);
 }
 
-.booking-contact-heading h2 {
-  margin: 0;
-  font-size: var(--text-lg);
-  font-weight: 600;
-}
-
-.booking-contact-heading p {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-
-.booking-contact-mail {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--canvas);
-  color: #0071e3;
-  font-size: var(--text-sm);
-  font-weight: 600;
+.booking-contact-content {
+  width: min(400px, 100%);
+  flex: none;
+  margin: auto;
 }
 
 .booking-contact-group {
-  margin-top: 1rem;
   overflow: hidden;
   border-radius: var(--radius-md);
   background: var(--canvas);
 }
 
-.booking-contact-group a {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+.booking-contact-group + .booking-contact-group { margin-top: 1rem; }
+
+.booking-contact-group a,
+.booking-contact-row {
+  position: relative;
+  display: block;
   min-height: 48px;
   padding: 0.875rem 1rem;
-  color: #0071e3;
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
-.booking-contact-group a + a { border-top: 1px solid var(--mosaic-card-surface); }
-.booking-contact-group svg { flex: none; color: var(--muted); }
+.booking-contact-group a { color: #0071e3; }
+.booking-contact-group > * + *::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 1rem;
+  height: 1px;
+  background: var(--mosaic-card-surface);
+}
+
 .booking-contact-group small {
   display: block;
-  margin-bottom: 0.25rem;
-  color: var(--ink);
+  margin-bottom: 0.125rem;
+  color: var(--muted);
   font-size: var(--text-xs);
+}
+
+@media (min-width: 900px) {
+  .booking-contact-panel { width: calc(50% - 1.5rem); }
+  .booking-shell:has(.booking-name-tag[aria-expanded="true"]) {
+    padding-right: calc(50% + 1.25rem);
+  }
 }
 
 .booking-contact-panel a:hover { background: var(--mosaic-card-surface); }

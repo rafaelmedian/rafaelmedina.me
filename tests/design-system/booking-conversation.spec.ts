@@ -154,11 +154,16 @@ for (const width of [390, 1542]) {
     const contact = page.getByRole('dialog', { name: 'Rafael Medina', exact: true })
     await expect(contact).toBeVisible()
     await expect(contact.getByRole('button', { name: 'Close contact info' })).toBeFocused()
-    await expect(contact.getByRole('link', { name: 'Email Rafael' })).toHaveAttribute('href', 'mailto:hey@rafaelmedina.me')
-    await expect(contact.getByRole('link', { name: /LinkedIn/ })).toHaveAttribute('href', 'https://www.linkedin.com/in/rafaelmedian')
+    await expect(contact.getByRole('link', { name: /email hey@rafaelmedina.me/ })).toHaveAttribute('href', 'mailto:hey@rafaelmedina.me')
+    await expect(contact.getByRole('link', { name: /linkedin/ })).toHaveAttribute('href', 'https://www.linkedin.com/in/rafaelmedian')
     const bounds = await contact.boundingBox()
     expect(bounds!.x).toBeGreaterThanOrEqual(0)
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+    if (width >= 900) {
+      const chatBounds = await chat.boundingBox()
+      expect(chatBounds!.x + chatBounds!.width / 2).toBeCloseTo(width / 4, 0)
+      expect(bounds!.width).toBeCloseTo(width / 2 - 24, 0)
+    }
     for (let index = 0; index < 7; index++) {
       await page.keyboard.press('Tab')
       await expect.poll(() => contact.evaluate(node => node.contains(document.activeElement))).toBe(true)
