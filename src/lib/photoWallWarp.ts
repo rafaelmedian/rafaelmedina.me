@@ -2,6 +2,9 @@
 // Rendering and pointer sampling must use the same signed scale.
 export const PHOTO_WALL_WARP_SCALE = -0.18
 
+/** The last painted field, so pointer sampling follows the animated curve. */
+export const renderedPhotoWallCurves = new WeakMap<HTMLElement, { bend: number; rim: number }>()
+
 /** One viewport-wide displacement field, shared by rendering and hit testing.
  * The S crosses the entire composition; the rim adds a shallow bowl curve.
  * Both meet zero at the viewport boundary, so no empty edge is pulled in. */

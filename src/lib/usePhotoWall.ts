@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from "react"
-import { PHOTO_WALL_WARP_SCALE, photoWallDisplacement } from "./photoWallWarp"
+import { PHOTO_WALL_WARP_SCALE, photoWallDisplacement, renderedPhotoWallCurves } from "./photoWallWarp"
 
 type Point = { x: number; y: number }
 type Camera = Point & { scale: number }
@@ -220,9 +220,7 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       // to select the photograph actually under a pointer. Keyboard clicks
       // and an enlarged photograph retain their ordinary DOM targets.
       if (!stage.querySelector("[data-warp-ready]") || !event.detail || stage.hasAttribute("data-held") || matchMedia("(prefers-reduced-motion: reduce)").matches) return
-      const settings = getComputedStyle(stage)
-      const bend = parseFloat(settings.getPropertyValue("--wall-bend")) || 0
-      const rim = parseFloat(settings.getPropertyValue("--wall-rim")) || 0
+      const { bend = 0, rim = 0 } = renderedPhotoWallCurves.get(stage) ?? {}
       if (!bend && !rim) return
       const bounds = stage.getBoundingClientRect()
       const offset = photoWallDisplacement((event.clientX - bounds.left) / bounds.width, (event.clientY - bounds.top) / bounds.height, bend, rim)

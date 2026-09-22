@@ -1,4 +1,5 @@
-import { PHOTO_WALL_WARP_SCALE } from "./photoWallWarp"
+import { cssTimeToMilliseconds } from "./cssTime"
+import { PHOTO_WALL_WARP_SCALE, renderedPhotoWallCurves } from "./photoWallWarp"
 
 /** Composite visible photographs into one texture, then bend that entire
  * texture. No per-photo rotation or deformation is involved. */
@@ -61,6 +62,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
   let frame = 0
   let disposed = false
   let contextLost = false
+  let curveStarted: number | null = null
   const bindProgram = (program: WebGLProgram) => {
     gl.useProgram(program)
     const position = gl.getAttribLocation(program, "position")
@@ -79,7 +81,11 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     const flying = slides.some(slide => slide.style.opacity === "0")
     const enabled = !flying && !reduced.matches && Boolean(bend || rim) && !stage.hasAttribute("data-held") && !stage.hasAttribute("data-hold-snap") && !surface.querySelector(".personal-photos-slide:focus-visible")
     surface.toggleAttribute("data-warp-ready", enabled)
-    if (!enabled) return
+    if (!enabled) {
+      curveStarted = null
+      renderedPhotoWallCurves.delete(stage)
+      return
+    }
     const bounds = stage.getBoundingClientRect()
     const ratio = Math.min(devicePixelRatio, 2)
     const width = Math.round(bounds.width * ratio), height = Math.round(bounds.height * ratio)
@@ -99,7 +105,12 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
       const style = getComputedStyle(slide)
       return [{ img, box, opacity: parseFloat(style.opacity), radius: parseFloat(style.borderTopLeftRadius) * box.width / slide.offsetWidth, level: Boolean(slide.querySelector(".personal-photo-level")) }]
     })
-    if (pendingImage) { surface.removeAttribute("data-warp-ready"); return }
+    if (pendingImage) {
+      surface.removeAttribute("data-warp-ready")
+      curveStarted = null
+      renderedPhotoWallCurves.delete(stage)
+      return
+    }
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
     gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT)
     gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
@@ -126,12 +137,22 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     gl.clear(gl.COLOR_BUFFER_BIT)
     bindProgram(warp)
     gl.bindTexture(gl.TEXTURE_2D,scene)
+    // Match the flat DOM on the first painted frame, then settle into the
+    // curve. Start after texture uploads so a cold image cannot skip the ease.
+    const now = performance.now()
+    curveStarted ??= now
+    const duration = cssTimeToMilliseconds(settings.getPropertyValue("--duration-base"))
+    const progress = duration > 0 ? Math.min(1, (now - curveStarted) / duration) : 1
+    // The same ease-out cubic used by the photo globe's imperative turns.
+    const strength = 1 - (1 - progress) ** 3
+    const drawn = { bend: bend * strength, rim: rim * strength }
     gl.uniform2f(gl.getUniformLocation(warp,"size"),bounds.width,bounds.height)
-    gl.uniform1f(gl.getUniformLocation(warp,"bend"),bend)
-    gl.uniform1f(gl.getUniformLocation(warp,"rim"),rim)
+    gl.uniform1f(gl.getUniformLocation(warp,"bend"),drawn.bend)
+    gl.uniform1f(gl.getUniformLocation(warp,"rim"),drawn.rim)
     gl.drawArrays(gl.TRIANGLES,0,6)
+    renderedPhotoWallCurves.set(stage, drawn)
     // Selection/release transitions run briefly; the idle wall has no loop.
-    if (surface.getAnimations({subtree:true}).some(animation=>animation.playState === "running")) request()
+    if (progress < 1 || surface.getAnimations({subtree:true}).some(animation=>animation.playState === "running")) request()
   }
   const request = () => { if (!disposed && !contextLost && !frame) frame = requestAnimationFrame(paint) }
   const observer = new ResizeObserver(request)
@@ -150,6 +171,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     // Restoration invalidates every GPU resource. Keep this viewing session
     // on the DOM fallback; reopening mounts a fresh renderer.
     contextLost = true
+    renderedPhotoWallCurves.delete(stage)
     cancelAnimationFrame(frame)
     frame = 0
     surface.removeAttribute("data-warp-ready")
@@ -158,6 +180,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
   request()
   return () => {
     disposed=true; cancelAnimationFrame(frame); observer.disconnect(); mutations.disconnect()
+    renderedPhotoWallCurves.delete(stage)
     surface.removeAttribute("data-warp-ready")
     surface.removeEventListener("focusin",request); surface.removeEventListener("focusout",request)
     surface.removeEventListener("load",request,true); surface.removeEventListener("transitionrun",request)
