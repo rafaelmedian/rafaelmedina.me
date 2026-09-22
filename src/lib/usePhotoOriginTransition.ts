@@ -195,7 +195,8 @@ export function usePhotoOriginTransition(
       }
     })
     const sourceWidths = new Map(sources.map(source => [source, source.element.offsetWidth]))
-    const gpuOpening = open && opaqueWall && curvedPhotoWallStages.has(strip)
+    const curved = Boolean(parseFloat(tokens.getPropertyValue("--wall-bend")) || parseFloat(tokens.getPropertyValue("--wall-rim")))
+    const gpuOpening = open && opaqueWall && curved && curvedPhotoWallStages.has(strip)
     previousFlights.forEach(flight => { if (flight.gpu) materializePhotoWallFlight(flight.gpu) })
     activePhotoWallFlights.delete(strip)
 

@@ -119,6 +119,9 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     surface.toggleAttribute("data-warp-ready", enabled)
     if (!enabled) {
       renderedPhotoWallCurves.delete(stage)
+      // A mode or focus change can disable rendering after GPU flights were
+      // captured. Release their hidden destinations even without another paint.
+      flights?.forEach(flight => flight.clock.finish())
       return
     }
     const bounds = stage.getBoundingClientRect()
