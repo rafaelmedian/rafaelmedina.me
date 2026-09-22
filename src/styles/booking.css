@@ -393,13 +393,12 @@
   display: flex;
   align-items: center;
   flex-direction: column;
-  gap: 0.375rem;
   padding: 0.5rem 0 1.25rem;
 }
 
 .booking-identity img {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   corner-shape: round;
   object-fit: cover;
   border-radius: var(--radius-full);
@@ -407,10 +406,16 @@
 }
 
 .booking-name-tag {
-  margin: 0;
+  position: relative;
+  margin-top: -0.5rem;
+  padding: 0.5rem 0.75rem;
+  corner-shape: round;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-overlay);
   white-space: nowrap;
   color: var(--ink);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.5;
 }
