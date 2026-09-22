@@ -423,14 +423,14 @@
   cursor: pointer;
   position: relative;
   margin-top: -0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 1rem;
   corner-shape: round;
   border-radius: var(--radius-full);
   background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-control);
+  box-shadow: var(--shadow-control-hover);
   white-space: nowrap;
   color: var(--ink);
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   font-weight: 600;
   line-height: 1.5;
 }
@@ -486,11 +486,10 @@
   animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) both;
   max-width: 90%;
   margin: 0;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
-  border-bottom-left-radius: var(--radius-sm);
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-control);
+  corner-shape: round;
+  background: var(--mosaic-card-surface);
   color: var(--ink);
   font-size: var(--text-sm);
   text-wrap: pretty;
@@ -719,7 +718,7 @@
 }
 
 /* A nested contact sheet keeps the conversation and its draft underneath. */
-.booking-name-tag svg { color: var(--muted); }
+.booking-name-tag svg { color: var(--muted-soft); opacity: 0.6; }
 
 .booking-contact-backdrop {
   position: fixed;
