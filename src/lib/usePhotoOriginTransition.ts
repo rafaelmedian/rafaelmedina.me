@@ -268,7 +268,9 @@ export function usePhotoOriginTransition(
         if (imageLoaded || own) {
           image.src = imageLoaded ? slideImage.currentSrc : own!.image.currentSrc
           image.removeAttribute("srcset")
-          image.style.backgroundImage = "none"
+          // A cached source can be complete before this new element has
+          // decoded it for paint. Keep the warmed thumbnail behind the copy
+          // so handing off from the focused fan never exposes a blank mat.
         }
         image.decoding = "sync"
         document.body.appendChild(clone)

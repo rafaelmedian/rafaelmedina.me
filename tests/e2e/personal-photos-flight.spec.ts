@@ -61,3 +61,37 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
   })
 }
+
+test("focused opens keep a bitmap behind newly mounted flight images", async ({ page }) => {
+  await page.goto("/")
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
+  const trigger = page.locator(".personal-photos-trigger")
+  await trigger.scrollIntoViewIfNeeded()
+  await trigger.locator("img").evaluateAll(images => Promise.all(images.map(image => image.decode())))
+  // Observe the real handoff before the browser paints the new clone. Even
+  // a cached, complete img may still need decoding; retain its fallback.
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Object.assign(window, { blankPhotoFlights: [] as string[] })
+    Element.prototype.animate = function (...args) {
+      const flight = this.closest(".personal-photos-flight")
+      if (flight) {
+        const image = flight.querySelector("img")!
+        if (getComputedStyle(image).backgroundImage === "none") {
+          (window as unknown as { blankPhotoFlights: string[] }).blankPhotoFlights.push(image.src)
+        }
+      }
+      return animate.apply(this, args)
+    }
+  })
+  for (let visit = 0; visit < 2; visit++) {
+    await trigger.focus()
+    await trigger.press("Enter")
+    await expect(page.getByRole("region", { name: "Photo wall" })).toBeVisible()
+    await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
+    await page.getByRole("button", { name: "Close photo wall" }).click()
+    await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
+    await expect(trigger).toBeFocused()
+  }
+  expect(await page.evaluate(() => (window as unknown as { blankPhotoFlights: string[] }).blankPhotoFlights)).toEqual([])
+})
