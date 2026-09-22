@@ -21,6 +21,8 @@ for (const width of [1440, 390]) {
     const flights = page.locator(".personal-photos-flight")
     await expect(flights.first()).toBeAttached()
     expect(await flights.first().evaluate(flight => flight.getAnimations()[0].effect!.getTiming().duration)).toBe(480)
+    await expect(page.locator("[data-photo-flight-curve]")).toHaveCount(1)
+    await expect(page.locator("[data-photo-flight-curve]")).not.toHaveCSS("filter", "none")
     await expect(page.locator(".personal-photos-wall-surface[data-warp-ready]")).toHaveCount(0)
     for (const direction of ["open", "close"]) {
       const frames = await page.evaluate(async () => {
@@ -60,6 +62,7 @@ for (const width of [1440, 390]) {
       await page.evaluate(() => document.querySelectorAll(".personal-photos-flight").forEach(flight =>
         flight.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
       await expect(flights).toHaveCount(0)
+      await expect(page.locator("[data-photo-flight-curve]")).toHaveCount(0)
       if (direction === "open") await page.getByRole("button", { name: "Close photo wall" }).click()
     }
     await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)

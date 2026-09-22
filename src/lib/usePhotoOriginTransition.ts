@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 
 import { cssTimeToMilliseconds } from "./cssTime"
+import { createPhotoFlightCurve } from "./photoFlightCurve"
 
 const useClientLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 const frameProperties = ["height", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderRadius", "boxShadow"] as const
@@ -103,6 +104,7 @@ export function usePhotoOriginTransition(
 ) {
   const flights = useRef<Flight[]>([])
   const sourceFades = useRef<Animation[]>([])
+  const curveLayer = useRef<HTMLElement | null>(null)
 
   useClientLayoutEffect(() => {
     if (!strip || !opener) return
@@ -128,6 +130,8 @@ export function usePhotoOriginTransition(
     const clear = () => {
       flights.current.forEach(removeFlight)
       flights.current = []
+      curveLayer.current?.remove()
+      curveLayer.current = null
       sourceFades.current.forEach((animation) => animation.cancel())
       sourceFades.current = []
     }
@@ -191,6 +195,12 @@ export function usePhotoOriginTransition(
       }
     })
     const sourceWidths = new Map(sources.map(source => [source, source.element.offsetWidth]))
+    // A reversed flight keeps its existing copies, but closing uses its normal
+    // layer. Move them before removing the old curved container.
+    previousFlights.forEach(flight => document.body.appendChild(flight.clone))
+    curveLayer.current?.remove()
+    const layer = open && opaqueWall ? createPhotoFlightCurve(strip) : null
+    curveLayer.current = layer
 
     destinations.forEach(({ slide, target, layoutWidth, layoutHeight, frame, image: imageStyles }) => {
       const previous = previousFlights.find((flight) => flight.slide === slide)
@@ -277,8 +287,10 @@ export function usePhotoOriginTransition(
           // so handing off from the focused fan never exposes a blank mat.
         }
         image.decoding = "sync"
-        document.body.appendChild(clone)
+        ;(layer ?? document.body).appendChild(clone)
       }
+
+      if (previous && layer) layer.appendChild(clone)
 
       // The print's own frame and crop, expressed at the size the slide is now.
       const originFrame = (print: PhotoOrigin) => ({
@@ -342,6 +354,8 @@ export function usePhotoOriginTransition(
       if (disposed) return
       if (!open) sources.forEach(({ element }) => element.removeAttribute("data-photo-away"))
       batch.forEach(removeFlight)
+      layer?.remove()
+      if (curveLayer.current === layer) curveLayer.current = null
       flights.current = flights.current.filter(flight => !batch.includes(flight))
       if (!open) onCloseComplete()
     })
@@ -366,6 +380,8 @@ export function usePhotoOriginTransition(
   useEffect(() => () => {
     flights.current.forEach(removeFlight)
     flights.current = []
+    curveLayer.current?.remove()
+    curveLayer.current = null
     sourceFades.current.forEach((animation) => animation.cancel())
     sourceFades.current = []
   }, [])

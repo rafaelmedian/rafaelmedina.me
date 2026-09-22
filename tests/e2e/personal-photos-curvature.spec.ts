@@ -87,7 +87,7 @@ test("the original photo wall remains usable without WebGL", async ({ page }) =>
   await expect(wall.locator(".personal-photos-slide[data-held]")).toHaveCount(1)
 })
 
-test("the opening curve eases from flat to its resting strength", async ({ page }) => {
+test("the opening curve is already at full strength on its first frame", async ({ page }) => {
   // Observe the values sent to the real shader, not just canvas visibility.
   await page.addInitScript(() => {
     const names = new WeakMap<WebGLUniformLocation, string>()
@@ -110,7 +110,6 @@ test("the opening curve eases from flat to its resting strength", async ({ page 
   await page.locator(".personal-photos-label").click()
   await expect.poll(() => page.evaluate(() => (window as unknown as { renderedRims: number[] }).renderedRims.at(-1))).toBe(0.46)
   const values = await page.evaluate(() => (window as unknown as { renderedRims: number[] }).renderedRims)
-  expect(values[0]).toBe(0)
-  expect(values.some(value => value > 0 && value < 0.46)).toBe(true)
-  expect(values.every((value, index) => index === 0 || value >= values[index - 1])).toBe(true)
+  expect(values.length).toBeGreaterThan(0)
+  expect(values.every(value => value === 0.46)).toBe(true)
 })

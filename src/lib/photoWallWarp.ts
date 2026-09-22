@@ -2,7 +2,10 @@
 // Rendering and pointer sampling must use the same signed scale.
 export const PHOTO_WALL_WARP_SCALE = -0.18
 
-/** The last painted field, so pointer sampling follows the animated curve. */
+/** Stages with a working curved renderer, including before its first paint. */
+export const curvedPhotoWallStages = new WeakSet<HTMLElement>()
+
+/** The last painted field, shared with pointer sampling. */
 export const renderedPhotoWallCurves = new WeakMap<HTMLElement, { bend: number; rim: number }>()
 
 /** One viewport-wide displacement field, shared by rendering and hit testing.
