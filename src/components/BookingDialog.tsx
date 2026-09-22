@@ -102,8 +102,8 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
           <section className="booking-conversation" hidden={calendar} aria-label="Conversation with Rafael">
             <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open && !calendar ? "polite" : "off"}>
               <div className="booking-bubble">Hey, I’m Rafa.</div>
-              <div className="booking-bubble">Have something in mind?</div>
-              <div className="booking-bubble">Leave your email so I can get back to you.</div>
+              <div className="booking-bubble">we should catch up properly</div>
+              <div className="booking-bubble">where should i email you?</div>
               {confirmedEmail && <>
                 <div className="booking-email-confirmation">
                   <div className="booking-bubble booking-outgoing">{confirmedEmail}</div>
