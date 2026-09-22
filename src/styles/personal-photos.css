@@ -808,9 +808,11 @@
 }
 .personal-photos-sheet[data-layout="wall"] {
   --wall-release-duration: var(--duration-base);
-  --wall-curve-angle: 16;
-  --wall-curve-power: 1.35;
-  --wall-curve-perspective: 1000px;
+  --wall-watch-shrink: 0;
+  --wall-watch-power: 1.35;
+  --wall-bend: 0.5;
+  --wall-rim: 0.35;
+  --wall-gap: clamp(1rem, 2vw, 2rem);
   /* The backdrop owns the white canvas. A second surface here would cover
      borrowed flights, which travel below the popup and above the backdrop. */
   background: transparent;
@@ -834,11 +836,11 @@
   transform-origin: 0 0;
   translate: var(--wall-focus-x, 0px) var(--wall-focus-y, 0px);
   transition: translate var(--grid-focus-duration) var(--ease-smooth);
-  gap: clamp(1.5rem, 4vw, 5rem);
+  gap: var(--wall-gap);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column {
   align-items: center;
-  gap: clamp(1.5rem, 4vw, 5rem);
+  gap: var(--wall-gap);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(even) {
   margin-top: 6rem;
@@ -899,16 +901,16 @@
   top: 0;
   display: flex;
   align-items: flex-start;
-  gap: clamp(1.5rem, 4vw, 5rem);
+  gap: var(--wall-gap);
   width: 100%;
-  padding-right: clamp(1.5rem, 4vw, 5rem);
+  padding-right: var(--wall-gap);
 }
 .personal-photos-wall-panel:first-child { position: relative; }
 .personal-photos-wall-panel:has(.personal-photos-slide[data-held]) { z-index: 1; }
 
 .personal-photos-wall-panel .personal-photos-column {
   position: relative;
-  padding-bottom: clamp(1.5rem, 4vw, 5rem);
+  padding-bottom: var(--wall-gap);
 }
 /* Recycled rows share a horizontal panel box. Empty portions of a later
    panel must not intercept a photo in an earlier one. */
@@ -1099,18 +1101,23 @@
 }
 .personal-photo-book[aria-expanded="true"] .personal-photo-details-chevron { rotate: 180deg; }
 
-/* Curve only the print surface: layout boxes stay flat for camera recycling,
-   selection centring, and keyboard navigation. */
+/* Watch retains its independent scale treatment. The default curved surface
+   bends the complete composition in one render pass below. */
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span {
   display: block;
   border-radius: inherit;
   box-shadow: var(--shadow-ring);
-  transform: perspective(var(--wall-curve-perspective)) rotateX(var(--wall-curve-x, 0deg)) rotateY(var(--wall-curve-y, 0deg));
+  transform: scale(var(--wall-watch-scale, 1));
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] > span {
-  transform: perspective(var(--wall-curve-perspective)) rotateX(0deg) rotateY(0deg);
+  transform: none;
   transition: transform var(--grid-focus-duration) var(--ease-smooth);
 }
 @media (prefers-reduced-motion: reduce) {
   .personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span { transform: none; }
 }
+
+.personal-photos-wall-surface { position: absolute; inset: 0; }
+.personal-photos-wall-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+.personal-photos-wall-surface[data-warp-ready] .personal-photos-masonry { opacity: 0; }
+.personal-photos-wall-surface[data-warp-ready] .personal-photos-wall-canvas { display: block; }

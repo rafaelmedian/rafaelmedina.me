@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from "react"
+import { PHOTO_WALL_WARP_SCALE, photoWallDisplacement } from "./photoWallWarp"
 
 type Point = { x: number; y: number }
 type Camera = Point & { scale: number }
@@ -19,25 +20,29 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     const columns = panels.map(panel => Array.from(panel.querySelectorAll<HTMLElement>(".personal-photos-column")))
     const slides = Array.from(plane.querySelectorAll<HTMLElement>(".personal-photos-slide"))
     let curvatureFrame = 0
-    // Gesture -> sample flat layout boxes -> tilt toward the plate rim.
+    // Gesture -> sample flat layout boxes -> apply the chosen edge treatment.
     // Selection -> flatten the print; reduced motion -> keep the wall flat.
     // Batch all reads before writes, and coalesce wheel/pointer events per frame.
     const curve = () => {
       curvatureFrame = 0
       const bounds = stage.getBoundingClientRect()
       const settings = getComputedStyle(stage)
-      const angle = parseFloat(settings.getPropertyValue("--wall-curve-angle")) || 0
-      const power = parseFloat(settings.getPropertyValue("--wall-curve-power")) || 1
+      const shrink = parseFloat(settings.getPropertyValue("--wall-watch-shrink")) || 0
+      const watchPower = parseFloat(settings.getPropertyValue("--wall-watch-power")) || 1.35
+      if (!shrink && !slides.some(slide => slide.style.getPropertyValue("--wall-watch-scale"))) return
       const poses = slides.map(slide => {
         const rect = slide.getBoundingClientRect()
         const x = clamp((rect.left + rect.width / 2 - bounds.left - bounds.width / 2) / (bounds.width / 2), -1, 1)
         const y = clamp((rect.top + rect.height / 2 - bounds.top - bounds.height / 2) / (bounds.height / 2), -1, 1)
-        const bend = (value: number) => Math.sign(value) * Math.abs(value) ** power * angle
-        return { slide, x: bend(y), y: -bend(x) }
+        // Elliptical distance makes corners recede sooner than straight edges.
+        // A quiet centre retains full-size photos; smoothstep avoids a hard rim.
+        const distance = Math.hypot(x, y)
+        const edge = clamp((distance - 0.25) / 1.15, 0, 1)
+        const falloff = (edge * edge * (3 - 2 * edge)) ** watchPower
+        return { slide, scale: 1 - shrink * falloff }
       })
-      for (const { slide, x, y } of poses) {
-        slide.style.setProperty("--wall-curve-x", `${x.toFixed(3)}deg`)
-        slide.style.setProperty("--wall-curve-y", `${y.toFixed(3)}deg`)
+      for (const { slide, scale } of poses) {
+        slide.style.setProperty("--wall-watch-scale", scale.toFixed(4))
       }
     }
     const requestCurve = () => {
@@ -76,6 +81,7 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       }
       plane.style.transform = `translate(${pose.x}px, ${pose.y}px) scale(${pose.scale})`
       requestCurve()
+      stage.dispatchEvent(new Event("photo-wall-paint"))
     }
     const local = (point: Point) => {
       const rect = stage.getBoundingClientRect()
@@ -208,7 +214,28 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
         event.preventDefault()
         event.stopImmediatePropagation()
         suppressClick = false
+        return
       }
+      // The rendered surface bends pixels, not DOM hit boxes. Sample the same field
+      // to select the photograph actually under a pointer. Keyboard clicks
+      // and an enlarged photograph retain their ordinary DOM targets.
+      if (!stage.querySelector("[data-warp-ready]") || !event.detail || stage.hasAttribute("data-held") || matchMedia("(prefers-reduced-motion: reduce)").matches) return
+      const settings = getComputedStyle(stage)
+      const bend = parseFloat(settings.getPropertyValue("--wall-bend")) || 0
+      const rim = parseFloat(settings.getPropertyValue("--wall-rim")) || 0
+      if (!bend && !rim) return
+      const bounds = stage.getBoundingClientRect()
+      const offset = photoWallDisplacement((event.clientX - bounds.left) / bounds.width, (event.clientY - bounds.top) / bounds.height, bend, rim)
+      const amplitude = Math.min(bounds.width, bounds.height) * PHOTO_WALL_WARP_SCALE / 2
+      const x = event.clientX + offset.x * amplitude
+      const y = event.clientY + offset.y * amplitude
+      const target = slides.find(slide => {
+        const rect = slide.getBoundingClientRect()
+        return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+      })
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      target?.click()
     }
     const key = (event: KeyboardEvent) => {
       if (!active.current || event.ctrlKey || event.metaKey || event.altKey) return
