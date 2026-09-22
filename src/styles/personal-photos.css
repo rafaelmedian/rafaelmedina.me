@@ -810,9 +810,9 @@
   --wall-release-duration: var(--duration-base);
   --wall-watch-shrink: 0;
   --wall-watch-power: 1.35;
-  --wall-bend: 0.5;
-  --wall-rim: 0.35;
-  --wall-gap: clamp(1rem, 2vw, 2rem);
+  --wall-bend: 0;
+  --wall-rim: 0.46;
+  --wall-gap: 0.5rem;
   /* The backdrop owns the white canvas. A second surface here would cover
      borrowed flights, which travel below the popup and above the backdrop. */
   background: transparent;

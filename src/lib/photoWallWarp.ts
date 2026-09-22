@@ -1,4 +1,6 @@
-export const PHOTO_WALL_WARP_SCALE = 0.18
+// Negative displacement reverses the surface into the inward bowl.
+// Rendering and pointer sampling must use the same signed scale.
+export const PHOTO_WALL_WARP_SCALE = -0.18
 
 /** One viewport-wide displacement field, shared by rendering and hit testing.
  * The S crosses the entire composition; the rim adds a shallow bowl curve.

@@ -52,7 +52,7 @@ const spherePhotoSizes = `${photoSphereHoldShare * 100}vw`
 // columns, as --photo-gutter and --photo-column-gap set them.
 // Like the globe, advertise the largest camera zoom before a gesture so
 // enlarging the wall never waits for a sharper bitmap to arrive.
-const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * clamp(1rem, 2vw, 2rem)) / 5 * 2.5)"
+const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * 0.5rem) / 5 * 2.5)"
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
