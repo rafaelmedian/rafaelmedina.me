@@ -115,7 +115,9 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     let pendingImage = false
     const corner = CSS.supports("corner-shape", "squircle") && settings.getPropertyValue("--corner-curve").trim() === "squircle" ? 4 : 2
     const visible = flights?.length ? [...flights].sort((a,b) => a.depth-b.depth).map(flight => {
-      const img = flight.image.complete && flight.image.naturalWidth ? flight.image : flight.placeholder
+      // Keep lightweight thumbnails for the whole opening. Uploading newly
+      // loaded originals mid-flight stalls the very frame they should animate.
+      const img = flight.placeholder.complete && flight.placeholder.naturalWidth ? flight.placeholder : flight.image
       if (!img.complete || !img.naturalWidth) pendingImage = true
       return { ...samplePhotoWallFlight(flight), img, opacity: 1, level: flight.level }
     }) : slides.flatMap(slide => {
@@ -132,6 +134,9 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     if (pendingImage) {
       surface.removeAttribute("data-warp-ready")
       renderedPhotoWallCurves.delete(stage)
+      // Placeholder Images live outside the surface, so its load listener
+      // cannot wake this renderer when a cold thumbnail finishes.
+      if (flights?.length) request()
       return
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
@@ -177,6 +182,16 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     renderedPhotoWallCurves.set(stage, drawn)
     flights?.forEach(flight => {
       if (flight.clone.style.visibility !== "hidden") flight.clone.style.visibility = "hidden"
+      if (flight.waitingForPaint) {
+        flight.waitingForPaint = false
+        // Start on the following frame: the current timeline timestamp was
+        // captured before cold shader compilation and texture uploads.
+        requestAnimationFrame(() => {
+          if (disposed || !activePhotoWallFlights.get(stage)?.includes(flight)) return
+          flight.clock.play()
+          request()
+        })
+      }
     })
     // Selection/release transitions run briefly; the idle wall has no loop.
     if (flights?.some(flight => flight.clock.playState === "running") || surface.getAnimations({subtree:true}).some(animation=>animation.playState === "running")) request()
@@ -198,7 +213,13 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     // Restoration invalidates every GPU resource. Keep this viewing session
     // on the DOM fallback; reopening mounts a fresh renderer.
     contextLost = true
-    activePhotoWallFlights.get(stage)?.forEach(materializePhotoWallFlight)
+    activePhotoWallFlights.get(stage)?.forEach(flight => {
+      materializePhotoWallFlight(flight)
+      if (flight.waitingForPaint) {
+        flight.waitingForPaint = false
+        flight.clock.play()
+      }
+    })
     curvedPhotoWallStages.delete(stage)
     renderedPhotoWallCurves.delete(stage)
     cancelAnimationFrame(frame)

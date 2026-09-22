@@ -341,6 +341,7 @@ export function usePhotoOriginTransition(
         if (!own) placeholder.src = slideImage.style.backgroundImage.slice(5, -2)
         flight.gpu = {
           clone, image: slideImage, placeholder, clock: animations[0],
+          waitingForPaint: animations[0].playState === "running",
           depth: own ? own.depth : -1,
           level: Boolean(slide.querySelector(".personal-photo-level")),
           from: { x: source.rect.left + source.rect.width / 2, y: source.rect.top + source.rect.height / 2,
@@ -353,6 +354,12 @@ export function usePhotoOriginTransition(
             padding: parseFloat(frame.paddingTop) * slideScale,
             radius: parseFloat(frame.borderRadius) * slideScale, angle: 0,
             positionX: endPosition[0], positionY: endPosition[1] },
+        }
+        // Loading and uploading the first textures must not consume flight time.
+        // Preserve an externally paused clock (for inspection or reduced playback).
+        if (flight.gpu.waitingForPaint) {
+          flight.gpu.clock.pause()
+          flight.gpu.clock.currentTime = 0
         }
         materializePhotoWallFlight(flight.gpu)
       }

@@ -12,6 +12,7 @@ export type PhotoWallFlight = {
   from: PhotoFlightPose
   to: PhotoFlightPose
   clock: Animation
+  waitingForPaint: boolean
   depth: number
   level: boolean
 }

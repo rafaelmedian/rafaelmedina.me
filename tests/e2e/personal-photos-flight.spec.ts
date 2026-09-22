@@ -160,3 +160,34 @@ test("closing during a GPU opening returns the photos to their fan slots", async
     flight.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
 })
+
+test("cold opening waits for its first GPU paint before advancing the flight", async ({ page }) => {
+  await page.addInitScript(() => {
+    const draw = WebGLRenderingContext.prototype.drawArrays
+    Object.assign(window, { firstFlightPaint: null as null | { time: number; state: string }, afterFirstFlightPaint: null as null | { time: number; state: string } })
+    WebGLRenderingContext.prototype.drawArrays = function (...args) {
+      const flight = document.querySelector(".personal-photos-flight")
+      const clock = flight?.getAnimations()[0]
+      const state = window as unknown as { firstFlightPaint: null | { time: number; state: string } }
+      if (clock && !state.firstFlightPaint) {
+        state.firstFlightPaint = { time: Number(clock.currentTime), state: clock.playState }
+        // Simulate a cold shader/texture upload consuming this render frame.
+        const until = performance.now() + 80
+        while (performance.now() < until) { /* GPU setup can block the main thread. */ }
+        requestAnimationFrame(() => {
+          (window as unknown as { afterFirstFlightPaint: { time: number; state: string } }).afterFirstFlightPaint = { time: Number(clock.currentTime), state: clock.playState }
+        })
+      }
+      return draw.apply(this, args)
+    }
+  })
+  await page.goto("/")
+  await page.locator(".personal-photos-label").click()
+  await expect.poll(() => page.evaluate(() => (window as unknown as { firstFlightPaint: unknown }).firstFlightPaint)).not.toBeNull()
+  const first = await page.evaluate(() => (window as unknown as { firstFlightPaint: { time: number; state: string } }).firstFlightPaint)
+  expect(first.time).toBe(0)
+  expect(first.state).toBe("paused")
+  await expect.poll(() => page.evaluate(() => (window as unknown as { afterFirstFlightPaint: unknown }).afterFirstFlightPaint)).toEqual({ time: 0, state: "paused" })
+  await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
+  await expect(page.locator(".personal-photos-wall-surface[data-warp-ready]")).toHaveCount(1)
+})
