@@ -50,9 +50,9 @@ const sphereCardShare = 0.225 * Math.sqrt(sphereCoverageTarget / sphereTiles.len
 const spherePhotoSizes = `${photoSphereHoldShare * 100}vw`
 // One column's width: the sheet less its gutters and the gaps between the
 // columns, as --photo-gutter and --photo-column-gap set them.
-// Like the globe, advertise the largest camera zoom before a gesture so
-// enlarging the wall never waits for a sharper bitmap to arrive.
-const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * 0.5rem) / 5 * 2.5)"
+// Start at the actual column width. The camera upgrades sizes as it zooms,
+// rather than decoding maximum-zoom originals for every initial tile.
+const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * 0.5rem) / 5)"
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and

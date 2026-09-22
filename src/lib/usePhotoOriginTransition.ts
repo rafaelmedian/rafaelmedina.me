@@ -337,8 +337,10 @@ export function usePhotoOriginTransition(
         const position = (value: string) => value.split(" ").map(part => parseFloat(part) / 100)
         const startPosition = position(source.imageStyles.objectPosition)
         const endPosition = position(imageStyles.objectPosition)
-        const placeholder = own?.image ?? new Image()
-        if (!own) placeholder.src = slideImage.style.backgroundImage.slice(5, -2)
+        // The fan may retain a larger image from a previous visit. Keep
+        // reopening on thumbnails too, rather than uploading those originals.
+        const placeholder = new Image()
+        placeholder.src = slideImage.style.backgroundImage.slice(5, -2)
         flight.gpu = {
           clone, image: slideImage, placeholder, clock: animations[0],
           waitingForPaint: animations[0].playState === "running",

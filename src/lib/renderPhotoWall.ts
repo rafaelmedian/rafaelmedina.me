@@ -72,7 +72,26 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
   }
   const scene = texture()
   const framebuffer = gl.createFramebuffer()!
-  const textures = new Map<string, WebGLTexture>()
+  const textures = new Map<string, { texture: WebGLTexture; width: number; height: number }>()
+  const thumbnails = new Map<string, HTMLImageElement>()
+  const thumbnail = (img: HTMLImageElement) => {
+    const src = new URL(img.style.backgroundImage.slice(5, -2), document.baseURI).href
+    let preview = thumbnails.get(src)
+    if (!preview) {
+      preview = new Image()
+      preview.src = src
+      preview.onload = request
+      thumbnails.set(src, preview)
+    }
+    return preview
+  }
+  const upload = (img: HTMLImageElement) => {
+    const bitmap = { texture: texture(), width: img.naturalWidth, height: img.naturalHeight }
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+    textures.set(img.currentSrc, bitmap)
+    return bitmap
+  }
   const slides = Array.from(surface.querySelectorAll<HTMLElement>(".personal-photos-slide"))
   const reduced = matchMedia("(prefers-reduced-motion: reduce)")
   let frame = 0
@@ -119,14 +138,16 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
       // loaded originals mid-flight stalls the very frame they should animate.
       const img = flight.placeholder.complete && flight.placeholder.naturalWidth ? flight.placeholder : flight.image
       if (!img.complete || !img.naturalWidth) pendingImage = true
-      return { ...samplePhotoWallFlight(flight), img, opacity: 1, level: flight.level }
+      return { ...samplePhotoWallFlight(flight), img, preview: flight.placeholder, opacity: 1, level: flight.level }
     }) : slides.flatMap(slide => {
       const box = slide.getBoundingClientRect()
       if (box.right < bounds.left || box.left > bounds.right || box.bottom < bounds.top || box.top > bounds.bottom) return []
-      const img = slide.querySelector("img")!
+      const original = slide.querySelector("img")!
+      const preview = thumbnail(original)
+      const img = original.complete && original.naturalWidth ? original : preview
       if (!img.complete || !img.naturalWidth) { pendingImage = true; return [] }
       const style = getComputedStyle(slide)
-      return [{ img, x: box.left + box.width / 2, y: box.top + box.height / 2,
+      return [{ img, preview, x: box.left + box.width / 2, y: box.top + box.height / 2,
         width: box.width, height: box.height, angle: 0, padding: 0, positionX: .5, positionY: .5,
         opacity: parseFloat(style.opacity), radius: parseFloat(style.borderTopLeftRadius) * box.width / slide.offsetWidth,
         level: Boolean(slide.querySelector(".personal-photo-level")) }]
@@ -143,22 +164,29 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT)
     gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     bindProgram(photo)
-    for (const { img, x, y, width: photoWidth, height: photoHeight, angle, padding, positionX, positionY, opacity, radius, level } of visible) {
+    let upgrades = 0
+    let refining = false
+    for (const { img, preview, x, y, width: photoWidth, height: photoHeight, angle, padding, positionX, positionY, opacity, radius, level } of visible) {
       let bitmap = textures.get(img.currentSrc)
       if (!bitmap) {
-        bitmap = texture()
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
-        textures.set(img.currentSrc, bitmap)
+        if (!flights?.length && preview.complete && preview.naturalWidth && preview.currentSrc !== img.currentSrc) {
+          // Preserve the painted thumbnail while originals sharpen one at a
+          // time. A whole viewport of uploads used to block a single frame.
+          const fallback = textures.get(preview.currentSrc) ?? upload(preview)
+          if (upgrades === 0) { bitmap = upload(img); upgrades++ }
+          else { bitmap = fallback; refining = true }
+        } else {
+          bitmap = upload(img)
+        }
       }
-      gl.bindTexture(gl.TEXTURE_2D, bitmap)
+      gl.bindTexture(gl.TEXTURE_2D, bitmap.texture)
       const radians = angle * Math.PI / 180
       const boxWidth = Math.abs(Math.cos(radians)) * photoWidth + Math.abs(Math.sin(radians)) * photoHeight
       const boxHeight = Math.abs(Math.sin(radians)) * photoWidth + Math.abs(Math.cos(radians)) * photoHeight
       gl.viewport(Math.round((x-boxWidth/2-bounds.left)*ratio),Math.round((bounds.bottom-y-boxHeight/2)*ratio),Math.round(boxWidth*ratio),Math.round(boxHeight*ratio))
       gl.uniform2f(gl.getUniformLocation(photo,"size"),photoWidth,photoHeight)
       gl.uniform2f(gl.getUniformLocation(photo,"viewportSize"),boxWidth,boxHeight)
-      gl.uniform2f(gl.getUniformLocation(photo,"imageSize"),img.naturalWidth,img.naturalHeight)
+      gl.uniform2f(gl.getUniformLocation(photo,"imageSize"),bitmap.width,bitmap.height)
       gl.uniform2f(gl.getUniformLocation(photo,"objectPosition"),positionX,positionY)
       gl.uniform1f(gl.getUniformLocation(photo,"radius"),radius)
       gl.uniform1f(gl.getUniformLocation(photo,"padding"),padding)
@@ -194,7 +222,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
       }
     })
     // Selection/release transitions run briefly; the idle wall has no loop.
-    if (flights?.some(flight => flight.clock.playState === "running") || surface.getAnimations({subtree:true}).some(animation=>animation.playState === "running")) request()
+    if (refining || flights?.some(flight => flight.clock.playState === "running") || surface.getAnimations({subtree:true}).some(animation=>animation.playState === "running")) request()
   }
   const request = () => { if (!disposed && !contextLost && !frame) frame = requestAnimationFrame(paint) }
   const observer = new ResizeObserver(request)
@@ -227,6 +255,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     surface.removeAttribute("data-warp-ready")
   }
   canvas.addEventListener("webglcontextlost",lost)
+  slides.forEach(slide => thumbnail(slide.querySelector("img")!))
   request()
   return () => {
     disposed=true; cancelAnimationFrame(frame); observer.disconnect(); mutations.disconnect()
@@ -238,7 +267,8 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     surface.removeEventListener("load",request,true); surface.removeEventListener("transitionrun",request)
     stage.removeEventListener("photo-wall-paint",request); window.removeEventListener("photo-wall-curve-change",request)
     reduced.removeEventListener("change",request); canvas.removeEventListener("webglcontextlost",lost)
-    textures.forEach(value=>gl.deleteTexture(value)); gl.deleteTexture(scene); gl.deleteFramebuffer(framebuffer)
+    thumbnails.forEach(value => { value.onload = null })
+    textures.forEach(value=>gl.deleteTexture(value.texture)); gl.deleteTexture(scene); gl.deleteFramebuffer(framebuffer)
     gl.deleteBuffer(buffer); gl.deleteProgram(photo); gl.deleteProgram(warp)
   }
 }

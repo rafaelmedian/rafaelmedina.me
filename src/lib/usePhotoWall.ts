@@ -58,10 +58,18 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     // leaving the surrounding ring moves; visible neighbours keep their slots.
     const recycledCell = (centre: number, offset: number) => centre + ((offset - centre + 1) % 3 + 3) % 3 - 1
     let focusRevision = 0
+    let imageWidth = 0
     const paint = (recycle = true) => {
       const pose = camera.current
       const width = plane.offsetWidth
       const heights = columns[0]?.map(column => column.offsetHeight) ?? []
+      const nextImageWidth = Math.ceil((columns[0]?.[0]?.offsetWidth ?? 0) * pose.scale)
+      if (nextImageWidth && nextImageWidth !== imageWidth) {
+        imageWidth = nextImageWidth
+        slides.forEach(slide => {
+          if (!slide.hasAttribute("data-held")) slide.querySelector("img")!.sizes = `${imageWidth}px`
+        })
+      }
       // Recycle horizontally by a complete collection, and vertically by
       // each column's own period. Unequal photo ratios cannot leave a blank
       // band below a short column when its taller neighbour repeats.
