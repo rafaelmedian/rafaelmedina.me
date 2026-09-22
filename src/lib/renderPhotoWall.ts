@@ -60,6 +60,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
   const reduced = matchMedia("(prefers-reduced-motion: reduce)")
   let frame = 0
   let disposed = false
+  let contextLost = false
   const bindProgram = (program: WebGLProgram) => {
     gl.useProgram(program)
     const position = gl.getAttribLocation(program, "position")
@@ -68,7 +69,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
   }
   const paint = () => {
     frame = 0
-    if (disposed || gl.isContextLost()) return
+    if (disposed || contextLost || gl.isContextLost()) return
     const settings = getComputedStyle(stage)
     const bend = parseFloat(settings.getPropertyValue("--wall-bend")) || 0
     const rim = parseFloat(settings.getPropertyValue("--wall-rim")) || 0
@@ -128,7 +129,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     // Selection/release transitions run briefly; the idle wall has no loop.
     if (surface.getAnimations({subtree:true}).some(animation=>animation.playState === "running")) request()
   }
-  const request = () => { if (!disposed && !frame) frame = requestAnimationFrame(paint) }
+  const request = () => { if (!disposed && !contextLost && !frame) frame = requestAnimationFrame(paint) }
   const observer = new ResizeObserver(request)
   observer.observe(stage)
   const mutations = new MutationObserver(request)
@@ -140,7 +141,15 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
   stage.addEventListener("photo-wall-paint",request)
   window.addEventListener("photo-wall-curve-change",request)
   reduced.addEventListener("change",request)
-  const lost = (event: Event) => { event.preventDefault(); surface.removeAttribute("data-warp-ready") }
+  const lost = (event: Event) => {
+    event.preventDefault()
+    // Restoration invalidates every GPU resource. Keep this viewing session
+    // on the DOM fallback; reopening mounts a fresh renderer.
+    contextLost = true
+    cancelAnimationFrame(frame)
+    frame = 0
+    surface.removeAttribute("data-warp-ready")
+  }
   canvas.addEventListener("webglcontextlost",lost)
   request()
   return () => {

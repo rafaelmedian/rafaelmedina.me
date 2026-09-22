@@ -1,5 +1,33 @@
 import { expect, test } from "@playwright/test"
 
+test("context restoration keeps the usable DOM fallback", async ({ page }) => {
+  await page.goto("/")
+  await page.locator(".personal-photos-label").click()
+  const wall = page.getByRole("region", { name: "Photo wall" })
+  await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
+  await expect(wall.locator("[data-warp-ready]")).toHaveCount(1)
+  await wall.evaluate(async stage => {
+    const canvas = stage.querySelector("canvas")!
+    const extension = canvas.getContext("webgl")!.getExtension("WEBGL_lose_context")!
+    const lost = new Promise(resolve => canvas.addEventListener("webglcontextlost", resolve, { once: true }))
+    extension.loseContext()
+    await lost
+    // Let the loss event finish dispatching before asking for restoration.
+    await new Promise(resolve => setTimeout(resolve, 100))
+    const restored = new Promise(resolve => canvas.addEventListener("webglcontextrestored", resolve, { once: true }))
+    extension.restoreContext()
+    await restored
+    stage.dispatchEvent(new Event("photo-wall-paint"))
+    await new Promise(requestAnimationFrame)
+  })
+  await expect(wall.locator("[data-warp-ready]")).toHaveCount(0)
+  await expect(wall.locator(".personal-photos-masonry")).toHaveCSS("opacity", "1")
+  await wall.press("Shift+ArrowRight")
+  await expect(wall.locator("canvas")).toBeHidden()
+  await wall.press("ArrowRight")
+  await expect(wall.locator(".personal-photos-slide[data-held]")).toHaveCount(1)
+})
+
 // Read pixels in the render frame, before WebGL discards its drawing buffer.
 // A visible canvas alone would miss a blank renderer or a failed framebuffer.
 test("the shared curved surface paints photos and sleeps at rest", async ({ page }) => {
