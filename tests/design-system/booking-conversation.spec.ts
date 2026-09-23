@@ -65,7 +65,8 @@ test('validates email and keeps controls reachable in a short mobile viewport', 
   await email.fill('visitor@example.com')
   await email.press('Enter')
   await expect(dialog.getByRole('textbox', { name: 'Your message' })).toBeFocused()
-  await dialog.getByRole('button', { name: 'Change email' }).click()
+  await dialog.getByRole('button', { name: 'Email options for visitor@example.com' }).click()
+  await page.getByRole('menuitem', { name: 'Unsend', exact: true }).click()
   await expect(email).toBeFocused()
   await expect(email).toHaveValue('visitor@example.com')
   for (let index = 0; index < 4; index++) {

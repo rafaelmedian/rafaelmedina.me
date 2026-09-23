@@ -1,3 +1,4 @@
+import { Menu } from "@base-ui/react/menu"
 import { Dialog } from "@base-ui/react/dialog"
 import { ArrowLeft, ArrowUp, CalendarDays, Mic, X } from "lucide-react"
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
@@ -122,12 +123,22 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
               <div className="booking-bubble">where should i email you?</div>
               {confirmedEmail && <>
                 <div className="booking-email-confirmation">
-                  <div className="booking-bubble booking-outgoing">{confirmedEmail}</div>
-                  <button className="booking-change-email" type="button" disabled={sending} onClick={() => {
-                    popupRef.current?.focus({ preventScroll: true })
-                    setConfirmedEmail("")
-                    requestAnimationFrame(() => popupRef.current?.querySelector<HTMLInputElement>('input[type="email"]')?.focus())
-                  }}>Change email</button>
+                  <Menu.Root modal={false}>
+                    <Menu.Trigger className="booking-bubble booking-outgoing booking-email-trigger" disabled={sending}
+                      aria-label={`Email options for ${confirmedEmail}`}>{confirmedEmail}</Menu.Trigger>
+                    <Menu.Portal>
+                      <Menu.Positioner className="booking-email-menu-positioner" positionMethod="fixed" side="bottom" align="end" sideOffset={8} collisionPadding={12}>
+                        <Menu.Popup className="booking-email-menu" aria-label="Email options"
+                          finalFocus={() => popupRef.current?.querySelector<HTMLInputElement>('input[type="email"]') ?? true}>
+                          <Menu.Item className="booking-email-menu-item" onClick={() => {
+                            popupRef.current?.focus({ preventScroll: true })
+                            setConfirmedEmail("")
+                            requestAnimationFrame(() => popupRef.current?.querySelector<HTMLInputElement>('input[type="email"]')?.focus())
+                          }}>Unsend</Menu.Item>
+                        </Menu.Popup>
+                      </Menu.Positioner>
+                    </Menu.Portal>
+                  </Menu.Root>
                 </div>
                 <div className="booking-bubble">Tell me a little about it. Or let’s find a time to talk.</div>
               </>}
@@ -149,6 +160,12 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
               </div>
               <p className="booking-hint" id={hintId}>Just for our conversation. No mailing list.</p>
             </form> : <div className="booking-compose-area booking-compose-row">
+              <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" title="Book a time · 30 min" onClick={() => {
+                popupRef.current?.focus({ preventScroll: true })
+                setCalendarEmail(confirmedEmail)
+                setCalendar(true)
+                requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
+              }}><CalendarDays size={20} aria-hidden="true" /></button>
               <form onSubmit={send}>
                 <div className="booking-composer">
                   <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : undefined} rows={1} maxLength={2000}
@@ -159,12 +176,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
                 </div>
                 {atLimit && <p className="sr-only" id={hintId} role="status">Message limit reached. You can still book a time.</p>}
               </form>
-              <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" title="Book a time · 30 min" onClick={() => {
-                popupRef.current?.focus({ preventScroll: true })
-                setCalendarEmail(confirmedEmail)
-                setCalendar(true)
-                requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
-              }}><CalendarDays size={20} aria-hidden="true" /></button>
+
             </div>}
           </section>
           {calendarEmail !== null && <section className="booking-calendar-stage" hidden={!calendar} aria-label="Choose a time">

@@ -675,18 +675,27 @@
   cursor: pointer;
 }
 
-.booking-change-email {
-  display: block;
-  align-self: flex-end;
-  margin: 0 0.5rem 0 0;
-  padding: 0.5rem;
-  min-height: 36px;
-  background: transparent;
-  border-radius: var(--radius-full);
-  color: var(--muted);
-  font-size: var(--text-xs);
+.booking-email-trigger { border: 0; cursor: pointer; text-align: left; }
+.booking-email-menu-positioner { z-index: var(--z-dialog); }
+.booking-email-menu {
+  min-width: 144px;
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+}
+.booking-email-menu-item {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: var(--text-sm);
   cursor: pointer;
 }
+.booking-email-menu-item[data-highlighted] { background: var(--mosaic-card-surface); outline: none; }
+
 
 .booking-calendar-stage {
   display: grid;
