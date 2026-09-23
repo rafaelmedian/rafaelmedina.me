@@ -218,3 +218,36 @@ test('moves the homepage portrait into the header and aligns composer controls',
     return Math.abs(composer!.height - booking!.height)
   }).toBeLessThan(1)
 })
+
+test('replays saved email and delivered messages in conversation order', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.route('**/contact', route => route.fulfill({ json: { sent: true } }))
+  await page.goto('/?tune=off')
+  await page.locator('.mosaic-booking-pill').click()
+  const chat = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
+  await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  for (const message of ['First project detail', 'One more detail']) {
+    await chat.getByRole('textbox', { name: 'Your message' }).fill(message)
+    await chat.getByRole('button', { name: 'Send message', exact: true }).click()
+  }
+  await expect(chat.getByText('Delivered', { exact: true })).toHaveCount(2)
+  await chat.getByRole('button', { name: 'Close conversation' }).click()
+  await expect(chat).toBeHidden()
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.locator('.mosaic-booking-pill').click()
+  await expect(chat).toBeVisible()
+  const entries = chat.locator('.booking-history > *')
+  expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).animationDelay)))
+    .toEqual(['0.2s', '0.36s', '0.52s', '0.68s', '0.84s', '1s', '1.16s'])
+  const receipt = chat.locator('.booking-delivery').last()
+  await receipt.evaluate(node => {
+    const animation = node.getAnimations()[0]
+    animation.pause()
+    animation.currentTime = 100
+  })
+  await expect(receipt).toHaveCSS('opacity', '0')
+  await receipt.evaluate(node => node.getAnimations()[0].finish())
+  await expect(receipt).toHaveCSS('opacity', '1')
+  await expect(receipt).toContainText('Delivered')
+})
