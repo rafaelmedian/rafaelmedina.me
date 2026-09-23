@@ -142,17 +142,17 @@ for (const width of [320, 1440]) {
     await expect.poll(chatAlignment).toBeLessThan(2)
     // Focus deepens the control shadow instead of drawing an inset stroke.
     expect(await message.locator('..').evaluate(node => getComputedStyle(node).boxShadow)).toContain('0px 4px 12px')
-    // The message grows with its text from 44px, caps at seven lines and then scrolls.
+    // The compact message field grows with its text, then scrolls at its cap.
     const fieldHeight = () => message.evaluate(node => node.getBoundingClientRect().height)
-    expect(await fieldHeight()).toBe(44)
+    expect(await fieldHeight()).toBe(36)
     await message.fill('One\nTwo\nThree\nFour\nFive')
-    expect(await fieldHeight()).toBe(width === 320 ? 136 : 121)
+    expect(await fieldHeight()).toBe(width === 320 ? 132 : 120)
     expect(await message.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
     await message.fill(Array.from({ length: 20 }, (_, line) => `Line ${line + 1}`).join('\n'))
     expect(await fieldHeight()).toBe(188)
     await expect.poll(chatAlignment).toBeLessThan(2)
     await message.fill('More context')
-    expect(await fieldHeight()).toBe(44)
+    expect(await fieldHeight()).toBe(36)
     await chat.getByRole('button', { name: 'Change email address: hello@example.com' }).click()
     await expect(email).toBeFocused()
     await email.fill('new@example.com')

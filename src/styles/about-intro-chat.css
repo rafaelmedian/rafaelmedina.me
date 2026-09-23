@@ -652,10 +652,11 @@
   opacity: 1;
 }
 
-/* Grows with the text (sized in AboutIntroChat) up to seven lines, or less on
-   short screens, then scrolls. The history above gives up the room. */
+/* Grows with the text (sized in AboutIntroChat) up to its height cap, then
+   scrolls. The history above gives up the room. */
 .about-intro-chat-message textarea {
-  min-height: 44px;
+  min-height: 36px;
+  padding-block: calc((36px - 1.5em) / 2);
   max-height: min(188px, 30dvh);
   overflow-y: auto;
   scrollbar-width: none;
@@ -1002,3 +1003,20 @@
 
 .about-intro-chat .about-intro-send::before { inset: 6px; }
 .about-intro-chat .about-intro-send svg { width: 20px; height: 20px; }
+
+/* Keep the message row visually compact without shrinking its tap targets. */
+.about-intro-chat-message :is(.about-intro-send, .booking-microphone, .booking-time-button) {
+  position: relative;
+  height: 36px;
+}
+
+.about-intro-chat-message .booking-time-button { width: 36px; }
+
+.about-intro-chat-message :is(.about-intro-send, .booking-microphone, .booking-time-button)::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
+.about-intro-chat-message .booking-time-button::after { inset: -4px; }
+.about-intro-chat-message .about-intro-send::before { inset: 4px 8px; }

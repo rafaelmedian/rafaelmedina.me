@@ -614,6 +614,7 @@ body:has(.booking-contact-panel) .booking-close {
 }
 
 .booking-composer textarea {
+  padding-block: calc((44px - 1.5em) / 2);
   max-height: min(188px, 30dvh);
   overflow-y: auto;
   scrollbar-width: thin;
