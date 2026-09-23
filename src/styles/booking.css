@@ -636,26 +636,29 @@
   text-align: center;
 }
 
-.booking-time-button {
+.booking-compose-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end;
   gap: 0.5rem;
-  width: fit-content;
-  min-height: 44px;
-  padding-inline: 1rem;
-  margin: 0.75rem auto 0;
-  border: 1px solid var(--mosaic-card-surface);
-  box-shadow: var(--shadow-control);
-  border-radius: var(--radius-full);
-  background: var(--canvas);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
 }
 
-.booking-time-button span { margin-left: 0.5rem; color: var(--muted); font-weight: 400; }
+.booking-compose-row > form { flex: 1; min-width: 0; }
+
+.booking-time-button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0.25rem;
+  border: 0;
+  corner-shape: round;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+  background: var(--canvas);
+  color: var(--ink);
+  cursor: pointer;
+}
 
 .booking-change-email {
   display: block;

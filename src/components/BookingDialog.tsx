@@ -132,7 +132,7 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
                 <button className="booking-send" type="submit" aria-label="Continue with email" disabled={!isContactEmail(email)}><ArrowUp size={24} /></button>
               </div>
               <p className="booking-hint" id={hintId}>Just for our conversation. No mailing list.</p>
-            </form> : <div className="booking-compose-area">
+            </form> : <div className="booking-compose-area booking-compose-row">
               <form onSubmit={send}>
                 <div className="booking-composer">
                   <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : undefined} rows={1} maxLength={2000}
@@ -142,12 +142,12 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
                 </div>
                 {atLimit && <p className="sr-only" id={hintId} role="status">Message limit reached. You can still book a time.</p>}
               </form>
-              <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" onClick={() => {
+              <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" title="Book a time · 30 min" onClick={() => {
                 popupRef.current?.focus({ preventScroll: true })
                 setCalendarEmail(confirmedEmail)
                 setCalendar(true)
                 requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
-              }}><CalendarDays size={18} aria-hidden="true" />Book a time<span>30 min</span></button>
+              }}><CalendarDays size={20} aria-hidden="true" /></button>
             </div>}
           </section>
           {calendarEmail !== null && <section className="booking-calendar-stage" hidden={!calendar} aria-label="Choose a time">
