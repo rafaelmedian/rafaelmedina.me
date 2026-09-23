@@ -375,7 +375,7 @@
   /* Keep the tail below the upper corner, even on one-line bubbles. */
   height: min(24px, 50%);
   background: inherit;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V24H0C6 21 8 16 8 8Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V18H18C13 22 7 24 0 22C7 19 8 12 8 0Z'/%3E%3C/svg%3E");
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
   pointer-events: none;
@@ -441,7 +441,7 @@
   height: min(24px, 50%);
   background: inherit;
   transform: scaleX(-1);
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V24H0C6 21 8 16 8 8Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V18H18C13 22 7 24 0 22C7 19 8 12 8 0Z'/%3E%3C/svg%3E");
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
   pointer-events: none;
@@ -1001,7 +1001,7 @@
   opacity: 1;
 }
 
-.about-intro-chat .about-intro-send::before { inset: 6px; }
+.about-intro-chat .about-intro-send::before { inset: 8px 2px; }
 .about-intro-chat .about-intro-send svg { width: 20px; height: 20px; }
 
 /* Keep the message row visually compact without shrinking its tap targets. */
@@ -1019,4 +1019,14 @@
 }
 
 .about-intro-chat-message .booking-time-button::after { inset: -4px; }
-.about-intro-chat-message .about-intro-send::before { inset: 4px 8px; }
+.about-intro-chat-message .about-intro-send::before { inset: 4px 2px; }
+
+/* Only the final bubble in a consecutive run carries the conversation tail. */
+.about-intro-chat-received:has(+ :is(.about-intro-chat-received, .about-intro-chat-typing)) .about-intro-chat-bubble::before,
+.about-intro-chat-sent-message:has(+ .about-intro-chat-sent-message) .about-intro-chat-outgoing::before {
+  content: none;
+}
+
+.about-intro-chat-sent-message:has(+ .about-intro-chat-sent-message) .about-intro-chat-outgoing {
+  border-bottom-right-radius: var(--radius-md);
+}
