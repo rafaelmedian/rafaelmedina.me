@@ -404,6 +404,7 @@
 }
 
 .booking-identity img {
+  transform-origin: top left;
   position: relative;
   z-index: 1;
   width: 64px;
@@ -553,7 +554,7 @@
 .booking-composer {
   display: flex;
   align-items: flex-end;
-  padding: 0.25rem;
+  padding: 0;
   gap: 0.5rem;
   border: 0;
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
@@ -660,7 +661,7 @@
   flex: none;
   width: 44px;
   height: 44px;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
   border: 0;
   corner-shape: round;
   border-radius: var(--radius-full);

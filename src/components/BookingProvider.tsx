@@ -10,12 +10,17 @@ const BookingDialog = lazy(() => import("./BookingDialog").then(module => ({ def
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [bookingUrl, setBookingUrl] = useState(siteLinks.booking)
   const [open, setOpen] = useState(false)
+  const [portraitOrigin, setPortraitOrigin] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
   const [hasOpened, setHasOpened] = useState(false)
   const returnFocus = useRef<HTMLButtonElement | null>(null)
   useEffect(() => subscribeDialogIntent(destination => {
     if (destination !== "booking") setOpen(false)
   }), [])
   return <BookingContext.Provider value={{ open, openBooking: (trigger, placement, url = siteLinks.booking) => {
+    const portrait = document.querySelector<HTMLElement>(".mosaic-avatar-button")
+    const bounds = portrait?.getBoundingClientRect()
+    setPortraitOrigin(bounds && bounds.width > 0 && bounds.bottom > 0 && bounds.top < window.innerHeight
+      ? { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height } : null)
     beginDialogIntent("booking")
     returnFocus.current = trigger
     setBookingUrl(url)
@@ -25,7 +30,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   } }}>
     {children}
     {hasOpened && <Suspense fallback={null}>
-      <BookingDialog bookingUrl={bookingUrl} open={open} onOpenChange={setOpen} returnFocus={returnFocus} />
+      <BookingDialog bookingUrl={bookingUrl} portraitOrigin={portraitOrigin} open={open} onOpenChange={setOpen} returnFocus={returnFocus} />
     </Suspense>}
   </BookingContext.Provider>
 }

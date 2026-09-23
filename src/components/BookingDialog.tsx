@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog"
 import { ArrowLeft, ArrowUp, CalendarDays, Mic, X } from "lucide-react"
-import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
@@ -12,12 +12,13 @@ type Delivery = ContactMessage & { status: "sending" | "delivered" | "failed"; e
 
 type BookingDialogProps = {
   bookingUrl: string
+  portraitOrigin: { left: number; top: number; width: number; height: number } | null
   open: boolean
   onOpenChange: (open: boolean) => void
   returnFocus: RefObject<HTMLButtonElement | null>
 }
 
-export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: BookingDialogProps) {
+export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, returnFocus }: BookingDialogProps) {
   const [email, setEmail] = useState("")
   const [confirmedEmail, setConfirmedEmail] = useState("")
   const [message, setMessage] = useState("")
@@ -32,6 +33,21 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
   const hintId = useId()
   const sending = outbox.some(item => item.status === "sending")
   const atLimit = outbox.length >= 5
+
+  const portraitRef = useCallback((node: HTMLImageElement | null) => {
+    if (!node || !open || !portraitOrigin || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const target = node.getBoundingClientRect()
+    const style = getComputedStyle(node)
+    const animation = node.animate([
+      { transform: `translate(${portraitOrigin.left - target.left}px, ${portraitOrigin.top - target.top}px) scale(${portraitOrigin.width / target.width}, ${portraitOrigin.height / target.height})` },
+      { transform: "translate(0, 0) scale(1)" },
+    ], {
+      duration: parseFloat(style.getPropertyValue("--duration-slow")),
+      easing: style.getPropertyValue("--ease-smooth").trim(),
+    })
+    return () => animation.cancel()
+  }, [open, portraitOrigin])
+
 
   useEffect(() => {
     if (open && !calendar) historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight })
@@ -96,7 +112,7 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
               requestAnimationFrame(() => bookRef.current?.focus({ preventScroll: true }))
             }}><ArrowLeft size={20} /></button>}
           <header className="booking-identity">
-            <img src={siteProfile.photo} width="64" height="64" alt="" />
+            <img ref={portraitRef} src={siteProfile.photo} width="64" height="64" alt="" />
             <BookingContactPanel />
           </header>
           <section className="booking-conversation" hidden={calendar} aria-label="Conversation with Rafael">
