@@ -586,6 +586,16 @@
 .booking-composer :is(input, textarea):focus-visible { outline: none; }
 .booking-composer:focus-within { box-shadow: var(--shadow-ring), var(--shadow-overlay-hover); }
 
+.booking-microphone {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  color: var(--muted-soft);
+  opacity: 0.6;
+}
+
 .booking-send {
   position: relative;
   isolation: isolate;

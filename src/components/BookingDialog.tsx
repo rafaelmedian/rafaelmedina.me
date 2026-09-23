@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { ArrowLeft, ArrowUp, CalendarDays, X } from "lucide-react"
+import { ArrowLeft, ArrowUp, CalendarDays, Mic, X } from "lucide-react"
 import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
@@ -138,7 +138,8 @@ export function BookingDialog({ bookingUrl, open, onOpenChange, returnFocus }: B
                   <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : undefined} rows={1} maxLength={2000}
                     {...ignorePasswordManagers} placeholder="Tell me a little about it…" value={message}
                     onChange={event => setMessage(event.target.value)} disabled={atLimit} />
-                  <button className="booking-send" type="submit" aria-label="Send message" disabled={!message.trim() || sending || atLimit}><ArrowUp size={24} /></button>
+                  {message.trim() ? <button className="booking-send" type="submit" aria-label="Send message" disabled={sending || atLimit}><ArrowUp size={24} /></button>
+                    : <span className="booking-microphone" aria-hidden="true"><Mic size={24} strokeWidth={1.75} /></span>}
                 </div>
                 {atLimit && <p className="sr-only" id={hintId} role="status">Message limit reached. You can still book a time.</p>}
               </form>
