@@ -658,7 +658,7 @@ body:has(.booking-contact-panel) .booking-close {
   corner-shape: round;
   content: "";
   position: absolute;
-  inset: 6px;
+  inset: 8px 2px;
   z-index: -1;
   border-radius: var(--radius-full);
   background: var(--booking-blue);

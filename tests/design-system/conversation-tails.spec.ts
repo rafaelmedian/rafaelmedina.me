@@ -33,5 +33,11 @@ for (const surface of ['about', 'booking'] as const) {
     await expect(outgoing).toHaveCount(2)
     expect(await outgoing.evaluateAll(nodes => nodes.map(node => getComputedStyle(node, '::before').content)))
       .toEqual(['none', '""'])
+    // Enter a draft so the main conversation shows Send instead of its mic.
+    await chat.getByRole('textbox', { name: /^Your message/ }).fill('Another thought')
+    expect(await send.evaluate(node => {
+      const style = getComputedStyle(node, '::before')
+      return [style.width, style.height]
+    })).toEqual(['40px', '28px'])
   })
 }
