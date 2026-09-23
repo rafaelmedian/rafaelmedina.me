@@ -183,3 +183,37 @@ for (const width of [390, 1542]) {
     await expect(name).toBeFocused()
   })
 }
+
+test('moves the homepage portrait into the header and aligns composer controls', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.addInitScript(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args: Parameters<Element['animate']>) {
+      const animation = animate.apply(this, args)
+      if (this.matches('.booking-identity img')) animation.pause()
+      return animation
+    }
+  })
+  await page.goto('/?tune=off')
+  const portrait = page.locator('.mosaic-avatar-button')
+  await portrait.click()
+  const dialog = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
+  const image = dialog.locator('.booking-identity img')
+  await expect(image).toBeVisible()
+  const source = await portrait.boundingBox()
+  const initial = await image.boundingBox()
+  expect(initial!.x).toBeCloseTo(source!.x, 0)
+  expect(initial!.y).toBeCloseTo(source!.y, 0)
+  expect(initial!.width).toBeCloseTo(source!.width, 0)
+  await image.evaluate(node => node.getAnimations().forEach(animation => animation.finish()))
+  await expect(image).toHaveCSS('width', '64px')
+  const destination = await image.boundingBox()
+  expect(destination!.y).toBe(20)
+  await dialog.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+  await dialog.getByRole('button', { name: 'Continue with email' }).click()
+  await expect.poll(async () => {
+    const composer = await dialog.locator('.booking-composer').boundingBox()
+    const booking = await dialog.getByRole('button', { name: 'Book a time' }).boundingBox()
+    return Math.abs(composer!.height - booking!.height)
+  }).toBeLessThan(1)
+})
