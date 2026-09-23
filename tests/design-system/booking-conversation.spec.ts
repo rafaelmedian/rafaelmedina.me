@@ -18,9 +18,13 @@ for (const width of [390, 1440]) {
     await expect(dialog.locator('iframe')).toHaveAttribute('src', /theme=light/)
     if (width >= 900) {
       await expect(dialog.getByRole('textbox', { name: 'Your message' })).toBeVisible()
-      const conversation = await dialog.locator('.booking-conversation').boundingBox()
+      // The iframe mounts before the grid has placed the conversation beside it.
+      await expect.poll(async () => {
+        const conversation = await dialog.locator('.booking-conversation').boundingBox()
+        const calendar = await dialog.locator('.booking-calendar-stage').boundingBox()
+        return conversation!.x + conversation!.width - calendar!.x
+      }).toBeLessThan(0)
       const calendar = await dialog.locator('.booking-calendar-stage').boundingBox()
-      expect(conversation!.x + conversation!.width).toBeLessThan(calendar!.x)
       expect(calendar!.x).toBeGreaterThanOrEqual(width / 2)
       await dialog.getByRole('textbox', { name: 'Your message' }).fill('Let’s talk about a design project.')
     } else {
@@ -175,12 +179,16 @@ for (const width of [390, 1542]) {
     expect(bounds!.x).toBeGreaterThanOrEqual(0)
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
     if (width >= 900) {
-      const chatBounds = await chat.boundingBox()
-      expect(chatBounds!.x + chatBounds!.width / 2).toBeCloseTo(width / 4, 0)
+      await expect.poll(async () => {
+        const chatBounds = await chat.boundingBox()
+        return chatBounds!.x + chatBounds!.width / 2
+      }).toBeCloseTo(width / 4, 0)
       expect(bounds!.width).toBeCloseTo(width / 2 - 24, 0)
-      const identity = await chat.locator(".booking-identity").boundingBox()
-      expect(identity!.y).toBe(20)
-      expect(identity!.x + identity!.width / 2).toBeCloseTo(width / 4, 0)
+      await expect.poll(async () => {
+        const identity = await chat.locator(".booking-identity").boundingBox()
+        return identity!.x + identity!.width / 2
+      }).toBeCloseTo(width / 4, 0)
+      expect((await chat.locator(".booking-identity").boundingBox())!.y).toBe(20)
     }
     for (let index = 0; index < 7; index++) {
       await page.keyboard.press('Tab')
