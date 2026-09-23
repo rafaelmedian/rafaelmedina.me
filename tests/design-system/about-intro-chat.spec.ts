@@ -48,7 +48,7 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
   await expect(intro).toHaveAttribute('data-chat-open', 'true')
   const chat = page.getByRole('dialog', { name: 'Chat with Rafa' })
   await expect(chat).toBeVisible()
-  await expect(chat.getByText('Hey, I’m Rafa.')).toBeVisible()
+  await expect(chat.getByText('Hey, what’s up?')).toBeVisible()
   const email = chat.getByRole('textbox', { name: 'Your email' })
   await expect(email).toBeVisible()
   await page.clock.runFor(620)
@@ -81,12 +81,12 @@ for (const width of [320, 1440]) {
     await expect(page.getByRole(width === 320 ? 'dialog' : 'region', { name: 'Chat with Rafa' })).toHaveCount(0)
     await page.locator('.about-intro-portrait-trigger').click()
     const chat = page.getByRole(width === 320 ? 'dialog' : 'region', { name: 'Chat with Rafa' })
-    await expect(chat.getByText('Hey, I’m Rafa.')).toHaveCSS('opacity', '1')
-    await expect(chat.getByText('How are you doing?')).toBeVisible()
+    await expect(chat.getByText('Hey, what’s up?')).toHaveCSS('opacity', '1')
+    await expect(chat.getByText('we should catch up properly')).toBeVisible()
     const email = chat.getByRole('textbox', { name: 'Your email' })
     await expect(email).toBeVisible()
     await expect(email).not.toBeFocused()
-    await expect(email.locator('..')).toHaveCSS('border-radius', '999px')
+    await expect(email.locator('..')).toHaveCSS('border-radius', '20.8px')
     if (width === 320) {
       // iOS zooms and pans the visual viewport when a focused input is below
       // 16px, clipping this fixed chat off the left edge.
@@ -115,10 +115,10 @@ for (const width of [320, 1440]) {
     await expect(tapback).toBeVisible()
     await expect(sent).toHaveCSS('margin-top', '28px')
     await expect(chat.getByRole('status', { name: 'Rafa is typing' })).toBeVisible()
-    await expect(chat.getByText('Want to share anything else?')).toBeVisible()
+    await expect(chat.getByText('Tell me a little about it.')).toBeVisible()
     const message = chat.getByRole('textbox', { name: 'Your message (optional)' })
     await expect(message).toBeFocused()
-    await expect(message.locator('..')).toHaveCSS('border-radius', '31.2px')
+    await expect(message.locator('..')).toHaveCSS('border-radius', '20.8px')
     await expect(chat.getByRole('status', { name: 'Rafa is typing' })).toHaveCount(0)
     await expect(chat.getByRole('button', { name: 'Send message' })).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(chat.getByRole('button', { name: 'Send message' })).toHaveAttribute('data-muted', 'true')
@@ -140,11 +140,11 @@ for (const width of [320, 1440]) {
       return Math.abs(face!.y + face!.height - hint!.y - hint!.height)
     }
     await expect.poll(chatAlignment).toBeLessThan(2)
-    // Focus deepens the overlay shadow instead of drawing an inset stroke.
-    expect(await message.locator('..').evaluate(node => getComputedStyle(node).boxShadow)).toContain('0px 16px 36px')
-    // The message grows with its text from 88px, caps at seven lines and then scrolls.
+    // Focus deepens the control shadow instead of drawing an inset stroke.
+    expect(await message.locator('..').evaluate(node => getComputedStyle(node).boxShadow)).toContain('0px 4px 12px')
+    // The message grows with its text from 44px, caps at seven lines and then scrolls.
     const fieldHeight = () => message.evaluate(node => node.getBoundingClientRect().height)
-    expect(await fieldHeight()).toBe(88)
+    expect(await fieldHeight()).toBe(68)
     await message.fill('One\nTwo\nThree\nFour\nFive')
     expect(await fieldHeight()).toBe(140)
     expect(await message.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
@@ -152,7 +152,7 @@ for (const width of [320, 1440]) {
     expect(await fieldHeight()).toBe(188)
     await expect.poll(chatAlignment).toBeLessThan(2)
     await message.fill('A little more context')
-    expect(await fieldHeight()).toBe(88)
+    expect(await fieldHeight()).toBe(44)
     await chat.getByRole('button', { name: 'Change email address: hello@example.com' }).click()
     await expect(email).toBeFocused()
     await email.fill('new@example.com')
@@ -193,7 +193,7 @@ test('keeps comparison chat collapsed until keyboard activation and respects red
   await expect(chat).toHaveCount(0)
   await portrait.press('Enter')
   await expect(chat).toBeVisible()
-  await expect(chat.getByText('Hey, I’m Rafa.')).toHaveCSS('transform', 'none')
+  await expect(chat.getByText('Hey, what’s up?')).toHaveCSS('transform', 'none')
   await expect(chat.getByRole('textbox', { name: 'Your email' })).not.toBeFocused()
 })
 
@@ -210,9 +210,9 @@ test('offers a compact, horizontally scrollable Apple-style reaction row', async
   await expect(hint).toHaveCSS('border-radius', '999px')
   await expect(hint).toHaveCSS('padding', '4px 10px')
 
-  const greeting = chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' })
+  const greeting = chat.getByRole('button', { name: 'React to “Hey, what’s up?”' })
   await greeting.click()
-  const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  const picker = page.getByRole('menu', { name: 'React to “Hey, what’s up?”' })
   await expect(picker).toBeVisible()
   await expect(picker.getByRole('menuitemcheckbox')).toHaveCount(10)
   for (const label of ['Love', 'Like', 'Dislike', 'Laugh', 'Emphasize', 'Question', 'Fire', 'Applause', 'Celebrate', 'Thinking']) {
@@ -229,8 +229,8 @@ test('offers a compact, horizontally scrollable Apple-style reaction row', async
   await picker.evaluate(node => { node.scrollLeft = 0 })
   await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
 
-  await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toBeVisible()
-  await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' }).locator('g[stroke]'))
+  await expect(page.getByRole('img', { name: 'You loved “Hey, what’s up?”' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'You loved “Hey, what’s up?”' }).locator('g[stroke]'))
     .toHaveAttribute('stroke-width', '2')
   // The shape is drawn twice so its white outer ring cannot cut either blue trail dot.
   await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-disc')).toHaveCount(2)
@@ -239,25 +239,25 @@ test('offers a compact, horizontally scrollable Apple-style reaction row', async
   await expect(picker).toHaveCount(0)
 
   await greeting.click()
-  const changedPicker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  const changedPicker = page.getByRole('menu', { name: 'React to “Hey, what’s up?”' })
   await expect(changedPicker.getByRole('menuitemcheckbox', { name: 'Love' })).toHaveAttribute('aria-checked', 'true')
   await changedPicker.getByRole('menuitemcheckbox', { name: 'Laugh' }).click()
-  await expect(page.getByRole('img', { name: 'You laughed at “Hey, I’m Rafa.”' })).toBeVisible()
-  await expect(page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toHaveCount(0)
+  await expect(page.getByRole('img', { name: 'You laughed at “Hey, what’s up?”' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'You loved “Hey, what’s up?”' })).toHaveCount(0)
 
   await greeting.click()
-  const removalPicker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  const removalPicker = page.getByRole('menu', { name: 'React to “Hey, what’s up?”' })
   await removalPicker.getByRole('menuitemcheckbox', { name: 'Laugh' }).click()
-  await expect(page.getByRole('img', { name: 'You laughed at “Hey, I’m Rafa.”' })).toHaveCount(0)
+  await expect(page.getByRole('img', { name: 'You laughed at “Hey, what’s up?”' })).toHaveCount(0)
   await expect(chat.getByRole('status')).toHaveText('Removed your 😂.')
 
   await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
   await chat.getByRole('button', { name: 'Continue with email' }).click()
-  const followup = chat.getByRole('button', { name: 'React to “Want to share anything else?”' })
+  const followup = chat.getByRole('button', { name: 'React to “Tell me a little about it.”' })
   await followup.click()
-  await page.getByRole('menu', { name: 'React to “Want to share anything else?”' })
+  await page.getByRole('menu', { name: 'React to “Tell me a little about it.”' })
     .getByRole('menuitemcheckbox', { name: 'Emphasize' }).click()
-  await expect(page.getByRole('img', { name: 'You emphasized “Want to share anything else?”' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'You emphasized “Tell me a little about it.”' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
@@ -269,9 +269,10 @@ test('keeps desktop reactions compact and reveals the remaining choices by scrol
   await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
-  await chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' }).click()
-  const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  await chat.getByRole('button', { name: 'React to “Hey, what’s up?”' }).click()
+  const picker = page.getByRole('menu', { name: 'React to “Hey, what’s up?”' })
   const choices = picker.getByRole('menuitemcheckbox')
+  await expect(choices.first()).toBeVisible()
   const visibleChoices = await choices.evaluateAll(nodes => {
     const viewport = nodes[0].parentElement!.getBoundingClientRect()
     return nodes.map(node => {
@@ -293,7 +294,7 @@ test('keeps desktop reactions compact and reveals the remaining choices by scrol
   const pickerBox = await picker.boundingBox()
   expect(lastBox!.x + lastBox!.width).toBeLessThanOrEqual(pickerBox!.x + pickerBox!.width)
   await page.keyboard.press('Enter')
-  await expect(chat.getByRole('img', { name: 'You thought about “Hey, I’m Rafa.”' })).toBeVisible()
+  await expect(chat.getByRole('img', { name: 'You thought about “Hey, what’s up?”' })).toBeVisible()
   await expect(picker).toHaveCount(0)
 })
 
@@ -309,10 +310,10 @@ test('opens the Tapback picker from the right and holds a selection beat before 
   // moves the portaled picker with its anchor. Wait for the final composer so
   // the hover assertion measures a stable user-visible hit box.
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
-  const greeting = chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' })
+  const greeting = chat.getByRole('button', { name: 'React to “Hey, what’s up?”' })
   await greeting.click()
 
-  const picker = page.getByRole('menu', { name: 'React to “Hey, I’m Rafa.”' })
+  const picker = page.getByRole('menu', { name: 'React to “Hey, what’s up?”' })
   await expect(picker).toHaveCSS('animation-name', 'intro-picker-open, intro-fade-in')
   await expect(picker).toHaveCSS('animation-duration', '0.36s, 0.16s')
   const choices = picker.getByRole('menuitemcheckbox')
@@ -331,7 +332,7 @@ test('opens the Tapback picker from the right and holds a selection beat before 
   await page.clock.runFor(80)
   await expect(greeting).toHaveAttribute('aria-expanded', 'false')
 
-  const tapback = page.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })
+  const tapback = page.getByRole('img', { name: 'You loved “Hey, what’s up?”' })
   await expect(tapback.locator('.about-intro-chat-visitor-tapback-glyph')).toHaveCSS('animation-name', 'intro-grow')
 })
 
@@ -339,45 +340,48 @@ test('shows three typing dots before each greeting and pauses the sequence in a 
   await page.clock.install()
   await page.goto('/?tune=off')
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
-  await page.locator('.about-intro-portrait-trigger').click()
+  const portrait = page.locator('.about-intro-portrait-trigger')
+  await expect(portrait).toBeVisible()
+  // Freeze before the click's actionability waits can consume a greeting.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
+  await portrait.click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   const typing = chat.getByRole('status', { name: 'Rafa is typing' })
   await expect(typing).toBeVisible()
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
   await expect(typing.locator('span')).toHaveCount(3)
   await expect.poll(async () => {
     const bubble = await typing.boundingBox()
     const face = await page.locator('.about-intro-surface').boundingBox()
     return Math.abs(bubble!.y + bubble!.height - face!.y - face!.height)
   }).toBeLessThan(1)
-  await expect(chat.getByText('Hey, I’m Rafa.')).toHaveCount(0)
+  await expect(chat.getByText('Hey, what’s up?')).toHaveCount(0)
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toHaveCount(0)
   await page.clock.runFor(900)
-  await expect(chat.getByText('Hey, I’m Rafa.')).toBeVisible()
+  await expect(chat.getByText('Hey, what’s up?')).toBeVisible()
   await expect(typing).toBeVisible()
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true })
     document.dispatchEvent(new Event('visibilitychange'))
   })
   await page.clock.runFor(3000)
-  await expect(page.locator('.about-intro-chat').getByText('How are you doing?', { exact: true })).toHaveCount(0)
+  await expect(page.locator('.about-intro-chat').getByText('we should catch up properly', { exact: true })).toHaveCount(0)
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: false })
     document.dispatchEvent(new Event('visibilitychange'))
   })
   await page.clock.runFor(900)
-  await expect(chat.getByText('How are you doing?')).toBeVisible()
+  await expect(chat.getByText('we should catch up properly')).toBeVisible()
   await page.clock.runFor(900)
   await expect(typing).toHaveCount(0)
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
   await expect.poll(async () => {
-    const question = await chat.getByText('Wanna share your email with me so I can reach out to you?').boundingBox()
+    const question = await chat.getByText('where should i email you?').boundingBox()
     const field = await chat.locator('form').boundingBox()
     return Math.abs(field!.y - question!.y - question!.height - 8)
   }).toBeLessThan(1)
   // The field is a clean pill until the visitor sends it; only the resulting
   // blue address bubble gains the conversation tail on the right.
-  expect(await chat.getByText('Wanna share your email with me so I can reach out to you?').evaluate(node => getComputedStyle(node, '::before').content)).toBe('none')
+  expect(await chat.getByText('where should i email you?').evaluate(node => getComputedStyle(node, '::before').content)).toBe('""')
   const form = chat.locator('form')
   expect(await form.evaluate(node => [getComputedStyle(node, '::before').content, getComputedStyle(node, '::after').content])).toEqual(['none', 'none'])
   const chatBox = await chat.boundingBox()
@@ -394,7 +398,7 @@ test('changes the address with a puff before reopening the email field', async (
   await expect(chat.getByRole('status', { name: 'Rafa is typing' })).toBeVisible()
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100))
   // Each typing timer is scheduled after the previous message renders.
-  for (const text of ['Hey, I’m Rafa.', 'How are you doing?', 'Wanna share your email with me so I can reach out to you?']) {
+  for (const text of ['Hey, what’s up?', 'we should catch up properly', 'where should i email you?']) {
     await page.clock.runFor(900)
     await expect(chat.getByText(text)).toBeVisible()
   }
@@ -593,12 +597,12 @@ test('contains mobile chat focus, preserves reactions and restores the portrait'
   await page.keyboard.press('Tab')
   await expect.poll(() => chat.evaluate(node => node.contains(document.activeElement))).toBe(true)
   await expect(page.getByRole('button', { name: 'Read about Rafael Medina' })).toHaveCount(0)
-  await chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' }).focus()
+  await chat.getByRole('button', { name: 'React to “Hey, what’s up?”' }).focus()
   await page.keyboard.press('Shift+Tab')
   await expect.poll(() => chat.evaluate(node => node.contains(document.activeElement))).toBe(true)
-  await chat.getByRole('button', { name: 'React to “Hey, I’m Rafa.”' }).click()
+  await chat.getByRole('button', { name: 'React to “Hey, what’s up?”' }).click()
   await page.getByRole('menuitemcheckbox', { name: 'Love', exact: true }).click()
-  await expect(chat.getByRole('img', { name: 'You loved “Hey, I’m Rafa.”' })).toBeVisible()
+  await expect(chat.getByRole('img', { name: 'You loved “Hey, what’s up?”' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(chat).toHaveCount(0)
   await expect(portrait).toBeFocused()
@@ -672,3 +676,44 @@ test('collapses the desktop chat outside and keeps its message count on the port
   await expect(page.getByRole('region', { name: 'Chat with Rafa' })).toHaveCount(0)
   await expect(intro.locator('.about-intro-chat-notification')).toHaveText('3')
 })
+
+for (const width of [390, 1542]) {
+  test(`dictates a portrait draft and opens its prefilled calendar at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 897 })
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.addInitScript(() => {
+      class Speech {
+        onresult: ((event: { results: { transcript: string }[][] }) => void) | null = null
+        onend: (() => void) | null = null
+        start() { Object.assign(window, { activeSpeech: this }) }
+        stop() { this.onend?.() }
+        abort() { Object.assign(window, { speechAborted: true }) }
+      }
+      Object.assign(window, { SpeechRecognition: Speech })
+    })
+    await page.route('https://cal.com/**', route => route.fulfill({ contentType: 'text/html', body: '<title>Calendar</title>' }))
+    await page.route('**/contact', () => { throw new Error('Dictation must not send automatically') })
+    await page.goto('/?tune=off')
+    await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
+    await page.locator('.about-intro-portrait-trigger').click()
+    const chat = page.getByRole(width < 900 ? 'dialog' : 'region', { name: 'Chat with Rafa', exact: true })
+    await chat.getByRole('textbox', { name: 'Your email', exact: true }).fill('portrait@example.com')
+    await chat.getByRole('button', { name: 'Continue with email' }).click()
+    await chat.getByRole('button', { name: 'Dictate message' }).click()
+    await expect(chat.getByRole('button', { name: 'Stop dictation' })).toBeVisible()
+    await page.evaluate(() => {
+      const speech = (window as unknown as { activeSpeech: { onresult: (event: unknown) => void } }).activeSpeech
+      speech.onresult({ results: [[{ transcript: 'Let’s talk about the project' }]] })
+    })
+    await expect(chat.getByRole('textbox', { name: 'Your message (optional)' })).toHaveValue('Let’s talk about the project')
+    await expect(chat.getByRole('button', { name: 'Send message', exact: true })).toBeDisabled()
+    await chat.getByRole('button', { name: 'Book a time', exact: true }).click()
+    const booking = page.getByRole('dialog', { name: 'Chat with Rafael Medina', exact: true })
+    await expect(booking.locator('iframe')).toHaveAttribute('src', /email=portrait%40example.com/)
+    await expect.poll(() => page.evaluate(() => (window as unknown as { speechAborted: boolean }).speechAborted)).toBe(true)
+    await booking.getByRole('button', { name: 'Close conversation' }).click()
+    await expect(booking).toHaveCount(0)
+    await page.locator('.about-intro-portrait-trigger').click()
+    await expect(chat.getByRole('textbox', { name: 'Your message (optional)' })).toHaveValue('Let’s talk about the project')
+  })
+}

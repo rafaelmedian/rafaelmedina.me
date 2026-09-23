@@ -81,7 +81,7 @@
 
 /* Right-aligned where the sent address will land, clear of Rafa's side. */
 .about-intro-chat[data-step="email"] > .about-intro-chat-composer {
-  width: min(256px, 100%);
+  width: min(224px, 100%);
   margin-left: auto;
   padding: 0;
 }
@@ -132,14 +132,17 @@
   flex: 0 0 auto;
   max-width: 100%;
   margin: 0;
-  padding: 12px 16px;
-  border-radius: var(--radius-lg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  corner-shape: round;
   background: var(--mosaic-card-surface);
   color: var(--ink);
   font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.5;
   text-wrap: pretty;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 /* Rafa's messages are the reaction triggers. The wrapper owns the entrance and
@@ -362,18 +365,19 @@
   line-height: 1.5;
 }
 
-.about-intro-chat-tail::before {
+.about-intro-chat-bubble::before {
   content: "";
   position: absolute;
   left: -8px;
   bottom: 0;
   z-index: -1;
-  /* 40px so the square covers the whole 31.2px corner radius, not just the
-     visible 8px tail outside the bubble. */
   width: 40px;
-  height: 24px;
+  /* Keep the tail below the upper corner, even on one-line bubbles. */
+  height: min(24px, 50%);
   background: inherit;
-  clip-path: path("M 8 0 H 40 V 24 H 0 C 6 21 8 16 8 8 Z");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V24H0C6 21 8 16 8 8Z'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
   pointer-events: none;
 }
 
@@ -409,10 +413,11 @@
   position: relative;
   isolation: isolate;
   max-width: 100%;
-  min-height: 44px;
-  padding: 12px 16px;
+  padding: 0.5rem 0.75rem;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
+  corner-shape: round;
+  border-bottom-right-radius: var(--radius-sm);
   background: var(--intro-blue);
   color: var(--canvas);
   font: inherit;
@@ -431,10 +436,14 @@
   right: -8px;
   bottom: 0;
   z-index: -1;
-  width: 32px;
-  height: 24px;
+  width: 40px;
+  /* Keep the tail below the upper corner, even on one-line bubbles. */
+  height: min(24px, 50%);
   background: inherit;
-  clip-path: path("M 24 0 H 0 V 24 H 32 C 26 21 24 16 24 8 Z");
+  transform: scaleX(-1);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V24H0C6 21 8 16 8 8Z'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
   pointer-events: none;
 }
 
@@ -605,22 +614,18 @@
   isolation: isolate;
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  padding: 4px;
-  border-radius: var(--radius-full);
+  gap: 0;
+  padding: 0;
+  border: 0;
+  corner-shape: round;
+  border-radius: var(--radius-md);
   background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
-}
-
-/* A multiline field is a small writing surface, not a stretched pill. The
-   one-line email composer keeps the full radius. */
-.about-intro-chat-message .about-intro-chat-composer {
-  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
 }
 
 /* Focus lifts the field rather than outlining it; the caret marks the rest. */
-.about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
-  box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
+.about-intro-chat-composer:focus-within {
+  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
 }
 
 .about-intro-chat-composer :is(input, textarea) {
@@ -628,12 +633,13 @@
   width: 0;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 16px;
+  caret-color: var(--intro-blue);
   border: 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   line-height: 1.5;
 }
 
@@ -649,7 +655,7 @@
 /* Grows with the text (sized in AboutIntroChat) up to seven lines, or less on
    short screens, then scrolls. The history above gives up the room. */
 .about-intro-chat-message textarea {
-  min-height: 88px;
+  min-height: 44px;
   max-height: min(188px, 30dvh);
   overflow-y: auto;
   scrollbar-width: none;
@@ -969,4 +975,26 @@
 .about-intro-chat .about-intro-send[data-muted="true"]::before {
   background: var(--muted-soft);
   opacity: 0.4;
+}
+
+/* Match the contact composer’s circular send disc, including squircle browsers. */
+.about-intro-chat .about-intro-send,
+.about-intro-chat .about-intro-send::before {
+  corner-shape: round;
+}
+
+.about-intro-chat-compose-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.about-intro-chat-compose-row > .about-intro-chat-composer {
+  flex: 1;
+  min-width: 0;
+}
+
+.about-intro-chat .booking-microphone[aria-pressed="true"] {
+  color: var(--intro-blue);
+  opacity: 1;
 }

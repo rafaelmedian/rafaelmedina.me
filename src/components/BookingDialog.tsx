@@ -14,13 +14,14 @@ type Delivery = ContactMessage & { status: "sending" | "delivered" | "failed"; e
 
 type BookingDialogProps = {
   bookingUrl: string
+  calendarEntry?: { email: string } | null
   portraitOrigin: { left: number; top: number; width: number; height: number } | null
   open: boolean
   onOpenChange: (open: boolean) => void
   returnFocus: RefObject<HTMLButtonElement | null>
 }
 
-export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, returnFocus }: BookingDialogProps) {
+export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open, onOpenChange, returnFocus }: BookingDialogProps) {
   const [email, setEmail] = useState("")
   const [confirmedEmail, setConfirmedEmail] = useState("")
   const [message, setMessage] = useState("")
@@ -28,6 +29,17 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
   const [calendar, setCalendar] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
   const [calendarEmail, setCalendarEmail] = useState<string | null>(null)
+  const [appliedCalendarEntry, setAppliedCalendarEntry] = useState<typeof calendarEntry>(null)
+  if (calendarEntry !== appliedCalendarEntry) {
+    setAppliedCalendarEntry(calendarEntry)
+    if (calendarEntry) {
+      setEmail(calendarEntry.email)
+      setConfirmedEmail(calendarEntry.email)
+      setCalendarEmail(calendarEntry.email)
+      setCalendar(true)
+      setContactOpen(false)
+    }
+  }
   const popupRef = useRef<HTMLDivElement>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const backRef = useRef<HTMLButtonElement>(null)
@@ -153,7 +165,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
           <section className="booking-conversation" aria-label="Conversation with Rafael">
             <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open ? "polite" : "off"}>
               <div className="booking-bubble" style={entryStyle("hello")}>Hey, what’s up?</div>
-              <div className="booking-bubble" style={entryStyle("catch-up")}>we should catch up properly</div>
+              <div className="booking-bubble" style={entryStyle("catch-up")}>we should chat properly</div>
               <div className="booking-bubble" style={entryStyle("email-prompt")}>where should i email you?</div>
               {confirmedEmail && <>
                 <div className="booking-email-confirmation" style={entryStyle("address")}>

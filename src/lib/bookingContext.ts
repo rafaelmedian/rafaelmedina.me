@@ -2,7 +2,7 @@ import { createContext, useContext } from "react"
 
 export const BookingContext = createContext<{
   open: boolean
-  openBooking: (trigger: HTMLButtonElement, placement: string, bookingUrl?: string) => void
+  openBooking: (trigger: HTMLButtonElement, placement: string, bookingUrl?: string, calendarEmail?: string) => void
 } | null>(null)
 
 export function useBooking() {

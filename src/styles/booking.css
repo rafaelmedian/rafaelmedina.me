@@ -515,9 +515,12 @@
   bottom: 0;
   z-index: -1;
   width: 40px;
-  height: 24px;
+  /* Keep the tail below the upper corner, even on one-line bubbles. */
+  height: min(24px, 50%);
   background: inherit;
-  clip-path: path("M 8 0 H 40 V 24 H 0 C 6 21 8 16 8 8 Z");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V24H0C6 21 8 16 8 8Z'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
   pointer-events: none;
 }
 
@@ -952,3 +955,5 @@
   .booking-shell:has(.booking-name-tag[aria-expanded="true"]) .booking-compose-area,
   .booking-popup[data-calendar="true"] .booking-compose-area { left: 25%; }
 }
+
+.booking-time-button svg { color: var(--muted-soft); opacity: 0.6; }

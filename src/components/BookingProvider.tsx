@@ -9,6 +9,7 @@ const BookingDialog = lazy(() => import("./BookingDialog").then(module => ({ def
 /** One session across the portrait, hero pill, and inline booking links. */
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [bookingUrl, setBookingUrl] = useState(siteLinks.booking)
+  const [calendarEntry, setCalendarEntry] = useState<{ email: string } | null>(null)
   const [open, setOpen] = useState(false)
   const [portraitOrigin, setPortraitOrigin] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
   const [hasOpened, setHasOpened] = useState(false)
@@ -16,13 +17,14 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   useEffect(() => subscribeDialogIntent(destination => {
     if (destination !== "booking") setOpen(false)
   }), [])
-  return <BookingContext.Provider value={{ open, openBooking: (trigger, placement, url = siteLinks.booking) => {
+  return <BookingContext.Provider value={{ open, openBooking: (trigger, placement, url = siteLinks.booking, calendarEmail) => {
     const portrait = document.querySelector<HTMLElement>(".mosaic-avatar-button")
     const bounds = portrait?.getBoundingClientRect()
     setPortraitOrigin(bounds && bounds.width > 0 && bounds.bottom > 0 && bounds.top < window.innerHeight
       ? { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height } : null)
     beginDialogIntent("booking")
     returnFocus.current = trigger
+    setCalendarEntry(calendarEmail ? { email: calendarEmail } : null)
     setBookingUrl(url)
     setHasOpened(true)
     setOpen(true)
@@ -30,7 +32,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   } }}>
     {children}
     {hasOpened && <Suspense fallback={null}>
-      <BookingDialog bookingUrl={bookingUrl} portraitOrigin={portraitOrigin} open={open} onOpenChange={setOpen} returnFocus={returnFocus} />
+      <BookingDialog bookingUrl={bookingUrl} calendarEntry={calendarEntry} portraitOrigin={portraitOrigin} open={open} onOpenChange={setOpen} returnFocus={returnFocus} />
     </Suspense>}
   </BookingContext.Provider>
 }
