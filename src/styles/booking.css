@@ -32,7 +32,7 @@
   padding:
     max(10rem, calc(env(safe-area-inset-top) + 8rem))
     max(1.25rem, env(safe-area-inset-right))
-    max(2.5rem, env(safe-area-inset-bottom))
+    max(calc(var(--booking-compose-height, 88px) + 2.5rem), env(safe-area-inset-bottom))
     max(1.25rem, env(safe-area-inset-left));
 }
 
@@ -318,7 +318,7 @@
     padding:
       max(9rem, calc(env(safe-area-inset-top) + 8rem))
       max(0.75rem, env(safe-area-inset-right))
-      max(1rem, env(safe-area-inset-bottom))
+      max(calc(var(--booking-compose-height, 88px) + 2.5rem), env(safe-area-inset-bottom))
       max(0.75rem, env(safe-area-inset-left));
   }
 
@@ -566,6 +566,12 @@
 }
 
 .booking-compose-area {
+  position: fixed;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: 50%;
+  width: min(360px, calc(100% - 1.5rem));
+  translate: -50% 0;
+  transition: left var(--duration-slow) var(--ease-smooth);
   animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) 680ms both;
   flex: none;
   padding: 0.5rem;
@@ -784,6 +790,7 @@
 .booking-name-tag svg { color: var(--muted-soft); opacity: 0.6; }
 
 .booking-contact-backdrop {
+  pointer-events: none;
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog);
@@ -818,6 +825,12 @@
 }
 
 .booking-contact-panel[data-ending-style] { transition-duration: var(--duration-quick); }
+
+.booking-contact-back {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+}
 
 .booking-contact-close {
   position: absolute;
@@ -933,4 +946,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .booking-calendar-stage { animation: none; }
+}
+
+@media (min-width: 900px) {
+  .booking-shell:has(.booking-name-tag[aria-expanded="true"]) .booking-compose-area,
+  .booking-popup[data-calendar="true"] .booking-compose-area { left: 25%; }
 }

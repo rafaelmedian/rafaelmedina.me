@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu"
 import { Dialog } from "@base-ui/react/dialog"
-import { ArrowLeft, ArrowUp, Calendar, Mic, Square, X } from "lucide-react"
+import { PanelRightClose, ArrowUp, Calendar, Mic, Square, X } from "lucide-react"
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
@@ -26,6 +26,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
   const [message, setMessage] = useState("")
   const [outbox, setOutbox] = useState<Delivery[]>([])
   const [calendar, setCalendar] = useState(false)
+  const [contactOpen, setContactOpen] = useState(false)
   const [calendarEmail, setCalendarEmail] = useState<string | null>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
@@ -49,6 +50,21 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
     return { animationDelay: `${order < 0 ? newDelay : 200 + order * 160}ms` }
   }
 
+
+  const composerRef = useCallback((node: HTMLElement | null) => {
+    if (!node) return
+    const shell = node.closest<HTMLElement>(".booking-shell")
+    const measure = () => {
+      if (node.offsetHeight) shell?.style.setProperty("--booking-compose-height", `${node.offsetHeight}px`)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    return () => {
+      observer.disconnect()
+      shell?.style.removeProperty("--booking-compose-height")
+    }
+  }, [])
 
   const portraitRef = useCallback((node: HTMLImageElement | null) => {
     if (!node || !open || !portraitOrigin || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
@@ -126,10 +142,13 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
               popupRef.current?.focus({ preventScroll: true })
               setCalendar(false)
               requestAnimationFrame(() => bookRef.current?.focus({ preventScroll: true }))
-            }}><ArrowLeft size={20} /></button>}
+            }}><PanelRightClose size={20} /></button>}
           <header className="booking-identity">
             <img ref={portraitRef} src={siteProfile.photo} width="52" height="52" alt="" />
-            <BookingContactPanel />
+            <BookingContactPanel open={contactOpen} onOpenChange={next => {
+              if (next) setCalendar(false)
+              setContactOpen(next)
+            }} calendarFocus={calendar ? backRef : undefined} />
           </header>
           <section className="booking-conversation" aria-label="Conversation with Rafael">
             <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open ? "polite" : "off"}>
@@ -166,7 +185,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
                 </div> : <p className="booking-receipt" role="status">{item.status === "sending" ? "Sending…" : "Delivered"}</p>}
               </div>)}
             </div>
-            {!confirmedEmail ? <form className="booking-compose-area" onSubmit={confirmEmail}>
+            {!confirmedEmail ? <form ref={composerRef} className="booking-compose-area" onSubmit={confirmEmail}>
               <label className="sr-only" htmlFor={`${hintId}-email`}>Your email</label>
               <div className="booking-composer">
                 <input id={`${hintId}-email`} type="email" autoComplete="email" required maxLength={254}
@@ -175,9 +194,10 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
                 <button className="booking-send" type="submit" aria-label="Continue with email" disabled={!isContactEmail(email)}><ArrowUp size={24} /></button>
               </div>
               <p className="booking-hint" id={hintId}>Just for our conversation. No mailing list.</p>
-            </form> : <div className="booking-compose-area booking-compose-row">
+            </form> : <div ref={composerRef} className="booking-compose-area booking-compose-row">
               <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" title="Book a time · 30 min" onClick={() => {
                 popupRef.current?.focus({ preventScroll: true })
+                setContactOpen(false)
                 setCalendarEmail(confirmedEmail)
                 setCalendar(true)
                 requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
