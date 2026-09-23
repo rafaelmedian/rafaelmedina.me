@@ -191,7 +191,8 @@
   height: var(--toc-row-height);
   max-width: calc(100vw - 2rem);
   overflow: hidden;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-full);
+  corner-shape: round;
   background: rgb(255 255 255 / 0.92);
   color: var(--ink);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
@@ -203,6 +204,7 @@
 }
 
 .mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-surface {
+  border-radius: var(--radius-lg);
   --toc-resize-duration: var(--duration-slow);
   width: min(17rem, calc(100vw - 2rem));
   height: calc(var(--toc-slot-count) * var(--toc-row-height) + (var(--toc-slot-count) - 1) * var(--toc-row-gap) + 2 * var(--toc-inset));
@@ -258,7 +260,8 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   height: 100%;
   padding: 0.75rem 1rem;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
+  corner-shape: round;
   background: transparent;
   color: var(--muted);
   font: inherit;

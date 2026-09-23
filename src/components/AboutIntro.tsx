@@ -4,7 +4,6 @@ import { HugeiconsIcon } from "@hugeicons/react"
 // Direct imports keep the deferred development chunk free of the full icon catalog.
 import BubbleChatIcon from "@hugeicons/core-free-icons/BubbleChatIcon"
 import Mail01Icon from "@hugeicons/core-free-icons/Mail01Icon"
-import PlayIcon from "@hugeicons/core-free-icons/PlayIcon"
 
 import AboutIntroReply from "./AboutIntroReply"
 import AboutIntroChat from "./AboutIntroChat"
@@ -385,7 +384,7 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
             inert={open} aria-hidden={open} />}
           {videoAvailable && <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
             aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
-            <span className="about-intro-play-mark"><HugeiconsIcon icon={PlayIcon} strokeWidth={1.5} size={24} fill="currentColor" aria-hidden="true" /></span>
+            <span className="about-intro-play-mark" aria-hidden="true" />
           </button>}
           {videoAvailable && media && <div id={id} className="about-intro-expanded" inert={!open} aria-hidden={!open}>
             <button type="button" className="about-intro-video-touch" aria-label={touchControls ? "Hide video controls" : "Show video controls"}

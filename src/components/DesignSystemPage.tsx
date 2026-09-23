@@ -1788,8 +1788,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <SiteLastUpdated />
               </div>
               <p className="ds-caption">
-                The booking dialog keeps a 44px shared round close control pinned 0.75rem from its top-right
-                corner, above the calendar during loading and scrolling.
+                The booking conversation has a fixed circular 44px close control with <code>corner-shape: round</code> 36px from the top and right edges (respecting safe areas), aligned with the contact panel’s close control before and after side panels open and hidden until the contact panel finishes unmounting, using the same ring and control shadow as its calendar Back button; clicking the backdrop or pressing Escape also dismisses it.
                 Company chips rest on <code>--canvas</code> behind a <code>1px solid rgb(0 0 0 / 0.07)</code> hairline, labelled in <code>--muted</code> so the hero name keeps the only dark ink in that block.
                 All chips fill to <code>#e9e9e9</code>{" "}
                 for hover, focus, and selected — deliberately the same value, because a chip that is open and a chip
@@ -1801,21 +1800,21 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 its viewport crossing. Booking is the dark pill and the contact row's primary action; it carries its
                 label alone, the green status dot that used to ride inside it having been the hero's only chromatic
                 pixel for a month the accessible description already names. Hover immediately reveals the Kermit reaction card
-                with no intent delay; the availability month remains in the accessible description. A press opens the Cal.com dialog — which wears no chrome of its own: no header, no
-                close button, only the calendar on an even mat, because that page already has a title and a month of its own
-                and a second set above it was the same thing twice. Escape and a press outside close it; the dialog's
-                responsive <code>clamp(16px, 3vw, 32px)</code> side gutters preserve the embed's 1040px desktop canvas
-                and extend Cal.com's <code>#fafafa</code> top-and-bottom field to both sides. Before that third-party
-                page paints, an <code>aria-hidden</code> calendar skeleton sits on the iframe's centre line but keeps
-                the 760px-wide stage Cal.com uses while booting: profile, month grid, and time rail on desktop, then
-                the month grid alone on phones. The live calendar can expand into the full 1040px canvas without the
-                preload beginning wider than the state it hands off to. Its neutral blocks pulse
-                once over two slow-duration steps, then cross-fade and cross-blur into the calendar over
-                <code>--duration-slow</code>; reduced motion swaps the layers immediately. The loading status remains
-                available to assistive technology and becomes visible only if the six-second failure threshold is met. The dialog's
-                name and description are still there as <code>sr-only</code> text, and the &ldquo;open it on
-                cal.com&rdquo; escape hatch waits inside the loading line for the six seconds it takes to know a
-                third-party frame has been blocked rather than sitting in a header from the start. The address is the page's top-right corner, opposite the section
+                with no intent delay; the availability month remains in the accessible description. A press opens the same floating conversation as the hero portrait and inline booking links.
+                The bubbles have no enclosing card. A full-screen white <code>--canvas</code> backdrop covers the page,
+                with focus and scrolling held inside the conversation until it closes.
+                The compact 360px conversation stays centered, grows with its messages, and scrolls its history
+                at the viewport limit. Hints and receipts use <code>--muted</code> text. Incoming bubbles use flat <code>--mosaic-card-surface</code> gray with <code>--ink</code> text, no border or shadow, and compact 8px by 12px padding;
+                right-aligned replies use the existing Messages blue <code>#0071e3</code> with white text.
+                The Messages-inspired header stays fixed 20px from the viewport top (respecting safe areas), centered over the conversation column independently of message growth. The conversation reserves top space so scrolling messages cannot overlap it. On opening, the visible homepage portrait’s bounds are captured and the chat image translates and scales from those bounds over <code>--duration-slow</code> with <code>--ease-smooth</code>; reduced motion and an offscreen homepage portrait skip the flight. The header centers a 52px (3.25rem) circular portrait, matching the homepage at every height with <code>corner-shape: round</code> and a subtle <code>--shadow-ring</code>. The portrait sits in front of the white <code>--radius-full</code> name pill at their 8px overlap, using local <code>z-index: 1</code> inside an isolated identity stack. The pill reads “Rafael” with round corners, a soft <code>--shadow-control-hover</code> without a border ring, and semibold <code>--text-sm</code> lettering. Its 14px chevron uses <code>--muted-soft</code> at 60% opacity.
+                The name pill is 36px tall with 6px vertical and 12px horizontal padding, plus an invisible 4px extension above and below for a 44px contact-info target. Its nested contact sheet slides from the right over <code>--duration-slow</code> and <code>--ease-smooth</code>, exits over <code>--duration-quick</code>, and stays within 12px safe-area gutters. At 900px and above the panel occupies the right half and the conversation moves into the left half; the portrait travels with a transform over the shared slow duration and smooth easing, keeping its fixed layout position stable on return; on phones it uses a maximum width of 360px. Grouped details stay centered in a 400px column with white <code>--radius-md</code> rows, inset separators, <code>--text-xs</code> muted labels, and <code>--text-md</code> values. The pale sheet mixes 45% <code>--mosaic-card-surface</code> with <code>--canvas</code> and uses the existing Messages blue for links. Both nested layers use <code>--z-dialog</code> in portal order, with a 6% black veil. Contact info has a matching top-left hide-panel button alongside its top-right close control. Contact info keeps keyboard focus contained but allows pointer interaction with the chat; pressing Book a time replaces contact details with scheduling, and pressing the name replaces scheduling with details. Escape closes contact info first and restores the name trigger; reduced motion removes the slide.
+                Bubbles use <code>--text-sm</code> with round <code>--radius-md</code> corners and 8px gaps. A 40px-wide masked pseudo-element capped at 24px or half the bubble height adds an 8px tail on the left for incoming messages, mirrored to the right for outgoing replies, using local <code>z-index: -1</code> inside each isolated bubble; outgoing replies retain a <code>--radius-sm</code> bottom-right corner. They borrow the side chat’s 8px rise, 0.98 scale, and 2px blur over <code>--duration-slow</code> with <code>--ease-smooth</code>: the opening bubbles begin at 200ms, 360ms, and 520ms after opening, followed by the composer at 680ms. Follow-up bubbles wait 80ms. Closing resets the entrance so it replays on reopening. The replay includes the confirmed email and all saved messages, staggered 160ms apart in history order; each outgoing message and its receipt enter as one unit. New replies enter immediately and delivery updates do not replay them. Fields match the bubbles’ <code>--text-sm</code> (14px) on desktop and use <code>--text-md</code> (16px) on phones to prevent focus zoom. The compact circular booking button sits to the left of the message composer with an 8px gap, a 44px target, and a 20px simple outline calendar icon with 1.75px strokes, using the microphone’s muted-soft gray at 60% opacity; its accessible label and tooltip identify the action. Hints use <code>--text-xs</code>.
+                The iOS-style white composer uses truly round <code>--radius-md</code> corners, a fine <code>--shadow-ring</code>, and subtle <code>--shadow-control</code> elevation, lifting to <code>--shadow-control-hover</code> on focus. Its text has 12px horizontal padding, with symmetric vertical padding centering a single message line within the 44px field, no gap before the trailing icon, and a Messages-blue caret. Send and its inset surface also use <code>corner-shape: round</code>. The compose area stays fixed 20px above the viewport bottom (respecting safe areas), centered over its conversation column. A ResizeObserver reserves its live height plus a 40px gap in the scroll layout so multiline drafts and dictation status do not cover messages. The composer has no outer padding, matching the adjacent calendar button’s 44px resting height. The message field grows from one line to <code>min(188px, 30dvh)</code>, then scrolls. The empty message field shows an interactive 20px microphone in a 44px slot, using <code>--muted-soft</code> at 60% opacity; typing replaces it with the blue send control. A press starts browser voice dictation, requesting microphone permission only then. While listening it becomes a blue stop control; interim text fills the read-only draft, and stopping leaves it editable for review. Status text uses <code>--text-xs</code> and <code>--muted</code>. Unsupported browsers and permission/network errors show a typing fallback. Closing the conversation or opening the calendar stops microphone use. The 44px send target holds a 32px inset surface and a 20px arrow, gray while disabled and blue when ready. Email comes first, with the submitted blue address opening an Unsend menu. This removes the address confirmation and returns to the email field, retaining the draft and any previously delivered messages; it does not recall delivered email. The menu uses <code>--z-dialog</code>, <code>--radius-md</code>, ring/overlay shadows, and a 44px item with <code>--radius-sm</code> highlighting. Optional messages follow with receipts and retries; the message composer has no inbox caption.
+                Book a time opens a light Cal.com calendar in the right half at desktop widths (900px and above), moving the still-editable conversation and portrait into the left half. The panel uses 12px gutters, a 64px control area, <code>--radius-lg</code>, and a 24px entrance over <code>--duration-slow</code> with <code>--ease-smooth</code>; its controls use local <code>z-index: 1</code>. On smaller screens the calendar replaces the conversation within the same dialog. The email is prefilled, and the hide-panel control collapses scheduling and restores the booking-button focus without losing the draft.
+                Calendar loading keeps a skeleton and offers a direct link, including the email, after six seconds.
+                Escape or an outside press dismisses the conversation and restores the opening trigger.
+                The conversation stays in memory across entry points; the popup fades without moving its fixed close control, and reduced motion removes bubble animations.
+                The address is the page's top-right corner, opposite the section
                 links, where the local time used to be — a clock is ambient and an address is what a visitor came
                 for, so only one of them earns that spot, and the clock moved into the About sheet. Below 700px the
                 corner is not drawn at all and the address falls back into the hero's location line; it is one
@@ -2068,15 +2067,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 id="avatar-coin"
                 data-ds-terms={terms("avatar greeting teaser video hover focus play introduction reduced motion lightweight")}
               >
-                <strong>The avatar greets you and opens the introduction.</strong>
+                <strong>The avatar greets you and opens the conversation.</strong>
                 <p>
                   Hovering or focusing the 52px circular portrait mounts the silent, looping greeting teaser.
                   It uses the existing MP4 in place of a heavier GIF and keeps the same crop and footprint.
                   Leaving removes the teaser. Reduced motion and lightweight connections keep the still portrait.
-                  The Handlee hint reads &ldquo;play my intro&rdquo;, and the accessible name is
-                  &ldquo;Watch Rafael Medina&apos;s introduction&rdquo;.
-                  Clicking opens the shared introduction player with its controls visible before playback, where Play starts the full recording with
-                  sound and captions. Closing returns focus to the avatar. The portrait no longer spins or zooms.
+                  The Handlee hint reads &ldquo;let’s talk&rdquo;, and the accessible name is
+                  &ldquo;Chat with Rafael Medina&rdquo;.
+                  Clicking opens the shared floating conversation and booking interface. The introduction recording remains available in the left-side dock. Closing returns focus to the avatar. The portrait no longer spins or zooms.
                 </p>
               </div>
 
@@ -2152,7 +2150,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   only its width eases to the new label.
                   Open, the control is one continuous card with three rows. The surface expands from the measured
                   label width to 17rem and from 48px to 164px — three 48px rows with 2px gaps and an 8px outer inset —
-                  keeping its bottom edge fixed. The card has 31.2px corners and the inset rows have concentric 20.8px
+                  keeping its bottom edge fixed. The card has round 31.2px corners and the inset rows use fully rounded pill
                   corners; labels are 14px and section numbers 12px. Its white fill is 92% opaque over a 16px backdrop
                   blur, with a 5% hairline and <code>--shadow-overlay</code> around the whole card.
                   Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
@@ -2177,6 +2175,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   pressing scales the trigger content to 0.96 over 120ms, keeping the shadow stable.
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
+                The collapsed control and individual rows use fully round <code>--radius-full</code> corners; the expanded container keeps round <code>--radius-lg</code> corners to leave its rows unclipped.
                 </li>
                 <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 320px 420px 536px 660px 600px 900px personal photos band compact two columns display contents protector quote span both 10px tablet 32px total inset 8px mobile gap 8px outer radius 20.8px 31.2px contain letterbox zero mat family stories rewards wallet homepage security token pro trade mobile flat backdrop rgb(63 62 68) rgb(231 231 233) background pair center bottom minmax(0, 1fr)")}>
                   <strong>The mosaic is four named groups.</strong> At 900px and above, Opening is a 3:6:3 row
@@ -2271,7 +2270,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <strong>The cue is also the shortcut.</strong> It is a 44px button that lands the About sheet at the
                   top of the viewport and moves focus into it — a tap finishes a crossing the reader has already
                   committed to. It is named &ldquo;Continue to About&rdquo;, distinct from the avatar&rsquo;s
-                  &ldquo;Ask about Rafael Medina&rdquo; chat action, so they stay distinguishable in a list of controls. The
+                  &ldquo;Chat with Rafael Medina&rdquo; chat action, so they stay distinguishable in a list of controls. The
                   button owns the target and the focus ring; the chevron inside owns the blend, because a ring drawn on
                   the blended element would invert along with the stroke.
                 </li>
@@ -2310,7 +2309,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   can be toggled with C; the sample recording starts without its descriptive captions.
                   The speaking portrait reveals a centered 24px white play triangle on hover, keyboard focus or tap.
                   A 20%-black overlay darkens the portrait only while those actions are shown, fading over
-                  <code> --duration-quick</code>. The triangle has no disc or colored background.
+                  <code> --duration-quick</code>. The triangle uses the white canvas color and an SVG mask to retain the play silhouette, with no blur or surrounding disc.
                   A 100px white pill to the right holds separate 44px email and text actions,
                   with the shared ring and overlay shadows, without backdrop blur. Hover or keyboard focus
                   grows one action from 44px to 128px and the pill to 184px, revealing “Your email” or
@@ -2345,8 +2344,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   and returns to the preserved conversation and composer when the player closes.
                   Development offers three comparison options: A keeps the compact pill; C separates the actions
                   into two 184px pills with a 12px gap. A and C keep their mobile reply row 80px above the safe-area edge to clear the TOC. B becomes a conversation anchored to a 64px portrait.
-                  Three gray bubbles use 31.2px corners, 12px by 16px padding, 14px text and 8px gaps; a transparent
-                  curved tail extends 8px toward the face. Only the typing bubble carries it; the questions have none.
+                  The gray bubbles match the contact conversation: round 20.8px corners, 8px by 12px padding,
+                  14px text and 8px gaps. Each message and typing bubble has a curved tail extending 8px toward the face.
+                  Outgoing bubbles use the same padding and corners with a 10.4px bottom-right corner and mirrored tail.
+                  Both conversations scale the tail mask to at most half the bubble’s height (capped at 24px),
+                  keeping its join below the upper rounded corner without a protruding ledge.
                   The fields that follow them are the visitor’s side instead: right-aligned with the chat’s edge where the
                   sent address lands and rising from their bottom-right corner. The email field stays a clean circular pill;
                   only the submitted blue address gains the mirrored tail on the right. Each incoming message is preceded by a 900ms typing bubble with three 8px muted dots,
@@ -2393,7 +2395,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   settle: snappy (0.45s, 0.2 bounce; 580ms, 1.5% overshoot) for the bubble and the shift, and pop
                   (0.35s, 0.5; 680ms, 16%) for the tapback. Reduced motion shows the tapback at rest, without its
                   ripple. The bubble stays 24px clear of the history’s left edge for the tapback’s trail. The chat then
-                  shows the same typing bubble before “Want to share anything else?” and reveals the optional
+                  shows the same typing bubble before “Tell me a little about it.” and reveals the optional
                   message field after 160ms. Hidden fields stay inert; their measured height offsets the history
                   so the typing bubble’s bottom edge rests level with the avatar’s. The history moves into its reply position
                   over 360ms with the shared smooth curve as the field enters. The sent address carries an
@@ -2408,13 +2410,17 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   during the puff. Reduced motion skips it. Timers
                   pause when the chat or tab is hidden, completed messages stay visible on return, and
                   reduced motion skips typing delays entirely. Delayed focus is canceled by interaction outside the chat.
-                  The email field caps at 256px by 44px and uses 14px text on desktop, rising to 16px on mobile so
-                  focusing it cannot trigger iOS&rsquo;s visual-viewport zoom. It sits at the chat’s
-                  right edge and its center aligns vertically with the 64px face, moving the conversation above that row. The one-line email composer keeps
-                  <code>--radius-full</code>; the multiline message composer uses the 31.2px <code>--radius-lg</code> squircle so it reads as a writing surface rather than an oversized pill. Both keep the white canvas, shared hairline ring and overlay shadow, retained on focus. The last message sits
+                  The desktop email field caps at 224px by 44px. Both inputs use 14px text on desktop and 16px on mobile so
+                  focusing them cannot trigger iOS&rsquo;s visual-viewport zoom. It sits at the chat’s
+                  right edge and its center aligns vertically with the 64px face, moving the conversation above that row. Both composers match the contact page with round 20.8px <code>--radius-md</code> corners,
+                  8px by 12px input padding, no outer padding or gap, a white canvas, and the shared hairline ring and control shadow.
+                  The right-aligned message row caps at 280px, with a short “Your message…” placeholder that fits one line.
+                  The email’s 44px send target holds a circular 32px disc and 20px arrow. After email confirmation, the message row is 36px tall with a 28px send disc, 20px arrow and microphone, and a 36px calendar button beside the composer with an 8px gap. Invisible extensions retain 44px tap targets; the calendar opens scheduling with the confirmed address.
+                  Its microphone dictates into the draft, switches to Stop while listening, and disappears once text is ready.
+                  The send arrow remains available for an email-only first message. Dictation never sends automatically,
+                  stops when the chat closes or scheduling opens, and reports permission or browser-support errors inline. The last message sits
                   8px above the input (4px history padding and 4px margin). The portrait stays at the dock baseline, beside the final field or the delivery hint below the optional message.
-                  The message textarea starts 88px high with 16px text and grows with each line up to seven lines
-                  (188px), or 30% of the viewport on short screens, before scrolling; the history gives up the room. The
+                  The message textarea starts 36px high with symmetric vertical padding calculated from its line height to center the text, and grows with each line up to 188px, or 30% of the viewport on short screens, before scrolling; the history gives up the room. The
                   compact footer reads &ldquo;Sent messages stay delivered &middot; Start over&rdquo; after a successful send. Its muted,
                   regular-weight, underlined action sits inline with the delivery note while keeping a 44px target and the standard
                   0.96 pressed scale. After three distinct sends, the composer shakes 6px in either direction over
@@ -2424,7 +2430,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Reduced motion skips the shake. The history uses the available space above the dock with a 12px top clearance, accounting for the
                   actual form height; only short viewports scroll. Neither the history nor the growing message draws
                   a scrollbar, so a bubble’s entrance rise no longer flashes one. The composer stays below it. Focus deepens
-                  the overlay shadow to <code>--shadow-overlay-hover</code> instead of drawing a stroke. The arrow starts gray,
+                  the control shadow to <code>--shadow-control-hover</code> instead of drawing a stroke. The arrow starts gray,
                   turning blue for a valid email or nonempty optional message. Each send posts one email to the contact
                   Worker and moves the text into a blue outgoing bubble that rises from the field on the snappy spring,
                   clearing the field and keeping its focus so the visitor can keep writing; an empty first send delivers

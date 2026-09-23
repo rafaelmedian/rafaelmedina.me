@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useId, useRef, useState, type CSSProperties, type FormEvent } from "react"
 import { Dialog } from "@base-ui/react/dialog"
 import { Menu } from "@base-ui/react/menu"
+import { Calendar, Mic, Square } from "lucide-react"
+import { useBooking } from "../lib/bookingContext"
+import { useMessageDictation } from "../lib/useMessageDictation"
 import { ArrowUp } from "./NavigationIcons"
 import { isContactEmail } from "../lib/contactEmail"
 import { trackEvent } from "../lib/analytics"
@@ -8,7 +11,7 @@ import { ignorePasswordManagers } from "../lib/passwordManagers"
 import { sendContact, type ContactMessage } from "../lib/sendContact"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
-const greeting = ["Hey, I’m Rafa.", "How are you doing?", "Wanna share your email with me so I can reach out to you?"]
+const greeting = ["Hey, what’s up?", "we should catch up properly", "where should i email you?"]
 // An empty first send still delivers the address; the bubble shows what arrives.
 const keepInTouch = "Hi Rafa, I’d like to keep in touch."
 const continueAfter = 3
@@ -124,6 +127,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   onPlayIntroduction?: () => void
   visible?: boolean
 }) {
+  const booking = useBooking()
   const fieldId = useId()
   const chatRef = useRef<HTMLDivElement>(null)
   const [chatElement, setChatElement] = useState<HTMLDivElement | null>(null)
@@ -169,6 +173,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   const messageReady = shown >= 4
   const typing = shown < target
   const pending = confirmed ? !messageReady : !emailReady
+  const dictation = useMessageDictation(visible && messageReady && !atCheckpoint && !atLimit && !booking.open && !puffing, setMessage)
 
   useEffect(() => onMessageCount?.(Math.min(shown, greeting.length)), [onMessageCount, shown])
 
@@ -342,7 +347,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   const submitMessage = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const text = message.trim()
-    if (!valid || atCheckpoint || atLimit || (!text && outbox.length)) return
+    if (!valid || atCheckpoint || atLimit || dictation.listening || (!text && outbox.length)) return
     const payload = { email: email.trim(), message: text || keepInTouch, requestId: crypto.randomUUID() }
     // The message moves into the conversation and the field clears for the next one.
     setOutbox(list => [...list, { ...payload, status: "sending" }])
@@ -380,7 +385,6 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
         <span aria-hidden="true" />Play intro
       </button>}
       {emailReady && <p className="about-intro-chat-reaction-hint" role="status" aria-live={visible ? "polite" : undefined}>{reactionFeedback}</p>}
-      {/* Only the typing bubble has a tail on Rafa's side; once a question lands, the visitor's field below it carries one on the right. */}
       {greeting.slice(0, Math.min(shown, 3)).map((text, messageIndex) =>
         <ReactableMessage key={text} text={text} messageIndex={messageIndex}
           reactionId={visitorReaction[messageIndex]} onReaction={reactToMessage} />)}
@@ -405,7 +409,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
             "--puff-x": `${dx}px`, "--puff-y": `${dy}px`, animationDelay: `${delay}ms`,
           } as CSSProperties} />)}
         </span>}
-        {messageReady && <ReactableMessage text="Want to share anything else?" messageIndex={3} followup
+        {messageReady && <ReactableMessage text="Tell me a little about it." messageIndex={3} followup
           reactionId={visitorReaction[3]} onReaction={reactToMessage} />}
         {outbox.map(item => <div key={item.requestId} className="about-intro-chat-sent-message" data-status={item.status}>
           {item.status === "failed"
@@ -421,14 +425,14 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
           </p>}
         </div>)}
       </>}
-      {typing && <div key={`typing-${shown}`} className="about-intro-chat-bubble about-intro-chat-tail about-intro-chat-typing about-intro-chat-new"
+      {typing && <div key={`typing-${shown}`} className="about-intro-chat-bubble about-intro-chat-typing about-intro-chat-new"
         role="status" aria-label="Rafa is typing">
         <span aria-hidden="true" /><span aria-hidden="true" /><span aria-hidden="true" />
       </div>}
     </div>
     {!confirmed ? <form className="about-intro-chat-composer about-intro-chat-enter" data-order="4" data-pending={!emailReady} inert={!emailReady} aria-hidden={!emailReady} onSubmit={confirmEmail}>
       <input ref={emailRef} type="email" aria-label="Your email" autoComplete="email" required maxLength={254}
-        {...ignorePasswordManagers} placeholder="hello@example.com" value={email} onChange={event => {
+        {...ignorePasswordManagers} placeholder="Your email address" value={email} onChange={event => {
           setEmail(event.target.value)
           setValid(event.currentTarget.validity.valid && isContactEmail(event.target.value))
         }} />
@@ -437,16 +441,32 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
         <ArrowUp size={24} aria-hidden="true" />
       </button>
     </form> : <form className="about-intro-chat-message about-intro-chat-new" data-pending={!messageReady} inert={!messageReady} aria-hidden={!messageReady} onSubmit={submitMessage}>
-      <div ref={composerRef} className="about-intro-chat-composer">
-        <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${fieldId}-delivery`} maxLength={2000}
-          rows={2} {...ignorePasswordManagers} disabled={atCheckpoint || atLimit}
-          placeholder={atLimit ? "Five-message limit reached" : atCheckpoint ? "Continue below to send two more" : locked ? "Anything else?" : "Anything on your mind?"}
-          value={message} onChange={event => setMessage(event.target.value)} />
-        <button type="submit" className="about-intro-send" aria-label="Send message"
-          disabled={atCheckpoint || atLimit || (locked && !message.trim())} data-muted={!message.trim()}>
-          <ArrowUp size={24} aria-hidden="true" />
-        </button>
+      <div className="about-intro-chat-compose-row">
+        <button type="button" className="booking-time-button" aria-label="Book a time" title="Book a time · 30 min"
+          aria-haspopup="dialog" onClick={event => {
+            const portrait = event.currentTarget.closest(".about-intro")?.querySelector<HTMLButtonElement>(".about-intro-portrait-trigger")
+            booking.openBooking(portrait ?? event.currentTarget, "about_intro", undefined, email.trim())
+          }}><Calendar size={20} strokeWidth={1.75} aria-hidden="true" /></button>
+        <div ref={composerRef} className="about-intro-chat-composer">
+          <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${fieldId}-delivery${dictation.status ? ` ${fieldId}-dictation` : ""}`} maxLength={2000}
+            rows={1} {...ignorePasswordManagers} disabled={atCheckpoint || atLimit} readOnly={dictation.listening}
+            placeholder={atLimit ? "Five-message limit reached" : atCheckpoint ? "Continue below to send two more" : locked ? "Anything else?" : "Your message…"}
+            value={message} onChange={event => setMessage(event.target.value)} />
+          {(!message.trim() || dictation.listening) && <button type="button" className="booking-microphone"
+            disabled={sending || atCheckpoint || atLimit}
+            aria-label={dictation.listening ? "Stop dictation" : "Dictate message"} aria-pressed={dictation.listening}
+            onClick={() => {
+              if (dictation.listening) dictation.stop()
+              else dictation.start()
+              messageRef.current?.focus({ preventScroll: true })
+            }}>{dictation.listening ? <Square size={18} fill="currentColor" aria-hidden="true" /> : <Mic size={24} strokeWidth={1.75} aria-hidden="true" />}</button>}
+          <button type="submit" className="about-intro-send" aria-label="Send message"
+            disabled={atCheckpoint || atLimit || dictation.listening || (locked && !message.trim())} data-muted={!message.trim()}>
+            <ArrowUp size={24} aria-hidden="true" />
+          </button>
+        </div>
       </div>
+      {dictation.status && <p id={`${fieldId}-dictation`} className="about-intro-chat-hint" role="status">{dictation.status}</p>}
       <div className="about-intro-chat-footer">
         <p id={`${fieldId}-delivery`} className="about-intro-chat-hint" aria-live="polite">{deliveryText}</p>
         {atCheckpoint && <>

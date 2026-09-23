@@ -1,3 +1,4 @@
+import { useBooking } from "../lib/bookingContext"
 import {
   Component,
   lazy,
@@ -597,6 +598,7 @@ function SocialCorner({ email }: { email: string }) {
 }
 
 export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
+  const { open: bookingOpen, openBooking } = useBooking()
   const prefersReducedMotion = usePrefersReducedMotion()
   const { gridRef, runwayRef } = useWorkGridHeight()
   const { avatarRef, active: introActive } = useAvatarIntro()
@@ -604,15 +606,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const [avatarHovered, setAvatarHovered] = useState(false)
   const [avatarFocused, setAvatarFocused] = useState(false)
   const lightweightMedia = useLightweightMedia()
-  const showAvatarTeaser = (avatarHovered || avatarFocused) && !isIntroOpen && !prefersReducedMotion && !lightweightMedia
-  const introFromAvatar = useRef(false)
-  const handleIntroOpenChange = (open: boolean) => {
-    setIsIntroOpen(open)
-    if (!open && introFromAvatar.current) {
-      introFromAvatar.current = false
-      window.requestAnimationFrame(() => avatarRef.current?.focus({ preventScroll: true }))
-    }
-  }
+  const showAvatarTeaser = (avatarHovered || avatarFocused) && !isIntroOpen && !bookingOpen && !prefersReducedMotion && !lightweightMedia
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { itemId: galleryItemId, selectItem: selectGalleryItem, clearItem: clearGalleryItem } = useGalleryUrl()
@@ -931,7 +925,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       <SocialCorner email={links.email} />
       <AboutIntroDock
         open={isIntroOpen}
-        onOpenChange={handleIntroOpenChange}
+        onOpenChange={setIsIntroOpen}
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
         onServices={() => scrollToSection("toc_services", "about-panel-services")}
@@ -955,16 +949,14 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               ref={avatarRef}
               type="button"
               className="mosaic-avatar mosaic-avatar-coin mosaic-avatar-button"
-              aria-label={`Watch ${profile.name}'s introduction`}
-              aria-expanded={isIntroOpen}
+              aria-label={`Chat with ${profile.name}`}
+              aria-haspopup="dialog"
+              aria-expanded={bookingOpen}
               onPointerEnter={() => setAvatarHovered(true)}
               onPointerLeave={() => setAvatarHovered(false)}
               onFocus={() => setAvatarFocused(true)}
               onBlur={() => setAvatarFocused(false)}
-              onClick={() => {
-                introFromAvatar.current = true
-                setIsIntroOpen(true)
-              }}
+              onClick={event => openBooking(event.currentTarget, "portrait", links.booking)}
             >
               <div className="mosaic-avatar-coin-inner">
                 <span className="mosaic-avatar-face mosaic-avatar-face-front">
@@ -992,7 +984,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   <path d="M33 5C23 4 11 7 4 15" />
                   <path d="M4 15 10.8 13.4M4 15 6.5 8.5" />
                 </svg>
-                <span className="mosaic-avatar-hint-label">play my intro</span>
+                <span className="mosaic-avatar-hint-label">let’s talk</span>
               </span>
             </button>
             <div className="mosaic-profile-meta">

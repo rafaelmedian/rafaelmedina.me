@@ -54,8 +54,8 @@ test("records the visitor reaction that lands on a chat message", async ({ page 
 
   await page.locator(".about-intro-portrait-trigger").click()
   const chat = page.getByRole("region", { name: "Chat with Rafa" })
-  await chat.getByRole("button", { name: "React to “Hey, I’m Rafa.”" }).click()
-  await page.getByRole("menu", { name: "React to “Hey, I’m Rafa.”" })
+  await chat.getByRole("button", { name: "React to “Hey, what’s up?”" }).click()
+  await page.getByRole("menu", { name: "React to “Hey, what’s up?”" })
     .getByRole("menuitemcheckbox", { name: "Love" }).click()
 
   const reactionEvent = await page.evaluate(() =>
