@@ -32,10 +32,25 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
   expect(faceBox!.x).toBe(12)
   expect(Math.abs(tocBox!.x + tocBox!.width / 2 - 384)).toBeLessThan(1)
   expect(badgeBox).toMatchObject({ width: 18, height: 18 })
-  expect(Math.abs(badgeBox!.x - (faceBox!.x + faceBox!.width - badgeBox!.width + 2))).toBeLessThan(1)
-  expect(Math.abs(badgeBox!.y - faceBox!.y + 2)).toBeLessThan(1)
+  // Layout offsets, not the rendered box: the badge is still riding its 6px
+  // entrance rise here, and how far that has run depends on how many frames
+  // the driver happened to force, which put the measured corner either side
+  // of a pixel.
+  expect(await notification.evaluate(node => {
+    const surface = node.offsetParent as HTMLElement
+    return {
+      parent: surface.className,
+      top: node.offsetTop,
+      right: surface.offsetWidth - node.offsetLeft - node.offsetWidth,
+    }
+  })).toEqual({ parent: 'about-intro-surface', top: -2, right: -2 })
   await expect(notification).toHaveCSS('border-radius', '50%')
-  await expect(notification).toHaveCSS('box-shadow', /rgba\(0, 0, 0, 0\.15\).*rgb\(255, 255, 255\)/)
+  // The clearance around the badge is cut out of the portrait, not painted:
+  // no canvas-white halo on the badge, and a 12px hole in the media's mask
+  // centred 7px in from the surface's top-right corner.
+  await expect(notification).toHaveCSS('box-shadow', /rgba\(0, 0, 0, 0\.15\)/)
+  await expect(notification).not.toHaveCSS('box-shadow', /rgb\(255, 255, 255\)/)
+  await expect(intro.locator('.about-intro-media')).toHaveCSS('mask-image', /radial-gradient.*12px/)
   expect(await notification.evaluate(node => {
     for (let parent = node.parentElement; parent; parent = parent.parentElement) {
       if (getComputedStyle(parent).overflow !== 'visible') return parent.className

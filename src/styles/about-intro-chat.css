@@ -28,9 +28,17 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
+  /* A true circle, not the global squircle: the clearance around it is a
+     circular hole cut in the portrait, and a superellipse pushes its corners
+     out through that ring. */
+  corner-shape: round;
   background: #e5352b;
   color: var(--canvas);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15), 0 0 0 3px var(--canvas), var(--shadow-control);
+  /* No halo: the 3px of clearance is cut out of the portrait itself (see
+     --intro-notification-cut), so the page shows through the gap instead of a
+     ring of canvas white. Only the hairline and the shared control shadow
+     ride on the badge. */
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15), var(--shadow-control);
   font: 700 11px / 1 var(--font-ui);
   font-variant-numeric: tabular-nums;
   pointer-events: none;
