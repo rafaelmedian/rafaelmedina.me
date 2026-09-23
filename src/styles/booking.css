@@ -395,7 +395,7 @@
   top: max(1.25rem, env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
-  transition: left var(--duration-slow) var(--ease-smooth);
+  transition: transform var(--duration-slow) var(--ease-smooth);
   flex: none;
   display: flex;
   align-items: center;
@@ -458,8 +458,13 @@
 
 .booking-close {
   position: fixed;
-  top: max(1.25rem, env(safe-area-inset-top));
-  right: max(1.25rem, env(safe-area-inset-right));
+  top: calc(max(0.75rem, env(safe-area-inset-top)) + 1.5rem);
+  right: calc(max(0.75rem, env(safe-area-inset-right)) + 1.5rem);
+}
+
+/* The nested close owns this spot until its exit has fully unmounted. */
+body:has(.booking-contact-panel) .booking-close {
+  visibility: hidden;
 }
 
 .booking-back {
@@ -886,7 +891,7 @@
 
 @media (min-width: 900px) {
   .booking-contact-panel { width: calc(50% - 1.5rem); }
-  .booking-shell:has(.booking-name-tag[aria-expanded="true"]) .booking-identity { left: 25%; }
+  .booking-shell:has(.booking-name-tag[aria-expanded="true"]) .booking-identity { transform: translateX(calc(-50% - 25vw)); }
   .booking-shell:has(.booking-name-tag[aria-expanded="true"]) {
     padding-right: calc(50% + 1.25rem);
   }
@@ -921,7 +926,7 @@
     width: min(360px, 100%);
     height: auto;
   }
-  .booking-popup[data-calendar="true"] .booking-identity { left: 25%; }
+  .booking-popup[data-calendar="true"] .booking-identity { transform: translateX(calc(-50% - 25vw)); }
   .booking-calendar-stage {
     position: fixed;
     top: max(0.75rem, env(safe-area-inset-top));
