@@ -2150,7 +2150,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   only its width eases to the new label.
                   Open, the control is one continuous card with three rows. The surface expands from the measured
                   label width to 17rem and from 48px to 164px — three 48px rows with 2px gaps and an 8px outer inset —
-                  keeping its bottom edge fixed. The card has 31.2px corners and the inset rows have concentric 20.8px
+                  keeping its bottom edge fixed. The card has round 31.2px corners and the inset rows use fully rounded pill
                   corners; labels are 14px and section numbers 12px. Its white fill is 92% opaque over a 16px backdrop
                   blur, with a 5% hairline and <code>--shadow-overlay</code> around the whole card.
                   Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
@@ -2175,6 +2175,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   pressing scales the trigger content to 0.96 over 120ms, keeping the shadow stable.
                   Controls suppress native tap highlights and text selection while preserving keyboard focus rings.
                   The shell reserves 6rem plus the safe area so the control clears the final content.
+                The collapsed control and individual rows use fully round <code>--radius-full</code> corners; the expanded container keeps round <code>--radius-lg</code> corners to leave its rows unclipped.
                 </li>
                 <li data-ds-terms={terms("mosaic organic grid named groups opening portraits offset closing desktop container cqw 3fr 6fr 3fr 3fr 5fr 4fr 5fr 7fr 1fr 260px 320px 420px 536px 660px 600px 900px personal photos band compact two columns display contents protector quote span both 10px tablet 32px total inset 8px mobile gap 8px outer radius 20.8px 31.2px contain letterbox zero mat family stories rewards wallet homepage security token pro trade mobile flat backdrop rgb(63 62 68) rgb(231 231 233) background pair center bottom minmax(0, 1fr)")}>
                   <strong>The mosaic is four named groups.</strong> At 900px and above, Opening is a 3:6:3 row
