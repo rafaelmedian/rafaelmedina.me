@@ -208,7 +208,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
                     {...ignorePasswordManagers} placeholder="Tell me a little about it…" value={message}
                     onChange={event => setMessage(event.target.value)} disabled={atLimit} readOnly={dictation.listening} />
                   {message.trim() && !dictation.listening ? <button className="booking-send" type="submit" aria-label="Send message" disabled={sending || atLimit}><ArrowUp size={24} /></button>
-                    : <button className="booking-microphone" type="button" disabled={sending || atLimit}
+                    : <button className="booking-microphone" type="button" disabled={sending || atLimit || calendar}
                       aria-label={dictation.listening ? "Stop dictation" : "Dictate message"} aria-pressed={dictation.listening}
                       onClick={event => {
                         event.preventDefault()
