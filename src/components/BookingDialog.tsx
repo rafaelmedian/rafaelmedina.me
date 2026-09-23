@@ -152,7 +152,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
           </header>
           <section className="booking-conversation" aria-label="Conversation with Rafael">
             <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open ? "polite" : "off"}>
-              <div className="booking-bubble" style={entryStyle("hello")}>Hey, I’m Rafa.</div>
+              <div className="booking-bubble" style={entryStyle("hello")}>Hey, what’s up?</div>
               <div className="booking-bubble" style={entryStyle("catch-up")}>we should catch up properly</div>
               <div className="booking-bubble" style={entryStyle("email-prompt")}>where should i email you?</div>
               {confirmedEmail && <>
