@@ -555,10 +555,11 @@
   display: flex;
   align-items: flex-end;
   padding: 0;
-  gap: 0.5rem;
+  gap: 0;
   border: 0;
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
-  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+  corner-shape: round;
+  border-radius: var(--radius-md);
   background: var(--canvas);
 }
 
@@ -567,7 +568,8 @@
   flex: 1;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 16px;
+  caret-color: var(--booking-blue);
   border: 0;
   background: transparent;
   color: var(--ink);
@@ -585,7 +587,7 @@
 
 .booking-composer :is(input, textarea)::placeholder { color: var(--muted-soft); }
 .booking-composer :is(input, textarea):focus-visible { outline: none; }
-.booking-composer:focus-within { box-shadow: var(--shadow-ring), var(--shadow-overlay-hover); }
+.booking-composer:focus-within { box-shadow: var(--shadow-ring), var(--shadow-control-hover); }
 
 .booking-microphone {
   display: grid;
@@ -598,6 +600,7 @@
 }
 
 .booking-send {
+  corner-shape: round;
   position: relative;
   isolation: isolate;
   flex: none;
@@ -613,6 +616,7 @@
 }
 
 .booking-send::before {
+  corner-shape: round;
   content: "";
   position: absolute;
   inset: 4px;
