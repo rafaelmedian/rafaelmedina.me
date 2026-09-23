@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu"
 import { Dialog } from "@base-ui/react/dialog"
-import { ArrowLeft, ArrowUp, CalendarDays, Mic, Square, X } from "lucide-react"
+import { ArrowLeft, ArrowUp, Calendar, Mic, Square, X } from "lucide-react"
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
@@ -128,7 +128,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
               requestAnimationFrame(() => bookRef.current?.focus({ preventScroll: true }))
             }}><ArrowLeft size={20} /></button>}
           <header className="booking-identity">
-            <img ref={portraitRef} src={siteProfile.photo} width="64" height="64" alt="" />
+            <img ref={portraitRef} src={siteProfile.photo} width="52" height="52" alt="" />
             <BookingContactPanel />
           </header>
           <section className="booking-conversation" aria-label="Conversation with Rafael">
@@ -181,7 +181,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
                 setCalendarEmail(confirmedEmail)
                 setCalendar(true)
                 requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
-              }}><CalendarDays size={20} aria-hidden="true" /></button>
+              }}><Calendar size={20} strokeWidth={1.75} aria-hidden="true" /></button>
               <form onSubmit={send}>
                 <div className="booking-composer">
                   <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : dictation.status ? `${hintId}-dictation` : undefined} rows={1} maxLength={2000}

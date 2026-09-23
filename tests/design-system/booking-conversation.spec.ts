@@ -217,7 +217,7 @@ test('moves the homepage portrait into the header and aligns composer controls',
   expect(initial!.y).toBeCloseTo(source!.y, 0)
   expect(initial!.width).toBeCloseTo(source!.width, 0)
   await image.evaluate(node => node.getAnimations().forEach(animation => animation.finish()))
-  await expect(image).toHaveCSS('width', '64px')
+  await expect(image).toHaveCSS('width', '52px')
   const destination = await image.boundingBox()
   expect(destination!.y).toBe(20)
   await dialog.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')

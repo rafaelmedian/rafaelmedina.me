@@ -407,8 +407,8 @@
   transform-origin: top left;
   position: relative;
   z-index: 1;
-  width: 64px;
-  height: 64px;
+  width: 3.25rem;
+  height: 3.25rem;
   corner-shape: round;
   object-fit: cover;
   border-radius: var(--radius-full);
@@ -490,6 +490,8 @@
 }
 
 .booking-bubble {
+  position: relative;
+  isolation: isolate;
   transform-origin: left bottom;
   max-width: 90%;
   margin: 0;
@@ -504,6 +506,25 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   flex-shrink: 0;
+}
+
+.booking-bubble::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  bottom: 0;
+  z-index: -1;
+  width: 40px;
+  height: 24px;
+  background: inherit;
+  clip-path: path("M 8 0 H 40 V 24 H 0 C 6 21 8 16 8 8 Z");
+  pointer-events: none;
+}
+
+.booking-outgoing::before {
+  left: auto;
+  right: -8px;
+  transform: scaleX(-1);
 }
 
 .booking-bubble p { margin: 0; }
@@ -720,7 +741,6 @@
 
 @media (max-height: 600px) {
   .booking-shell { padding-top: max(8rem, calc(env(safe-area-inset-top) + 7rem)); }
-  .booking-identity img { width: 48px; height: 48px; }
   .booking-compose-area { padding-block: 0.5rem; }
 }
 
