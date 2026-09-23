@@ -450,7 +450,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
         <div ref={composerRef} className="about-intro-chat-composer">
           <textarea ref={messageRef} aria-label="Your message (optional)" aria-describedby={`${fieldId}-delivery${dictation.status ? ` ${fieldId}-dictation` : ""}`} maxLength={2000}
             rows={1} {...ignorePasswordManagers} disabled={atCheckpoint || atLimit} readOnly={dictation.listening}
-            placeholder={atLimit ? "Five-message limit reached" : atCheckpoint ? "Continue below to send two more" : locked ? "Anything else?" : "Tell me a little about it…"}
+            placeholder={atLimit ? "Five-message limit reached" : atCheckpoint ? "Continue below to send two more" : locked ? "Anything else?" : "Your message…"}
             value={message} onChange={event => setMessage(event.target.value)} />
           {(!message.trim() || dictation.listening) && <button type="button" className="booking-microphone"
             disabled={sending || atCheckpoint || atLimit}

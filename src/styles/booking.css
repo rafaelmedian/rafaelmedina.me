@@ -602,13 +602,13 @@ body:has(.booking-contact-panel) .booking-close {
   flex: 1;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 16px;
+  padding: 8px 12px;
   caret-color: var(--booking-blue);
   border: 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.5;
   resize: none;
 }
@@ -657,7 +657,7 @@ body:has(.booking-contact-panel) .booking-close {
   corner-shape: round;
   content: "";
   position: absolute;
-  inset: 4px;
+  inset: 6px;
   z-index: -1;
   border-radius: var(--radius-full);
   background: var(--booking-blue);
@@ -962,3 +962,10 @@ body:has(.booking-contact-panel) .booking-close {
 }
 
 .booking-time-button svg { color: var(--muted-soft); opacity: 0.6; }
+
+.booking-send svg,
+.booking-microphone svg { width: 20px; height: 20px; }
+
+@media (max-width: 899.98px) {
+  .booking-composer :is(input, textarea) { font-size: var(--text-md); }
+}

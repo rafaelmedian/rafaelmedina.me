@@ -633,13 +633,13 @@
   width: 0;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 16px;
+  padding: 8px 12px;
   caret-color: var(--intro-blue);
   border: 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 
@@ -659,7 +659,6 @@
   max-height: min(188px, 30dvh);
   overflow-y: auto;
   scrollbar-width: none;
-  font-size: var(--text-md);
   resize: none;
 }
 
@@ -864,7 +863,7 @@
 
   /* iOS zooms the visual viewport when a focused input is smaller than 16px,
      which pans this fixed conversation beyond the left screen edge. */
-  .about-intro-dock .about-intro-chat-composer input {
+  .about-intro-dock .about-intro-chat-composer :is(input, textarea) {
     font-size: var(--text-md);
   }
 }
@@ -984,6 +983,8 @@
 }
 
 .about-intro-chat-compose-row {
+  width: min(280px, 100%);
+  margin-left: auto;
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
@@ -998,3 +999,6 @@
   color: var(--intro-blue);
   opacity: 1;
 }
+
+.about-intro-chat .about-intro-send::before { inset: 6px; }
+.about-intro-chat .about-intro-send svg { width: 20px; height: 20px; }
