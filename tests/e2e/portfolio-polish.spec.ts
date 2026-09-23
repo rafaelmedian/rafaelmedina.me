@@ -2292,7 +2292,7 @@ test("keeps Rafael’s identity above the calendar", async ({ page }) => {
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
   await expect(dialog).toHaveAccessibleName("Chat with Rafael Medina")
-  await expect(dialog.locator(".booking-name-tag")).toHaveText("Rafael Medina")
+  await expect(dialog.getByRole("button", { name: "Rafael Medina contact info" })).toBeVisible()
   await dialog.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com")
   await dialog.getByRole("button", { name: "Continue with email" }).click()
   await dialog.getByRole("button", { name: "Book a time", exact: true }).click()
@@ -2309,7 +2309,7 @@ test("keeps Rafael’s identity above the calendar", async ({ page }) => {
   ])
   const leftGutter = iframeBox!.x - frameBox!.x
   const rightGutter = frameBox!.x + frameBox!.width - iframeBox!.x - iframeBox!.width
-  expect(leftGutter).toBeCloseTo(32, 0)
+  expect(leftGutter).toBeCloseTo(12, 0)
   expect(rightGutter).toBeCloseTo(leftGutter, 5)
   expect(frameBackground).toBe("rgb(250, 250, 250)")
 
@@ -2340,12 +2340,14 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   await expect(skeleton.locator(".booking-skeleton-day")).toHaveCount(35)
   await expect(skeleton).toHaveCSS("opacity", "1")
   await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "0")
-  // The floating chat expands into the calendar; measure after that transition.
-  await expect.poll(async () => (await frame.locator(".booking-iframe").boundingBox())!.width).toBeCloseTo(1040, 0)
+  // Scheduling occupies the right half with 24px of panel margin and
+  // two 12px iframe gutters; wait for the panel to settle.
+  const calendarWidth = page.viewportSize()!.width / 2 - 48
+  await expect.poll(async () => (await frame.locator(".booking-iframe").boundingBox())!.width).toBeCloseTo(calendarWidth, 0)
   const skeletonPanel = await skeleton.locator(".booking-skeleton-panel").boundingBox()
   const iframe = await frame.locator(".booking-iframe").boundingBox()
-  expect(skeletonPanel!.width).toBeCloseTo(760, 0)
-  expect(iframe!.width).toBeCloseTo(1040, 0)
+  expect(skeletonPanel!.width).toBeCloseTo(Math.min(760, calendarWidth), 0)
+  expect(iframe!.width).toBeCloseTo(calendarWidth, 0)
   expect(skeletonPanel!.x + skeletonPanel!.width / 2).toBeCloseTo(iframe!.x + iframe!.width / 2, 5)
 
   expect(finishCalendarRequest).toBeDefined()
