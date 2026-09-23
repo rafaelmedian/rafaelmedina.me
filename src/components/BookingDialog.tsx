@@ -34,6 +34,19 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
   const hintId = useId()
   const sending = outbox.some(item => item.status === "sending")
   const atLimit = outbox.length >= 5
+  const [entrance, setEntrance] = useState({ open, keys: ["hello", "catch-up", "email-prompt"] })
+  if (entrance.open !== open) {
+    setEntrance({ open, keys: [
+      "hello", "catch-up", "email-prompt",
+      ...(confirmedEmail ? ["address", "message-prompt"] : []),
+      ...outbox.map(item => item.requestId),
+    ] })
+  }
+  const entryStyle = (key: string, newDelay = 0) => {
+    const order = entrance.keys.indexOf(key)
+    return { animationDelay: `${order < 0 ? newDelay : 200 + order * 160}ms` }
+  }
+
 
   const portraitRef = useCallback((node: HTMLImageElement | null) => {
     if (!node || !open || !portraitOrigin || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
@@ -118,11 +131,11 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
           </header>
           <section className="booking-conversation" hidden={calendar} aria-label="Conversation with Rafael">
             <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open && !calendar ? "polite" : "off"}>
-              <div className="booking-bubble">Hey, I’m Rafa.</div>
-              <div className="booking-bubble">we should catch up properly</div>
-              <div className="booking-bubble">where should i email you?</div>
+              <div className="booking-bubble" style={entryStyle("hello")}>Hey, I’m Rafa.</div>
+              <div className="booking-bubble" style={entryStyle("catch-up")}>we should catch up properly</div>
+              <div className="booking-bubble" style={entryStyle("email-prompt")}>where should i email you?</div>
               {confirmedEmail && <>
-                <div className="booking-email-confirmation">
+                <div className="booking-email-confirmation" style={entryStyle("address")}>
                   <Menu.Root modal={false}>
                     <Menu.Trigger className="booking-bubble booking-outgoing booking-email-trigger" disabled={sending}
                       aria-label={`Email options for ${confirmedEmail}`}>{confirmedEmail}</Menu.Trigger>
@@ -140,9 +153,9 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
                     </Menu.Portal>
                   </Menu.Root>
                 </div>
-                <div className="booking-bubble">Tell me a little about it. Or let’s find a time to talk.</div>
+                <div className="booking-bubble" style={entryStyle("message-prompt", 80)}>Tell me a little about it. Or let’s find a time to talk.</div>
               </>}
-              {outbox.map(item => <div className="booking-delivery" key={item.requestId}>
+              {outbox.map(item => <div className="booking-delivery" key={item.requestId} style={entryStyle(item.requestId)}>
                 <p className="booking-bubble booking-outgoing">{item.message}</p>
                 {item.status === "failed" ? <div className="booking-receipt" role="alert">
                   {item.error} <button type="button" onClick={() => void deliver({ email: item.email, message: item.message, requestId: item.requestId })}

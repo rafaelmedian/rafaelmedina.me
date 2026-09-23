@@ -491,7 +491,6 @@
 
 .booking-bubble {
   transform-origin: left bottom;
-  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) both;
   max-width: 90%;
   margin: 0;
   padding: 0.5rem 0.75rem;
@@ -721,14 +720,20 @@
   .booking-compose-area { padding-block: 0.5rem; }
 }
 
-/* Let the popup appear first, then greet the visitor one bubble at a time. */
-.booking-history > .booking-bubble:nth-child(1) { animation-delay: var(--duration-base); }
-.booking-history > .booking-bubble:nth-child(2) { animation-delay: var(--duration-slow); }
-.booking-history > .booking-bubble:nth-child(3) { animation-delay: 520ms; }
-.booking-email-confirmation + .booking-bubble { animation-delay: 80ms; }
+/* Animate each history entry as a unit, including its receipt. Opening
+   captures the saved entries; new replies enter without the replay delay. */
+.booking-history > * {
+  transform-origin: left bottom;
+  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) both;
+}
+
+.booking-history > :is(.booking-email-confirmation, .booking-delivery) {
+  transform-origin: right bottom;
+}
 
 /* Reset even if the dialog is reopened before its exit finishes. */
-.booking-popup[data-conversation-open="false"] :is(.booking-bubble, .booking-compose-area) {
+.booking-popup[data-conversation-open="false"] .booking-history > *,
+.booking-popup[data-conversation-open="false"] .booking-compose-area {
   animation: none;
 }
 
@@ -747,8 +752,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .booking-bubble,
-  .booking-compose-area { animation: none; }
+  .booking-history > *,
+  .booking-compose-area { animation: none !important; }
 }
 
 /* A nested contact sheet keeps the conversation and its draft underneath. */
