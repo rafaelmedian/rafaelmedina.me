@@ -28,7 +28,7 @@ export function BookingContactPanel({ open, onOpenChange, calendarFocus }: {
         <div className="booking-contact-content">
           <div className="booking-contact-group">
             <div className="booking-contact-row"><small>name</small>{siteProfile.name}</div>
-            <div className="booking-contact-row"><small>Title</small>{siteProfile.title}</div>
+            <div className="booking-contact-row"><small>title</small>{siteProfile.title}</div>
           </div>
           <div className="booking-contact-group">
             <a href={`mailto:${siteLinks.email}`}><small>email</small>{siteLinks.email}</a>
