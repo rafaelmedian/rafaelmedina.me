@@ -19,6 +19,10 @@ for (const surface of ['about', 'booking'] as const) {
     await expect(incoming).toHaveCount(3)
     await expect.poll(() => incoming.evaluateAll(nodes => nodes.map(node => getComputedStyle(node, '::before').content)))
       .toEqual(['none', 'none', '""'])
+    expect(await chat.getByRole('button', { name: 'Continue with email' }).evaluate(node => {
+      const style = getComputedStyle(node, '::before')
+      return [style.width, style.height, style.top, style.bottom, style.right]
+    })).toEqual(['40px', '28px', '8px', '8px', '8px'])
     await chat.getByRole('textbox', { name: 'Your email', exact: true }).fill('hello@example.com')
     await chat.getByRole('button', { name: 'Continue with email' }).click()
     const send = chat.getByRole('button', { name: 'Send message', exact: true })
@@ -37,7 +41,7 @@ for (const surface of ['about', 'booking'] as const) {
     await chat.getByRole('textbox', { name: /^Your message/ }).fill('Another thought')
     expect(await send.evaluate(node => {
       const style = getComputedStyle(node, '::before')
-      return [style.width, style.height]
-    })).toEqual(['40px', '28px'])
+      return [style.width, style.height, style.top, style.bottom, style.right]
+    })).toEqual(['40px', '28px', ...(surface === 'about' ? ['4px', '4px', '4px'] : ['8px', '8px', '8px'])])
   })
 }

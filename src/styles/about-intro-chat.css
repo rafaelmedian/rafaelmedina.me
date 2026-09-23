@@ -1001,7 +1001,8 @@
   opacity: 1;
 }
 
-.about-intro-chat .about-intro-send::before { inset: 8px 2px; }
+.about-intro-chat .about-intro-send { width: 56px; flex-basis: 56px; }
+.about-intro-chat .about-intro-send::before { inset: 8px; }
 .about-intro-chat .about-intro-send svg { width: 20px; height: 20px; }
 
 /* Keep the message row visually compact without shrinking its tap targets. */
@@ -1019,7 +1020,8 @@
 }
 
 .about-intro-chat-message .booking-time-button::after { inset: -4px; }
-.about-intro-chat-message .about-intro-send::before { inset: 4px 2px; }
+.about-intro-chat-message .about-intro-send { width: 48px; flex-basis: 48px; }
+.about-intro-chat-message .about-intro-send::before { inset: 4px; }
 
 /* Only the final bubble in a consecutive run carries the conversation tail. */
 .about-intro-chat-received:has(+ :is(.about-intro-chat-received, .about-intro-chat-typing)) .about-intro-chat-bubble::before,
