@@ -193,11 +193,9 @@
   overflow: hidden;
   border-radius: var(--radius-full);
   corner-shape: round;
-  background: rgb(255 255 255 / 0.92);
+  background: var(--canvas);
   color: var(--ink);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   transition: width var(--toc-resize-duration) var(--ease-smooth), height var(--toc-resize-duration) var(--ease-smooth);

@@ -2151,8 +2151,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Open, the control is one continuous card with three rows. The surface expands from the measured
                   label width to 17rem and from 48px to 164px — three 48px rows with 2px gaps and an 8px outer inset —
                   keeping its bottom edge fixed. The card has round 31.2px corners and the inset rows use fully rounded pill
-                  corners; labels are 14px and section numbers 12px. Its white fill is 92% opaque over a 16px backdrop
-                  blur, with a 5% hairline and <code>--shadow-overlay</code> around the whole card.
+                  corners; labels are 14px and section numbers 12px. Its solid white <code>--canvas</code> fill
+                  has no backdrop blur, with <code>--shadow-ring</code> and <code>--shadow-overlay</code> around the whole card.
                   Opening moves the rows into place as the card grows over 360ms with smooth easing; closing returns
                   them to the compact chip over 200ms on the same curve. Inactive rows fade and clear
                   <code>--blur-reveal</code> over 160ms. The card clips the rows throughout the transition.
