@@ -2307,9 +2307,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   inset hairline and control shadow as the playback pill. Media stays clipped in its own rounded wrapper.
                   Hovered playback controls use 16% white. Captions remain enabled for real recordings and
                   can be toggled with C; the sample recording starts without its descriptive captions.
-                  The speaking portrait reveals a centered 24px dark translucent play triangle on hover, keyboard focus or tap.
+                  The speaking portrait reveals a centered 24px white play triangle on hover, keyboard focus or tap.
                   A 20%-black overlay darkens the portrait only while those actions are shown, fading over
-                  <code> --duration-quick</code>. The triangle reuses the playback controls’ 36%-black tint and 16px backdrop blur, masked to the play silhouette so the backdrop blur cannot leave a square over the face, with no surrounding disc.
+                  <code> --duration-quick</code>. The triangle uses the white canvas color and an SVG mask to retain the play silhouette, with no blur or surrounding disc.
                   A 100px white pill to the right holds separate 44px email and text actions,
                   with the shared ring and overlay shadows, without backdrop blur. Hover or keyboard focus
                   grows one action from 44px to 128px and the pill to 184px, revealing “Your email” or
