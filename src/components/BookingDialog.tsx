@@ -71,7 +71,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
 
   useLayoutEffect(() => {
     const field = messageRef.current
-    if (!field || calendar || !open) return
+    if (!field || !open || !field.getClientRects().length) return
     const fit = () => {
       field.style.height = "auto"
       field.style.height = `${field.scrollHeight}px`
@@ -114,7 +114,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
     <Dialog.Portal>
       <Dialog.Backdrop className="booking-backdrop" />
       <div className="booking-shell">
-        <Dialog.Popup className="booking-popup" data-calendar={calendar} data-conversation-open={open && !calendar} ref={popupRef}
+        <Dialog.Popup className="booking-popup" data-calendar={calendar} data-conversation-open={open} ref={popupRef}
           initialFocus={popupRef} finalFocus={returnFocus}>
           <Dialog.Close className="booking-icon-button booking-close" aria-label="Close conversation">
             <X size={20} aria-hidden="true" />
@@ -131,8 +131,8 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
             <img ref={portraitRef} src={siteProfile.photo} width="64" height="64" alt="" />
             <BookingContactPanel />
           </header>
-          <section className="booking-conversation" hidden={calendar} aria-label="Conversation with Rafael">
-            <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open && !calendar ? "polite" : "off"}>
+          <section className="booking-conversation" aria-label="Conversation with Rafael">
+            <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open ? "polite" : "off"}>
               <div className="booking-bubble" style={entryStyle("hello")}>Hey, I’m Rafa.</div>
               <div className="booking-bubble" style={entryStyle("catch-up")}>we should catch up properly</div>
               <div className="booking-bubble" style={entryStyle("email-prompt")}>where should i email you?</div>
@@ -147,6 +147,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
                           finalFocus={() => popupRef.current?.querySelector<HTMLInputElement>('input[type="email"]') ?? true}>
                           <Menu.Item className="booking-email-menu-item" onClick={() => {
                             popupRef.current?.focus({ preventScroll: true })
+                            setCalendar(false)
                             setConfirmedEmail("")
                             requestAnimationFrame(() => popupRef.current?.querySelector<HTMLInputElement>('input[type="email"]')?.focus())
                           }}>Unsend</Menu.Item>

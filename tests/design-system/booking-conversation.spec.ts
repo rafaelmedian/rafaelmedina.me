@@ -16,6 +16,16 @@ for (const width of [390, 1440]) {
     await dialog.getByRole('button', { name: 'Book a time', exact: true }).click()
     await expect(dialog.locator('iframe')).toHaveAttribute('src', /email=visitor%40example.com/)
     await expect(dialog.locator('iframe')).toHaveAttribute('src', /theme=light/)
+    if (width >= 900) {
+      await expect(dialog.getByRole('textbox', { name: 'Your message' })).toBeVisible()
+      const conversation = await dialog.locator('.booking-conversation').boundingBox()
+      const calendar = await dialog.locator('.booking-calendar-stage').boundingBox()
+      expect(conversation!.x + conversation!.width).toBeLessThan(calendar!.x)
+      expect(calendar!.x).toBeGreaterThanOrEqual(width / 2)
+      await dialog.getByRole('textbox', { name: 'Your message' }).fill('Let’s talk about a design project.')
+    } else {
+      await expect(dialog.getByRole('textbox', { name: 'Your message' })).toBeHidden()
+    }
     await dialog.getByRole('button', { name: 'Back to conversation' }).click()
     await expect(dialog.getByRole('textbox', { name: 'Your message' })).toHaveValue('Let’s talk about a design project.')
     await page.keyboard.press('Escape')
