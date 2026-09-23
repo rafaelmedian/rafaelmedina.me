@@ -418,24 +418,31 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  min-height: 44px;
+  min-height: 36px;
   border: 0;
   cursor: pointer;
   position: relative;
   margin-top: -0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.375rem 0.75rem;
   corner-shape: round;
   border-radius: var(--radius-full);
   background: var(--canvas);
   box-shadow: var(--shadow-control-hover);
   white-space: nowrap;
   color: var(--ink);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.5;
 }
 
+.booking-name-tag::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
 .booking-icon-button {
+  corner-shape: round;
   display: grid;
   place-items: center;
   width: 44px;
