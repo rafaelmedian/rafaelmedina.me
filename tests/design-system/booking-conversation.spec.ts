@@ -251,3 +251,61 @@ test('replays saved email and delivered messages in conversation order', async (
   await expect(receipt).toHaveCSS('opacity', '1')
   await expect(receipt).toContainText('Delivered')
 })
+
+test('dictates into a draft, handles permission errors, and stops on close', async ({ page }) => {
+  await page.addInitScript(() => {
+    class FakeSpeechRecognition {
+      onresult: ((event: { results: { transcript: string }[][] }) => void) | null = null
+      onerror: ((event: { error: string }) => void) | null = null
+      onend: (() => void) | null = null
+      start() { Object.assign(window, { activeSpeech: this }) }
+      stop() { this.onend?.() }
+      abort() { Object.assign(window, { speechAborted: true }) }
+    }
+    Object.assign(window, { SpeechRecognition: FakeSpeechRecognition })
+  })
+  await page.route('**/contact', () => { throw new Error('Dictation must not send messages') })
+  await page.goto('/?tune=off')
+  await page.locator('.mosaic-booking-pill').click()
+  const chat = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
+  await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  await chat.getByRole('button', { name: 'Dictate message' }).click()
+  await expect(chat.getByRole('button', { name: 'Stop dictation' })).toBeVisible()
+  await page.evaluate(() => {
+    const speech = (window as unknown as { activeSpeech: { onresult: (event: unknown) => void } }).activeSpeech
+    speech.onresult({ results: [[{ transcript: 'Let’s discuss my project' }]] })
+  })
+  const message = chat.getByRole('textbox', { name: 'Your message' })
+  await expect(message).toHaveValue('Let’s discuss my project')
+  await expect(message).toHaveAttribute('readonly', '')
+  await chat.getByRole('button', { name: 'Stop dictation' }).click()
+  await expect(message).not.toHaveAttribute('readonly')
+  await expect(chat.getByRole('button', { name: 'Send message', exact: true })).toBeEnabled()
+  await message.fill('')
+  await chat.getByRole('button', { name: 'Dictate message' }).click()
+  await page.evaluate(() => {
+    const speech = (window as unknown as { activeSpeech: { onerror: (event: unknown) => void; onend: () => void } }).activeSpeech
+    speech.onerror({ error: 'not-allowed' })
+    speech.onend()
+  })
+  await expect(chat.getByRole('status')).toContainText('Microphone access was denied')
+  await chat.getByRole('button', { name: 'Dictate message' }).click()
+  await chat.getByRole('button', { name: 'Close conversation' }).click()
+  await expect.poll(() => page.evaluate(() => (window as unknown as { speechAborted: boolean }).speechAborted)).toBe(true)
+})
+
+test('offers a typing fallback when browser dictation is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { SpeechRecognition: undefined, webkitSpeechRecognition: undefined })
+  })
+  await page.goto('/?tune=off')
+  await page.locator('.mosaic-booking-pill').click()
+  const chat = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
+  await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  await chat.getByRole('button', { name: 'Dictate message' }).click()
+  await expect(chat.getByRole('status')).toContainText('isn’t supported in this browser')
+  await chat.getByRole('textbox', { name: 'Your message' }).fill('Typing still works')
+  await expect(chat.getByRole('button', { name: 'Send message', exact: true })).toBeEnabled()
+})
