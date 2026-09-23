@@ -1,11 +1,12 @@
 import { Menu } from "@base-ui/react/menu"
 import { Dialog } from "@base-ui/react/dialog"
-import { ArrowLeft, ArrowUp, CalendarDays, Mic, X } from "lucide-react"
+import { ArrowLeft, ArrowUp, CalendarDays, Mic, Square, X } from "lucide-react"
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
 import { sendContact, type ContactMessage } from "../lib/sendContact"
+import { useMessageDictation } from "../lib/useMessageDictation"
 import { BookingCalendar } from "./BookingCalendar"
 import { BookingContactPanel } from "./BookingContactPanel"
 
@@ -34,6 +35,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
   const hintId = useId()
   const sending = outbox.some(item => item.status === "sending")
   const atLimit = outbox.length >= 5
+  const dictation = useMessageDictation(open && !calendar && !!confirmedEmail && !atLimit, setMessage)
   const [entrance, setEntrance] = useState({ open, keys: ["hello", "catch-up", "email-prompt"] })
   if (entrance.open !== open) {
     setEntrance({ open, keys: [
@@ -101,7 +103,7 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
   }
   const send = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!message.trim() || !confirmedEmail || sending || atLimit) return
+    if (!message.trim() || !confirmedEmail || sending || atLimit || dictation.listening) return
     const item = { email: confirmedEmail, message: message.trim(), requestId: crypto.randomUUID() }
     setOutbox(list => [...list, { ...item, status: "sending" }])
     setMessage("")
@@ -181,12 +183,21 @@ export function BookingDialog({ bookingUrl, portraitOrigin, open, onOpenChange, 
               }}><CalendarDays size={20} aria-hidden="true" /></button>
               <form onSubmit={send}>
                 <div className="booking-composer">
-                  <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : undefined} rows={1} maxLength={2000}
+                  <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : dictation.status ? `${hintId}-dictation` : undefined} rows={1} maxLength={2000}
                     {...ignorePasswordManagers} placeholder="Tell me a little about it…" value={message}
-                    onChange={event => setMessage(event.target.value)} disabled={atLimit} />
-                  {message.trim() ? <button className="booking-send" type="submit" aria-label="Send message" disabled={sending || atLimit}><ArrowUp size={24} /></button>
-                    : <span className="booking-microphone" aria-hidden="true"><Mic size={24} strokeWidth={1.75} /></span>}
+                    onChange={event => setMessage(event.target.value)} disabled={atLimit} readOnly={dictation.listening} />
+                  {message.trim() && !dictation.listening ? <button className="booking-send" type="submit" aria-label="Send message" disabled={sending || atLimit}><ArrowUp size={24} /></button>
+                    : <button className="booking-microphone" type="button" disabled={sending || atLimit}
+                      aria-label={dictation.listening ? "Stop dictation" : "Dictate message"} aria-pressed={dictation.listening}
+                      onClick={event => {
+                        event.preventDefault()
+                        if (dictation.listening) {
+                          dictation.stop()
+                          messageRef.current?.focus({ preventScroll: true })
+                        } else dictation.start()
+                      }}>{dictation.listening ? <Square size={18} fill="currentColor" aria-hidden="true" /> : <Mic size={24} strokeWidth={1.75} aria-hidden="true" />}</button>}
                 </div>
+                {dictation.status && <p className="booking-dictation-status" id={`${hintId}-dictation`} role="status">{dictation.status}</p>}
                 {atLimit && <p className="sr-only" id={hintId} role="status">Message limit reached. You can still book a time.</p>}
               </form>
 

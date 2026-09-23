@@ -589,6 +589,10 @@
 .booking-composer:focus-within { box-shadow: var(--shadow-ring), var(--shadow-control-hover); }
 
 .booking-microphone {
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
   display: grid;
   place-items: center;
   flex: none;
@@ -862,3 +866,12 @@
   .booking-contact-panel[data-starting-style],
   .booking-contact-panel[data-ending-style] { transform: none; }
 }
+
+.booking-microphone[aria-pressed="true"] { color: var(--booking-blue); opacity: 1; }
+.booking-dictation-status {
+  margin: 0.5rem 0.75rem 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+.booking-compose-row:has(.booking-dictation-status) .booking-time-button { align-self: flex-start; }
