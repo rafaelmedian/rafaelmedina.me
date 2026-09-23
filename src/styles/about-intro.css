@@ -64,8 +64,11 @@
   overflow: visible;
   isolation: isolate;
   border-radius: calc(var(--intro-size) / 2);
-  background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  /* Elevation only. The hairline this tier usually prepends is drawn inside
+     the media instead, because a spread shadow paints outside the border box
+     and so survives the notification's cut -- it left a grey arc crossing the
+     gap around the badge. */
+  box-shadow: var(--shadow-overlay);
   transition-property: width, height, border-radius, bottom, right, transform;
   transition-duration: var(--duration-quick);
   transition-timing-function: var(--ease-smooth);
@@ -82,12 +85,52 @@
   transition-duration: var(--duration-slow);
 }
 
+/* The radius of the bite the notification badge takes out of the portrait.
+   Registered so it can be transitioned: the badge rises 6px into place, and a
+   hole already at full size under it shows a crescent of the page through the
+   portrait until the badge catches up. */
+@property --intro-notification-cut {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* The fill the poster loads over sits here rather than on the surface so one
+   mask covers both. The badge's separation from the portrait is that mask --
+   a hole rather than a canvas-coloured ring, which would otherwise paint a
+   white smudge over whatever page content this overlay floats above. The hole
+   is centred on the badge: 18px wide, offset 2px past the top-right corner,
+   so its centre is 7px in from the corner on both axes and its 12px radius is
+   the badge's 9px plus the 3px of clearance the ring used to hold. */
 .about-intro-media {
   position: absolute;
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
   corner-shape: inherit;
+  background: var(--canvas);
+  mask-image: radial-gradient(circle at calc(100% - 7px) 7px,
+    #0000 var(--intro-notification-cut),
+    #000 calc(var(--intro-notification-cut) + 0.5px));
+  transition: --intro-notification-cut var(--duration-base) var(--ease-smooth);
+}
+
+.about-intro-surface:has(.about-intro-chat-notification) .about-intro-media {
+  --intro-notification-cut: 12px;
+}
+
+/* The floating tier's hairline, moved off the surface and inside the mask so
+   the cut takes it too. Inset by a pixel rather than spread by one, which is
+   the only difference a 6%-black line at this size can show. It rides above
+   the poster and the player, both of which fill the same box. */
+.about-intro-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  corner-shape: inherit;
+  box-shadow: inset var(--shadow-ring);
+  pointer-events: none;
 }
 
 .about-intro-poster,
