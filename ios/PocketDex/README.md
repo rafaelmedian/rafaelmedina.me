@@ -86,15 +86,28 @@ Core tests exercise random choices, retries, unique captures, save validation,
 completion, seeded replay, and fold-state transitions. UI tests exercise
 opening, selection, collection, retry/capture, restart, rotation, and large type.
 
+Verified on the current toolchain: all 10 core tests, three iPhone UI tests,
+the iPad showcase test, and a repeat of capture/restart after the review fix.
+Debug and Release compatibility builds, repository lint, and repository build
+pass. Simulator recording and screenshots are saved under `.context/`:
+`pocketdex-compatibility.mp4`, `pocketdex-open.png`, `pocketdex-closed.png`,
+`pocketdex-captured.png`, and `pocketdex-collection.png`. The recording is a
+silent iPad compatibility preview; native Duo footage still needs that runtime.
+
 After installing the new toolchain, manually verify on Duo:
 
 1. Launch closed, then unfold: cover switches to the two interior panels.
+   Also launch already unfolded to verify initial hinge delivery.
 2. Fold partially and rotate: all controls avoid reserved regions and stay usable.
 3. Close during reveal and during the Poké Ball phase; reopen and confirm the
    capture count increments only once.
 4. Change displays while viewing the collection and while a choice is selected.
 5. Background and resume, then restart: answers, selection, and captures persist.
 6. Check VoiceOver and Reduce Motion. Hidden silhouettes must not disclose names.
+
+The automated UI suite uses compatibility Open/Close controls. On actual Duo,
+use the simulator's physical folding controls for these checks; the suite's
+manual-opening assumptions do not validate a physical fold.
 
 Duo SDK compilation and actual hinge validation remain pending the user's
 macOS/Xcode update. The current machine has macOS 26.5.2, Xcode 26.6, and iOS

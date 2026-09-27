@@ -96,6 +96,36 @@ final class PocketDexUITests: XCTestCase {
         attach("05-large-type-landscape")
     }
 
+    /// Reproducible, human-paced capture of the actual compatibility app.
+    func testShowcaseRecording() {
+        app.launch()
+        XCTAssertTrue(app.buttons["open-case"].waitForExistence(timeout: 10))
+        attach("showcase-closed")
+        Thread.sleep(forTimeInterval: 1.5) // Deliberate beats for the recording.
+        app.buttons["open-case"].tap()
+        XCTAssertTrue(app.staticTexts["pokemon-name"].waitForExistence(timeout: 5))
+        attach("showcase-open")
+        Thread.sleep(forTimeInterval: 1.5)
+        let correct = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label == %@", "Gengar")).firstMatch
+        reveal(correct)
+        correct.tap()
+        reveal(app.buttons["confirm-answer"])
+        app.buttons["confirm-answer"].tap()
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: app.buttons["confirm-answer"])
+        waitForExpectations(timeout: 5)
+        attach("showcase-captured")
+        Thread.sleep(forTimeInterval: 1.5)
+        reveal(app.buttons["show-collection"])
+        app.buttons["show-collection"].tap()
+        XCTAssertTrue(app.buttons["back-to-game"].waitForExistence(timeout: 5))
+        attach("showcase-collection")
+        Thread.sleep(forTimeInterval: 1.5)
+        app.buttons["back-to-game"].tap()
+        app.buttons["close-case"].tap()
+        XCTAssertTrue(app.buttons["open-case"].waitForExistence(timeout: 5))
+        Thread.sleep(forTimeInterval: 1.5)
+    }
+
     private func reveal(_ element: XCUIElement) {
         let scroll = app.scrollViews.firstMatch
         for _ in 0..<12 {
