@@ -21,9 +21,13 @@ struct ClosedCase: View {
                 ShellBackground()
                 FlapPlastic(outline: flap)
                 Polyline(points: seam, corner: 12).groove(2.5)
+                // Closed, the hinge shows only its near half along the edge.
+                Capsule().fill(Color(red: 0.12, green: 0.01, blue: 0.03)).blur(radius: 1.5)
+                    .frame(width: 46, height: size.height - lens.seamHigh + 12)
+                    .position(x: 0, y: (lens.seamHigh + size.height) / 2 + 3)
                 HingeBarrel()
-                    .frame(width: 18, height: size.height - lens.seamHigh - 34)
-                    .position(x: 12, y: (lens.seamHigh + size.height) / 2 + 2)
+                    .frame(width: 40, height: size.height - lens.seamHigh + 6)
+                    .position(x: 0, y: (lens.seamHigh + size.height) / 2 + 3)
                 LensStrip(lens: lens, glow: glow, lights: (false, false, true))
 
                 VStack(alignment: .leading, spacing: 10) {

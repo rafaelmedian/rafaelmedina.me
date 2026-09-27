@@ -20,6 +20,10 @@ final class GameStore {
             defaults.set(data, forKey: "pocketdex.lens")
         }
     }
+    /// Bumped when the selection moves; the lens answers with a glint.
+    private(set) var selectionGlints = 0
+    /// Bumped when an answer is confirmed; the lens fires its scan flash.
+    private(set) var scanFlashes = 0
     /// Counts rejected guesses so the hardware can flash on each one.
     private(set) var wrongAnswers = 0
     private let defaults: UserDefaults
@@ -51,12 +55,17 @@ final class GameStore {
     func select(_ index: Int) {
         let before = game.round.selection
         game.select(index)
-        if game.round.selection != before { play("select", haptic: .selection) }
+        if game.round.selection != before {
+            selectionGlints += 1
+            play("select", haptic: .selection)
+        }
         save()
     }
 
     func move(_ direction: Direction) {
+        let before = game.round.selection
         game.move(direction)
+        if game.round.selection != before { selectionGlints += 1 }
         play("select", haptic: .selection)
         save()
     }
@@ -69,6 +78,7 @@ final class GameStore {
             message = "A wild mystery appeared."
             play("select", haptic: .selection)
         } else {
+            scanFlashes += 1
             switch game.confirm() {
             case .incorrect:
                 message = "Not quite. Try another!"

@@ -8,7 +8,7 @@ struct BodyPanel: View {
     /// When true the scanner grows to fill the panel; otherwise it keeps a fixed height.
     var fill = true
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 10) {
             Scanner(store: store)
                 .frame(minHeight: 250, maxHeight: fill ? .infinity : 330)
             ControlDeck(store: store)
@@ -30,12 +30,25 @@ private struct Scanner: View {
             }.accessibilityHidden(true)
             CRTScreen(power: power, radius: 16) { ScannerPicture(store: store) }
             HStack(alignment: .center) {
-                DotGrille(rows: 3, columns: 6, dot: 4, gap: 4, color: Dex.bezelShade)
+                // The red dome sits inside the bezel, clear of the cut corner.
+                ZStack {
+                    Circle().fill(Dex.bezelShade.shadow(.inner(color: .black.opacity(0.35), radius: 2, y: 1)))
+                        .frame(width: 30, height: 30)
+                    Circle().fill(RadialGradient(colors: [Dex.redLight, Dex.red, Dex.redDark], center: UnitPoint(x: 0.4, y: 0.3), startRadius: 0, endRadius: 15))
+                        .frame(width: 22, height: 22)
+                        .shadow(color: Dex.redDark.opacity(0.6), radius: 0, y: 2)
+                    Ellipse().fill(.white.opacity(0.6)).frame(width: 7, height: 4).offset(x: -4, y: -5)
+                }
+                .padding(.leading, 26)
+                .accessibilityHidden(true)
                 Spacer()
-                Circle().fill(RadialGradient(colors: [Dex.redLight, Dex.red, Dex.redDark], center: UnitPoint(x: 0.4, y: 0.3), startRadius: 0, endRadius: 18))
-                    .frame(width: 26, height: 26)
-                    .shadow(color: Dex.redDark.opacity(0.6), radius: 0, y: 2.5)
-                    .accessibilityHidden(true)
+                VStack(spacing: 4) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        Capsule().fill(Dex.bezelShade).frame(width: 46, height: 3.5)
+                            .overlay(Capsule().fill(.black.opacity(0.35)).frame(height: 1.5).offset(y: -0.6))
+                            .shadow(color: .white, radius: 0, y: 1)
+                    }
+                }.accessibilityHidden(true)
             }.padding(.horizontal, 6)
         }
         .padding(14)
@@ -49,15 +62,15 @@ private struct Scanner: View {
     }
 }
 
-/// A rounded panel with the Pokédex's chamfered lower corner.
+/// A rounded panel with the Pokédex's chamfered lower-left corner.
 private struct BezelShape: Shape {
     func path(in rect: CGRect) -> Path {
         let r: CGFloat = 20
-        let cut = min(rect.width, rect.height) * 0.16
+        let cut = min(rect.width, rect.height) * 0.13
         return Polyline(points: [
             CGPoint(x: rect.midX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY),
-            CGPoint(x: rect.maxX, y: rect.maxY - cut), CGPoint(x: rect.maxX - cut, y: rect.maxY),
-            CGPoint(x: rect.minX, y: rect.maxY), CGPoint(x: rect.minX, y: rect.minY)
+            CGPoint(x: rect.maxX, y: rect.maxY), CGPoint(x: rect.minX + cut, y: rect.maxY),
+            CGPoint(x: rect.minX, y: rect.maxY - cut), CGPoint(x: rect.minX, y: rect.minY)
         ], closed: true, corner: r).path(in: rect)
     }
 }
@@ -147,9 +160,9 @@ private struct ControlDeck: View {
             Spacer(minLength: 0)
             Button { store.toggleMute() } label: {
                 Image(systemName: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                    .font(.system(size: 15, weight: .bold)).frame(width: 34, height: 34)
+                    .font(.system(size: 14, weight: .bold))
             }
-            .buttonStyle(KeyCapStyle(tint: .ink, depth: 6, corners: .all(40), wake: 0.62))
+            .buttonStyle(RoundPadStyle())
             .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
         }
         .onChange(of: store.wrongAnswers) {
@@ -175,32 +188,140 @@ private struct IndicatorPill: View {
     }
 }
 
+/// One moulded cross that rocks toward the arm you press, like a real
+/// D-pad, rather than four separate keys.
 struct DPad: View {
     let move: (Direction) -> Void
-    private let arm: CGFloat = 44
+    private let size: CGFloat = 132
+    @State private var pressed: Direction?
+    @Environment(\.dexPower) private var power
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        VStack(spacing: 0) {
-            key(.up, "chevron.up", corners: .init(topLeading: 10, bottomLeading: 2, bottomTrailing: 2, topTrailing: 10))
-            HStack(spacing: 0) {
-                key(.left, "chevron.left", corners: .init(topLeading: 10, bottomLeading: 10, bottomTrailing: 2, topTrailing: 2))
-                RoundedRectangle(cornerRadius: 3).fill(KeyTint.ink.face)
-                    .overlay(Circle().fill(.black.opacity(0.35)).padding(12).shadow(color: .white.opacity(0.12), radius: 0, y: 1))
-                    .frame(width: arm, height: arm)
-                    .padding(.bottom, 5)
-                    .accessibilityHidden(true)
-                key(.right, "chevron.right", corners: .init(topLeading: 2, bottomLeading: 2, bottomTrailing: 10, topTrailing: 10))
+        let arm = size / 3
+        let tilt = tiltOffset
+        let cross = CrossShape(arm: arm, radius: 7)
+        ZStack {
+            // Recessed well the cross sits in.
+            Circle().fill(Dex.redDark.shadow(.inner(color: .black.opacity(0.5), radius: 5, y: 2)))
+                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1).offset(y: 1))
+                .frame(width: size + 16, height: size + 16)
+            cross.fill(Color(red: 0.02, green: 0.02, blue: 0.03)).offset(y: 6)
+                .shadow(color: .black.opacity(0.4), radius: 3, y: 7)
+            ZStack {
+                cross.fill(LinearGradient(colors: [Color(white: 0.27), Color(white: 0.16)], startPoint: .top, endPoint: .bottom))
+                cross.stroke(LinearGradient(colors: [.white.opacity(0.35), .clear], startPoint: .top, endPoint: .center), lineWidth: 1)
+                Circle().fill(.black.opacity(0.35)).frame(width: arm * 0.5)
+                    .overlay(Circle().stroke(.white.opacity(0.1), lineWidth: 1).offset(y: 1))
+                ForEach([Direction.up, .down, .left, .right], id: \.self) { direction in
+                    Triangle()
+                        .fill(Color(white: pressed == direction ? 0.75 : 0.5))
+                        .frame(width: 7, height: 9)
+                        .rotationEffect(.degrees(angle(direction)))
+                        .offset(offset(direction, arm * 1.05))
+                }
             }
-            key(.down, "chevron.down", corners: .init(topLeading: 2, bottomLeading: 10, bottomTrailing: 10, topTrailing: 2))
+            .offset(x: tilt.width, y: tilt.height + (power < 0.5 ? 4 : 0))
+            .rotation3DEffect(.degrees(pressed == nil ? 0 : 7), axis: axis, perspective: 0.6)
+            .brightness(power < 0.5 ? -0.15 : 0)
+            // Four invisible hit areas, one per arm.
+            ForEach([Direction.up, .down, .left, .right], id: \.self) { direction in
+                Button { move(direction) } label: { Color.clear.frame(width: arm + 6, height: arm + 6) }
+                    .buttonStyle(ArmPress(direction: direction, pressed: $pressed))
+                    .offset(offset(direction, arm))
+                    .accessibilityLabel("Select \(String(describing: direction))")
+            }
         }
-        .padding(8)
-        .background(Circle().fill(Dex.groove.opacity(0.35)).blur(radius: 1))
+        .frame(width: size + 16, height: size + 22)
+        .opacity(isEnabled ? 1 : 0.7)
+        .animation(reduceMotion ? nil : Dex.squeeze, value: pressed)
+        .animation(reduceMotion ? nil : Dex.squeeze, value: power < 0.5)
     }
-    private func key(_ direction: Direction, _ symbol: String, corners: RectangleCornerRadii) -> some View {
-        Button { move(direction) } label: {
-            Image(systemName: symbol).font(.system(size: 12, weight: .black)).frame(width: arm - 24, height: arm - 20)
+
+    private var tiltOffset: CGSize {
+        guard let pressed else { return .zero }
+        let o = offset(pressed, 2)
+        return CGSize(width: o.width, height: o.height + 2)
+    }
+    private var axis: (x: CGFloat, y: CGFloat, z: CGFloat) {
+        switch pressed {
+        case .up: (1, 0, 0)
+        case .down: (-1, 0, 0)
+        case .left: (0, -1, 0)
+        case .right: (0, 1, 0)
+        case nil: (1, 0, 0)
         }
-        .buttonStyle(KeyCapStyle(tint: .ink, depth: 5, corners: corners, wake: 0.5))
-        .accessibilityLabel("Select \(String(describing: direction))")
+    }
+    private func offset(_ direction: Direction, _ distance: CGFloat) -> CGSize {
+        switch direction {
+        case .up: CGSize(width: 0, height: -distance)
+        case .down: CGSize(width: 0, height: distance)
+        case .left: CGSize(width: -distance, height: 0)
+        case .right: CGSize(width: distance, height: 0)
+        }
+    }
+    /// Triangle points left by default.
+    private func angle(_ direction: Direction) -> Double {
+        switch direction {
+        case .left: 0
+        case .up: 90
+        case .right: 180
+        case .down: 270
+        }
+    }
+}
+
+private struct ArmPress: ButtonStyle {
+    let direction: Direction
+    @Binding var pressed: Direction?
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed { pressed = direction } else if pressed == direction { pressed = nil }
+            }
+    }
+}
+
+/// A plus sign with softened corners, three arms wide.
+struct CrossShape: Shape {
+    var arm: CGFloat
+    var radius: CGFloat
+    func path(in rect: CGRect) -> Path {
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let h = arm / 2
+        let l = arm * 1.5
+        let points = [
+            CGPoint(x: c.x - h, y: c.y - l), CGPoint(x: c.x + h, y: c.y - l), CGPoint(x: c.x + h, y: c.y - h),
+            CGPoint(x: c.x + l, y: c.y - h), CGPoint(x: c.x + l, y: c.y + h), CGPoint(x: c.x + h, y: c.y + h),
+            CGPoint(x: c.x + h, y: c.y + l), CGPoint(x: c.x - h, y: c.y + l), CGPoint(x: c.x - h, y: c.y + h),
+            CGPoint(x: c.x - l, y: c.y + h), CGPoint(x: c.x - l, y: c.y - h), CGPoint(x: c.x - h, y: c.y - h)
+        ]
+        // Start mid-edge so every corner is softened.
+        let start = CGPoint(x: c.x, y: c.y - l)
+        return Polyline(points: [start] + Array(points[1...]) + [points[0]], closed: true, corner: radius).path(in: rect)
+    }
+}
+
+/// A plain round rubber button: no skirt, it just gives a little when pressed.
+struct RoundPadStyle: ButtonStyle {
+    var size: CGFloat = 50
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        return ZStack {
+            Circle().fill(Dex.redDark.shadow(.inner(color: .black.opacity(0.5), radius: 3, y: 1.5)))
+                .frame(width: size + 10, height: size + 10)
+            Circle().fill(RadialGradient(colors: [Color(white: 0.3), Color(white: 0.12)], center: UnitPoint(x: 0.4, y: 0.3), startRadius: 0, endRadius: size * 0.6))
+                .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
+                .frame(width: size, height: size)
+                .shadow(color: .black.opacity(pressed ? 0.2 : 0.45), radius: pressed ? 1 : 3, y: pressed ? 1 : 3)
+            configuration.label.foregroundStyle(Color(white: 0.62))
+        }
+        .scaleEffect(pressed ? 0.95 : 1)
+        .contentShape(Circle())
+        .animation(reduceMotion ? nil : Dex.squeeze, value: pressed)
     }
 }
 

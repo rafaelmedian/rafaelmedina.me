@@ -137,50 +137,90 @@ struct Polyline: Shape {
     }
 }
 
-/// The spine between the two halves: a cream barrel split into knuckles.
+/// The spine between the two halves: a red plastic barrel, shaded as a
+/// cylinder, with ring grooves near each end and screw caps. The closed cover
+/// shows its near half at the edge; the open display shows all of it.
 struct HingeBarrel: View {
     var vertical = true
     var body: some View {
+        let across: UnitPoint = vertical ? .leading : .top
+        let along: UnitPoint = vertical ? .trailing : .bottom
         let shading = LinearGradient(stops: [
-            .init(color: Dex.bezelShade, location: 0),
-            .init(color: Dex.bezel, location: 0.3),
-            .init(color: .white, location: 0.45),
-            .init(color: Dex.bezel, location: 0.62),
-            .init(color: Color(white: 0.52), location: 1)
-        ], startPoint: vertical ? .leading : .top, endPoint: vertical ? .trailing : .bottom)
+            .init(color: Dex.groove, location: 0),
+            .init(color: Dex.redDark, location: 0.12),
+            .init(color: Dex.red, location: 0.3),
+            .init(color: Dex.redLight, location: 0.36),
+            .init(color: Color(red: 1, green: 0.78, blue: 0.76), location: 0.42),
+            .init(color: Dex.redLight, location: 0.5),
+            .init(color: Dex.red, location: 0.66),
+            .init(color: Dex.redDark, location: 0.88),
+            .init(color: Dex.groove, location: 1)
+        ], startPoint: across, endPoint: along)
         GeometryReader { proxy in
+            let thick = vertical ? proxy.size.width : proxy.size.height
             let length = vertical ? proxy.size.height : proxy.size.width
-            let breaks = [0.16, 0.2, 0.8, 0.84].map { length * $0 }
+            let rings = [0.07, 0.1, 0.9, 0.93].map { length * $0 }
             ZStack {
-                Capsule().fill(shading)
-                Capsule().fill(Dex.red.opacity(0.9)).frame(width: vertical ? 3 : nil, height: vertical ? nil : 3)
-                    .padding(vertical ? .vertical : .horizontal, length * 0.24)
-                ForEach(Array(breaks.enumerated()), id: \.offset) { _, at in
-                    Rectangle().fill(Dex.groove.opacity(0.75))
-                        .frame(width: vertical ? proxy.size.width : 1.5, height: vertical ? 1.5 : proxy.size.height)
-                        .overlay(Rectangle().fill(.white.opacity(0.6)).frame(width: vertical ? proxy.size.width : 1, height: vertical ? 1 : proxy.size.height).offset(x: vertical ? 0 : 1.5, y: vertical ? 1.5 : 0))
+                RoundedRectangle(cornerRadius: thick * 0.45, style: .continuous).fill(shading)
+                // Knuckle rings: a dark cut with a lit lip, following the curve.
+                ForEach(Array(rings.enumerated()), id: \.offset) { _, at in
+                    Capsule().fill(Dex.groove.opacity(0.8))
+                        .frame(width: vertical ? thick : 1.5, height: vertical ? 1.5 : thick)
+                        .overlay(Capsule().fill(.white.opacity(0.28)).frame(width: vertical ? thick * 0.8 : 1, height: vertical ? 1 : thick * 0.8)
+                            .offset(x: vertical ? 0 : 1.6, y: vertical ? 1.6 : 0))
+                        .position(x: vertical ? proxy.size.width / 2 : at, y: vertical ? at : proxy.size.height / 2)
+                }
+                // Screw caps at the barrel ends.
+                ForEach([thick * 0.5, length - thick * 0.5], id: \.self) { at in
+                    Circle().fill(RadialGradient(colors: [Dex.redLight, Dex.redDark], center: UnitPoint(x: 0.4, y: 0.35), startRadius: 0, endRadius: thick * 0.4))
+                        .overlay(Capsule().fill(Dex.groove.opacity(0.85)).frame(width: thick * 0.42, height: 1.5).rotationEffect(.degrees(-35)))
+                        .overlay(Circle().strokeBorder(Dex.groove.opacity(0.7), lineWidth: 1))
+                        .frame(width: thick * 0.62, height: thick * 0.62)
                         .position(x: vertical ? proxy.size.width / 2 : at, y: vertical ? at : proxy.size.height / 2)
                 }
             }
-            .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.35), radius: 3, x: vertical ? 1 : 0, y: vertical ? 0 : 2)
+            .shadow(color: .black.opacity(0.45), radius: 4, x: vertical ? 2 : 0, y: vertical ? 1 : 3)
         }.accessibilityHidden(true)
     }
 }
 
-/// Lens and lights at their fixed spots on the strip.
+/// Lens and lights at their fixed spots on the strip. Choosing a Pokémon
+/// sends a glint across the lens; confirming fires the scan flash.
 struct LensStrip: View {
     let lens: LensGeometry
     var glow: Double = 1
     var lights: (red: Bool, yellow: Bool, green: Bool) = (false, false, true)
+    var glints = 0
+    var flashes = 0
+    @State private var sweep: CGFloat?
+    @State private var flash = 0.0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         ZStack(alignment: .topLeading) {
-            CameraLens(diameter: lens.diameter, pupil: lens.pupil, glow: glow)
+            CameraLens(diameter: lens.diameter, pupil: lens.pupil, glow: glow, sweep: sweep, flash: flash)
                 .position(lens.center)
             LED(color: Color(red: 1, green: 0.22, blue: 0.2), lit: lights.red).position(lens.light(0))
             LED(color: Color(red: 1, green: 0.8, blue: 0.1), lit: lights.yellow).position(lens.light(1))
             LED(color: Color(red: 0.3, green: 0.95, blue: 0.3), lit: lights.green).position(lens.light(2))
-        }.accessibilityHidden(true)
+        }
+        .accessibilityHidden(true)
+        .onChange(of: glints) {
+            guard !reduceMotion else { return }
+            Task {
+                // Commit the start state for a frame, or the sweep coalesces away.
+                sweep = 0
+                try? await Task.sleep(for: .milliseconds(20))
+                withAnimation(.easeInOut(duration: 0.5)) { sweep = 1 } completion: { sweep = nil }
+            }
+        }
+        .onChange(of: flashes) {
+            // A camera-like pop: instant on, slow falloff. Reduce Motion keeps a gentle glow.
+            Task {
+                withAnimation(.easeOut(duration: 0.06)) { flash = reduceMotion ? 0.4 : 1 }
+                try? await Task.sleep(for: .milliseconds(80))
+                withAnimation(.easeOut(duration: reduceMotion ? 0.3 : 0.9)) { flash = 0 }
+            }
+        }
     }
 }
 

@@ -115,11 +115,17 @@ struct InnerDisplay: View {
             FlapPlastic(outline: flapOutline)
             Polyline(points: flapEdge, corner: 12).stroke(.white.opacity(0.35), lineWidth: 1.2).offset(y: 1)
             Polyline(points: seam, corner: 12).groove(2.5)
+            // Open, the whole barrel shows, capped at both ends.
+            // The gap the barrel turns in, then the barrel itself.
+            Capsule().fill(Color(red: 0.12, green: 0.01, blue: 0.03))
+                .frame(width: fold.width + 6, height: size.height - lens.seamHigh + 8)
+                .position(x: fold.midX, y: (lens.seamHigh + size.height) / 2 - 3)
+                .blur(radius: 1.5)
             HingeBarrel()
-                .frame(width: fold.width - 4, height: size.height - lens.seamHigh - 28)
-                .position(x: fold.midX, y: (lens.seamHigh + size.height) / 2)
+                .frame(width: fold.width, height: size.height - lens.seamHigh + 2)
+                .position(x: fold.midX, y: (lens.seamHigh + size.height) / 2 - 3)
             ForEach(Array(sensors.enumerated()), id: \.offset) { _, rect in SensorWindow(rect: rect) }
-            LensStrip(lens: lens, glow: power, lights: lights)
+            LensStrip(lens: lens, glow: power, lights: lights, glints: store.selectionGlints, flashes: store.scanFlashes)
             DotGrille(rows: 2, columns: 6, dot: 4, gap: 4).position(tab)
             fitting(BodyPanel(store: store, fill: true), scrolling: BodyPanel(store: store, fill: false))
                 .frame(width: bodyContent.width, height: bodyContent.height)
@@ -139,7 +145,7 @@ struct InnerDisplay: View {
                 ZStack(alignment: .topLeading) {
                     ShellBackground()
                     Polyline(points: lens.seam(hinge: -20, edge: size.width + 20), corner: 12).groove(2.5)
-                    LensStrip(lens: lens, glow: power, lights: lights)
+                    LensStrip(lens: lens, glow: power, lights: lights, glints: store.selectionGlints, flashes: store.scanFlashes)
                     BodyPanel(store: store, fill: false)
                         .padding(.horizontal, 20).padding(.top, lens.seamLow + 20).padding(.bottom, 26)
                     closeKey.padding(.leading, 18).padding(.top, max(safe.top, 10) + 6)

@@ -169,6 +169,10 @@ struct CameraLens: View {
     var pupil: CGFloat = 20
     /// Glass glow, 0 asleep to 1 awake.
     var glow: Double = 1
+    /// A glint crossing the glass, 0 (left) to 1 (right); nil when idle.
+    var sweep: CGFloat? = nil
+    /// The scan flash, 0 off to 1 fully lit.
+    var flash: Double = 0
     var body: some View {
         let d = diameter
         ZStack {
@@ -183,6 +187,21 @@ struct CameraLens: View {
             Circle().strokeBorder(Color(red: 0.55, green: 0.95, blue: 1.0).opacity(0.15 + 0.7 * glow), lineWidth: 1.5)
                 .padding(d * 0.2)
                 .shadow(color: .cyan.opacity(0.9 * glow), radius: 6 * glow)
+            if let sweep {
+                // A soft bar of light travelling across the glass.
+                ZStack {
+                    Rectangle().fill(LinearGradient(colors: [.clear, .white.opacity(0.95), .clear], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: d * 0.34, height: d * 1.4)
+                        .rotationEffect(.degrees(24))
+                        .offset(x: (sweep - 0.5) * d * 1.2)
+                }
+                .frame(width: d, height: d)
+                .clipShape(Circle().inset(by: d * 0.11))
+                .blendMode(.plusLighter)
+            }
+            Circle().fill(Color(red: 0.75, green: 0.97, blue: 1.0).opacity(0.85 * flash))
+                .padding(d * 0.11)
+                .blendMode(.plusLighter)
             Circle().fill(.black).frame(width: pupil, height: pupil)
                 .overlay(Circle().strokeBorder(Color(red: 0.2, green: 0.5, blue: 0.7).opacity(0.5), lineWidth: 1).padding(-2))
             Ellipse().fill(.white.opacity(0.82)).frame(width: d * 0.24, height: d * 0.12)
@@ -190,6 +209,7 @@ struct CameraLens: View {
             Circle().fill(.white.opacity(0.4)).frame(width: d * 0.06).offset(x: d * 0.2, y: d * 0.22)
         }
         .frame(width: d, height: d)
+        .background(Circle().fill(Color.cyan.opacity(0.55 * flash)).blur(radius: 18).scaleEffect(1 + 0.5 * flash))
         .accessibilityHidden(true)
     }
 }
