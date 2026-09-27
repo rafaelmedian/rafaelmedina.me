@@ -1,0 +1,86 @@
+name: PocketDex
+options:
+  bundleIdPrefix: me.rafaelmedina
+  deploymentTarget:
+    iOS: '27.1'
+  xcodeVersion: '27.1'
+  createIntermediateGroups: true
+configs:
+  Debug: debug
+  Release: release
+  DebugCompatibility: debug
+  ReleaseCompatibility: release
+packages:
+  PocketDexCore:
+    path: Core
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    TARGETED_DEVICE_FAMILY: '1,2'
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGN_STYLE: Automatic
+  configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: '$(inherited) DEBUG POCKETDEX_DUO'
+    Release:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: '$(inherited) POCKETDEX_DUO'
+    DebugCompatibility:
+      IPHONEOS_DEPLOYMENT_TARGET: '26.0'
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: '$(inherited) DEBUG'
+    ReleaseCompatibility:
+      IPHONEOS_DEPLOYMENT_TARGET: '26.0'
+targets:
+  PocketDex:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - path: Resources
+        excludes: ['SOURCES.md']
+    dependencies:
+      - package: PocketDexCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: me.rafaelmedina.PocketDex
+        INFOPLIST_KEY_CFBundleDisplayName: PocketDex
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: 'UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight'
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: 'UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight'
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: '1.0'
+  PocketDexUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: PocketDex
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: me.rafaelmedina.PocketDex.UITests
+schemes:
+  PocketDex:
+    build:
+      targets:
+        PocketDex: all
+        PocketDexUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [PocketDexUITests]
+    archive:
+      config: Release
+  PocketDexCompatibility:
+    build:
+      targets:
+        PocketDex: all
+        PocketDexUITests: [test]
+    run:
+      config: DebugCompatibility
+    test:
+      config: DebugCompatibility
+      targets: [PocketDexUITests]
+    archive:
+      config: ReleaseCompatibility
