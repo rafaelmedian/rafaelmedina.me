@@ -75,9 +75,13 @@ final class GameStore {
 
     /// Cancellation preserves the stage; resume continues without another award.
     func presentCapture(reduceMotion: Bool) async {
-        guard game.round.revealed else { return }
+        guard game.round.revealed, captureStage != .caught else { return }
         do {
-            if reduceMotion { captureStage = .caught; message = "Registered. A new friend!"; return }
+            try Task.checkCancellation()
+            if reduceMotion {
+                finishCapture()
+                return
+            }
             if captureStage == .reveal {
                 try await Task.sleep(for: .milliseconds(650))
                 try Task.checkCancellation()
@@ -86,11 +90,16 @@ final class GameStore {
             if captureStage == .ball {
                 try await Task.sleep(for: .milliseconds(850))
                 try Task.checkCancellation()
-                withAnimation(Dex.reveal) { captureStage = .caught }
-                message = "Registered. A new friend!"
-                play("capture", haptic: .success)
+                withAnimation(Dex.reveal) { finishCapture() }
             }
         } catch { /* Closing or backgrounding pauses presentation, never progress. */ }
+    }
+
+    private func finishCapture() {
+        guard captureStage != .caught else { return }
+        captureStage = .caught
+        message = "Registered. A new friend!"
+        play("capture", haptic: .success)
     }
 
     func setManualOpen(_ open: Bool) {

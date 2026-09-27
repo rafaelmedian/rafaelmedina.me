@@ -55,6 +55,13 @@ import Testing
     #expect(game.round.selection == 0)
     game.select(4)
     #expect(game.round.selection == 0)
+    let wrong = game.round.choices.firstIndex { $0 != game.round.pokemonID }!
+    game.select(wrong)
+    #expect(game.confirm() == .incorrect)
+    game.select(wrong ^ 1)
+    game.move(.right)
+    #expect(game.round.selection != wrong)
+    #expect(!game.round.rejected.contains(game.round.selection))
 }
 
 @Test func persistenceRetainsChoicesSelectionAndRejectedAnswers() throws {
