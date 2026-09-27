@@ -3,30 +3,47 @@
 An offline, native SwiftUI fan demo for iPhone Duo. The outer display is the
 Pokédex cover; opening the device reveals a twelve-Pokémon guessing game.
 
-## Run after the Duo toolchain update
+## Run on the Duo simulator
 
-Apple lists macOS Tahoe **26.6 or later** for Xcode 27.1 beta. Install the beta
-alongside the existing Xcode and install its **iOS 27.1 simulator runtime**.
-Create an iPhone Duo simulator in Xcode's Device Hub.
-
-Open `PocketDex.xcodeproj` in that Xcode, select the **PocketDex** scheme, and
-choose the Duo simulator. No signing team is needed for the simulator. For a
-physical device, select your own team in Signing & Capabilities.
+Needs macOS 26.6 or later, Xcode 27.1 beta installed alongside the current
+Xcode, and its iOS 27.1 runtime. Create an iPhone Duo simulator in Device Hub
+(`Xcode-27.1.0-Beta.app/Contents/Applications/DeviceHub.app`); the scripts
+assume it is named `pocketdex-duo`. No signing team is needed for the
+simulator. For a physical device, select your own team in Signing &
+Capabilities.
 
 ```sh
-DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+DEVELOPER_DIR=/Applications/Xcode-27.1.0-Beta.app/Contents/Developer \
   xcodebuild -project ios/PocketDex/PocketDex.xcodeproj \
-  -scheme PocketDex -destination 'platform=iOS Simulator,name=iPhone Duo' \
+  -scheme PocketDex -destination 'platform=iOS Simulator,name=pocketdex-duo' \
   -derivedDataPath .context/PocketDexDuo build
 ```
 
-Run this command from the repository root, adjusting the app path and simulator
-name to the installation. The primary scheme uses the iOS 27.1 SDK and
-`POCKETDEX_DUO` compilation condition; it never silently substitutes a simulated
-hinge. `FoldObserver` consumes `onHingeChange` / `DeviceHinge`; `FoldPanels` uses
-`ArrangementView(.split)` to respect reserved fold regions. The shared
-`GameStore` keeps the same game alive across display changes. Hinge angle is
-presentation input, not a layout breakpoint.
+The primary scheme uses the iOS 27.1 SDK and the `POCKETDEX_DUO` compilation
+condition, and never substitutes a simulated hinge.
+
+## How the fold is drawn
+
+The Duo's cover swings open to the left and its right half stays put, so the
+Pokédex is the classic one mirrored. The cover and the open display both come
+from the same shared geometry (`App/Hardware.swift`):
+
+- The lens and lights sit on the body's top strip. On the cover the lens
+  wraps the outer camera. The camera comes from the `.occlusion` reserved
+  region; the status strip beside it is also an occlusion, so the smallest
+  round one wins.
+- The cover saves where it drew the lens. The open body draws the lens at the
+  same distance from the top and right edges, the ones that do not move, so
+  the strip holds still while the flap swings. The inner camera gets its own
+  dark sensor window.
+- The `.division` region splits the open display. The flap's inside, on the
+  left, mirrors the cover's seam across it, and a hinge barrel sits on top.
+
+`FoldObserver` feeds `onHingeChange` into `GameStore`. Opening runs a stepped
+power-on: lights go red, yellow, green; the CRTs go from dot to line to
+picture; keys rise in order. The hinge angle caps the power-on, so a slow
+unfold wakes the Pokédex gradually. Hinge angle is presentation input, not a
+layout breakpoint.
 
 ## Compatibility preview on the current Mac
 
@@ -69,8 +86,20 @@ collection, then close the case. The wrench menu resets the demo in place.
 `--ui-testing` isolates test progress from personal progress.
 These launch arguments and the wrench menu are excluded from release builds.
 
-Use the Duo simulator's own folding controls for the showcase recording.
-Compatibility footage demonstrates app content and manual open/close only.
+### Showcase video
+
+`scripts/record-duo-demo.sh` records the whole story in Device Hub's 3D view:
+closed cover, unfold, a wrong guess, the capture, close, reopen, next round.
+Before running it:
+
+- Open the `pocketdex-duo` device in its own Device Hub window, at 100%.
+- Give the terminal app Accessibility and Screen Recording permission.
+
+Device Hub has no scripting interface for the hinge, so `scripts/devicehub.swift`
+clicks its posture buttons and the device's screen. Leave the Mac alone for
+the ~35 seconds it runs. The raw window capture lands in
+`.context/pocketdex-duo-demo/`. `simctl io screenshot` returns black for the
+inner display; capture the Device Hub window instead.
 
 ## Validation
 
@@ -86,36 +115,17 @@ Core tests exercise random choices, retries, unique captures, save validation,
 completion, seeded replay, and fold-state transitions. UI tests exercise
 opening, selection, collection, retry/capture, restart, rotation, and large type.
 
-Verified on the current toolchain: all 10 core tests, three iPhone UI tests,
-the iPad showcase test, and a repeat of capture/restart after the review fix.
-Debug and Release compatibility builds, repository lint, and repository build
-pass. Simulator recording and screenshots are saved under `.context/`:
-`pocketdex-compatibility.mp4`, `pocketdex-open.png`, `pocketdex-closed.png`,
-`pocketdex-captured.png`, and `pocketdex-collection.png`. The recording is a
-silent iPad compatibility preview; native Duo footage still needs that runtime.
+Verified: all 10 core tests, and the four compatibility UI tests on the
+`PocketDex-preview` simulator. The Duo build runs on the iPhone Duo simulator
+(iOS 27.1). It was checked by folding it in Device Hub through closed,
+half-open, and open, capturing Gengar, closing mid-game, and reopening.
+Reopening kept the capture and did not award it twice.
 
-After installing the new toolchain, manually verify on Duo:
-
-1. Launch closed, then unfold: cover switches to the two interior panels.
-   Also launch already unfolded to verify initial hinge delivery.
-2. Fold partially and rotate: all controls avoid reserved regions and stay usable.
-3. Close during reveal and during the Poké Ball phase; reopen and confirm the
-   capture count increments only once.
-4. Change displays while viewing the collection and while a choice is selected.
-5. Background and resume, then restart: answers, selection, and captures persist.
-6. Check VoiceOver and Reduce Motion. Hidden silhouettes must not disclose names.
-
-The automated UI suite uses compatibility Open/Close controls. On actual Duo,
-use the simulator's physical folding controls for these checks; the suite's
-manual-opening assumptions do not validate a physical fold.
-
-Duo SDK compilation and actual hinge validation remain pending the user's
-macOS/Xcode update. The current machine has macOS 26.5.2, Xcode 26.6, and iOS
-26.5 simulators. Do not call a compatibility run a Duo verification.
+The automated UI suite still uses the compatibility Open/Close controls; it
+does not fold a Duo.
 
 Resources are bundled in `Resources/`; see `Resources/SOURCES.md` for attribution
 and regeneration. No network requests, backend, accounts, or analytics are used.
 
 References: [Apple requirements](https://developer.apple.com/xcode/system-requirements),
-[hinge updates](https://developer.apple.com/documentation/swiftui/view/onhingechange(isenabled:_:)),
-[arrangements](https://developer.apple.com/documentation/swiftui/arrangementview).
+[hinge updates](https://developer.apple.com/documentation/swiftui/view/onhingechange(isenabled:_:)).
