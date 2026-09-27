@@ -103,6 +103,7 @@ private struct ScannerPicture: View {
                 }
             }
             .frame(maxHeight: .infinity)
+            .animation(reduceMotion ? nil : Dex.reveal, value: store.captureStage)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(revealed ? store.pokemon.name : "Silhouette of an undiscovered Pokémon. Use the clue to identify it.")
             Text(revealed ? store.pokemon.name : "Who's that Pokémon?")
@@ -116,7 +117,6 @@ private struct ScannerPicture: View {
                 .foregroundStyle(Dex.phosphor.opacity(0.6))
         }
         .padding(16)
-        .animation(reduceMotion ? nil : Dex.reveal, value: store.captureStage)
     }
 }
 
