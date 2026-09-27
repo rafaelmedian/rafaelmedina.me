@@ -20,6 +20,11 @@ those values in `src/styles/`, update any affected descriptions and exceptions i
 read from computed CSS and the specimens use real components; component-specific
 values and explanatory prose still need to be kept in step.
 
+Keep each entry to the rule a reader needs while writing CSS: the token, the
+exception, and why. A component's full spec (pixel offsets, choreography,
+history of what it used to be) belongs in that component's stylesheet comments
+and tests, not on this page.
+
 `src/index.css` is the ordered stylesheet entry point. Shared tokens and base
 rules live in `src/styles/base.css`; component files own their responsive rules.
 Keep the Tailwind reset first and the global reduced-motion policy last. See
