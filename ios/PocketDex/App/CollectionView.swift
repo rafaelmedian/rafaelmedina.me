@@ -1,78 +1,93 @@
 import SwiftUI
 import PocketDexCore
 
-struct CollectionView: View {
+/// Discoveries replace the answer keys on the flap; the scanner stays put.
+struct CollectionPanel: View {
     let store: GameStore
+    @Environment(\.dexPower) private var power
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            HStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    Stencil(text: "YOUR FIELD NOTES", size: 10)
-                    Text("Little discoveries.")
-                        .font(.system(.largeTitle, design: .rounded, weight: .heavy)).foregroundStyle(Dex.cream)
+        VStack(spacing: 16) {
+            HStack(spacing: 12) {
+                Button { store.collectionVisible = false } label: {
+                    Image(systemName: "arrow.uturn.backward").font(.system(size: 15, weight: .bold))
                 }
-                Spacer()
-                Button { store.collectionVisible = false } label: { Image(systemName: "arrow.uturn.backward") }
-                    .buttonStyle(HardwareButtonStyle(color: Dex.cream))
-                    .accessibilityLabel("Back to game").accessibilityIdentifier("back-to-game")
+                .buttonStyle(KeyCapStyle(tint: .cream, depth: 6, corners: .all(12), wake: 0))
+                .accessibilityLabel("Back to game").accessibilityIdentifier("back-to-game")
+                VStack(alignment: .leading, spacing: 2) {
+                    Engraved(text: "FIELD NOTES", size: 10)
+                    Text("Discoveries").font(.system(.title2, design: .rounded, weight: .heavy)).foregroundStyle(Dex.cream)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                }
+                Spacer(minLength: 0)
+                LCD {
+                    Text("\(store.game.captured.count)/12").font(.system(.headline, design: .monospaced, weight: .bold))
+                }
             }
-            LCD {
-                HStack {
-                    Stencil(text: "KANTO COLLECTION", size: 10, color: Dex.ink)
-                    Spacer()
-                    Text("\(store.game.captured.count) / 12").font(.system(.title3, design: .monospaced, weight: .bold))
-                }.foregroundStyle(Dex.ink)
-            }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 95, maximum: 180))], spacing: 14) {
-                ForEach(Catalog.all) { pokemon in
-                    let caught = store.game.captured.contains(pokemon.id)
-                    VStack(spacing: 6) {
-                        HStack {
-                            Stencil(text: pokemon.number, size: 9, color: Dex.screenDark)
-                            Spacer()
-                            if caught { Image(systemName: "checkmark.seal.fill").font(.caption).foregroundStyle(Dex.screenDark) }
-                        }
-                        Image(pokemon.asset).resizable().scaledToFit().frame(height: 76)
+            CRTScreen(power: power, radius: 16, pitch: 3) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 78, maximum: 140), spacing: 8)], spacing: 8) {
+                    ForEach(Catalog.all) { pokemon in
+                        let caught = store.game.captured.contains(pokemon.id)
+                        VStack(spacing: 4) {
+                            Group {
+                                if caught {
+                                    Image(pokemon.asset).resizable().scaledToFit()
+                                } else {
+                                    Image(pokemon.asset).resizable().renderingMode(.template).scaledToFit()
+                                        .foregroundStyle(Dex.phosphor.opacity(0.16))
+                                }
+                            }
+                            .frame(height: 54)
                             .accessibilityHidden(true)
-                            .saturation(caught ? 1 : 0).brightness(caught ? 0 : -1).opacity(caught ? 1 : 0.16)
-                        Text(caught ? pokemon.name : "???").font(.system(.caption, design: .rounded, weight: .bold))
-                            .foregroundStyle(Dex.ink)
-                    }.padding(10).background(caught ? Dex.cream : Dex.screen.opacity(0.85), in: RoundedRectangle(cornerRadius: 12))
-                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Dex.ink, lineWidth: 2))
+                            Text(caught ? pokemon.name.uppercased() : "No.\(pokemon.number)")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundStyle(Dex.phosphor.opacity(caught ? 0.9 : 0.45))
+                                .lineLimit(1).minimumScaleFactor(0.7)
+                        }
+                        .padding(6)
+                        .frame(maxWidth: .infinity)
+                        .background(Dex.phosphor.opacity(caught ? 0.08 : 0.03), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(caught ? "\(pokemon.name), discovered" : "Undiscovered Pokémon")
+                    }
                 }
+                .padding(12)
             }
-            Text("Every silhouette is the start of a friendship.")
-                .font(.system(.subheadline, design: .rounded)).foregroundStyle(Dex.cream)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
 
-struct CompletedView: View {
+struct CompletedPanel: View {
     let store: GameStore
+    @Environment(\.dexPower) private var power
     @State private var confirmReplay = false
     var body: some View {
-        VStack(spacing: 26) {
-            Stencil(text: "FIELD REPORT / COMPLETE")
-            LCD {
-                VStack(spacing: 20) {
-                    Pokeball().frame(width: 86, height: 86)
-                    Text("Twelve new friends.")
-                        .font(.system(.largeTitle, design: .rounded, weight: .heavy))
+        VStack(spacing: 16) {
+            CRTScreen(power: power, radius: 16) {
+                VStack(spacing: 14) {
+                    Pokeball().frame(width: 72, height: 72)
+                    Text("TWELVE NEW FRIENDS.").font(.system(.title3, design: .monospaced, weight: .bold))
                     Text("You found every Pokémon in this little corner of Kanto.")
-                        .font(.system(.body, design: .rounded))
-                    Stencil(text: "COLLECTION 12 / 12", size: 12, color: Dex.screenDark)
-                }.multilineTextAlignment(.center).foregroundStyle(Dex.ink).padding(.vertical, 26)
+                        .font(.system(.callout, design: .monospaced))
+                        .foregroundStyle(Dex.phosphor.opacity(0.75))
+                }
+                .foregroundStyle(Dex.phosphor)
+                .multilineTextAlignment(.center)
+                .padding(22)
+                .frame(maxWidth: .infinity)
             }
+            .fixedSize(horizontal: false, vertical: true)
             Button { store.collectionVisible = true } label: {
-                Label("Visit your collection", systemImage: "square.grid.2x2.fill").frame(maxWidth: .infinity)
-            }.buttonStyle(HardwareButtonStyle(color: Dex.cream))
-            Button("Start a new adventure") { confirmReplay = true }
-                .buttonStyle(HardwareButtonStyle(color: Dex.yellow))
-                .confirmationDialog("Start a new collection?", isPresented: $confirmReplay, titleVisibility: .visible) {
-                    Button("Start again", role: .destructive) { store.replay() }
-                } message: { Text("Your 12 discoveries will be cleared.") }
-        }.frame(maxWidth: 620)
+                Label("Visit your collection", systemImage: "square.grid.2x2.fill")
+                    .font(.system(.subheadline, design: .rounded, weight: .bold)).frame(maxWidth: .infinity)
+            }.buttonStyle(KeyCapStyle(tint: .cream, depth: 6, corners: .all(12), wake: 0))
+            Button { confirmReplay = true } label: {
+                Text("Start a new adventure").font(.system(.subheadline, design: .rounded, weight: .bold)).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(KeyCapStyle(tint: .yellow, depth: 6, corners: .all(12), wake: 0))
+            .confirmationDialog("Start a new collection?", isPresented: $confirmReplay, titleVisibility: .visible) {
+                Button("Start again", role: .destructive) { store.replay() }
+            } message: { Text("Your 12 discoveries will be cleared.") }
+        }
     }
 }

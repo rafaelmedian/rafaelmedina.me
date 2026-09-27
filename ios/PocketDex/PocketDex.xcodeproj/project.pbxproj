@@ -22,6 +22,7 @@
 		A0747516C69B4FC53A9F1C6E /* GamePanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01ABACF5D1D9DA10A9E21939 /* GamePanels.swift */; };
 		CAA4DE44254FBD28B8076583 /* FoldAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F06265E40DCC2C3D26BB826 /* FoldAdapter.swift */; };
 		DD3658A4CC55DC4F7C7B8AF7 /* capture.wav in Resources */ = {isa = PBXBuildFile; fileRef = D2DFC1F7844B131706E567A3 /* capture.wav */; };
+		E95FFD3CE979156D3A5D5EB1 /* Hardware.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DAB8D0F5AC0BB79D1D97B9E /* Hardware.swift */; };
 		F34A87224AF3B056D61F23E3 /* close.wav in Resources */ = {isa = PBXBuildFile; fileRef = 353EAC92CB4CF230332E317F /* close.wav */; };
 /* End PBXBuildFile section */
 
@@ -49,6 +50,7 @@
 		4505AB6C4A6471EA2B46FB39 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
 		47E4CF637A8F45A6E360C205 /* GameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStore.swift; sourceTree = "<group>"; };
 		6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketDexView.swift; sourceTree = "<group>"; };
+		7DAB8D0F5AC0BB79D1D97B9E /* Hardware.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hardware.swift; sourceTree = "<group>"; };
 		9BC92F9589E0725CC7F4C092 /* ClosedCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedCase.swift; sourceTree = "<group>"; };
 		A66D7A75D1E931916A9444B4 /* open.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = open.wav; sourceTree = "<group>"; };
 		BBFCAC1145D7A1504B5A4033 /* CollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionView.swift; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 				1F06265E40DCC2C3D26BB826 /* FoldAdapter.swift */,
 				01ABACF5D1D9DA10A9E21939 /* GamePanels.swift */,
 				47E4CF637A8F45A6E360C205 /* GameStore.swift */,
+				7DAB8D0F5AC0BB79D1D97B9E /* Hardware.swift */,
 				3B418053320F7F802BF8F86D /* PocketDexApp.swift */,
 				6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */,
 				37D95E9CC307AAEFE74D91E7 /* Theme.swift */,
@@ -240,6 +243,7 @@
 				CAA4DE44254FBD28B8076583 /* FoldAdapter.swift in Sources */,
 				A0747516C69B4FC53A9F1C6E /* GamePanels.swift in Sources */,
 				88C0815A150A8C18C515ADBE /* GameStore.swift in Sources */,
+				E95FFD3CE979156D3A5D5EB1 /* Hardware.swift in Sources */,
 				3058F38A1012B4B670423ADD /* PocketDexApp.swift in Sources */,
 				49CE5A20DCA439AB9278A14F /* PocketDexView.swift in Sources */,
 				3E56D7E49620A6DC50ADC979 /* Theme.swift in Sources */,

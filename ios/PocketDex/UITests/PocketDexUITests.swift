@@ -128,6 +128,8 @@ final class PocketDexUITests: XCTestCase {
 
     private func reveal(_ element: XCUIElement) {
         let scroll = app.scrollViews.firstMatch
+        // The cover is a fixed layout; only the open panels scroll.
+        guard scroll.exists else { return }
         for _ in 0..<12 {
             let viewport = scroll.frame.insetBy(dx: 0, dy: 16)
             if element.exists && element.isHittable && viewport.contains(element.frame) { return }

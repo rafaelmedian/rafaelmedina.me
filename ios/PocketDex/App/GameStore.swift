@@ -13,6 +13,15 @@ final class GameStore {
     var captureStage: CaptureStage = .hidden
     var message = "A wild mystery appeared."
     var muted = false
+    /// Where the cover drew its lens, so the open body can draw it in the same place.
+    var lensAnchor: LensAnchor? {
+        didSet {
+            guard lensAnchor != oldValue, let lensAnchor, let data = try? JSONEncoder().encode(lensAnchor) else { return }
+            defaults.set(data, forKey: "pocketdex.lens")
+        }
+    }
+    /// Counts rejected guesses so the hardware can flash on each one.
+    private(set) var wrongAnswers = 0
     private let defaults: UserDefaults
     private let saveKey = "pocketdex.progress.v1"
     private let feedback = Feedback()
@@ -31,6 +40,7 @@ final class GameStore {
         captureStage = game.round.revealed ? .caught : .hidden
         if game.round.revealed { message = "Registered. A new friend!" }
         muted = defaults.bool(forKey: "pocketdex.muted")
+        lensAnchor = defaults.data(forKey: "pocketdex.lens").flatMap { try? JSONDecoder().decode(LensAnchor.self, from: $0) }
     }
 
     var pokemon: Pokemon { Catalog.pokemon(id: game.round.pokemonID)! }
@@ -62,6 +72,7 @@ final class GameStore {
             switch game.confirm() {
             case .incorrect:
                 message = "Not quite. Try another!"
+                wrongAnswers += 1
                 play("wrong", haptic: .error)
             case .captured:
                 captureStage = .reveal

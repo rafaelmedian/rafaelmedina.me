@@ -1,219 +1,356 @@
 import SwiftUI
 import PocketDexCore
 
-struct PokemonPanel: View {
+// MARK: - Body (the stationary half): scanner and control deck
+
+struct BodyPanel: View {
+    let store: GameStore
+    /// When true the scanner grows to fill the panel; otherwise it keeps a fixed height.
+    var fill = true
+    var body: some View {
+        VStack(spacing: 18) {
+            Scanner(store: store)
+                .frame(minHeight: 250, maxHeight: fill ? .infinity : 330)
+            ControlDeck(store: store)
+        }
+    }
+}
+
+/// The cream bezel with its cut corner, holding the CRT.
+private struct Scanner: View {
+    let store: GameStore
+    @Environment(\.dexPower) private var power
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 10) {
+                ForEach(0..<2, id: \.self) { _ in
+                    Circle().fill(Dex.redDark).frame(width: 7, height: 7)
+                        .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 1).offset(y: 0.8))
+                }
+            }.accessibilityHidden(true)
+            CRTScreen(power: power, radius: 16) { ScannerPicture(store: store) }
+            HStack(alignment: .center) {
+                DotGrille(rows: 3, columns: 6, dot: 4, gap: 4, color: Dex.bezelShade)
+                Spacer()
+                Circle().fill(RadialGradient(colors: [Dex.redLight, Dex.red, Dex.redDark], center: UnitPoint(x: 0.4, y: 0.3), startRadius: 0, endRadius: 18))
+                    .frame(width: 26, height: 26)
+                    .shadow(color: Dex.redDark.opacity(0.6), radius: 0, y: 2.5)
+                    .accessibilityHidden(true)
+            }.padding(.horizontal, 6)
+        }
+        .padding(14)
+        .background {
+            let shape = BezelShape()
+            shape.fill(LinearGradient(colors: [.white, Dex.bezel, Color(white: 0.84)], startPoint: .top, endPoint: .bottom))
+                .overlay(shape.stroke(.white, lineWidth: 1.5).blendMode(.plusLighter).opacity(0.6).padding(1))
+                .shadow(color: Dex.groove.opacity(0.55), radius: 0, y: 4)
+                .shadow(color: .black.opacity(0.3), radius: 10, y: 8)
+        }
+    }
+}
+
+/// A rounded panel with the Pokédex's chamfered lower corner.
+private struct BezelShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let r: CGFloat = 20
+        let cut = min(rect.width, rect.height) * 0.16
+        return Polyline(points: [
+            CGPoint(x: rect.midX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY),
+            CGPoint(x: rect.maxX, y: rect.maxY - cut), CGPoint(x: rect.maxX - cut, y: rect.maxY),
+            CGPoint(x: rect.minX, y: rect.maxY), CGPoint(x: rect.minX, y: rect.minY)
+        ], closed: true, corner: r).path(in: rect)
+    }
+}
+
+private struct ScannerPicture: View {
     let store: GameStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        VStack(spacing: 18) {
+        let revealed = store.game.round.revealed
+        VStack(spacing: 6) {
             HStack {
-                Stencil(text: "01 / FIELD SCANNER")
+                Text(revealed ? "SIGNAL IDENTIFIED" : "SCANNING…")
                 Spacer()
-                Screw()
+                Text(revealed ? "No.\(store.pokemon.number)" : "No.???")
             }
-            VStack(spacing: 12) {
+            .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1)
+            .foregroundStyle(Dex.phosphor.opacity(0.75))
+            ZStack {
+                ForEach([0.95, 0.66], id: \.self) { scale in
+                    Circle().stroke(Dex.phosphor.opacity(0.14), style: StrokeStyle(lineWidth: 1, dash: [2, 5]))
+                        .scaleEffect(scale)
+                }
+                if store.captureStage == .ball {
+                    Pokeball().frame(width: 84, height: 84).transition(.scale.combined(with: .opacity))
+                } else if revealed {
+                    Image(store.pokemon.asset).resizable().scaledToFit()
+                        .shadow(color: .white.opacity(0.35), radius: 10)
+                        .padding(8)
+                        .transition(.opacity)
+                } else {
+                    Image(store.pokemon.asset).resizable().renderingMode(.template).scaledToFit()
+                        .foregroundStyle(Dex.phosphor)
+                        .shadow(color: Dex.phosphor.opacity(0.8), radius: 8)
+                        .padding(8)
+                        .phaseAnimator(reduceMotion ? [1.0] : [1.0, 0.82]) { view, phase in view.opacity(phase) }
+                            animation: { _ in .easeInOut(duration: 1.3) }
+                        .transition(.opacity)
+                }
+                if store.captureStage == .caught {
+                    Image(systemName: "sparkles").font(.title).foregroundStyle(Dex.phosphor)
+                        .shadow(color: Dex.phosphor, radius: 6)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                }
+            }
+            .frame(maxHeight: .infinity)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(revealed ? store.pokemon.name : "Silhouette of an undiscovered Pokémon. Use the clue to identify it.")
+            Text(revealed ? store.pokemon.name : "Who's that Pokémon?")
+                .font(.system(.title3, design: .monospaced, weight: .bold))
+                .foregroundStyle(Dex.phosphor)
+                .shadow(color: Dex.phosphor.opacity(0.7), radius: 5)
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .accessibilityIdentifier("pokemon-name")
+            Text(revealed ? store.pokemon.type : "SCAN • GUESS • DISCOVER")
+                .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1.5)
+                .foregroundStyle(Dex.phosphor.opacity(0.6))
+        }
+        .padding(16)
+        .animation(reduceMotion ? nil : Dex.reveal, value: store.captureStage)
+    }
+}
+
+/// D-pad, counter, and the sound knob, mirrored from the classic layout so the
+/// D-pad sits by the hinge.
+private struct ControlDeck: View {
+    let store: GameStore
+    @State private var wrongFlash = false
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            DPad { store.move($0) }.disabled(store.game.round.revealed)
+            Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    Indicator(color: Dex.red, lit: store.game.round.revealed)
-                    Indicator(color: Dex.yellow, lit: true)
+                    IndicatorPill(color: Color(red: 1, green: 0.3, blue: 0.3), lit: wrongFlash)
+                    IndicatorPill(color: Color(red: 0.4, green: 0.75, blue: 1), lit: store.canConfirm && !store.game.round.revealed)
                 }
                 LCD {
-                    VStack(spacing: 8) {
-                        HStack {
-                            Stencil(text: store.game.round.revealed ? "SIGNAL IDENTIFIED" : "UNKNOWN SIGNAL", size: 10, color: Dex.screenDark)
-                            Spacer()
-                            Image(systemName: "antenna.radiowaves.left.and.right").font(.caption)
-                        }
-                        ZStack {
-                            Circle().stroke(Dex.screenDark.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
-                                .frame(width: 165, height: 165)
-                            Circle().stroke(Dex.screenDark.opacity(0.1), lineWidth: 1).frame(width: 125, height: 125)
-                            if store.captureStage == .ball {
-                                Pokeball().frame(width: 80, height: 80).transition(.scale.combined(with: .opacity))
-                            } else {
-                                Image(store.pokemon.asset)
-                                    .resizable().scaledToFit()
-                                    .accessibilityHidden(true)
-                                    .saturation(store.game.round.revealed ? 1 : 0)
-                                    .brightness(store.game.round.revealed ? 0 : -1)
-                                    .opacity(store.game.round.revealed ? 1 : 0.84)
-                                    .padding(5)
-                                    .shadow(color: Dex.screenDark.opacity(0.2), radius: 1, x: 4, y: 5)
-                                    .transition(.opacity)
-                            }
-                            if store.captureStage == .caught {
-                                Image(systemName: "sparkles").font(.title).foregroundStyle(Dex.screenDark)
-                                    .offset(x: 78, y: -52).accessibilityHidden(true)
-                            }
-                        }.frame(height: 174)
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel(store.game.round.revealed ? store.pokemon.name : "Silhouette of an undiscovered Pokémon. Use the clue to identify it.")
-                        Text(store.game.round.revealed ? store.pokemon.name : "Who's that Pokémon?")
-                            .font(.system(.title3, design: .rounded, weight: .heavy))
-                            .accessibilityIdentifier("pokemon-name")
-                        Stencil(text: store.game.round.revealed ? "No. \(store.pokemon.number)  /  \(store.pokemon.type)" : "SCAN • GUESS • DISCOVER", size: 9, color: Dex.screenDark)
-                    }.foregroundStyle(Dex.ink)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text(String(format: "%02d", store.game.captured.count)).font(.system(size: 28, weight: .semibold, design: .monospaced))
+                        Text("/12").font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    }
                 }
-                HStack {
-                    Circle().fill(Dex.red).frame(width: 12, height: 12).overlay(Circle().stroke(Dex.ink, lineWidth: 2))
-                    Spacer()
-                    Stencil(text: "POCKETDEX OPTICAL SYSTEM", size: 8, color: Dex.ink.opacity(0.7))
-                    Spacer()
-                    Speaker()
-                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
+                .accessibilityIdentifier("capture-count")
             }
-            .padding(15).background(Dex.cream.gradient)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Dex.ink, lineWidth: 3))
-            .shadow(color: Dex.redDark, radius: 0, x: 2, y: 5)
-            HStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 10) {
-                        Capsule().fill(Dex.redLight).frame(width: 38, height: 8).overlay(Capsule().strokeBorder(Dex.ink, lineWidth: 2))
-                        Capsule().fill(Dex.blue).frame(width: 38, height: 8).overlay(Capsule().strokeBorder(Dex.ink, lineWidth: 2))
-                    }.accessibilityHidden(true)
-                    LCD {
-                        HStack(alignment: .firstTextBaseline, spacing: 4) {
-                            Text(String(format: "%02d", store.game.captured.count)).font(.system(size: 34, weight: .medium, design: .monospaced))
-                            Text("/12").font(.system(.caption, design: .monospaced))
-                        }.foregroundStyle(Dex.ink)
-                    }.accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
-                        .accessibilityIdentifier("capture-count")
-                    Stencil(text: "SPECIMENS FOUND", size: 8)
-                }
-                Spacer(minLength: 0)
-                DPad { store.move($0) }.disabled(store.game.round.revealed)
+            Spacer(minLength: 0)
+            Button { store.toggleMute() } label: {
+                Image(systemName: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                    .font(.system(size: 15, weight: .bold)).frame(width: 34, height: 34)
             }
+            .buttonStyle(KeyCapStyle(tint: .ink, depth: 6, corners: .all(40), wake: 0.62))
+            .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
+        }
+        .onChange(of: store.wrongAnswers) {
+            wrongFlash = true
+            Task { try? await Task.sleep(for: .milliseconds(700)); wrongFlash = false }
+        }
+    }
+}
+
+private struct IndicatorPill: View {
+    let color: Color
+    let lit: Bool
+    var body: some View {
+        Capsule().fill(lit ? color : color.opacity(0.35))
+            .overlay(Capsule().fill(.black.opacity(lit ? 0 : 0.35)))
+            .overlay(Capsule().stroke(.white.opacity(0.45), lineWidth: 1).padding(1))
+            .frame(width: 34, height: 9)
+            .padding(2.5)
+            .background(Dex.groove, in: Capsule())
+            .shadow(color: lit ? color.opacity(0.9) : .clear, radius: 6)
+            .animation(Dex.quick, value: lit)
+            .accessibilityHidden(true)
+    }
+}
+
+struct DPad: View {
+    let move: (Direction) -> Void
+    private let arm: CGFloat = 44
+    var body: some View {
+        VStack(spacing: 0) {
+            key(.up, "chevron.up", corners: .init(topLeading: 10, bottomLeading: 2, bottomTrailing: 2, topTrailing: 10))
+            HStack(spacing: 0) {
+                key(.left, "chevron.left", corners: .init(topLeading: 10, bottomLeading: 10, bottomTrailing: 2, topTrailing: 2))
+                RoundedRectangle(cornerRadius: 3).fill(KeyTint.ink.face)
+                    .overlay(Circle().fill(.black.opacity(0.35)).padding(12).shadow(color: .white.opacity(0.12), radius: 0, y: 1))
+                    .frame(width: arm, height: arm)
+                    .padding(.bottom, 5)
+                    .accessibilityHidden(true)
+                key(.right, "chevron.right", corners: .init(topLeading: 2, bottomLeading: 2, bottomTrailing: 10, topTrailing: 10))
+            }
+            key(.down, "chevron.down", corners: .init(topLeading: 2, bottomLeading: 10, bottomTrailing: 10, topTrailing: 2))
+        }
+        .padding(8)
+        .background(Circle().fill(Dex.groove.opacity(0.35)).blur(radius: 1))
+    }
+    private func key(_ direction: Direction, _ symbol: String, corners: RectangleCornerRadii) -> some View {
+        Button { move(direction) } label: {
+            Image(systemName: symbol).font(.system(size: 12, weight: .black)).frame(width: arm - 24, height: arm - 20)
+        }
+        .buttonStyle(KeyCapStyle(tint: .ink, depth: 5, corners: corners, wake: 0.5))
+        .accessibilityLabel("Select \(String(describing: direction))")
+    }
+}
+
+// MARK: - Flap (the half that swings): clue, answers, confirm
+
+struct FlapPanel: View {
+    let store: GameStore
+    var fill = false
+    var body: some View {
+        if store.collectionVisible {
+            CollectionPanel(store: store).frame(maxHeight: fill ? .infinity : nil, alignment: .top)
+        } else if store.game.isComplete {
+            CompletedPanel(store: store).frame(maxHeight: fill ? .infinity : nil, alignment: .top)
+        } else {
+            AnswerPanel(store: store, fill: fill)
         }
     }
 }
 
 struct AnswerPanel: View {
     let store: GameStore
+    /// Fill the flap: the clue screen takes whatever height the keys leave.
+    var fill = false
+    @Environment(\.dexPower) private var power
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Stencil(text: "02 / IDENTIFICATION")
-                Spacer()
-                Screw()
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 6) {
-                    Circle().fill(Dex.screen).frame(width: 5, height: 5)
-                    Stencil(text: "PROFESSOR'S CLUE", size: 9, color: Dex.screen)
+        VStack(spacing: 16) {
+            CRTScreen(power: power, radius: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("PROFESSOR'S CLUE").font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(1.5)
+                        .foregroundStyle(Dex.phosphor.opacity(0.6))
+                    Typewriter(text: store.pokemon.clue.uppercased())
+                        .font(.system(fill ? .title3 : .callout, design: .monospaced, weight: .semibold))
+                        .lineSpacing(4)
+                        .foregroundStyle(Dex.phosphor)
+                        .shadow(color: Dex.phosphor.opacity(0.6), radius: 4)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(store.pokemon.clue)
-                    .font(.system(.body, design: .rounded, weight: .medium))
-                    .foregroundStyle(Dex.cream).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
-            }.frame(maxWidth: .infinity, minHeight: 94, alignment: .leading)
-                .padding(18).background(Dex.ink.gradient)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.black.opacity(0.6), lineWidth: 3))
-                .shadow(color: .white.opacity(0.16), radius: 0, y: 2)
-            VStack(alignment: .leading, spacing: 10) {
-                Stencil(text: "SELECT A SIGNAL", size: 9)
-                LazyVGrid(columns: Array(repeating: .init(.flexible()), count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
-                    ForEach(Array(store.game.round.choices.enumerated()), id: \.offset) { index, id in
-                        answer(index: index, id: id)
+                .frame(maxWidth: .infinity, maxHeight: fill ? .infinity : nil, alignment: .topLeading)
+                .padding(16)
+            }
+            .fixedSize(horizontal: false, vertical: !fill)
+            .frame(minHeight: fill ? 120 : nil)
+
+            let columns = typeSize.isAccessibilitySize ? 1 : 2
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: columns), spacing: 10) {
+                ForEach(Array(store.game.round.choices.enumerated()), id: \.offset) { index, id in
+                    answer(index: index, id: id, columns: columns)
+                }
+            }
+
+            HStack(alignment: .center, spacing: 16) {
+                Button { store.confirm() } label: {
+                    VStack(spacing: 2) {
+                        Image(systemName: store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 18, weight: .black))
+                        Text(store.game.round.revealed ? "NEXT" : "OK").font(.system(size: 9, weight: .heavy, design: .rounded))
                     }
                 }
-            }
-            HStack(alignment: .center, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(store.message)
-                        .font(.system(.subheadline, design: .rounded, weight: .bold))
-                        .foregroundStyle(Dex.cream)
-                        .accessibilityIdentifier("round-feedback")
-                    Stencil(text: store.game.round.revealed ? "ONE MORE FRIEND." : "TAKE YOUR TIME.", size: 8)
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                Button { store.confirm() } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: store.game.round.revealed ? "arrow.right" : "checkmark").font(.title3.bold())
-                        Text(store.game.round.revealed ? "NEXT" : "CONFIRM").font(.system(size: 9, weight: .heavy, design: .monospaced))
-                    }.frame(width: 65, height: 57)
-                }
-                .buttonStyle(HardwareButtonStyle(color: store.canConfirm ? Dex.yellow : Dex.cream.opacity(0.65), round: true))
+                .buttonStyle(ArcadeButtonStyle(tint: .yellow, armed: store.canConfirm, size: 92, wake: 0.85))
                 .disabled(!store.canConfirm)
                 .accessibilityLabel(store.game.round.revealed ? "Next Pokémon" : "Confirm answer")
                 .accessibilityIdentifier("confirm-answer")
-            }.padding(.top, 4)
-            Rectangle().fill(Dex.redDark).frame(height: 2).overlay(alignment: .bottom) { Rectangle().fill(.white.opacity(0.2)).frame(height: 1).offset(y: 2) }
-            Button { store.collectionVisible = true } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "square.grid.2x2.fill")
-                    Text("Your discoveries").font(.system(.subheadline, design: .rounded, weight: .bold))
-                    Spacer()
-                    Text("\(store.game.captured.count)/12").font(.system(.caption, design: .monospaced, weight: .bold))
-                }.frame(maxWidth: .infinity)
-            }.buttonStyle(HardwareButtonStyle(color: Dex.cream))
-                .accessibilityIdentifier("show-collection")
-            HStack {
-                Stencil(text: "KANTO RESEARCH DIVISION", size: 8)
-                Spacer()
-                Speaker()
-            }.padding(.top, 4)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Readout {
+                        Text(store.message)
+                            .font(.system(.caption, design: .monospaced, weight: .bold))
+                            .foregroundStyle(Dex.phosphor)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("round-feedback")
+                    }
+                    Button { store.collectionVisible = true } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "square.grid.2x2.fill").font(.caption)
+                            Text("Discoveries").font(.system(.subheadline, design: .rounded, weight: .bold))
+                            Spacer(minLength: 4)
+                            Text("\(store.game.captured.count)/12").font(.system(.caption, design: .monospaced, weight: .bold))
+                        }
+                    }
+                    .buttonStyle(KeyCapStyle(tint: .cream, depth: 6, corners: .all(12), wake: 0.78))
+                    .accessibilityIdentifier("show-collection")
+                }
+            }
         }
     }
 
-    private func answer(index: Int, id: Int) -> some View {
+    private func answer(index: Int, id: Int, columns: Int) -> some View {
         let rejected = store.game.round.rejected.contains(index)
         let selected = store.game.round.selection == index
+        let name = Catalog.pokemon(id: id)!.name
+        // Mist rounds the outside bottom corners of its outer keys.
+        let bottomRow = index >= store.game.round.choices.count - columns
+        let outerLeft = bottomRow && index % columns == 0
+        let outerRight = bottomRow && index % columns == columns - 1
+        let tint: KeyTint = rejected ? .spent : .blue
         return Button { store.select(index) } label: {
-            HStack(spacing: 6) {
-                Text(["A", "B", "C", "D"][index]).font(.system(size: 10, weight: .heavy, design: .monospaced))
-                    .padding(4).background(Dex.ink.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
-                Text(Catalog.pokemon(id: id)!.name).font(.system(.subheadline, design: .rounded, weight: .bold))
+            HStack(spacing: 8) {
+                KeyLegend(text: ["A", "B", "C", "D"][index], color: tint.legend)
+                Text(name).font(.system(.subheadline, design: .rounded, weight: .bold))
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 if rejected { Image(systemName: "xmark").font(.caption.bold()) }
-            }.frame(maxWidth: .infinity, minHeight: 30)
+            }.frame(maxWidth: .infinity, minHeight: 40)
         }
-        .buttonStyle(HardwareButtonStyle(color: rejected ? Dex.cream.opacity(0.6) : (selected ? Dex.yellow : Dex.blue), selected: selected))
+        .buttonStyle(KeyCapStyle(tint: tint, depth: 8,
+                                 corners: .init(topLeading: 12, bottomLeading: outerLeft ? 30 : 12, bottomTrailing: outerRight ? 30 : 12, topTrailing: 12),
+                                 latched: selected && !rejected, wake: 0.55 + Double(index) * 0.05))
         .disabled(rejected || store.game.round.revealed)
-        .accessibilityLabel(Catalog.pokemon(id: id)!.name)
+        .accessibilityLabel(name)
         .accessibilityValue(rejected ? "Incorrect" : selected ? "Selected" : "")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("answer-\(index)")
     }
 }
 
-struct DPad: View {
-    let move: (Direction) -> Void
+/// A slim dark display set into the plastic.
+struct Readout<Content: View>: View {
+    @ViewBuilder var content: Content
     var body: some View {
-        VStack(spacing: 0) {
-            key(.up, symbol: "chevron.up")
-            HStack(spacing: 0) {
-                key(.left, symbol: "chevron.left")
-                Circle().fill(Dex.ink.gradient).overlay(Circle().strokeBorder(.white.opacity(0.1), lineWidth: 1))
-                    .frame(width: 44, height: 44).accessibilityHidden(true)
-                key(.right, symbol: "chevron.right")
-            }
-            key(.down, symbol: "chevron.down")
-        }.background {
-            Circle().stroke(Dex.redDark.opacity(0.5), lineWidth: 1).padding(-4)
-        }
-    }
-    private func key(_ direction: Direction, symbol: String) -> some View {
-        Button { move(direction) } label: {
-            Image(systemName: symbol).font(.system(size: 12, weight: .black)).foregroundStyle(Dex.cream)
-        }
-        .buttonStyle(HardwareButtonStyle(color: Dex.ink))
-        .accessibilityLabel("Select \(String(describing: direction))")
+        content
+            .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
+            .padding(.horizontal, 12).padding(.vertical, 9)
+            .background(Dex.glass, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay { DotMask(pitch: 2.5).opacity(0.5).clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous)).allowsHitTesting(false) }
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 1).offset(y: 1))
     }
 }
 
-struct Pokeball: View {
+/// Clue text arrives a character at a time; layout is reserved up front.
+struct Typewriter: View {
+    let text: String
+    @State private var shown = Int.max
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Circle().fill(Dex.cream)
-                Rectangle().fill(Dex.red).frame(height: proxy.size.height / 2).frame(maxHeight: .infinity, alignment: .top)
-                Rectangle().fill(Dex.ink).frame(height: 5)
-                Circle().fill(Dex.cream).frame(width: proxy.size.width * 0.3)
-                    .overlay(Circle().strokeBorder(Dex.ink, lineWidth: 4))
-            }.clipShape(Circle()).overlay(Circle().strokeBorder(Dex.ink, lineWidth: 4))
-                .shadow(color: Dex.ink.opacity(0.2), radius: 0, x: 3, y: 5)
-        }.accessibilityLabel("Poké Ball")
+        let visible = String(text.prefix(shown))
+        let rest = String(text.dropFirst(min(shown, text.count)))
+        Text("\(visible)\(Text(rest).foregroundStyle(.clear))")
+            .accessibilityLabel(text)
+            .task(id: text) {
+                guard !reduceMotion else { shown = text.count; return }
+                shown = 0
+                do {
+                    try await Task.sleep(for: .milliseconds(350))
+                    for count in 1...max(text.count, 1) {
+                        shown = count
+                        try await Task.sleep(for: .milliseconds(24))
+                    }
+                } catch {
+                    shown = text.count
+                }
+            }
     }
 }
