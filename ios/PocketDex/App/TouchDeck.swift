@@ -24,10 +24,14 @@ struct TouchDeck: View {
                     Trackpad(store: store)
                         .frame(width: Self.stripHeight)
                     readoutTile
-                    settingTile(icon: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", label: "SOUND", on: !store.muted) { store.toggleMute() }
-                        .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
-                    settingTile(icon: "waveform.path", label: "HAPTIC", on: store.hapticsOn) { store.toggleHaptics() }
-                        .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
+                    // Two small switches, stacked in the corner.
+                    VStack(spacing: 6) {
+                        settingTile(icon: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", label: "SOUND", on: !store.muted) { store.toggleMute() }
+                            .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
+                        settingTile(icon: "waveform.path", label: "HAPTIC", on: store.hapticsOn) { store.toggleHaptics() }
+                            .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
+                    }
+                    .frame(width: 58)
                 }
                 .frame(height: Self.stripHeight)
             }
@@ -104,17 +108,14 @@ struct TouchDeck: View {
         .animation(Dex.quick, value: line)
     }
 
+    /// `label` names the switch for tests and VoiceOver; the tile shows only its icon.
     private func settingTile(icon: String, label: String, on: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: icon).font(.system(size: 18, weight: .bold))
-                Text(on ? "\(label) ON" : "\(label) OFF").font(.system(size: 9, weight: .heavy, design: .monospaced))
-            }
+            Image(systemName: icon).font(.system(size: 14, weight: .bold))
             .foregroundStyle(on ? Dex.glass : Dex.phosphor.opacity(0.6))
-            .frame(width: Self.stripHeight - 16)
-            .frame(maxHeight: .infinity)
-            .background(on ? Dex.phosphor : Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .shadow(color: on ? Dex.phosphor.opacity(0.5) : .clear, radius: 5)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(on ? Dex.phosphor : Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .shadow(color: on ? Dex.phosphor.opacity(0.5) : .clear, radius: 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(GlassPress())
