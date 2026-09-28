@@ -191,7 +191,7 @@ private struct ScannerPicture: View {
     }
 }
 
-/// The right thumb's corner: the camera key, then OK as the big primary
+/// The right thumb's corner: the camera and Discoveries keys, then OK as the big primary
 /// button, lit green whenever it can be pressed.
 private struct ControlDeck: View {
     let store: GameStore
@@ -201,8 +201,9 @@ private struct ControlDeck: View {
                 .padding(4)
                 .background(Circle().fill(Dex.groove.shadow(.inner(color: .black.opacity(0.6), radius: 2, y: 1.5))))
                 .overlay(Circle().strokeBorder(LinearGradient(colors: [.clear, .white.opacity(0.25)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-            DotGrille(rows: 3, columns: 9, dot: 4, gap: 4)
+            DiscoveriesKey(store: store)
             Spacer(minLength: 0)
+            DotGrille(rows: 3, columns: 6, dot: 4, gap: 4)
             Button { store.confirm() } label: {
                 VStack(spacing: 1) {
                     Image(systemName: store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 20, weight: .black))
@@ -289,6 +290,29 @@ private struct SnapshotCard: View {
         .padding(16)
         .background(ShellBackground())
         .fixedSize()
+    }
+}
+
+/// Discoveries sits by the screen it changes: a small cream key that swaps
+/// the scanner to the collection and back, with the count beside it.
+private struct DiscoveriesKey: View {
+    let store: GameStore
+    var body: some View {
+        let showing = store.collectionVisible
+        Button { store.collectionVisible.toggle() } label: {
+            HStack(spacing: 8) {
+                Image(systemName: showing ? "arrow.uturn.backward" : "square.grid.2x2.fill")
+                    .font(.system(size: 14, weight: .bold))
+                Text(String(format: "%02d/12", store.game.captured.count))
+                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                    .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
+                    .accessibilityIdentifier("capture-count")
+            }
+            .padding(.horizontal, 4)
+        }
+        .buttonStyle(KeyCapStyle(tint: .cream, depth: 5, corners: .all(14), latched: showing, wake: 0.78))
+        .accessibilityLabel(showing ? "Back to game" : "Discoveries")
+        .accessibilityIdentifier(showing ? "back-to-game" : "show-collection")
     }
 }
 

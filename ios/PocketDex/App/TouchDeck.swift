@@ -2,8 +2,8 @@ import SwiftUI
 import PocketDexCore
 
 /// The flap's controls as one low-res CRT touchscreen, after Mist's control
-/// panel: a trackpad with a joystick knob, four coloured answer pills, and
-/// small tiles for Discoveries, a readout, and the two settings. Everything is
+/// panel: four coloured answer pills, then a strip holding a small trackpad,
+/// a readout, and the two settings. Everything is
 /// drawn on the glass, so it wakes, dims, and scan-lines with the rest.
 struct TouchDeck: View {
     let store: GameStore
@@ -11,34 +11,32 @@ struct TouchDeck: View {
 
     var body: some View {
         CRTScreen(power: power, radius: Dex.screenRadius, pitch: 3) {
-            VStack(spacing: 10) {
-                HStack(spacing: 10) {
-                    Trackpad(store: store)
-                        .frame(width: 150)
-                    VStack(spacing: 10) {
-                        HStack(spacing: 10) { pill(0); pill(1) }
-                        HStack(spacing: 10) { pill(2); pill(3) }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 138)
+            // The answers own the screen. Below them, one strip of equal-height
+            // tiles: the small trackpad in the thumb's corner, the readout, and the
+            // two settings.
+            VStack(spacing: 12) {
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) { pill(0); pill(1) }
+                    HStack(spacing: 12) { pill(2); pill(3) }
                 }
                 .frame(maxHeight: .infinity)
-                HStack(spacing: 10) {
-                    discoveriesTile
+                HStack(spacing: 8) {
+                    Trackpad(store: store)
+                        .frame(width: Self.stripHeight)
                     readoutTile
-                    VStack(spacing: 8) {
-                        settingTile(icon: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", on: !store.muted) { store.toggleMute() }
-                            .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
-                        settingTile(icon: "waveform.path", on: store.hapticsOn) { store.toggleHaptics() }
-                            .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
-                    }
-                    .frame(width: 52)
+                    settingTile(icon: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", label: "SOUND", on: !store.muted) { store.toggleMute() }
+                        .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
+                    settingTile(icon: "waveform.path", label: "HAPTIC", on: store.hapticsOn) { store.toggleHaptics() }
+                        .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
                 }
-                .frame(height: 96)
+                .frame(height: Self.stripHeight)
             }
             .padding(12)
         }
     }
+
+    /// Height of the bottom strip, and so the trackpad's side.
+    static let stripHeight: CGFloat = 88
 
     // MARK: Answer pills
 
@@ -57,14 +55,14 @@ struct TouchDeck: View {
             Button { store.select(index) } label: {
                 HStack(spacing: 5) {
                     Text(["A", "B", "C", "D"][index]).font(.system(size: 10, weight: .black, design: .monospaced)).opacity(0.55)
-                    Text(pokemon.name).font(.system(.subheadline, design: .rounded, weight: .heavy))
+                    Text(pokemon.name).font(.system(.title3, design: .rounded, weight: .heavy))
                         .lineLimit(1).minimumScaleFactor(0.6)
                         .strikethrough(rejected)
                 }
                 .foregroundStyle(.black.opacity(rejected ? 0.45 : 0.75))
                 .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity)
-                .frame(height: 56)
+                .frame(minHeight: 56, maxHeight: 76)
                 .background(rejected ? Color(white: 0.3) : Self.colors[index], in: Capsule())
                 // Each pill sits in its own darker nest on the glass.
                 .padding(3)
@@ -85,27 +83,6 @@ struct TouchDeck: View {
 
     // MARK: Tiles
 
-    private var discoveriesTile: some View {
-        let showing = store.collectionVisible
-        return Button { store.collectionVisible.toggle() } label: {
-            VStack(spacing: 6) {
-                Image(systemName: showing ? "arrow.uturn.backward" : "square.grid.2x2.fill").font(.system(size: 16, weight: .bold))
-                Text(String(format: "%02d/12", store.game.captured.count))
-                    .font(.system(size: 15, weight: .bold, design: .monospaced))
-                    .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
-                    .accessibilityIdentifier("capture-count")
-            }
-            .foregroundStyle(showing ? Dex.glass : Dex.phosphor)
-            .frame(width: 82)
-            .frame(maxHeight: .infinity)
-            .background(showing ? Dex.phosphor : Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(GlassPress())
-        .accessibilityLabel(showing ? "Back to game" : "Discoveries")
-        .accessibilityIdentifier(showing ? "back-to-game" : "show-collection")
-    }
-
     /// What the Pokémon just said, or the round's feedback.
     private var readoutTile: some View {
         let idle = store.message == GameStore.idleMessage
@@ -117,7 +94,7 @@ struct TouchDeck: View {
             Text(line)
                 .font(.system(.footnote, design: .monospaced, weight: .semibold))
                 .foregroundStyle(store.reaction != nil ? Dex.yellow : Dex.phosphor)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(3).minimumScaleFactor(0.75)
                 .accessibilityIdentifier(store.reaction == nil && !idle ? "round-feedback" : "readout")
             Spacer(minLength: 0)
         }
@@ -127,14 +104,18 @@ struct TouchDeck: View {
         .animation(Dex.quick, value: line)
     }
 
-    private func settingTile(icon: String, on: Bool, action: @escaping () -> Void) -> some View {
+    private func settingTile(icon: String, label: String, on: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: icon).font(.system(size: 14, weight: .bold))
-                .foregroundStyle(on ? Dex.glass : Dex.phosphor.opacity(0.6))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(on ? Dex.phosphor : Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .shadow(color: on ? Dex.phosphor.opacity(0.5) : .clear, radius: 5)
-                .contentShape(Rectangle())
+            VStack(spacing: 6) {
+                Image(systemName: icon).font(.system(size: 18, weight: .bold))
+                Text(on ? "\(label) ON" : "\(label) OFF").font(.system(size: 9, weight: .heavy, design: .monospaced))
+            }
+            .foregroundStyle(on ? Dex.glass : Dex.phosphor.opacity(0.6))
+            .frame(width: Self.stripHeight - 16)
+            .frame(maxHeight: .infinity)
+            .background(on ? Dex.phosphor : Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .shadow(color: on ? Dex.phosphor.opacity(0.5) : .clear, radius: 5)
+            .contentShape(Rectangle())
         }
         .buttonStyle(GlassPress())
     }
