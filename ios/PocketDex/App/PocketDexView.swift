@@ -112,15 +112,21 @@ struct InnerDisplay: View {
             FlapPlastic(outline: flapOutline)
             Polyline(points: flapEdge, corner: 12).stroke(.white.opacity(0.35), lineWidth: 1.2).offset(y: 1)
             Polyline(points: seam, corner: 12).groove(2.5)
-            // The spine runs the full fold, from the seam to the bottom edge, in a
-            // crisp dark gap: no blur, so it stays clean when the fold tilts.
+            // The spine runs down the fold in a crisp dark channel, from the seam
+            // out through the bottom edge: no blur, so it stays clean when the fold
+            // tilts. The barrel sits an even inset inside it and ends short of the
+            // edge, and the channel's top corners are the knuckles' plus that inset.
             let spineTop = lens.seamHigh - 2
-            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Dex.lining)
-                .frame(width: fold.width + 2, height: size.height - spineTop + 20)
+            let spineInset: CGFloat = 3
+            let barrelWidth = fold.width - 4
+            let barrelTop = spineTop + spineInset
+            let barrelBottom = size.height - 12
+            RoundedRectangle(cornerRadius: HingeBarrel.corner(thick: barrelWidth) + spineInset, style: .continuous).fill(Dex.lining)
+                .frame(width: barrelWidth + spineInset * 2, height: size.height - spineTop + 20)
                 .position(x: fold.midX, y: (spineTop + size.height + 20) / 2)
             HingeBarrel()
-                .frame(width: fold.width - 4, height: size.height - spineTop + 20)
-                .position(x: fold.midX, y: (spineTop + size.height + 20) / 2 + 2)
+                .frame(width: barrelWidth, height: barrelBottom - barrelTop)
+                .position(x: fold.midX, y: (barrelTop + barrelBottom) / 2)
             LensStrip(lens: lens, glow: power, lights: lights, glints: store.selectionGlints, flashes: store.scanFlashes)
             DotGrille(rows: 2, columns: 6, dot: 4, gap: 4).position(tab)
             // On the Duo the body always fills its half; only large type scrolls.

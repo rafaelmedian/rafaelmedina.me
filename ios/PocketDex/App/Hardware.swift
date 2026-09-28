@@ -127,6 +127,9 @@ struct Polyline: Shape {
 /// colour, so it reads as part of the case.
 struct HingeBarrel: View {
     var vertical = true
+    /// Knuckle corner radius for a barrel this thick. The pocket around the
+    /// barrel adds its inset to this so the two curves stay concentric.
+    static func corner(thick: CGFloat) -> CGFloat { thick * 0.22 }
     var body: some View {
         let across: UnitPoint = vertical ? .leading : .top
         let along: UnitPoint = vertical ? .trailing : .bottom
@@ -149,7 +152,7 @@ struct HingeBarrel: View {
             ZStack(alignment: .topLeading) {
                 ForEach(Array(pieces.enumerated()), id: \.offset) { index, piece in
                     let size = piece.end - piece.start
-                    let shape = RoundedRectangle(cornerRadius: thick * 0.32, style: .continuous)
+                    let shape = RoundedRectangle(cornerRadius: Self.corner(thick: thick), style: .continuous)
                     shape.fill(shading)
                         .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.3), .clear, .black.opacity(0.18)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
                         .overlay {
