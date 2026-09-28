@@ -28,7 +28,15 @@ private struct Scanner: View {
                         .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 1).offset(y: 0.8))
                 }
             }.accessibilityHidden(true)
-            CRTScreen(power: power, radius: 16) { ScannerPicture(store: store) }
+            CRTScreen(power: power, radius: 16) {
+                // Discoveries take over the scanner; the answers stay on the flap.
+                if store.collectionVisible {
+                    CollectionGrid(store: store).transition(.opacity)
+                } else {
+                    ScannerPicture(store: store).transition(.opacity)
+                }
+            }
+            .animation(Dex.quick, value: store.collectionVisible)
             HStack(alignment: .center) {
                 // The red dome sits inside the bezel, clear of the cut corner.
                 ZStack {
@@ -151,20 +159,17 @@ private struct ControlDeck: View {
     let store: GameStore
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                MiniSwitch(label: "SOUND", on: !store.muted) { store.toggleMute() }
-                    .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
-                MiniSwitch(label: "HAPTIC", on: store.hapticsOn) { store.toggleHaptics() }
-                    .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
-            }
+            OptionsScreen(store: store)
             Spacer(minLength: 0)
             VStack(spacing: 6) {
-                Button { store.collectionVisible = true } label: {
-                    Image(systemName: "square.grid.2x2.fill").font(.system(size: 15, weight: .bold))
+                let showing = store.collectionVisible
+                Button { store.collectionVisible.toggle() } label: {
+                    Image(systemName: showing ? "arrow.uturn.backward" : "square.grid.2x2.fill")
+                        .font(.system(size: 15, weight: .bold))
                 }
-                .buttonStyle(KeyCapStyle(tint: .cream, depth: 5, corners: .all(12), wake: 0.78))
-                .accessibilityLabel("Discoveries")
-                .accessibilityIdentifier("show-collection")
+                .buttonStyle(KeyCapStyle(tint: .cream, depth: 5, corners: .all(12), latched: showing, wake: 0.78))
+                .accessibilityLabel(showing ? "Back to game" : "Discoveries")
+                .accessibilityIdentifier(showing ? "back-to-game" : "show-collection")
                 Text(String(format: "%02d/12", store.game.captured.count))
                     .font(.system(size: 11, weight: .heavy, design: .monospaced))
                     .foregroundStyle(Dex.cream.opacity(0.8))
@@ -172,12 +177,12 @@ private struct ControlDeck: View {
                     .accessibilityIdentifier("capture-count")
             }
             Button { store.confirm() } label: {
-                VStack(spacing: 2) {
-                    Image(systemName: store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 22, weight: .black))
-                    Text(store.game.round.revealed ? "NEXT" : "OK").font(.system(size: 10, weight: .heavy, design: .rounded))
+                VStack(spacing: 1) {
+                    Image(systemName: store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 24, weight: .black))
+                    Text(store.game.round.revealed ? "NEXT" : "OK").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1)
                 }
             }
-            .buttonStyle(ArcadeButtonStyle(tint: .yellow, armed: store.canConfirm, size: 100, wake: 0.85))
+            .buttonStyle(ArcadeButtonStyle(tint: .yellow, armed: store.canConfirm, size: 104, wake: 0.85))
             .disabled(!store.canConfirm)
             .accessibilityLabel(store.game.round.revealed ? "Next Pokémon" : "Confirm answer")
             .accessibilityIdentifier("confirm-answer")
@@ -185,30 +190,78 @@ private struct ControlDeck: View {
     }
 }
 
-/// A small DS-style switch: a tiny shell-plastic button, its engraved name,
-/// and a light that shows whether it is on.
-private struct MiniSwitch: View {
-    let label: String
-    let on: Bool
-    let action: () -> Void
+/// Settings live on a small digital screen, after the touch panel in Mist's
+/// sleep mode: at rest it shows one OPTIONS button; opened, it shows the
+/// toggles as on-screen buttons and closes itself after a few seconds.
+private struct OptionsScreen: View {
+    let store: GameStore
+    @State private var open = false
+    @State private var touches = 0
+    @Environment(\.dexPower) private var power
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Circle().fill(on ? Color(red: 0.4, green: 1, blue: 0.45) : Dex.groove.opacity(0.6))
-                    .frame(width: 6, height: 6)
-                    .shadow(color: on ? .green : .clear, radius: 4)
-                Capsule().fill(LinearGradient(colors: [Dex.redLight, Dex.red], startPoint: .top, endPoint: .bottom))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
-                    .frame(width: 34, height: 14)
-                    .shadow(color: Dex.groove.opacity(0.55), radius: 0, y: 2)
-                Text(label).font(.system(size: 10, weight: .heavy, design: .rounded)).tracking(1.2)
-                    .foregroundStyle(Dex.cream.opacity(0.75))
+        ZStack {
+            if open {
+                HStack(spacing: 6) {
+                    toggle("SOUND", icon: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", on: !store.muted) { store.toggleMute() }
+                        .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
+                    toggle("HAPTIC", icon: "waveform.path", on: store.hapticsOn) { store.toggleHaptics() }
+                        .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
+                    Button { withAnimation(Dex.quick) { open = false } } label: {
+                        Image(systemName: "xmark").font(.system(size: 10, weight: .bold)).frame(width: 30, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Dex.phosphor.opacity(0.6))
+                    .accessibilityLabel("Close options")
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+            } else {
+                Button { withAnimation(Dex.quick) { open = true; touches += 1 } } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "slider.horizontal.3").font(.system(size: 12, weight: .bold))
+                        Text("OPTIONS").font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1.5)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Dex.phosphor.opacity(0.8))
+                .accessibilityLabel("Options")
+                .transition(.opacity)
             }
-            .frame(minHeight: 30)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .frame(minWidth: 150, maxWidth: 196, minHeight: 58, maxHeight: 58)
+        .background(Dex.glass, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay { DotMask(pitch: 2.5).opacity(0.45).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)).allowsHitTesting(false) }
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.black.opacity(0.7), lineWidth: 2))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 1).offset(y: 1.5))
+        .opacity(power > 0.7 ? 1 : 0.35)
+        .task(id: touches) {
+            // Idle for five seconds and the options fold away again.
+            guard open else { return }
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? nil : Dex.quick) { open = false }
+        }
+    }
+
+    /// An on-screen button: outlined when off, lit and inverted when on.
+    private func toggle(_ label: String, icon: String, on: Bool, action: @escaping () -> Void) -> some View {
+        Button { action(); touches += 1 } label: {
+            VStack(spacing: 2) {
+                Image(systemName: icon).font(.system(size: 12, weight: .bold))
+                Text(on ? "\(label) ON" : "\(label) OFF").font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+            }
+            .foregroundStyle(on ? Dex.glass : Dex.phosphor.opacity(0.7))
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(on ? Dex.phosphor : .clear, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Dex.phosphor.opacity(0.6), lineWidth: 1))
+            .shadow(color: on ? Dex.phosphor.opacity(0.6) : .clear, radius: 5)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .animation(Dex.quick, value: on)
     }
 }
 
@@ -341,9 +394,7 @@ struct FlapPanel: View {
     let store: GameStore
     var fill = false
     var body: some View {
-        if store.collectionVisible {
-            CollectionPanel(store: store).frame(maxHeight: fill ? .infinity : nil, alignment: .top)
-        } else if store.game.isComplete {
+        if store.game.isComplete {
             CompletedPanel(store: store).frame(maxHeight: fill ? .infinity : nil, alignment: .top)
         } else {
             AnswerPanel(store: store, fill: fill)
@@ -359,20 +410,29 @@ struct AnswerPanel: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
         VStack(spacing: 16) {
-            // A compact clue: sentence case and generous leading read faster than a wall of caps.
+            // Professor Oak gives the clue, then congratulates you once it is solved.
             CRTScreen(power: power, radius: 14) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("PROFESSOR'S CLUE").font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(1.5)
-                        .foregroundStyle(Dex.phosphor.opacity(0.55))
-                    Typewriter(text: store.pokemon.clue)
-                        .font(.system(.body, design: .monospaced, weight: .semibold))
-                        .lineSpacing(3)
-                        .foregroundStyle(Dex.phosphor)
-                        .shadow(color: Dex.phosphor.opacity(0.5), radius: 3)
-                        .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .top, spacing: 14) {
+                    OakPortrait()
+                        .frame(width: 58, height: 64)
+                        .padding(4)
+                        .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Dex.phosphor.opacity(0.25), lineWidth: 1))
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(store.game.round.revealed ? "PROF. OAK · REGISTERED" : "PROF. OAK · CLUE")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(1.5)
+                            .foregroundStyle(Dex.phosphor.opacity(0.55))
+                        Typewriter(text: oakLine)
+                            .font(.system(.body, design: .monospaced, weight: .semibold))
+                            .lineSpacing(3)
+                            .foregroundStyle(Dex.phosphor)
+                            .shadow(color: Dex.phosphor.opacity(0.5), radius: 3)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("oak-line")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .padding(.horizontal, 16).padding(.vertical, 14)
+                .padding(.horizontal, 14).padding(.vertical, 12)
             }
             .fixedSize(horizontal: false, vertical: true)
 
@@ -390,6 +450,12 @@ struct AnswerPanel: View {
                 DotGrille(rows: 3, columns: 7, dot: 4, gap: 4).padding(.bottom, 10)
             }
         }
+    }
+
+    private var oakLine: String {
+        guard store.game.round.revealed else { return store.pokemon.clue }
+        let count = store.game.captured.count
+        return "Splendid! That was \(store.pokemon.name). Your Pokédex now holds \(count) of 12."
     }
 
     private func answer(index: Int, id: Int, columns: Int) -> some View {

@@ -36,7 +36,12 @@ final class GameStore {
         let arguments = ProcessInfo.processInfo.arguments
         #if DEBUG
         defaults = arguments.contains("--ui-testing") ? UserDefaults(suiteName: "PocketDexUITests")! : .standard
-        if arguments.contains("--reset") { defaults.removeObject(forKey: saveKey) }
+        if arguments.contains("--reset") {
+            defaults.removeObject(forKey: saveKey)
+            // Settings go back to their defaults too: sound and haptics on.
+            defaults.removeObject(forKey: "pocketdex.muted")
+            defaults.removeObject(forKey: "pocketdex.hapticsOff")
+        }
         let seed: UInt64 = arguments.contains("--demo") ? 151 : UInt64.random(in: 0...UInt64.max)
         #else
         defaults = .standard

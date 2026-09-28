@@ -1,59 +1,48 @@
 import SwiftUI
 import PocketDexCore
 
-/// Discoveries replace the answer keys on the flap; the scanner stays put.
-struct CollectionPanel: View {
+/// Discoveries, drawn on the scanner's own screen: caught Pokémon in colour,
+/// the rest as faint numbered silhouettes.
+struct CollectionGrid: View {
     let store: GameStore
-    @Environment(\.dexPower) private var power
     var body: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 12) {
-                Button { store.collectionVisible = false } label: {
-                    Image(systemName: "arrow.uturn.backward").font(.system(size: 15, weight: .bold))
-                }
-                .buttonStyle(KeyCapStyle(tint: .cream, depth: 6, corners: .all(12), wake: 0))
-                .accessibilityLabel("Back to game").accessibilityIdentifier("back-to-game")
-                VStack(alignment: .leading, spacing: 2) {
-                    Engraved(text: "FIELD NOTES", size: 10)
-                    Text("Discoveries").font(.system(.title2, design: .rounded, weight: .heavy)).foregroundStyle(Dex.cream)
-                        .lineLimit(1).minimumScaleFactor(0.5)
-                }
-                Spacer(minLength: 0)
-                LCD {
-                    Text("\(store.game.captured.count)/12").font(.system(.headline, design: .monospaced, weight: .bold))
-                }
+        VStack(spacing: 8) {
+            HStack {
+                Text("DISCOVERIES")
+                Spacer()
+                Text("\(store.game.captured.count)/12")
             }
-            CRTScreen(power: power, radius: 16, pitch: 3) {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 78, maximum: 140), spacing: 8)], spacing: 8) {
-                    ForEach(Catalog.all) { pokemon in
-                        let caught = store.game.captured.contains(pokemon.id)
-                        VStack(spacing: 4) {
-                            Group {
-                                if caught {
-                                    Image(pokemon.asset).resizable().scaledToFit()
-                                } else {
-                                    Image(pokemon.asset).resizable().renderingMode(.template).scaledToFit()
-                                        .foregroundStyle(Dex.phosphor.opacity(0.16))
-                                }
+            .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1)
+            .foregroundStyle(Dex.phosphor.opacity(0.75))
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
+                ForEach(Catalog.all) { pokemon in
+                    let caught = store.game.captured.contains(pokemon.id)
+                    VStack(spacing: 2) {
+                        Group {
+                            if caught {
+                                Image(pokemon.asset).resizable().scaledToFit()
+                            } else {
+                                Image(pokemon.asset).resizable().renderingMode(.template).scaledToFit()
+                                    .foregroundStyle(Dex.phosphor.opacity(0.14))
                             }
-                            .frame(height: 54)
-                            .accessibilityHidden(true)
-                            Text(caught ? pokemon.name.uppercased() : "No.\(pokemon.number)")
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .foregroundStyle(Dex.phosphor.opacity(caught ? 0.9 : 0.45))
-                                .lineLimit(1).minimumScaleFactor(0.7)
                         }
-                        .padding(6)
-                        .frame(maxWidth: .infinity)
-                        .background(Dex.phosphor.opacity(caught ? 0.08 : 0.03), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(caught ? "\(pokemon.name), discovered" : "Undiscovered Pokémon")
+                        .frame(height: 40)
+                        .accessibilityHidden(true)
+                        Text(caught ? pokemon.name.uppercased() : "No.\(pokemon.number)")
+                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Dex.phosphor.opacity(caught ? 0.9 : 0.4))
+                            .lineLimit(1).minimumScaleFactor(0.6)
                     }
+                    .padding(4)
+                    .frame(maxWidth: .infinity)
+                    .background(Dex.phosphor.opacity(caught ? 0.08 : 0.03), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(caught ? "\(pokemon.name), discovered" : "Undiscovered Pokémon")
                 }
-                .padding(12)
             }
-            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
+        .padding(14)
     }
 }
 

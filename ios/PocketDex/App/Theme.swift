@@ -275,34 +275,55 @@ struct KeyLegend: View {
     }
 }
 
-/// A plain round button: a domed cap on its own shallow skirt, no well.
+/// The primary button: a dished cap in a cream bezel ring, like an arcade
+/// button. When it can be pressed, a soft glow breathes around the ring.
 struct ArcadeButtonStyle: ButtonStyle {
     var tint: KeyTint = .yellow
     var armed = true
-    var size: CGFloat = 96
+    var size: CGFloat = 104
     var wake: Double = 0.8
     @Environment(\.dexPower) private var power
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         let asleep = power < wake
-        let sink: CGFloat = configuration.isPressed || asleep ? 4 : 0
-        let cap = size * 0.78
+        let pressed = configuration.isPressed
+        let sink: CGFloat = pressed || asleep ? 4 : 0
+        let ring = size * 0.9
+        let cap = size * 0.7
         return ZStack {
-            Circle().fill(tint.skirt).frame(width: cap, height: cap).offset(y: 5)
-                .shadow(color: .black.opacity(0.3), radius: 3, y: 6)
-            Circle().fill(RadialGradient(colors: [tint.top, tint.face], center: UnitPoint(x: 0.4, y: 0.3), startRadius: 0, endRadius: cap * 0.6))
-                .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1).padding(1))
-                .overlay(Circle().strokeBorder(tint.skirt.opacity(0.35), lineWidth: 1).padding(cap * 0.14))
+            // Breathing glow while armed.
+            Circle().fill(tint.face.opacity(0.45)).frame(width: ring, height: ring).blur(radius: 10)
+                .phaseAnimator(armed && !asleep && !reduceMotion ? [0.55, 1.0] : [armed && !asleep ? 0.8 : 0]) { view, phase in
+                    view.opacity(phase)
+                } animation: { _ in .easeInOut(duration: 1.4) }
+            // Cream bezel ring with a dark gap around the cap.
+            Circle().fill(LinearGradient(colors: [.white, Dex.bezel, Dex.bezelShade], startPoint: .top, endPoint: .bottom))
+                .frame(width: ring, height: ring)
+                .shadow(color: Dex.groove.opacity(0.55), radius: 0, y: 3)
+                .shadow(color: .black.opacity(0.3), radius: 6, y: 5)
+            Circle().fill(Dex.ink.opacity(0.75)).frame(width: cap + 8, height: cap + 8)
+            // Skirt, then the dished face: darker at the top, lighter below.
+            Circle().fill(tint.skirt).frame(width: cap, height: cap).offset(y: 4)
+            Circle().fill(LinearGradient(colors: [tint.face.opacity(0.92), tint.top], startPoint: .top, endPoint: .bottom))
+                .overlay(Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.75), .clear], startPoint: .top, endPoint: .center), lineWidth: 1.5))
+                .overlay(
+                    Ellipse().fill(.white.opacity(pressed ? 0.2 : 0.5)).frame(width: cap * 0.56, height: cap * 0.16)
+                        .blur(radius: 1).offset(y: -cap * 0.32)
+                )
                 .frame(width: cap, height: cap)
                 .offset(y: sink)
-            configuration.label.foregroundStyle(tint.legend).offset(y: sink)
+                .scaleEffect(pressed ? 0.97 : 1)
+            configuration.label
+                .foregroundStyle(tint.legend)
+                .shadow(color: .white.opacity(0.45), radius: 0, y: 1)
+                .offset(y: sink)
         }
         .frame(width: size, height: size)
-        .saturation(armed ? 1 : 0.35)
-        .brightness(asleep ? -0.15 : 0)
-        .contentShape(Rectangle())
-        .animation(reduceMotion ? nil : Dex.squeeze, value: configuration.isPressed)
+        .saturation(armed ? 1 : 0.3)
+        .brightness(asleep ? -0.15 : (armed ? 0 : -0.05))
+        .contentShape(Circle())
+        .animation(reduceMotion ? nil : Dex.squeeze, value: pressed)
         .animation(reduceMotion ? nil : Dex.squeeze, value: asleep)
     }
 }
