@@ -182,6 +182,28 @@ final class PocketDexUITests: XCTestCase {
         attach("duo-slept")
     }
 
+    /// Scan mode on the unfolded Duo: wake into the camera, scan, get a match.
+    func testDuoScan() throws {
+        app.launchArguments = ["--ui-testing", "--demo", "--reset"]
+        app.launch()
+        if app.buttons["open-case"].waitForExistence(timeout: 3) { throw XCTSkip("Needs an unfolded iPhone Duo.") }
+        XCTAssertTrue(app.buttons["wake-scan"].waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 1)
+        attach("duo-wake-choice")
+        app.buttons["wake-scan"].tap()
+        XCTAssertTrue(app.buttons["scan-button"].waitForExistence(timeout: 5))
+        Thread.sleep(forTimeInterval: 2)
+        attach("duo-scan-ready")
+        app.buttons["scan-button"].tap()
+        Thread.sleep(forTimeInterval: 0.9)
+        attach("duo-scanning")
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "scan-result").firstMatch.waitForExistence(timeout: 5))
+        Thread.sleep(forTimeInterval: 0.8)
+        attach("duo-scan-match")
+        app.buttons["sleep"].tap()
+        XCTAssertTrue(app.buttons["wake-scan"].waitForExistence(timeout: 3))
+    }
+
     private func reveal(_ element: XCUIElement) {
         let scroll = app.scrollViews.firstMatch
         // The cover is a fixed layout; only the open panels scroll.

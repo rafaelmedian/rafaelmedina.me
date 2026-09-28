@@ -37,7 +37,11 @@ private struct Scanner: View {
                     if store.collectionVisible {
                         CollectionGrid(store: store).transition(.opacity)
                     } else {
-                        ScannerPicture(store: store).transition(.opacity)
+                        if store.mode == .scan {
+                            ScanScreen(store: store).transition(.opacity)
+                        } else {
+                            ScannerPicture(store: store).transition(.opacity)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -204,17 +208,18 @@ private struct ControlDeck: View {
             DiscoveriesKey(store: store)
             Spacer(minLength: 0)
             DotGrille(rows: 3, columns: 6, dot: 4, gap: 4)
-            Button { store.confirm() } label: {
+            // In scan mode the big green button scans; asleep, it rests.
+            let scanning = store.mode == .scan
+            let armed = !store.asleep && (scanning ? !store.scanning : store.canConfirm)
+            Button { scanning ? store.scan() : store.confirm() } label: {
                 VStack(spacing: 1) {
-                    Image(systemName: store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 20, weight: .black))
-                    Text(store.game.round.revealed ? "NEXT" : "OK").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1)
+                    Image(systemName: scanning ? "viewfinder" : store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 20, weight: .black))
+                    Text(scanning ? "SCAN" : store.game.round.revealed ? "NEXT" : "OK").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1)
                 }
             }
-            .buttonStyle(ArcadeButtonStyle(tint: store.canConfirm ? .green : .spent, armed: store.canConfirm, size: 80, wake: 0.85))
-            .background(Circle().fill(Dex.groove.shadow(.inner(color: .black.opacity(0.6), radius: 3, y: 2))).padding(-3))
-            .overlay(Circle().strokeBorder(LinearGradient(colors: [.clear, .white.opacity(0.25)], startPoint: .top, endPoint: .bottom), lineWidth: 1).padding(-3))
-            .disabled(!store.canConfirm)
-            .accessibilityLabel(store.game.round.revealed ? "Next Pokémon" : "Confirm answer")
+            .buttonStyle(ArcadeButtonStyle(tint: armed ? .green : .spent, armed: armed, size: 80, wake: 0.85))
+            .disabled(!armed)
+            .accessibilityLabel(scanning ? "Scan" : store.game.round.revealed ? "Next Pokémon" : "Confirm answer")
             .accessibilityIdentifier("confirm-answer")
         }
     }
@@ -368,7 +373,7 @@ struct AnswerPanel: View {
                         .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Dex.phosphor.opacity(0.25), lineWidth: 1))
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(store.game.round.revealed ? "PROF. OAK · REGISTERED" : "PROF. OAK · CLUE")
+                        Text(store.mode == .scan ? "PROF. OAK · SCANNER" : store.game.round.revealed ? "PROF. OAK · REGISTERED" : "PROF. OAK · CLUE")
                             .font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(1.5)
                             .foregroundStyle(Dex.phosphor.opacity(0.55))
                         Typewriter(text: oakLine)
@@ -398,6 +403,10 @@ struct AnswerPanel: View {
     }
 
     private var oakLine: String {
+        if store.mode == .scan {
+            if let id = store.scanResult, let found = Catalog.pokemon(id: id) { return "Remarkable! That looks like a \(found.name)." }
+            return "Point the lens at a Pokémon and press SCAN. I'll tell you what it is!"
+        }
         guard store.game.round.revealed else { return store.pokemon.clue }
         let count = store.game.captured.count
         return "Splendid! That was \(store.pokemon.name). Your Pokédex now holds \(count) of 12."

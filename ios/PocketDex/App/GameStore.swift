@@ -17,6 +17,13 @@ final class GameStore {
     /// Asleep, the screens are dark and the touchscreen offers to wake it,
     /// as Mist does. It starts asleep each launch.
     private(set) var asleep = true
+    /// What waking chose: the discovery game, or the camera scanner.
+    enum Mode { case game, scan }
+    private(set) var mode: Mode = .game
+    private(set) var scanning = false
+    /// The Pokémon the last scan "identified". Scans never add to the collection.
+    private(set) var scanResult: Int?
+    private var scanTask: Task<Void, Never>?
     static let idleMessage = "A wild mystery appeared."
     /// Where the cover drew its lens, so the open body can draw it in the same place.
     var lensAnchor: LensAnchor? {
@@ -94,15 +101,37 @@ final class GameStore {
         confirm()
     }
 
-    func wake() {
+    func wake(into mode: Mode = .game) {
         guard asleep else { return }
+        self.mode = mode
+        scanResult = nil
         asleep = false
         play("open", haptic: .impact)
+    }
+
+    /// A pretend scan: the lens flashes, the screen sweeps for a moment, then
+    /// a Pokémon from the catalog is "identified".
+    func scan() {
+        guard mode == .scan, !asleep, !scanning else { return }
+        scanning = true
+        scanResult = nil
+        scanFlashes += 1
+        play("select", haptic: .impact)
+        scanTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2.2))
+            guard let self, !Task.isCancelled else { return }
+            let pool = Catalog.all.map(\.id).filter { $0 != self.scanResult }
+            self.scanResult = pool.randomElement()
+            self.scanning = false
+            self.play("capture", haptic: .success)
+        }
     }
 
     func sleep() {
         guard !asleep else { return }
         asleep = true
+        scanTask?.cancel()
+        scanning = false
         collectionVisible = false
         feedback.stop()
         play("close", haptic: .impact)

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		097F2220108CEDEC10F8BD51 /* ScanMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D223CF9CC6D981048563890 /* ScanMode.swift */; };
 		0C5C4B8C857B7780AFAE3FEB /* ClosedCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC92F9589E0725CC7F4C092 /* ClosedCase.swift */; };
 		1663E35871064F5BE8BC9083 /* PocketDexCore in Frameworks */ = {isa = PBXBuildFile; productRef = F74FBCD34BEBF6C68C2A42F3 /* PocketDexCore */; };
 		2C5B9642F64E8DD42B07D55C /* wrong.wav in Resources */ = {isa = PBXBuildFile; fileRef = 330FCF8A1F31FE7DE1A4B77C /* wrong.wav */; };
@@ -50,6 +51,7 @@
 		37D95E9CC307AAEFE74D91E7 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		3B418053320F7F802BF8F86D /* PocketDexApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketDexApp.swift; sourceTree = "<group>"; };
 		3C0CA64F6A3BA6B0B748AC82 /* PocketDex.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PocketDex.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D223CF9CC6D981048563890 /* ScanMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanMode.swift; sourceTree = "<group>"; };
 		4505AB6C4A6471EA2B46FB39 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
 		47E4CF637A8F45A6E360C205 /* GameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStore.swift; sourceTree = "<group>"; };
 		6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketDexView.swift; sourceTree = "<group>"; };
@@ -86,6 +88,7 @@
 				7C6269632EFC7200940E0A54 /* Pettable.swift */,
 				3B418053320F7F802BF8F86D /* PocketDexApp.swift */,
 				6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */,
+				3D223CF9CC6D981048563890 /* ScanMode.swift */,
 				37D95E9CC307AAEFE74D91E7 /* Theme.swift */,
 				2484B2769C0FA65005E9422D /* TouchDeck.swift */,
 			);
@@ -253,6 +256,7 @@
 				C6CADE12BC7ED30A800C3DDD /* Pettable.swift in Sources */,
 				3058F38A1012B4B670423ADD /* PocketDexApp.swift in Sources */,
 				49CE5A20DCA439AB9278A14F /* PocketDexView.swift in Sources */,
+				097F2220108CEDEC10F8BD51 /* ScanMode.swift in Sources */,
 				3E56D7E49620A6DC50ADC979 /* Theme.swift in Sources */,
 				687F9342FA46BB67A8D98B8E /* TouchDeck.swift in Sources */,
 			);
@@ -344,6 +348,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_KEY_CFBundleDisplayName = PocketDex;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Scan mode shows the back camera on the Pokédex screen so you can scan a Pokémon plushie. Nothing is recorded or saved.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -449,6 +454,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_KEY_CFBundleDisplayName = PocketDex;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Scan mode shows the back camera on the Pokédex screen so you can scan a Pokémon plushie. Nothing is recorded or saved.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -538,6 +544,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_KEY_CFBundleDisplayName = PocketDex;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Scan mode shows the back camera on the Pokédex screen so you can scan a Pokémon plushie. Nothing is recorded or saved.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -561,6 +568,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_KEY_CFBundleDisplayName = PocketDex;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Scan mode shows the back camera on the Pokédex screen so you can scan a Pokémon plushie. Nothing is recorded or saved.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
