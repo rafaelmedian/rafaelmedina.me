@@ -11,7 +11,6 @@ struct Pettable<Content: View>: View {
 
     @State private var pressing = false
     @State private var pull: CGSize = .zero
-    @State private var pressStart: Date?
     @State private var hop: CGFloat = 0
     @State private var shakes = 0
     @State private var bursts = 0
@@ -52,31 +51,30 @@ struct Pettable<Content: View>: View {
             }
         }
         .contentShape(Rectangle())
+        // A tap pokes. A press held a moment squeezes, and dragging while held
+        // pulls it; both leave scrolling alone on layouts that scroll.
+        .onTapGesture { store.poke() }
         .gesture(
-            DragGesture(minimumDistance: 0)
+            LongPressGesture(minimumDuration: 0.25)
+                .sequenced(before: DragGesture(minimumDistance: 0))
                 .onChanged { value in
-                    if pressStart == nil {
-                        pressStart = .now
-                        store.touch()
-                    }
+                    guard case .second(true, let drag) = value else { return }
+                    if !pressing { store.touch() }
                     let limit: CGFloat = 28
-                    let target = CGSize(width: max(-limit, min(limit, value.translation.width * 0.3)),
-                                        height: max(-limit, min(limit, value.translation.height * 0.3)))
+                    let translation = drag?.translation ?? .zero
+                    let target = CGSize(width: max(-limit, min(limit, translation.width * 0.3)),
+                                        height: max(-limit, min(limit, translation.height * 0.3)))
                     withAnimation(reduceMotion ? nil : .interactiveSpring(response: 0.22, dampingFraction: 0.7)) {
                         pressing = true
                         pull = target
                     }
                 }
-                .onEnded { value in
-                    let held = Date.now.timeIntervalSince(pressStart ?? .now)
-                    let moved = hypot(value.translation.width, value.translation.height)
-                    pressStart = nil
+                .onEnded { _ in
                     withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.32)) {
                         pressing = false
                         pull = .zero
                     }
-                    // A quick tap is a poke; a longer press or drag was a squeeze.
-                    store.poke(squeezed: held > 0.3 || moved > 12)
+                    store.poke(squeezed: true)
                 }
         )
         .onChange(of: store.pokes) { react() }

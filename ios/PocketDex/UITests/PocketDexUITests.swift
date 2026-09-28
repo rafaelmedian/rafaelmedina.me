@@ -117,6 +117,7 @@ final class PocketDexUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 1.5)
         // Poke the screen: the Pokémon answers, as Mist does.
         let art = app.descendants(matching: .any).matching(identifier: "scanner-art").firstMatch
+        reveal(art)
         art.tap()
         XCTAssertTrue(app.staticTexts["Gengar vanished for a second. Rude."].waitForExistence(timeout: 2))
         attach("showcase-poke")
