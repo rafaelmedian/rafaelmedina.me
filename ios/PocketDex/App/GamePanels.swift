@@ -282,6 +282,8 @@ private struct ScannerPicture: View {
                 .animation(Dex.quick, value: caption.text)
         }
         .padding(16)
+        // The options drop down over the whole glass from the gear key.
+        .overlay { SettingsDropdown(store: store) }
     }
 
     private var caption: (text: String, feedback: Bool) {
@@ -353,37 +355,6 @@ struct SleepKey: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Put PocketDex to sleep")
             .accessibilityIdentifier("sleep")
-    }
-}
-
-/// Sound, haptics, and starting over, folded into one small key in the
-/// scanner's header so they stay out of the way of the game.
-struct SettingsKey: View {
-    let store: GameStore
-    @State private var confirmingReset = false
-    var body: some View {
-        Menu {
-            Button { store.toggleMute() } label: {
-                Label(store.muted ? "Enable sound" : "Mute sound", systemImage: store.muted ? "speaker.wave.2" : "speaker.slash")
-            }
-            Button { store.toggleHaptics() } label: {
-                Label(store.hapticsOn ? "Turn off haptics" : "Turn on haptics", systemImage: "waveform.path")
-            }
-            Divider()
-            Button(role: .destructive) { confirmingReset = true } label: {
-                Label("Reset progress", systemImage: "arrow.counterclockwise")
-            }
-        } label: {
-            GlassKeyLabel(icon: "gearshape.fill")
-        }
-        .accessibilityLabel("Options")
-        .accessibilityIdentifier("options")
-        // Starting over wipes the Pokédex, so it asks first.
-        .confirmationDialog("Reset your Pokédex?", isPresented: $confirmingReset, titleVisibility: .visible) {
-            Button("Reset progress", role: .destructive) { store.replay() }
-        } message: {
-            Text("Every discovery is cleared and a new round begins.")
-        }
     }
 }
 

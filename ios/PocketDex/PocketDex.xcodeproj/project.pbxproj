@@ -22,6 +22,7 @@
 		84B35F80E7D2A064FF7C258E /* CaptureSequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495DEB78C6E2533A40A8B189 /* CaptureSequence.swift */; };
 		84F733519405FB433C9AA047 /* PocketDexUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277AB6FFD0AAE9FD19031F68 /* PocketDexUITests.swift */; };
 		88C0815A150A8C18C515ADBE /* GameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E4CF637A8F45A6E360C205 /* GameStore.swift */; };
+		90400A9E85A1AE5390670E77 /* SettingsDropdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ABE3BF042B988C4C226E843 /* SettingsDropdown.swift */; };
 		A0747516C69B4FC53A9F1C6E /* GamePanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01ABACF5D1D9DA10A9E21939 /* GamePanels.swift */; };
 		C6CADE12BC7ED30A800C3DDD /* Pettable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C6269632EFC7200940E0A54 /* Pettable.swift */; };
 		CAA4DE44254FBD28B8076583 /* FoldAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F06265E40DCC2C3D26BB826 /* FoldAdapter.swift */; };
@@ -59,6 +60,7 @@
 		6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketDexView.swift; sourceTree = "<group>"; };
 		7C6269632EFC7200940E0A54 /* Pettable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pettable.swift; sourceTree = "<group>"; };
 		7DAB8D0F5AC0BB79D1D97B9E /* Hardware.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hardware.swift; sourceTree = "<group>"; };
+		9ABE3BF042B988C4C226E843 /* SettingsDropdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDropdown.swift; sourceTree = "<group>"; };
 		9BC92F9589E0725CC7F4C092 /* ClosedCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosedCase.swift; sourceTree = "<group>"; };
 		A66D7A75D1E931916A9444B4 /* open.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = open.wav; sourceTree = "<group>"; };
 		BBFCAC1145D7A1504B5A4033 /* CollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionView.swift; sourceTree = "<group>"; };
@@ -92,6 +94,7 @@
 				3B418053320F7F802BF8F86D /* PocketDexApp.swift */,
 				6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */,
 				3D223CF9CC6D981048563890 /* ScanMode.swift */,
+				9ABE3BF042B988C4C226E843 /* SettingsDropdown.swift */,
 				37D95E9CC307AAEFE74D91E7 /* Theme.swift */,
 				2484B2769C0FA65005E9422D /* TouchDeck.swift */,
 			);
@@ -261,6 +264,7 @@
 				3058F38A1012B4B670423ADD /* PocketDexApp.swift in Sources */,
 				49CE5A20DCA439AB9278A14F /* PocketDexView.swift in Sources */,
 				097F2220108CEDEC10F8BD51 /* ScanMode.swift in Sources */,
+				90400A9E85A1AE5390670E77 /* SettingsDropdown.swift in Sources */,
 				3E56D7E49620A6DC50ADC979 /* Theme.swift in Sources */,
 				687F9342FA46BB67A8D98B8E /* TouchDeck.swift in Sources */,
 			);

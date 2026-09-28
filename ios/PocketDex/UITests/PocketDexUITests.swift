@@ -119,8 +119,17 @@ final class PocketDexUITests: XCTestCase {
         attach("showcase-poke")
         reveal(app.buttons["Options"])
         app.buttons["Options"].tap()
-        XCTAssertTrue(app.buttons["Mute sound"].waitForExistence(timeout: 3))
+        // The options drop down over the scanner as Control Center tiles.
+        let sound = app.buttons["sound-toggle"]
+        XCTAssertTrue(sound.waitForExistence(timeout: 3))
+        XCTAssertEqual(sound.value as? String, "On")
         attach("showcase-options")
+        sound.tap()
+        XCTAssertEqual(sound.value as? String, "Off")
+        sound.tap()
+        // The gear, now a close key, puts the panel away again.
+        app.buttons["options"].tap()
+        XCTAssertTrue(sound.waitForNonExistence(timeout: 3))
         reveal(app.buttons["show-collection"])
         app.buttons["show-collection"].tap()
         XCTAssertTrue(app.buttons["back-to-game"].waitForExistence(timeout: 5))

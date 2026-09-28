@@ -13,6 +13,10 @@ final class GameStore {
     var captureStage: CaptureStage = .hidden
     var message = GameStore.idleMessage
     var muted = false
+    /// Sound level, 0…1. Dragging it to zero mutes; raising it unmutes.
+    private(set) var volume = 0.8
+    /// The options panel hanging over the scanner from its gear key.
+    var settingsVisible = false
     var hapticsOn = true
     /// Asleep, the screens are dark and the touchscreen offers to wake it,
     /// as Mist does. It starts asleep each launch.
@@ -50,6 +54,7 @@ final class GameStore {
             defaults.removeObject(forKey: saveKey)
             // Settings go back to their defaults too: sound and haptics on.
             defaults.removeObject(forKey: "pocketdex.muted")
+            defaults.removeObject(forKey: "pocketdex.volume")
             defaults.removeObject(forKey: "pocketdex.hapticsOff")
         }
         let seed: UInt64 = arguments.contains("--demo") ? 151 : UInt64.random(in: 0...UInt64.max)
@@ -61,7 +66,9 @@ final class GameStore {
         captureStage = game.round.revealed ? .caught : .hidden
         if game.round.revealed { message = "Registered. A new friend!" }
         muted = defaults.bool(forKey: "pocketdex.muted")
+        if defaults.object(forKey: "pocketdex.volume") != nil { volume = defaults.double(forKey: "pocketdex.volume") }
         hapticsOn = !defaults.bool(forKey: "pocketdex.hapticsOff")
+        feedback.volume = volume
         #if DEBUG
         if arguments.contains("--awake") { asleep = false }
         #endif
@@ -122,6 +129,7 @@ final class GameStore {
     func sleep() {
         guard !asleep else { return }
         asleep = true
+        settingsVisible = false
         scanTask?.cancel()
         scanning = false
         collectionVisible = false
@@ -209,7 +217,22 @@ final class GameStore {
         muted.toggle()
         defaults.set(muted, forKey: "pocketdex.muted")
         if muted { feedback.stop() }
+        // Unmuting at zero would still be silent, so it comes back at half.
+        if !muted, volume == 0 { setVolume(0.5) }
     }
+
+    func setVolume(_ level: Double) {
+        volume = min(max(level, 0), 1)
+        defaults.set(volume, forKey: "pocketdex.volume")
+        if muted != (volume == 0) {
+            muted = volume == 0
+            defaults.set(muted, forKey: "pocketdex.muted")
+        }
+        feedback.volume = volume
+    }
+
+    /// A tick at the new level, so the slider can be heard.
+    func previewVolume() { play("select", haptic: .selection) }
 
     /// Touches on the scanner screen; the Pokémon reacts to each one.
     private(set) var pokes = 0
@@ -320,6 +343,8 @@ final class GameStore {
 private final class Feedback {
     enum Haptic { case selection, impact, success, error }
     private var player: AVAudioPlayer?
+    /// The user's level, 0…1; full volume plays at 0.7 so it stays gentle.
+    var volume = 0.8
     func play(_ name: String, audible: Bool, haptic: Haptic?) {
         switch haptic {
         case nil: break
@@ -332,7 +357,7 @@ private final class Feedback {
         // Ambient respects the silent switch and mixes with the user's music.
         try? AVAudioSession.sharedInstance().setCategory(.ambient)
         player = try? AVAudioPlayer(contentsOf: url)
-        player?.volume = 0.55
+        player?.volume = Float(volume * 0.7)
         player?.play()
     }
     func stop() { player?.stop() }
