@@ -121,10 +121,12 @@ struct Polyline: Shape {
     }
 }
 
-/// The spine between the two halves, after the DS Lite: a bar moulded in
-/// the shell's own plastic, split into short end knuckles and a long middle
-/// piece. Soft cylinder shading and hairline gaps separate it; no contrast
-/// colour, so it reads as part of the case.
+/// The spine between the two halves, after the DS Lite and the GBA SP: a
+/// bar moulded in the shell's own plastic, split into short end knuckles and
+/// a long middle piece. It is shaded as a satin cylinder lit from the flap
+/// side: one broad, soft sheen off-centre, a gradual turn into shadow, and a
+/// faint reflected rim on the far edge. Hairline dark seams separate the
+/// pieces, and each piece's end catches a little light from above.
 struct HingeBarrel: View {
     var vertical = true
     /// Knuckle corner radius for a barrel this thick. The pocket around the
@@ -133,12 +135,16 @@ struct HingeBarrel: View {
     var body: some View {
         let across: UnitPoint = vertical ? .leading : .top
         let along: UnitPoint = vertical ? .trailing : .bottom
+        let sheen = Color(red: 0.92, green: 0.31, blue: 0.32)
+        let rim = Color(red: 0.69, green: 0.15, blue: 0.18)
         let shading = LinearGradient(stops: [
             .init(color: Dex.redDark, location: 0),
-            .init(color: Dex.red, location: 0.22),
-            .init(color: Dex.redLight, location: 0.42),
-            .init(color: Dex.red, location: 0.62),
-            .init(color: Dex.redDark.opacity(0.95), location: 1)
+            .init(color: Dex.red, location: 0.14),
+            .init(color: sheen, location: 0.32),
+            .init(color: Dex.red, location: 0.52),
+            .init(color: Dex.redDark, location: 0.84),
+            .init(color: rim, location: 0.94),
+            .init(color: Dex.redDark.mix(with: .black, by: 0.2), location: 1)
         ], startPoint: across, endPoint: along)
         GeometryReader { proxy in
             let thick = vertical ? proxy.size.width : proxy.size.height
@@ -153,14 +159,23 @@ struct HingeBarrel: View {
                 ForEach(Array(pieces.enumerated()), id: \.offset) { index, piece in
                     let size = piece.end - piece.start
                     let shape = RoundedRectangle(cornerRadius: Self.corner(thick: thick), style: .continuous)
+                    // The rounded ends turn toward the light at the top and away at the bottom.
+                    let cap = min(thick * 0.45 / size, 0.4)
                     shape.fill(shading)
-                        .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.3), .clear, .black.opacity(0.18)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
+                        .overlay(shape.fill(LinearGradient(stops: [
+                            .init(color: .white.opacity(0.1), location: 0),
+                            .init(color: .clear, location: cap),
+                            .init(color: .clear, location: 1 - cap),
+                            .init(color: .black.opacity(0.16), location: 1)
+                        ], startPoint: vertical ? .top : .leading, endPoint: vertical ? .bottom : .trailing)))
+                        .overlay(shape.strokeBorder(.black.opacity(0.22), lineWidth: 0.75))
                         .overlay {
                             if index != 1 {
-                                // Grip rings on the knuckles.
+                                // Grip rings on the knuckles: shallow grooves with a lit lower lip.
                                 let lines = ForEach(0..<3, id: \.self) { _ in
-                                    Rectangle().fill(Dex.groove.opacity(0.35))
-                                        .frame(width: vertical ? thick * 0.55 : 1.5, height: vertical ? 1.5 : thick * 0.55)
+                                    Rectangle().fill(Dex.groove.opacity(0.28))
+                                        .frame(width: vertical ? thick * 0.5 : 1, height: vertical ? 1 : thick * 0.5)
+                                        .shadow(color: .white.opacity(0.14), radius: 0, x: vertical ? 0 : 0.75, y: vertical ? 0.75 : 0)
                                 }
                                 if vertical { VStack(spacing: 3) { lines } } else { HStack(spacing: 3) { lines } }
                             }
