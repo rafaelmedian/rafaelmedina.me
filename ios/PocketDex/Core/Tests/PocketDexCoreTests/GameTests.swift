@@ -108,3 +108,17 @@ import Testing
 @Test func seededDemoIsRepeatable() {
     #expect(Game(seed: 151) == Game(seed: 151))
 }
+
+@Test func ruleOutStrikesWrongChoicesButLeavesOneStanding() {
+    var game = Game(seed: 7)
+    let answer = game.round.choices.firstIndex(of: game.round.pokemonID)!
+    let first = game.ruleOut()
+    let second = game.ruleOut()
+    #expect(first != nil && second != nil && first != second)
+    #expect(first != answer && second != answer)
+    #expect(game.round.rejected.count == 2)
+    #expect(!game.round.rejected.contains(game.round.selection))
+    #expect(game.ruleOut() == nil)
+    #expect(game.round.rejected.count == 2)
+    #expect(Game.restore(try! game.savedData()) == game)
+}

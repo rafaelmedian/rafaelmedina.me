@@ -61,6 +61,21 @@ public struct Game: Codable, Equatable, Sendable {
         return .incorrect
     }
 
+    /// A hint: strikes out one wrong choice, but always leaves one wrong
+    /// choice standing so the last guess is still a guess. Returns the index
+    /// struck, or nil when there is nothing left to rule out.
+    @discardableResult
+    public mutating func ruleOut() -> Int? {
+        guard !round.revealed, !isComplete else { return nil }
+        let wrong = round.choices.indices.filter { round.choices[$0] != round.pokemonID && !round.rejected.contains($0) }
+        guard wrong.count > 1, let index = wrong.randomElement(using: &random) else { return nil }
+        round.rejected.insert(index)
+        if round.selection == index, let next = (1...4).map({ (index + $0) % 4 }).first(where: { !round.rejected.contains($0) }) {
+            round.selection = next
+        }
+        return index
+    }
+
     public mutating func advance() {
         guard round.revealed, !isComplete else { return }
         guard let next = deck.first(where: { !captured.contains($0) }) else {
