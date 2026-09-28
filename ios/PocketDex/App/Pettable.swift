@@ -15,6 +15,7 @@ struct Pettable<Content: View>: View {
     @State private var hop: CGFloat = 0
     @State private var shakes = 0
     @State private var bursts = 0
+    @State private var size: CGSize = .zero
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -52,7 +53,9 @@ struct Pettable<Content: View>: View {
         // A tap pokes. A press held a moment squeezes, and dragging while held
         // pulls it; both leave scrolling alone on layouts that scroll.
         // Simultaneous, so the pixels' own finger tracking doesn't swallow them.
-        .simultaneousGesture(TapGesture().onEnded { store.poke() })
+        .simultaneousGesture(SpatialTapGesture().onEnded { value in
+            store.poke(region: TouchRegion(value.location, in: size))
+        })
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.25)
                 .sequenced(before: DragGesture(minimumDistance: 0))
@@ -76,6 +79,7 @@ struct Pettable<Content: View>: View {
                     store.poke(squeezed: true)
                 }
         )
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .animation(Dex.quick, value: store.reaction)
         .onChange(of: store.pokes) { react() }
         .task(id: store.pokes) {
@@ -156,244 +160,323 @@ enum PokeLines {
         let revealed = store.game.round.revealed
         let name = store.pokemon.name
         if overdone { return revealed ? "\(name) wants you to be gentler." : "Easy… you'll scare it off." }
-        if store.lastPokeSqueezed { return revealed ? "\(name) squishes and bounces back!" : "It squirms out of your grip." }
-        let lines = revealed ? cries[store.pokemon.id, default: ["\(name) looks pleased."]] : shadows
-        return lines[store.pokes % lines.count]
+        if store.lastPokeSqueezed {
+            return revealed ? squeezes(name)[store.pokes % 3] : "It squirms out of your grip."
+        }
+        guard revealed else {
+            // Silhouettes answer where they're touched, without a name.
+            if let region = store.lastPokeRegion, store.pokes.isMultiple(of: 2) { return shadowRegions[region]! }
+            return shadows[store.pokes % shadows.count]
+        }
+        // Cycle through where it was touched, what it's made of, and its own cry.
+        switch store.pokes % 3 {
+        case 0: if let region = store.lastPokeRegion { return regionLine(region, name: name, pokes: store.pokes) }
+        case 1: return TouchStyle(store.pokemon).line(name)
+        default: break
+        }
+        let own = cries[store.pokemon.id, default: [TouchStyle(store.pokemon).line(name)]]
+        return own[(store.pokes / 3) % own.count]
+    }
+
+    private static func squeezes(_ name: String) -> [String] {
+        ["Squish! \(name)'s cheeks puff out.", "\(name) squishes and bounces back!", "\(name) makes a very squashed face."]
+    }
+
+    private static let shadowRegions: [TouchRegion: String] = [
+        .head: "It ducks its head.", .cheek: "Squish. Soft cheeks, whoever it is.",
+        .belly: "Something giggled…", .feet: "It shuffles its feet."
+    ]
+
+    private static func regionLine(_ region: TouchRegion, name: String, pokes: Int) -> String {
+        let lines: [String]
+        switch region {
+        case .head: lines = ["You patted \(name)'s head.", "\(name) leans into the pat."]
+        case .cheek: lines = ["Boop! Right on \(name)'s cheek.", "Squishy cheeks!"]
+        case .belly: lines = ["\(name) giggles. Ticklish!", "Poke! Right in the tummy."]
+        case .feet: lines = ["\(name) hops on the spot.", "Its toes curl up."]
+        }
+        return lines[(pokes / 3) % lines.count]
     }
 }
 
-// MARK: - The Pokémon as pixels
+/// Where a tap landed on the Pokémon, roughly: its head, a cheek, its
+/// middle, or its feet.
+enum TouchRegion: Hashable {
+    case head, cheek, belly, feet
 
-/// The Pokémon drawn as the scanner's own pixels, after Mist's squeezable
-/// face. A finger dents the pixels under it; a pinch squishes its cheeks
-/// together (spread your fingers and it stretches). Squeeze it hard enough,
-/// by pinching or holding, and it dissolves into another picture of itself:
-/// its shiny artwork, then its Pokémon HOME renders.
+    init?(_ point: CGPoint, in size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return nil }
+        let x = point.x / size.width, y = point.y / size.height
+        if y < 0.36 { self = .head } else if y > 0.74 { self = .feet } else if abs(x - 0.5) > 0.17 { self = .cheek } else { self = .belly }
+    }
+}
+
+/// How a Pokémon's body answers a touch, by its first type: the shader's
+/// style, how firm it is to haptics, and what it feels like.
+enum TouchStyle: Int {
+    case jelly, fire, electric, water, ghost, psychic, ice, stone, grass
+
+    init(_ pokemon: Pokemon) {
+        let types = pokemon.type.split(separator: "/").map { $0.trimmingCharacters(in: .whitespaces) }
+        if types.contains("GHOST") { self = .ghost; return }
+        switch types.first ?? "" {
+        case "FIRE": self = .fire
+        case "ELECTRIC": self = .electric
+        case "WATER": self = .water
+        case "PSYCHIC": self = .psychic
+        case "ICE": self = .ice
+        case "ROCK", "GROUND", "STEEL": self = .stone
+        case "GRASS", "BUG": self = .grass
+        default: self = .jelly
+        }
+    }
+
+    func line(_ name: String) -> String {
+        switch self {
+        case .jelly: "\(name) wobbles like jelly."
+        case .fire: "Hot! \(name) is warm to the touch."
+        case .electric: "Bzzt! A little static off \(name)."
+        case .water: "Splish. \(name) is cool and wet."
+        case .ghost: "Your finger went right through \(name)!"
+        case .psychic: "\(name) knew you'd touch it there."
+        case .ice: "Brr! \(name) is freezing."
+        case .stone: "Tok tok. \(name) is hard as rock."
+        case .grass: "\(name) smells like fresh leaves."
+        }
+    }
+
+    /// Stone and electric feel sharp under the finger; water and jelly soft.
+    var haptic: UIImpactFeedbackGenerator.FeedbackStyle {
+        switch self {
+        case .stone, .electric, .ice: .rigid
+        case .jelly, .water, .ghost: .soft
+        default: .light
+        }
+    }
+}
+
+// MARK: - The Pokémon under the finger
+
+/// The Pokémon at full resolution behind the CRT's dot mask, bent by a
+/// Metal shader under the finger, after Mist's squeezable face.
+///
+/// - A finger dents the picture and drags the part it holds; a tap sends a
+///   ripple out from where it landed. Let go and the body shivers like jelly.
+/// - A pinch draws its cheeks in (spread to stretch it). Squeeze hard, by
+///   pinching or holding, and it dissolves a dot at a time into another
+///   picture of itself: shiny artwork, then its Pokémon HOME renders.
+/// - Its type sets the feel: fire shimmers, electric crackles, water ripples
+///   hard, ghosts let the finger through, psychic floats, ice frosts,
+///   stone barely gives, grass rustles. A haptic texture follows a drag.
 struct PixelPokemon: View {
     let store: GameStore
     /// Identified Pokémon show their colours; before that, a phosphor silhouette.
     let revealed: Bool
 
     @State private var picture = 0
-    @State private var previous: PixelBitmap?
-    @State private var dissolve = 1.0
+    @State private var previous: String?
+    @State private var swapped = Date.distantPast
     @State private var press = 0.0
-    @State private var pressPoint = CGPoint(x: 0.5, y: 0.5)
+    @State private var finger = CGPoint.zero
+    @State private var dragStart = CGPoint.zero
+    @State private var drag = CGSize.zero
     @State private var squish = 0.0
-    @State private var squishCenter = CGPoint(x: 0.5, y: 0.45)
+    @State private var pinch = CGPoint.zero
     @State private var deepest = 0.0
+    @State private var pinching = false
+    @State private var ripples: [(point: CGPoint, start: Date)] = []
+    @State private var wobble = 0.0
+    @State private var released = Date.distantPast
+    @State private var lastTick = CGPoint.zero
+    @State private var active = false
+    @State private var settle: Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let pictures = PixelBitmap.pictures(for: store.pokemon)
+        let pictures = Self.pictures(for: store.pokemon)
+        let style = TouchStyle(store.pokemon)
         GeometryReader { proxy in
             let size = proxy.size
-            PixelField(bitmap: pictures[picture % pictures.count], previous: previous,
-                       tint: revealed ? nil : Dex.phosphor,
-                       press: press, pressPoint: pressPoint,
-                       squish: squish, squishCenter: squishCenter, dissolve: dissolve)
-                .shadow(color: revealed ? .white.opacity(0.25) : Dex.phosphor.opacity(0.7), radius: revealed ? 8 : 7)
-                .contentShape(Rectangle())
-                // A finger dents the pixels under it and they spring back after.
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let point = unit(value.location, in: size)
-                            if press == 0 { pressPoint = point }
-                            withAnimation(reduceMotion ? nil : .interactiveSpring(response: 0.2, dampingFraction: 0.8)) {
-                                press = 1
-                                pressPoint = point
-                            }
+            TimelineView(.animation(paused: !active || reduceMotion)) { timeline in
+                let now = timeline.date
+                // The swap runs off the clock: each dot of the new picture arrives at its own moment.
+                let dissolve = reduceMotion ? 1 : min(1, now.timeIntervalSince(swapped) / 0.5)
+                ZStack {
+                    if let previous, dissolve < 1 {
+                        artwork(previous).visualEffect { [dissolve] view, _ in
+                            view.colorEffect(ShaderLibrary.dotDissolve(.float(dissolve), .float(0)))
                         }
-                        .onEnded { _ in
-                            withAnimation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.35)) { press = 0 }
-                        }
-                )
-                // Pinch in to squish its cheeks; spread to stretch it.
-                .simultaneousGesture(
-                    MagnifyGesture()
-                        .onChanged { value in
-                            if squish == 0 { squishCenter = unit(value.startLocation, in: size) }
-                            let amount = min(max((1 - value.magnification) / 0.45, -0.7), 1)
-                            deepest = max(deepest, amount)
-                            withAnimation(reduceMotion ? nil : .interactiveSpring(response: 0.15, dampingFraction: 0.85)) { squish = amount }
-                        }
-                        .onEnded { _ in
-                            let squeezed = deepest > 0.5
-                            deepest = 0
-                            withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.3)) { squish = 0 }
-                            if squeezed { store.poke(squeezed: true) }
-                        }
-                )
+                    }
+                    artwork(pictures[picture % pictures.count]).visualEffect { [dissolve] view, _ in
+                        view.colorEffect(ShaderLibrary.dotDissolve(.float(dissolve < 1 ? dissolve : 1.01), .float(1)))
+                    }
+                }
+                .frame(width: size.width, height: size.height)
+                .modifier(SquishEffect(size: size, time: now.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1000),
+                                       style: style, finger: finger, press: press, drag: elastic(drag),
+                                       pinch: pinch, squish: squish,
+                                       wobble: wobble, wobbleAge: now.timeIntervalSince(released),
+                                       ripples: ripples.compactMap { ripple in
+                                           let age = now.timeIntervalSince(ripple.start)
+                                           return age < 1.4 ? [ripple.point.x, ripple.point.y, age] : nil
+                                       }.flatMap { $0 },
+                                       reduceMotion: reduceMotion))
+            }
+            .contentShape(Rectangle())
+            .simultaneousGesture(touch(in: size, style: style))
+            .simultaneousGesture(pinchGesture(in: size))
         }
         // A hard squeeze, by pinch or by holding, brings out another picture.
         .onChange(of: store.pokes) {
             guard store.lastPokeSqueezed, !store.lastPokeOverdone, pictures.count > 1 else { return }
             previous = pictures[picture % pictures.count]
             picture += 1
-            dissolve = 0
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.45)) { dissolve = 1 }
+            swapped = .now
+            wake(for: 0.6)
         }
         .onChange(of: store.pokemon.id) {
             picture = 0
             previous = nil
-            dissolve = 1
+            swapped = .distantPast
         }
     }
 
-    private func unit(_ point: CGPoint, in size: CGSize) -> CGPoint {
-        CGPoint(x: point.x / max(size.width, 1), y: point.y / max(size.height, 1))
-    }
-}
-
-/// Draws a bitmap as square pixels, displaced by the finger and the pinch.
-/// Animatable, so springs on the touch values redraw every frame.
-private struct PixelField: View, Animatable {
-    let bitmap: PixelBitmap
-    let previous: PixelBitmap?
-    let tint: Color?
-    var press: Double
-    let pressPoint: CGPoint
-    var squish: Double
-    let squishCenter: CGPoint
-    var dissolve: Double
-
-    nonisolated var animatableData: AnimatablePair<AnimatablePair<Double, Double>, Double> {
-        get { AnimatablePair(AnimatablePair(press, squish), dissolve) }
-        set { press = newValue.first.first; squish = newValue.first.second; dissolve = newValue.second }
-    }
-
-    var body: some View {
-        Canvas { context, size in
-            // Mid-swap, each pixel flips from the old picture to the new at its
-            // own moment, so the change reads as a dither, not a crossfade.
-            if let previous, dissolve < 1 {
-                draw(previous, in: &context, size: size) { $0 >= dissolve }
-            }
-            draw(bitmap, in: &context, size: size) { dissolve >= 1 || $0 < dissolve }
-        }
-        .accessibilityHidden(true)
-    }
-
-    private func draw(_ bitmap: PixelBitmap, in context: inout GraphicsContext, size: CGSize, when visible: (Double) -> Bool) {
-        let side = min(size.width, size.height)
-        let cell = side / CGFloat(bitmap.side)
-        let origin = CGPoint(x: (size.width - side) / 2, y: (size.height - side) / 2)
-        // Touch points arrive in the view's unit space; map them into the square.
-        let finger = CGPoint(x: (pressPoint.x * size.width - origin.x) / side, y: (pressPoint.y * size.height - origin.y) / side)
-        let pinch = CGPoint(x: (squishCenter.x * size.width - origin.x) / side, y: (squishCenter.y * size.height - origin.y) / side)
-        for (index, color) in bitmap.pixels.enumerated() {
-            guard let color, visible(bitmap.noise[index]) else { continue }
-            var x = (Double(index % bitmap.side) + 0.5) / Double(bitmap.side)
-            var y = (Double(index / bitmap.side) + 0.5) / Double(bitmap.side)
-            var width = 1.0, height = 1.0
-            // The pinch draws the cheeks in toward its centre line and lets the
-            // pixels bulge up and down, fading with distance from the fingers.
-            if squish != 0 {
-                let dx = x - pinch.x, dy = y - pinch.y
-                let reach = exp(-(dx * dx + dy * dy) / (2 * 0.3 * 0.3))
-                let amount = squish * reach
-                x = pinch.x + dx * (1 - 0.45 * amount)
-                y = pinch.y + dy * (1 + 0.2 * amount)
-                width = 1 - 0.35 * amount
-                height = 1 + 0.25 * amount
-            }
-            // The finger pushes pixels out of its way, like pressing into dough.
-            if press > 0 {
-                let dx = x - finger.x, dy = y - finger.y
-                let distance = max(sqrt(dx * dx + dy * dy), 0.001)
-                let push = press * 0.07 * exp(-(distance * distance) / (2 * 0.14 * 0.14))
-                x += dx / distance * push
-                y += dy / distance * push
-            }
-            let w = cell * 0.86 * width, h = cell * 0.86 * height
-            let rect = CGRect(x: origin.x + x * side - w / 2, y: origin.y + y * side - h / 2, width: w, height: h)
-            context.fill(Path(rect), with: .color(tint ?? color))
+    @ViewBuilder private func artwork(_ name: String) -> some View {
+        if revealed {
+            Image(name).resizable().interpolation(.high).scaledToFit()
+                .shadow(color: .white.opacity(0.25), radius: 8)
+        } else {
+            Image(name).resizable().renderingMode(.template).interpolation(.high).scaledToFit()
+                .foregroundStyle(Dex.phosphor)
+                .shadow(color: Dex.phosphor.opacity(0.8), radius: 8)
         }
     }
-}
 
-/// A picture sampled down to a square grid: one entry per cell, nil where
-/// it is transparent. The grid is fine enough to read as the CRT's own dots
-/// rather than as chunky pixel art.
-struct PixelBitmap {
-    let side: Int
-    let pixels: [Color?]
-    /// A fixed random value per cell, for dissolving between pictures.
-    let noise: [Double]
+    /// One finger: dent, drag, and a ripple where it lets go of a tap.
+    private func touch(in size: CGSize, style: TouchStyle) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                // A second finger turns this into a pinch; the pinch owns the body then.
+                guard !pinching else { return }
+                if press == 0 {
+                    dragStart = value.startLocation
+                    lastTick = value.startLocation
+                    finger = value.startLocation
+                }
+                wake(for: nil)
+                withAnimation(reduceMotion ? nil : .interactiveSpring(response: 0.18, dampingFraction: 0.8)) {
+                    press = 1
+                    finger = value.location
+                    drag = value.translation
+                }
+                // A haptic tick every so often along the drag, like a texture under the finger.
+                let travelled = hypot(value.location.x - lastTick.x, value.location.y - lastTick.y)
+                if travelled > 14, store.hapticsOn {
+                    UIImpactFeedbackGenerator(style: style.haptic).impactOccurred(intensity: min(1, 0.35 + travelled / 60))
+                    lastTick = value.location
+                }
+            }
+            .onEnded { value in
+                let moved = hypot(value.translation.width, value.translation.height)
+                if moved < 10 { ripples = (ripples + [(value.location, .now)]).suffix(3) }
+                wobble = min(1, 0.35 + moved / 120)
+                released = .now
+                wake(for: 1.6)
+                withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.32)) {
+                    press = 0
+                    drag = .zero
+                }
+            }
+    }
 
-    /// Cells across the grid.
-    static let side = 112
+    /// Two fingers: pinch in to squish its cheeks, spread to stretch it.
+    private func pinchGesture(in size: CGSize) -> some Gesture {
+        MagnifyGesture()
+            .onChanged { value in
+                if !pinching {
+                    pinching = true
+                    pinch = value.startLocation
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
+                        press = 0
+                        drag = .zero
+                    }
+                }
+                let amount = min(max((1 - value.magnification) / 0.45, -0.7), 1)
+                deepest = max(deepest, amount)
+                wake(for: nil)
+                withAnimation(reduceMotion ? nil : .interactiveSpring(response: 0.15, dampingFraction: 0.85)) { squish = amount }
+            }
+            .onEnded { _ in
+                let squeezed = deepest > 0.5
+                pinching = false
+                wobble = min(1, abs(deepest) + 0.3)
+                released = .now
+                deepest = 0
+                wake(for: 1.6)
+                withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.3)) { squish = 0 }
+                if squeezed { store.poke(squeezed: true) }
+            }
+    }
+
+    /// The held part follows the finger less the further it is pulled, like
+    /// stretching something soft.
+    private func elastic(_ drag: CGSize) -> CGSize {
+        let length = hypot(drag.width, drag.height)
+        let give = 1 / (1 + length / 70)
+        return CGSize(width: drag.width * give, height: drag.height * give)
+    }
+
+    /// Keeps the timeline running while something is moving, then lets it rest.
+    private func wake(for seconds: Double?) {
+        active = true
+        settle?.cancel()
+        guard let seconds else { return }
+        settle = Task {
+            try? await Task.sleep(for: .seconds(seconds))
+            if !Task.isCancelled { active = false }
+        }
+    }
 
     /// The artwork first, then each extra picture that is bundled.
-    @MainActor static func pictures(for pokemon: Pokemon) -> [PixelBitmap] {
-        if let cached = cache[pokemon.id] { return cached }
-        let names = [pokemon.asset] + ["shiny", "home", "home-shiny"].map {
-            String(format: "picture-%03d-%@", pokemon.id, $0)
-        }
-        let pictures = names.compactMap { name in UIImage(named: name).flatMap(sample) }
-        let result = pictures.isEmpty ? [PixelBitmap(side: 1, pixels: [nil], noise: [0])] : pictures
-        cache[pokemon.id] = result
-        return result
+    @MainActor private static func pictures(for pokemon: Pokemon) -> [String] {
+        [pokemon.asset] + ["shiny", "home", "home-shiny"]
+            .map { String(format: "picture-%03d-%@", pokemon.id, $0) }
+            .filter { UIImage(named: $0) != nil }
+    }
+}
+
+/// Applies the squish shader. Animatable, so springs on the touch values
+/// reach the shader every frame.
+private struct SquishEffect: ViewModifier, Animatable {
+    let size: CGSize
+    let time: Double
+    let style: TouchStyle
+    let finger: CGPoint
+    var press: Double
+    let drag: CGSize
+    let pinch: CGPoint
+    var squish: Double
+    let wobble: Double
+    let wobbleAge: Double
+    let ripples: [Double]
+    let reduceMotion: Bool
+
+    nonisolated var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(press, squish) }
+        set { press = newValue.first; squish = newValue.second }
     }
 
-    @MainActor private static var cache: [Int: [PixelBitmap]] = [:]
-
-    /// Crops to the opaque pixels, then fits them into a square grid.
-    private static func sample(_ image: UIImage) -> PixelBitmap? {
-        guard let cg = image.cgImage, let full = rgba(cg, width: cg.width, height: cg.height, smooth: false) else { return nil }
-        var minX = cg.width, minY = cg.height, maxX = -1, maxY = -1
-        for y in 0..<cg.height {
-            for x in 0..<cg.width where full[(y * cg.width + x) * 4 + 3] > 127 {
-                minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
-            }
-        }
-        guard maxX >= minX, maxY >= minY else { return nil }
-        let span = max(maxX - minX + 1, maxY - minY + 1)
-        // Centre the crop in a square, sitting on the bottom edge.
-        let crop = CGRect(x: minX - (span - (maxX - minX + 1)) / 2, y: maxY + 1 - span, width: span, height: span)
-        guard let cropped = cg.cropping(to: crop.intersection(CGRect(x: 0, y: 0, width: cg.width, height: cg.height))),
-              let small = rgba(cropped, width: side, height: side, smooth: true, frame: crop, source: cg) else { return nil }
-        var pixels = [Color?](repeating: nil, count: side * side)
-        var noise = [Double](repeating: 0, count: side * side)
-        var seed: UInt64 = 0x9E3779B97F4A7C15
-        for index in 0..<(side * side) {
-            seed = seed &* 6364136223846793005 &+ 1442695040888963407
-            noise[index] = Double(seed >> 11) / Double(1 << 53)
-            let alpha = small[index * 4 + 3]
-            guard alpha > 110 else { continue }
-            // Premultiplied: undo it so edge pixels keep their colour.
-            let scale = 255 / Double(alpha)
-            pixels[index] = Color(red: Double(small[index * 4]) * scale / 255,
-                                  green: Double(small[index * 4 + 1]) * scale / 255,
-                                  blue: Double(small[index * 4 + 2]) * scale / 255)
-        }
-        return PixelBitmap(side: side, pixels: pixels, noise: noise)
-    }
-
-    /// Draws an image into an RGBA buffer. With a frame, the crop is placed
-    /// where it sat inside that frame, so a crop clipped at the edge keeps
-    /// its offset.
-    private static func rgba(_ image: CGImage, width: Int, height: Int, smooth: Bool,
-                             frame: CGRect? = nil, source: CGImage? = nil) -> [UInt8]? {
-        var buffer = [UInt8](repeating: 0, count: width * height * 4)
-        let drawn = buffer.withUnsafeMutableBytes { bytes -> Bool in
-            guard let context = CGContext(data: bytes.baseAddress, width: width, height: height, bitsPerComponent: 8,
-                                          bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
-                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
-            context.interpolationQuality = smooth ? .high : .none
-            var rect = CGRect(x: 0, y: 0, width: width, height: height)
-            if let frame, let source {
-                // Where the clipped crop sits within the requested square, flipped for Core Graphics.
-                let visible = frame.intersection(CGRect(x: 0, y: 0, width: source.width, height: source.height))
-                let scale = CGFloat(width) / frame.width
-                rect = CGRect(x: (visible.minX - frame.minX) * scale,
-                              y: (frame.maxY - visible.maxY) * scale,
-                              width: visible.width * scale, height: visible.height * scale)
-            }
-            context.draw(image, in: rect)
-            return true
-        }
-        return drawn ? buffer : nil
+    func body(content: Content) -> some View {
+        content.layerEffect(
+            ShaderLibrary.pixelSquish(
+                .float2(size), .float(time), .float(Float(style.rawValue)),
+                .float2(finger), .float(press), .float2(drag),
+                .float2(pinch), .float(squish),
+                .float(reduceMotion ? 0 : wobble), .float(wobbleAge),
+                // Never empty: an idle ring far in the past stands in for none.
+                .floatArray(ripples.isEmpty ? [0, 0, 99] : ripples.map(Float.init))
+            ),
+            maxSampleOffset: CGSize(width: 80, height: 80)
+        )
     }
 }

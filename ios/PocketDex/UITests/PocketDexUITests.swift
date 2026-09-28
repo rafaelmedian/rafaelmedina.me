@@ -258,6 +258,11 @@ final class PocketDexUITests: XCTestCase {
         reveal(art)
         Thread.sleep(forTimeInterval: 1)
         attach("squeeze-before")
+        // Drag a finger across it: the picture follows, then shivers on release.
+        let start = art.coordinate(withNormalizedOffset: CGVector(dx: 0.35, dy: 0.45))
+        start.press(forDuration: 0.3, thenDragTo: art.coordinate(withNormalizedOffset: CGVector(dx: 0.65, dy: 0.55)))
+        Thread.sleep(forTimeInterval: 0.4)
+        attach("squeeze-dragged")
         art.press(forDuration: 1.2)
         Thread.sleep(forTimeInterval: 1.2)
         attach("squeeze-held")

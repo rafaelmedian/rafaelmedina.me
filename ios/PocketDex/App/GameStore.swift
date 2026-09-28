@@ -256,7 +256,11 @@ final class GameStore {
     private(set) var ruledOut: Int?
     static let hintCount = 5
 
-    func poke(squeezed: Bool = false) {
+    /// Where the last tap landed, so the Pokémon can answer to it.
+    private(set) var lastPokeRegion: TouchRegion?
+
+    func poke(squeezed: Bool = false, region: TouchRegion? = nil) {
+        lastPokeRegion = region
         let now = Date.now
         recentPokes = recentPokes.filter { now.timeIntervalSince($0) < 3 } + [now]
         lastPokeOverdone = recentPokes.count >= 6

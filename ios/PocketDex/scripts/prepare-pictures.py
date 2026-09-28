@@ -3,12 +3,14 @@
 
 Squeezing a Pokémon on the scanner swaps it to its next picture: the shiny
 artwork, its Pokémon HOME render, then the shiny HOME render. The scanner
-draws them as about 112 CRT cells across, so each is shrunk to 128px here
-to keep the app small. Needs macOS `sips`. No runtime network.
+shows them behind its 3pt dot mask, so each is shrunk to 256px here
+to keep the app small, and palette-compressed with pngquant when it is
+installed. Needs macOS `sips`. No runtime network.
 """
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import json
+import shutil
 import subprocess
 import urllib.request
 
@@ -31,7 +33,10 @@ def fetch(job):
     target = folder / f'{name}.png'
     if not target.exists():
         urllib.request.urlretrieve(f'{BASE}/{path}/{number}.png', target)
-        subprocess.run(['sips', '-Z', '128', str(target)], check=True, capture_output=True)
+        subprocess.run(['sips', '-Z', '256', str(target)], check=True, capture_output=True)
+        if shutil.which('pngquant'):
+            subprocess.run(['pngquant', '--force', '--skip-if-larger', '--quality', '70-92',
+                            '--output', str(target), str(target)], capture_output=True)
     (folder / 'Contents.json').write_text(json.dumps({
         'images': [{'filename': target.name, 'idiom': 'universal'}],
         'info': {'author': 'xcode', 'version': 1}}, indent=2) + '\n')

@@ -12,6 +12,11 @@ assume it is named `pocketdex-duo`. No signing team is needed for the
 simulator. For a physical device, select your own team in Signing &
 Capabilities.
 
+The scanner bends the Pokémon with a Metal shader (`App/PixelSquish.metal`).
+Each Xcode needs its Metal Toolchain once; a missing one fails the build with
+"cannot execute tool 'metal'". Install it with
+`xcodebuild -downloadComponent MetalToolchain` under each `DEVELOPER_DIR`.
+
 ```sh
 DEVELOPER_DIR=/Applications/Xcode-27.1.0-Beta.app/Contents/Developer \
   xcodebuild -project ios/PocketDex/PocketDex.xcodeproj \
