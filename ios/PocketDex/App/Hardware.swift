@@ -105,18 +105,26 @@ struct Polyline: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         guard points.count > 1 else { return path }
+        if closed {
+            // Start between the last and first points so every corner is softened.
+            let first = points[0], last = points[points.count - 1]
+            path.move(to: CGPoint(x: (first.x + last.x) / 2, y: (first.y + last.y) / 2))
+            for index in points.indices {
+                path.addArc(tangent1End: points[index], tangent2End: points[(index + 1) % points.count], radius: corner)
+            }
+            path.closeSubpath()
+            return path
+        }
         path.move(to: points[0])
         for index in 1..<points.count {
             let point = points[index]
             let isLast = index == points.count - 1
-            if isLast && !closed {
+            if isLast {
                 path.addLine(to: point)
             } else {
-                let next = points[(index + 1) % points.count]
-                path.addArc(tangent1End: point, tangent2End: next, radius: corner)
+                path.addArc(tangent1End: point, tangent2End: points[index + 1], radius: corner)
             }
         }
-        if closed { path.closeSubpath() }
         return path
     }
 }
