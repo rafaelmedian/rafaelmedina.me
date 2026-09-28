@@ -21,41 +21,14 @@ struct ClosedCase: View {
                 ShellBackground()
                 FlapPlastic(outline: flap)
                 Polyline(points: seam, corner: 12).groove(2.5)
-                // Closed, the hinge shows only its near half along the edge.
-                Capsule().fill(Color(red: 0.12, green: 0.01, blue: 0.03)).blur(radius: 1.5)
-                    .frame(width: 46, height: size.height - lens.seamHigh + 12)
-                    .position(x: 0, y: (lens.seamHigh + size.height) / 2 + 3)
-                HingeBarrel()
-                    .frame(width: 40, height: size.height - lens.seamHigh + 6)
-                    .position(x: 0, y: (lens.seamHigh + size.height) / 2 + 3)
                 LensStrip(lens: lens, glow: glow, lights: (false, false, true))
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("POKÉDEX")
-                        .font(.system(size: 34, weight: .black, design: .rounded)).tracking(-0.5)
-                        .foregroundStyle(Dex.groove.opacity(0.5))
-                        .shadow(color: .white.opacity(0.3), radius: 0, y: 1.2)
-                    HStack(spacing: 8) {
-                        LCD {
-                            Text(String(format: "%02d/12", store.game.captured.count))
-                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                        }
-                        Engraved(text: "FOUND", size: 9)
-                    }
-                }
-                .padding(.leading, 40)
-                .padding(.top, lens.seamLow + 34)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("PocketDex. \(store.game.captured.count) of 12 discovered.")
+                Color.clear
+                    .accessibilityElement()
+                    .accessibilityLabel("PocketDex. \(store.game.captured.count) of 12 discovered.")
 
                 Opener(reduceMotion: reduceMotion)
                     .position(x: size.width - max(safe.trailing, 0) - 20, y: flapMid)
-
-                Capsule().fill(Dex.groove.opacity(0.55))
-                    .overlay(Capsule().stroke(.white.opacity(0.22), lineWidth: 1).offset(y: 1.2))
-                    .frame(width: size.width * 0.36, height: 6)
-                    .position(x: size.width / 2 + 8, y: size.height - max(safe.bottom, 16) - 14)
-                    .accessibilityHidden(true)
 
                 DotGrille(rows: 2, columns: 8, dot: 4, gap: 4)
                     .position(x: 40 + 30, y: size.height - max(safe.bottom, 16) - 44)

@@ -271,7 +271,7 @@ struct KeyLegend: View {
     }
 }
 
-/// A round arcade cap sitting in a recessed well, with a halo when armed.
+/// A plain round button: a domed cap on its own shallow skirt, no well.
 struct ArcadeButtonStyle: ButtonStyle {
     var tint: KeyTint = .yellow
     var armed = true
@@ -283,14 +283,10 @@ struct ArcadeButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let asleep = power < wake
         let sink: CGFloat = configuration.isPressed || asleep ? 4 : 0
-        let cap = size * 0.64
+        let cap = size * 0.78
         return ZStack {
-            RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-                .fill(Dex.redDark.shadow(.inner(color: .black.opacity(0.55), radius: 5, y: 3)))
-                .overlay(RoundedRectangle(cornerRadius: size * 0.26, style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 1).offset(y: 1))
-            Circle().fill(tint.face.opacity(armed && !asleep ? 0.38 : 0.1)).frame(width: cap + 18, height: cap + 18)
-                .blur(radius: armed ? 1 : 0)
             Circle().fill(tint.skirt).frame(width: cap, height: cap).offset(y: 5)
+                .shadow(color: .black.opacity(0.3), radius: 3, y: 6)
             Circle().fill(RadialGradient(colors: [tint.top, tint.face], center: UnitPoint(x: 0.4, y: 0.3), startRadius: 0, endRadius: cap * 0.6))
                 .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1).padding(1))
                 .overlay(Circle().strokeBorder(tint.skirt.opacity(0.35), lineWidth: 1).padding(cap * 0.14))

@@ -42,8 +42,10 @@ struct LensGeometry: Equatable {
         if let camera, panel.contains(CGPoint(x: camera.midX, y: camera.midY)) {
             center = CGPoint(x: camera.midX, y: camera.midY)
             pupil = max(camera.width, camera.height) + 2
-            let room = min(center.y - panel.minY, panel.maxX - center.x) * 2 - 8
-            diameter = min(max(pupil * 2.4, 64), max(room, pupil + 26), 100)
+            // Keep clear of the display's rounded corner: the lens stays inside
+            // the straight edges with a margin rather than filling the corner.
+            let room = min(center.y - panel.minY, panel.maxX - center.x) * 2 - 22
+            diameter = min(max(pupil * 1.9, 60), max(room, pupil + 22), 84)
         } else {
             diameter = 76
             pupil = 16
@@ -94,7 +96,7 @@ struct LensAnchor: Codable, Equatable {
     var pupil: CGFloat
     var diameter: CGFloat
     /// iPhone Duo's outer camera, for launches that open before the cover is seen.
-    static let duo = LensAnchor(trailing: 47.8, top: 47.8, pupil: 39, diameter: 87.6)
+    static let duo = LensAnchor(trailing: 47.8, top: 47.8, pupil: 39, diameter: 73.6)
 }
 
 /// A dark glass window over a sensor housing the lens does not cover.
@@ -138,8 +140,8 @@ struct Polyline: Shape {
 }
 
 /// The spine between the two halves: a red plastic barrel, shaded as a
-/// cylinder, with ring grooves near each end and screw caps. The closed cover
-/// shows its near half at the edge; the open display shows all of it.
+/// cylinder, with ring grooves near each end and screw caps. It only shows on
+/// the open display; the cover stays a clean face.
 struct HingeBarrel: View {
     var vertical = true
     var body: some View {
