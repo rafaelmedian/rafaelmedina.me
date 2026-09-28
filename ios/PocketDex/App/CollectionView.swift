@@ -10,7 +10,7 @@ struct CollectionGrid: View {
             HStack {
                 Text("DISCOVERIES")
                 Spacer()
-                Text("\(store.game.captured.count)/12")
+                DiscoveriesChip(store: store)
             }
             .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1)
             .foregroundStyle(Dex.phosphor.opacity(0.75))

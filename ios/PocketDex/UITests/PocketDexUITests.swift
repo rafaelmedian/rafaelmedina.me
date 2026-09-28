@@ -49,19 +49,17 @@ final class PocketDexUITests: XCTestCase {
         XCTAssertTrue(correct.waitForExistence(timeout: 5))
         let wrong = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label != %@", "Gengar")).firstMatch
         reveal(wrong)
+        // One tap answers: no OK needed.
         wrong.tap()
-        reveal(app.buttons["confirm-answer"])
-        app.buttons["confirm-answer"].tap()
         XCTAssertFalse(wrong.isEnabled)
         XCTAssertTrue(app.staticTexts["Not quite. Try another!"].exists)
         reveal(correct)
         correct.tap()
-        app.buttons["confirm-answer"].tap()
         app.buttons["close-case"].tap()
         app.buttons["open-case"].tap()
-        XCTAssertTrue(app.buttons["confirm-answer"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["next-pokemon"].waitForExistence(timeout: 3))
         let ready = NSPredicate(format: "enabled == true")
-        expectation(for: ready, evaluatedWith: app.buttons["confirm-answer"])
+        expectation(for: ready, evaluatedWith: app.buttons["next-pokemon"])
         waitForExpectations(timeout: 5)
         XCTAssertEqual(app.staticTexts["pokemon-name"].label, "Gengar")
         attach("04-captured")
@@ -75,8 +73,8 @@ final class PocketDexUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["pokemon-name"].label, "Gengar")
         let count = app.descendants(matching: .any).matching(identifier: "capture-count").firstMatch
         XCTAssertEqual(count.label, "1 of 12 Pokémon discovered")
-        reveal(app.buttons["confirm-answer"])
-        app.buttons["confirm-answer"].tap()
+        reveal(app.buttons["next-pokemon"])
+        app.buttons["next-pokemon"].tap()
         XCTAssertEqual(app.staticTexts["pokemon-name"].label, "Who's that Pokémon?")
     }
 
@@ -85,8 +83,8 @@ final class PocketDexUITests: XCTestCase {
         app.launch()
         reveal(app.buttons["open-case"])
         app.buttons["open-case"].tap()
-        reveal(app.buttons["confirm-answer"])
-        XCTAssertTrue(app.buttons["confirm-answer"].isHittable)
+        reveal(app.buttons["answer-0"])
+        XCTAssertTrue(app.buttons["answer-0"].isHittable)
         XCUIDevice.shared.orientation = .landscapeLeft
         reveal(app.buttons["show-collection"])
         if !app.buttons["show-collection"].isHittable { print(app.debugDescription); attach("large-type-failure") }
@@ -109,9 +107,7 @@ final class PocketDexUITests: XCTestCase {
         let correct = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label == %@", "Gengar")).firstMatch
         reveal(correct)
         correct.tap()
-        reveal(app.buttons["confirm-answer"])
-        app.buttons["confirm-answer"].tap()
-        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: app.buttons["confirm-answer"])
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: app.buttons["next-pokemon"])
         waitForExpectations(timeout: 5)
         attach("showcase-captured")
         Thread.sleep(forTimeInterval: 1.5)
@@ -125,10 +121,6 @@ final class PocketDexUITests: XCTestCase {
         app.buttons["Options"].tap()
         XCTAssertTrue(app.buttons["Mute sound"].waitForExistence(timeout: 3))
         attach("showcase-options")
-        reveal(app.buttons["camera"])
-        app.buttons["camera"].tap()
-        XCTAssertTrue(app.buttons["Share snapshot"].waitForExistence(timeout: 3))
-        attach("showcase-snapshot")
         reveal(app.buttons["show-collection"])
         app.buttons["show-collection"].tap()
         XCTAssertTrue(app.buttons["back-to-game"].waitForExistence(timeout: 5))

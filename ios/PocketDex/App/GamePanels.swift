@@ -1,21 +1,16 @@
 import SwiftUI
 import PocketDexCore
 
-// MARK: - Body (the stationary half): scanner and control deck
+// MARK: - Body (the stationary half): the scanner
 
 struct BodyPanel: View {
     let store: GameStore
     /// When true the scanner grows to fill the panel; otherwise it keeps a fixed height.
     var fill = true
     var body: some View {
-        VStack(spacing: 10) {
-            // The scanner takes everything the short control row leaves.
-            Scanner(store: store)
-                .frame(minHeight: 250, idealHeight: fill ? 520 : 300, maxHeight: fill ? .infinity : 330)
-                .layoutPriority(1)
-            ControlDeck(store: store)
-                .frame(height: 76)
-        }
+        // The scanner is the whole half; its controls are drawn on the glass.
+        Scanner(store: store)
+            .frame(minHeight: 250, idealHeight: fill ? 600 : 380, maxHeight: fill ? .infinity : 410)
     }
 }
 
@@ -133,10 +128,11 @@ private struct ScannerPicture: View {
     var body: some View {
         let revealed = store.game.round.revealed
         VStack(spacing: 6) {
-            HStack {
+            HStack(spacing: 10) {
                 Text(revealed ? "SIGNAL IDENTIFIED" : "SCANNING…")
-                Spacer()
-                Text(revealed ? "No.\(store.pokemon.number)" : "No.???")
+                Text(revealed ? "No.\(store.pokemon.number)" : "No.???").opacity(0.6)
+                Spacer(minLength: 0)
+                DiscoveriesChip(store: store)
             }
             .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1)
             .foregroundStyle(Dex.phosphor.opacity(0.75))
@@ -195,150 +191,36 @@ private struct ScannerPicture: View {
     }
 }
 
-/// The right thumb's corner: the camera and Discoveries keys, then OK as the big primary
-/// button, lit green whenever it can be pressed.
-private struct ControlDeck: View {
-    let store: GameStore
-    var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            CameraButton(store: store)
-                .padding(4)
-                .background(Circle().fill(Dex.groove.shadow(.inner(color: .black.opacity(0.6), radius: 2, y: 1.5))))
-                .overlay(Circle().strokeBorder(LinearGradient(colors: [.clear, .white.opacity(0.25)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-            DiscoveriesKey(store: store)
-            Spacer(minLength: 0)
-            DotGrille(rows: 3, columns: 6, dot: 4, gap: 4)
-            // In scan mode the big green button scans; asleep, it rests.
-            let scanning = store.mode == .scan
-            let armed = !store.asleep && (scanning ? !store.scanning : store.canConfirm)
-            Button { scanning ? store.scan() : store.confirm() } label: {
-                VStack(spacing: 1) {
-                    Image(systemName: scanning ? "viewfinder" : store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 20, weight: .black))
-                    Text(scanning ? "SCAN" : store.game.round.revealed ? "NEXT" : "OK").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1)
-                }
-            }
-            .buttonStyle(ArcadeButtonStyle(tint: armed ? .green : .spent, armed: armed, size: 80, wake: 0.85))
-            .disabled(!armed)
-            .accessibilityLabel(scanning ? "Scan" : store.game.round.revealed ? "Next Pokémon" : "Confirm answer")
-            .accessibilityIdentifier("confirm-answer")
-        }
-    }
-}
-
-/// Mist's camera button: a small dark round key. It fires the lens flash,
-/// snaps the scanner screen, and slides a print out of the corner; tap the
-/// print to share it.
-private struct CameraButton: View {
-    let store: GameStore
-    @State private var photo: Image?
-    @State private var shots = 0
-    @Environment(\.displayScale) private var displayScale
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        Button(action: snap) {
-            Image(systemName: "camera.fill").font(.system(size: 15, weight: .semibold))
-        }
-        .buttonStyle(DarkRoundStyle())
-        .accessibilityLabel("Take a snapshot")
-        .accessibilityIdentifier("camera")
-        .overlay(alignment: .bottomTrailing) {
-            if let photo {
-                ShareLink(item: photo, preview: SharePreview("PocketDex", image: photo)) {
-                    // A fixed-size print; left to itself ShareLink shrinks the image to icon size.
-                    Color.clear
-                        .frame(width: 112, height: 97)
-                        .overlay { photo.resizable().aspectRatio(contentMode: .fill) }
-                        .clipped()
-                        .padding(5).padding(.bottom, 14)
-                        .background(Color(white: 0.97), in: RoundedRectangle(cornerRadius: 4))
-                        .shadow(color: .black.opacity(0.35), radius: 8, y: 5)
-                        .rotationEffect(.degrees(-6))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Share snapshot")
-                .offset(x: -8, y: -64)
-                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.6, anchor: .bottomTrailing)))
-            }
-        }
-        .task(id: shots) {
-            // The print waits a few seconds to be tapped, then tucks away.
-            guard photo != nil else { return }
-            try? await Task.sleep(for: .seconds(4))
-            guard !Task.isCancelled else { return }
-            withAnimation(reduceMotion ? nil : Dex.reveal) { photo = nil }
-        }
-    }
-
-    private func snap() {
-        store.snap()
-        let renderer = ImageRenderer(content: SnapshotCard(store: store).environment(\.dexPower, 1))
-        renderer.proposedSize = ProposedViewSize(width: 352, height: 306)
-        renderer.scale = displayScale
-        guard let image = renderer.uiImage else { return }
-        withAnimation(reduceMotion ? nil : Dex.reveal.delay(0.15)) { photo = Image(uiImage: image) }
-        shots += 1
-    }
-}
-
-/// What the camera captures: the scanner screen in a strip of case plastic.
-private struct SnapshotCard: View {
-    let store: GameStore
-    var body: some View {
-        VStack(spacing: 10) {
-            CRTScreen(power: 1, radius: 14) { ScannerPicture(store: store) }
-                .frame(width: 320, height: 250)
-            Text("POCKETDEX · \(store.game.captured.count)/12")
-                .font(.system(size: 11, weight: .heavy, design: .monospaced)).tracking(2)
-                .foregroundStyle(Dex.cream.opacity(0.85))
-        }
-        .padding(16)
-        .background(ShellBackground())
-        .fixedSize()
-    }
-}
-
-/// Discoveries sits by the screen it changes: a small cream key that swaps
-/// the scanner to the collection and back, with the count beside it.
-private struct DiscoveriesKey: View {
+/// Discoveries, drawn on the glass: a thin phosphor chip in the scanner's
+/// header that swaps the screen to the collection and back, with the count.
+struct DiscoveriesChip: View {
     let store: GameStore
     var body: some View {
         let showing = store.collectionVisible
         Button { store.collectionVisible.toggle() } label: {
-            HStack(spacing: 8) {
-                Image(systemName: showing ? "arrow.uturn.backward" : "square.grid.2x2.fill")
-                    .font(.system(size: 14, weight: .bold))
+            HStack(spacing: 5) {
+                Image(systemName: showing ? "arrow.uturn.backward" : "square.grid.2x2")
+                    .font(.system(size: 10, weight: .bold))
                 Text(String(format: "%02d/12", store.game.captured.count))
-                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
                     .accessibilityIdentifier("capture-count")
             }
-            .padding(.horizontal, 4)
+            .tracking(1)
+            .foregroundStyle(showing ? Dex.glass : Dex.phosphor)
+            .padding(.horizontal, 8)
+            .frame(height: 22)
+            .background(showing ? Dex.phosphor : Dex.phosphor.opacity(0.06), in: Capsule())
+            .overlay(Capsule().strokeBorder(Dex.phosphor.opacity(showing ? 0 : 0.45), lineWidth: 1))
+            .shadow(color: showing ? Dex.phosphor.opacity(0.5) : .clear, radius: 4)
+            // A comfortable target around a thin chip.
+            .padding(.vertical, 11).padding(.horizontal, 4)
+            .contentShape(Rectangle())
+            .padding(.vertical, -11).padding(.horizontal, -4)
         }
-        .buttonStyle(KeyCapStyle(tint: .cream, depth: 5, corners: .all(14), latched: showing, wake: 0.78))
+        .buttonStyle(.plain)
         .accessibilityLabel(showing ? "Back to game" : "Discoveries")
         .accessibilityIdentifier(showing ? "back-to-game" : "show-collection")
-    }
-}
-
-/// A small dark round key, as on Mist's camera button.
-struct DarkRoundStyle: ButtonStyle {
-    var size: CGFloat = 48
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed
-        return ZStack {
-            Circle().fill(Color(red: 0.03, green: 0.03, blue: 0.04)).frame(width: size, height: size).offset(y: 3)
-            Circle().fill(RadialGradient(colors: [Color(white: 0.24), Color(white: 0.12)], center: UnitPoint(x: 0.45, y: 0.3), startRadius: 0, endRadius: size * 0.6))
-                .overlay(Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.25), .clear], startPoint: .top, endPoint: .center), lineWidth: 1))
-                .frame(width: size, height: size)
-                .offset(y: pressed ? 2.5 : 0)
-            configuration.label.foregroundStyle(Color(white: 0.62)).offset(y: pressed ? 2.5 : 0)
-        }
-        .frame(width: size, height: size + 4)
-        .shadow(color: Dex.groove.opacity(0.45), radius: 4, y: 3)
-        .contentShape(Circle())
-        .animation(reduceMotion ? nil : Dex.squeeze, value: pressed)
     }
 }
 
