@@ -141,6 +141,7 @@ final class GameStore {
         guard canConfirm else { return }
         if game.round.revealed {
             game.advance()
+            hintsTaken = 0
             captureStage = .hidden
             message = Self.idleMessage
             play("select", haptic: .selection)
@@ -233,6 +234,12 @@ final class GameStore {
         if hapticsOn { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
     }
 
+    /// How many of the round's hints touching the silhouette has given.
+    /// Each one fills in a line of the entry: type, height, weight, the
+    /// name's first letter, then a wrong answer struck out.
+    private(set) var hintsTaken = 0
+    static let hintCount = 5
+
     func poke(squeezed: Bool = false) {
         let now = Date.now
         recentPokes = recentPokes.filter { now.timeIntervalSince($0) < 3 } + [now]
@@ -240,8 +247,31 @@ final class GameStore {
         if lastPokeOverdone { recentPokes.removeAll() }
         lastPokeSqueezed = squeezed
         pokes += 1
-        reaction = PokeLines.line(for: self, overdone: lastPokeOverdone)
+        if let hint = nextHint() {
+            reaction = hint
+        } else {
+            reaction = PokeLines.line(for: self, overdone: lastPokeOverdone)
+        }
         if hapticsOn { UIImpactFeedbackGenerator(style: squeezed ? .rigid : .soft).impactOccurred() }
+    }
+
+    /// A plain tap on the unidentified silhouette gives the next hint.
+    /// Squeezes and pokes that come too fast only make it squirm.
+    private func nextHint() -> String? {
+        guard mode == .game, !asleep, !game.round.revealed, !lastPokeSqueezed, !lastPokeOverdone,
+              hintsTaken < Self.hintCount else { return nil }
+        let pokemon = pokemon
+        switch hintsTaken {
+        case 0: hintsTaken += 1; return "Type read: \(pokemon.type)."
+        case 1: hintsTaken += 1; return String(format: "Height read: %.1f m.", pokemon.height)
+        case 2: hintsTaken += 1; return String(format: "Weight read: %.1f kg.", pokemon.weight)
+        case 3: hintsTaken += 1; return "Its name starts with \(pokemon.name.prefix(1))."
+        default:
+            hintsTaken += 1
+            guard let index = game.ruleOut(), let ruled = Catalog.pokemon(id: game.round.choices[index]) else { return nil }
+            save()
+            return "It's not \(ruled.name)!"
+        }
     }
 
     func toggleHaptics() {
@@ -252,6 +282,7 @@ final class GameStore {
 
     func replay() {
         game = Game()
+        hintsTaken = 0
         captureStage = .hidden
         collectionVisible = false
         message = Self.idleMessage
@@ -261,6 +292,7 @@ final class GameStore {
     #if DEBUG
     func resetDemo() {
         game = Game(seed: 151)
+        hintsTaken = 0
         captureStage = .hidden
         collectionVisible = false
         message = Self.idleMessage

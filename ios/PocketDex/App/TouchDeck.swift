@@ -141,7 +141,7 @@ struct ControlStrip: View {
     /// What the Pokémon just said, or the round's feedback.
     private var readoutTile: some View {
         let idle = store.message == GameStore.idleMessage
-        let line = store.reaction ?? (idle ? "Tap the screen to say hi." : store.message)
+        let line = store.reaction ?? (!idle ? store.message : store.hintsTaken < GameStore.hintCount ? "Touch the Pokémon for a hint." : "Pick an answer on the left.")
         return VStack(alignment: .leading, spacing: 4) {
             Text(store.reaction != nil ? "IT SAYS" : "STATUS")
                 .font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1.5)

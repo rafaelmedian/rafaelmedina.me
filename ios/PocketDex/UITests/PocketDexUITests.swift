@@ -174,6 +174,36 @@ final class PocketDexUITests: XCTestCase {
         attach("duo-slept")
     }
 
+    /// Touching the silhouette reads the entry one hint at a time, then
+    /// strikes out a wrong answer.
+    func testDuoHints() throws {
+        app.launchArguments = ["--ui-testing", "--demo", "--reset"]
+        app.launch()
+        if app.buttons["open-case"].waitForExistence(timeout: 3) { throw XCTSkip("Needs an unfolded iPhone Duo.") }
+        XCTAssertTrue(app.buttons["wake-up"].waitForExistence(timeout: 10))
+        app.buttons["wake-up"].tap()
+        let art = app.descendants(matching: .any).matching(identifier: "scanner-art").firstMatch
+        let data = app.descendants(matching: .any).matching(identifier: "scan-data").firstMatch
+        XCTAssertTrue(art.waitForExistence(timeout: 5))
+        XCTAssertFalse(data.label.contains("GHOST"))
+        art.tap()
+        XCTAssertTrue(data.label.localizedCaseInsensitiveContains("ghost"), data.label)
+        Thread.sleep(forTimeInterval: 1)
+        attach("duo-hint-type")
+        let struck = NSPredicate(format: "identifier BEGINSWITH 'answer-' AND value == %@", "Incorrect")
+        XCTAssertEqual(app.buttons.matching(struck).count, 0)
+        // Spaced out, so the Pokémon doesn't think it's being pestered.
+        for _ in 0..<4 {
+            Thread.sleep(forTimeInterval: 0.8)
+            art.tap()
+        }
+        XCTAssertTrue(data.label.contains("G·····"), data.label)
+        XCTAssertEqual(app.buttons.matching(struck).count, 1)
+        XCTAssertNotEqual(app.buttons.matching(struck).firstMatch.label, "Gengar")
+        Thread.sleep(forTimeInterval: 0.4)
+        attach("duo-hints-all")
+    }
+
     /// Scan mode on the unfolded Duo: wake into the camera, scan, get a match.
     func testDuoScan() throws {
         app.launchArguments = ["--ui-testing", "--demo", "--reset"]

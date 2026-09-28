@@ -99,26 +99,30 @@ private struct BezelShape: Shape {
     }
 }
 
-/// The entry's data: type, height, weight, and status. Unknown until the
-/// Pokémon is identified, so the numbers never give the answer away.
+/// The entry's data: type, height, weight, and status. Each line stays
+/// unknown until a hint reads it or the Pokémon is identified.
 private struct ScanData: View {
     let store: GameStore
     var body: some View {
         let revealed = store.game.round.revealed
         let pokemon = store.pokemon
+        let read = { (hint: Int) in revealed || store.hintsTaken > hint }
         VStack(alignment: .leading, spacing: 10) {
-            row("TYPE", revealed ? pokemon.type.capitalized : "???")
-            row("HEIGHT", revealed ? String(format: "%.1f m", pokemon.height) : "???")
-            row("WEIGHT", revealed ? String(format: "%.1f kg", pokemon.weight) : "???")
+            row("TYPE", read(0) ? pokemon.type.capitalized : "???")
+            row("HEIGHT", read(1) ? String(format: "%.1f m", pokemon.height) : "???")
+            row("WEIGHT", read(2) ? String(format: "%.1f kg", pokemon.weight) : "???")
+            row("NAME", revealed ? pokemon.name : read(3) ? "\(pokemon.name.prefix(1))" + String(repeating: "·", count: pokemon.name.count - 1) : "???")
             Rectangle().fill(Dex.phosphor.opacity(0.2)).frame(height: 1)
-            row("STATUS", revealed ? "IDENTIFIED" : "SCANNING", tint: revealed ? Color(red: 0.45, green: 1, blue: 0.5) : Dex.yellow)
+            row("STATUS", revealed ? "IDENTIFIED" : store.hintsTaken > 0 ? "HINTS \(store.hintsTaken)/\(GameStore.hintCount)" : "SCANNING", tint: revealed ? Color(red: 0.45, green: 1, blue: 0.5) : Dex.yellow)
         }
         .padding(12)
         .frame(maxHeight: .infinity, alignment: .center)
         .background(Dex.phosphor.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Dex.phosphor.opacity(0.18), lineWidth: 1))
         .animation(Dex.quick, value: revealed)
+        .animation(Dex.quick, value: store.hintsTaken)
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("scan-data")
     }
 
     private func row(_ label: String, _ value: String, tint: Color = Dex.phosphor) -> some View {
@@ -181,8 +185,8 @@ private struct ScannerPicture: View {
             .frame(maxHeight: .infinity)
             .animation(reduceMotion ? nil : Dex.reveal, value: store.captureStage)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(revealed ? store.pokemon.name : "Silhouette of an undiscovered Pokémon. Use the clue to identify it.")
-            .accessibilityAction(named: "Poke") { store.poke() }
+            .accessibilityLabel(revealed ? store.pokemon.name : "Silhouette of an undiscovered Pokémon. Touch it for a hint.")
+            .accessibilityAction(named: revealed ? "Poke" : "Hint") { store.poke() }
             .accessibilityIdentifier("scanner-art")
             // Once identified, the entry's data sits beside the art.
             ScanData(store: store).frame(width: 150)
@@ -193,7 +197,7 @@ private struct ScannerPicture: View {
                 .shadow(color: Dex.phosphor.opacity(0.7), radius: 5)
                 .lineLimit(1).minimumScaleFactor(0.6)
                 .accessibilityIdentifier("pokemon-name")
-            Text(revealed ? "#\(store.pokemon.number) · \(store.pokemon.species) Pokémon" : "Touch it. Pinch to look closer.")
+            Text(revealed ? "#\(store.pokemon.number) · \(store.pokemon.species) Pokémon" : store.hintsTaken < GameStore.hintCount ? "Touch it for a hint." : "No more hints. Trust your gut!")
                 .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1)
                 .foregroundStyle(Dex.phosphor.opacity(0.55))
         }
