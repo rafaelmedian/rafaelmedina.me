@@ -420,41 +420,112 @@ struct LCD<Content: View>: View {
     }
 }
 
+/// A Poké Ball that can open the way the games and the anime draw it: the
+/// base stays put and shows its hollow as an ellipse, while the lid swings
+/// up and back on its rear hinge, showing its own dark inside with the
+/// button riding up on top. At `open` 0 it's the plain shut ball.
 struct Pokeball: View {
-    /// How far the top half has swung open, in degrees; 0 is shut.
-    var lid: Double = 0
-    /// How brightly the button glows red, 0…1.
+    /// How far the lid has swung open: 0 is shut, 1 is wide open. Springs
+    /// may overshoot past 1 a little.
+    var open: Double = 0
+    /// How brightly the button (and the hollow inside) glows red, 0…1.
     var glow: Double = 0
 
     var body: some View {
         GeometryReader { proxy in
-            let s = proxy.size.width
-            ZStack {
-                face(s).mask(half(s, top: false))
-                face(s).mask(half(s, top: true))
-                    // The lid tips back on its hinge and lifts clear of the seam.
-                    .rotation3DEffect(.degrees(-lid), axis: (1, 0, 0), anchor: .center, perspective: 0.55)
-                    .offset(y: -s * 0.18 * min(lid / 90, 1))
-            }
-            .shadow(color: .black.opacity(0.35), radius: 6, y: 4)
-        }.accessibilityLabel("Poké Ball")
+            let s = min(proxy.size.width, proxy.size.height)
+            // The lid rises above the ball's frame, so draw on a taller
+            // canvas centred on it rather than clipping the open lid.
+            Canvas { context, size in draw(in: &context, size: size, s: s) }
+                .frame(width: s, height: s * 2.2)
+                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                .shadow(color: .black.opacity(0.35), radius: 6, y: 4)
+                // The overflow above and below is decoration; taps go to what's there.
+                .allowsHitTesting(false)
+        }
+        .accessibilityLabel("Poké Ball")
     }
 
-    private func face(_ s: CGFloat) -> some View {
-        ZStack {
-            Circle().fill(Dex.cream)
-            Rectangle().fill(LinearGradient(colors: [Dex.redLight, Dex.red], startPoint: .top, endPoint: .bottom))
-                .frame(height: s / 2).frame(maxHeight: .infinity, alignment: .top)
-            Rectangle().fill(Dex.ink).frame(height: s * 0.07)
-            Circle().fill(Dex.ink).frame(width: s * 0.34)
-            Circle().fill(Dex.cream).frame(width: s * 0.22)
-            Circle().fill(Dex.redLight).frame(width: s * 0.22).opacity(glow)
-                .shadow(color: Dex.red.opacity(glow), radius: s * 0.08)
-            Ellipse().fill(.white.opacity(0.7)).frame(width: s * 0.22, height: s * 0.1).rotationEffect(.degrees(-30)).offset(x: -s * 0.22, y: -s * 0.28)
-        }.clipShape(Circle())
+    private func draw(in context: inout GraphicsContext, size: CGSize, s: CGFloat) {
+        let r = s / 2
+        let c = CGPoint(x: size.width / 2, y: size.height / 2)
+        let t = max(open, 0)
+        let band = s * 0.07
+        let inside = GraphicsContext.Shading.linearGradient(
+            Gradient(colors: [Color(red: 0.03, green: 0.03, blue: 0.05), Dex.ink]),
+            startPoint: .zero, endPoint: CGPoint(x: 0, y: s))
+
+        // The base: the lower half of the sphere, and its hollow seen from above.
+        let baseRim = r * 0.32 * t
+        context.drawLayer { layer in
+            layer.clip(to: Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: s, height: s)))
+            var lower = layer
+            lower.clip(to: Path(CGRect(x: c.x - r, y: c.y, width: s, height: r)))
+            lower.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: s, height: s)),
+                       with: .linearGradient(Gradient(colors: [Dex.cream, Color(white: 0.8)]),
+                                             startPoint: c, endPoint: CGPoint(x: c.x, y: c.y + r)))
+            rim(in: &layer, center: c, r: r, depth: baseRim, band: band, inside: inside)
+        }
+
+        // The lid: it lifts and tips back, so its dome foreshortens and its
+        // underside turns towards us as an ellipse.
+        let lift = r * 1.0 * t
+        let lidRim = r * 0.4 * min(t, 1.1)
+        let dome = r * (1 - 0.4 * min(t, 1))
+        let pivot = CGPoint(x: c.x, y: c.y - lift)
+        // The hinge at the back joins the two halves across the gap.
+        if t > 0.05 {
+            let hinge = CGRect(x: c.x - r * 0.14, y: pivot.y + lidRim * 0.5, width: r * 0.28,
+                               height: max(c.y - baseRim - pivot.y - lidRim * 0.5 + band * 0.5, 0))
+            context.fill(Path(roundedRect: hinge, cornerRadius: r * 0.06), with: .color(Dex.ink))
+        }
+        context.drawLayer { layer in
+            layer.clip(to: Path(ellipseIn: CGRect(x: c.x - r, y: pivot.y - dome, width: s, height: dome * 2)))
+            var upper = layer
+            upper.clip(to: Path(CGRect(x: c.x - r, y: pivot.y - dome, width: s, height: dome)))
+            upper.fill(Path(ellipseIn: CGRect(x: c.x - r, y: pivot.y - dome, width: s, height: dome * 2)),
+                       with: .linearGradient(Gradient(colors: [Dex.redLight, Dex.red]),
+                                             startPoint: CGPoint(x: c.x, y: pivot.y - dome), endPoint: pivot))
+            // The shine sits high on the dome and travels with it.
+            let shine = Path(ellipseIn: CGRect(x: -s * 0.11, y: -s * 0.05, width: s * 0.22, height: s * 0.1))
+                .applying(CGAffineTransform(rotationAngle: -.pi / 6))
+                .applying(CGAffineTransform(translationX: c.x - s * 0.22, y: pivot.y - s * 0.28 * dome / r))
+            upper.fill(shine, with: .color(.white.opacity(0.7)))
+            rim(in: &layer, center: pivot, r: r, depth: lidRim, band: band, inside: inside)
+        }
+
+        // The button stays on the lid's front lip, which rises to the top as it tips back.
+        let button = CGPoint(x: c.x, y: pivot.y - r * 0.5 * min(t, 1))
+        let squash = 1 - 0.35 * min(t, 1)
+        func disc(_ diameter: CGFloat) -> Path {
+            Path(ellipseIn: CGRect(x: button.x - diameter / 2, y: button.y - diameter * squash / 2,
+                                   width: diameter, height: diameter * squash))
+        }
+        context.fill(disc(s * 0.34), with: .color(Dex.ink))
+        context.fill(disc(s * 0.22), with: .color(Dex.cream))
+        if glow > 0 {
+            var lit = context
+            lit.addFilter(.shadow(color: Dex.red.opacity(glow), radius: s * 0.08))
+            lit.fill(disc(s * 0.22), with: .color(Dex.redLight.opacity(glow)))
+        }
     }
 
-    private func half(_ s: CGFloat, top: Bool) -> some View {
-        Rectangle().frame(height: s / 2).frame(maxHeight: .infinity, alignment: top ? .top : .bottom)
+    /// A half-shell's open edge: the black band, and the dark hollow inside
+    /// it once it has any depth.
+    private func rim(in context: inout GraphicsContext, center: CGPoint, r: CGFloat, depth: CGFloat,
+                     band: CGFloat, inside: GraphicsContext.Shading) {
+        let hollow = CGRect(x: center.x - r, y: center.y - depth, width: r * 2, height: depth * 2)
+        if depth > 0.5 {
+            // A grey inner lip, then the deep, dark hollow set back inside it.
+            context.fill(Path(ellipseIn: hollow), with: .color(Color(white: 0.32)))
+            let deep = CGRect(x: hollow.minX + r * 0.14, y: hollow.minY + depth * 0.12,
+                              width: hollow.width - r * 0.28, height: hollow.height - depth * 0.34)
+            context.fill(Path(ellipseIn: deep), with: inside)
+            if glow > 0 { context.fill(Path(ellipseIn: deep.insetBy(dx: r * 0.12, dy: depth * 0.12)), with: .color(Dex.redLight.opacity(glow * 0.5))) }
+            // Open, the band is just the shell's edge, so it thins to let the lip show.
+            context.stroke(Path(ellipseIn: hollow), with: .color(Dex.ink), lineWidth: band * (1 - 0.45 * min(open, 1)))
+        } else {
+            context.fill(Path(CGRect(x: center.x - r, y: center.y - band / 2, width: r * 2, height: band)), with: .color(Dex.ink))
+        }
     }
 }

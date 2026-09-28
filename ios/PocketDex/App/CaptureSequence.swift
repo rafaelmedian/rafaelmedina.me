@@ -78,7 +78,7 @@ private struct CaptureThrow: View {
                     .blur(radius: 10)
                     .offset(x: frame.ball.x * unit, y: (frame.ball.y + 60) * unit)
                     .opacity(frame.beam * (1 - frame.absorb))
-                Pokeball(lid: frame.lid, glow: frame.beam)
+                Pokeball(open: frame.lid, glow: frame.beam)
                     .frame(width: size, height: size)
                     .rotationEffect(.degrees(frame.spin))
                     .scaleEffect(frame.scale)
@@ -105,8 +105,8 @@ private struct CaptureThrow: View {
             }
             KeyframeTrack(\.lid) {
                 LinearKeyframe(0, duration: 0.42)
-                SpringKeyframe(80, duration: 0.14, spring: .snappy)
-                LinearKeyframe(80, duration: 0.24)
+                SpringKeyframe(0.85, duration: 0.14, spring: .snappy)
+                LinearKeyframe(0.85, duration: 0.24)
                 SpringKeyframe(0, duration: 0.12, spring: .snappy)
             }
             KeyframeTrack(\.beam) {
@@ -213,10 +213,9 @@ private struct CaptureOpen: View {
     var body: some View {
         KeyframeAnimator(initialValue: OpenFrame(), trigger: started) { frame in
             ZStack {
-                Pokeball(lid: frame.lid)
+                Pokeball(open: frame.lid)
                     .frame(width: size, height: size)
-                    .scaleEffect(1 - 0.35 * frame.fade)
-                    .offset(y: size * 0.4 * frame.fade)
+                    .scaleEffect(1 - 0.12 * frame.fade)
                     .opacity(1 - frame.fade)
                 Circle().fill(RadialGradient(colors: [.white, Dex.phosphor.opacity(0.6), .clear], center: .center, startRadius: 0, endRadius: size * 0.85))
                     .frame(width: size * 1.7, height: size * 1.7)
@@ -226,7 +225,7 @@ private struct CaptureOpen: View {
             }
         } keyframes: { _ in
             KeyframeTrack(\.lid) {
-                SpringKeyframe(110, duration: 0.22, spring: .bouncy)
+                SpringKeyframe(1, duration: 0.24, spring: .bouncy)
             }
             KeyframeTrack(\.flash) {
                 LinearKeyframe(0, duration: 0.06)
