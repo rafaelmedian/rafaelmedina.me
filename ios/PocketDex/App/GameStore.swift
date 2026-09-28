@@ -158,6 +158,12 @@ final class GameStore {
         if muted { feedback.stop() }
     }
 
+    /// The camera button: the lens fires its flash and the shutter clicks.
+    func snap() {
+        scanFlashes += 1
+        play("select", haptic: .impact)
+    }
+
     func toggleHaptics() {
         hapticsOn.toggle()
         defaults.set(!hapticsOn, forKey: "pocketdex.hapticsOff")

@@ -388,6 +388,100 @@ struct CrossShape: Shape {
     }
 }
 
+/// Mist's camera button: a small dark round key. It fires the lens flash,
+/// snaps the scanner screen, and slides a print out of the corner; tap the
+/// print to share it.
+private struct CameraButton: View {
+    let store: GameStore
+    @State private var photo: Image?
+    @State private var shots = 0
+    @Environment(\.displayScale) private var displayScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button(action: snap) {
+            Image(systemName: "camera.fill").font(.system(size: 15, weight: .semibold))
+        }
+        .buttonStyle(DarkRoundStyle())
+        .accessibilityLabel("Take a snapshot")
+        .accessibilityIdentifier("camera")
+        .overlay(alignment: .bottomTrailing) {
+            if let photo {
+                ShareLink(item: photo, preview: SharePreview("PocketDex", image: photo)) {
+                    // A fixed-size print; left to itself ShareLink shrinks the image to icon size.
+                    Color.clear
+                        .frame(width: 112, height: 97)
+                        .overlay { photo.resizable().aspectRatio(contentMode: .fill) }
+                        .clipped()
+                        .padding(5).padding(.bottom, 14)
+                        .background(Color(white: 0.97), in: RoundedRectangle(cornerRadius: 4))
+                        .shadow(color: .black.opacity(0.35), radius: 8, y: 5)
+                        .rotationEffect(.degrees(-6))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Share snapshot")
+                .offset(x: -8, y: -64)
+                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.6, anchor: .bottomTrailing)))
+            }
+        }
+        .task(id: shots) {
+            // The print waits a few seconds to be tapped, then tucks away.
+            guard photo != nil else { return }
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? nil : Dex.reveal) { photo = nil }
+        }
+    }
+
+    private func snap() {
+        store.snap()
+        let renderer = ImageRenderer(content: SnapshotCard(store: store).environment(\.dexPower, 1))
+        renderer.proposedSize = ProposedViewSize(width: 352, height: 306)
+        renderer.scale = displayScale
+        guard let image = renderer.uiImage else { return }
+        withAnimation(reduceMotion ? nil : Dex.reveal.delay(0.15)) { photo = Image(uiImage: image) }
+        shots += 1
+    }
+}
+
+/// What the camera captures: the scanner screen in a strip of case plastic.
+private struct SnapshotCard: View {
+    let store: GameStore
+    var body: some View {
+        VStack(spacing: 10) {
+            CRTScreen(power: 1, radius: 14) { ScannerPicture(store: store) }
+                .frame(width: 320, height: 250)
+            Text("POCKETDEX · \(store.game.captured.count)/12")
+                .font(.system(size: 11, weight: .heavy, design: .monospaced)).tracking(2)
+                .foregroundStyle(Dex.cream.opacity(0.85))
+        }
+        .padding(16)
+        .background(ShellBackground())
+        .fixedSize()
+    }
+}
+
+/// A small dark round key, as on Mist's camera button.
+struct DarkRoundStyle: ButtonStyle {
+    var size: CGFloat = 48
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        return ZStack {
+            Circle().fill(Color(red: 0.03, green: 0.03, blue: 0.04)).frame(width: size, height: size).offset(y: 3)
+            Circle().fill(RadialGradient(colors: [Color(white: 0.24), Color(white: 0.12)], center: UnitPoint(x: 0.45, y: 0.3), startRadius: 0, endRadius: size * 0.6))
+                .overlay(Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.25), .clear], startPoint: .top, endPoint: .center), lineWidth: 1))
+                .frame(width: size, height: size)
+                .offset(y: pressed ? 2.5 : 0)
+            configuration.label.foregroundStyle(Color(white: 0.62)).offset(y: pressed ? 2.5 : 0)
+        }
+        .frame(width: size, height: size + 4)
+        .shadow(color: Dex.groove.opacity(0.45), radius: 4, y: 3)
+        .contentShape(Circle())
+        .animation(reduceMotion ? nil : Dex.squeeze, value: pressed)
+    }
+}
+
 // MARK: - Flap (the half that swings): clue, answers, confirm
 
 struct FlapPanel: View {
@@ -447,7 +541,8 @@ struct AnswerPanel: View {
             HStack(alignment: .bottom) {
                 DPad { store.move($0) }.disabled(store.game.round.revealed)
                 Spacer(minLength: 0)
-                DotGrille(rows: 3, columns: 7, dot: 4, gap: 4).padding(.bottom, 10)
+                DotGrille(rows: 3, columns: 5, dot: 4, gap: 4).padding(.bottom, 16)
+                CameraButton(store: store).padding(.leading, 12)
             }
         }
     }
