@@ -229,6 +229,37 @@ final class PocketDexUITests: XCTestCase {
         XCTAssertTrue(app.buttons["wake-scan"].waitForExistence(timeout: 3))
     }
 
+    /// The Pokémon is made of pixels: a pinch squishes it, and a hard squeeze
+    /// swaps it to another of its pictures. Mostly for the screenshots.
+    func testSqueeze() throws {
+        app.launch()
+        // Off the Duo the case opens by hand.
+        if app.buttons["open-case"].waitForExistence(timeout: 3) { app.buttons["open-case"].tap() }
+        let art = app.descendants(matching: .any).matching(identifier: "scanner-art").firstMatch
+        XCTAssertTrue(art.waitForExistence(timeout: 5))
+        art.pinch(withScale: 0.5, velocity: -0.6)
+        Thread.sleep(forTimeInterval: 1.2)
+        attach("squeeze-silhouette")
+        let correct = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label == %@", "Gengar")).firstMatch
+        reveal(correct)
+        correct.tap()
+        let next = app.buttons["next-pokemon"]
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: next)
+        waitForExpectations(timeout: 8)
+        reveal(art)
+        Thread.sleep(forTimeInterval: 1)
+        attach("squeeze-before")
+        art.press(forDuration: 1.2)
+        Thread.sleep(forTimeInterval: 1.2)
+        attach("squeeze-held")
+        art.pinch(withScale: 0.45, velocity: -0.5)
+        Thread.sleep(forTimeInterval: 1.2)
+        attach("squeeze-pinched")
+        art.pinch(withScale: 0.45, velocity: -0.5)
+        Thread.sleep(forTimeInterval: 1.2)
+        attach("squeeze-again")
+    }
+
     /// Options → Reset progress asks first, then clears every discovery.
     func testDuoResetProgress() throws {
         app.launchArguments = ["--ui-testing", "--demo", "--reset"]

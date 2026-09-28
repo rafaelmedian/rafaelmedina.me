@@ -242,18 +242,11 @@ private struct ScannerPicture: View {
                 } else {
                     // Touch the screen and the Pokémon answers, as Mist's face does.
                     Pettable(store: store) {
-                        if revealed {
-                            Image(store.pokemon.asset).resizable().scaledToFit()
-                                .shadow(color: .white.opacity(0.35), radius: 10)
-                                .padding(8)
-                        } else {
-                            Image(store.pokemon.asset).resizable().renderingMode(.template).scaledToFit()
-                                .foregroundStyle(Dex.phosphor)
-                                .shadow(color: Dex.phosphor.opacity(0.8), radius: 8)
-                                .padding(8)
-                                .phaseAnimator(reduceMotion ? [1.0] : [1.0, 0.82]) { view, phase in view.opacity(phase) }
-                                    animation: { _ in .easeInOut(duration: 1.3) }
-                        }
+                        // Drawn as the screen's own pixels, which squish under a pinch.
+                        PixelPokemon(store: store, revealed: revealed)
+                            .padding(8)
+                            .phaseAnimator(reduceMotion || revealed ? [1.0] : [1.0, 0.82]) { view, phase in view.opacity(phase) }
+                                animation: { _ in .easeInOut(duration: 1.3) }
                     }
                     .transition(.opacity)
                 }
