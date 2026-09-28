@@ -268,50 +268,15 @@ func smoothstep(_ value: Double, _ low: Double, _ high: Double) -> Double {
     return t * t * (3 - 2 * t)
 }
 
-/// Professor Oak as a tiny original phosphor sprite: swept grey hair, lab
-/// coat, red shirt. Drawn from a character map so it stays crisp on the CRT.
+/// Professor Oak's portrait, cut out of its white page so the glass shows
+/// around him. It keeps its colour: he is a person on a video call, not a
+/// reading on the CRT.
 struct OakPortrait: View {
-    private static let rows = [
-        ".....hhhhhh.....",
-        "...hhhhhhhhhh...",
-        "..hhhhhhhhhhhh..",
-        "..hhsssssssshh..",
-        "..hssssssssssh..",
-        "..sseessssees...",
-        "..ssssssssssss..",
-        "...sssbsssbss...",
-        "...ssssmmssss...",
-        "....ssssssss....",
-        ".....ssssss.....",
-        "...cccsrrsccc...",
-        "..ccccsrrscccc..",
-        ".ccccccrrcccccc.",
-        ".ccccccrrcccccc.",
-        ".cccccccccccccc."
-    ]
     var body: some View {
-        Canvas { context, size in
-            let columns = CGFloat(Self.rows[0].count)
-            let pixel = min(size.width / columns, size.height / CGFloat(Self.rows.count))
-            let origin = CGPoint(x: (size.width - pixel * columns) / 2, y: (size.height - pixel * CGFloat(Self.rows.count)) / 2)
-            for (y, row) in Self.rows.enumerated() {
-                for (x, character) in row.enumerated() {
-                    let level: Double? = switch character {
-                    case "h": 0.95
-                    case "c": 0.8
-                    case "s": 0.5
-                    case "r": 0.3
-                    case "b", "m": 0.22
-                    case "e": 0.08
-                    default: nil
-                    }
-                    guard let level else { continue }
-                    let rect = CGRect(x: origin.x + CGFloat(x) * pixel, y: origin.y + CGFloat(y) * pixel, width: pixel - 0.6, height: pixel - 0.6)
-                    context.fill(Path(rect), with: .color(Dex.phosphor.opacity(level)))
-                }
-            }
-        }
-        .shadow(color: Dex.phosphor.opacity(0.45), radius: 3)
-        .accessibilityLabel("Professor Oak")
+        Image("professor-oak").resizable().scaledToFill()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .overlay { DotMask(pitch: 2).opacity(0.12).allowsHitTesting(false) }
+            .accessibilityLabel("Professor Oak")
     }
 }

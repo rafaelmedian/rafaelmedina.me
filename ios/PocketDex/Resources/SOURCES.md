@@ -6,6 +6,10 @@ retrieved 2026-09-27. Pokémon characters and artwork belong to their respective
 owners (Nintendo / Creatures / GAME FREAK). This is an unofficial fan demo;
 the repository's code licence does not grant rights to Pokémon artwork.
 
+Professor Oak portrait: anime artwork supplied by the author on 2026-09-28,
+with its white background cut away. The character belongs to its owners
+(Nintendo / Creatures / GAME FREAK).
+
 Shell: original SwiftUI paths, gradients, and deterministic Canvas grain.
 Clues: original text for this demo.
 Audio: original synthesized WAVs produced by `scripts/prepare-resources.py`.
