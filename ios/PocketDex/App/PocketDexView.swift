@@ -117,9 +117,13 @@ struct InnerDisplay: View {
         // On a real fold the lens stays where the cover had it.
         let anchor = regions.fold == nil ? nil : (store.lensAnchor ?? .duo)
         let lens = anchor.map { LensGeometry(anchor: $0, panel: bodyRect) } ?? LensGeometry(camera: regions.camera, panel: bodyRect, safe: safe)
-        let seam = lens.seam(hinge: fold.maxX - 4, edge: size.width + 20)
-        let flapEdge = lens.mirroredSeam(fold: fold, edge: -20)
-        let flapOutline = flapEdge + [CGPoint(x: -20, y: size.height + 20), CGPoint(x: fold.minX, y: size.height + 20)]
+        // Above the spine the flap and the body close over the fold and meet
+        // at its middle, so the spine sits in the plastic rather than running
+        // up into the lining.
+        let seam = lens.seam(hinge: fold.midX, edge: size.width + 20)
+        var flapEdge = lens.mirroredSeam(fold: fold, edge: -20)
+        flapEdge[0].x = fold.midX
+        let flapOutline = flapEdge + [CGPoint(x: -20, y: size.height + 20), CGPoint(x: fold.midX, y: size.height + 20)]
         let top = lens.seamLow + 20
         let bottom = size.height - max(safe.bottom, 14) - 8
         let bodyContent = CGRect(x: fold.maxX + 22, y: top, width: size.width - max(safe.trailing, 0) - 22 - fold.maxX - 22, height: bottom - top)
@@ -131,11 +135,11 @@ struct InnerDisplay: View {
             FlapPlastic(outline: flapOutline)
             Polyline(points: flapEdge, corner: 12).stroke(.white.opacity(0.35), lineWidth: 1.2).offset(y: 1)
             Polyline(points: seam, corner: 12).groove(2.5)
-            // The spine runs down the fold in a crisp dark channel, from the seam
-            // out through the bottom edge: no blur, so it stays clean when the fold
+            // The spine runs down the fold in a crisp dark channel, from just
+            // under the seam out through the bottom edge: no blur, so it stays clean when the fold
             // tilts. The barrel sits an even inset inside it and ends short of the
             // edge, and the channel's top corners are the knuckles' plus that inset.
-            let spineTop = lens.seamHigh - 2
+            let spineTop = lens.seamHigh + 16
             let spineInset: CGFloat = 3
             let barrelWidth = fold.width - 4
             let barrelTop = spineTop + spineInset
