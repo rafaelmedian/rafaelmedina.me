@@ -117,36 +117,37 @@ struct InnerDisplay: View {
         // On a real fold the lens stays where the cover had it.
         let anchor = regions.fold == nil ? nil : (store.lensAnchor ?? .duo)
         let lens = anchor.map { LensGeometry(anchor: $0, panel: bodyRect) } ?? LensGeometry(camera: regions.camera, panel: bodyRect, safe: safe)
-        // Above the spine the flap and the body close over the fold and meet
-        // at its middle, so the spine sits in the plastic rather than running
-        // up into the lining.
-        let seam = lens.seam(hinge: fold.midX, edge: size.width + 20)
-        var flapEdge = lens.mirroredSeam(fold: fold, edge: -20)
-        flapEdge[0].x = fold.midX
-        let flapOutline = flapEdge + [CGPoint(x: -20, y: size.height + 20), CGPoint(x: fold.midX, y: size.height + 20)]
+        // The flap and the body are separate slabs of plastic with the hinge
+        // channel between them. Every edge the case has is rounded, including
+        // where the halves meet the channel and the display's own edges, so
+        // the shell reads as a moulded object rather than a cut-off fill.
+        let barrelWidth = fold.width - 4
+        let channelInset: CGFloat = 3
+        let flapRight = fold.midX - barrelWidth / 2 - channelInset
+        let bodyLeft = fold.midX + barrelWidth / 2 + channelInset
+        let seam = lens.seam(hinge: bodyLeft, edge: size.width + 20)
+        var flapEdge = lens.mirroredSeam(fold: fold, edge: 0)
+        flapEdge[0].x = flapRight
+        let flapOutline = flapEdge + [CGPoint(x: 0, y: size.height), CGPoint(x: flapRight, y: size.height)]
+        let bodyOutline = [CGPoint(x: bodyLeft, y: 0), CGPoint(x: size.width, y: 0),
+                           CGPoint(x: size.width, y: size.height), CGPoint(x: bodyLeft, y: size.height)]
         let top = lens.seamLow + 20
         let bottom = size.height - max(safe.bottom, 14) - 8
         let bodyContent = CGRect(x: fold.maxX + 22, y: top, width: size.width - max(safe.trailing, 0) - 22 - fold.maxX - 22, height: bottom - top)
         let flapContent = CGRect(x: max(safe.leading, 0) + 22, y: top, width: fold.minX - 22 - max(safe.leading, 0) - 22, height: bottom - top)
         let tab = CGPoint(x: (fold.minX + flapEdge[1].x) / 2, y: (lens.seamHigh + lens.seamLow) / 2 + 3)
         return ZStack(alignment: .topLeading) {
-            ShellBackground()
-            Lining().frame(width: fold.midX, height: size.height)
+            Lining()
+            ShellBackground().clipShape(Polyline(points: bodyOutline, closed: true, corner: 14))
             FlapPlastic(outline: flapOutline)
-            Polyline(points: flapEdge, corner: 12).stroke(.white.opacity(0.35), lineWidth: 1.2).offset(y: 1)
+            // The lit edge wraps the flap's corners at the channel and the display edge.
+            Polyline(points: [CGPoint(x: flapRight, y: lens.seamHigh + 16)] + flapEdge + [CGPoint(x: 0, y: lens.seamLow + 16)], corner: 12)
+                .stroke(.white.opacity(0.35), lineWidth: 1.2).offset(y: 1)
             Polyline(points: seam, corner: 12).groove(2.5)
-            // The spine runs down the fold in a crisp dark channel, from just
-            // under the seam out through the bottom edge: no blur, so it stays clean when the fold
-            // tilts. The barrel sits an even inset inside it and ends short of the
-            // edge, and the channel's top corners are the knuckles' plus that inset.
-            let spineTop = lens.seamHigh + 16
-            let spineInset: CGFloat = 3
-            let barrelWidth = fold.width - 4
-            let barrelTop = spineTop + spineInset
+            // The barrel stands in the channel as far from the flap's top edge as
+            // it stands from the display's bottom edge.
+            let barrelTop = lens.seamHigh + 12
             let barrelBottom = size.height - 12
-            RoundedRectangle(cornerRadius: HingeBarrel.corner(thick: barrelWidth) + spineInset, style: .continuous).fill(Dex.lining)
-                .frame(width: barrelWidth + spineInset * 2, height: size.height - spineTop + 20)
-                .position(x: fold.midX, y: (spineTop + size.height + 20) / 2)
             HingeBarrel()
                 .frame(width: barrelWidth, height: barrelBottom - barrelTop)
                 .position(x: fold.midX, y: (barrelTop + barrelBottom) / 2)
