@@ -18,6 +18,7 @@ struct BodyPanel: View {
 private struct Scanner: View {
     let store: GameStore
     @Environment(\.dexPower) private var power
+    @Environment(\.deckPower) private var deckPower
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 10) {
@@ -41,6 +42,13 @@ private struct Scanner: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            // Asleep, the dark glass keeps a dim moon, matching the flap's sleep screen.
+            .overlay {
+                if store.asleep {
+                    SleepGlyph().opacity(deckPower).transition(.opacity)
+                }
+            }
+            .animation(Dex.quick, value: store.asleep)
             .recessed(radius: Dex.screenRadius, depth: 4)
             .animation(Dex.quick, value: store.collectionVisible)
             HStack(alignment: .center) {
@@ -73,6 +81,24 @@ private struct Scanner: View {
                 .shadow(color: Dex.groove.opacity(0.55), radius: 0, y: 4)
                 .shadow(color: .black.opacity(0.3), radius: 10, y: 8)
         }
+    }
+}
+
+/// A dim moon that breathes on the scanner's dark glass while PocketDex sleeps.
+private struct SleepGlyph: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "moon.zzz.fill")
+                .font(.system(size: 44, weight: .semibold))
+                .symbolEffect(.breathe, isActive: !reduceMotion)
+            Text("Zzz…")
+                .font(.system(.footnote, design: .monospaced, weight: .semibold)).tracking(2)
+        }
+        .foregroundStyle(Dex.phosphor.opacity(0.35))
+        .shadow(color: Dex.phosphor.opacity(0.3), radius: 6)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -202,6 +228,7 @@ private struct ScannerPicture: View {
                 Spacer(minLength: 0)
                 DiscoveriesChip(store: store)
                 SettingsKey(store: store)
+                SleepKey(store: store)
             }
             .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1)
             .foregroundStyle(Dex.phosphor.opacity(0.75))
@@ -299,10 +326,38 @@ struct DiscoveriesChip: View {
     }
 }
 
-/// Sound, haptics, and sleep, folded into one small key in the scanner's
-/// header so they stay out of the way of the game.
+/// A small round key drawn on the scanner's glass, sized to sit in the
+/// header beside the Discoveries chip.
+struct GlassKeyLabel: View {
+    let icon: String
+    var body: some View {
+        Image(systemName: icon)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(Dex.phosphor.opacity(0.8))
+            .frame(width: 22, height: 22)
+            .background(Dex.phosphor.opacity(0.06), in: Circle())
+            .overlay(Circle().strokeBorder(Dex.phosphor.opacity(0.45), lineWidth: 1))
+            // A comfortable target around a small key.
+            .padding(11).contentShape(Rectangle()).padding(-11)
+    }
+}
+
+/// Sleep, always in reach in the scanner's header, in both modes.
+struct SleepKey: View {
+    let store: GameStore
+    var body: some View {
+        Button { store.sleep() } label: { GlassKeyLabel(icon: "moon.zzz.fill") }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Put PocketDex to sleep")
+            .accessibilityIdentifier("sleep")
+    }
+}
+
+/// Sound, haptics, and starting over, folded into one small key in the
+/// scanner's header so they stay out of the way of the game.
 struct SettingsKey: View {
     let store: GameStore
+    @State private var confirmingReset = false
     var body: some View {
         Menu {
             Button { store.toggleMute() } label: {
@@ -312,22 +367,20 @@ struct SettingsKey: View {
                 Label(store.hapticsOn ? "Turn off haptics" : "Turn on haptics", systemImage: "waveform.path")
             }
             Divider()
-            Button { store.sleep() } label: {
-                Label("Put PocketDex to sleep", systemImage: "moon.zzz")
+            Button(role: .destructive) { confirmingReset = true } label: {
+                Label("Reset progress", systemImage: "arrow.counterclockwise")
             }
-            .accessibilityIdentifier("sleep")
         } label: {
-            Image(systemName: "gearshape.fill")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(Dex.phosphor.opacity(0.8))
-                .frame(width: 22, height: 22)
-                .background(Dex.phosphor.opacity(0.06), in: Circle())
-                .overlay(Circle().strokeBorder(Dex.phosphor.opacity(0.45), lineWidth: 1))
-                // A comfortable target around a small key.
-                .padding(11).contentShape(Rectangle()).padding(-11)
+            GlassKeyLabel(icon: "gearshape.fill")
         }
         .accessibilityLabel("Options")
         .accessibilityIdentifier("options")
+        // Starting over wipes the Pokédex, so it asks first.
+        .confirmationDialog("Reset your Pokédex?", isPresented: $confirmingReset, titleVisibility: .visible) {
+            Button("Reset progress", role: .destructive) { store.replay() }
+        } message: {
+            Text("Every discovery is cleared and a new round begins.")
+        }
     }
 }
 

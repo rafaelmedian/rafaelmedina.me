@@ -274,6 +274,18 @@ final class GameStore {
         if hapticsOn { UISelectionFeedbackGenerator().selectionChanged() }
     }
 
+    /// Switches between the game and the scanner while awake, so scan mode
+    /// has a way back that doesn't go through sleep.
+    func switchMode(to next: Mode) {
+        guard !asleep, mode != next else { return }
+        scanTask?.cancel()
+        scanning = false
+        scanResult = nil
+        collectionVisible = false
+        mode = next
+        play("select", haptic: .selection)
+    }
+
     func replay() {
         game = Game()
         hintsTaken = 0

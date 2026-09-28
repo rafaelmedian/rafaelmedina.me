@@ -146,7 +146,7 @@ extension SleepCard {
     }
 }
 
-/// Scan mode's touchscreen: one big SCAN button and a way back to sleep.
+/// Scan mode's touchscreen: one big SCAN button and a way back to the game.
 private struct ScanControls: View {
     let store: GameStore
     var body: some View {
@@ -176,19 +176,22 @@ private struct ScanControls: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                     .padding(.horizontal, 12)
                     .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                Button { store.sleep() } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "moon.zzz.fill").font(.system(size: 16, weight: .bold))
-                        Text("SLEEP").font(.system(size: 9, weight: .heavy, design: .monospaced))
+                // Scan mode's way back to the game, without sleeping first.
+                Button { store.switchMode(to: .game) } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.uturn.backward").font(.system(size: 15, weight: .bold))
+                        Text("Guess").font(.system(.headline, design: .monospaced, weight: .bold))
                     }
-                    .foregroundStyle(Dex.phosphor.opacity(0.8))
-                    .frame(width: 72)
+                    .foregroundStyle(Dex.phosphor)
+                    .padding(.horizontal, 14)
                     .frame(maxHeight: .infinity)
-                    .background(Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Dex.phosphor.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(GlassPress())
-                .accessibilityIdentifier("sleep")
+                .disabled(store.scanning)
+                .accessibilityLabel("Back to the discovery game")
+                .accessibilityIdentifier("back-to-guess")
             }
             .frame(height: 64)
         }

@@ -108,6 +108,7 @@ struct ScanScreen: View {
                     Text(store.scanning ? "SCANNING…" : store.scanResult == nil ? "SCAN MODE" : "MATCH FOUND")
                     Spacer()
                     Text(cameraLabel)
+                    SleepKey(store: store)
                 }
                 .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1)
                 .foregroundStyle(Dex.phosphor.opacity(0.8))

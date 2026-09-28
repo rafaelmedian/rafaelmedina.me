@@ -168,10 +168,7 @@ final class PocketDexUITests: XCTestCase {
         XCTAssertTrue(app.buttons["answer-0"].waitForExistence(timeout: 3))
         Thread.sleep(forTimeInterval: 1)
         attach("duo-next-round")
-        // Sleep sits in the scanner's small settings key.
-        app.buttons["Options"].tap()
-        XCTAssertTrue(app.buttons["Put PocketDex to sleep"].waitForExistence(timeout: 3))
-        app.buttons["Put PocketDex to sleep"].tap()
+        app.buttons["sleep"].tap()
         XCTAssertTrue(app.buttons["wake-up"].waitForExistence(timeout: 3))
         Thread.sleep(forTimeInterval: 1)
         attach("duo-slept")
@@ -225,8 +222,36 @@ final class PocketDexUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "scan-result").firstMatch.waitForExistence(timeout: 5))
         Thread.sleep(forTimeInterval: 0.8)
         attach("duo-scan-match")
+        // Back to the game without going through sleep.
+        app.buttons["back-to-guess"].tap()
+        XCTAssertTrue(app.buttons["answer-0"].waitForExistence(timeout: 3))
         app.buttons["sleep"].tap()
         XCTAssertTrue(app.buttons["wake-scan"].waitForExistence(timeout: 3))
+    }
+
+    /// Options → Reset progress asks first, then clears every discovery.
+    func testDuoResetProgress() throws {
+        app.launchArguments = ["--ui-testing", "--demo", "--reset"]
+        app.launch()
+        if app.buttons["open-case"].waitForExistence(timeout: 3) { throw XCTSkip("Needs an unfolded iPhone Duo.") }
+        XCTAssertTrue(app.buttons["wake-up"].waitForExistence(timeout: 10))
+        app.buttons["wake-up"].tap()
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label == %@", "Gengar")).firstMatch.tap()
+        let count = app.descendants(matching: .any).matching(identifier: "capture-count").firstMatch
+        expectation(for: NSPredicate(format: "label == %@", "1 of 12 Pokémon discovered"), evaluatedWith: count)
+        waitForExpectations(timeout: 5)
+        app.buttons["Options"].tap()
+        XCTAssertTrue(app.buttons["Reset progress"].waitForExistence(timeout: 3))
+        app.buttons["Reset progress"].tap()
+        // The confirmation's own Reset progress button.
+        let confirm = app.buttons.matching(identifier: "Reset progress").element(boundBy: 0)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 3))
+        Thread.sleep(forTimeInterval: 0.5)
+        attach("duo-reset-confirm")
+        confirm.tap()
+        expectation(for: NSPredicate(format: "label == %@", "0 of 12 Pokémon discovered"), evaluatedWith: count)
+        waitForExpectations(timeout: 5)
+        XCTAssertTrue(app.buttons["answer-0"].waitForExistence(timeout: 3))
     }
 
     private func reveal(_ element: XCUIElement) {
