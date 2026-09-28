@@ -103,19 +103,23 @@ private struct ScannerPicture: View {
                 }
                 if store.captureStage == .ball {
                     Pokeball().frame(width: 84, height: 84).transition(.scale.combined(with: .opacity))
-                } else if revealed {
-                    Image(store.pokemon.asset).resizable().scaledToFit()
-                        .shadow(color: .white.opacity(0.35), radius: 10)
-                        .padding(8)
-                        .transition(.opacity)
                 } else {
-                    Image(store.pokemon.asset).resizable().renderingMode(.template).scaledToFit()
-                        .foregroundStyle(Dex.phosphor)
-                        .shadow(color: Dex.phosphor.opacity(0.8), radius: 8)
-                        .padding(8)
-                        .phaseAnimator(reduceMotion ? [1.0] : [1.0, 0.82]) { view, phase in view.opacity(phase) }
-                            animation: { _ in .easeInOut(duration: 1.3) }
-                        .transition(.opacity)
+                    // Touch the screen and the Pokémon answers, as Mist's face does.
+                    Pettable(store: store) {
+                        if revealed {
+                            Image(store.pokemon.asset).resizable().scaledToFit()
+                                .shadow(color: .white.opacity(0.35), radius: 10)
+                                .padding(8)
+                        } else {
+                            Image(store.pokemon.asset).resizable().renderingMode(.template).scaledToFit()
+                                .foregroundStyle(Dex.phosphor)
+                                .shadow(color: Dex.phosphor.opacity(0.8), radius: 8)
+                                .padding(8)
+                                .phaseAnimator(reduceMotion ? [1.0] : [1.0, 0.82]) { view, phase in view.opacity(phase) }
+                                    animation: { _ in .easeInOut(duration: 1.3) }
+                        }
+                    }
+                    .transition(.opacity)
                 }
                 if store.captureStage == .caught {
                     Image(systemName: "sparkles").font(.title).foregroundStyle(Dex.phosphor)
@@ -127,6 +131,8 @@ private struct ScannerPicture: View {
             .animation(reduceMotion ? nil : Dex.reveal, value: store.captureStage)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(revealed ? store.pokemon.name : "Silhouette of an undiscovered Pokémon. Use the clue to identify it.")
+            .accessibilityAction(named: "Poke") { store.poke() }
+            .accessibilityIdentifier("scanner-art")
             Text(revealed ? store.pokemon.name : "Who's that Pokémon?")
                 .font(.system(.title3, design: .monospaced, weight: .bold))
                 .foregroundStyle(Dex.phosphor)

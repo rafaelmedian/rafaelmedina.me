@@ -158,6 +158,21 @@ final class GameStore {
         if muted { feedback.stop() }
     }
 
+    /// Touches on the scanner screen; the Pokémon reacts to each one.
+    private(set) var pokes = 0
+    private(set) var lastPokeSqueezed = false
+
+    /// A light tap under the finger as it lands on the screen.
+    func touch() {
+        if hapticsOn { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+    }
+
+    func poke(squeezed: Bool = false) {
+        lastPokeSqueezed = squeezed
+        pokes += 1
+        if hapticsOn { UIImpactFeedbackGenerator(style: squeezed ? .rigid : .soft).impactOccurred() }
+    }
+
     /// The camera button: the lens fires its flash and the shutter clicks.
     func snap() {
         scanFlashes += 1
