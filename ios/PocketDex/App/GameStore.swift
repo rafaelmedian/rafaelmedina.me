@@ -83,14 +83,6 @@ final class GameStore {
         save()
     }
 
-    func move(_ direction: Direction) {
-        let before = game.round.selection
-        game.move(direction)
-        if game.round.selection != before { selectionGlints += 1 }
-        play("select", haptic: .selection)
-        save()
-    }
-
     func clearReaction() { reaction = nil }
 
     /// Tapping an answer picks it and checks it in one go.
@@ -142,6 +134,7 @@ final class GameStore {
         if game.round.revealed {
             game.advance()
             hintsTaken = 0
+            ruledOut = nil
             captureStage = .hidden
             message = Self.idleMessage
             play("select", haptic: .selection)
@@ -224,8 +217,6 @@ final class GameStore {
     /// What the Pokémon said last; the main screen and the touchscreen both show it.
     private(set) var reaction: String?
     private var recentPokes: [Date] = []
-    /// Where the trackpad is steering the Pokémon's gaze, each axis -1…1.
-    var gaze: CGSize = .zero
     /// True when the last poke came too fast after the others.
     private(set) var lastPokeOverdone = false
 
@@ -238,6 +229,8 @@ final class GameStore {
     /// Each one fills in a line of the entry: type, height, weight, the
     /// name's first letter, then a wrong answer struck out.
     private(set) var hintsTaken = 0
+    /// The answer the last hint struck out, for the flap's hint log.
+    private(set) var ruledOut: Int?
     static let hintCount = 5
 
     func poke(squeezed: Bool = false) {
@@ -269,6 +262,7 @@ final class GameStore {
         default:
             hintsTaken += 1
             guard let index = game.ruleOut(), let ruled = Catalog.pokemon(id: game.round.choices[index]) else { return nil }
+            ruledOut = ruled.id
             save()
             return "It's not \(ruled.name)!"
         }
@@ -283,6 +277,7 @@ final class GameStore {
     func replay() {
         game = Game()
         hintsTaken = 0
+        ruledOut = nil
         captureStage = .hidden
         collectionVisible = false
         message = Self.idleMessage
@@ -293,6 +288,7 @@ final class GameStore {
     func resetDemo() {
         game = Game(seed: 151)
         hintsTaken = 0
+        ruledOut = nil
         captureStage = .hidden
         collectionVisible = false
         message = Self.idleMessage

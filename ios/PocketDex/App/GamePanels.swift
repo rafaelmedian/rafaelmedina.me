@@ -28,31 +28,21 @@ private struct Scanner: View {
             }.accessibilityHidden(true)
             CRTScreen(power: power, radius: Dex.screenRadius) {
                 // Discoveries take over the scanner; the answers stay on the flap.
-                VStack(spacing: 0) {
-                    Group {
-                        if store.collectionVisible {
-                            CollectionGrid(store: store).transition(.opacity)
+                Group {
+                    if store.collectionVisible {
+                        CollectionGrid(store: store).transition(.opacity)
+                    } else {
+                        if store.mode == .scan {
+                            ScanScreen(store: store).transition(.opacity)
                         } else {
-                            if store.mode == .scan {
-                                ScanScreen(store: store).transition(.opacity)
-                            } else {
-                                ScannerPicture(store: store).transition(.opacity)
-                            }
+                            ScannerPicture(store: store).transition(.opacity)
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    // The trackpad sits under the Pokémon it steers. The camera
-                    // view in scan mode keeps the whole glass; its flap has sleep.
-                    if store.mode == .game {
-                        ControlStrip(store: store)
-                            .padding(.horizontal, 12).padding(.bottom, 12)
-                            .transition(.opacity)
-                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .recessed(radius: Dex.screenRadius, depth: 4)
             .animation(Dex.quick, value: store.collectionVisible)
-            .animation(Dex.quick, value: store.mode)
             HStack(alignment: .center) {
                 // The red dome sits inside the bezel, clear of the cut corner.
                 ZStack {
@@ -99,39 +89,103 @@ private struct BezelShape: Shape {
     }
 }
 
-/// The entry's data: type, height, weight, and status. Each line stays
-/// unknown until a hint reads it or the Pokémon is identified.
-private struct ScanData: View {
+/// The entry's data in one row, shown on the flap once the Pokémon is
+/// found: type, height, weight, and name.
+struct EntryStrip: View {
     let store: GameStore
     var body: some View {
-        let revealed = store.game.round.revealed
         let pokemon = store.pokemon
-        let read = { (hint: Int) in revealed || store.hintsTaken > hint }
-        VStack(alignment: .leading, spacing: 10) {
-            row("TYPE", read(0) ? pokemon.type.capitalized : "???")
-            row("HEIGHT", read(1) ? String(format: "%.1f m", pokemon.height) : "???")
-            row("WEIGHT", read(2) ? String(format: "%.1f kg", pokemon.weight) : "???")
-            row("NAME", revealed ? pokemon.name : read(3) ? "\(pokemon.name.prefix(1))" + String(repeating: "·", count: pokemon.name.count - 1) : "???")
-            Rectangle().fill(Dex.phosphor.opacity(0.2)).frame(height: 1)
-            row("STATUS", revealed ? "IDENTIFIED" : store.hintsTaken > 0 ? "HINTS \(store.hintsTaken)/\(GameStore.hintCount)" : "SCANNING", tint: revealed ? Color(red: 0.45, green: 1, blue: 0.5) : Dex.yellow)
+        HStack(spacing: 0) {
+            cell("TYPE", pokemon.type.capitalized)
+            cell("HEIGHT", String(format: "%.1f m", pokemon.height))
+            cell("WEIGHT", String(format: "%.1f kg", pokemon.weight))
+        }
+        .padding(.vertical, 8)
+        .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("entry")
+    }
+
+    private func cell(_ label: String, _ value: String, tint: Color = Dex.phosphor) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label).font(.system(size: 8, weight: .bold, design: .monospaced)).tracking(1.2)
+                .foregroundStyle(Dex.phosphor.opacity(0.5))
+            Text(value).font(.system(.footnote, design: .monospaced, weight: .bold))
+                .foregroundStyle(tint)
+                .lineLimit(1).minimumScaleFactor(0.55)
+        }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// The flap's hint log, under the answers. Each touch on the silhouette
+/// adds one line, which slides in and glows; the newest reads in yellow.
+/// Its height is fixed for all five, so the answers above never move.
+struct HintLog: View {
+    let store: GameStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let taken = store.hintsTaken
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text("HINTS").tracking(1.5)
+                Spacer(minLength: 0)
+                HStack(spacing: 5) {
+                    ForEach(0..<GameStore.hintCount, id: \.self) { index in
+                        Circle().fill(index < taken ? Dex.yellow : Dex.phosphor.opacity(0.18))
+                            .frame(width: 7, height: 7)
+                            .shadow(color: index < taken ? Dex.yellow.opacity(0.7) : .clear, radius: 3)
+                    }
+                }
+                .accessibilityHidden(true)
+            }
+            .font(.system(size: 9, weight: .bold, design: .monospaced))
+            .foregroundStyle(Dex.phosphor.opacity(0.55))
+            if taken == 0 {
+                Text("Touch the Pokémon on the scanner. Every touch reads one more clue.")
+                    .font(.system(.footnote, design: .monospaced, weight: .semibold))
+                    .foregroundStyle(Dex.phosphor.opacity(0.6))
+                    .transition(.opacity)
+            }
+            ForEach(0..<taken, id: \.self) { index in
+                let line = self.line(index)
+                let newest = index == taken - 1
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(line.label)
+                        .font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1.2)
+                        .foregroundStyle(Dex.phosphor.opacity(0.5))
+                        .frame(width: 58, alignment: .leading)
+                    Text(line.value)
+                        .font(.system(.callout, design: .monospaced, weight: .bold))
+                        .foregroundStyle(newest ? Dex.yellow : Dex.phosphor)
+                        .shadow(color: (newest ? Dex.yellow : Dex.phosphor).opacity(0.6), radius: newest ? 5 : 2)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                }
+                .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
+            }
+            Spacer(minLength: 0)
         }
         .padding(12)
-        .frame(maxHeight: .infinity, alignment: .center)
-        .background(Dex.phosphor.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Dex.phosphor.opacity(0.18), lineWidth: 1))
-        .animation(Dex.quick, value: revealed)
-        .animation(Dex.quick, value: store.hintsTaken)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: 162)
+        .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Dex.yellow.opacity(taken > 0 ? 0.25 : 0), lineWidth: 1))
+        .clipped()
+        .animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.75), value: taken)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("scan-data")
     }
 
-    private func row(_ label: String, _ value: String, tint: Color = Dex.phosphor) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1.5)
-                .foregroundStyle(Dex.phosphor.opacity(0.5))
-            Text(value).font(.system(.callout, design: .monospaced, weight: .bold))
-                .foregroundStyle(tint)
-                .lineLimit(1).minimumScaleFactor(0.6)
+    private func line(_ index: Int) -> (label: String, value: String) {
+        let pokemon = store.pokemon
+        switch index {
+        case 0: return ("TYPE", pokemon.type.capitalized)
+        case 1: return ("HEIGHT", String(format: "%.1f m", pokemon.height))
+        case 2: return ("WEIGHT", String(format: "%.1f kg", pokemon.weight))
+        case 3: return ("NAME", "\(pokemon.name.prefix(1))" + String(repeating: "·", count: pokemon.name.count - 1))
+        default: return ("NOT", store.ruledOut.flatMap { Catalog.pokemon(id: $0)?.name } ?? "—")
         }
     }
 }
@@ -147,10 +201,10 @@ private struct ScannerPicture: View {
                 Text(revealed ? "No.\(store.pokemon.number)" : "No.???").opacity(0.6)
                 Spacer(minLength: 0)
                 DiscoveriesChip(store: store)
+                SettingsKey(store: store)
             }
             .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1)
             .foregroundStyle(Dex.phosphor.opacity(0.75))
-            HStack(alignment: .center, spacing: 12) {
             ZStack {
                 ForEach([0.95, 0.66], id: \.self) { scale in
                     Circle().stroke(Dex.phosphor.opacity(0.14), style: StrokeStyle(lineWidth: 1, dash: [2, 5]))
@@ -188,20 +242,27 @@ private struct ScannerPicture: View {
             .accessibilityLabel(revealed ? store.pokemon.name : "Silhouette of an undiscovered Pokémon. Touch it for a hint.")
             .accessibilityAction(named: revealed ? "Poke" : "Hint") { store.poke() }
             .accessibilityIdentifier("scanner-art")
-            // Once identified, the entry's data sits beside the art.
-            ScanData(store: store).frame(width: 150)
-            }
             Text(revealed ? store.pokemon.name : "Who's that Pokémon?")
                 .font(.system(.title3, design: .monospaced, weight: .bold))
                 .foregroundStyle(Dex.phosphor)
                 .shadow(color: Dex.phosphor.opacity(0.7), radius: 5)
                 .lineLimit(1).minimumScaleFactor(0.6)
                 .accessibilityIdentifier("pokemon-name")
-            Text(revealed ? "#\(store.pokemon.number) · \(store.pokemon.species) Pokémon" : store.hintsTaken < GameStore.hintCount ? "Touch it for a hint." : "No more hints. Trust your gut!")
-                .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1)
-                .foregroundStyle(Dex.phosphor.opacity(0.55))
+            // One line under the name: the round's feedback when there is
+            // some, otherwise what touching the Pokémon will do.
+            Text(caption.text)
+                .font(.system(size: 11, weight: .semibold, design: .monospaced)).tracking(1)
+                .foregroundStyle(caption.feedback ? Dex.yellow : Dex.phosphor.opacity(0.55))
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .animation(Dex.quick, value: caption.text)
         }
         .padding(16)
+    }
+
+    private var caption: (text: String, feedback: Bool) {
+        if store.game.round.revealed { return ("#\(store.pokemon.number) · \(store.pokemon.species) Pokémon", false) }
+        if store.message != GameStore.idleMessage { return (store.message, true) }
+        return (store.hintsTaken < GameStore.hintCount ? "Touch it for a hint." : "No more hints. Trust your gut!", false)
     }
 }
 
@@ -235,6 +296,38 @@ struct DiscoveriesChip: View {
         .buttonStyle(.plain)
         .accessibilityLabel(showing ? "Back to game" : "Discoveries")
         .accessibilityIdentifier(showing ? "back-to-game" : "show-collection")
+    }
+}
+
+/// Sound, haptics, and sleep, folded into one small key in the scanner's
+/// header so they stay out of the way of the game.
+struct SettingsKey: View {
+    let store: GameStore
+    var body: some View {
+        Menu {
+            Button { store.toggleMute() } label: {
+                Label(store.muted ? "Enable sound" : "Mute sound", systemImage: store.muted ? "speaker.wave.2" : "speaker.slash")
+            }
+            Button { store.toggleHaptics() } label: {
+                Label(store.hapticsOn ? "Turn off haptics" : "Turn on haptics", systemImage: "waveform.path")
+            }
+            Divider()
+            Button { store.sleep() } label: {
+                Label("Put PocketDex to sleep", systemImage: "moon.zzz")
+            }
+            .accessibilityIdentifier("sleep")
+        } label: {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(Dex.phosphor.opacity(0.8))
+                .frame(width: 22, height: 22)
+                .background(Dex.phosphor.opacity(0.06), in: Circle())
+                .overlay(Circle().strokeBorder(Dex.phosphor.opacity(0.45), lineWidth: 1))
+                // A comfortable target around a small key.
+                .padding(11).contentShape(Rectangle()).padding(-11)
+        }
+        .accessibilityLabel("Options")
+        .accessibilityIdentifier("options")
     }
 }
 
@@ -303,6 +396,7 @@ struct OakClue: View {
             return "Point the lens at a Pokémon and press SCAN. I'll tell you what it is!"
         }
         guard store.game.round.revealed else { return store.pokemon.clue }
+        guard store.captureStage == .caught else { return "That's it! Quick, a Poké Ball!" }
         let count = store.game.captured.count
         return "Splendid! That was \(store.pokemon.name). Your Pokédex now holds \(count) of 12."
     }

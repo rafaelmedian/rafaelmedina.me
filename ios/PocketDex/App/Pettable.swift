@@ -21,10 +21,6 @@ struct Pettable<Content: View>: View {
         ZStack(alignment: .top) {
             content
                 .scaleEffect(x: pressing ? 1.1 : 1, y: pressing ? 0.86 : 1, anchor: .bottom)
-                // The trackpad on the touchscreen steers where it looks.
-                .rotation3DEffect(.degrees(Double(store.gaze.width) * 22), axis: (0, 1, 0), perspective: 0.5)
-                .rotation3DEffect(.degrees(Double(-store.gaze.height) * 16), axis: (1, 0, 0), perspective: 0.5)
-                .offset(x: store.gaze.width * 14, y: store.gaze.height * 10)
                 .scaleEffect(zoom)
                 .rotationEffect(.degrees(Double(pull.width) * 0.5), anchor: .bottom)
                 .offset(x: pull.width, y: pull.height * 0.4 + hop)
@@ -86,7 +82,6 @@ struct Pettable<Content: View>: View {
                 .onChanged { value in zoom = min(max(value.magnification, 1), 2.4) }
                 .onEnded { _ in withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.6)) { zoom = 1 } }
         )
-        .animation(reduceMotion ? nil : .interactiveSpring(response: 0.25, dampingFraction: 0.75), value: store.gaze)
         .animation(Dex.quick, value: store.reaction)
         .onChange(of: store.pokes) { react() }
         .task(id: store.pokes) {

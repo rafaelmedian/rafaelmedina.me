@@ -168,7 +168,10 @@ final class PocketDexUITests: XCTestCase {
         XCTAssertTrue(app.buttons["answer-0"].waitForExistence(timeout: 3))
         Thread.sleep(forTimeInterval: 1)
         attach("duo-next-round")
-        app.buttons["sleep"].tap()
+        // Sleep sits in the scanner's small settings key.
+        app.buttons["Options"].tap()
+        XCTAssertTrue(app.buttons["Put PocketDex to sleep"].waitForExistence(timeout: 3))
+        app.buttons["Put PocketDex to sleep"].tap()
         XCTAssertTrue(app.buttons["wake-up"].waitForExistence(timeout: 3))
         Thread.sleep(forTimeInterval: 1)
         attach("duo-slept")
