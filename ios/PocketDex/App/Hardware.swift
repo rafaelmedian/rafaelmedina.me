@@ -4,8 +4,6 @@ import SwiftUI
 struct DeviceRegions: Equatable {
     var camera: CGRect?
     var fold: CGRect?
-    /// Every sensor housing, including ones the system currently marks inactive.
-    var sensors: [CGRect] = []
 }
 
 extension GeometryProxy {
@@ -20,8 +18,7 @@ extension GeometryProxy {
         let camera = reservedRegions(kind: .occlusion).map(\.frame).filter(isRound)
             .min { area($0) < area($1) }
         let fold = reservedRegions(kind: .division).first?.frame
-        let sensors = reservedRegions(kind: .occlusion, options: .includeInactive).map(\.frame)
-        return DeviceRegions(camera: camera, fold: fold, sensors: sensors)
+        return DeviceRegions(camera: camera, fold: fold)
         #else
         return DeviceRegions()
         #endif
@@ -97,21 +94,6 @@ struct LensAnchor: Codable, Equatable {
     var diameter: CGFloat
     /// iPhone Duo's outer camera, for launches that open before the cover is seen.
     static let duo = LensAnchor(trailing: 47.8, top: 47.8, pupil: 39, diameter: 73.6)
-}
-
-/// A dark glass window over a sensor housing the lens does not cover.
-struct SensorWindow: View {
-    let rect: CGRect
-    var body: some View {
-        let r = rect.insetBy(dx: -7, dy: -5)
-        Capsule().fill(Dex.glass)
-            .overlay(Capsule().strokeBorder(.white.opacity(0.16), lineWidth: 1).padding(1))
-            .overlay(Capsule().strokeBorder(Dex.groove, lineWidth: 2).padding(-2))
-            .shadow(color: .white.opacity(0.25), radius: 0, y: 1.5)
-            .frame(width: r.width, height: r.height)
-            .position(x: r.midX, y: r.midY)
-            .accessibilityHidden(true)
-    }
 }
 
 /// A polyline in the display's own coordinates, with softened corners.

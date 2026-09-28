@@ -95,12 +95,9 @@ struct InnerDisplay: View {
 
     private func sideBySide(size: CGSize, safe: EdgeInsets, fold: CGRect, regions: DeviceRegions) -> some View {
         let bodyRect = CGRect(x: fold.maxX, y: 0, width: size.width - fold.maxX, height: size.height)
-        // On a real fold the lens stays where the cover had it; the inner
-        // camera gets its own sensor window on the strip.
+        // On a real fold the lens stays where the cover had it.
         let anchor = regions.fold == nil ? nil : (store.lensAnchor ?? .duo)
         let lens = anchor.map { LensGeometry(anchor: $0, panel: bodyRect) } ?? LensGeometry(camera: regions.camera, panel: bodyRect, safe: safe)
-        let lensRect = CGRect(x: lens.center.x - lens.radius, y: lens.center.y - lens.radius, width: lens.diameter, height: lens.diameter)
-        let sensors = regions.sensors.filter { !$0.intersects(lensRect) }
         let seam = lens.seam(hinge: fold.maxX - 4, edge: size.width + 20)
         let flapEdge = lens.mirroredSeam(fold: fold, edge: -20)
         let flapOutline = flapEdge + [CGPoint(x: -20, y: size.height + 20), CGPoint(x: fold.minX, y: size.height + 20)]
@@ -123,7 +120,6 @@ struct InnerDisplay: View {
             HingeBarrel()
                 .frame(width: fold.width - 2, height: size.height - lens.seamHigh - 4)
                 .position(x: fold.midX, y: (lens.seamHigh + size.height) / 2 - 4)
-            ForEach(Array(sensors.enumerated()), id: \.offset) { _, rect in SensorWindow(rect: rect) }
             LensStrip(lens: lens, glow: power, lights: lights, glints: store.selectionGlints, flashes: store.scanFlashes)
             DotGrille(rows: 2, columns: 6, dot: 4, gap: 4).position(tab)
             fitting(BodyPanel(store: store, fill: true), scrolling: BodyPanel(store: store, fill: false))

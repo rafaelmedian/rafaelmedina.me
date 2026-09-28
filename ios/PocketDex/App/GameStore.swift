@@ -11,8 +11,10 @@ final class GameStore {
     var hingeAngle: Double = 180
     var collectionVisible = false
     var captureStage: CaptureStage = .hidden
-    var message = "A wild mystery appeared."
+    var message = GameStore.idleMessage
     var muted = false
+    var hapticsOn = true
+    static let idleMessage = "A wild mystery appeared."
     /// Where the cover drew its lens, so the open body can draw it in the same place.
     var lensAnchor: LensAnchor? {
         didSet {
@@ -44,6 +46,7 @@ final class GameStore {
         captureStage = game.round.revealed ? .caught : .hidden
         if game.round.revealed { message = "Registered. A new friend!" }
         muted = defaults.bool(forKey: "pocketdex.muted")
+        hapticsOn = !defaults.bool(forKey: "pocketdex.hapticsOff")
         lensAnchor = defaults.data(forKey: "pocketdex.lens").flatMap { try? JSONDecoder().decode(LensAnchor.self, from: $0) }
     }
 
@@ -75,7 +78,7 @@ final class GameStore {
         if game.round.revealed {
             game.advance()
             captureStage = .hidden
-            message = "A wild mystery appeared."
+            message = Self.idleMessage
             play("select", haptic: .selection)
         } else {
             scanFlashes += 1
@@ -150,11 +153,17 @@ final class GameStore {
         if muted { feedback.stop() }
     }
 
+    func toggleHaptics() {
+        hapticsOn.toggle()
+        defaults.set(!hapticsOn, forKey: "pocketdex.hapticsOff")
+        if hapticsOn { UISelectionFeedbackGenerator().selectionChanged() }
+    }
+
     func replay() {
         game = Game()
         captureStage = .hidden
         collectionVisible = false
-        message = "A wild mystery appeared."
+        message = Self.idleMessage
         save()
     }
 
@@ -163,7 +172,7 @@ final class GameStore {
         game = Game(seed: 151)
         captureStage = .hidden
         collectionVisible = false
-        message = "A wild mystery appeared."
+        message = Self.idleMessage
         save()
     }
     #endif
@@ -172,7 +181,7 @@ final class GameStore {
         if let data = try? game.savedData() { defaults.set(data, forKey: saveKey) }
     }
     private func play(_ name: String, haptic: Feedback.Haptic) {
-        feedback.play(name, audible: !muted, haptic: haptic)
+        feedback.play(name, audible: !muted, haptic: hapticsOn ? haptic : nil)
     }
 }
 
@@ -180,8 +189,9 @@ final class GameStore {
 private final class Feedback {
     enum Haptic { case selection, impact, success, error }
     private var player: AVAudioPlayer?
-    func play(_ name: String, audible: Bool, haptic: Haptic) {
+    func play(_ name: String, audible: Bool, haptic: Haptic?) {
         switch haptic {
+        case nil: break
         case .selection: UISelectionFeedbackGenerator().selectionChanged()
         case .impact: UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         case .success: UINotificationFeedbackGenerator().notificationOccurred(.success)

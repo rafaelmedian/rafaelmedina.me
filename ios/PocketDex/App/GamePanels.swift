@@ -8,7 +8,7 @@ struct BodyPanel: View {
     /// When true the scanner grows to fill the panel; otherwise it keeps a fixed height.
     var fill = true
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 14) {
             Scanner(store: store)
                 .frame(minHeight: 250, maxHeight: fill ? .infinity : 330)
             ControlDeck(store: store)
@@ -125,59 +125,90 @@ private struct ScannerPicture: View {
                 .shadow(color: Dex.phosphor.opacity(0.7), radius: 5)
                 .lineLimit(1).minimumScaleFactor(0.6)
                 .accessibilityIdentifier("pokemon-name")
-            Text(revealed ? store.pokemon.type : "SCAN • GUESS • DISCOVER")
-                .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1.5)
-                .foregroundStyle(Dex.phosphor.opacity(0.6))
+            if revealed {
+                Text(store.pokemon.type)
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1.5)
+                    .foregroundStyle(Dex.phosphor.opacity(0.6))
+            }
+            // Round feedback sits on the screen, where the player is looking.
+            // The idle greeting says nothing new, so only real feedback shows.
+            let idle = store.message == GameStore.idleMessage
+            Text(store.message)
+                .font(.system(.footnote, design: .monospaced, weight: .semibold))
+                .foregroundStyle(Dex.yellow.opacity(0.9))
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .opacity(idle ? 0 : 1)
+                .accessibilityHidden(idle)
+                .accessibilityIdentifier("round-feedback")
         }
         .padding(16)
     }
 }
 
-/// D-pad, status lights, and the sound button, mirrored from the classic layout so the
-/// D-pad sits by the hinge.
+/// The right thumb's corner: two DS-style switches, a small Discoveries key,
+/// and OK as the big primary button under the thumb.
 private struct ControlDeck: View {
     let store: GameStore
-    @State private var wrongFlash = false
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            DPad { store.move($0) }.disabled(store.game.round.revealed)
-            Spacer(minLength: 0)
-            // The count lives on the Discoveries key; the deck keeps only its lights.
-            HStack(spacing: 8) {
-                IndicatorPill(color: Color(red: 1, green: 0.3, blue: 0.3), lit: wrongFlash)
-                IndicatorPill(color: Color(red: 0.4, green: 0.75, blue: 1), lit: store.canConfirm && !store.game.round.revealed)
+        HStack(alignment: .center, spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                MiniSwitch(label: "SOUND", on: !store.muted) { store.toggleMute() }
+                    .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
+                MiniSwitch(label: "HAPTIC", on: store.hapticsOn) { store.toggleHaptics() }
+                    .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
-            .accessibilityIdentifier("capture-count")
             Spacer(minLength: 0)
-            Button { store.toggleMute() } label: {
-                Image(systemName: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                    .font(.system(size: 14, weight: .bold))
+            VStack(spacing: 6) {
+                Button { store.collectionVisible = true } label: {
+                    Image(systemName: "square.grid.2x2.fill").font(.system(size: 15, weight: .bold))
+                }
+                .buttonStyle(KeyCapStyle(tint: .cream, depth: 5, corners: .all(12), wake: 0.78))
+                .accessibilityLabel("Discoveries")
+                .accessibilityIdentifier("show-collection")
+                Text(String(format: "%02d/12", store.game.captured.count))
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(Dex.cream.opacity(0.8))
+                    .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
+                    .accessibilityIdentifier("capture-count")
             }
-            .buttonStyle(FaceButtonStyle())
-            .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
-        }
-        .onChange(of: store.wrongAnswers) {
-            wrongFlash = true
-            Task { try? await Task.sleep(for: .milliseconds(700)); wrongFlash = false }
+            Button { store.confirm() } label: {
+                VStack(spacing: 2) {
+                    Image(systemName: store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 22, weight: .black))
+                    Text(store.game.round.revealed ? "NEXT" : "OK").font(.system(size: 10, weight: .heavy, design: .rounded))
+                }
+            }
+            .buttonStyle(ArcadeButtonStyle(tint: .yellow, armed: store.canConfirm, size: 100, wake: 0.85))
+            .disabled(!store.canConfirm)
+            .accessibilityLabel(store.game.round.revealed ? "Next Pokémon" : "Confirm answer")
+            .accessibilityIdentifier("confirm-answer")
         }
     }
 }
 
-private struct IndicatorPill: View {
-    let color: Color
-    let lit: Bool
+/// A small DS-style switch: a tiny shell-plastic button, its engraved name,
+/// and a light that shows whether it is on.
+private struct MiniSwitch: View {
+    let label: String
+    let on: Bool
+    let action: () -> Void
     var body: some View {
-        Capsule().fill(lit ? color : color.opacity(0.35))
-            .overlay(Capsule().fill(.black.opacity(lit ? 0 : 0.35)))
-            .overlay(Capsule().stroke(.white.opacity(0.45), lineWidth: 1).padding(1))
-            .frame(width: 34, height: 9)
-            .padding(2.5)
-            .background(Dex.groove, in: Capsule())
-            .shadow(color: lit ? color.opacity(0.9) : .clear, radius: 6)
-            .animation(Dex.quick, value: lit)
-            .accessibilityHidden(true)
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Circle().fill(on ? Color(red: 0.4, green: 1, blue: 0.45) : Dex.groove.opacity(0.6))
+                    .frame(width: 6, height: 6)
+                    .shadow(color: on ? .green : .clear, radius: 4)
+                Capsule().fill(LinearGradient(colors: [Dex.redLight, Dex.red], startPoint: .top, endPoint: .bottom))
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+                    .frame(width: 34, height: 14)
+                    .shadow(color: Dex.groove.opacity(0.55), radius: 0, y: 2)
+                Text(label).font(.system(size: 10, weight: .heavy, design: .rounded)).tracking(1.2)
+                    .foregroundStyle(Dex.cream.opacity(0.75))
+            }
+            .frame(minHeight: 30)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .animation(Dex.quick, value: on)
     }
 }
 
@@ -185,7 +216,9 @@ private struct IndicatorPill: View {
 /// D-pad, rather than four separate keys.
 struct DPad: View {
     let move: (Direction) -> Void
-    private let size: CGFloat = 132
+    private let size: CGFloat = 120
+    /// Visual arm width; the hit areas stay a full 44pt.
+    private let thickness: CGFloat = 30
     @State private var pressed: Direction?
     @Environment(\.dexPower) private var power
     @Environment(\.isEnabled) private var isEnabled
@@ -194,7 +227,7 @@ struct DPad: View {
     var body: some View {
         let arm = size / 3
         let tilt = tiltOffset
-        let cross = CrossShape(arm: arm, radius: 7)
+        let cross = CrossShape(arm: arm, thickness: thickness, radius: 7)
         ZStack {
             // An even skirt all round, so every arm reads the same height.
             cross.fill(Dex.redDark).offset(y: 3)
@@ -205,10 +238,10 @@ struct DPad: View {
                 if let pressed {
                     // The pressed arm drops into shadow.
                     RoundedRectangle(cornerRadius: 6).fill(Dex.groove.opacity(0.28))
-                        .frame(width: arm - 2, height: arm - 2)
+                        .frame(width: thickness - 2, height: thickness - 2)
                         .offset(offset(pressed, arm))
                 }
-                Circle().fill(Dex.groove.opacity(0.18)).frame(width: arm * 0.55)
+                Circle().fill(Dex.groove.opacity(0.18)).frame(width: thickness * 0.55)
                     .overlay(Circle().stroke(.white.opacity(0.25), lineWidth: 1).offset(y: 1))
                 ForEach([Direction.up, .down, .left, .right], id: \.self) { direction in
                     // An engraved line along each arm, as on the DS.
@@ -281,13 +314,14 @@ private struct ArmPress: ButtonStyle {
     }
 }
 
-/// A plus sign with softened corners, three arms wide.
+/// A plus sign with softened corners: arms `thickness` wide, reaching 1.5 `arm`.
 struct CrossShape: Shape {
     var arm: CGFloat
+    var thickness: CGFloat
     var radius: CGFloat
     func path(in rect: CGRect) -> Path {
         let c = CGPoint(x: rect.midX, y: rect.midY)
-        let h = arm / 2
+        let h = thickness / 2
         let l = arm * 1.5
         let points = [
             CGPoint(x: c.x - h, y: c.y - l), CGPoint(x: c.x + h, y: c.y - l), CGPoint(x: c.x + h, y: c.y - h),
@@ -298,33 +332,6 @@ struct CrossShape: Shape {
         // Start mid-edge so every corner is softened.
         let start = CGPoint(x: c.x, y: c.y - l)
         return Polyline(points: [start] + Array(points[1...]) + [points[0]], closed: true, corner: radius).path(in: rect)
-    }
-}
-
-/// A round face button in the shell's plastic, like the DS's ABXY: it reads
-/// through a soft shadow and an engraved legend, not a contrasting colour.
-struct FaceButtonStyle: ButtonStyle {
-    var size: CGFloat = 52
-    @Environment(\.dexPower) private var power
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed
-        return ZStack {
-            Circle().fill(Dex.redDark).frame(width: size, height: size).offset(y: 3)
-                .shadow(color: Dex.groove.opacity(0.5), radius: pressed ? 1 : 4, y: pressed ? 1 : 4)
-            Circle().fill(RadialGradient(colors: [Dex.redLight, Dex.red], center: UnitPoint(x: 0.45, y: 0.3), startRadius: 0, endRadius: size * 0.6))
-                .overlay(Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.45), .clear], startPoint: .top, endPoint: .center), lineWidth: 1))
-                .frame(width: size, height: size)
-                .offset(y: pressed ? 2.5 : 0)
-            configuration.label
-                .foregroundStyle(Dex.groove.opacity(0.6))
-                .shadow(color: .white.opacity(0.3), radius: 0, y: 1)
-                .offset(y: pressed ? 2.5 : 0)
-        }
-        .frame(width: size, height: size + 4)
-        .brightness(power < 0.62 ? -0.12 : 0)
-        .contentShape(Circle())
-        .animation(reduceMotion ? nil : Dex.squeeze, value: pressed)
     }
 }
 
@@ -346,28 +353,28 @@ struct FlapPanel: View {
 
 struct AnswerPanel: View {
     let store: GameStore
-    /// Fill the flap: the clue screen takes whatever height the keys leave.
+    /// Fill the flap: the D-pad settles into the bottom corner under the left thumb.
     var fill = false
     @Environment(\.dexPower) private var power
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
         VStack(spacing: 16) {
+            // A compact clue: sentence case and generous leading read faster than a wall of caps.
             CRTScreen(power: power, radius: 14) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text("PROFESSOR'S CLUE").font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(1.5)
-                        .foregroundStyle(Dex.phosphor.opacity(0.6))
-                    Typewriter(text: store.pokemon.clue.uppercased())
-                        .font(.system(fill ? .title3 : .callout, design: .monospaced, weight: .semibold))
-                        .lineSpacing(4)
+                        .foregroundStyle(Dex.phosphor.opacity(0.55))
+                    Typewriter(text: store.pokemon.clue)
+                        .font(.system(.body, design: .monospaced, weight: .semibold))
+                        .lineSpacing(3)
                         .foregroundStyle(Dex.phosphor)
-                        .shadow(color: Dex.phosphor.opacity(0.6), radius: 4)
+                        .shadow(color: Dex.phosphor.opacity(0.5), radius: 3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxWidth: .infinity, maxHeight: fill ? .infinity : nil, alignment: .topLeading)
-                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(.horizontal, 16).padding(.vertical, 14)
             }
-            .fixedSize(horizontal: false, vertical: !fill)
-            .frame(minHeight: fill ? 120 : nil)
+            .fixedSize(horizontal: false, vertical: true)
 
             let columns = typeSize.isAccessibilitySize ? 1 : 2
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: columns), spacing: 10) {
@@ -376,42 +383,17 @@ struct AnswerPanel: View {
                 }
             }
 
-            HStack(alignment: .center, spacing: 16) {
-                Button { store.confirm() } label: {
-                    VStack(spacing: 2) {
-                        Image(systemName: store.game.round.revealed ? "arrow.right" : "checkmark").font(.system(size: 18, weight: .black))
-                        Text(store.game.round.revealed ? "NEXT" : "OK").font(.system(size: 9, weight: .heavy, design: .rounded))
-                    }
-                }
-                .buttonStyle(ArcadeButtonStyle(tint: .yellow, armed: store.canConfirm, size: 92, wake: 0.85))
-                .disabled(!store.canConfirm)
-                .accessibilityLabel(store.game.round.revealed ? "Next Pokémon" : "Confirm answer")
-                .accessibilityIdentifier("confirm-answer")
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Readout {
-                        Text(store.message)
-                            .font(.system(.caption, design: .monospaced, weight: .bold))
-                            .foregroundStyle(Dex.phosphor)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("round-feedback")
-                    }
-                    Button { store.collectionVisible = true } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "square.grid.2x2.fill").font(.caption)
-                            Text("Discoveries").font(.system(.subheadline, design: .rounded, weight: .bold))
-                            Spacer(minLength: 4)
-                            Text("\(store.game.captured.count)/12").font(.system(.caption, design: .monospaced, weight: .bold))
-                        }
-                    }
-                    .buttonStyle(KeyCapStyle(tint: .cream, depth: 6, corners: .all(12), wake: 0.78))
-                    .accessibilityIdentifier("show-collection")
-                }
+            if fill { Spacer(minLength: 0) }
+            HStack(alignment: .bottom) {
+                DPad { store.move($0) }.disabled(store.game.round.revealed)
+                Spacer(minLength: 0)
+                DotGrille(rows: 3, columns: 7, dot: 4, gap: 4).padding(.bottom, 10)
             }
         }
     }
 
     private func answer(index: Int, id: Int, columns: Int) -> some View {
+        let fill = self.fill
         let rejected = store.game.round.rejected.contains(index)
         let selected = store.game.round.selection == index
         let name = Catalog.pokemon(id: id)!.name
@@ -425,11 +407,11 @@ struct AnswerPanel: View {
         return Button { store.select(index) } label: {
             HStack(spacing: 8) {
                 KeyLegend(text: ["A", "B", "C", "D"][index], color: tint.legend)
-                Text(name).font(.system(.subheadline, design: .rounded, weight: .bold))
+                Text(name).font(.system(fill ? .title3 : .headline, design: .rounded, weight: .bold))
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 if rejected { Image(systemName: "xmark").font(.caption.bold()) }
-            }.frame(maxWidth: .infinity, minHeight: 40)
+            }.frame(maxWidth: .infinity, minHeight: fill ? 62 : 46)
         }
         .buttonStyle(KeyCapStyle(tint: tint, depth: 8,
                                  corners: .init(topLeading: 12, bottomLeading: outerLeft ? 30 : 12, bottomTrailing: outerRight ? 30 : 12, topTrailing: 12),
@@ -439,19 +421,6 @@ struct AnswerPanel: View {
         .accessibilityValue(rejected ? "Incorrect" : selected ? "Selected" : "")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("answer-\(index)")
-    }
-}
-
-/// A slim dark display set into the plastic.
-struct Readout<Content: View>: View {
-    @ViewBuilder var content: Content
-    var body: some View {
-        content
-            .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
-            .padding(.horizontal, 12).padding(.vertical, 9)
-            .background(Dex.glass, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .overlay { DotMask(pitch: 2.5).opacity(0.5).clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous)).allowsHitTesting(false) }
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 1).offset(y: 1))
     }
 }
 
