@@ -28,21 +28,31 @@ private struct Scanner: View {
             }.accessibilityHidden(true)
             CRTScreen(power: power, radius: Dex.screenRadius) {
                 // Discoveries take over the scanner; the answers stay on the flap.
-                Group {
-                    if store.collectionVisible {
-                        CollectionGrid(store: store).transition(.opacity)
-                    } else {
-                        if store.mode == .scan {
-                            ScanScreen(store: store).transition(.opacity)
+                VStack(spacing: 0) {
+                    Group {
+                        if store.collectionVisible {
+                            CollectionGrid(store: store).transition(.opacity)
                         } else {
-                            ScannerPicture(store: store).transition(.opacity)
+                            if store.mode == .scan {
+                                ScanScreen(store: store).transition(.opacity)
+                            } else {
+                                ScannerPicture(store: store).transition(.opacity)
+                            }
                         }
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // The trackpad sits under the Pokémon it steers. The camera
+                    // view in scan mode keeps the whole glass; its flap has sleep.
+                    if store.mode == .game {
+                        ControlStrip(store: store)
+                            .padding(.horizontal, 12).padding(.bottom, 12)
+                            .transition(.opacity)
+                    }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .recessed(radius: Dex.screenRadius, depth: 4)
             .animation(Dex.quick, value: store.collectionVisible)
+            .animation(Dex.quick, value: store.mode)
             HStack(alignment: .center) {
                 // The red dome sits inside the bezel, clear of the cut corner.
                 ZStack {
@@ -224,7 +234,7 @@ struct DiscoveriesChip: View {
     }
 }
 
-// MARK: - Flap (the half that swings): clue, answers, confirm
+// MARK: - Flap (the half that swings): one screen for the clue and answers
 
 struct FlapPanel: View {
     let store: GameStore
@@ -240,48 +250,47 @@ struct FlapPanel: View {
 
 struct AnswerPanel: View {
     let store: GameStore
-    /// Fill the flap: the touchscreen takes the height the clue leaves.
+    /// Fill the flap: the touchscreen takes its whole height.
     var fill = false
-    @Environment(\.dexPower) private var power
-    @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
-        VStack(spacing: 16) {
-            // Professor Oak gives the clue, then congratulates you once it is solved.
-            CRTScreen(power: power, radius: Dex.screenRadius) {
-                HStack(alignment: .top, spacing: 14) {
-                    OakPortrait()
-                        .frame(width: 58, height: 64)
-                        .padding(4)
-                        .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Dex.phosphor.opacity(0.25), lineWidth: 1))
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(store.mode == .scan ? "PROF. OAK · SCANNER" : store.game.round.revealed ? "PROF. OAK · REGISTERED" : "PROF. OAK · CLUE")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(1.5)
-                            .foregroundStyle(Dex.phosphor.opacity(0.55))
-                        Typewriter(text: oakLine)
-                            .font(.system(.body, design: .monospaced, weight: .semibold))
-                            .lineSpacing(3)
-                            .foregroundStyle(Dex.phosphor)
-                            .shadow(color: Dex.phosphor.opacity(0.5), radius: 3)
-                            .lineLimit(3)
-                            .minimumScaleFactor(0.8)
-                            .accessibilityIdentifier("oak-line")
-                    }
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                }
-                .padding(.horizontal, 14).padding(.vertical, 12)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-            // A fixed height, sized for the longest line, so nothing below moves
-            // when the clue changes or turns into Oak's congratulations.
-            .frame(height: 118)
+        // The flap is one touchscreen: Oak's clue on top, the answers below.
+        TouchDeck(store: store)
+            .frame(minHeight: 420, maxHeight: fill ? .infinity : 520)
             .recessed(radius: Dex.screenRadius)
+    }
+}
 
-            // The rest of the flap is one touchscreen.
-            TouchDeck(store: store)
-                .frame(minHeight: 300, maxHeight: fill ? .infinity : 380)
-                .recessed(radius: Dex.screenRadius)
+/// Professor Oak gives the clue, then congratulates you once it is solved.
+/// Drawn on the flap's touchscreen, above the answers.
+struct OakClue: View {
+    let store: GameStore
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            OakPortrait()
+                .frame(width: 58, height: 64)
+                .padding(4)
+                .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Dex.phosphor.opacity(0.25), lineWidth: 1))
+            VStack(alignment: .leading, spacing: 6) {
+                Text(store.mode == .scan ? "PROF. OAK · SCANNER" : store.game.round.revealed ? "PROF. OAK · REGISTERED" : "PROF. OAK · CLUE")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced)).tracking(1.5)
+                    .foregroundStyle(Dex.phosphor.opacity(0.55))
+                Typewriter(text: oakLine)
+                    .font(.system(.body, design: .monospaced, weight: .semibold))
+                    .lineSpacing(3)
+                    .foregroundStyle(Dex.phosphor)
+                    .shadow(color: Dex.phosphor.opacity(0.5), radius: 3)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
+                    .accessibilityIdentifier("oak-line")
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        // A fixed height, sized for the longest line, so nothing below moves
+        // when the clue changes or turns into Oak's congratulations.
+        .frame(maxWidth: .infinity, minHeight: 104, maxHeight: 104, alignment: .topLeading)
+        .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var oakLine: String {
@@ -293,7 +302,6 @@ struct AnswerPanel: View {
         let count = store.game.captured.count
         return "Splendid! That was \(store.pokemon.name). Your Pokédex now holds \(count) of 12."
     }
-
 }
 
 /// Clue text arrives a character at a time; layout is reserved up front.

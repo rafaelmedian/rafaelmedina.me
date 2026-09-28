@@ -1,10 +1,10 @@
 import SwiftUI
 import PocketDexCore
 
-/// The flap's controls as one low-res CRT touchscreen, after Mist's control
-/// panel: four coloured answer pills, then a strip holding a small trackpad,
-/// a readout, and the two settings. Everything is
-/// drawn on the glass, so it wakes, dims, and scan-lines with the rest.
+/// The flap as one low-res CRT touchscreen, after Mist's control panel:
+/// Professor Oak's clue on top and four coloured answer pills below.
+/// Everything is drawn on the glass, so it wakes, dims, and scan-lines with
+/// the rest.
 struct TouchDeck: View {
     let store: GameStore
     @Environment(\.deckPower) private var power
@@ -12,14 +12,20 @@ struct TouchDeck: View {
 
     var body: some View {
         CRTScreen(power: power, radius: Dex.screenRadius, pitch: 3) {
-            Group {
-                if store.asleep {
-                    SleepCard(store: store).transition(.opacity)
-                } else if store.mode == .scan {
-                    ScanControls(store: store).transition(.opacity)
-                } else {
-                    controls.transition(.opacity)
+            VStack(spacing: 0) {
+                if !store.asleep {
+                    OakClue(store: store).padding([.horizontal, .top], 12).transition(.opacity)
                 }
+                Group {
+                    if store.asleep {
+                        SleepCard(store: store).transition(.opacity)
+                    } else if store.mode == .scan {
+                        ScanControls(store: store).transition(.opacity)
+                    } else {
+                        controls.transition(.opacity)
+                    }
+                }
+                .frame(maxHeight: .infinity)
             }
             .animation(reduceMotion ? nil : Dex.quick, value: store.asleep)
             .animation(reduceMotion ? nil : Dex.quick, value: store.mode)
@@ -27,64 +33,22 @@ struct TouchDeck: View {
     }
 
     private var controls: some View {
-        ZStack {
-            // The answers own the screen. Below them, one strip of equal-height
-            // tiles: the small trackpad in the thumb's corner, the readout, and the
-            // two settings.
-            VStack(spacing: 12) {
-                Group {
-                    // Once found, the answers give way to the result and a way on.
-                    if store.game.round.revealed {
-                        FoundCard(store: store).transition(.opacity.combined(with: .scale(scale: 0.97)))
-                    } else {
-                        VStack(spacing: 12) {
-                            HStack(spacing: 12) { pill(0); pill(1) }
-                            HStack(spacing: 12) { pill(2); pill(3) }
-                        }
-                        .transition(.opacity)
-                    }
+        // Once found, the answers give way to the result and a way on.
+        Group {
+            if store.game.round.revealed {
+                FoundCard(store: store).transition(.opacity.combined(with: .scale(scale: 0.97)))
+            } else {
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) { pill(0); pill(1) }
+                    HStack(spacing: 12) { pill(2); pill(3) }
                 }
-                .frame(maxHeight: .infinity)
-                .animation(reduceMotion ? nil : Dex.reveal, value: store.game.round.revealed)
-                HStack(spacing: 8) {
-                    Trackpad(store: store)
-                        .frame(width: Self.stripHeight)
-                    readoutTile
-                    // Two small switches, stacked in the corner.
-                    VStack(spacing: 6) {
-                        settingTile(icon: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", label: "SOUND", on: !store.muted) { store.toggleMute() }
-                            .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
-                        settingTile(icon: "waveform.path", label: "HAPTIC", on: store.hapticsOn) { store.toggleHaptics() }
-                            .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
-                    }
-                    .frame(width: 58)
-                    sleepTile
-                }
-                .frame(height: Self.stripHeight)
+                .transition(.opacity)
             }
-            .padding(12)
         }
+        .frame(maxHeight: .infinity)
+        .animation(reduceMotion ? nil : Dex.reveal, value: store.game.round.revealed)
+        .padding(12)
     }
-
-    private var sleepTile: some View {
-        Button { store.sleep() } label: {
-            VStack(spacing: 6) {
-                Image(systemName: "moon.zzz.fill").font(.system(size: 16, weight: .bold))
-                Text("SLEEP").font(.system(size: 9, weight: .heavy, design: .monospaced))
-            }
-            .foregroundStyle(Dex.phosphor.opacity(0.8))
-            .frame(width: 58)
-            .frame(maxHeight: .infinity)
-            .background(Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(GlassPress())
-        .accessibilityLabel("Put PocketDex to sleep")
-        .accessibilityIdentifier("sleep")
-    }
-
-    /// Height of the bottom strip, and so the trackpad's side.
-    static let stripHeight: CGFloat = 88
 
     // MARK: Answer pills
 
@@ -110,7 +74,7 @@ struct TouchDeck: View {
                 .foregroundStyle(.black.opacity(rejected ? 0.45 : 0.75))
                 .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 56, maxHeight: 76)
+                .frame(minHeight: 56, maxHeight: 112)
                 .background(rejected ? Color(white: 0.3) : Self.colors[index], in: Capsule())
                 // Each pill sits in its own darker nest on the glass.
                 .padding(3)
@@ -128,8 +92,51 @@ struct TouchDeck: View {
             .accessibilityIdentifier("answer-\(index)")
         }
     }
+}
 
-    // MARK: Tiles
+/// The scanner's bottom strip, drawn on its glass: the small trackpad that
+/// steers the Pokémon above it, a readout of what it said or the round's
+/// feedback, the two settings, and sleep.
+struct ControlStrip: View {
+    let store: GameStore
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Trackpad(store: store)
+                .frame(width: Self.height)
+            readoutTile
+            // Two small switches, stacked in the corner.
+            VStack(spacing: 6) {
+                settingTile(icon: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", label: "SOUND", on: !store.muted) { store.toggleMute() }
+                    .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
+                settingTile(icon: "waveform.path", label: "HAPTIC", on: store.hapticsOn) { store.toggleHaptics() }
+                    .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
+            }
+            .frame(width: 58)
+            sleepTile
+        }
+        .frame(height: Self.height)
+    }
+
+    /// Height of the strip, and so the trackpad's side.
+    static let height: CGFloat = 84
+
+    private var sleepTile: some View {
+        Button { store.sleep() } label: {
+            VStack(spacing: 6) {
+                Image(systemName: "moon.zzz.fill").font(.system(size: 16, weight: .bold))
+                Text("SLEEP").font(.system(size: 9, weight: .heavy, design: .monospaced))
+            }
+            .foregroundStyle(Dex.phosphor.opacity(0.8))
+            .frame(width: 58)
+            .frame(maxHeight: .infinity)
+            .background(Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(GlassPress())
+        .accessibilityLabel("Put PocketDex to sleep")
+        .accessibilityIdentifier("sleep")
+    }
 
     /// What the Pokémon just said, or the round's feedback.
     private var readoutTile: some View {
