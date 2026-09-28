@@ -133,7 +133,7 @@ private struct ScannerPicture: View {
     }
 }
 
-/// D-pad, counter, and the sound knob, mirrored from the classic layout so the
+/// D-pad, status lights, and the sound button, mirrored from the classic layout so the
 /// D-pad sits by the hinge.
 private struct ControlDeck: View {
     let store: GameStore
@@ -142,27 +142,20 @@ private struct ControlDeck: View {
         HStack(alignment: .center, spacing: 16) {
             DPad { store.move($0) }.disabled(store.game.round.revealed)
             Spacer(minLength: 0)
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    IndicatorPill(color: Color(red: 1, green: 0.3, blue: 0.3), lit: wrongFlash)
-                    IndicatorPill(color: Color(red: 0.4, green: 0.75, blue: 1), lit: store.canConfirm && !store.game.round.revealed)
-                }
-                LCD {
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text(String(format: "%02d", store.game.captured.count)).font(.system(size: 28, weight: .semibold, design: .monospaced))
-                        Text("/12").font(.system(size: 12, weight: .semibold, design: .monospaced))
-                    }
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
-                .accessibilityIdentifier("capture-count")
+            // The count lives on the Discoveries key; the deck keeps only its lights.
+            HStack(spacing: 8) {
+                IndicatorPill(color: Color(red: 1, green: 0.3, blue: 0.3), lit: wrongFlash)
+                IndicatorPill(color: Color(red: 0.4, green: 0.75, blue: 1), lit: store.canConfirm && !store.game.round.revealed)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(store.game.captured.count) of 12 Pokémon discovered")
+            .accessibilityIdentifier("capture-count")
             Spacer(minLength: 0)
             Button { store.toggleMute() } label: {
                 Image(systemName: store.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                     .font(.system(size: 14, weight: .bold))
             }
-            .buttonStyle(RoundPadStyle())
+            .buttonStyle(FaceButtonStyle())
             .accessibilityLabel(store.muted ? "Enable sound" : "Mute sound")
         }
         .onChange(of: store.wrongAnswers) {
@@ -203,23 +196,27 @@ struct DPad: View {
         let tilt = tiltOffset
         let cross = CrossShape(arm: arm, radius: 7)
         ZStack {
-            // Recessed well the cross sits in.
-            Circle().fill(Dex.redDark.shadow(.inner(color: .black.opacity(0.5), radius: 5, y: 2)))
-                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1).offset(y: 1))
-                .frame(width: size + 16, height: size + 16)
-            cross.fill(Color(red: 0.02, green: 0.02, blue: 0.03)).offset(y: 6)
-                .shadow(color: .black.opacity(0.4), radius: 3, y: 7)
+            // An even skirt all round, so every arm reads the same height.
+            cross.fill(Dex.redDark).offset(y: 3)
+                .shadow(color: Dex.groove.opacity(0.5), radius: 4, y: 4)
             ZStack {
-                cross.fill(LinearGradient(colors: [Color(white: 0.27), Color(white: 0.16)], startPoint: .top, endPoint: .bottom))
-                cross.stroke(LinearGradient(colors: [.white.opacity(0.35), .clear], startPoint: .top, endPoint: .center), lineWidth: 1)
-                Circle().fill(.black.opacity(0.35)).frame(width: arm * 0.5)
-                    .overlay(Circle().stroke(.white.opacity(0.1), lineWidth: 1).offset(y: 1))
+                cross.fill(LinearGradient(colors: [Dex.redLight, Dex.red], startPoint: .top, endPoint: .bottom))
+                cross.stroke(LinearGradient(colors: [.white.opacity(0.45), .clear], startPoint: .top, endPoint: .center), lineWidth: 1)
+                if let pressed {
+                    // The pressed arm drops into shadow.
+                    RoundedRectangle(cornerRadius: 6).fill(Dex.groove.opacity(0.28))
+                        .frame(width: arm - 2, height: arm - 2)
+                        .offset(offset(pressed, arm))
+                }
+                Circle().fill(Dex.groove.opacity(0.18)).frame(width: arm * 0.55)
+                    .overlay(Circle().stroke(.white.opacity(0.25), lineWidth: 1).offset(y: 1))
                 ForEach([Direction.up, .down, .left, .right], id: \.self) { direction in
-                    Triangle()
-                        .fill(Color(white: pressed == direction ? 0.75 : 0.5))
-                        .frame(width: 7, height: 9)
-                        .rotationEffect(.degrees(angle(direction)))
-                        .offset(offset(direction, arm * 1.05))
+                    // An engraved line along each arm, as on the DS.
+                    Capsule().fill(Dex.groove.opacity(pressed == direction ? 0.6 : 0.4))
+                        .frame(width: 2, height: arm * 0.34)
+                        .shadow(color: .white.opacity(0.3), radius: 0, x: 0.8, y: 0.8)
+                        .rotationEffect(.degrees(angle(direction) + 90))
+                        .offset(offset(direction, arm * 1.02))
                 }
             }
             .offset(x: tilt.width, y: tilt.height + (power < 0.5 ? 4 : 0))
@@ -233,7 +230,7 @@ struct DPad: View {
                     .accessibilityLabel("Select \(String(describing: direction))")
             }
         }
-        .frame(width: size + 16, height: size + 22)
+        .frame(width: size + 8, height: size + 12)
         .opacity(isEnabled ? 1 : 0.7)
         .animation(reduceMotion ? nil : Dex.squeeze, value: pressed)
         .animation(reduceMotion ? nil : Dex.squeeze, value: power < 0.5)
@@ -304,22 +301,28 @@ struct CrossShape: Shape {
     }
 }
 
-/// A plain round rubber button: no skirt, it just gives a little when pressed.
-struct RoundPadStyle: ButtonStyle {
-    var size: CGFloat = 50
+/// A round face button in the shell's plastic, like the DS's ABXY: it reads
+/// through a soft shadow and an engraved legend, not a contrasting colour.
+struct FaceButtonStyle: ButtonStyle {
+    var size: CGFloat = 52
+    @Environment(\.dexPower) private var power
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         return ZStack {
-            Circle().fill(Dex.redDark.shadow(.inner(color: .black.opacity(0.5), radius: 3, y: 1.5)))
-                .frame(width: size + 10, height: size + 10)
-            Circle().fill(RadialGradient(colors: [Color(white: 0.3), Color(white: 0.12)], center: UnitPoint(x: 0.4, y: 0.3), startRadius: 0, endRadius: size * 0.6))
-                .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
+            Circle().fill(Dex.redDark).frame(width: size, height: size).offset(y: 3)
+                .shadow(color: Dex.groove.opacity(0.5), radius: pressed ? 1 : 4, y: pressed ? 1 : 4)
+            Circle().fill(RadialGradient(colors: [Dex.redLight, Dex.red], center: UnitPoint(x: 0.45, y: 0.3), startRadius: 0, endRadius: size * 0.6))
+                .overlay(Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.45), .clear], startPoint: .top, endPoint: .center), lineWidth: 1))
                 .frame(width: size, height: size)
-                .shadow(color: .black.opacity(pressed ? 0.2 : 0.45), radius: pressed ? 1 : 3, y: pressed ? 1 : 3)
-            configuration.label.foregroundStyle(Color(white: 0.62))
+                .offset(y: pressed ? 2.5 : 0)
+            configuration.label
+                .foregroundStyle(Dex.groove.opacity(0.6))
+                .shadow(color: .white.opacity(0.3), radius: 0, y: 1)
+                .offset(y: pressed ? 2.5 : 0)
         }
-        .scaleEffect(pressed ? 0.95 : 1)
+        .frame(width: size, height: size + 4)
+        .brightness(power < 0.62 ? -0.12 : 0)
         .contentShape(Circle())
         .animation(reduceMotion ? nil : Dex.squeeze, value: pressed)
     }
@@ -416,7 +419,9 @@ struct AnswerPanel: View {
         let bottomRow = index >= store.game.round.choices.count - columns
         let outerLeft = bottomRow && index % columns == 0
         let outerRight = bottomRow && index % columns == columns - 1
-        let tint: KeyTint = rejected ? .spent : .blue
+        // Each answer is its own plastic, like Mist's mood keys.
+        let palette: [KeyTint] = [.green, .yellow, .purple, .blue]
+        let tint: KeyTint = rejected ? .spent : palette[index % palette.count]
         return Button { store.select(index) } label: {
             HStack(spacing: 8) {
                 KeyLegend(text: ["A", "B", "C", "D"][index], color: tint.legend)

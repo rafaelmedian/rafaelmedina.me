@@ -139,49 +139,52 @@ struct Polyline: Shape {
     }
 }
 
-/// The spine between the two halves: a red plastic barrel, shaded as a
-/// cylinder, with ring grooves near each end and screw caps. It only shows on
-/// the open display; the cover stays a clean face.
+/// The spine between the two halves, after the DS Lite: a bar moulded in
+/// the shell's own plastic, split into short end knuckles and a long middle
+/// piece. Soft cylinder shading and hairline gaps separate it; no contrast
+/// colour, so it reads as part of the case.
 struct HingeBarrel: View {
     var vertical = true
     var body: some View {
         let across: UnitPoint = vertical ? .leading : .top
         let along: UnitPoint = vertical ? .trailing : .bottom
         let shading = LinearGradient(stops: [
-            .init(color: Dex.groove, location: 0),
-            .init(color: Dex.redDark, location: 0.12),
-            .init(color: Dex.red, location: 0.3),
-            .init(color: Dex.redLight, location: 0.36),
-            .init(color: Color(red: 1, green: 0.78, blue: 0.76), location: 0.42),
-            .init(color: Dex.redLight, location: 0.5),
-            .init(color: Dex.red, location: 0.66),
-            .init(color: Dex.redDark, location: 0.88),
-            .init(color: Dex.groove, location: 1)
+            .init(color: Dex.redDark, location: 0),
+            .init(color: Dex.red, location: 0.22),
+            .init(color: Dex.redLight, location: 0.42),
+            .init(color: Dex.red, location: 0.62),
+            .init(color: Dex.redDark.opacity(0.95), location: 1)
         ], startPoint: across, endPoint: along)
         GeometryReader { proxy in
             let thick = vertical ? proxy.size.width : proxy.size.height
             let length = vertical ? proxy.size.height : proxy.size.width
-            let rings = [0.07, 0.1, 0.9, 0.93].map { length * $0 }
-            ZStack {
-                RoundedRectangle(cornerRadius: thick * 0.45, style: .continuous).fill(shading)
-                // Knuckle rings: a dark cut with a lit lip, following the curve.
-                ForEach(Array(rings.enumerated()), id: \.offset) { _, at in
-                    Capsule().fill(Dex.groove.opacity(0.8))
-                        .frame(width: vertical ? thick : 1.5, height: vertical ? 1.5 : thick)
-                        .overlay(Capsule().fill(.white.opacity(0.28)).frame(width: vertical ? thick * 0.8 : 1, height: vertical ? 1 : thick * 0.8)
-                            .offset(x: vertical ? 0 : 1.6, y: vertical ? 1.6 : 0))
-                        .position(x: vertical ? proxy.size.width / 2 : at, y: vertical ? at : proxy.size.height / 2)
-                }
-                // Screw caps at the barrel ends.
-                ForEach([thick * 0.5, length - thick * 0.5], id: \.self) { at in
-                    Circle().fill(RadialGradient(colors: [Dex.redLight, Dex.redDark], center: UnitPoint(x: 0.4, y: 0.35), startRadius: 0, endRadius: thick * 0.4))
-                        .overlay(Capsule().fill(Dex.groove.opacity(0.85)).frame(width: thick * 0.42, height: 1.5).rotationEffect(.degrees(-35)))
-                        .overlay(Circle().strokeBorder(Dex.groove.opacity(0.7), lineWidth: 1))
-                        .frame(width: thick * 0.62, height: thick * 0.62)
-                        .position(x: vertical ? proxy.size.width / 2 : at, y: vertical ? at : proxy.size.height / 2)
+            let knuckle = min(length * 0.12, 70)
+            let gap: CGFloat = 3
+            // End knuckle, middle, end knuckle.
+            let pieces: [(start: CGFloat, end: CGFloat)] = [
+                (0, knuckle), (knuckle + gap, length - knuckle - gap), (length - knuckle, length)
+            ]
+            ZStack(alignment: .topLeading) {
+                ForEach(Array(pieces.enumerated()), id: \.offset) { index, piece in
+                    let size = piece.end - piece.start
+                    let shape = RoundedRectangle(cornerRadius: thick * 0.32, style: .continuous)
+                    shape.fill(shading)
+                        .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.3), .clear, .black.opacity(0.18)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
+                        .overlay {
+                            if index != 1 {
+                                // Grip rings on the knuckles.
+                                let lines = ForEach(0..<3, id: \.self) { _ in
+                                    Rectangle().fill(Dex.groove.opacity(0.35))
+                                        .frame(width: vertical ? thick * 0.55 : 1.5, height: vertical ? 1.5 : thick * 0.55)
+                                }
+                                if vertical { VStack(spacing: 3) { lines } } else { HStack(spacing: 3) { lines } }
+                            }
+                        }
+                        .frame(width: vertical ? thick : size, height: vertical ? size : thick)
+                        .offset(x: vertical ? 0 : piece.start, y: vertical ? piece.start : 0)
                 }
             }
-            .shadow(color: .black.opacity(0.45), radius: 4, x: vertical ? 2 : 0, y: vertical ? 1 : 3)
+            .shadow(color: Dex.groove.opacity(0.45), radius: 3, x: vertical ? 0 : 0, y: 2)
         }.accessibilityHidden(true)
     }
 }

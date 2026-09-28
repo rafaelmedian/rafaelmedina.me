@@ -41,6 +41,10 @@ struct KeyTint: Equatable {
                              skirt: Color(red: 0.03, green: 0.03, blue: 0.04), legend: Color(red: 0.72, green: 0.72, blue: 0.74))
     static let red = KeyTint(face: Color(red: 0.93, green: 0.27, blue: 0.27), top: Color(red: 1.0, green: 0.48, blue: 0.45),
                              skirt: Color(red: 0.52, green: 0.07, blue: 0.10), legend: Color(red: 0.40, green: 0.03, blue: 0.06))
+    static let green = KeyTint(face: Color(red: 0.2, green: 0.74, blue: 0.4), top: Color(red: 0.42, green: 0.88, blue: 0.56),
+                               skirt: Color(red: 0.07, green: 0.42, blue: 0.2), legend: Color(red: 0.03, green: 0.26, blue: 0.11))
+    static let purple = KeyTint(face: Color(red: 0.48, green: 0.33, blue: 0.93), top: Color(red: 0.64, green: 0.53, blue: 1.0),
+                                skirt: Color(red: 0.26, green: 0.14, blue: 0.62), legend: Color(red: 0.16, green: 0.07, blue: 0.4))
     static let spent = KeyTint(face: Color(red: 0.72, green: 0.70, blue: 0.70), top: Color(red: 0.82, green: 0.80, blue: 0.80),
                                skirt: Color(red: 0.46, green: 0.44, blue: 0.44), legend: Color(red: 0.36, green: 0.34, blue: 0.34))
 }
