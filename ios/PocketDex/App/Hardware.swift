@@ -166,7 +166,7 @@ struct HingeBarrel: View {
                         .offset(x: vertical ? 0 : piece.start, y: vertical ? piece.start : 0)
                 }
             }
-            .shadow(color: Dex.groove.opacity(0.45), radius: 3, x: vertical ? 0 : 0, y: 2)
+
         }.accessibilityHidden(true)
     }
 }
@@ -222,7 +222,7 @@ struct FlapPlastic: View {
             .init(color: Dex.redDark, location: 1)
         ], startPoint: .top, endPoint: .bottom))
         .overlay { Grain().clipShape(shape).allowsHitTesting(false) }
-        .shadow(color: .black.opacity(0.28), radius: 6, y: 3)
+        .shadow(color: .black.opacity(0.22), radius: 1.5, y: 1)
     }
 }
 

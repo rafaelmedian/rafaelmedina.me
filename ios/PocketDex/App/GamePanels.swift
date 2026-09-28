@@ -31,7 +31,7 @@ private struct Scanner: View {
                         .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 1).offset(y: 0.8))
                 }
             }.accessibilityHidden(true)
-            CRTScreen(power: power, radius: 16) {
+            CRTScreen(power: power, radius: Dex.screenRadius) {
                 // Discoveries take over the scanner; the answers stay on the flap.
                 Group {
                     if store.collectionVisible {
@@ -42,6 +42,7 @@ private struct Scanner: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .recessed(radius: Dex.screenRadius, depth: 4)
             .animation(Dex.quick, value: store.collectionVisible)
             HStack(alignment: .center) {
                 // The red dome sits inside the bezel, clear of the cut corner.
@@ -197,6 +198,9 @@ private struct ControlDeck: View {
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
             CameraButton(store: store)
+                .padding(4)
+                .background(Circle().fill(Dex.groove.shadow(.inner(color: .black.opacity(0.6), radius: 2, y: 1.5))))
+                .overlay(Circle().strokeBorder(LinearGradient(colors: [.clear, .white.opacity(0.25)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
             DotGrille(rows: 3, columns: 9, dot: 4, gap: 4)
             Spacer(minLength: 0)
             Button { store.confirm() } label: {
@@ -206,6 +210,8 @@ private struct ControlDeck: View {
                 }
             }
             .buttonStyle(ArcadeButtonStyle(tint: store.canConfirm ? .green : .spent, armed: store.canConfirm, size: 80, wake: 0.85))
+            .background(Circle().fill(Dex.groove.shadow(.inner(color: .black.opacity(0.6), radius: 3, y: 2))).padding(-3))
+            .overlay(Circle().strokeBorder(LinearGradient(colors: [.clear, .white.opacity(0.25)], startPoint: .top, endPoint: .bottom), lineWidth: 1).padding(-3))
             .disabled(!store.canConfirm)
             .accessibilityLabel(store.game.round.revealed ? "Next Pokémon" : "Confirm answer")
             .accessibilityIdentifier("confirm-answer")
@@ -330,7 +336,7 @@ struct AnswerPanel: View {
     var body: some View {
         VStack(spacing: 16) {
             // Professor Oak gives the clue, then congratulates you once it is solved.
-            CRTScreen(power: power, radius: 14) {
+            CRTScreen(power: power, radius: Dex.screenRadius) {
                 HStack(alignment: .top, spacing: 14) {
                     OakPortrait()
                         .frame(width: 58, height: 64)
@@ -346,18 +352,24 @@ struct AnswerPanel: View {
                             .lineSpacing(3)
                             .foregroundStyle(Dex.phosphor)
                             .shadow(color: Dex.phosphor.opacity(0.5), radius: 3)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.8)
                             .accessibilityIdentifier("oak-line")
                     }
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .fixedSize(horizontal: false, vertical: true)
+            // A fixed height, sized for the longest line, so nothing below moves
+            // when the clue changes or turns into Oak's congratulations.
+            .frame(height: 118)
+            .recessed(radius: Dex.screenRadius)
 
             // The rest of the flap is one touchscreen.
             TouchDeck(store: store)
                 .frame(minHeight: 300, maxHeight: fill ? .infinity : 380)
+                .recessed(radius: Dex.screenRadius)
         }
     }
 

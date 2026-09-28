@@ -60,7 +60,7 @@ struct CompletedPanel: View {
     @State private var confirmReplay = false
     var body: some View {
         VStack(spacing: 16) {
-            CRTScreen(power: power, radius: 16) {
+            CRTScreen(power: power, radius: Dex.screenRadius) {
                 VStack(spacing: 14) {
                     Pokeball().frame(width: 72, height: 72)
                     Text("TWELVE NEW FRIENDS.").font(.system(.title3, design: .monospaced, weight: .bold))

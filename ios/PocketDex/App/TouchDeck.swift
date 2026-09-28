@@ -10,7 +10,7 @@ struct TouchDeck: View {
     @Environment(\.dexPower) private var power
 
     var body: some View {
-        CRTScreen(power: power, radius: 18, pitch: 3) {
+        CRTScreen(power: power, radius: Dex.screenRadius, pitch: 3) {
             VStack(spacing: 10) {
                 HStack(spacing: 10) {
                     Trackpad(store: store)
@@ -19,7 +19,8 @@ struct TouchDeck: View {
                         HStack(spacing: 10) { pill(0); pill(1) }
                         HStack(spacing: 10) { pill(2); pill(3) }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: 150)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 138)
                 }
                 .frame(maxHeight: .infinity)
                 HStack(spacing: 10) {
@@ -62,9 +63,14 @@ struct TouchDeck: View {
                 }
                 .foregroundStyle(.black.opacity(rejected ? 0.45 : 0.75))
                 .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 64)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
                 .background(rejected ? Color(white: 0.3) : Self.colors[index], in: Capsule())
-                .overlay(Capsule().strokeBorder(.white.opacity(selected ? 0.95 : 0), lineWidth: 3).padding(-4))
+                // Each pill sits in its own darker nest on the glass.
+                .padding(3)
+                .background(Capsule().fill(.black.opacity(0.55).shadow(.inner(color: .black, radius: 2, y: 1.5))))
+                .overlay(Capsule().strokeBorder(LinearGradient(colors: [.clear, Dex.phosphor.opacity(0.18)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
+                .overlay(Capsule().strokeBorder(.white.opacity(selected ? 0.95 : 0), lineWidth: 2.5).padding(-1))
                 .shadow(color: selected ? Self.colors[index].opacity(0.9) : .clear, radius: 10)
                 .contentShape(Capsule())
             }

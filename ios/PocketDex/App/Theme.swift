@@ -316,6 +316,32 @@ struct ArcadeButtonStyle: ButtonStyle {
     }
 }
 
+extension View {
+    /// Sets a screen or key into the shell: a dark bevelled pocket around it, a
+    /// shadow falling from the top edge into the pocket, and a lit lip along the
+    /// bottom where light catches the plastic. Every screen and key uses it, so
+    /// they all sit at the same depth.
+    func recessed(radius: CGFloat, depth: CGFloat = 5) -> some View {
+        let outer = RoundedRectangle(cornerRadius: radius + depth, style: .continuous)
+        return self
+            .padding(depth)
+            .background {
+                outer.fill(LinearGradient(colors: [Dex.lining, Dex.groove], startPoint: .top, endPoint: .bottom)
+                    .shadow(.inner(color: .black.opacity(0.7), radius: 3, y: 2)))
+            }
+            .overlay {
+                // Lit lower lip of the pocket.
+                outer.strokeBorder(LinearGradient(colors: [.clear, .clear, .white.opacity(0.28)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
+/// The standard corner radius for every screen on the device.
+extension Dex {
+    static let screenRadius: CGFloat = 18
+}
+
 /// Dark glass with a dot-matrix mask, vignette, and bloom. `power` runs the
 /// CRT: dark, a dot, a bright line, then the full picture.
 struct CRTScreen<Content: View>: View {
@@ -341,6 +367,13 @@ struct CRTScreen<Content: View>: View {
             RadialGradient(colors: [.clear, .black.opacity(0.55)], center: .center, startRadius: 40, endRadius: 420)
                 .allowsHitTesting(false)
             LinearGradient(colors: [.white.opacity(0.07), .clear], startPoint: .top, endPoint: .center).allowsHitTesting(false)
+            // A thin reflection along the top edge of the glass.
+            VStack {
+                Capsule().fill(LinearGradient(colors: [.clear, .white.opacity(0.22), .clear], startPoint: .leading, endPoint: .trailing))
+                    .frame(height: 1.5).padding(.horizontal, radius).padding(.top, 3)
+                Spacer()
+            }
+            .allowsHitTesting(false)
         }
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(.black.opacity(0.85), lineWidth: 2.5))
