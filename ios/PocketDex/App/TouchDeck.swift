@@ -185,8 +185,8 @@ private struct SleepCard: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             HStack(spacing: 10) {
-                wakeButton("Discovery game", icon: "questionmark.circle.fill", id: "wake-up") { store.wake(into: .game) }
-                wakeButton("Scan mode", icon: "camera.viewfinder", id: "wake-scan") { store.wake(into: .scan) }
+                wakeButton("Guess", spoken: "Discovery game", icon: "questionmark.circle.fill", id: "wake-up") { store.wake(into: .game) }
+                wakeButton("Scan", spoken: "Scan mode", icon: "camera.viewfinder", id: "wake-scan") { store.wake(into: .scan) }
             }
             .frame(height: 76)
         }
@@ -195,18 +195,23 @@ private struct SleepCard: View {
 }
 
 extension SleepCard {
-    func wakeButton(_ title: String, icon: String, id: String, action: @escaping () -> Void) -> some View {
+    /// A short verb on the key so it sits well inside its half of the strip;
+    /// VoiceOver reads the mode's full name.
+    func wakeButton(_ title: String, spoken: String, icon: String, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon).font(.system(size: 18, weight: .bold))
                 Text(title).font(.system(.headline, design: .monospaced, weight: .bold))
+                    .lineLimit(1).minimumScaleFactor(0.8)
             }
+            .padding(.horizontal, 12)
             .foregroundStyle(Dex.phosphor)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Dex.phosphor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(GlassPress())
+        .accessibilityLabel(spoken)
         .accessibilityIdentifier(id)
     }
 }
