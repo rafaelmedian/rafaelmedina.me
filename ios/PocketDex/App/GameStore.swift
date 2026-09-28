@@ -14,6 +14,9 @@ final class GameStore {
     var message = GameStore.idleMessage
     var muted = false
     var hapticsOn = true
+    /// Asleep, the screens are dark and the touchscreen offers to wake it,
+    /// as Mist does. It starts asleep each launch.
+    private(set) var asleep = true
     static let idleMessage = "A wild mystery appeared."
     /// Where the cover drew its lens, so the open body can draw it in the same place.
     var lensAnchor: LensAnchor? {
@@ -52,6 +55,9 @@ final class GameStore {
         if game.round.revealed { message = "Registered. A new friend!" }
         muted = defaults.bool(forKey: "pocketdex.muted")
         hapticsOn = !defaults.bool(forKey: "pocketdex.hapticsOff")
+        #if DEBUG
+        if arguments.contains("--awake") { asleep = false }
+        #endif
         lensAnchor = defaults.data(forKey: "pocketdex.lens").flatMap { try? JSONDecoder().decode(LensAnchor.self, from: $0) }
     }
 
@@ -80,6 +86,28 @@ final class GameStore {
 
     func clearReaction() { reaction = nil }
 
+    /// Tapping an answer picks it and checks it in one go.
+    func choose(_ index: Int) {
+        guard !game.round.revealed, !asleep else { return }
+        select(index)
+        guard game.round.selection == index else { return }
+        confirm()
+    }
+
+    func wake() {
+        guard asleep else { return }
+        asleep = false
+        play("open", haptic: .impact)
+    }
+
+    func sleep() {
+        guard !asleep else { return }
+        asleep = true
+        collectionVisible = false
+        feedback.stop()
+        play("close", haptic: .impact)
+    }
+
     func confirm() {
         guard canConfirm else { return }
         if game.round.revealed {
@@ -96,7 +124,7 @@ final class GameStore {
                 play("wrong", haptic: .error)
             case .captured:
                 captureStage = .reveal
-                message = "It's \(pokemon.name)!"
+                message = "You found it! It's \(pokemon.name)."
                 play("select", haptic: .selection)
             case .ignored: break
             }

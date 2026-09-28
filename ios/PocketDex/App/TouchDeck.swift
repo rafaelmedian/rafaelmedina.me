@@ -7,19 +7,42 @@ import PocketDexCore
 /// drawn on the glass, so it wakes, dims, and scan-lines with the rest.
 struct TouchDeck: View {
     let store: GameStore
-    @Environment(\.dexPower) private var power
+    @Environment(\.deckPower) private var power
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         CRTScreen(power: power, radius: Dex.screenRadius, pitch: 3) {
+            Group {
+                if store.asleep {
+                    SleepCard(store: store).transition(.opacity)
+                } else {
+                    controls.transition(.opacity)
+                }
+            }
+            .animation(reduceMotion ? nil : Dex.quick, value: store.asleep)
+        }
+    }
+
+    private var controls: some View {
+        ZStack {
             // The answers own the screen. Below them, one strip of equal-height
             // tiles: the small trackpad in the thumb's corner, the readout, and the
             // two settings.
             VStack(spacing: 12) {
-                VStack(spacing: 12) {
-                    HStack(spacing: 12) { pill(0); pill(1) }
-                    HStack(spacing: 12) { pill(2); pill(3) }
+                Group {
+                    // Once found, the answers give way to the result and a way on.
+                    if store.game.round.revealed {
+                        FoundCard(store: store).transition(.opacity.combined(with: .scale(scale: 0.97)))
+                    } else {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 12) { pill(0); pill(1) }
+                            HStack(spacing: 12) { pill(2); pill(3) }
+                        }
+                        .transition(.opacity)
+                    }
                 }
                 .frame(maxHeight: .infinity)
+                .animation(reduceMotion ? nil : Dex.reveal, value: store.game.round.revealed)
                 HStack(spacing: 8) {
                     Trackpad(store: store)
                         .frame(width: Self.stripHeight)
@@ -32,11 +55,29 @@ struct TouchDeck: View {
                             .accessibilityLabel(store.hapticsOn ? "Turn off haptics" : "Turn on haptics")
                     }
                     .frame(width: 58)
+                    sleepTile
                 }
                 .frame(height: Self.stripHeight)
             }
             .padding(12)
         }
+    }
+
+    private var sleepTile: some View {
+        Button { store.sleep() } label: {
+            VStack(spacing: 6) {
+                Image(systemName: "moon.zzz.fill").font(.system(size: 16, weight: .bold))
+                Text("SLEEP").font(.system(size: 9, weight: .heavy, design: .monospaced))
+            }
+            .foregroundStyle(Dex.phosphor.opacity(0.8))
+            .frame(width: 58)
+            .frame(maxHeight: .infinity)
+            .background(Dex.phosphor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(GlassPress())
+        .accessibilityLabel("Put PocketDex to sleep")
+        .accessibilityIdentifier("sleep")
     }
 
     /// Height of the bottom strip, and so the trackpad's side.
@@ -56,7 +97,7 @@ struct TouchDeck: View {
         if index < choices.count, let pokemon = Catalog.pokemon(id: choices[index]) {
             let rejected = store.game.round.rejected.contains(index)
             let selected = store.game.round.selection == index && !rejected
-            Button { store.select(index) } label: {
+            Button { store.choose(index) } label: {
                 HStack(spacing: 5) {
                     Text(["A", "B", "C", "D"][index]).font(.system(size: 10, weight: .black, design: .monospaced)).opacity(0.55)
                     Text(pokemon.name).font(.system(.title3, design: .rounded, weight: .heavy))
@@ -119,6 +160,81 @@ struct TouchDeck: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(GlassPress())
+    }
+}
+
+/// After Mist's sleep screen: two dark panels, a note, and one way back.
+private struct SleepCard: View {
+    let store: GameStore
+    var body: some View {
+        VStack(spacing: 10) {
+            VStack(spacing: 8) {
+                Image(systemName: "moon.zzz.fill").font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(Dex.phosphor.opacity(0.7))
+                Text("PocketDex is sleeping.")
+                    .font(.system(.title3, design: .monospaced, weight: .semibold))
+                Text("The Pokémon are resting too. Don't tap the lens.")
+                    .font(.system(.footnote, design: .monospaced))
+                    .foregroundStyle(Dex.phosphor.opacity(0.6))
+            }
+            .multilineTextAlignment(.center)
+            .foregroundStyle(Dex.phosphor)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            Button { store.wake() } label: {
+                Text("Wake up PocketDex")
+                    .font(.system(.title3, design: .monospaced, weight: .bold))
+                    .foregroundStyle(Dex.phosphor)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 76)
+                    .background(Dex.phosphor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(GlassPress())
+            .accessibilityIdentifier("wake-up")
+        }
+        .padding(12)
+    }
+}
+
+/// The found message: the Pokémon, a line of praise, and the way to the next.
+private struct FoundCard: View {
+    let store: GameStore
+    var body: some View {
+        let caught = store.captureStage == .caught
+        HStack(spacing: 14) {
+            Image(store.pokemon.asset).resizable().scaledToFit()
+                .frame(width: 96, height: 96)
+                .shadow(color: .white.opacity(0.3), radius: 8)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("YOU FOUND IT!")
+                    .font(.system(size: 12, weight: .heavy, design: .monospaced)).tracking(2)
+                    .foregroundStyle(Color(red: 0.45, green: 1, blue: 0.5))
+                Text(store.pokemon.name)
+                    .font(.system(.title, design: .rounded, weight: .heavy))
+                    .foregroundStyle(Dex.phosphor)
+                Button { store.confirm() } label: {
+                    HStack(spacing: 8) {
+                        Text(caught ? "Next Pokémon" : "Registering…")
+                        Image(systemName: "arrow.right")
+                    }
+                    .font(.system(.headline, design: .rounded, weight: .heavy))
+                    .foregroundStyle(.black.opacity(0.75))
+                    .padding(.horizontal, 18)
+                    .frame(height: 48)
+                    .background(Color(red: 0.24, green: 0.72, blue: 0.34).opacity(caught ? 1 : 0.4), in: Capsule())
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(GlassPress())
+                .disabled(!caught)
+                .accessibilityIdentifier("next-pokemon")
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Dex.phosphor.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 

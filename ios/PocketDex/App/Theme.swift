@@ -51,10 +51,17 @@ struct KeyTint: Equatable {
 
 /// How far the fold has powered the Pokédex, 0 (dark) to 1 (awake).
 private struct DexPowerKey: EnvironmentKey { static let defaultValue: Double = 1 }
+/// The touchscreen's own power: it stays lit while the Pokédex sleeps, so it
+/// can offer to wake it.
+private struct DeckPowerKey: EnvironmentKey { static let defaultValue: Double = 1 }
 extension EnvironmentValues {
     var dexPower: Double {
         get { self[DexPowerKey.self] }
         set { self[DexPowerKey.self] = newValue }
+    }
+    var deckPower: Double {
+        get { self[DeckPowerKey.self] }
+        set { self[DeckPowerKey.self] = newValue }
     }
 }
 

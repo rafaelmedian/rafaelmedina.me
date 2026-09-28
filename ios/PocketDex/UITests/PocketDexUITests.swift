@@ -7,7 +7,7 @@ final class PocketDexUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--ui-testing", "--demo", "--reset"]
+        app.launchArguments = ["--ui-testing", "--demo", "--reset", "--awake"]
         XCUIDevice.shared.orientation = .portrait
     }
 
@@ -143,19 +143,27 @@ final class PocketDexUITests: XCTestCase {
     /// Runs on the iPhone Duo with the device already unfolded: plays a round on
     /// the touchscreen and captures each state.
     func testDuoTour() throws {
+        app.launchArguments = ["--ui-testing", "--demo", "--reset"]
         app.launch()
         if app.buttons["open-case"].waitForExistence(timeout: 3) { throw XCTSkip("Needs an unfolded iPhone Duo.") }
-        XCTAssertTrue(app.buttons["answer-0"].waitForExistence(timeout: 10))
+        // It opens asleep, as Mist does.
+        XCTAssertTrue(app.buttons["wake-up"].waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 1.5)
+        attach("duo-asleep")
+        app.buttons["wake-up"].tap()
+        XCTAssertTrue(app.buttons["answer-0"].waitForExistence(timeout: 5))
         Thread.sleep(forTimeInterval: 2)
         attach("duo-open")
+        // One tap answers: no OK needed.
         app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label == %@", "Meowth")).firstMatch.tap()
-        app.buttons["confirm-answer"].tap()
+        Thread.sleep(forTimeInterval: 0.6)
         attach("duo-wrong")
         app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label == %@", "Gengar")).firstMatch.tap()
-        app.buttons["confirm-answer"].tap()
-        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: app.buttons["confirm-answer"])
+        let next = app.buttons["next-pokemon"]
+        XCTAssertTrue(next.waitForExistence(timeout: 3))
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: next)
         waitForExpectations(timeout: 5)
-        Thread.sleep(forTimeInterval: 2.5)
+        Thread.sleep(forTimeInterval: 1)
         attach("duo-identified")
         app.descendants(matching: .any).matching(identifier: "scanner-art").firstMatch.tap()
         Thread.sleep(forTimeInterval: 0.3)
@@ -164,6 +172,14 @@ final class PocketDexUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 0.6)
         attach("duo-collection")
         app.buttons["back-to-game"].tap()
+        next.tap()
+        XCTAssertTrue(app.buttons["answer-0"].waitForExistence(timeout: 3))
+        Thread.sleep(forTimeInterval: 1)
+        attach("duo-next-round")
+        app.buttons["sleep"].tap()
+        XCTAssertTrue(app.buttons["wake-up"].waitForExistence(timeout: 3))
+        Thread.sleep(forTimeInterval: 1)
+        attach("duo-slept")
     }
 
     private func reveal(_ element: XCUIElement) {

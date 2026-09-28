@@ -7,6 +7,8 @@ struct PocketDexView: View {
     /// A timed power-on that runs each time the case opens. The hinge angle
     /// caps it, so a slow unfold wakes the Pokédex as it opens.
     @State private var boot = 0.0
+    /// Rises when the Pokédex is woken and falls when it is put to sleep.
+    @State private var wake = 0.0
     private var presenting: Bool { store.fold.isOpen && scenePhase == .active && !store.collectionVisible }
     private var presentationID: String { "\(presenting)-\(store.game.round.pokemonID)-\(store.game.round.revealed)" }
     private var power: Double {
@@ -24,7 +26,8 @@ struct PocketDexView: View {
                 ClosedCase(store: store).transition(.opacity)
             }
         }
-        .environment(\.dexPower, power)
+        .environment(\.dexPower, min(power, wake))
+        .environment(\.deckPower, power)
         .background(Dex.ink.ignoresSafeArea())
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
@@ -34,8 +37,24 @@ struct PocketDexView: View {
             if presenting { await store.presentCapture(reduceMotion: reduceMotion) }
         }
         .task(id: store.fold.isOpen) { await runBoot() }
+        .task(id: store.asleep) { await runWake() }
         .onChange(of: scenePhase) { _, next in
             if next != .active { store.stopFeedback() }
+        }
+    }
+
+    /// Waking replays the power-on; sleeping collapses the screens quickly.
+    private func runWake() async {
+        if reduceMotion { wake = store.asleep ? 0 : 1; return }
+        let from = wake
+        let to: Double = store.asleep ? 0 : 1
+        let duration = store.asleep ? 0.45 : 1.35
+        let start = Date.now
+        while !Task.isCancelled {
+            let t = min(Date.now.timeIntervalSince(start) / duration, 1)
+            wake = from + (to - from) * t
+            if t >= 1 { break }
+            try? await Task.sleep(for: .milliseconds(16))
         }
     }
 
