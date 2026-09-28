@@ -14,35 +14,43 @@ struct CollectionGrid: View {
             }
             .font(.system(size: 11, weight: .bold, design: .monospaced)).tracking(1)
             .foregroundStyle(Dex.phosphor.opacity(0.75))
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
-                ForEach(Catalog.all) { pokemon in
-                    let caught = store.game.captured.contains(pokemon.id)
-                    VStack(spacing: 2) {
-                        Group {
-                            if caught {
-                                Image(pokemon.asset).resizable().scaledToFit()
-                            } else {
-                                Image(pokemon.asset).resizable().renderingMode(.template).scaledToFit()
-                                    .foregroundStyle(Dex.phosphor.opacity(0.14))
-                            }
-                        }
-                        .frame(height: 40)
-                        .accessibilityHidden(true)
-                        Text(caught ? pokemon.name.uppercased() : "No.\(pokemon.number)")
-                            .font(.system(size: 8, weight: .bold, design: .monospaced))
-                            .foregroundStyle(Dex.phosphor.opacity(caught ? 0.9 : 0.4))
-                            .lineLimit(1).minimumScaleFactor(0.6)
+            // Three rows that share the screen's full height, so the grid fills it.
+            let rows = stride(from: 0, to: Catalog.all.count, by: 4).map { Array(Catalog.all[$0..<min($0 + 4, Catalog.all.count)]) }
+            VStack(spacing: 8) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    HStack(spacing: 8) {
+                        ForEach(row) { pokemon in tile(pokemon) }
                     }
-                    .padding(4)
-                    .frame(maxWidth: .infinity)
-                    .background(Dex.phosphor.opacity(caught ? 0.08 : 0.03), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(caught ? "\(pokemon.name), discovered" : "Undiscovered Pokémon")
+                    .frame(maxHeight: .infinity)
                 }
             }
-            Spacer(minLength: 0)
         }
         .padding(14)
+    }
+
+    private func tile(_ pokemon: Pokemon) -> some View {
+        let caught = store.game.captured.contains(pokemon.id)
+        return VStack(spacing: 4) {
+            Group {
+                if caught {
+                    Image(pokemon.asset).resizable().scaledToFit()
+                } else {
+                    Image(pokemon.asset).resizable().renderingMode(.template).scaledToFit()
+                        .foregroundStyle(Dex.phosphor.opacity(0.14))
+                }
+            }
+            .frame(maxHeight: .infinity)
+            .accessibilityHidden(true)
+            Text(caught ? pokemon.name.uppercased() : "No.\(pokemon.number)")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(Dex.phosphor.opacity(caught ? 0.9 : 0.4))
+                .lineLimit(1).minimumScaleFactor(0.6)
+        }
+        .padding(6)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Dex.phosphor.opacity(caught ? 0.09 : 0.03), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(caught ? "\(pokemon.name), discovered" : "Undiscovered Pokémon")
     }
 }
 

@@ -78,6 +78,8 @@ final class GameStore {
         save()
     }
 
+    func clearReaction() { reaction = nil }
+
     func confirm() {
         guard canConfirm else { return }
         if game.round.revealed {
@@ -161,6 +163,13 @@ final class GameStore {
     /// Touches on the scanner screen; the Pokémon reacts to each one.
     private(set) var pokes = 0
     private(set) var lastPokeSqueezed = false
+    /// What the Pokémon said last; the main screen and the touchscreen both show it.
+    private(set) var reaction: String?
+    private var recentPokes: [Date] = []
+    /// Where the trackpad is steering the Pokémon's gaze, each axis -1…1.
+    var gaze: CGSize = .zero
+    /// True when the last poke came too fast after the others.
+    private(set) var lastPokeOverdone = false
 
     /// A light tap under the finger as it lands on the screen.
     func touch() {
@@ -168,8 +177,13 @@ final class GameStore {
     }
 
     func poke(squeezed: Bool = false) {
+        let now = Date.now
+        recentPokes = recentPokes.filter { now.timeIntervalSince($0) < 3 } + [now]
+        lastPokeOverdone = recentPokes.count >= 6
+        if lastPokeOverdone { recentPokes.removeAll() }
         lastPokeSqueezed = squeezed
         pokes += 1
+        reaction = PokeLines.line(for: self, overdone: lastPokeOverdone)
         if hapticsOn { UIImpactFeedbackGenerator(style: squeezed ? .rigid : .soft).impactOccurred() }
     }
 

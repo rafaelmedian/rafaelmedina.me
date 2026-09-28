@@ -16,6 +16,7 @@
 		4600D2F85C133FEBCC649435 /* select.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2C3B2EFB85C18BD14737DF3B /* select.wav */; };
 		49CE5A20DCA439AB9278A14F /* PocketDexView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */; };
 		59EC5DB35C35123CBD0D86BD /* CollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFCAC1145D7A1504B5A4033 /* CollectionView.swift */; };
+		687F9342FA46BB67A8D98B8E /* TouchDeck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2484B2769C0FA65005E9422D /* TouchDeck.swift */; };
 		844CB905A3DEE9342FC802E2 /* open.wav in Resources */ = {isa = PBXBuildFile; fileRef = A66D7A75D1E931916A9444B4 /* open.wav */; };
 		84F733519405FB433C9AA047 /* PocketDexUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277AB6FFD0AAE9FD19031F68 /* PocketDexUITests.swift */; };
 		88C0815A150A8C18C515ADBE /* GameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E4CF637A8F45A6E360C205 /* GameStore.swift */; };
@@ -40,6 +41,7 @@
 /* Begin PBXFileReference section */
 		01ABACF5D1D9DA10A9E21939 /* GamePanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamePanels.swift; sourceTree = "<group>"; };
 		1F06265E40DCC2C3D26BB826 /* FoldAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoldAdapter.swift; sourceTree = "<group>"; };
+		2484B2769C0FA65005E9422D /* TouchDeck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchDeck.swift; sourceTree = "<group>"; };
 		277AB6FFD0AAE9FD19031F68 /* PocketDexUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketDexUITests.swift; sourceTree = "<group>"; };
 		2C3B2EFB85C18BD14737DF3B /* select.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = select.wav; sourceTree = "<group>"; };
 		2DA58AC8280A4A9BF9A8310A /* PocketDexUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PocketDexUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -85,6 +87,7 @@
 				3B418053320F7F802BF8F86D /* PocketDexApp.swift */,
 				6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */,
 				37D95E9CC307AAEFE74D91E7 /* Theme.swift */,
+				2484B2769C0FA65005E9422D /* TouchDeck.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -251,6 +254,7 @@
 				3058F38A1012B4B670423ADD /* PocketDexApp.swift in Sources */,
 				49CE5A20DCA439AB9278A14F /* PocketDexView.swift in Sources */,
 				3E56D7E49620A6DC50ADC979 /* Theme.swift in Sources */,
+				687F9342FA46BB67A8D98B8E /* TouchDeck.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

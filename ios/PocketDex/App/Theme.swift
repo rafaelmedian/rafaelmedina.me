@@ -263,18 +263,6 @@ struct KeyCapStyle: ButtonStyle {
     }
 }
 
-/// A legend printed in a small engraved box, as on Mist's mood keys.
-struct KeyLegend: View {
-    let text: String
-    var color: Color
-    var body: some View {
-        Text(text).font(.system(size: 10, weight: .bold, design: .rounded)).tracking(0.6)
-            .foregroundStyle(color.opacity(0.85))
-            .padding(.horizontal, 5).padding(.vertical, 2)
-            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(color.opacity(0.4), lineWidth: 1))
-    }
-}
-
 /// The primary button: a dished cap in a cream bezel ring, like an arcade
 /// button. When it can be pressed, a soft glow breathes around the ring.
 struct ArcadeButtonStyle: ButtonStyle {

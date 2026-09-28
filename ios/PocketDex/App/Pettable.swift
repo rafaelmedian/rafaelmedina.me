@@ -14,15 +14,18 @@ struct Pettable<Content: View>: View {
     @State private var hop: CGFloat = 0
     @State private var shakes = 0
     @State private var bursts = 0
-    @State private var reaction: String?
-    @State private var reactionID = 0
-    @State private var recentPokes: [Date] = []
+    @State private var zoom: CGFloat = 1
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack(alignment: .top) {
             content
                 .scaleEffect(x: pressing ? 1.1 : 1, y: pressing ? 0.86 : 1, anchor: .bottom)
+                // The trackpad on the touchscreen steers where it looks.
+                .rotation3DEffect(.degrees(Double(store.gaze.width) * 22), axis: (0, 1, 0), perspective: 0.5)
+                .rotation3DEffect(.degrees(Double(-store.gaze.height) * 16), axis: (1, 0, 0), perspective: 0.5)
+                .offset(x: store.gaze.width * 14, y: store.gaze.height * 10)
+                .scaleEffect(zoom)
                 .rotationEffect(.degrees(Double(pull.width) * 0.5), anchor: .bottom)
                 .offset(x: pull.width, y: pull.height * 0.4 + hop)
                 .keyframeAnimator(initialValue: 0.0, trigger: shakes) { view, angle in
@@ -37,7 +40,7 @@ struct Pettable<Content: View>: View {
                     }
                 }
             SparkBurst(trigger: bursts)
-            if let reaction {
+            if let reaction = store.reaction {
                 Text(reaction)
                     .font(.system(.footnote, design: .monospaced, weight: .bold))
                     .foregroundStyle(Dex.glass)
@@ -45,7 +48,7 @@ struct Pettable<Content: View>: View {
                     .background(Dex.phosphor, in: Capsule())
                     .shadow(color: Dex.phosphor.opacity(0.6), radius: 6)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                    .id(reactionID)
+                    .id(store.pokes)
                     .transition(.opacity.combined(with: .offset(y: 6)))
                     .accessibilityAddTraits(.updatesFrequently)
             }
@@ -77,36 +80,35 @@ struct Pettable<Content: View>: View {
                     store.poke(squeezed: true)
                 }
         )
+        // Pinch to look closer; it settles back when you let go.
+        .simultaneousGesture(
+            MagnifyGesture()
+                .onChanged { value in zoom = min(max(value.magnification, 1), 2.4) }
+                .onEnded { _ in withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.6)) { zoom = 1 } }
+        )
+        .animation(reduceMotion ? nil : .interactiveSpring(response: 0.25, dampingFraction: 0.75), value: store.gaze)
+        .animation(Dex.quick, value: store.reaction)
         .onChange(of: store.pokes) { react() }
-        .task(id: reactionID) {
-            guard reaction != nil else { return }
+        .task(id: store.pokes) {
+            guard store.reaction != nil else { return }
             try? await Task.sleep(for: .seconds(1.8))
             guard !Task.isCancelled else { return }
-            withAnimation(Dex.quick) { reaction = nil }
+            withAnimation(Dex.quick) { store.clearReaction() }
         }
     }
 
     private func react() {
-        let now = Date.now
-        recentPokes = recentPokes.filter { now.timeIntervalSince($0) < 3 } + [now]
-        let overdone = recentPokes.count >= 6
-        if !reduceMotion {
-            if overdone {
-                shakes += 1
-            } else if !store.lastPokeSqueezed {
-                withAnimation(.spring(response: 0.22, dampingFraction: 0.5)) { hop = -16 }
-                Task {
-                    try? await Task.sleep(for: .milliseconds(140))
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.4)) { hop = 0 }
-                }
+        guard !reduceMotion else { return }
+        if store.lastPokeOverdone {
+            shakes += 1
+        } else if !store.lastPokeSqueezed {
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.5)) { hop = -16 }
+            Task {
+                try? await Task.sleep(for: .milliseconds(140))
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.4)) { hop = 0 }
             }
-            bursts += 1
         }
-        withAnimation(Dex.quick) {
-            reaction = PokeLines.line(for: store, overdone: overdone)
-            reactionID += 1
-        }
-        if overdone { recentPokes.removeAll() }
+        bursts += 1
     }
 }
 

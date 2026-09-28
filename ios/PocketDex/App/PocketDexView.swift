@@ -122,6 +122,7 @@ struct InnerDisplay: View {
                 .position(x: fold.midX, y: (lens.seamHigh + size.height) / 2 - 4)
             LensStrip(lens: lens, glow: power, lights: lights, glints: store.selectionGlints, flashes: store.scanFlashes)
             DotGrille(rows: 2, columns: 6, dot: 4, gap: 4).position(tab)
+            // On the Duo the body always fills its half; only large type scrolls.
             fitting(BodyPanel(store: store, fill: true), scrolling: BodyPanel(store: store, fill: false))
                 .frame(width: bodyContent.width, height: bodyContent.height)
                 .position(x: bodyContent.midX, y: bodyContent.midY)
@@ -157,10 +158,13 @@ struct InnerDisplay: View {
     }
 
     /// Fills the panel when it fits; scrolls at large text sizes.
-    private func fitting(_ fixed: some View, scrolling: some View) -> some View {
-        ViewThatFits(in: .vertical) {
-            fixed
+    /// Fills the panel at normal text sizes; scrolls at accessibility sizes.
+    /// (ViewThatFits would size the fixed layout to its ideal height, not the panel's.)
+    @ViewBuilder private func fitting(_ fixed: some View, scrolling: some View) -> some View {
+        if typeSize.isAccessibilitySize {
             ScrollView { scrolling.padding(.bottom, 12) }.scrollIndicators(.hidden)
+        } else {
+            fixed
         }
     }
 

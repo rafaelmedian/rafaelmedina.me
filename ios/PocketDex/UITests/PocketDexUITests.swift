@@ -140,6 +140,32 @@ final class PocketDexUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 1.5)
     }
 
+    /// Runs on the iPhone Duo with the device already unfolded: plays a round on
+    /// the touchscreen and captures each state.
+    func testDuoTour() throws {
+        app.launch()
+        if app.buttons["open-case"].waitForExistence(timeout: 3) { throw XCTSkip("Needs an unfolded iPhone Duo.") }
+        XCTAssertTrue(app.buttons["answer-0"].waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 2)
+        attach("duo-open")
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label == %@", "Meowth")).firstMatch.tap()
+        app.buttons["confirm-answer"].tap()
+        attach("duo-wrong")
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'answer-' AND label == %@", "Gengar")).firstMatch.tap()
+        app.buttons["confirm-answer"].tap()
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: app.buttons["confirm-answer"])
+        waitForExpectations(timeout: 5)
+        Thread.sleep(forTimeInterval: 2.5)
+        attach("duo-identified")
+        app.descendants(matching: .any).matching(identifier: "scanner-art").firstMatch.tap()
+        Thread.sleep(forTimeInterval: 0.3)
+        attach("duo-poke")
+        app.buttons["show-collection"].tap()
+        Thread.sleep(forTimeInterval: 0.6)
+        attach("duo-collection")
+        app.buttons["back-to-game"].tap()
+    }
+
     private func reveal(_ element: XCUIElement) {
         let scroll = app.scrollViews.firstMatch
         // The cover is a fixed layout; only the open panels scroll.
@@ -155,7 +181,17 @@ final class PocketDexUITests: XCTestCase {
     }
 
     private func attach(_ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let screenshot = app.screenshot()
+        // Simulator runs also drop a PNG on the host, for reviewing without a result bundle.
+        if let home = ProcessInfo.processInfo.environment["SIMULATOR_HOST_HOME"] {
+            let folder = URL(fileURLWithPath: home).appending(path: "Library/Caches/PocketDexShots")
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try? screenshot.pngRepresentation.write(to: folder.appending(path: "\(name).png"))
+            // The Duo's inner display screenshots black here; hold still so a host
+            // capture of the Device Hub window can catch this state.
+            if name.hasPrefix("duo-") { Thread.sleep(forTimeInterval: 1.2) }
+        }
+        let attachment = XCTAttachment(screenshot: screenshot)
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
