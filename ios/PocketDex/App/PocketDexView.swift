@@ -140,9 +140,23 @@ struct InnerDisplay: View {
             Lining()
             ShellBackground().clipShape(Polyline(points: bodyOutline, closed: true, corner: 14))
             FlapPlastic(outline: flapOutline)
-            // The lit edge wraps the flap's corners at the channel and the display edge.
+            // The lit edge wraps the flap's corners and fades out as it turns down
+            // them, the way light falls off a rounded edge, instead of stopping dead.
             Polyline(points: [CGPoint(x: flapRight, y: lens.seamHigh + 16)] + flapEdge + [CGPoint(x: 0, y: lens.seamLow + 16)], corner: 12)
                 .stroke(.white.opacity(0.35), lineWidth: 1.2).offset(y: 1)
+                .mask {
+                    ZStack(alignment: .topLeading) {
+                        Rectangle()
+                        ForEach([(flapRight, lens.seamHigh), (CGFloat(0), lens.seamLow)], id: \.0) { x, y in
+                            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                                .frame(width: 10, height: 12)
+                                .position(x: x - 2, y: y + 8)
+                            Rectangle().frame(width: 10, height: 10).position(x: x - 2, y: y + 19)
+                        }
+                        .blendMode(.destinationOut)
+                    }
+                    .compositingGroup()
+                }
             Polyline(points: seam, corner: 12).groove(2.5)
             // The barrel stands in the channel as far from the flap's top edge as
             // it stands from the display's bottom edge.
