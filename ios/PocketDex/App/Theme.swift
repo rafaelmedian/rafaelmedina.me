@@ -421,19 +421,40 @@ struct LCD<Content: View>: View {
 }
 
 struct Pokeball: View {
+    /// How far the top half has swung open, in degrees; 0 is shut.
+    var lid: Double = 0
+    /// How brightly the button glows red, 0…1.
+    var glow: Double = 0
+
     var body: some View {
         GeometryReader { proxy in
             let s = proxy.size.width
             ZStack {
-                Circle().fill(Dex.cream)
-                Rectangle().fill(LinearGradient(colors: [Dex.redLight, Dex.red], startPoint: .top, endPoint: .bottom))
-                    .frame(height: s / 2).frame(maxHeight: .infinity, alignment: .top)
-                Rectangle().fill(Dex.ink).frame(height: s * 0.07)
-                Circle().fill(Dex.ink).frame(width: s * 0.34)
-                Circle().fill(Dex.cream).frame(width: s * 0.22)
-                Ellipse().fill(.white.opacity(0.7)).frame(width: s * 0.22, height: s * 0.1).rotationEffect(.degrees(-30)).offset(x: -s * 0.22, y: -s * 0.28)
-            }.clipShape(Circle())
-                .shadow(color: .black.opacity(0.35), radius: 6, y: 4)
+                face(s).mask(half(s, top: false))
+                face(s).mask(half(s, top: true))
+                    // The lid tips back on its hinge and lifts clear of the seam.
+                    .rotation3DEffect(.degrees(-lid), axis: (1, 0, 0), anchor: .center, perspective: 0.55)
+                    .offset(y: -s * 0.18 * min(lid / 90, 1))
+            }
+            .shadow(color: .black.opacity(0.35), radius: 6, y: 4)
         }.accessibilityLabel("Poké Ball")
+    }
+
+    private func face(_ s: CGFloat) -> some View {
+        ZStack {
+            Circle().fill(Dex.cream)
+            Rectangle().fill(LinearGradient(colors: [Dex.redLight, Dex.red], startPoint: .top, endPoint: .bottom))
+                .frame(height: s / 2).frame(maxHeight: .infinity, alignment: .top)
+            Rectangle().fill(Dex.ink).frame(height: s * 0.07)
+            Circle().fill(Dex.ink).frame(width: s * 0.34)
+            Circle().fill(Dex.cream).frame(width: s * 0.22)
+            Circle().fill(Dex.redLight).frame(width: s * 0.22).opacity(glow)
+                .shadow(color: Dex.red.opacity(glow), radius: s * 0.08)
+            Ellipse().fill(.white.opacity(0.7)).frame(width: s * 0.22, height: s * 0.1).rotationEffect(.degrees(-30)).offset(x: -s * 0.22, y: -s * 0.28)
+        }.clipShape(Circle())
+    }
+
+    private func half(_ s: CGFloat, top: Bool) -> some View {
+        Rectangle().frame(height: s / 2).frame(maxHeight: .infinity, alignment: top ? .top : .bottom)
     }
 }

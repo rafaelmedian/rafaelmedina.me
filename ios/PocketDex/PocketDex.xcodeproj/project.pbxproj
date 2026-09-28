@@ -19,6 +19,7 @@
 		59EC5DB35C35123CBD0D86BD /* CollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFCAC1145D7A1504B5A4033 /* CollectionView.swift */; };
 		687F9342FA46BB67A8D98B8E /* TouchDeck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2484B2769C0FA65005E9422D /* TouchDeck.swift */; };
 		844CB905A3DEE9342FC802E2 /* open.wav in Resources */ = {isa = PBXBuildFile; fileRef = A66D7A75D1E931916A9444B4 /* open.wav */; };
+		84B35F80E7D2A064FF7C258E /* CaptureSequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495DEB78C6E2533A40A8B189 /* CaptureSequence.swift */; };
 		84F733519405FB433C9AA047 /* PocketDexUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277AB6FFD0AAE9FD19031F68 /* PocketDexUITests.swift */; };
 		88C0815A150A8C18C515ADBE /* GameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E4CF637A8F45A6E360C205 /* GameStore.swift */; };
 		A0747516C69B4FC53A9F1C6E /* GamePanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01ABACF5D1D9DA10A9E21939 /* GamePanels.swift */; };
@@ -54,6 +55,7 @@
 		3D223CF9CC6D981048563890 /* ScanMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanMode.swift; sourceTree = "<group>"; };
 		4505AB6C4A6471EA2B46FB39 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
 		47E4CF637A8F45A6E360C205 /* GameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStore.swift; sourceTree = "<group>"; };
+		495DEB78C6E2533A40A8B189 /* CaptureSequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSequence.swift; sourceTree = "<group>"; };
 		6F7C7DF3ED7E721BFBBB3F7D /* PocketDexView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketDexView.swift; sourceTree = "<group>"; };
 		7C6269632EFC7200940E0A54 /* Pettable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pettable.swift; sourceTree = "<group>"; };
 		7DAB8D0F5AC0BB79D1D97B9E /* Hardware.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hardware.swift; sourceTree = "<group>"; };
@@ -79,6 +81,7 @@
 		21367750783ECA972E80D99C /* App */ = {
 			isa = PBXGroup;
 			children = (
+				495DEB78C6E2533A40A8B189 /* CaptureSequence.swift */,
 				9BC92F9589E0725CC7F4C092 /* ClosedCase.swift */,
 				BBFCAC1145D7A1504B5A4033 /* CollectionView.swift */,
 				1F06265E40DCC2C3D26BB826 /* FoldAdapter.swift */,
@@ -247,6 +250,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				84B35F80E7D2A064FF7C258E /* CaptureSequence.swift in Sources */,
 				0C5C4B8C857B7780AFAE3FEB /* ClosedCase.swift in Sources */,
 				59EC5DB35C35123CBD0D86BD /* CollectionView.swift in Sources */,
 				CAA4DE44254FBD28B8076583 /* FoldAdapter.swift in Sources */,

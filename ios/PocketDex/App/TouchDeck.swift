@@ -206,10 +206,21 @@ private struct FoundCard: View {
     var body: some View {
         let caught = store.captureStage == .caught
         VStack(spacing: 10) {
-            Image(store.pokemon.asset).resizable().scaledToFit()
-                .frame(maxWidth: 150, maxHeight: 150)
-                .shadow(color: .white.opacity(0.3), radius: 8)
-                .accessibilityHidden(true)
+            // A silhouette until the Poké Ball on the scanner lets it out.
+            Group {
+                if caught {
+                    Image(store.pokemon.asset).resizable().scaledToFit()
+                        .shadow(color: .white.opacity(0.3), radius: 8)
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                } else {
+                    Image(store.pokemon.asset).resizable().renderingMode(.template).scaledToFit()
+                        .foregroundStyle(Dex.phosphor.opacity(0.35))
+                        .transition(.opacity)
+                }
+            }
+            .frame(maxWidth: 150, maxHeight: 150)
+            .animation(Dex.reveal, value: caught)
+            .accessibilityHidden(true)
             VStack(spacing: 2) {
                 Text("YOU FOUND IT!")
                     .font(.system(size: 12, weight: .heavy, design: .monospaced)).tracking(2)

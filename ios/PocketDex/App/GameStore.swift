@@ -165,12 +165,12 @@ final class GameStore {
                 return
             }
             if captureStage == .reveal {
-                try await Task.sleep(for: .milliseconds(650))
+                try await Task.sleep(for: CaptureSequence.throwDuration)
                 try Task.checkCancellation()
                 withAnimation(Dex.reveal) { captureStage = .ball }
             }
             if captureStage == .ball {
-                try await Task.sleep(for: .milliseconds(850))
+                try await Task.sleep(for: CaptureSequence.wiggleDuration)
                 try Task.checkCancellation()
                 withAnimation(Dex.reveal) { finishCapture() }
             }

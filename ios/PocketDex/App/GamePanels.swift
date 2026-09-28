@@ -220,10 +220,11 @@ private struct ScannerPicture: View {
     let store: GameStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        let revealed = store.game.round.revealed
+        // The Pokémon stays hidden until the Poké Ball has caught it and let it out.
+        let revealed = store.captureStage == .caught
         VStack(spacing: 6) {
             HStack(spacing: 10) {
-                Text(revealed ? "SIGNAL IDENTIFIED" : "SCANNING…")
+                Text(revealed ? "SIGNAL IDENTIFIED" : store.game.round.revealed ? "CAPTURING…" : "SCANNING…")
                 Text(revealed ? "No.\(store.pokemon.number)" : "No.???").opacity(0.6)
                 Spacer(minLength: 0)
                 DiscoveriesChip(store: store)
@@ -237,9 +238,9 @@ private struct ScannerPicture: View {
                     Circle().stroke(Dex.phosphor.opacity(0.14), style: StrokeStyle(lineWidth: 1, dash: [2, 5]))
                         .scaleEffect(scale)
                 }
-                if store.captureStage == .ball {
-                    Pokeball().frame(width: 84, height: 84).transition(.scale.combined(with: .opacity))
-                } else {
+                // A right answer throws a Poké Ball in place of the silhouette.
+                CaptureSequence(store: store)
+                if store.captureStage == .hidden || store.captureStage == .caught {
                     // Touch the screen and the Pokémon answers, as Mist's face does.
                     Pettable(store: store) {
                         // Drawn as the screen's own pixels, which squish under a pinch.
@@ -248,7 +249,11 @@ private struct ScannerPicture: View {
                             .phaseAnimator(reduceMotion || revealed ? [1.0] : [1.0, 0.82]) { view, phase in view.opacity(phase) }
                                 animation: { _ in .easeInOut(duration: 1.3) }
                     }
-                    .transition(.opacity)
+                    // It pops out of the opening ball, from small to full size.
+                    .transition(reduceMotion ? .opacity : .asymmetric(
+                        insertion: .scale(scale: 0.05).combined(with: .opacity)
+                            .animation(.spring(duration: 0.55, bounce: 0.45).delay(0.1)),
+                        removal: .identity))
                 }
                 if store.captureStage == .caught {
                     Image(systemName: "sparkles").font(.title).foregroundStyle(Dex.phosphor)
@@ -280,6 +285,11 @@ private struct ScannerPicture: View {
     }
 
     private var caption: (text: String, feedback: Bool) {
+        switch store.captureStage {
+        case .reveal: return ("Poké Ball, go!", true)
+        case .ball: return ("Wiggle… wiggle…", true)
+        case .hidden, .caught: break
+        }
         if store.game.round.revealed { return ("#\(store.pokemon.number) · \(store.pokemon.species) Pokémon", false) }
         if store.message != GameStore.idleMessage { return (store.message, true) }
         return (store.hintsTaken < GameStore.hintCount ? "Touch it for a hint." : "No more hints. Trust your gut!", false)
