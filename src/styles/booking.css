@@ -49,10 +49,11 @@
   background: transparent;
   color: var(--ink);
   color-scheme: light;
-  transition:
-    opacity var(--duration-base) var(--ease-standard),
-    width var(--duration-slow) var(--ease-standard),
-    height var(--duration-slow) var(--ease-standard);
+  /* Size changes snap: below 900px the calendar takes the popup from 360px to
+     the full viewport, and tweening width and height re-laid out the whole
+     conversation and the embed every frame. The calendar stage carries the
+     motion instead (booking-calendar-enter, on transform and opacity). */
+  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .booking-popup[data-starting-style],
@@ -758,6 +759,7 @@ body:has(.booking-contact-panel) .booking-close {
   overflow: hidden;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  animation: booking-calendar-enter var(--duration-slow) var(--ease-smooth) both;
 }
 
 .booking-conversation[hidden],
@@ -949,7 +951,6 @@ body:has(.booking-contact-panel) .booking-close {
     padding-top: 4rem;
     background: #fafafa;
     box-shadow: none;
-    animation: booking-calendar-enter var(--duration-slow) var(--ease-smooth) both;
   }
   .booking-calendar-stage .booking-frame { --booking-frame-gutter: 12px; }
   .booking-popup[data-calendar="true"] :is(.booking-close, .booking-back) { z-index: 1; }
