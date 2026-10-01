@@ -608,7 +608,8 @@ body:has(.booking-contact-panel) .booking-close {
   flex: 1;
   min-width: 0;
   min-height: 44px;
-  padding: 8px 12px;
+  /* Clear the 20.8px corner curve so text starts where the side runs straight. */
+  padding: 8px 12px 8px 16px;
   caret-color: var(--booking-blue);
   border: 0;
   background: transparent;
