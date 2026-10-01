@@ -4820,17 +4820,34 @@ test("travels one role-bearing work-history popover between company triggers wit
   expect(onitPopoverBox!.y).toBeGreaterThan(onitTriggerBox!.y + onitTriggerBox!.height)
   expect(onitLocationBox!.y).toBeCloseTo(initialLocationBox!.y, 0)
 
+  // A switch is a glide, not a fresh open: the card travels on `translate` and
+  // only its content swaps. Record the motion as it starts rather than
+  // sampling it, since a 200ms settle can finish before a poll comes round.
+  await popover.evaluate((element) => {
+    const seen: { transitions: string[]; animations: string[] } = { transitions: [], animations: [] }
+    element.addEventListener("transitionrun", (event) => {
+      if (event.target === element) seen.transitions.push(event.propertyName)
+    })
+    element.addEventListener("animationstart", (event) => seen.animations.push(event.animationName))
+    ;(window as unknown as { workHistorySwitch: typeof seen }).workHistorySwitch = seen
+  })
   await page
     .locator(".mosaic-work-history")
     .getByRole("link", { name: "Moody's", exact: true })
     .hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Moody's")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
-  expect(
-    await popover.evaluate(
-      (element) => element.getAnimations({ subtree: true }).filter((animation) => animation.playState !== "finished").length,
-    ),
-  ).toBe(0)
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { workHistorySwitch: { animations: string[] } }).workHistorySwitch.animations))
+    .toEqual(["mosaic-work-history-popover-swap"])
+  const switchMotion = await page.evaluate(
+    () => (window as unknown as { workHistorySwitch: { transitions: string[] } }).workHistorySwitch,
+  )
+  expect(switchMotion.transitions).toContain("translate")
+  expect(switchMotion.transitions).not.toContain("opacity")
+  await popover.evaluate((element) =>
+    Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => undefined))),
+  )
   expect((await page.locator(".mosaic-work-history-popover").count())).toBe(1)
   expect((await popover.boundingBox())!.x).not.toBe(onitPopoverBox!.x)
   expect((await location.boundingBox())!.y).toBeCloseTo(initialLocationBox!.y, 0)

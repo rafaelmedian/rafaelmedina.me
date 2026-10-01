@@ -141,13 +141,19 @@
  *   0-200ms    card settles top-to-bottom while opacity reaches 1
  *   0-160ms    exit reverses upward and fades on the same clock, then
  *              visibility switches off
+ *
+ * Moving from one chip to the next while the card is open is a switch, not a
+ * fresh open: the card glides to the new chip on `translate` (200ms, smooth)
+ * and only its content swaps, rising 4px out of --blur-swap over 160ms. A
+ * fresh open never animates `translate`, so the card cannot slide in from
+ * wherever it last closed.
  */
 .mosaic-work-history-popover {
   --mosaic-popover-offset-y: 0.375rem;
   --mosaic-popover-width: min(24rem, calc(100vw - 2rem));
   position: absolute;
-  top: var(--mosaic-popover-y);
-  left: var(--mosaic-popover-x);
+  top: 0;
+  left: 0;
   z-index: 4;
   width: var(--mosaic-popover-width);
   padding: 0.9375rem 1rem 1.0625rem;
@@ -159,6 +165,9 @@
   visibility: hidden;
   pointer-events: none;
 
+  /* Placement rides the independent `translate` property so a switch can move
+     the card without re-laying it out; `transform` keeps the open offset. */
+  translate: var(--mosaic-popover-x) var(--mosaic-popover-y);
   transform: translate(-50%, calc(-100% + var(--mosaic-popover-offset-y)));
   transform-origin: center bottom;
   will-change: transform, opacity;
@@ -195,15 +204,17 @@
 }
 
 .mosaic-work-history-popover[data-switching="true"] {
-  transition: none;
+  transition:
+    translate var(--duration-base) var(--ease-smooth),
+    transform var(--mosaic-popover-enter-duration) var(--mosaic-popover-enter-ease),
+    opacity var(--mosaic-popover-enter-duration) var(--mosaic-popover-enter-ease),
+    visibility 0ms linear;
 }
 
+/* The content is keyed by company, so each switch remounts it and replays
+   this. A fresh open leaves it alone: the card's own fade already covers it. */
 .mosaic-work-history-popover[data-switching="true"] .mosaic-work-history-popover-content {
-  animation: none;
-}
-
-.mosaic-work-history-popover-content {
-  animation: mosaic-work-history-popover-swap var(--duration-fast) ease both;
+  animation: mosaic-work-history-popover-swap var(--duration-quick) var(--ease-standard) both;
 }
 
 .mosaic-work-history-popover-heading {
@@ -305,10 +316,8 @@
 @keyframes mosaic-work-history-popover-swap {
   from {
     opacity: 0;
-  }
-
-  to {
-    opacity: 1;
+    transform: translateY(0.25rem);
+    filter: blur(var(--blur-swap));
   }
 }
 
