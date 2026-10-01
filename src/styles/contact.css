@@ -187,9 +187,12 @@
   transform: translateX(-50%) scaleX(1.12);
   border-radius: var(--radius-full);
   corner-shape: round;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.6) 0%, rgb(255 255 255 / 0) 100%);
+  /* A crisp gloss rather than a glow: no blur, so the highlight keeps the
+     pill's curve along its top edge, and it fades out by its middle instead
+     of smearing down the whole face. */
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.5) 0%, rgb(255 255 255 / 0.12) 55%, rgb(255 255 255 / 0) 100%);
   opacity: 0.8;
-  filter: blur(2px);
+  filter: blur(0);
   z-index: 0;
   pointer-events: none;
   transition: height var(--duration-quick) var(--ease-standard), filter var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-standard), opacity var(--duration-quick) var(--ease-standard);
@@ -218,7 +221,7 @@
 .mosaic-contact-pill-dark:hover::before,
 .mosaic-contact-pill-dark:focus-visible::before {
   height: 28px;
-  filter: blur(4px);
+  filter: blur(0.5px);
   transform: translateX(-50%) scaleX(1.12);
   opacity: 1;
 }
@@ -229,7 +232,7 @@
 
 .mosaic-contact-pill-dark:active::before {
   height: 22px;
-  filter: blur(2px);
+  filter: blur(0);
   opacity: 0.2;
 }
 
