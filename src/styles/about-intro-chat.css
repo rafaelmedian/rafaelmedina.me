@@ -126,6 +126,10 @@
   --intro-chat-bottom: 0px;
   --intro-spring-pop: linear(0, 0.051, 0.18, 0.351, 0.536, 0.713, 0.866, 0.989, 1.077, 1.132, 1.159, 1.162, 1.149, 1.125, 1.096, 1.066, 1.038, 1.015, 0.996, 0.984, 0.977, 0.974, 0.974, 0.977, 0.981, 0.986, 0.991, 0.995, 0.999, 1.001, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1);
   --intro-reply-height: 44px;
+  /* One soft shade under every bubble and tapback, so the light fills hold
+     their edge over the pale tiles the chat floats above. A filter rather than
+     a box-shadow: it follows the tails and stays out of the tapback holes. */
+  --intro-bubble-shade: drop-shadow(0 0.5px 1px rgb(0 0 0 / 0.22)) drop-shadow(0 3px 8px rgb(0 0 0 / 0.14));
   position: absolute;
   left: calc(100% + 12px);
   bottom: var(--intro-chat-bottom);
@@ -196,7 +200,9 @@
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
   corner-shape: round;
-  background: var(--mosaic-card-surface);
+  --intro-bubble-fill: #dfdfe3;
+  background: var(--intro-bubble-fill);
+  filter: var(--intro-bubble-shade);
   color: var(--ink);
   font-size: var(--text-sm);
   font-weight: 400;
@@ -226,11 +232,36 @@
   font: inherit;
   text-align: start;
   cursor: pointer;
-  transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+  transition: --intro-bubble-fill var(--duration-quick) var(--ease-standard), --intro-tapback-cut 580ms var(--intro-spring-snappy), transform var(--duration-fast) var(--ease-standard);
 }
 
 .about-intro-chat-received .about-intro-chat-bubble:is(:hover, [data-popup-open]) {
-  background: #e4e4e6;
+  --intro-bubble-fill: #d5d5da;
+}
+
+/* A tapback is separated from its bubble by a hole in the bubble's fill, not a
+   ring of canvas white: the chat floats over the work grid, where a white ring
+   reads as a sticker outline on every photo behind it. The hole is concentric
+   with the disc (15px at the scaled SVG's centre, mirrored to the right
+   corner) and grows on the disc's own spring, so the page shows through the
+   gap. Only the fill is cut; the tail sets its own fill so it keeps no hole. */
+@property --intro-tapback-cut {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --intro-bubble-fill {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+.about-intro-chat-received[data-reacted="true"] .about-intro-chat-bubble {
+  --intro-tapback-cut: 16px;
+  background: radial-gradient(circle at calc(100% - 2px) -5px,
+    #0000 var(--intro-tapback-cut),
+    var(--intro-bubble-fill) calc(var(--intro-tapback-cut) + 0.5px));
 }
 
 .about-intro-chat-received .about-intro-chat-bubble:active {
@@ -246,6 +277,7 @@
   width: 39px;
   height: 37.5px;
   color: var(--intro-blue);
+  filter: var(--intro-bubble-shade);
   pointer-events: none;
 }
 
@@ -412,20 +444,6 @@
   to { transform: translateY(-2px) scale(1.14); }
 }
 
-.about-intro-chat .about-intro-chat-reaction-hint {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  align-self: flex-start;
-  margin: 0 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  background: var(--canvas);
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: 1.5;
-}
-
 .about-intro-chat-bubble::before {
   content: "";
   position: absolute;
@@ -435,7 +453,7 @@
   width: 40px;
   /* Keep the tail below the upper corner, even on one-line bubbles. */
   height: min(24px, 50%);
-  background: inherit;
+  background: var(--intro-bubble-fill);
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V18H18C13 22 7 24 0 22C7 19 8 12 8 0Z'/%3E%3C/svg%3E");
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
@@ -470,6 +488,15 @@
   margin-top: 28px;
 }
 
+/* Rafa's disc is centred 2px in and 6px above the bubble's corner; its 18px
+   radius plus 3px of clearance is the hole. See --intro-tapback-cut. */
+.about-intro-chat-sent[data-reacted="true"] .about-intro-chat-outgoing {
+  --intro-tapback-cut: 21px;
+  background: radial-gradient(circle at 2px -6px,
+    #0000 var(--intro-tapback-cut),
+    var(--intro-blue) calc(var(--intro-tapback-cut) + 0.5px));
+}
+
 .about-intro-chat-outgoing {
   position: relative;
   isolation: isolate;
@@ -484,7 +511,9 @@
   font: inherit;
   text-align: start;
   overflow-wrap: anywhere;
+  filter: var(--intro-bubble-shade);
   cursor: pointer;
+  transition: --intro-tapback-cut 680ms var(--intro-spring-pop);
 }
 
 .about-intro-chat-outgoing:disabled {
@@ -500,7 +529,7 @@
   width: 40px;
   /* Keep the tail below the upper corner, even on one-line bubbles. */
   height: min(24px, 50%);
-  background: inherit;
+  background: var(--intro-blue);
   transform: scaleX(-1);
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V18H18C13 22 7 24 0 22C7 19 8 12 8 0Z'/%3E%3C/svg%3E");
   mask-size: 100% 100%;
@@ -518,6 +547,7 @@
   top: -26px;
   color: var(--intro-blue);
   overflow: visible;
+  filter: var(--intro-bubble-shade);
   pointer-events: none;
 }
 
@@ -970,6 +1000,15 @@
   align-items: center;
   gap: 4px;
   min-height: 44px;
+  /* The bubble shade outranks the shared blur-in, so the typing bubble spells
+     both out with matching lists; blur(0) keeps the entrance interpolable. */
+  filter: blur(0) var(--intro-bubble-shade);
+}
+
+@starting-style {
+  .about-intro-chat .about-intro-chat-typing.about-intro-chat-new {
+    filter: blur(2px) var(--intro-bubble-shade);
+  }
 }
 
 .about-intro-chat-typing span {
