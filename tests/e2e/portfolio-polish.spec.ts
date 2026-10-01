@@ -1918,8 +1918,8 @@ test("the TOC contains all three rows in one inset card", async ({ page }) => {
   const trigger = page.getByRole("button", { name: /^Table of contents:/ })
   await trigger.click()
   await expect(surface).toHaveCSS("border-radius", "31.2px")
-  await expect(surface).toHaveCSS("background-color", "rgb(255, 255, 255)")
-  await expect(surface).toHaveCSS("backdrop-filter", "none")
+  await expect(surface).toHaveCSS("background-color", "rgba(255, 255, 255, 0.86)")
+  await expect(surface).toHaveCSS("backdrop-filter", "blur(8px) saturate(1.6)")
   await expect(surface).not.toHaveCSS("box-shadow", "none")
   const card = (await surface.boundingBox())!
   const rows = await page.locator(".mosaic-mobile-toc-row").all()

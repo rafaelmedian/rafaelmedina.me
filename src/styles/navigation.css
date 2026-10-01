@@ -40,10 +40,12 @@
     corner-shape: round;
     display: grid;
     place-items: center;
-    background: var(--canvas);
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
     color: var(--ink);
     cursor: pointer;
-    box-shadow: var(--shadow-ring), var(--shadow-overlay);
+    box-shadow: var(--glass-hairline), var(--shadow-overlay), var(--glass-rim);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -64,7 +66,7 @@
 
   .mosaic-takeover-close:hover,
   .mosaic-takeover-close:focus-visible {
-    box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
+    box-shadow: var(--glass-hairline), var(--shadow-overlay-hover), var(--glass-rim);
   }
 
   .mosaic-takeover-close:active {
@@ -193,9 +195,11 @@
   overflow: hidden;
   border-radius: var(--radius-full);
   corner-shape: round;
-  background: var(--canvas);
+  background: var(--glass-fill-strong);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   color: var(--ink);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  box-shadow: var(--glass-hairline), var(--shadow-overlay), var(--glass-rim);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   transition: width var(--toc-resize-duration) var(--ease-smooth), height var(--toc-resize-duration) var(--ease-smooth);
@@ -297,7 +301,7 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
 }
 
 .mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-trigger {
-  background: rgb(233 233 233 / 0.92);
+  background: rgb(0 0 0 / 0.06);
 }
 
 .mosaic-mobile-toc-row-content {
