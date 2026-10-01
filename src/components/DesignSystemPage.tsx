@@ -388,7 +388,7 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-quick", use: "Hover and focus changes, and overlay exits. The default." },
   { value: "--duration-base", use: "Surface moves and overlay entrances: the gallery, hover cards, popovers, paging." },
   { value: "--duration-slow", use: "Big reveals: the avatar and page entrance, media resolving, the photo sheet opening." },
-  { value: "60ms", use: "--card-caption-delay, and the entrance stagger step." },
+  { value: "60ms", use: "--card-caption-delay, and --entrance-stagger, the entrance step (four at most)." },
   { value: "240–1260ms", use: "Scoped choreography — the live-time roll, the About copy rise, the photo deal, the page-end glow. Stays with its component." },
 ]
 
@@ -1328,8 +1328,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load avatar stagger 60ms 12px groups")}>
                 <strong>The avatar arrives first, then the page.</strong>
                 <p>
-                  On a fresh visit the portrait resolves in place, then each homepage group rises 12px from the same
-                  blur, 60ms apart. Any input ends the intro at once; reduced motion skips it.
+                  On a fresh visit the portrait resolves in place, then the homepage rises 12px from the same blur in
+                  60ms steps, four at most, so the whole stagger stays under 300ms; every work group shares the last
+                  step. Any input ends the intro at once; reduced motion skips it.
                 </p>
               </div>
 

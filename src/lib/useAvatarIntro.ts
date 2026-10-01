@@ -29,7 +29,10 @@ export function useAvatarIntro() {
       return
     }
     const style = getComputedStyle(portrait)
-    const staggerDuration = cssTimeToMilliseconds(style.getPropertyValue("--duration-fast"))
+    // The same properties the stylesheet's delays are built from, so the
+    // reveal cannot end before the last group lands.
+    const staggerDuration = cssTimeToMilliseconds(style.getPropertyValue("--entrance-stagger"))
+    const staggerSteps = Number.parseInt(style.getPropertyValue("--entrance-stagger-steps"), 10) || 0
     const revealDuration = cssTimeToMilliseconds(style.getPropertyValue("--duration-slow"))
     const finish = (reveal = false) => {
       const phase = root.dataset.avatarIntro
@@ -39,7 +42,7 @@ export function useAvatarIntro() {
         root.dataset.avatarIntro = "revealing"
         revealTimer = window.setTimeout(() => {
           delete root.dataset.avatarIntro
-        }, revealDuration + staggerDuration * 4)
+        }, revealDuration + staggerDuration * staggerSteps)
       } else {
         delete root.dataset.avatarIntro
       }

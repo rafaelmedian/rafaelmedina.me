@@ -39,6 +39,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       ".mosaic-profile-contact",
       ".mosaic-section-corner",
       ".mosaic-group:first-child",
+      ".mosaic-group:last-child",
     ].join(",")).evaluateAll((elements) => elements.map((element) => {
       const style = getComputedStyle(element)
       return {
@@ -46,9 +47,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         delay: Number.parseFloat(style.animationDelay) * 1000,
       }
     }))
-    expect(delays).toHaveLength(6)
-    expect(delays.map(({ animationName }) => animationName)).toEqual(Array(6).fill("avatar-intro-content"))
-    expect(delays.map(({ delay }) => delay).sort((a, b) => a - b)).toEqual([0, 60, 120, 180, 240, 300])
+    expect(delays).toHaveLength(7)
+    expect(delays.map(({ animationName }) => animationName)).toEqual(Array(7).fill("avatar-intro-content"))
+    // Four 60ms steps at most; every work group shares the last one.
+    expect(delays.map(({ delay }) => delay).sort((a, b) => a - b)).toEqual([0, 60, 60, 120, 180, 240, 240])
 
     await expect(html).not.toHaveAttribute("data-avatar-intro")
     await expect(portrait).toBeVisible()
