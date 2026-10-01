@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import type { CSSProperties } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 // Direct imports keep the deferred development chunk free of the full icon catalog.
 import BubbleChatIcon from "@hugeicons/core-free-icons/BubbleChatIcon"
@@ -36,6 +37,9 @@ export default function AboutIntro({ media, portrait, visible, mobileMessages = 
   visible: boolean
 }) {
   const id = useId()
+  // The frost anchors to this intro's chat by name; useId's colons are not
+  // valid in a dashed ident.
+  const chatAnchor = { "--intro-chat-anchor": `--intro-chat-${id.replace(/[^\w-]/g, "")}` } as CSSProperties
   const [actionsOpen, setActionsOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatCollapsed, setChatCollapsed] = useState(true)
@@ -178,7 +182,8 @@ export default function AboutIntro({ media, portrait, visible, mobileMessages = 
   const messageLabel = `${messageCount} ${messageCount === 1 ? "message" : "messages"}`
 
   return (
-    <section ref={introRef} className="about-intro" aria-label="A quick hello from Rafael" data-visible={visible} data-variant={variant}
+    <>
+    <section ref={introRef} className="about-intro" style={chatAnchor} aria-label="A quick hello from Rafael" data-visible={visible} data-variant={variant}
       data-chat-open={chatExpanded}
       onPointerEnter={event => {
         if (event.pointerType === "mouse" && !mobileChat && media && !(variant === "b" && chatCollapsed)) {
@@ -251,5 +256,11 @@ export default function AboutIntro({ media, portrait, visible, mobileMessages = 
         {replyContent && visible && repliesAvailable && <AboutIntroReply key={replyContent} mode={replyContent} active={Boolean(reply)} onClose={closeReply} />}
       </div>}
     </section>
+    {/* A sibling, not a child: inside the fixed intro, the intro's own
+        compositing layer showed through the frost's backdrop blur as a pale
+        square around the portrait. It follows the chat in document order, so
+        it can anchor to it, and shares the intro's stacking context. */}
+    {variant === "b" && <span className="about-intro-chat-frost" style={chatAnchor} data-open={chatExpanded} aria-hidden="true" />}
+    </>
   )
 }
