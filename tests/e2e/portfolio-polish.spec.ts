@@ -3955,7 +3955,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
 })
 
 // The toolbar is the card's sibling rather than its first child, so the
-// between-previews switch -- 1.4rem of travel and a fade to nothing -- must not
+// between-previews switch -- 0.5rem of travel and a fade to nothing -- must not
 // reach it. Nested back inside the card, every press slid the control that was
 // pressed out from under the thumb and took the close with it.
 test("holds the compact toolbar still while the gallery pages", async ({ page }) => {
@@ -4616,22 +4616,22 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
       return seen
     }, navSelector)
 
-  // 1.4rem of travel each way; assert well inside it. The outgoing pose leaves
+  // 0.5rem (8px) of travel each way; assert well inside it. The outgoing pose leaves
   // in the arrow's direction, the incoming one arrives from the opposite edge
   // and settles at zero, and nothing moves on Y.
   const forward = await poses(".preview-gallery-rail .preview-gallery-nav-next")
-  expect(forward.find((pose) => pose.phase.endsWith("out-next"))?.to).toBeLessThan(-8)
-  expect(forward.find((pose) => pose.phase.endsWith("in-next"))?.to).toBeGreaterThan(8)
+  expect(forward.find((pose) => pose.phase.endsWith("out-next"))?.to).toBeLessThan(-4)
+  expect(forward.find((pose) => pose.phase.endsWith("in-next"))?.to).toBeGreaterThan(4)
   expect(forward.at(-1)).toMatchObject({ phase: "idle", to: 0 })
-  expect(forward.at(-1)!.from).toBeGreaterThan(8)
+  expect(forward.at(-1)!.from).toBeGreaterThan(4)
   expect(Math.max(...forward.map((pose) => pose.y))).toBeLessThan(0.5)
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   const back = await poses(".preview-gallery-rail .preview-gallery-nav-prev")
-  expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(8)
-  expect(back.find((pose) => pose.phase.endsWith("in-prev"))?.to).toBeLessThan(-8)
+  expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(4)
+  expect(back.find((pose) => pose.phase.endsWith("in-prev"))?.to).toBeLessThan(-4)
   expect(back.at(-1)).toMatchObject({ phase: "idle", to: 0 })
-  expect(back.at(-1)!.from).toBeLessThan(-8)
+  expect(back.at(-1)!.from).toBeLessThan(-4)
   expect(Math.max(...back.map((pose) => pose.y))).toBeLessThan(0.5)
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
 })

@@ -71,6 +71,7 @@ const galleryMotionVars = {
   "--pg-backdrop-in-ms": "var(--duration-base)",
   "--pg-backdrop-out-ms": "var(--duration-quick)",
   "--pg-switch-ms": "var(--duration-base)",
+  "--pg-switch-out-ms": "var(--duration-quick)",
 } as CSSProperties
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
@@ -409,13 +410,14 @@ export function PreviewGalleryDialog({
         window.cancelAnimationFrame(switchFrameRef.current)
       }
 
-      // The exact property the card's transition reads, not the token behind
-      // it: this timer steps that transition, so the two cannot resolve
-      // differently. `--pg-switch-ms` only lives on the shell, so the fallback
-      // mirrors the one the stylesheet already carries.
+      // The exact property the outgoing pose's transition reads, not the token
+      // behind it: this timer steps that transition, so the two cannot resolve
+      // differently. `--pg-switch-out-ms` only lives on the shell, so the
+      // fallback mirrors the one the stylesheet already carries. The leaving
+      // leg is shorter than the settle so the next preview lands sooner.
       const switchStyles = getComputedStyle(popupRef.current ?? document.documentElement)
       const switchMs = cssTimeToMilliseconds(
-        switchStyles.getPropertyValue("--pg-switch-ms") || switchStyles.getPropertyValue("--duration-base"),
+        switchStyles.getPropertyValue("--pg-switch-out-ms") || switchStyles.getPropertyValue("--duration-quick"),
       )
       setSwitchDirection(nextDirection)
       setSwitchPhase("out")

@@ -1311,7 +1311,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <strong>Motion follows the axis of its control.</strong>
                 <p>
                   The gallery pages sideways because its arrows and swipe are sideways: cards travel{" "}
-                  <code>1.4rem</code> along X over <code>--duration-base</code>. Along the other axis, nothing moves.
+                  <code>0.5rem</code> along X, leaving over <code>--duration-quick</code> and settling over{" "}
+                  <code>--duration-base</code>. Along the other axis, nothing moves.
                 </p>
               </div>
 
