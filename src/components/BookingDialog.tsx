@@ -1,7 +1,7 @@
 import { Menu } from "@base-ui/react/menu"
 import { Dialog } from "@base-ui/react/dialog"
 import { PanelRightClose, ArrowUp, Calendar, Mic, Square, X } from "lucide-react"
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react"
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent, type RefObject } from "react"
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
@@ -57,10 +57,18 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
       ...outbox.map(item => item.requestId),
     ] })
   }
+  // The three greeting bubbles keep a conversational 160ms beat. A reopen
+  // replays everything saved after them on a 40ms step instead, so five sent
+  // messages land in 200ms rather than 800ms, and the composer arrives with the
+  // last of them instead of at a fixed 680ms that put it mid-replay.
+  const entranceDelay = (order: number) => order < 3 ? 200 + order * 160 : 520 + (order - 2) * 40
   const entryStyle = (key: string, newDelay = 0) => {
     const order = entrance.keys.indexOf(key)
-    return { animationDelay: `${order < 0 ? newDelay : 200 + order * 160}ms` }
+    return { animationDelay: `${order < 0 ? newDelay : entranceDelay(order)}ms` }
   }
+  const composeStyle = {
+    "--booking-compose-delay": `${entranceDelay(entrance.keys.length - 1) + 160}ms`,
+  } as CSSProperties
 
 
   const composerRef = useCallback((node: HTMLElement | null) => {
@@ -197,7 +205,7 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
                 </div> : <p className="booking-receipt" role="status">{item.status === "sending" ? "Sending…" : "Delivered"}</p>}
               </div>)}
             </div>
-            {!confirmedEmail ? <form ref={composerRef} className="booking-compose-area" onSubmit={confirmEmail}>
+            {!confirmedEmail ? <form ref={composerRef} className="booking-compose-area" style={composeStyle} onSubmit={confirmEmail}>
               <label className="sr-only" htmlFor={`${hintId}-email`}>Your email</label>
               <div className="booking-composer">
                 <input id={`${hintId}-email`} type="email" autoComplete="email" required maxLength={254}
@@ -206,7 +214,7 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
                 <button className="booking-send" type="submit" aria-label="Continue with email" disabled={!isContactEmail(email)}><ArrowUp size={24} /></button>
               </div>
               <p className="booking-hint" id={hintId}>Just for our conversation. No mailing list.</p>
-            </form> : <div ref={composerRef} className="booking-compose-area booking-compose-row">
+            </form> : <div ref={composerRef} className="booking-compose-area booking-compose-row" style={composeStyle}>
               <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" title="Book a time · 30 min" onClick={() => {
                 popupRef.current?.focus({ preventScroll: true })
                 setContactOpen(false)

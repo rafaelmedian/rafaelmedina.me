@@ -586,7 +586,7 @@ body:has(.booking-contact-panel) .booking-close {
   width: min(360px, calc(100% - 1.5rem));
   translate: -50% 0;
   transition: left var(--duration-slow) var(--ease-smooth);
-  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) 680ms both;
+  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) var(--booking-compose-delay, 680ms) both;
   flex: none;
   padding: 0.5rem;
 }
