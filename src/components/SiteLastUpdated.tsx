@@ -2,6 +2,7 @@ import { Tooltip } from "@base-ui/react/tooltip"
 
 import { contributionCalendar } from "../data/githubActivity"
 import { siteActivity } from "../data/siteActivity"
+import { HINT_OPEN_DELAY_MS } from "../lib/hoverIntent"
 
 const HANDLE = contributionCalendar.login
 const PROFILE_URL = `https://github.com/${HANDLE}`
@@ -74,7 +75,7 @@ export function SiteLastUpdated() {
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
-        delay={200}
+        delay={HINT_OPEN_DELAY_MS}
         closeDelay={140}
         className="mosaic-last-updated"
         render={

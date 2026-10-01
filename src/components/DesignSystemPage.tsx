@@ -388,6 +388,7 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-quick", use: "Hover and focus changes, and overlay exits. The default." },
   { value: "--duration-base", use: "Surface moves and overlay entrances: the gallery, hover cards, popovers, paging." },
   { value: "--duration-slow", use: "Big reveals: the avatar and page entrance, media resolving, the photo sheet opening." },
+  { value: "160 / 260ms", use: "Hover intent before a card opens: hints, then rich profile cards. src/lib/hoverIntent.ts." },
   { value: "60ms", use: "--card-caption-delay, and --entrance-stagger, the entrance step (four at most)." },
   { value: "240–1260ms", use: "Scoped choreography — the live-time roll, the About copy rise, the photo deal, the page-end glow. Stays with its component." },
 ]

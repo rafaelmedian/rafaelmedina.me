@@ -5,6 +5,7 @@ import { trackEvent } from "../lib/analytics"
 import { useEmailCopy } from "../lib/useEmailCopy"
 import { EMAIL_COPY_CONFIRMATION, EMAIL_COPY_INVITATION } from "./emailCopyReactions"
 import { ReactionCard } from "./ReactionCard"
+import { HINT_OPEN_DELAY_MS } from "../lib/hoverIntent"
 
 type InlineEmailCopyProps = {
   email: string
@@ -35,7 +36,7 @@ export function InlineEmailCopy({ email, placement, className }: InlineEmailCopy
       {/* Same deal as the corner: the card is what reports the copy back, so
           the press must not close it. */}
       <Tooltip.Trigger
-        delay={160}
+        delay={HINT_OPEN_DELAY_MS}
         closeDelay={120}
         closeOnClick={false}
         className={className}

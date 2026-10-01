@@ -15,6 +15,7 @@ import {
 import { workedWithCompanies } from "../data/companies"
 import type { WorkedWithCompany } from "../data/companies"
 import { HoverLogoLink } from "./HoverLogoLink"
+import { HINT_OPEN_DELAY_MS } from "../lib/hoverIntent"
 
 type WorkedWithCompaniesInlineProps = {
   variant?: "sentence" | "profile"
@@ -27,7 +28,6 @@ type PopoverPosition = {
 }
 
 const recentGroupId = "recent-0x-matcha"
-const openDelayMs = 120
 const closeDelayMs = 180
 
 function isHoverCapable() {
@@ -224,7 +224,7 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
       openTimeoutRef.current = window.setTimeout(() => {
         setIsSwitchingCompany(false)
         setActiveCompanyId(companyId)
-      }, openDelayMs)
+      }, HINT_OPEN_DELAY_MS)
     }
 
     const scheduleClose = () => {
