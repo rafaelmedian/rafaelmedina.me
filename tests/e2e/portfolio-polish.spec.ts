@@ -1202,7 +1202,7 @@ test("reveals the address icon on hover without moving the line", async ({ page 
   const [restIcon, restLabel] = await Promise.all([icon.boundingBox(), label.boundingBox()])
   expect(restIcon).not.toBeNull()
   expect(restLabel).not.toBeNull()
-  expect(restIcon!.width).toBeCloseTo(14, 0)
+  expect(restIcon!.width).toBeCloseTo(12, 0)
 
   await email.hover()
   await expect(icon).toHaveCSS("opacity", "1")
@@ -1250,7 +1250,7 @@ test("fills the address in as a chip card on hover and focus", async ({ page }) 
   await expect(email).toHaveCSS("background-color", "rgb(233, 233, 233)")
 })
 
-test("marks a copy in the accent and lets go of it again", async ({ page }) => {
+test("marks a copy with a grey check and lets go of it again", async ({ page }) => {
   // The copied state is the subject here, not the clipboard, so the write is
   // stubbed for the same reason as the reduced-motion test above.
   await page.addInitScript(() => {
@@ -1267,9 +1267,10 @@ test("marks a copy in the accent and lets go of it again", async ({ page }) => {
 
   await email.click()
   await expect(email).toHaveAttribute("data-copied", "true")
-  await expect(icon).toHaveCSS("color", "rgb(52, 162, 106)")
-  // The card empties to white for the confirmation: --accent is 3.2:1 there and
-  // only 2.7:1 on the grey hover fill, which is the one moment it has to read.
+  // The check keeps the icon's own ink rather than turning green.
+  await expect(icon).toHaveCSS("color", "rgb(20, 20, 20)")
+  await expect(icon.locator(".mosaic-profile-email-check")).toHaveCSS("opacity", "1")
+  // The card empties to white for the confirmation.
   await expect(email).toHaveCSS("background-color", "rgb(255, 255, 255)")
   // And the check outlasts the pointer -- it is lit by the copy, not the hover,
   // so a keyboard copy shows it too.
@@ -1731,7 +1732,7 @@ for (const width of [390, 1440]) {
     await expect(trigger).toHaveAttribute("aria-expanded", "false")
     await page.goto("/#about-panel")
     await expect(trigger).toBeVisible()
-    await expect(trigger).toHaveText("02 About")
+    await expect(trigger).toHaveText("About")
   })
 }
 
@@ -1805,25 +1806,25 @@ test("mobile table of contents selects and tracks each section", async ({ page }
   await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
   const trigger = page.getByRole("button", { name: /^Table of contents:/ })
   const contents = page.getByRole("navigation", { name: "Table of contents" })
-  await expect(trigger).toHaveText("01 Work")
+  await expect(trigger).toHaveText("Work")
   await trigger.click()
   await expect(trigger).toHaveAttribute("aria-current", "location")
-  for (const [number, label, target] of [["02", "About", "about-panel"], ["03", "Services", "about-panel-services"]]) {
+  for (const [label, target] of [["About", "about-panel"], ["Services", "about-panel-services"]]) {
     await contents.getByRole("link", { name: label, exact: true }).click()
     await expect(contents.getByRole("link")).toHaveCount(0)
     await expect(page.locator(`#${target}`)).toBeFocused()
     await expect(page).toHaveURL(new RegExp(`#${target}$`))
-    await expect(trigger).toHaveText(`${number} ${label}`)
+    await expect(trigger).toHaveText(label)
     await trigger.click()
     await expect(trigger).toHaveAttribute("aria-current", "location")
-    await expect(contents.locator(".mosaic-mobile-toc-row")).toHaveText(["01 Work", "02 About", "03 Services"])
+    await expect(contents.locator(".mosaic-mobile-toc-row")).toHaveText(["Work", "About", "Services"])
   }
   await contents.getByRole("link", { name: "Work", exact: true }).click()
   await expect(page).toHaveURL(/#work$/)
   await expect(page.locator("#work")).toBeFocused()
   await expect(page.locator("#work")).toBeInViewport()
   await page.evaluate(() => document.getElementById("about-panel-services")!.scrollIntoView())
-  await expect(trigger).toHaveText("03 Services")
+  await expect(trigger).toHaveText("Services")
   await trigger.click()
   await expect(trigger).toHaveAttribute("aria-current", "location")
 })
@@ -1849,8 +1850,8 @@ test("the TOC keeps its collapsed height while scrolling between sections", asyn
   await page.evaluate(() => window.scrollTo(0, 160))
   await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
   const trigger = page.getByRole("button", { name: /^Table of contents:/ })
-  await expect(trigger).toHaveText("01 Work")
-  for (const [target, label] of [["about-panel", "02 About"], ["about-panel-services", "03 Services"], ["work", "01 Work"]]) {
+  await expect(trigger).toHaveText("Work")
+  for (const [target, label] of [["about-panel", "About"], ["about-panel-services", "Services"], ["work", "Work"]]) {
     const heights = await page.evaluate(async (id) => {
       const surface = document.querySelector(".mosaic-mobile-toc-surface")!
       const samples: number[] = []
@@ -1865,7 +1866,7 @@ test("the TOC keeps its collapsed height while scrolling between sections", asyn
     await expect(trigger).toHaveText(label)
     for (const height of heights) expect(height).toBeCloseTo(48, 0)
     await trigger.click()
-    await expect(page.locator(".mosaic-mobile-toc-row")).toHaveText(["01 Work", "02 About", "03 Services"])
+    await expect(page.locator(".mosaic-mobile-toc-row")).toHaveText(["Work", "About", "Services"])
     await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(164, 0)
     await trigger.click()
     await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(48, 0)
@@ -1899,10 +1900,10 @@ test("the TOC label leaves in the direction the page is travelling", async ({ pa
     return seen[0]
   }, target)
 
-  expect(await swap("about-panel")).toMatchObject({ direction: "up", leaving: "01 Work", travel: 1 })
-  expect(await swap("work")).toMatchObject({ direction: "down", leaving: "02 About", travel: -1 })
+  expect(await swap("about-panel")).toMatchObject({ direction: "up", leaving: "Work", travel: 1 })
+  expect(await swap("work")).toMatchObject({ direction: "down", leaving: "About", travel: -1 })
   await expect(page.locator(".mosaic-mobile-toc-ghost")).toHaveCount(0)
-  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("01 Work")
+  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("Work")
 
   // Reduced motion keeps the label change, drops the departure.
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -1918,8 +1919,8 @@ test("the TOC contains all three rows in one inset card", async ({ page }) => {
   const trigger = page.getByRole("button", { name: /^Table of contents:/ })
   await trigger.click()
   await expect(surface).toHaveCSS("border-radius", "31.2px")
-  await expect(surface).toHaveCSS("background-color", "rgb(255, 255, 255)")
-  await expect(surface).toHaveCSS("backdrop-filter", "none")
+  await expect(surface).toHaveCSS("background-color", "rgba(255, 255, 255, 0.86)")
+  await expect(surface).toHaveCSS("backdrop-filter", "blur(8px) saturate(1.6)")
   await expect(surface).not.toHaveCSS("box-shadow", "none")
   const card = (await surface.boundingBox())!
   const rows = await page.locator(".mosaic-mobile-toc-row").all()
@@ -1971,27 +1972,27 @@ for (const width of [768, 1440]) {
     const topNav = page.getByRole("navigation", { name: "Sections", exact: true })
     const contents = page.getByRole("navigation", { name: "Table of contents" })
     await expect(topNav).toBeVisible()
-    await expect(trigger).toHaveText("01 Work")
+    await expect(trigger).toHaveText("Work")
     const pill = await trigger.boundingBox()
     expect(pill!.x + pill!.width / 2).toBeCloseTo(width / 2, 0)
     expect(pill!.y).toBeGreaterThan(800)
     await trigger.click()
     await contents.getByRole("link", { name: "About", exact: true }).click()
     await expect(page.locator("#about-panel")).toBeFocused()
-    await expect(trigger).toHaveText("02 About")
+    await expect(trigger).toHaveText("About")
     await trigger.click()
     await contents.getByRole("link", { name: "Services", exact: true }).click()
     await expect(page.locator("#about-panel-services")).toBeFocused()
-    await expect(trigger).toHaveText("03 Services")
+    await expect(trigger).toHaveText("Services")
     await trigger.click()
     await contents.getByRole("link", { name: "Work", exact: true }).click()
-    await expect(trigger).toHaveText("01 Work")
+    await expect(trigger).toHaveText("Work")
     await page.evaluate(() => window.scrollTo(0, 0))
     await expect(topNav).toBeInViewport()
     await topNav.getByRole("link", { name: "About", exact: true }).click()
-    await expect(trigger).toHaveText("02 About")
+    await expect(trigger).toHaveText("About")
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-    await expect(trigger).toHaveText("03 Services")
+    await expect(trigger).toHaveText("Services")
     const about = await page.locator("#about-panel").boundingBox()
     expect(about!.y + about!.height).toBeLessThan((await trigger.boundingBox())!.y)
   })
@@ -2003,7 +2004,7 @@ test("keeps the mobile profile and final content clear of the table of contents"
   const avatar = await page.getByRole("button", { name: "Chat with Rafael Medina" }).boundingBox()
   expect(avatar!.y).toBeLessThan(96)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("03 Services")
+  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("Services")
   const trigger = await page.getByRole("button", { name: /^Table of contents:/ }).boundingBox()
   const about = await page.locator("#about-panel").boundingBox()
   expect(about!.y + about!.height).toBeLessThan(trigger!.y)
@@ -2411,6 +2412,24 @@ test("keeps the whole location line gray at rest", async ({ page }) => {
   await expect(page.locator(".mosaic-profile-location-place")).toHaveCSS("color", "rgb(107, 107, 107)")
   await expect(page.locator(".mosaic-last-updated")).toHaveCSS("color", "rgb(107, 107, 107)")
   await expect(page.locator(".mosaic-last-updated")).toHaveCSS("text-decoration-line", "none")
+})
+
+// An open dialog aria-hides the rest of the page, including the place name's
+// anchor. The separator was once styled by its aria-hidden, so the anchor took
+// the separator's margin and the rest of the line slid right behind the modal.
+test("holds the location line still while a modal is open", async ({ page }) => {
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const lastUpdated = page.locator(".mosaic-profile-location .mosaic-last-updated")
+  const before = await lastUpdated.boundingBox()
+
+  await page.getByText("Notes & tools").first().click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(page.locator(".mosaic-profile-location-anchor")).toHaveAttribute("aria-hidden", "true")
+
+  const during = await lastUpdated.boundingBox()
+  expect(during!.x).toBeCloseTo(before!.x, 0)
 })
 
 test("keeps the corner address gray and uncarded at rest", async ({ page }) => {

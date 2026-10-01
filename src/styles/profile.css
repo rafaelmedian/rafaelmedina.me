@@ -495,15 +495,17 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 
 /* The icon leads the address, so the affordance is read before the thing it
    acts on rather than trailing it. It keeps its slot at rest and only fades in,
-   rather than being added to the line on hover: reserving the 0.875rem up front
-   is what lets the address hold still while the affordance arrives. */
+   rather than being added to the line on hover: reserving the 0.75rem up front
+   is what lets the address hold still while the affordance arrives. It sits a
+   size under the address's cap height so it reads as a hint beside the address,
+   not a second word. */
 .mosaic-profile-email-icon {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 0.75rem;
+  height: 0.75rem;
   color: var(--ink);
   opacity: 0;
   transition:
@@ -514,12 +516,53 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 .mosaic-profile-email-icon svg {
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
-.mosaic-profile-email-icon .inline-swap,
-.mosaic-profile-email-icon .inline-swap-current {
-  width: 100%;
-  height: 100%;
+/* The copy morph: the back sheet slides its 2.75-unit offset down and left until
+   it lies on the front sheet's top-left edges, the merged sheet shrinks away,
+   and the check draws in over the same spot. Each step waits on the one before
+   it on the way in; on the way out they run together, since the confirmation is
+   over and the plain affordance should simply be back. */
+.mosaic-profile-email-sheet-back {
+  transition: transform var(--duration-base) var(--ease-smooth);
+}
+
+.mosaic-profile-email-sheets {
+  transform-box: fill-box;
+  transform-origin: 35% 65%;
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-smooth);
+}
+
+.mosaic-profile-email-check {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  transition:
+    stroke-dashoffset var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+
+.mosaic-profile-email[data-copied="true"] .mosaic-profile-email-sheet-back {
+  transform: translate(-2.75px, 2.75px);
+}
+
+.mosaic-profile-email[data-copied="true"] .mosaic-profile-email-sheets {
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity var(--duration-fast) var(--ease-standard) var(--duration-fast),
+    transform var(--duration-quick) var(--ease-exit) var(--duration-fast);
+}
+
+.mosaic-profile-email[data-copied="true"] .mosaic-profile-email-check {
+  stroke-dashoffset: 0;
+  opacity: 1;
+  transition:
+    stroke-dashoffset var(--duration-base) var(--ease-smooth) var(--duration-quick),
+    opacity 0s linear var(--duration-quick);
 }
 
 .mosaic-profile-email:hover .mosaic-profile-email-icon,
@@ -529,18 +572,17 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 
 /* On the copy the card empties out to the chip's resting look -- white behind
    the same hairline, drawn as an inset shadow so it costs no layout -- and holds
-   it whether or not the pointer is still there. Two things needed that: the
-   confirmation outlives the hover, since a copy can come from the keyboard or
-   outlast the cursor; and --accent is a 3.2:1 graphic on white but only 2.7:1 on
-   the #e9e9e9 fill, which is under the 3:1 floor for the one moment the check
-   has to be read. Ordered after the hover rule, which it ties on specificity. */
+   it whether or not the pointer is still there, because the confirmation
+   outlives the hover: a copy can come from the keyboard or outlast the cursor.
+   The check stays in the icon's own grey ink rather than turning green; the
+   morph is what announces the copy, and the corner has no other colour in it.
+   Ordered after the hover rule, which it ties on specificity. */
 .mosaic-profile-email[data-copied="true"] {
   background: var(--canvas);
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.07);
 }
 
 .mosaic-profile-email[data-copied="true"] .mosaic-profile-email-icon {
-  color: var(--accent);
   opacity: 1;
 }
 
@@ -729,7 +771,10 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   margin-top: 1.1rem;
 }
 
-.mosaic-profile-location > span[aria-hidden="true"] {
+/* By class, not by aria-hidden: an open dialog sets aria-hidden on the rest of
+   the page, and the place name's anchor then took this margin in place of its
+   own -0.375rem, pushing the rest of the line 10px right behind every modal. */
+.mosaic-profile-location > .mosaic-profile-location-separator {
   color: var(--muted-soft);
   margin-inline: 0.25rem;
 }

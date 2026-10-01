@@ -42,7 +42,9 @@ function ReactionGlyph({ reaction }: { reaction: typeof visitorReactions[number]
   return reaction.emoji
 }
 const heartPath = "M12 20.7C6.1 16.6 2.5 13.3 2.5 9.2c0-2.8 2.2-4.9 4.9-4.9 1.9 0 3.6 1 4.6 2.6 1-1.6 2.7-2.6 4.6-2.6 2.7 0 4.9 2.1 4.9 4.9 0 4.1-3.6 7.4-9.5 11.5Z"
-// Drawn twice, as the canvas ring and then the fill, so no ring cuts a neighbour.
+// Drawn once, in the fill alone: the hole in the bubble's own fill is what
+// separates the disc, so no canvas ring is left to cut a neighbour.
+// See --intro-tapback-cut.
 const tapbackShape = <>
   <circle className="about-intro-chat-tapback-disc" cx="32" cy="20" r="18" />
   <circle className="about-intro-chat-tapback-trail" cx="18" cy="34" r="6.5" />
@@ -94,7 +96,6 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
         aria-label={`You ${selected.announcement} “${text}”`}>
         <svg viewBox="0 0 52 50" width="52" height="50" aria-hidden="true">
           <g transform="translate(52 0) scale(-1 1)">
-            <g fill="var(--canvas)" stroke="var(--canvas)" strokeWidth="2">{tapbackShape}</g>
             <g fill="currentColor">{tapbackShape}</g>
           </g>
         </svg>
@@ -118,13 +119,12 @@ function ReactableMessage({ followup = false, messageIndex, onReaction, reaction
   </Menu.Root>
 }
 
-export default function AboutIntroChat({ active, id, modal = false, onClose, onMessageCount, onPlayIntroduction, visible = active }: {
+export default function AboutIntroChat({ active, id, modal = false, onClose, onMessageCount, visible = active }: {
   active: boolean
   id?: string
   modal?: boolean
   onClose?: () => void
   onMessageCount?: (count: number) => void
-  onPlayIntroduction?: () => void
   visible?: boolean
 }) {
   const booking = useBooking()
@@ -157,7 +157,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
   const [revealed, setRevealed] = useState(0)
   const [reaction, setReaction] = useState(0)
   const [visitorReaction, setVisitorReaction] = useState<Partial<Record<number, VisitorReactionId>>>({})
-  const [reactionFeedback, setReactionFeedback] = useState("Tap a message to react")
+  const [reactionFeedback, setReactionFeedback] = useState("")
   const sentRef = useRef<HTMLDivElement>(null)
   // The unsent bubble's box within the history, where its dots scatter from.
   const [puff, setPuff] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
@@ -378,13 +378,9 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
     role={modal ? "dialog" : "region"}
     inert={!visible} aria-hidden={!visible} aria-label="Chat with Rafa">
     {modal && <Dialog.Close className="sr-only" tabIndex={-1}>Close chat</Dialog.Close>}
-    {/* Hidden live regions can make modal isolation hide the neighboring player. */}
+    {/* Hidden live regions can make modal isolation hide the neighboring portrait. */}
     <div ref={historyRef} className="about-intro-chat-history" role="log" aria-label="Conversation" aria-live={visible ? "polite" : undefined} aria-relevant="additions">
-      {modal && onPlayIntroduction && <button type="button" className="about-intro-chat-video-action"
-        aria-label="Play introduction" onClick={onPlayIntroduction}>
-        <span aria-hidden="true" />Play intro
-      </button>}
-      {emailReady && <p className="about-intro-chat-reaction-hint" role="status" aria-live={visible ? "polite" : undefined}>{reactionFeedback}</p>}
+      {emailReady && <p className="sr-only" role="status" aria-live={visible ? "polite" : undefined}>{reactionFeedback}</p>}
       {greeting.slice(0, Math.min(shown, 3)).map((text, messageIndex) =>
         <ReactableMessage key={text} text={text} messageIndex={messageIndex}
           reactionId={visitorReaction[messageIndex]} onReaction={reactToMessage} />)}
@@ -395,7 +391,6 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
             title={locked ? "Start over" : "Change email"} disabled={puffing || sending}>{email}</button>
           {reactionShown && <svg className="about-intro-chat-reaction" viewBox="0 0 52 50" width="52" height="50" role="img" aria-label="Loved by Rafa">
             <circle className="about-intro-chat-tapback-ripple" cx="32" cy="20" r="18" />
-            <g fill="var(--canvas)" stroke="var(--canvas)" strokeWidth="2">{tapbackShape}</g>
             <g fill="currentColor">{tapbackShape}</g>
             <g className="about-intro-chat-tapback-heart">
               <g transform="translate(21.8 9.6) scale(0.85)"><path className="about-intro-chat-heart" d={heartPath} /></g>

@@ -1,9 +1,8 @@
-import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react"
 
 import { getAboutIntro } from "../data/aboutIntro"
 import { siteProfile } from "../data/portfolio"
 import { MobileTableOfContents } from "./MobileTableOfContents"
-import { AboutIntroLayer } from "./AboutIntroLayer"
 
 import type { IntroOption } from "../data/aboutIntro"
 
@@ -18,14 +17,11 @@ class IntroBoundary extends Component<{ children: ReactNode }, { failed: boolean
 }
 
 export function AboutIntroDock(props: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
   onWork: () => void
   onAbout: () => void
   onServices: () => void
 }) {
   const [media] = useState(() => getAboutIntro())
-  const videoEnabled = Boolean(media)
   const [option] = useState<IntroOption>(() => {
     const requested = import.meta.env.DEV && typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("introStyle") : null
@@ -35,12 +31,7 @@ export function AboutIntroDock(props: {
   const [approached, setApproached] = useState(false)
   const [active, setActive] = useState(false)
   const [obscured, setObscured] = useState(false)
-  const { open, onOpenChange: setOpen } = props
   const [tocOpen, setTocOpen] = useState(false)
-  const handleTocOpen = useCallback((next: boolean) => {
-    setTocOpen(next)
-    if (next) setOpen(false)
-  }, [setOpen])
 
   useEffect(() => {
     const dock = dockRef.current
@@ -103,7 +94,7 @@ export function AboutIntroDock(props: {
   useEffect(() => {
     // Dialogs live in several independently owned portals. Observe their
     // semantic state instead of coupling every gallery/booking/photo reader
-    // to this optional player. Ignore persistent, closed Base UI popups.
+    // to this optional corner. Ignore persistent, closed Base UI popups.
     const sync = () => {
       const covered = [...document.querySelectorAll<HTMLElement>("[role='dialog'], dialog[open]")]
         .some(dialog => !dialog.closest(".about-intro") && !dialog.hasAttribute("data-closed") &&
@@ -119,19 +110,17 @@ export function AboutIntroDock(props: {
     return () => observer.disconnect()
   }, [])
 
-  const visible = open || (active && !obscured)
+  const visible = active && !obscured
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
-      data-obscured={obscured} data-intro-visible={Boolean((approached || open) && visible)} data-toc-open={tocOpen}>
-      <MobileTableOfContents {...props} onOpenChange={handleTocOpen} />
-      {(approached || open) && (
+      data-obscured={obscured} data-intro-visible={approached && visible} data-toc-open={tocOpen}>
+      <MobileTableOfContents {...props} onOpenChange={setTocOpen} />
+      {approached && (
         <IntroBoundary>
           <Suspense fallback={null}>
-            <AboutIntroLayer open={open}>
-              <AboutIntro key={option} variant={option} media={media ?? undefined}
-                portrait={siteProfile.photo} videoEnabled={videoEnabled} mobileMessages
-                repliesAvailable={!tocOpen && !obscured} visible={visible} open={open} onOpenChange={setOpen} />
-            </AboutIntroLayer>
+            <AboutIntro key={option} variant={option} media={media ?? undefined}
+              portrait={siteProfile.photo} mobileMessages
+              repliesAvailable={!tocOpen && !obscured} visible={visible} />
           </Suspense>
         </IntroBoundary>
       )}

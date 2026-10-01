@@ -645,10 +645,12 @@
   height: 32px;
   padding: 0 0.75rem;
   overflow: clip;
-  border: 1px solid #dedee0;
+  border: 0;
   border-radius: var(--radius-full);
   corner-shape: round;
-  background: var(--canvas);
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   color: var(--muted);
   font-size: var(--text-xs);
   font-weight: 500;
@@ -656,16 +658,16 @@
   letter-spacing: 0;
   white-space: nowrap;
   text-decoration: none;
-  box-shadow: var(--shadow-control);
+  box-shadow: var(--shadow-glass), var(--glass-rim);
   transition:
     box-shadow var(--duration-quick) var(--ease-standard),
     transform var(--duration-quick) var(--ease-standard),
     color var(--duration-quick) var(--ease-standard);
 }
 @media (hover: hover) {
-  .writing-copy-link:hover { box-shadow: var(--shadow-control-hover); }
+  .writing-copy-link:hover { box-shadow: var(--shadow-glass-hover), var(--glass-rim); }
 }
-.writing-copy-link:active { transform: scale(0.96); box-shadow: var(--shadow-control-pressed); }
+.writing-copy-link:active { transform: scale(0.96); box-shadow: var(--shadow-glass), var(--glass-rim); }
 /* Confirmed rather than announced: the label and the icon both change, and the
    ink steps up to the heading's, so the swap reads without a colour of its own. */
 .writing-copy-link[data-copied="true"] { color: var(--ink); }

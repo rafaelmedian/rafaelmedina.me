@@ -4,18 +4,75 @@
   --intro-chat-face-bottom: 0px;
 }
 
-.about-intro[data-variant="b"]:not([data-open="true"]) .about-intro-surface {
+.about-intro[data-variant="b"] .about-intro-surface {
   bottom: var(--intro-chat-face-bottom);
 }
 
-/* A collapsed chat gives the portrait pointer priority. The development video
-   trigger can still take over after keyboard focus explicitly reveals it. */
+/* A collapsed chat gives the portrait pointer priority. */
 .about-intro[data-variant="b"][data-chat-open="false"]:not([data-actions-open="true"]) .about-intro-portrait-trigger {
   z-index: 1;
 }
 
 .about-intro-chat-backdrop {
   display: none;
+}
+
+/* Frost behind the open desktop chat: a quarter ellipse of softly blurred,
+   lightly tinted page grown out of the portrait's corner, so the bubbles sit on
+   a calm ground instead of the busy tiles. It is anchored to the chat, so it
+   only reaches a little past the conversation and grows taller with it as
+   messages and a longer reply arrive. It renders as the intro's sibling and
+   sits one step under the intro's corner layer. */
+.about-intro-chat-frost {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .about-intro[data-variant="b"] .about-intro-chat {
+    anchor-name: var(--intro-chat-anchor);
+  }
+
+  .about-intro-chat-frost {
+    --intro-frost-shape: ellipse farthest-side at 0 100%;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    z-index: calc(var(--z-corner) - 1);
+    display: block;
+    /* Fallback for browsers without anchor positioning. */
+    width: 600px;
+    height: 520px;
+    background: radial-gradient(var(--intro-frost-shape), rgb(255 255 255 / 0.4), rgb(255 255 255 / 0.22) 50%, rgb(255 255 255 / 0) 100%);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    /* A long eased falloff: a short one shows the sharp page ghosting
+       through the half-masked blur as a double image. */
+    mask-image: radial-gradient(var(--intro-frost-shape), #000 68%, rgb(0 0 0 / 0.5) 86%, #0000 100%);
+    mask-repeat: no-repeat;
+    mask-position: 0 100%;
+    mask-size: 0% 0%;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: mask-size var(--duration-slow) var(--ease-smooth), opacity var(--duration-slow) var(--ease-smooth), visibility 0s var(--duration-slow);
+  }
+
+  @supports (anchor-name: --a) {
+    .about-intro-chat-frost {
+      position-anchor: var(--intro-chat-anchor);
+      top: calc(anchor(top) - 160px);
+      right: calc(anchor(right) - 140px);
+      width: auto;
+      height: auto;
+    }
+  }
+
+  .about-intro-chat-frost[data-open="true"] {
+    mask-size: 100% 100%;
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
 }
 
 .about-intro-chat-notification {
@@ -69,6 +126,10 @@
   --intro-chat-bottom: 0px;
   --intro-spring-pop: linear(0, 0.051, 0.18, 0.351, 0.536, 0.713, 0.866, 0.989, 1.077, 1.132, 1.159, 1.162, 1.149, 1.125, 1.096, 1.066, 1.038, 1.015, 0.996, 0.984, 0.977, 0.974, 0.974, 0.977, 0.981, 0.986, 0.991, 0.995, 0.999, 1.001, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1);
   --intro-reply-height: 44px;
+  /* One soft shade under every bubble and tapback, so the light fills hold
+     their edge over the pale tiles the chat floats above. A filter rather than
+     a box-shadow: it follows the tails and stays out of the tapback holes. */
+  --intro-bubble-shade: drop-shadow(0 0.5px 1px rgb(0 0 0 / 0.22)) drop-shadow(0 3px 8px rgb(0 0 0 / 0.14));
   position: absolute;
   left: calc(100% + 12px);
   bottom: var(--intro-chat-bottom);
@@ -115,10 +176,6 @@
   transition: transform var(--duration-slow) var(--ease-smooth);
 }
 
-.about-intro-chat-video-action {
-  display: none;
-}
-
 /* Each new bubble's entrance rise overflows for a moment, which flashed an
    overlay scrollbar on every message; a growing reply did the same. Both still
    scroll by wheel, touch, and keyboard, just without drawing a bar. */
@@ -143,7 +200,9 @@
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
   corner-shape: round;
-  background: var(--mosaic-card-surface);
+  --intro-bubble-fill: #dfdfe3;
+  background: var(--intro-bubble-fill);
+  filter: var(--intro-bubble-shade);
   color: var(--ink);
   font-size: var(--text-sm);
   font-weight: 400;
@@ -173,11 +232,36 @@
   font: inherit;
   text-align: start;
   cursor: pointer;
-  transition: background-color var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+  transition: --intro-bubble-fill var(--duration-quick) var(--ease-standard), --intro-tapback-cut 580ms var(--intro-spring-snappy), transform var(--duration-fast) var(--ease-standard);
 }
 
 .about-intro-chat-received .about-intro-chat-bubble:is(:hover, [data-popup-open]) {
-  background: #e4e4e6;
+  --intro-bubble-fill: #d5d5da;
+}
+
+/* A tapback is separated from its bubble by a hole in the bubble's fill, not a
+   ring of canvas white: the chat floats over the work grid, where a white ring
+   reads as a sticker outline on every photo behind it. The hole is concentric
+   with the disc (15px at the scaled SVG's centre, mirrored to the right
+   corner) and grows on the disc's own spring, so the page shows through the
+   gap. Only the fill is cut; the tail sets its own fill so it keeps no hole. */
+@property --intro-tapback-cut {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --intro-bubble-fill {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+.about-intro-chat-received[data-reacted="true"] .about-intro-chat-bubble {
+  --intro-tapback-cut: 16px;
+  background: radial-gradient(circle at calc(100% - 2px) -5px,
+    #0000 var(--intro-tapback-cut),
+    var(--intro-bubble-fill) calc(var(--intro-tapback-cut) + 0.5px));
 }
 
 .about-intro-chat-received .about-intro-chat-bubble:active {
@@ -193,6 +277,7 @@
   width: 39px;
   height: 37.5px;
   color: var(--intro-blue);
+  filter: var(--intro-bubble-shade);
   pointer-events: none;
 }
 
@@ -359,20 +444,6 @@
   to { transform: translateY(-2px) scale(1.14); }
 }
 
-.about-intro-chat .about-intro-chat-reaction-hint {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  align-self: flex-start;
-  margin: 0 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  background: var(--canvas);
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: 1.5;
-}
-
 .about-intro-chat-bubble::before {
   content: "";
   position: absolute;
@@ -382,7 +453,7 @@
   width: 40px;
   /* Keep the tail below the upper corner, even on one-line bubbles. */
   height: min(24px, 50%);
-  background: inherit;
+  background: var(--intro-bubble-fill);
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V18H18C13 22 7 24 0 22C7 19 8 12 8 0Z'/%3E%3C/svg%3E");
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
@@ -417,6 +488,15 @@
   margin-top: 28px;
 }
 
+/* Rafa's disc is centred 2px in and 6px above the bubble's corner; its 18px
+   radius plus 3px of clearance is the hole. See --intro-tapback-cut. */
+.about-intro-chat-sent[data-reacted="true"] .about-intro-chat-outgoing {
+  --intro-tapback-cut: 21px;
+  background: radial-gradient(circle at 2px -6px,
+    #0000 var(--intro-tapback-cut),
+    var(--intro-blue) calc(var(--intro-tapback-cut) + 0.5px));
+}
+
 .about-intro-chat-outgoing {
   position: relative;
   isolation: isolate;
@@ -431,7 +511,9 @@
   font: inherit;
   text-align: start;
   overflow-wrap: anywhere;
+  filter: var(--intro-bubble-shade);
   cursor: pointer;
+  transition: --intro-tapback-cut 680ms var(--intro-spring-pop);
 }
 
 .about-intro-chat-outgoing:disabled {
@@ -447,7 +529,7 @@
   width: 40px;
   /* Keep the tail below the upper corner, even on one-line bubbles. */
   height: min(24px, 50%);
-  background: inherit;
+  background: var(--intro-blue);
   transform: scaleX(-1);
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24' preserveAspectRatio='none'%3E%3Cpath d='M8 0H40V18H18C13 22 7 24 0 22C7 19 8 12 8 0Z'/%3E%3C/svg%3E");
   mask-size: 100% 100%;
@@ -465,6 +547,7 @@
   top: -26px;
   color: var(--intro-blue);
   overflow: visible;
+  filter: var(--intro-bubble-shade);
   pointer-events: none;
 }
 
@@ -826,42 +909,6 @@
     width: auto;
   }
 
-  .about-intro-dock .about-intro-chat-video-action {
-    position: sticky;
-    top: 4px;
-    z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-end;
-    gap: 7px;
-    min-height: 44px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: var(--canvas);
-    box-shadow: var(--shadow-ring), var(--shadow-control);
-    color: var(--ink);
-    font: 500 var(--text-sm) / 1 var(--font-ui);
-    cursor: pointer;
-    transition: box-shadow var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
-  }
-
-  .about-intro-dock .about-intro-chat-video-action > span {
-    width: 0;
-    height: 0;
-    border-block: 5px solid transparent;
-    border-left: 8px solid currentColor;
-  }
-
-  .about-intro-dock .about-intro-chat-video-action:is(:hover, :focus-visible) {
-    box-shadow: var(--shadow-ring), var(--shadow-control-hover);
-  }
-
-  .about-intro-dock .about-intro-chat-video-action:active {
-    box-shadow: var(--shadow-ring), var(--shadow-control-pressed);
-    transform: scale(0.97);
-  }
-
   .about-intro-chat {
     width: min(320px, calc(100vw - 100px));
   }
@@ -902,6 +949,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .about-intro-chat-frost,
   .about-intro-chat-backdrop,
   .about-intro-chat-notification,
   .about-intro-chat-notification-number,
@@ -941,10 +989,6 @@
   }
 }
 
-.about-intro[data-variant="b"] .about-intro-label {
-  display: none;
-}
-
 .about-intro-chat[data-active="true"] [data-pending="true"] {
   visibility: hidden;
   opacity: 0;
@@ -956,6 +1000,15 @@
   align-items: center;
   gap: 4px;
   min-height: 44px;
+  /* The bubble shade outranks the shared blur-in, so the typing bubble spells
+     both out with matching lists; blur(0) keeps the entrance interpolable. */
+  filter: blur(0) var(--intro-bubble-shade);
+}
+
+@starting-style {
+  .about-intro-chat .about-intro-chat-typing.about-intro-chat-new {
+    filter: blur(2px) var(--intro-bubble-shade);
+  }
 }
 
 .about-intro-chat-typing span {

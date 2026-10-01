@@ -1,5 +1,5 @@
-import { X } from "./NavigationIcons"
-import { type CSSProperties, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import type { CSSProperties } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 // Direct imports keep the deferred development chunk free of the full icon catalog.
 import BubbleChatIcon from "@hugeicons/core-free-icons/BubbleChatIcon"
@@ -12,33 +12,6 @@ import type { IntroOption } from "../data/aboutIntro"
 import type { AboutIntroMedia } from "../data/aboutIntro"
 import { useLightweightMedia } from "../lib/useLightweightMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
-
-// Solid, compact media silhouettes inspired by native iOS playback controls.
-function PlaybackIcon({ kind }: { kind: "play" | "pause" | "volume" | "muted" }) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      {kind === "play" ? <path d="M6 4.7c0-1 .9-1.5 1.7-1l12 7.3c.8.5.8 1.5 0 2l-12 7.3c-.8.5-1.7 0-1.7-1Z" />
-        : kind === "pause" ? <><rect x="5" y="3" width="5" height="18" rx="1.2" /><rect x="14" y="3" width="5" height="18" rx="1.2" /></>
-          : <>
-            <path d={kind === "muted"
-              ? "M12.5 3.8v8.1L6.7 6.1l4.2-3.2c.7-.5 1.6 0 1.6.9ZM3 8h1.1l8.4 8.4v3.8c0 .9-.9 1.4-1.6.9L5 16.5H3c-1 0-1.5-.5-1.5-1.5V9.5C1.5 8.5 2 8 3 8Z"
-              : "M3 8h2l5.9-4.6c.7-.5 1.6 0 1.6.9v15.4c0 .9-.9 1.4-1.6.9L5 16H3c-1 0-1.5-.5-1.5-1.5v-5C1.5 8.5 2 8 3 8Z"} />
-            <path d={kind === "muted" ? "M2 2 22 22" : "M16 8a6 6 0 0 1 0 8M19 4.5a10.5 10.5 0 0 1 0 15"}
-              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </>}
-    </svg>
-  )
-}
-
-const timeLabel = (seconds: number) => {
-  const whole = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0))
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`
-}
-
-function setCaptionMode(video: HTMLVideoElement | null, enabled: boolean) {
-  const track = video?.textTracks[0]
-  if (track) track.mode = enabled ? "showing" : "disabled"
-}
 
 const subscribeVisibility = (listener: () => void) => {
   document.addEventListener("visibilitychange", listener)
@@ -55,18 +28,18 @@ const subscribeMobileMessages = (listener: () => void) => {
 const mobileMessagesMatch = () => window.matchMedia(mobileMessagesQuery).matches
 const mobileMessagesOnServer = () => false
 
-export default function AboutIntro({ media, portrait, videoEnabled = false, visible, open, onOpenChange, mobileMessages = false, repliesAvailable = true, variant = "b" }: {
+export default function AboutIntro({ media, portrait, visible, mobileMessages = false, repliesAvailable = true, variant = "b" }: {
   variant?: IntroOption
   media?: AboutIntroMedia
   portrait: string
-  videoEnabled?: boolean
   mobileMessages?: boolean
   repliesAvailable?: boolean
   visible: boolean
-  open: boolean
-  onOpenChange: (open: boolean) => void
 }) {
   const id = useId()
+  // The frost anchors to this intro's chat by name; useId's colons are not
+  // valid in a dashed ident.
+  const chatAnchor = { "--intro-chat-anchor": `--intro-chat-${id.replace(/[^\w-]/g, "")}` } as CSSProperties
   const [actionsOpen, setActionsOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatCollapsed, setChatCollapsed] = useState(true)
@@ -78,8 +51,8 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const [replyContent, setReplyContent] = useState<"email" | "text" | null>(null)
   const available = visible && repliesAvailable
   const [wasAvailable, setWasAvailable] = useState(available)
-  // A new About visit starts with the portrait, while the video retains time.
-  // Adjust this component's state before rendering children into a new context.
+  // A new About visit starts with the portrait. Adjust this component's state
+  // before rendering children into a new context.
   if (wasAvailable !== available) {
     setWasAvailable(available)
     if (!available) {
@@ -95,37 +68,19 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const emailReplyRef = useRef<HTMLButtonElement>(null)
   const portraitRef = useRef<HTMLButtonElement>(null)
   const restoringReplyFocus = useRef(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
   const teaserRef = useRef<HTMLVideoElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const playRef = useRef<HTMLButtonElement>(null)
   const introRef = useRef<HTMLElement>(null)
-  const collapseFocusRef = useRef<HTMLElement | null>(null)
-  const restoreChatAfterVideoRef = useRef(false)
-  const requestRef = useRef(0)
-  const [started, setStarted] = useState(false)
-  const [playing, setPlaying] = useState(false)
-  const [touchControls, setTouchControls] = useState(true)
-  const [ready, setReady] = useState(false)
-  const [waiting, setWaiting] = useState(false)
-  const [error, setError] = useState(false)
-  const [ended, setEnded] = useState(false)
-  const [muted, setMuted] = useState(false)
-  const [captions, setCaptions] = useState(!media?.placeholder)
-  const [position, setPosition] = useState(0)
-  const [duration, setDuration] = useState(media?.duration ?? 0)
   const reducedMotion = usePrefersReducedMotion()
   const lightweight = useLightweightMedia()
   const pageHidden = useSyncExternalStore(subscribeVisibility, pageIsHidden, hiddenOnServer)
   const mobileViewport = useSyncExternalStore(subscribeMobileMessages, mobileMessagesMatch, mobileMessagesOnServer)
-  const videoAvailable = videoEnabled && Boolean(media)
   const mobileChat = mobileMessages && mobileViewport && variant === "b"
-  const chatActive = visible && !open && repliesAvailable && !pageHidden
+  const chatActive = visible && repliesAvailable && !pageHidden
   const mobileChatOpen = mobileChat && chatActive && chatOpen
   const desktopChatOpen = !mobileChat && variant === "b" && chatActive && !chatCollapsed
   const chatExpanded = mobileChatOpen || desktopChatOpen
   const chatVisible = chatExpanded
-  const collapsedMessageCount = !open && !chatExpanded ? messageCount : 0
+  const collapsedMessageCount = !chatExpanded ? messageCount : 0
   if (notificationTransition.current !== collapsedMessageCount) {
     setNotificationTransition({
       current: collapsedMessageCount,
@@ -135,28 +90,23 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
   const teaserIsGif = /\.gif(?:\?|$)/i.test(media?.assets.teaser ?? "")
   // This chunk mounts after hydration. The shared motion hook starts false,
   // so consult the live preference before assigning an automatic media URL.
-  const animateTeaser = videoAvailable && !reducedMotion && !lightweight &&
+  const animateTeaser = Boolean(media) && !reducedMotion && !lightweight &&
     !window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
   useEffect(() => {
-    if (!videoAvailable) return
-    const video = videoRef.current
     const teaser = teaserRef.current
+    if (!teaser) return
     const sync = () => {
-      if (!visible || !open || document.hidden) {
-        requestRef.current += 1
-        video?.pause()
-      }
-      if (visible && !open && !document.hidden && animateTeaser) {
-        void teaser?.play().catch(() => { /* A poster remains if autoplay is blocked. */ })
-      } else teaser?.pause()
+      if (visible && !document.hidden) {
+        void teaser.play().catch(() => { /* A poster remains if autoplay is blocked. */ })
+      } else teaser.pause()
     }
     sync()
     document.addEventListener("visibilitychange", sync)
     return () => {
       document.removeEventListener("visibilitychange", sync)
     }
-  }, [visible, open, animateTeaser, videoAvailable])
+  }, [visible, animateTeaser])
 
   useEffect(() => {
     if (!mobileChatOpen) return
@@ -200,79 +150,6 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
     return () => window.clearTimeout(timer)
   }, [notificationTransition.leaving])
 
-  useEffect(() => {
-    const video = videoRef.current
-    return () => { video?.pause() }
-  }, [])
-
-  useEffect(() => {
-    if (open && visible) playRef.current?.focus({ preventScroll: true })
-  }, [open, visible])
-
-  useLayoutEffect(() => {
-    if (open || !collapseFocusRef.current) return
-    const focusTarget = collapseFocusRef.current
-    collapseFocusRef.current = null
-    // React has removed inert now; wait until the activating key/click has
-    // finished so the disappearing close button cannot reclaim focus.
-    const frame = requestAnimationFrame(() => focusTarget.focus({ preventScroll: true }))
-    return () => cancelAnimationFrame(frame)
-  }, [open])
-
-  const syncCaptions = () => {
-    setCaptionMode(videoRef.current, captions)
-  }
-
-  const play = () => {
-    const video = videoRef.current
-    if (!video || !media || !videoAvailable) return
-    if (!open) restoreChatAfterVideoRef.current = chatExpanded
-    setReply(null)
-    setReturnedReply(null)
-    setReplyLabel(null)
-    setActionsOpen(false)
-    setTouchControls(true)
-    const request = ++requestRef.current
-    teaserRef.current?.pause()
-    setStarted(true)
-    setError(false)
-    setWaiting(true)
-    setEnded(false)
-    onOpenChange(true)
-    // Set the source and call play in the originating gesture. Deferring this
-    // until an effect or transition end loses audio permission on mobile.
-    if (!video.getAttribute("src")) video.src = media.assets.recording
-    if (error) video.load()
-    if (video.ended) video.currentTime = 0
-    video.muted = muted
-    void video.play().catch(reason => {
-      if (request !== requestRef.current) return
-      setWaiting(false)
-      setPlaying(false)
-      if (!(reason instanceof DOMException && (reason.name === "NotAllowedError" || reason.name === "AbortError"))) {
-        setError(true)
-      }
-    })
-  }
-
-  const collapse = () => {
-    const parentDialog = triggerRef.current?.closest<HTMLElement>("[role='dialog'], dialog[open]")
-    const restoreChat = restoreChatAfterVideoRef.current && !parentDialog && repliesAvailable
-    restoreChatAfterVideoRef.current = false
-    const focusTarget = parentDialog ?? (restoreChat
-      ? introRef.current?.querySelector<HTMLElement>(".about-intro-chat") ?? null
-      : mobileChat
-        ? portraitRef.current
-        : triggerRef.current)
-    requestRef.current += 1
-    videoRef.current?.pause()
-    collapseFocusRef.current = focusTarget
-    if (restoreChat) {
-      setChatCollapsed(false)
-      setChatOpen(true)
-    }
-    onOpenChange(false)
-  }
   const closeReply = useCallback((restoreFocus = true) => {
     const target = reply === "email" ? emailReplyRef : textReplyRef
     restoringReplyFocus.current = restoreFocus
@@ -286,16 +163,12 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
     })
   }, [reply])
   const startReply = (mode: "email" | "text") => {
-    requestRef.current += 1
-    videoRef.current?.pause()
-    onOpenChange(false)
     setReply(mode)
     setReturnedReply(null)
     setReplyLabel(mode)
     setReplyContent(mode)
     setActionsOpen(false)
   }
-  const action = error ? "Retry introduction" : ended ? "Replay introduction" : started ? "Resume introduction" : "Play introduction"
   const openChat = () => {
     setChatCollapsed(false)
     setChatOpen(true)
@@ -306,23 +179,20 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
     setChatOpen(false)
     if (restoreFocus) requestAnimationFrame(() => portraitRef.current?.focus({ preventScroll: true }))
   }
-  const playFromChat = () => {
-    play()
-  }
   const messageLabel = `${messageCount} ${messageCount === 1 ? "message" : "messages"}`
 
   return (
-    <section ref={introRef} className="about-intro" aria-label="A quick hello from Rafael" data-visible={visible} data-variant={variant}
+    <>
+    <section ref={introRef} className="about-intro" style={chatAnchor} aria-label="A quick hello from Rafael" data-visible={visible} data-variant={variant}
       data-chat-open={chatExpanded}
       onPointerEnter={event => {
-        if (event.pointerType === "mouse" && !mobileChat && videoAvailable && !(variant === "b" && chatCollapsed)) {
+        if (event.pointerType === "mouse" && !mobileChat && media && !(variant === "b" && chatCollapsed)) {
           setActionsOpen(true)
         }
       }}
       onPointerLeave={event => { if (!event.currentTarget.contains(document.activeElement)) setActionsOpen(false) }}
-      onFocusCapture={event => {
-        const focusingVideo = event.target instanceof Element && event.target.closest(".about-intro-trigger")
-        if (!mobileChat && (!(variant === "b" && chatCollapsed) || focusingVideo)) setActionsOpen(true)
+      onFocusCapture={() => {
+        if (!mobileChat && !(variant === "b" && chatCollapsed)) setActionsOpen(true)
       }}
       onBlurCapture={event => {
         if (restoringReplyFocus.current) return
@@ -333,13 +203,8 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
         // next button. Keep the hovered target alive until its click completes.
         if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(":hover")) setActionsOpen(false)
       }}
-      data-open={open} data-started={started} data-touch-controls={touchControls} data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || (variant !== "a" && !open)) && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
+      data-actions-open={actionsOpen || Boolean(returnedReply)} data-reply-layout={Boolean((reply || returnedReply || variant !== "a") && repliesAvailable)} data-reply-open={Boolean(reply && repliesAvailable)} inert={!visible} aria-hidden={!visible}
       onKeyDown={event => {
-        if (videoAvailable && event.key.toLowerCase() === "c" && open && !event.metaKey && !event.ctrlKey && !event.altKey &&
-          !(event.target instanceof HTMLElement && event.target.matches("input, textarea, [contenteditable]"))) {
-          setCaptionMode(videoRef.current, !captions)
-          setCaptions(!captions)
-        }
         if (event.key === "Escape" && mobileChatOpen) {
           event.preventDefault()
           event.stopPropagation()
@@ -348,94 +213,30 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
           event.preventDefault()
           event.stopPropagation()
           closeReply()
-        } else if (event.key === "Escape" && open) {
-          event.preventDefault()
-          event.stopPropagation()
-          collapse()
         }
       }}>
-      <div className="about-intro-surface" data-ready={ready && open}>
+      <div className="about-intro-surface">
         <div className="about-intro-media">
-          <img className="about-intro-poster" src={videoAvailable && media ? media.assets.poster : portrait} width={720} height={720} alt="" />
-          {videoAvailable && media && animateTeaser && teaserIsGif && visible && !open && !pageHidden &&
+          <img className="about-intro-poster" src={media ? media.assets.poster : portrait} width={720} height={720} alt="" />
+          {media && animateTeaser && teaserIsGif && visible && !pageHidden &&
             <img className="about-intro-teaser" src={media.assets.teaser} width={180} height={180} alt="" />}
-          {videoAvailable && media && animateTeaser && !teaserIsGif && <video ref={teaserRef} className="about-intro-teaser" src={media.assets.teaser}
+          {media && animateTeaser && !teaserIsGif && <video ref={teaserRef} className="about-intro-teaser" src={media.assets.teaser}
             muted loop playsInline preload="metadata" aria-hidden="true" />}
-          {videoAvailable && media && <video ref={videoRef} className="about-intro-recording" data-recording="" playsInline preload="none"
-            aria-label={media.placeholder ? "Placeholder introduction" : "Rafael's introduction"} aria-description="Press C to toggle captions." aria-hidden={!open} tabIndex={-1}
-            onLoadedMetadata={event => {
-              const next = event.currentTarget.duration
-              if (Number.isFinite(next) && next > 0) setDuration(next)
-              syncCaptions()
-            }}
-            onLoadedData={() => setReady(true)} onWaiting={() => setWaiting(true)}
-            onPlaying={() => { setWaiting(false); setPlaying(true) }}
-            onPause={() => { setPlaying(false); setWaiting(false) }}
-            onTimeUpdate={event => setPosition(event.currentTarget.currentTime)}
-            onEnded={() => { setEnded(true); setPlaying(false); setWaiting(false) }}
-            onError={() => { setError(true); setWaiting(false); setPlaying(false) }}>
-            {started && <track kind="captions" label="English" srcLang="en" src={media.assets.captions}
-              default={captions} onLoad={syncCaptions} />}
-          </video>}
-          {(variant === "b" || videoAvailable) && <button ref={portraitRef} type="button" className="about-intro-portrait-trigger"
+          {(variant === "b" || media) && <button ref={portraitRef} type="button" className="about-intro-portrait-trigger"
             aria-label={variant === "b" && mobileMessages ? `Open ${messageCount ? messageLabel : "messages"} from Rafa` : "Show introduction actions"}
             aria-expanded={variant === "b" ? chatExpanded : actionsOpen} aria-controls={variant === "b" ? `${id}-chat` : `${id}-actions`}
-            onClick={variant === "b" ? openChat : () => setActionsOpen(true)}
-            inert={open} aria-hidden={open} />}
-          {videoAvailable && <button ref={triggerRef} type="button" className="about-intro-trigger" aria-label={action}
-            aria-expanded={open} aria-controls={id} onClick={play} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
-            <span className="about-intro-play-mark" aria-hidden="true" />
-          </button>}
-          {videoAvailable && media && <div id={id} className="about-intro-expanded" inert={!open} aria-hidden={!open}>
-            <button type="button" className="about-intro-video-touch" aria-label={touchControls ? "Hide video controls" : "Show video controls"}
-              onClick={() => setTouchControls(!touchControls)} />
-            <div className="about-intro-controls">
-              <button ref={playRef} type="button" className="about-intro-button"
-                aria-label={playing ? "Pause introduction" : action}
-                onClick={() => { if (playing) videoRef.current?.pause(); else play() }}>
-                <span className="t-icon-swap" data-state={playing ? "b" : "a"} aria-hidden="true">
-                  <span className="t-icon" data-icon="a"><PlaybackIcon kind="play" /></span>
-                  <span className="t-icon" data-icon="b"><PlaybackIcon kind="pause" /></span>
-                </span>
-              </button>
-              <div className="about-intro-progress" style={{ "--intro-progress": `${duration > 0 ? Math.min(100, position / duration * 100) : 0}%` } as CSSProperties}>
-                <input type="range" min={0} max={duration} step={0.1} value={Math.min(position, duration)}
-                  aria-label="Seek introduction" aria-valuetext={`${timeLabel(position)} of ${timeLabel(duration)}`}
-                  disabled={!ready} onChange={event => {
-                    const next = Number(event.target.value)
-                    if (videoRef.current) videoRef.current.currentTime = next
-                    setPosition(next)
-                    setEnded(false)
-                  }} />
-              </div>
-              <button type="button" className="about-intro-button" aria-label={muted ? "Unmute introduction" : "Mute introduction"}
-                onClick={() => {
-                  if (videoRef.current) videoRef.current.muted = !muted
-                  setMuted(!muted)
-                }}>
-                <span className="t-icon-swap" data-state={muted ? "b" : "a"} aria-hidden="true">
-                  <span className="t-icon" data-icon="a"><PlaybackIcon kind="volume" /></span>
-                  <span className="t-icon" data-icon="b"><PlaybackIcon kind="muted" /></span>
-                </span>
-              </button>
-            </div>
-            <span className="about-intro-status" role="status">{error ? "Couldn’t load video. Try again." : waiting ? "Loading introduction…" : ""}</span>
-          </div>}
+            onClick={variant === "b" ? openChat : () => setActionsOpen(true)} />}
         </div>
         {collapsedMessageCount > 0 && <span className="about-intro-chat-notification" aria-hidden="true">
           {notificationTransition.leaving && <span className="about-intro-chat-notification-ghost">{notificationTransition.leaving}</span>}
           <span key={notificationTransition.current} className="about-intro-chat-notification-number">{notificationTransition.current}</span>
         </span>}
-        {videoAvailable && <button type="button" className="about-intro-collapse about-intro-button" inert={!open} aria-hidden={!open} onClick={collapse} aria-label="Close introduction">
-          <X size={18} />
-        </button>}
       </div>
       {variant === "b" && <>
         <button type="button" className="about-intro-chat-backdrop" aria-label="Close messages"
           inert={!mobileChatOpen} aria-hidden={!mobileChatOpen} onClick={() => closeChat()} />
       </>}
-      {variant === "b" ? <AboutIntroChat id={`${id}-chat`} active={chatActive} visible={chatVisible} modal={mobileChatOpen} onClose={closeChat} onMessageCount={setMessageCount}
-        onPlayIntroduction={mobileChatOpen && videoAvailable ? playFromChat : undefined} /> : <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={open || !repliesAvailable} aria-hidden={open || !repliesAvailable}>
+      {variant === "b" ? <AboutIntroChat id={`${id}-chat`} active={chatActive} visible={chatVisible} modal={mobileChatOpen} onClose={closeChat} onMessageCount={setMessageCount} /> : <div id={`${id}-actions`} className="about-intro-actions" data-reply={reply ?? "none"} data-labeled={Boolean(replyLabel)} data-returned={Boolean(returnedReply)} inert={!repliesAvailable} aria-hidden={!repliesAvailable}>
         <div className="about-intro-action-buttons" inert={Boolean(reply)} aria-hidden={Boolean(reply)}
           onPointerLeave={() => setReplyLabel(returnedReply)}
           onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setReplyLabel(returnedReply) }}>
@@ -454,7 +255,12 @@ export default function AboutIntro({ media, portrait, videoEnabled = false, visi
         </div>
         {replyContent && visible && repliesAvailable && <AboutIntroReply key={replyContent} mode={replyContent} active={Boolean(reply)} onClose={closeReply} />}
       </div>}
-      <span className="about-intro-label" aria-hidden="true">A quick hello <span>{timeLabel(duration)}</span></span>
     </section>
+    {/* A sibling, not a child: inside the fixed intro, the intro's own
+        compositing layer showed through the frost's backdrop blur as a pale
+        square around the portrait. It follows the chat in document order, so
+        it can anchor to it, and shares the intro's stacking context. */}
+    {variant === "b" && <span className="about-intro-chat-frost" style={chatAnchor} data-open={chatExpanded} aria-hidden="true" />}
+    </>
   )
 }

@@ -219,11 +219,8 @@ test('offers a compact, horizontally scrollable Apple-style reaction row', async
   await page.locator('#about-panel').evaluate(node => node.scrollIntoView({ behavior: 'instant' }))
   await page.getByRole('button', { name: /Open \d+ messages? from Rafa/ }).click()
   const chat = page.getByRole('dialog', { name: 'Chat with Rafa' })
-  const hint = chat.getByText('Tap a message to react', { exact: true })
-  await expect(hint).toBeVisible()
-  await expect(hint).toHaveCSS('background-color', 'rgb(255, 255, 255)')
-  await expect(hint).toHaveCSS('border-radius', '999px')
-  await expect(hint).toHaveCSS('padding', '4px 10px')
+  await expect(chat.getByText('Tap a message to react')).toHaveCount(0)
+  await expect(chat.getByRole('status')).toHaveText('')
 
   const greeting = chat.getByRole('button', { name: 'React to “Hey, what’s up?”' })
   await greeting.click()
@@ -245,11 +242,11 @@ test('offers a compact, horizontally scrollable Apple-style reaction row', async
   await picker.getByRole('menuitemcheckbox', { name: 'Love' }).click()
 
   await expect(page.getByRole('img', { name: 'You loved “Hey, what’s up?”' })).toBeVisible()
-  await expect(page.getByRole('img', { name: 'You loved “Hey, what’s up?”' }).locator('g[stroke]'))
-    .toHaveAttribute('stroke-width', '2')
-  // The shape is drawn twice so its white outer ring cannot cut either blue trail dot.
-  await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-disc')).toHaveCount(2)
-  await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-trail')).toHaveCount(4)
+  // No painted ring: the disc is separated by a hole in the bubble's fill, so the page shows through.
+  await expect(page.getByRole('img', { name: 'You loved “Hey, what’s up?”' }).locator('g[stroke]')).toHaveCount(0)
+  await expect(chat.locator('.about-intro-chat-visitor-tapback .about-intro-chat-tapback-disc')).toHaveCount(1)
+  await expect(chat.locator('.about-intro-chat-received[data-reacted="true"] .about-intro-chat-bubble'))
+    .toHaveCSS('background-image', /radial-gradient/)
   await expect(chat.getByRole('status')).toHaveText('Got it — I’ll see your 🩷.')
   await expect(picker).toHaveCount(0)
 

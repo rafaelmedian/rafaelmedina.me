@@ -77,11 +77,6 @@
   --duration-quick: 160ms; /* most hover and state transitions */
   --duration-base: 200ms; /* larger surface moves */
   --duration-slow: 360ms; /* scrims, captions, big reveals */
-  /* transitions.dev's icon swap, scoped by its semantic token names. */
-  --icon-swap-dur: 250ms;
-  --icon-swap-blur: 2px;
-  --icon-swap-start-scale: 0.25;
-  --icon-swap-ease: ease-in-out;
   --blur-reveal: 4px; /* load, preview entrance, switch, and exit */
   /* Stacking. The global ladder; Tailwind's z-dock/z-chrome map onto the
      same tokens. Component-internal stacking (0-5, and the map attribution's
@@ -110,9 +105,10 @@
      same ink reads as a black frame rather than a selection. This grey still
      clears 1.4.11 at 3.4:1 on --body-bg. */
   --focus-ring-soft: #8a8a8a;
-  /* Worn by the hero address's copy-confirmation check, which is why that check
-     sits on a white card rather than the grey hover fill: 3.2:1 as a non-text
-     graphic on --canvas, 2.7:1 on #e9e9e9. */
+  /* Worn by the line under the About sheet's address while a copy holds, and
+     by nothing else: 3.2:1 as a non-text graphic on the white it underlines.
+     The corner chip confirms by morphing its own grey mark instead, so it
+     needs no colour of its own. */
   --accent: #34a26a;
   --elastic-edge-height: 56px;
   /* The floating-surface elevation. Hover cards, popovers, the takeover
@@ -134,6 +130,34 @@
   --shadow-control: 0 1px 5px rgb(46 42 42 / 0.08);
   --shadow-control-hover: 0 4px 12px rgb(46 42 42 / 0.12);
   --shadow-control-pressed: 0 1px 4px rgb(46 42 42 / 0.08);
+  /* Glass, after logram.ai's buttons: the chrome that floats over content --
+     buttons, pills, the tables of contents -- is the canvas made mostly
+     opaque over a light blur. --glass-rim is four offset inset shadows whose
+     -2px spread shrinks each highlight to a crescent that only survives
+     where the edge curves, so light catches the top and bottom of a pill
+     the way it would a lens, not a drawn outline. --shadow-glass is the
+     hairline plus two tight drop shadows. Overlay-tier surfaces (the TOC
+     card, takeover close) keep --shadow-overlay and swap only the ring for
+     --glass-hairline. --glass-fill-strong is for hover and for surfaces
+     that hold rows of text. */
+  --glass-fill: rgb(255 255 255 / 0.72);
+  --glass-fill-strong: rgb(255 255 255 / 0.86);
+  --glass-filter: blur(8px) saturate(1.6);
+  --glass-highlight: rgb(255 255 255 / 1);
+  --glass-rim:
+    inset 0 -2px 1px -2px var(--glass-highlight),
+    inset -1px -2px 1px -2px var(--glass-highlight),
+    inset 1px 2px 1px -2px var(--glass-highlight),
+    inset 0 2px 1px -2px var(--glass-highlight);
+  --glass-hairline: 0 0 0 0.5px rgb(0 0 0 / 0.1);
+  --shadow-glass:
+    var(--glass-hairline),
+    0 2px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 2px -2px rgb(0 0 0 / 0.1);
+  --shadow-glass-hover:
+    var(--glass-hairline),
+    0 4px 10px -2px rgb(0 0 0 / 0.14),
+    0 2px 2px -2px rgb(0 0 0 / 0.1);
   /* UI type scale. Four steps cover interface text -- see
      /design-system. The ramp used to carry twelve distinct sizes, half of them
      sitting a fraction of a pixel from a neighbour (0.82 next to 0.8125, 0.9

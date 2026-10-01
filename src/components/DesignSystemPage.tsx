@@ -230,7 +230,7 @@ const NON_TEXT_ENTRIES = [
     token: "--accent",
     kind: "non-text",
     name: "Copied",
-    note: "The copy-confirmation check and underline. A graphic only — the confirmation itself is spoken. Graded on white, so the surface empties to --canvas while it shows.",
+    note: "The line under the About sheet's address while a copy holds. A graphic only — the confirmation itself is spoken. Graded on white, the colour of the prose it underlines. The corner chip answers a copy by morphing its own grey mark instead, so this is the token's one wearer.",
   },
   {
     token: "--focus-ring-soft",

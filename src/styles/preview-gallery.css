@@ -402,10 +402,12 @@
   max-width: calc(100% - 2rem);
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-sm);
-  background: var(--canvas);
+  background: var(--glass-fill-strong);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   color: var(--ink);
   font-size: var(--text-sm);
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--glass-hairline), var(--shadow-overlay), var(--glass-rim);
 }
 
 .preview-gallery-media-status button {
@@ -531,15 +533,13 @@
   height: 36px;
   padding-inline: 0.85rem;
   border: none;
-  background: rgb(255 255 255 / 0.92);
-  backdrop-filter: blur(12px) saturate(1.1);
-  -webkit-backdrop-filter: blur(12px) saturate(1.1);
-  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  background: var(--glass-fill-strong);
+  box-shadow: var(--glass-hairline), var(--shadow-overlay), var(--glass-rim);
 }
 
 @media (hover: hover) {
   .preview-gallery-likes .like-button:hover {
-    box-shadow: var(--shadow-ring), var(--shadow-overlay-hover);
+    box-shadow: var(--glass-hairline), var(--shadow-overlay-hover), var(--glass-rim);
   }
 }
 
@@ -548,12 +548,14 @@
 .preview-gallery-likes [role="alert"] {
   padding: 0.4rem 0.6rem;
   border-radius: var(--radius-sm);
-  background: var(--canvas);
+  background: var(--glass-fill-strong);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   color: var(--ink);
   font-size: var(--text-xs);
   line-height: 1.35;
   text-align: right;
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--glass-hairline), var(--shadow-overlay), var(--glass-rim);
 }
 
 .preview-gallery-content {
@@ -1072,14 +1074,16 @@
   border-radius: var(--radius-full);
   corner-shape: round;
   border: 1px solid rgb(0 0 0 / 0.08);
-  background: rgb(255 255 255 / 0.92);
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   color: var(--ink);
   display: grid;
   place-items: center;
   cursor: pointer;
   /* The floating-chrome recipe, same as the close and the table of contents.
      The edge is a real border here because the writings rail darkens it. */
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--shadow-overlay), var(--glass-rim);
   transition:
     background-color var(--duration-quick) ease-out,
     color var(--duration-quick) ease-out,
@@ -1089,8 +1093,8 @@
 
 .preview-gallery-nav:hover:not(:disabled),
 .preview-gallery-nav:focus-visible:not(:disabled) {
-  background: #ffffff;
-  box-shadow: var(--shadow-overlay-hover);
+  background: var(--glass-fill-strong);
+  box-shadow: var(--shadow-overlay-hover), var(--glass-rim);
 }
 
 .preview-gallery-nav:disabled {
@@ -1222,16 +1226,16 @@
      border from tightening the icon's drawn area. */
   .preview-gallery-toolbar .preview-gallery-nav {
     border: 0;
-    box-shadow: var(--shadow-ring), var(--shadow-control);
+    box-shadow: var(--shadow-glass), var(--glass-rim);
   }
 
   .preview-gallery-toolbar .preview-gallery-nav:hover:not(:disabled),
   .preview-gallery-toolbar .preview-gallery-nav:focus-visible:not(:disabled) {
-    box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+    box-shadow: var(--shadow-glass-hover), var(--glass-rim);
   }
 
   .preview-gallery-toolbar .preview-gallery-nav:active:not(:disabled) {
-    box-shadow: var(--shadow-ring), var(--shadow-control-pressed);
+    box-shadow: var(--shadow-glass), var(--glass-rim);
   }
 
   /* The compact gallery still shows the full composition even though the

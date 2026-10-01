@@ -10,11 +10,7 @@ const options = [
   { value: "c", title: "Stacked buttons", description: "Two separate reply buttons, always within reach." },
 ] as const
 
-function ComparisonPreview({ variant, open, onOpenChange }: {
-  variant: IntroOption
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
+function ComparisonPreview({ variant }: { variant: IntroOption }) {
   const stageRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   useEffect(() => {
@@ -26,13 +22,11 @@ function ComparisonPreview({ variant, open, onOpenChange }: {
   }, [])
   return <div ref={stageRef} className="intro-comparison-stage">
     <AboutIntro media={aboutIntroPreview} portrait={aboutIntroPreview.assets.poster}
-      videoEnabled variant={variant} visible={visible}
-      open={open} onOpenChange={onOpenChange} />
+      variant={variant} visible={visible} />
   </div>
 }
 
 export default function AboutIntroComparison() {
-  const [playingOption, setPlayingOption] = useState<IntroOption | null>(null)
   return <main id="main-content" tabIndex={-1} className="intro-comparison">
     <header className="intro-comparison-header">
       <a href="/">Back to the site</a>
@@ -46,11 +40,10 @@ export default function AboutIntroComparison() {
           <span className="intro-comparison-letter" aria-hidden="true">{option.value.toUpperCase()}</span>
           <div><h2 id={`option-${option.value}`}>{option.title}</h2><p>{option.description}</p></div>
         </header>
-        <ComparisonPreview variant={option.value} open={playingOption === option.value}
-          onOpenChange={open => setPlayingOption(open ? option.value : null)} />
+        <ComparisonPreview variant={option.value} />
         <a className="intro-comparison-context" href={`/?introStyle=${option.value}`}>Try {option.value.toUpperCase()} on the site</a>
       </section>)}
     </div>
-    <p className="intro-comparison-note">One video, three ways to start a conversation. Use the feedback button to leave a note on an option.</p>
+    <p className="intro-comparison-note">One portrait, three ways to start a conversation. Use the feedback button to leave a note on an option.</p>
   </main>
 }

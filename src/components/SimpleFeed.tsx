@@ -602,11 +602,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
   const { gridRef, runwayRef } = useWorkGridHeight()
   const { avatarRef, active: introActive } = useAvatarIntro()
-  const [isIntroOpen, setIsIntroOpen] = useState(false)
   const [avatarHovered, setAvatarHovered] = useState(false)
   const [avatarFocused, setAvatarFocused] = useState(false)
   const lightweightMedia = useLightweightMedia()
-  const showAvatarTeaser = (avatarHovered || avatarFocused) && !isIntroOpen && !bookingOpen && !prefersReducedMotion && !lightweightMedia
+  const showAvatarTeaser = (avatarHovered || avatarFocused) && !bookingOpen && !prefersReducedMotion && !lightweightMedia
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { itemId: galleryItemId, selectItem: selectGalleryItem, clearItem: clearGalleryItem } = useGalleryUrl()
@@ -924,8 +923,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       />
       <SocialCorner email={links.email} />
       <AboutIntroDock
-        open={isIntroOpen}
-        onOpenChange={setIsIntroOpen}
         onWork={() => scrollToSection("toc_work", "work")}
         onAbout={() => scrollToSection("toc_about")}
         onServices={() => scrollToSection("toc_services", "about-panel-services")}
