@@ -4892,13 +4892,14 @@ test("fades the work-history card out with the company still inside it", async (
   expect(exited.height).toBe(openHeight)
 
   // The 6px retreat and the fade run on one clock, so the movement is on
-  // screen rather than finishing after the card has already gone.
+  // screen rather than finishing after the card has already gone. The retreat
+  // accelerates away; the fade decelerates so it registers on the first frame.
   const exitMotion = await popover.evaluate((element) => {
     const style = getComputedStyle(element)
     return { duration: style.transitionDuration, ease: style.transitionTimingFunction }
   })
   expect(exitMotion.duration).toBe("0.16s, 0.16s, 0s")
-  expect(exitMotion.ease).toBe("cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1), linear")
+  expect(exitMotion.ease).toBe("cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.2, 0, 0, 1), linear")
 })
 
 test("opens the work-history popover from the keyboard and links each chip to its company", async ({

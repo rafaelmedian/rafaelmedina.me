@@ -55,6 +55,9 @@
      of its travel after the fade had already finished, so the 6px retreat was
      never on screen. The alias stays so the motion note below can name it. */
   --mosaic-popover-exit-ease: var(--ease-exit);
+  /* The fade decelerates instead, so the dismissal registers on its first
+     frame while the retreat still accelerates away. */
+  --mosaic-popover-exit-fade-ease: var(--ease-standard);
   position: relative;
   z-index: var(--z-overlay);
   isolation: isolate;
@@ -161,7 +164,7 @@
   will-change: transform, opacity;
   transition:
     transform var(--mosaic-popover-exit-duration) var(--mosaic-popover-exit-ease),
-    opacity var(--mosaic-popover-exit-duration) var(--mosaic-popover-exit-ease),
+    opacity var(--mosaic-popover-exit-duration) var(--mosaic-popover-exit-fade-ease),
     visibility 0ms linear var(--mosaic-popover-exit-duration);
 }
 

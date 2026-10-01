@@ -49,7 +49,7 @@
 }
 
 .preview-gallery-backdrop[data-ending-style] {
-  transition: opacity var(--pg-backdrop-out-ms, var(--duration-quick)) ease-in;
+  transition: opacity var(--pg-backdrop-out-ms, var(--duration-quick)) var(--ease-standard);
 }
 
 .preview-gallery-shell {
@@ -144,7 +144,7 @@
 
 .preview-gallery-popup[data-ending-style] {
   transition:
-    opacity var(--pg-content-out-ms, var(--duration-quick)) ease-in,
+    opacity var(--pg-content-out-ms, var(--duration-quick)) var(--ease-standard),
     transform var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
 }
 

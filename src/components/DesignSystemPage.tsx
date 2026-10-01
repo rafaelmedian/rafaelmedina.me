@@ -349,7 +349,7 @@ const EASINGS_ENTRIES = [
     name: "Exit — --ease-exit",
     css: "--ease-exit",
     duration: "120–160ms",
-    use: "Anything leaving: hover cards, popovers (as --mosaic-popover-exit-ease), the gallery. Always shorter than its entrance.",
+    use: "The travel of anything leaving: hover cards, popovers (as --mosaic-popover-exit-ease), the gallery. Its fade runs on --ease-standard. Always shorter than its entrance.",
   },
   {
     name: "Origin open",
@@ -1303,8 +1303,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <strong>Hover cards share one entrance and exit.</strong>
                 <p>
                   In over <code>--duration-base</code> on <code>--ease-smooth</code>, out over{" "}
-                  <code>--duration-quick</code> on <code>--ease-exit</code>. Opacity and transform finish together;
-                  unmount only after the exit completes.
+                  <code>--duration-quick</code>: the transform accelerates away on <code>--ease-exit</code> while the
+                  fade decelerates on <code>--ease-standard</code>, so a dismissal registers on its first frame.
+                  Opacity and transform finish together; unmount only after the exit completes.
                 </p>
               </div>
 
