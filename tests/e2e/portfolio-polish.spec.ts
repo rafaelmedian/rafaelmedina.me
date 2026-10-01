@@ -2414,6 +2414,24 @@ test("keeps the whole location line gray at rest", async ({ page }) => {
   await expect(page.locator(".mosaic-last-updated")).toHaveCSS("text-decoration-line", "none")
 })
 
+// An open dialog aria-hides the rest of the page, including the place name's
+// anchor. The separator was once styled by its aria-hidden, so the anchor took
+// the separator's margin and the rest of the line slid right behind the modal.
+test("holds the location line still while a modal is open", async ({ page }) => {
+  await page.goto("/")
+  await settleAvatarIntro(page)
+
+  const lastUpdated = page.locator(".mosaic-profile-location .mosaic-last-updated")
+  const before = await lastUpdated.boundingBox()
+
+  await page.getByText("Notes & tools").first().click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(page.locator(".mosaic-profile-location-anchor")).toHaveAttribute("aria-hidden", "true")
+
+  const during = await lastUpdated.boundingBox()
+  expect(during!.x).toBeCloseTo(before!.x, 0)
+})
+
 test("keeps the corner address gray and uncarded at rest", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
