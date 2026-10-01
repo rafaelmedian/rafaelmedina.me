@@ -1318,12 +1318,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 </p>
               </div>
 
-              <div className="ds-rule" data-ds-terms={terms("loading blur --blur-reveal 4px entrance skeleton")}>
-                <strong>Loads and entrances share one blur.</strong>
+              <div className="ds-rule" data-ds-terms={terms("loading blur --blur-reveal 4px --blur-swap 2px entrance swap skeleton")}>
+                <strong>Loads and entrances share one blur; swaps take half of it.</strong>
                 <p>
                   Media and entering text resolve from <code>--blur-reveal</code> to zero over{" "}
                   <code>--duration-slow</code> on <code>--ease-smooth</code>. Large dialogs use opacity and transform
-                  only. Empty work tiles show a breathing skeleton until their artwork decodes.
+                  only. Empty work tiles show a breathing skeleton until their artwork decodes. Things that change
+                  in place (a label, a number, an icon, a chat bubble) use <code>--blur-swap</code>: at 13–14px the
+                  reveal blur smears the glyphs.
                 </p>
               </div>
 

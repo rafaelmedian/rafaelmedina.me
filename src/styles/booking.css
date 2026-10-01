@@ -787,7 +787,7 @@ body:has(.booking-contact-panel) .booking-close {
   from {
     opacity: 0;
     transform: translateY(8px) scale(0.98);
-    filter: blur(2px);
+    filter: blur(var(--blur-swap));
   }
 
   to {

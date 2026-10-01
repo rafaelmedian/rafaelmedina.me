@@ -88,6 +88,7 @@
      --ease-smooth-out maps to --ease-smooth for surfaces and --ease-standard
      for in-place state. */
   --blur-reveal: 4px; /* load, preview entrance, switch, and exit */
+  --blur-swap: 2px; /* in-place swaps: labels, numbers, icons, chat bubbles */
   /* Stacking. The global ladder; Tailwind's z-dock/z-chrome map onto the
      same tokens. Component-internal stacking (0-5, and the map attribution's
      Leaflet-clearing 500) stays raw because it lives inside an isolated or

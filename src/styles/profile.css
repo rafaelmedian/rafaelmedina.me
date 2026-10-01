@@ -806,7 +806,7 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   display: inline-block;
   will-change: transform, opacity, filter;
   /* The blur lane is what makes the roll read as one label moving rather than
-     two boxes sliding past each other; 2px is the text-swap default. */
+     two boxes sliding past each other; --blur-swap is the text-swap default. */
   filter: blur(0);
   transition:
     transform 240ms var(--ease-smooth),
@@ -822,13 +822,13 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 .mosaic-live-time-value-next {
   transform: translateY(1.05em);
   opacity: 0;
-  filter: blur(2px);
+  filter: blur(var(--blur-swap));
 }
 
 .mosaic-live-time.is-animating .mosaic-live-time-value-current {
   transform: translateY(-1.05em);
   opacity: 0;
-  filter: blur(2px);
+  filter: blur(var(--blur-swap));
 }
 
 .mosaic-live-time.is-animating .mosaic-live-time-value-next {

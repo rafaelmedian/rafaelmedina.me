@@ -435,7 +435,7 @@
 }
 
 @keyframes intro-pick-in {
-  from { opacity: 0; transform: translateX(10px) scale(0.72); filter: blur(2px); }
+  from { opacity: 0; transform: translateX(10px) scale(0.72); filter: blur(var(--blur-swap)); }
   to { opacity: 1; transform: none; filter: none; }
 }
 
@@ -825,7 +825,7 @@
 .about-intro-chat-enter {
   opacity: 0;
   transform: translateY(8px) scale(0.98);
-  filter: blur(2px);
+  filter: blur(var(--blur-swap));
   /* The email field is its only user; it rises from the portrait-side corner. */
   transform-origin: right bottom;
   transition: opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
@@ -854,7 +854,7 @@
   .about-intro-chat-new {
     opacity: 0;
     transform: translateY(8px) scale(0.98);
-    filter: blur(2px);
+    filter: blur(var(--blur-swap));
   }
 }
 
@@ -935,7 +935,7 @@
 @keyframes intro-notification-number-enter {
   from {
     transform: translateY(4px);
-    filter: blur(var(--blur-reveal));
+    filter: blur(var(--blur-swap));
     opacity: 0;
   }
 }
@@ -943,7 +943,7 @@
 @keyframes intro-notification-number-exit {
   to {
     transform: translateY(-4px);
-    filter: blur(var(--blur-reveal));
+    filter: blur(var(--blur-swap));
     opacity: 0;
   }
 }
@@ -1007,7 +1007,7 @@
 
 @starting-style {
   .about-intro-chat .about-intro-chat-typing.about-intro-chat-new {
-    filter: blur(2px) var(--intro-bubble-shade);
+    filter: blur(var(--blur-swap)) var(--intro-bubble-shade);
   }
 }
 
