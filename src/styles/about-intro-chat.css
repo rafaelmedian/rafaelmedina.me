@@ -4,12 +4,11 @@
   --intro-chat-face-bottom: 0px;
 }
 
-.about-intro[data-variant="b"]:not([data-open="true"]) .about-intro-surface {
+.about-intro[data-variant="b"] .about-intro-surface {
   bottom: var(--intro-chat-face-bottom);
 }
 
-/* A collapsed chat gives the portrait pointer priority. The development video
-   trigger can still take over after keyboard focus explicitly reveals it. */
+/* A collapsed chat gives the portrait pointer priority. */
 .about-intro[data-variant="b"][data-chat-open="false"]:not([data-actions-open="true"]) .about-intro-portrait-trigger {
   z-index: 1;
 }
@@ -113,10 +112,6 @@
   overscroll-behavior: contain;
   scrollbar-width: none;
   transition: transform var(--duration-slow) var(--ease-smooth);
-}
-
-.about-intro-chat-video-action {
-  display: none;
 }
 
 /* Each new bubble's entrance rise overflows for a moment, which flashed an
@@ -826,42 +821,6 @@
     width: auto;
   }
 
-  .about-intro-dock .about-intro-chat-video-action {
-    position: sticky;
-    top: 4px;
-    z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-end;
-    gap: 7px;
-    min-height: 44px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: var(--canvas);
-    box-shadow: var(--shadow-ring), var(--shadow-control);
-    color: var(--ink);
-    font: 500 var(--text-sm) / 1 var(--font-ui);
-    cursor: pointer;
-    transition: box-shadow var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
-  }
-
-  .about-intro-dock .about-intro-chat-video-action > span {
-    width: 0;
-    height: 0;
-    border-block: 5px solid transparent;
-    border-left: 8px solid currentColor;
-  }
-
-  .about-intro-dock .about-intro-chat-video-action:is(:hover, :focus-visible) {
-    box-shadow: var(--shadow-ring), var(--shadow-control-hover);
-  }
-
-  .about-intro-dock .about-intro-chat-video-action:active {
-    box-shadow: var(--shadow-ring), var(--shadow-control-pressed);
-    transform: scale(0.97);
-  }
-
   .about-intro-chat {
     width: min(320px, calc(100vw - 100px));
   }
@@ -939,10 +898,6 @@
     animation: none;
     transform: none;
   }
-}
-
-.about-intro[data-variant="b"] .about-intro-label {
-  display: none;
 }
 
 .about-intro-chat[data-active="true"] [data-pending="true"] {

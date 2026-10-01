@@ -4,37 +4,8 @@
   display: contents;
 }
 
-.about-intro-anchor,
-.about-intro-layer {
-  display: contents;
-}
-
-/* Inside a dialog's focus scope, but above its transformed/clipped surface. */
-.about-intro-layer:popover-open {
-  position: fixed;
-  inset: 0;
-  display: block;
-  width: 0;
-  height: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  overflow: visible;
-  background: transparent;
-  pointer-events: none;
-}
-
-.about-intro-layer::backdrop {
-  display: none;
-}
-
-.about-intro-layer[data-relocating] .about-intro-surface {
-  transition-property: width, height, border-radius, transform;
-}
-
 .about-intro {
   --intro-size: 112px;
-  --intro-open-size: 240px;
   /* Messages blue, deepened from #007aff so white 14px text clears 4.5:1. */
   --intro-blue: #0071e3;
   position: fixed;
@@ -68,21 +39,11 @@
      the media instead, because a spread shadow paints outside the border box
      and so survives the notification's cut -- it left a grey arc crossing the
      gap around the badge. */
+  corner-shape: round;
   box-shadow: var(--shadow-overlay);
   transition-property: width, height, border-radius, bottom, right, transform;
   transition-duration: var(--duration-quick);
   transition-timing-function: var(--ease-smooth);
-}
-
-.about-intro:not([data-open="true"]) .about-intro-surface {
-  corner-shape: round;
-}
-
-.about-intro[data-open="true"] .about-intro-surface {
-  width: var(--intro-open-size);
-  height: var(--intro-open-size);
-  border-radius: var(--radius-lg);
-  transition-duration: var(--duration-slow);
 }
 
 /* The radius of the bite the notification badge takes out of the portrait.
@@ -122,7 +83,7 @@
 /* The floating tier's hairline, moved off the surface and inside the mask so
    the cut takes it too. Inset by a pixel rather than spread by one, which is
    the only difference a 6%-black line at this size can show. It rides above
-   the poster and the player, both of which fill the same box. */
+   the poster and the teaser, both of which fill the same box. */
 .about-intro-media::after {
   content: "";
   position: absolute;
@@ -134,38 +95,13 @@
 }
 
 .about-intro-poster,
-.about-intro-teaser,
-.about-intro-recording {
+.about-intro-teaser {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   border-radius: inherit;
   corner-shape: inherit;
-  object-fit: cover;
-}
-
-.about-intro-recording {
-  opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
-}
-
-.about-intro-recording::cue {
-  font-family: var(--font-ui);
-  font-size: var(--text-sm);
-}
-
-.about-intro-surface[data-ready="true"] .about-intro-recording {
-  opacity: 1;
-}
-
-.about-intro[data-open="true"] .about-intro-teaser {
-  visibility: hidden;
-}
-
-/* Media fills the square; controls overlay it only when engaged. */
-.about-intro[data-open="true"] :is(.about-intro-poster, .about-intro-recording) {
-  height: 100%;
   object-fit: cover;
 }
 
@@ -237,34 +173,6 @@
   border-radius: var(--radius-lg);
 }
 
-.about-intro-trigger {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  color: var(--canvas);
-  background: transparent;
-  pointer-events: none;
-  cursor: pointer;
-}
-
-.about-intro-trigger::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgb(0 0 0 / 0.2);
-  opacity: 0;
-  transition: opacity var(--duration-quick) var(--ease-standard);
-}
-
-.about-intro[data-actions-open="true"] .about-intro-trigger::before {
-  opacity: 1;
-}
-
 .about-intro-reply-action {
   position: relative;
   display: flex;
@@ -287,27 +195,6 @@
 .about-intro[data-actions-open="true"] .about-intro-actions,
 .about-intro[data-reply-open="true"] .about-intro-actions {
   visibility: visible;
-  opacity: 1;
-  transform: none;
-}
-
-.about-intro[data-actions-open="true"] .about-intro-trigger,
-.about-intro:focus-within .about-intro-trigger {
-  pointer-events: auto;
-}
-
-.about-intro-play-mark {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  opacity: 0;
-  transform: scale(0.96);
-  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-base) var(--ease-smooth);
-}
-
-.about-intro[data-actions-open="true"] .about-intro-play-mark {
   opacity: 1;
   transform: none;
 }
@@ -335,257 +222,14 @@
   transition-delay: 80ms;
 }
 
-/* Mask the white play mark to the existing triangle silhouette. */
-.about-intro-play-mark::before {
-  content: "";
-  width: 24px;
-  height: 24px;
-  transform: translateX(1px);
-  background: var(--canvas);
-  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M18.8906%2012.846C18.5371%2014.189%2016.8667%2015.138%2013.5257%2017.0361C10.296%2018.8709%208.6812%2019.7884%207.37983%2019.4196C6.8418%2019.2671%206.35159%2018.9776%205.95624%2018.5787C5%2017.6139%205%2015.7426%205%2012C5%208.2574%205%206.3861%205.95624%205.42132C6.35159%205.02245%206.8418%204.73288%207.37983%204.58042C8.6812%204.21165%2010.296%205.12907%2013.5257%206.96393C16.8667%208.86197%2018.5371%209.811%2018.8906%2011.154C19.0365%2011.7084%2019.0365%2012.2916%2018.8906%2012.846Z%22%2F%3E%3C%2Fsvg%3E");
-  mask-size: 100% 100%;
-  mask-repeat: no-repeat;
-}
-
-.about-intro-trigger:focus-visible {
-  outline: none;
-}
-
-.about-intro-trigger:focus-visible .about-intro-play-mark {
-  outline: 2px solid var(--canvas);
-  outline-offset: 2px;
-}
-
-.about-intro[data-open="true"] .about-intro-actions,
-.about-intro-actions[aria-hidden="true"],
-.about-intro[data-open="true"] .about-intro-portrait-trigger {
+.about-intro-actions[aria-hidden="true"] {
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
 }
 
-.about-intro-button:focus-visible,
-.about-intro-progress input:focus-visible {
-  outline-offset: -4px;
-}
-
-.about-intro-trigger:active .about-intro-play-mark,
-.about-intro-button:active,
 .about-intro-reply-action:active {
   transform: scale(0.96);
-}
-
-.about-intro-expanded,
-.about-intro-trigger {
-  transition: opacity var(--duration-quick) var(--ease-standard);
-}
-
-.about-intro-expanded {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.about-intro[data-open="true"] .about-intro-expanded {
-  position: absolute;
-  inset: 0;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.about-intro[data-open="true"] .about-intro-trigger,
-.about-intro-trigger[aria-hidden="true"] {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.about-intro-button {
-  display: grid;
-  place-items: center;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--canvas);
-  cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-standard), background-color var(--duration-quick) var(--ease-standard);
-}
-
-.about-intro-button:hover,
-.about-intro-button[aria-pressed="true"] {
-  background: rgb(255 255 255 / 0.16);
-}
-
-.about-intro-collapse {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  color: var(--canvas);
-}
-
-.about-intro-controls {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  left: 8px;
-  display: flex;
-  align-items: center;
-  padding: 2px;
-  border-radius: var(--radius-full);
-}
-
-
-.about-intro-progress {
-  flex: 1;
-  min-width: 0;
-  height: 44px;
-  padding-inline: 4px;
-}
-
-.about-intro-progress input {
-  display: block;
-  width: 100%;
-  height: 44px;
-  margin: 0;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-
-.about-intro-progress input::-webkit-slider-runnable-track {
-  height: 4px;
-  background: linear-gradient(to right, var(--canvas) var(--intro-progress), rgb(255 255 255 / 0.36) var(--intro-progress));
-  border-radius: var(--radius-full);
-}
-
-.about-intro-progress input::-moz-range-track {
-  height: 4px;
-  background: linear-gradient(to right, var(--canvas) var(--intro-progress), rgb(255 255 255 / 0.36) var(--intro-progress));
-  border-radius: var(--radius-full);
-}
-
-.about-intro-progress input::-webkit-slider-thumb {
-  appearance: none;
-  width: 0;
-  height: 4px;
-  border: 0;
-  background: transparent;
-}
-
-.about-intro-progress input::-moz-range-thumb {
-  width: 0;
-  height: 4px;
-  border: 0;
-  background: transparent;
-}
-
-.about-intro-controls,
-.about-intro-collapse {
-  background: rgb(0 0 0 / 0.36);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16), var(--shadow-control);
-  opacity: 0;
-  pointer-events: none;
-  /* transform keeps the close button's press scale; the bar never scales. */
-  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
-}
-
-/* The close control is glass and a button at once: tint over the glass on
-   hover, as a hovered button in the bar does, instead of replacing it. */
-.about-intro-collapse:hover {
-  background: linear-gradient(rgb(255 255 255 / 0.16) 0 0), rgb(0 0 0 / 0.36);
-}
-
-.about-intro[data-open="true"][data-started="false"] :is(.about-intro-controls, .about-intro-collapse),
-.about-intro[data-open="true"] .about-intro-surface:is(:hover, :has(:focus-visible)) :is(.about-intro-controls, .about-intro-collapse) {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.about-intro-collapse:focus-visible,
-.about-intro-controls :focus-visible {
-  outline-color: var(--canvas);
-}
-
-.about-intro-video-touch {
-  display: none;
-}
-
-@media (hover: none) {
-  .about-intro-video-touch {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    background: transparent;
-  }
-
-  .about-intro[data-touch-controls="false"] .about-intro-surface:not(:has(:focus-visible)) :is(.about-intro-controls, .about-intro-collapse) {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .about-intro[data-open="true"][data-touch-controls="true"] :is(.about-intro-controls, .about-intro-collapse) {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
-.about-intro-status {
-  position: absolute;
-  right: 8px;
-  bottom: 60px;
-  left: 8px;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--canvas);
-  color: var(--ink);
-  font-size: var(--text-xs);
-  text-align: center;
-}
-
-.about-intro-status:empty {
-  display: none;
-}
-
-.about-intro-label {
-  position: absolute;
-  bottom: calc(100% + 12px);
-  left: 0;
-  visibility: hidden;
-  opacity: 0;
-  transform: scale(0.98);
-  transform-origin: left bottom;
-  transition: opacity var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-smooth), visibility var(--duration-fast);
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  background: var(--canvas);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  white-space: nowrap;
-  box-shadow: var(--shadow-ring), var(--shadow-control);
-}
-
-.about-intro-label span {
-  display: block;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
-
-.about-intro[data-actions-open="true"]:not([data-open="true"]):not([data-reply-open="true"]) .about-intro-label {
-  visibility: visible;
-  opacity: 1;
-  transform: none;
-  transition-duration: var(--duration-quick);
-  transition-delay: 80ms;
 }
 
 @media (max-width: 899.98px) {
@@ -616,7 +260,6 @@
 
   .about-intro {
     --intro-size: 64px;
-    --intro-open-size: min(256px, calc(100vw - 24px), calc(100dvh - 112px - env(safe-area-inset-bottom)));
     right: 12px;
     left: auto;
   }
@@ -632,16 +275,6 @@
   .about-intro-surface {
     right: 0;
     left: auto;
-  }
-
-  .about-intro[data-open="true"] .about-intro-surface {
-    /* Align the expanded frame to the viewport, not the narrow TOC label. */
-    right: calc((var(--intro-dock-width) - var(--intro-open-size)) / 2);
-    bottom: calc(var(--intro-size) + 12px);
-  }
-
-  .about-intro-label {
-    display: none;
   }
 
   .about-intro-actions {
@@ -666,26 +299,6 @@
 
   .about-intro[data-reply-open="true"] .about-intro-actions {
     width: min(320px, calc(100vw - 100px));
-  }
-
-  .about-intro-anchor[data-detached="true"] {
-    display: block;
-    width: 64px;
-    height: 64px;
-  }
-
-  .about-intro-layer:popover-open .about-intro {
-    --intro-dock-width: var(--intro-size);
-    position: fixed;
-    left: calc(50% - var(--intro-size) / 2);
-    right: auto;
-    bottom: calc(80px + env(safe-area-inset-bottom));
-    width: var(--intro-size);
-    height: var(--intro-size);
-  }
-
-  .about-intro-layer:popover-open .about-intro-surface {
-    bottom: 0;
   }
 
   body:has(.about-intro[data-visible="true"]) .portfolio-feedback-toolbar {
@@ -717,18 +330,12 @@
 @media (prefers-reduced-motion: reduce) {
   .about-intro,
   .about-intro-surface,
-  .about-intro-trigger,
-  .about-intro-expanded,
-  .about-intro-play-mark,
-  .about-intro-button,
   .about-intro-actions,
   .about-intro-reply-action {
     transition: none;
   }
 
-  .about-intro-trigger:active .about-intro-play-mark,
-  .about-intro-reply-action:active,
-  .about-intro-button:active {
+  .about-intro-reply-action:active {
     transform: none;
   }
 }
@@ -867,11 +474,9 @@
 @media (prefers-reduced-motion: reduce) {
   .about-intro-action-buttons,
   .about-intro-reply,
-  .about-intro-label,
   .about-intro-actions,
   .about-intro-action-label,
-  .about-intro-send,
-  .about-intro-play-mark {
+  .about-intro-send {
     transition: none;
     transform: none;
   }
@@ -881,37 +486,7 @@
   }
 }
 
-/* transitions.dev: keep both control glyphs mounted through a state swap. */
-.t-icon-swap {
-  position: relative;
-  display: inline-grid;
-}
-.t-icon-swap .t-icon {
-  grid-area: 1 / 1;
-  transition:
-    opacity   var(--icon-swap-dur) var(--icon-swap-ease),
-    filter    var(--icon-swap-dur) var(--icon-swap-ease),
-    transform var(--icon-swap-dur) var(--icon-swap-ease);
-  will-change: opacity, filter, transform;
-}
-.t-icon-swap[data-state="a"] .t-icon[data-icon="a"],
-.t-icon-swap[data-state="b"] .t-icon[data-icon="b"] {
-  opacity: 1;
-  filter: blur(0);
-  transform: scale(1);
-}
-.t-icon-swap[data-state="a"] .t-icon[data-icon="b"],
-.t-icon-swap[data-state="b"] .t-icon[data-icon="a"] {
-  opacity: 0;
-  filter: blur(var(--icon-swap-blur));
-  transform: scale(var(--icon-swap-start-scale));
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .t-icon-swap .t-icon { transition: none !important; }
-}
-
-/* Development comparison: the same player and forms, three reply layouts. */
+/* Development comparison: the same portrait and forms, three reply layouts. */
 .about-intro-choices {
   display: flex;
   gap: 4px;
@@ -942,14 +517,10 @@
   transform: none;
 }
 
-.about-intro[data-variant="c"]:not([data-open="true"]) .about-intro-actions:not([aria-hidden="true"]) {
+.about-intro[data-variant="c"] .about-intro-actions:not([aria-hidden="true"]) {
   visibility: visible;
   opacity: 1;
   transform: none;
-}
-
-.about-intro[data-variant="c"] .about-intro-label {
-  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -75,7 +75,6 @@
 
 .intro-comparison-stage .about-intro {
   --intro-size: 64px;
-  --intro-open-size: min(240px, calc(100cqw - 24px));
   position: absolute;
   left: 12px;
   right: auto;
@@ -127,6 +126,6 @@
 }
 
 /* B keeps its portrait beside the final input or delivery hint. */
-.intro-comparison-stage .about-intro[data-variant="b"]:not([data-open="true"]) .about-intro-surface {
+.intro-comparison-stage .about-intro[data-variant="b"] .about-intro-surface {
   bottom: 0;
 }

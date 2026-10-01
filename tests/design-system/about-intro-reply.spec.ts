@@ -8,11 +8,11 @@ const openAbout = async (page: Page) => {
   return intro
 }
 
-test('reveals play on the portrait and offers email and text tooltips', async ({ page }) => {
+test('reveals reply actions on the portrait with email and text tooltips', async ({ page }) => {
   const intro = await openAbout(page)
-  await expect(intro.locator('.about-intro-play-mark')).toHaveCSS('opacity', '0')
+  await expect(intro.locator('.about-intro-actions')).toHaveCSS('opacity', '0')
   await intro.getByRole('button', { name: 'Show introduction actions' }).hover()
-  await expect(intro.locator('.about-intro-play-mark')).toHaveCSS('opacity', '1')
+  await expect(intro.locator('.about-intro-actions')).toHaveCSS('opacity', '1')
   const email = intro.getByRole('button', { name: 'Your email', exact: true })
   await email.hover()
   await expect(intro.getByRole('tooltip', { name: 'Your email', exact: true })).toBeVisible()
@@ -60,7 +60,7 @@ test('opens a minimal email input with an arrow and returns focus on escape', as
   await expect.poll(() => arrow.evaluate(node => getComputedStyle(node, '::before').backgroundColor)).toBe('rgb(0, 113, 227)')
   await page.keyboard.press('Escape')
   await expect(intro.getByRole('button', { name: 'Your email', exact: true })).toBeFocused()
-  await expect(intro.locator('video[data-recording]')).not.toHaveAttribute('src')
+  await expect(intro.locator('video[data-recording]')).toHaveCount(0)
 })
 
 test('opens a compact text composer and keeps delivery explicit', async ({ page }) => {
@@ -84,25 +84,6 @@ test('opens a compact text composer and keeps delivery explicit', async ({ page 
 
 test.describe('touch layout', () => {
   test.use({ hasTouch: true, isMobile: true })
-
-test('toggles video controls by tapping the video on touch screens', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 740 })
-  const intro = await openAbout(page)
-  await intro.getByRole('button', { name: 'Show introduction actions' }).tap()
-  await intro.getByRole('button', { name: 'Play introduction', exact: true }).tap()
-  await expect(intro.locator('.about-intro-controls')).toHaveCSS('opacity', '1')
-  await expect(intro.locator('.about-intro-collapse')).toHaveCSS('opacity', '1')
-  await intro.getByRole('button', { name: 'Pause introduction' }).tap()
-  await intro.getByRole('button', { name: 'Hide video controls' }).tap({ position: { x: 100, y: 80 } })
-  await expect(intro.locator('.about-intro-controls')).toHaveCSS('opacity', '0')
-  await expect(intro.locator('.about-intro-collapse')).toHaveCSS('opacity', '0')
-  await intro.getByRole('button', { name: 'Show video controls' }).tap({ position: { x: 100, y: 80 } })
-  await expect(intro.locator('.about-intro-controls')).toHaveCSS('opacity', '1')
-  await expect(intro.locator('.about-intro-collapse')).toHaveCSS('opacity', '1')
-  await expect(intro.getByRole('button', { name: 'Resume introduction' })).toBeVisible()
-  await intro.getByRole('button', { name: 'Close introduction' }).tap()
-  await expect(intro).toHaveAttribute('data-open', 'false')
-})
 
 test('keeps minimal email controls together at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 })
@@ -129,49 +110,4 @@ test('keeps minimal email controls together at 320px', async ({ page }) => {
   expect(actions!.x + actions!.width).toBeLessThanOrEqual(308)
 })
 
-})
-
-test('shows the hello on hover and fills the player with edge-to-edge video', async ({ page }) => {
-  const intro = await openAbout(page)
-  await expect(intro.locator('.about-intro-label')).toHaveCSS('opacity', '0')
-  await intro.hover()
-  await expect(intro.locator('.about-intro-label')).toHaveCSS('opacity', '1')
-  await expect(intro.locator('.about-intro-label')).not.toContainText('Placeholder')
-  await intro.getByRole('button', { name: 'Play introduction', exact: true }).click()
-  await expect(intro.getByRole('button', { name: 'Pause introduction' })).toBeVisible()
-  const surface = intro.locator('.about-intro-surface')
-  const video = intro.locator('video[data-recording]')
-  await expect(surface).toHaveCSS('width', '240px')
-  await expect(video).toHaveCSS('height', '240px')
-  await expect(video).toHaveCSS('object-fit', 'cover')
-  await expect(intro.getByRole('button', { name: 'Expand introduction' })).toHaveCount(0)
-  await expect(intro.locator('.about-intro-time')).toHaveCount(0)
-  const close = await intro.getByRole('button', { name: 'Close introduction' }).boundingBox()
-  const frame = await surface.boundingBox()
-  expect(close!.y).toBeCloseTo(frame!.y + 8, 0)
-  expect(close!.x + close!.width).toBeCloseTo(frame!.x + frame!.width - 8, 0)
-  const play = await intro.getByRole('button', { name: 'Pause introduction' }).boundingBox()
-  const seek = intro.getByRole('slider', { name: 'Seek introduction' })
-  const rail = await seek.boundingBox()
-  const mute = intro.getByRole('button', { name: 'Mute introduction' })
-  const volume = await mute.boundingBox()
-  expect(play!.x + play!.width).toBeLessThanOrEqual(rail!.x)
-  expect(rail!.x + rail!.width).toBeLessThanOrEqual(volume!.x)
-  await mute.click()
-  await expect(video).toHaveJSProperty('muted', true)
-  await intro.getByRole('button', { name: 'Pause introduction' }).click()
-  await seek.focus()
-  await seek.press('End')
-  await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).currentTime)).toBeGreaterThan(0)
-  // End snaps to the last 0.1-second step before the media's fractional duration.
-  await expect.poll(() => intro.locator('.about-intro-progress').evaluate(node =>
-    parseFloat(getComputedStyle(node).getPropertyValue('--intro-progress')))).toBeGreaterThan(99)
-  await page.mouse.click(800, 100)
-  await expect(intro.locator('.about-intro-controls')).toHaveCSS('opacity', '0')
-  await expect(intro.locator('.about-intro-collapse')).toHaveCSS('opacity', '0')
-  await surface.hover()
-  await expect(intro.locator('.about-intro-controls')).toHaveCSS('opacity', '1')
-  await expect(intro.locator('.about-intro-collapse')).toHaveCSS('opacity', '1')
-  await intro.getByRole('button', { name: 'Close introduction' }).click()
-  await expect(intro).toHaveAttribute('data-open', 'false')
 })

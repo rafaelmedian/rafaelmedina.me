@@ -34,24 +34,3 @@ for (const width of [320, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
   })
 }
-
-test('plays one comparison video at a time and keeps the players inside their cards', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/intro-options')
-  for (const name of ['Compact pill', 'Chat bubble', 'Stacked buttons']) {
-    const card = page.getByRole('region', { name, exact: true })
-    if (name === 'Chat bubble') await card.locator('.about-intro-portrait-trigger').click()
-    await card.getByRole('button', { name: 'Play introduction', exact: true }).focus()
-    await card.getByRole('button', { name: 'Play introduction', exact: true }).click()
-    await expect.poll(() => page.locator('video[data-recording]').evaluateAll(videos =>
-      videos.filter(video => !(video as HTMLVideoElement).paused).length)).toBe(1)
-    await expect(card.getByRole('button', { name: 'Pause introduction' })).toBeVisible()
-    await expect(card.getByRole('button', { name: 'Expand introduction' })).toHaveCount(0)
-    const frame = await card.boundingBox()
-    const surface = card.locator('.about-intro-surface')
-    await expect(surface).toHaveCSS('width', '240px')
-    const player = await surface.boundingBox()
-    expect(player!.x).toBeGreaterThanOrEqual(frame!.x)
-    expect(player!.x + player!.width).toBeLessThanOrEqual(frame!.x + frame!.width)
-  }
-})

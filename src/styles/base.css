@@ -77,11 +77,6 @@
   --duration-quick: 160ms; /* most hover and state transitions */
   --duration-base: 200ms; /* larger surface moves */
   --duration-slow: 360ms; /* scrims, captions, big reveals */
-  /* transitions.dev's icon swap, scoped by its semantic token names. */
-  --icon-swap-dur: 250ms;
-  --icon-swap-blur: 2px;
-  --icon-swap-start-scale: 0.25;
-  --icon-swap-ease: ease-in-out;
   --blur-reveal: 4px; /* load, preview entrance, switch, and exit */
   /* Stacking. The global ladder; Tailwind's z-dock/z-chrome map onto the
      same tokens. Component-internal stacking (0-5, and the map attribution's
