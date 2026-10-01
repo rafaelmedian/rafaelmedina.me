@@ -217,6 +217,7 @@
   font-size: var(--text-xs);
   line-height: 1.1;
   text-decoration: none;
+  transition: color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-local-time-map-attribution:hover,

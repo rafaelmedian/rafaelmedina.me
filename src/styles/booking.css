@@ -686,7 +686,9 @@ body:has(.booking-contact-panel) .booking-close {
 }
 
 .booking-popup button {
-  transition: opacity var(--duration-quick) var(--ease-standard);
+  transition:
+    opacity var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
 }
 
 .booking-popup button:disabled { opacity: 0.45; cursor: default; }
