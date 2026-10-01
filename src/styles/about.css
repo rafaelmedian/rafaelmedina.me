@@ -210,11 +210,12 @@
 }
 
 /* The address in the prose copies rather than opening a mail client, and the
-   reaction card beside it says so. The line under the address takes the
-   corner chip's confirmation ink for the same moment, so the answer is also on
-   the thing that was pressed -- a copy can come from the keyboard, or outlast
-   the pointer that started it. Ordered after the hover rule, which it ties on
-   specificity. */
+   reaction card beside it says so. The line under the address goes to --accent
+   for that moment, so the answer is also on the thing that was pressed -- a
+   copy can come from the keyboard, or outlast the pointer that started it.
+   Here the confirmation has to be a colour: the address is a run of text in a
+   sentence, with no mark of its own to redraw the way the corner chip's icon
+   has. Ordered after the hover rule, which it ties on specificity. */
 .mosaic-about-email[data-copied="true"] {
   text-decoration-color: var(--accent);
 }

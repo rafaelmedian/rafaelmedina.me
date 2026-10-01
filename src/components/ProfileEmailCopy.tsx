@@ -1,11 +1,9 @@
 import { Tooltip } from "@base-ui/react/tooltip"
-import { Check, Copy } from "lucide-react"
 import { useId } from "react"
 
 import { useEmailCopy } from "../lib/useEmailCopy"
 import { EMAIL_COPY_CONFIRMATION, EMAIL_COPY_INVITATION } from "./emailCopyReactions"
 import { ReactionCard } from "./ReactionCard"
-import { InlineSwap } from "./InlineSwap"
 
 type ProfileEmailCopyProps = {
   email: string
@@ -34,9 +32,19 @@ export function ProfileEmailCopy({ email, side = "top" }: ProfileEmailCopyProps)
           onClick={() => void copy()}
         >
           <span className="mosaic-profile-email-icon" aria-hidden="true">
-            <InlineSwap value={isCopied ? "copied" : "copy"} direction={isCopied ? "up" : "down"}>
-              {isCopied ? <Check strokeWidth={2.25} /> : <Copy strokeWidth={2} />}
-            </InlineSwap>
+            {/* One drawing with two states rather than two icons trading
+                places: the back sheet slides down onto the front one, the
+                merged sheet shrinks away, and a check draws itself in where it
+                stood. The back sheet is only its visible corner, so nothing has
+                to paint over it to hide the overlap. */}
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.25}
+              strokeLinecap="round" strokeLinejoin="round">
+              <g className="mosaic-profile-email-sheets">
+                <path className="mosaic-profile-email-sheet-back" d="M3.5 3.5V2.75a2 2 0 0 1 2-2h3.75a2 2 0 0 1 2 2V6.5a2 2 0 0 1-2 2H8.5" />
+                <rect x="0.75" y="3.5" width="7.75" height="7.75" rx="2" />
+              </g>
+              <path className="mosaic-profile-email-check" pathLength={1} d="M2.25 6.25 4.75 8.75 9.75 3.25" />
+            </svg>
           </span>
           <span className="mosaic-profile-email-label">{email}</span>
         </Tooltip.Trigger>

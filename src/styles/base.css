@@ -105,9 +105,10 @@
      same ink reads as a black frame rather than a selection. This grey still
      clears 1.4.11 at 3.4:1 on --body-bg. */
   --focus-ring-soft: #8a8a8a;
-  /* Worn by the hero address's copy-confirmation check, which is why that check
-     sits on a white card rather than the grey hover fill: 3.2:1 as a non-text
-     graphic on --canvas, 2.7:1 on #e9e9e9. */
+  /* Worn by the line under the About sheet's address while a copy holds, and
+     by nothing else: 3.2:1 as a non-text graphic on the white it underlines.
+     The corner chip confirms by morphing its own grey mark instead, so it
+     needs no colour of its own. */
   --accent: #34a26a;
   --elastic-edge-height: 56px;
   /* The floating-surface elevation. Hover cards, popovers, the takeover

@@ -1202,7 +1202,7 @@ test("reveals the address icon on hover without moving the line", async ({ page 
   const [restIcon, restLabel] = await Promise.all([icon.boundingBox(), label.boundingBox()])
   expect(restIcon).not.toBeNull()
   expect(restLabel).not.toBeNull()
-  expect(restIcon!.width).toBeCloseTo(14, 0)
+  expect(restIcon!.width).toBeCloseTo(12, 0)
 
   await email.hover()
   await expect(icon).toHaveCSS("opacity", "1")
@@ -1250,7 +1250,7 @@ test("fills the address in as a chip card on hover and focus", async ({ page }) 
   await expect(email).toHaveCSS("background-color", "rgb(233, 233, 233)")
 })
 
-test("marks a copy in the accent and lets go of it again", async ({ page }) => {
+test("marks a copy with a grey check and lets go of it again", async ({ page }) => {
   // The copied state is the subject here, not the clipboard, so the write is
   // stubbed for the same reason as the reduced-motion test above.
   await page.addInitScript(() => {
@@ -1267,9 +1267,10 @@ test("marks a copy in the accent and lets go of it again", async ({ page }) => {
 
   await email.click()
   await expect(email).toHaveAttribute("data-copied", "true")
-  await expect(icon).toHaveCSS("color", "rgb(52, 162, 106)")
-  // The card empties to white for the confirmation: --accent is 3.2:1 there and
-  // only 2.7:1 on the grey hover fill, which is the one moment it has to read.
+  // The check keeps the icon's own ink rather than turning green.
+  await expect(icon).toHaveCSS("color", "rgb(20, 20, 20)")
+  await expect(icon.locator(".mosaic-profile-email-check")).toHaveCSS("opacity", "1")
+  // The card empties to white for the confirmation.
   await expect(email).toHaveCSS("background-color", "rgb(255, 255, 255)")
   // And the check outlasts the pointer -- it is lit by the copy, not the hover,
   // so a keyboard copy shows it too.

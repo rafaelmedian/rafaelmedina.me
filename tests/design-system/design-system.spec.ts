@@ -141,27 +141,31 @@ const findScriptCustomPropertyReferences = (text: string, fileName = "source.tsx
 
 test("grades meaningful non-text colors against the 3:1 threshold", async ({ page }) => {
   // --accent used to sit on the booking pill's status dot, which rested visible
-  // and could be read straight off the page. The copy confirmation is its only
-  // wearer now, so the live sample has to be earned with a click -- and a real
-  // writeText rejects on a page that is not the frontmost one, which several
-  // parallel workers guarantee for most of them. The address's fallback for a
-  // rejection is a mailto: navigation, so the check would never appear. The
-  // colour is the subject here, not the clipboard, so the write is stubbed out.
+  // and could be read straight off the page. The line under the About sheet's
+  // address is its only wearer now -- the corner chip answers a copy by
+  // morphing its own grey mark -- so the live sample has to be earned with a
+  // click. A real writeText rejects on a page that is not the frontmost one,
+  // which several parallel workers guarantee for most of them, and the
+  // address's fallback for a rejection is a mailto: navigation, so the
+  // confirmation would never appear. The colour is the subject here, not the
+  // clipboard, so the write is stubbed out.
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText: async () => {} },
     })
   })
-  // The default development tuner overlaps this corner control. It is not
-  // part of the colour sample, so keep the page itself unobstructed.
+  // The default development tuner floats over the page. It is not part of the
+  // colour sample, so keep the page itself unobstructed.
   await page.goto("/?tune=off")
-  await page.locator(".mosaic-social-corner .mosaic-profile-email").click()
-  const icon = page.locator('.mosaic-social-corner .mosaic-profile-email[data-copied="true"] .mosaic-profile-email-icon')
-  // The check fades from --ink to --accent, and a colour read mid-transition is
-  // neither value -- so wait the transition out before sampling it.
-  await icon.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
-  const liveAccentColor = await icon.evaluate((element) => getComputedStyle(element).color)
+  const address = page.locator("#about-section .mosaic-about-email")
+  await address.scrollIntoViewIfNeeded()
+  await address.click()
+  await expect(address).toHaveAttribute("data-copied", "true")
+  // The underline fades from the resting grey to --accent, and a colour read
+  // mid-transition is neither value -- so wait the transition out first.
+  await address.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+  const liveAccentColor = await address.evaluate((element) => getComputedStyle(element).textDecorationColor)
 
   await openDesignSystem(page)
 
