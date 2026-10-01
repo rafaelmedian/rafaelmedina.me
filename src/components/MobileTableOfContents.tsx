@@ -2,9 +2,9 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties
 import { ChevronUp } from "./NavigationIcons"
 
 const SECTIONS = [
-  { id: "work", number: "01", label: "Work", href: "#work" },
-  { id: "about", number: "02", label: "About", href: "#about-panel" },
-  { id: "services", number: "03", label: "Services", href: "#about-panel-services" },
+  { id: "work", label: "Work", href: "#work" },
+  { id: "about", label: "About", href: "#about-panel" },
+  { id: "services", label: "Services", href: "#about-panel-services" },
 ] as const
 
 type SectionId = (typeof SECTIONS)[number]["id"]
@@ -189,7 +189,6 @@ export function MobileTableOfContents({
                 className="mosaic-mobile-toc-row-content"
               >
                 <span className="mosaic-mobile-toc-label">
-                  <span className="mosaic-mobile-toc-number" aria-hidden="true">{section.number}</span>{" "}
                   <span>{section.label}</span>
                 </span>
                 {isCurrent && (
@@ -237,7 +236,6 @@ export function MobileTableOfContents({
         {leavingSection && !isOpen && (
           <span className="mosaic-mobile-toc-ghost" aria-hidden="true">
             <span className="mosaic-mobile-toc-label">
-              <span className="mosaic-mobile-toc-number">{leavingSection.number}</span>{" "}
               <span>{leavingSection.label}</span>
             </span>
           </span>
