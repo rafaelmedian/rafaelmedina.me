@@ -275,7 +275,8 @@ test("refreshes token values, specimens, and contrast when the stylesheet change
   await expect(page.locator("#typography .ds-type-row").filter({ hasText: "--text-md" })).toContainText("1.0625rem · 17px")
   await expect(page.locator("#space .ds-card").filter({ hasText: "--radius-md" })).toContainText("18px")
   await expect(page.locator("#motion tr").filter({ has: page.locator("td:first-child", { hasText: "--duration-quick" }) })).toContainText("170ms")
-  await expect(page.locator("#motion .ds-motion-card").filter({ hasText: "--ease-standard" })).toContainText("cubic-bezier(0.1, 0.2, 0.3, 1)")
+  // Anchored on the card's own name: the exit card's copy names --ease-standard too.
+  await expect(page.locator("#motion .ds-motion-card").filter({ hasText: "Standard — --ease-standard" })).toContainText("cubic-bezier(0.1, 0.2, 0.3, 1)")
 
   await page.getByRole("searchbox").fill("#225588")
   await expect(accent).toBeVisible()
