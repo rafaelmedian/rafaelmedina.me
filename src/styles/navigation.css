@@ -122,7 +122,7 @@
 .mosaic-social-link-external-icon {
   flex: 0 0 auto;
   opacity: 0;
-  filter: blur(4px);
+  filter: blur(var(--blur-swap));
   transform: scale(0.25);
   transform-origin: center;
   transition:
@@ -276,6 +276,9 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-row {
@@ -380,7 +383,7 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
 @keyframes mosaic-toc-label-exit {
   to {
     transform: translateY(calc(var(--toc-swap-direction, 1) * -0.25rem));
-    filter: blur(var(--blur-reveal));
+    filter: blur(var(--blur-swap));
     opacity: 0;
   }
 }
@@ -388,7 +391,7 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
 @keyframes mosaic-toc-label-enter {
   from {
     transform: translateY(calc(var(--toc-swap-direction, 1) * 0.25rem));
-    filter: blur(var(--blur-reveal));
+    filter: blur(var(--blur-swap));
     opacity: 0;
   }
 }

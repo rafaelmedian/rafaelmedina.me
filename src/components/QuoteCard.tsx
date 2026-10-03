@@ -3,6 +3,7 @@ import { Popover } from "@base-ui/react/popover"
 import { KeyboardHint } from "./KeyboardHint"
 import { XProfileHoverCard } from "./XProfileHoverCard"
 import type { PortfolioQuote } from "../data/quotes"
+import { RICH_CARD_OPEN_DELAY_MS } from "../lib/hoverIntent"
 
 // The distance that tells a swipe apart from a click that wandered. It is the
 // only gate the gesture has: past it the drag takes an axis, and a horizontal
@@ -102,7 +103,7 @@ function QuoteCredit({
                 aria-describedby={keysId}
                 tabIndex={active && interactive ? 0 : -1}
                 openOnHover
-                delay={260}
+                delay={RICH_CARD_OPEN_DELAY_MS}
                 closeDelay={140}
               >
                 {quote.attribution}

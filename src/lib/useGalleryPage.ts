@@ -23,7 +23,7 @@ export function useGalleryPage(
       return
     }
     const duration = cssTimeToMilliseconds(getComputedStyle(surface.current ?? document.documentElement)
-      .getPropertyValue("--pg-switch-ms"))
+      .getPropertyValue("--pg-switch-out-ms"))
     let frame = 0
     setTravelDirection(target === null ? "prev" : current.current === null ? "next" : direction.current)
     setPhase("out")

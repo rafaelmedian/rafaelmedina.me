@@ -25,6 +25,12 @@ exception, and why. A component's full spec (pixel offsets, choreography,
 history of what it used to be) belongs in that component's stylesheet comments
 and tests, not on this page.
 
+The transitions.dev skills in `.agents/skills/` and the `transitions-agent` CLI
+share our motion token names but not their values (their `--duration-fast` is
+250ms; ours is 120ms). Never install their `_root.css` or copy a suggested
+`var(--duration-*)` as written: translate each recipe value by usage onto our
+scale, using the mapping under the duration tokens in `src/styles/base.css`.
+
 `src/index.css` is the ordered stylesheet entry point. Shared tokens and base
 rules live in `src/styles/base.css`; component files own their responsive rules.
 Keep the Tailwind reset first and the global reduced-motion policy last. See

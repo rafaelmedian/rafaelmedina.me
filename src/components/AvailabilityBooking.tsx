@@ -3,6 +3,7 @@ import { Tooltip } from "@base-ui/react/tooltip"
 import { useId } from "react"
 
 import { ReactionCard, type Reaction } from "./ReactionCard"
+import { HINT_OPEN_DELAY_MS } from "../lib/hoverIntent"
 
 // Kermit on the phone, from a 1987 Christmas special by way of Giphy
 // (yPhqlJccIOaru), transcoded the way the LinkedIn clip was: 10fps at 400px,
@@ -30,7 +31,7 @@ export function AvailabilityBooking({ label, bookingUrl }: AvailabilityBookingPr
     <>
       <Tooltip.Root disabled={isOpen}>
         <Tooltip.Trigger
-          delay={0}
+          delay={HINT_OPEN_DELAY_MS}
           closeDelay={120}
           className="mosaic-contact-pill mosaic-contact-pill-dark mosaic-booking-pill"
           aria-label={`Book a call — ${label}`}

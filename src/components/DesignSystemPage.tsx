@@ -349,7 +349,7 @@ const EASINGS_ENTRIES = [
     name: "Exit — --ease-exit",
     css: "--ease-exit",
     duration: "120–160ms",
-    use: "Anything leaving: hover cards, popovers (as --mosaic-popover-exit-ease), the gallery. Always shorter than its entrance.",
+    use: "The travel of anything leaving: hover cards, popovers (as --mosaic-popover-exit-ease), the gallery. Its fade runs on --ease-standard. Always shorter than its entrance.",
   },
   {
     name: "Origin open",
@@ -388,7 +388,8 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-quick", use: "Hover and focus changes, and overlay exits. The default." },
   { value: "--duration-base", use: "Surface moves and overlay entrances: the gallery, hover cards, popovers, paging." },
   { value: "--duration-slow", use: "Big reveals: the avatar and page entrance, media resolving, the photo sheet opening." },
-  { value: "60ms", use: "--card-caption-delay, and the entrance stagger step." },
+  { value: "160 / 260ms", use: "Hover intent before a card opens: hints, then rich profile cards. src/lib/hoverIntent.ts." },
+  { value: "60ms", use: "--card-caption-delay, and --entrance-stagger, the entrance step (four at most)." },
   { value: "240–1260ms", use: "Scoped choreography — the live-time roll, the About copy rise, the photo deal, the page-end glow. Stays with its component." },
 ]
 
@@ -1302,8 +1303,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <strong>Hover cards share one entrance and exit.</strong>
                 <p>
                   In over <code>--duration-base</code> on <code>--ease-smooth</code>, out over{" "}
-                  <code>--duration-quick</code> on <code>--ease-exit</code>. Opacity and transform finish together;
-                  unmount only after the exit completes.
+                  <code>--duration-quick</code>: the transform accelerates away on <code>--ease-exit</code> while the
+                  fade decelerates on <code>--ease-standard</code>, so a dismissal registers on its first frame.
+                  Opacity and transform finish together; unmount only after the exit completes.
                 </p>
               </div>
 
@@ -1311,24 +1313,28 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <strong>Motion follows the axis of its control.</strong>
                 <p>
                   The gallery pages sideways because its arrows and swipe are sideways: cards travel{" "}
-                  <code>1.4rem</code> along X over <code>--duration-base</code>. Along the other axis, nothing moves.
+                  <code>0.5rem</code> along X, leaving over <code>--duration-quick</code> and settling over{" "}
+                  <code>--duration-base</code>. Along the other axis, nothing moves.
                 </p>
               </div>
 
-              <div className="ds-rule" data-ds-terms={terms("loading blur --blur-reveal 4px entrance skeleton")}>
-                <strong>Loads and entrances share one blur.</strong>
+              <div className="ds-rule" data-ds-terms={terms("loading blur --blur-reveal 4px --blur-swap 2px entrance swap skeleton")}>
+                <strong>Loads and entrances share one blur; swaps take half of it.</strong>
                 <p>
                   Media and entering text resolve from <code>--blur-reveal</code> to zero over{" "}
                   <code>--duration-slow</code> on <code>--ease-smooth</code>. Large dialogs use opacity and transform
-                  only. Empty work tiles show a breathing skeleton until their artwork decodes.
+                  only. Empty work tiles show a breathing skeleton until their artwork decodes. Things that change
+                  in place (a label, a number, an icon, a chat bubble) use <code>--blur-swap</code>: at 13–14px the
+                  reveal blur smears the glyphs.
                 </p>
               </div>
 
               <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load avatar stagger 60ms 12px groups")}>
                 <strong>The avatar arrives first, then the page.</strong>
                 <p>
-                  On a fresh visit the portrait resolves in place, then each homepage group rises 12px from the same
-                  blur, 60ms apart. Any input ends the intro at once; reduced motion skips it.
+                  On a fresh visit the portrait resolves in place, then the homepage rises 12px from the same blur in
+                  60ms steps, four at most, so the whole stagger stays under 300ms; every work group shares the last
+                  step. Any input ends the intro at once; reduced motion skips it.
                 </p>
               </div>
 

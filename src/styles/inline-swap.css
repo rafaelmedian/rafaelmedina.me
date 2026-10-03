@@ -39,7 +39,7 @@
 @keyframes inline-swap-exit {
   to {
     transform: translateY(calc(var(--inline-swap-direction) * -0.25rem));
-    filter: blur(var(--blur-reveal));
+    filter: blur(var(--blur-swap));
     opacity: 0;
   }
 }
@@ -47,7 +47,7 @@
 @keyframes inline-swap-enter {
   from {
     transform: translateY(calc(var(--inline-swap-direction) * 0.25rem));
-    filter: blur(var(--blur-reveal));
+    filter: blur(var(--blur-swap));
     opacity: 0;
   }
 }

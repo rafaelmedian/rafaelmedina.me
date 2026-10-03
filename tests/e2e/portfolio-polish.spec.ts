@@ -3955,7 +3955,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
 })
 
 // The toolbar is the card's sibling rather than its first child, so the
-// between-previews switch -- 1.4rem of travel and a fade to nothing -- must not
+// between-previews switch -- 0.5rem of travel and a fade to nothing -- must not
 // reach it. Nested back inside the card, every press slid the control that was
 // pressed out from under the thumb and took the close with it.
 test("holds the compact toolbar still while the gallery pages", async ({ page }) => {
@@ -4616,22 +4616,22 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
       return seen
     }, navSelector)
 
-  // 1.4rem of travel each way; assert well inside it. The outgoing pose leaves
+  // 0.5rem (8px) of travel each way; assert well inside it. The outgoing pose leaves
   // in the arrow's direction, the incoming one arrives from the opposite edge
   // and settles at zero, and nothing moves on Y.
   const forward = await poses(".preview-gallery-rail .preview-gallery-nav-next")
-  expect(forward.find((pose) => pose.phase.endsWith("out-next"))?.to).toBeLessThan(-8)
-  expect(forward.find((pose) => pose.phase.endsWith("in-next"))?.to).toBeGreaterThan(8)
+  expect(forward.find((pose) => pose.phase.endsWith("out-next"))?.to).toBeLessThan(-4)
+  expect(forward.find((pose) => pose.phase.endsWith("in-next"))?.to).toBeGreaterThan(4)
   expect(forward.at(-1)).toMatchObject({ phase: "idle", to: 0 })
-  expect(forward.at(-1)!.from).toBeGreaterThan(8)
+  expect(forward.at(-1)!.from).toBeGreaterThan(4)
   expect(Math.max(...forward.map((pose) => pose.y))).toBeLessThan(0.5)
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   const back = await poses(".preview-gallery-rail .preview-gallery-nav-prev")
-  expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(8)
-  expect(back.find((pose) => pose.phase.endsWith("in-prev"))?.to).toBeLessThan(-8)
+  expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(4)
+  expect(back.find((pose) => pose.phase.endsWith("in-prev"))?.to).toBeLessThan(-4)
   expect(back.at(-1)).toMatchObject({ phase: "idle", to: 0 })
-  expect(back.at(-1)!.from).toBeLessThan(-8)
+  expect(back.at(-1)!.from).toBeLessThan(-4)
   expect(Math.max(...back.map((pose) => pose.y))).toBeLessThan(0.5)
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
 })
@@ -4820,17 +4820,34 @@ test("travels one role-bearing work-history popover between company triggers wit
   expect(onitPopoverBox!.y).toBeGreaterThan(onitTriggerBox!.y + onitTriggerBox!.height)
   expect(onitLocationBox!.y).toBeCloseTo(initialLocationBox!.y, 0)
 
+  // A switch is a glide, not a fresh open: the card travels on `translate` and
+  // only its content swaps. Record the motion as it starts rather than
+  // sampling it, since a 200ms settle can finish before a poll comes round.
+  await popover.evaluate((element) => {
+    const seen: { transitions: string[]; animations: string[] } = { transitions: [], animations: [] }
+    element.addEventListener("transitionrun", (event) => {
+      if (event.target === element) seen.transitions.push(event.propertyName)
+    })
+    element.addEventListener("animationstart", (event) => seen.animations.push(event.animationName))
+    ;(window as unknown as { workHistorySwitch: typeof seen }).workHistorySwitch = seen
+  })
   await page
     .locator(".mosaic-work-history")
     .getByRole("link", { name: "Moody's", exact: true })
     .hover()
   await expect(popover.locator(".mosaic-work-history-popover-name")).toHaveText("Moody's")
   await expect(popover.locator(".mosaic-work-history-popover-role")).toHaveText("Frontend dev and designer")
-  expect(
-    await popover.evaluate(
-      (element) => element.getAnimations({ subtree: true }).filter((animation) => animation.playState !== "finished").length,
-    ),
-  ).toBe(0)
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { workHistorySwitch: { animations: string[] } }).workHistorySwitch.animations))
+    .toEqual(["mosaic-work-history-popover-swap"])
+  const switchMotion = await page.evaluate(
+    () => (window as unknown as { workHistorySwitch: { transitions: string[] } }).workHistorySwitch,
+  )
+  expect(switchMotion.transitions).toContain("translate")
+  expect(switchMotion.transitions).not.toContain("opacity")
+  await popover.evaluate((element) =>
+    Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => undefined))),
+  )
   expect((await page.locator(".mosaic-work-history-popover").count())).toBe(1)
   expect((await popover.boundingBox())!.x).not.toBe(onitPopoverBox!.x)
   expect((await location.boundingBox())!.y).toBeCloseTo(initialLocationBox!.y, 0)
@@ -4892,13 +4909,14 @@ test("fades the work-history card out with the company still inside it", async (
   expect(exited.height).toBe(openHeight)
 
   // The 6px retreat and the fade run on one clock, so the movement is on
-  // screen rather than finishing after the card has already gone.
+  // screen rather than finishing after the card has already gone. The retreat
+  // accelerates away; the fade decelerates so it registers on the first frame.
   const exitMotion = await popover.evaluate((element) => {
     const style = getComputedStyle(element)
     return { duration: style.transitionDuration, ease: style.transitionTimingFunction }
   })
   expect(exitMotion.duration).toBe("0.16s, 0.16s, 0s")
-  expect(exitMotion.ease).toBe("cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1), linear")
+  expect(exitMotion.ease).toBe("cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.2, 0, 0, 1), linear")
 })
 
 test("opens the work-history popover from the keyboard and links each chip to its company", async ({

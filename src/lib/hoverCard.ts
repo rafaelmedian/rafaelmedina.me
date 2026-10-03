@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { RICH_CARD_OPEN_DELAY_MS } from "./hoverIntent"
 
-// Long enough that a pointer crossing the pill on its way elsewhere never
-// summons the card; short enough that a deliberate hover feels immediate.
-const OPEN_DELAY_MS = 260
 // Covers the diagonal trip from pill to card without the card blinking out.
 const CLOSE_DELAY_MS = 140
 
@@ -53,7 +51,7 @@ export function useHoverCard() {
     onPointerEnter: (event: React.PointerEvent<HTMLElement>) => {
       // Touch and pen taps go straight to the link; only a mouse hovers.
       if (event.pointerType !== "mouse") return
-      schedule(true, OPEN_DELAY_MS)
+      schedule(true, RICH_CARD_OPEN_DELAY_MS)
     },
     onPointerLeave: (event: React.PointerEvent<HTMLElement>) => {
       if (event.pointerType !== "mouse") return

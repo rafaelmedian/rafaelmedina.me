@@ -246,6 +246,7 @@
   background: none;
   color: #6b6b6b;
   cursor: pointer;
+  transition: color var(--duration-quick) var(--ease-standard);
 }
 
 .ds-filter-clear svg {

@@ -77,7 +77,18 @@
   --duration-quick: 160ms; /* most hover and state transitions */
   --duration-base: 200ms; /* larger surface moves */
   --duration-slow: 360ms; /* scrims, captions, big reveals */
+  /* transitions.dev (the repo's transitions-dev / transitions-polish skills
+     and the transitions-agent CLI) uses the same token names with different
+     values: its --duration-fast is 250ms, --duration-quick 150ms,
+     --duration-slow 400ms. Never import its _root.css, and never take a
+     suggested `var(--duration-*)` literally. Translate a recipe by what the
+     motion does: close, tooltip, text swap (150) -> --duration-quick;
+     dropdown/modal open, icon swap, page slide (250) -> --duration-base;
+     panel open/close, toast close (350-400) -> --duration-slow. Its
+     --ease-smooth-out maps to --ease-smooth for surfaces and --ease-standard
+     for in-place state. */
   --blur-reveal: 4px; /* load, preview entrance, switch, and exit */
+  --blur-swap: 2px; /* in-place swaps: labels, numbers, icons, chat bubbles */
   /* Stacking. The global ladder; Tailwind's z-dock/z-chrome map onto the
      same tokens. Component-internal stacking (0-5, and the map attribution's
      Leaflet-clearing 500) stays raw because it lives inside an isolated or

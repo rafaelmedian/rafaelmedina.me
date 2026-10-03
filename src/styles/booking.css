@@ -28,7 +28,6 @@
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
   pointer-events: none;
-  transition: padding-right var(--duration-slow) var(--ease-smooth);
   padding:
     max(10rem, calc(env(safe-area-inset-top) + 8rem))
     max(1.25rem, env(safe-area-inset-right))
@@ -50,10 +49,11 @@
   background: transparent;
   color: var(--ink);
   color-scheme: light;
-  transition:
-    opacity var(--duration-base) var(--ease-standard),
-    width var(--duration-slow) var(--ease-standard),
-    height var(--duration-slow) var(--ease-standard);
+  /* Size changes snap: below 900px the calendar takes the popup from 360px to
+     the full viewport, and tweening width and height re-laid out the whole
+     conversation and the embed every frame. The calendar stage carries the
+     motion instead (booking-calendar-enter, on transform and opacity). */
+  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .booking-popup[data-starting-style],
@@ -395,7 +395,9 @@
   top: max(1.25rem, env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
-  transition: transform var(--duration-slow) var(--ease-smooth);
+  /* Returning to centre runs on the panel's close clock; the split states
+     below lengthen it to the panel's open. See .booking-history. */
+  transition: transform var(--duration-base) var(--ease-smooth);
   flex: none;
   display: flex;
   align-items: center;
@@ -498,6 +500,13 @@ body:has(.booking-contact-panel) .booking-close {
   overscroll-behavior: contain;
   padding: 0.5rem 0.5rem 0.5rem;
   scrollbar-width: thin;
+  /* The desktop split (contact panel or calendar) slides the conversation a
+     quarter of the viewport left on `translate`, together with the identity
+     and the composer, rather than reflowing the column through the shell's
+     padding. It opens on the panel's --duration-slow and returns on its
+     --duration-base, so the two land together both ways. Translating the
+     section itself would make it the composer's containing block. */
+  transition: translate var(--duration-base) var(--ease-smooth);
 }
 
 .booking-bubble {
@@ -585,8 +594,8 @@ body:has(.booking-contact-panel) .booking-close {
   left: 50%;
   width: min(360px, calc(100% - 1.5rem));
   translate: -50% 0;
-  transition: left var(--duration-slow) var(--ease-smooth);
-  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) 680ms both;
+  transition: translate var(--duration-base) var(--ease-smooth);
+  animation: booking-bubble-enter var(--duration-slow) var(--ease-smooth) var(--booking-compose-delay, 680ms) both;
   flex: none;
   padding: 0.5rem;
 }
@@ -677,7 +686,9 @@ body:has(.booking-contact-panel) .booking-close {
 }
 
 .booking-popup button {
-  transition: opacity var(--duration-quick) var(--ease-standard);
+  transition:
+    opacity var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
 }
 
 .booking-popup button:disabled { opacity: 0.45; cursor: default; }
@@ -750,6 +761,7 @@ body:has(.booking-contact-panel) .booking-close {
   overflow: hidden;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  animation: booking-calendar-enter var(--duration-slow) var(--ease-smooth) both;
 }
 
 .booking-conversation[hidden],
@@ -787,7 +799,7 @@ body:has(.booking-contact-panel) .booking-close {
   from {
     opacity: 0;
     transform: translateY(8px) scale(0.98);
-    filter: blur(2px);
+    filter: blur(var(--blur-swap));
   }
 
   to {
@@ -840,7 +852,10 @@ body:has(.booking-contact-panel) .booking-close {
   transform: translateX(calc(100% + 1.5rem));
 }
 
-.booking-contact-panel[data-ending-style] { transition-duration: var(--duration-quick); }
+/* The panel travels ~380px, so it closes on --duration-base rather than the
+   quick overlay exit: in 160ms it was gone before the conversation had moved
+   halfway back. */
+.booking-contact-panel[data-ending-style] { transition-duration: var(--duration-base); }
 
 .booking-contact-back {
   position: absolute;
@@ -900,9 +915,6 @@ body:has(.booking-contact-panel) .booking-close {
 @media (min-width: 900px) {
   .booking-contact-panel { width: calc(50% - 1.5rem); }
   .booking-shell:has(.booking-name-tag[aria-expanded="true"]) .booking-identity { transform: translateX(calc(-50% - 25vw)); }
-  .booking-shell:has(.booking-name-tag[aria-expanded="true"]) {
-    padding-right: calc(50% + 1.25rem);
-  }
 }
 
 .booking-contact-panel a:hover { background: var(--mosaic-card-surface); }
@@ -927,9 +939,6 @@ body:has(.booking-contact-panel) .booking-close {
 
 /* Scheduling shares the desktop split layout with contact details. */
 @media (min-width: 900px) {
-  .booking-shell:has(.booking-popup[data-calendar="true"]) {
-    padding-right: calc(50% + 1.25rem);
-  }
   .booking-popup[data-calendar="true"] {
     width: min(360px, 100%);
     height: auto;
@@ -944,7 +953,6 @@ body:has(.booking-contact-panel) .booking-close {
     padding-top: 4rem;
     background: #fafafa;
     box-shadow: none;
-    animation: booking-calendar-enter var(--duration-slow) var(--ease-smooth) both;
   }
   .booking-calendar-stage .booking-frame { --booking-frame-gutter: 12px; }
   .booking-popup[data-calendar="true"] :is(.booking-close, .booking-back) { z-index: 1; }
@@ -965,8 +973,14 @@ body:has(.booking-contact-panel) .booking-close {
 }
 
 @media (min-width: 900px) {
+  .booking-shell:has(.booking-name-tag[aria-expanded="true"]) :is(.booking-identity, .booking-history, .booking-compose-area),
+  .booking-popup[data-calendar="true"] :is(.booking-identity, .booking-history, .booking-compose-area) {
+    transition-duration: var(--duration-slow);
+  }
+  .booking-shell:has(.booking-name-tag[aria-expanded="true"]) .booking-history,
+  .booking-popup[data-calendar="true"] .booking-history { translate: -25vw 0; }
   .booking-shell:has(.booking-name-tag[aria-expanded="true"]) .booking-compose-area,
-  .booking-popup[data-calendar="true"] .booking-compose-area { left: 25%; }
+  .booking-popup[data-calendar="true"] .booking-compose-area { translate: calc(-50% - 25vw) 0; }
 }
 
 .booking-time-button svg { color: var(--muted-soft); opacity: 0.6; }

@@ -64,10 +64,11 @@
   /* Exit. Transform used to run --duration-base while opacity and visibility
      ran --duration-quick, so the card was hidden 40ms before it stopped
      moving -- the clipped-animation bug .mosaic-hover-card documents. One
-     duration across all three, on the exit curve. Enter lives on .is-open. */
+     duration across all three; the travel on the exit curve, the fade on the
+     house curve so it starts on the first frame. Enter lives on .is-open. */
   transition:
     transform var(--duration-quick) var(--ease-exit),
-    opacity var(--duration-quick) var(--ease-exit),
+    opacity var(--duration-quick) var(--ease-standard),
     visibility var(--duration-quick) linear;
 }
 
@@ -216,6 +217,7 @@
   font-size: var(--text-xs);
   line-height: 1.1;
   text-decoration: none;
+  transition: color var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-local-time-map-attribution:hover,

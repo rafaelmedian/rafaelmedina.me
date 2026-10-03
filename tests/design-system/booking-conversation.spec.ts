@@ -18,11 +18,14 @@ for (const width of [390, 1440]) {
     await expect(dialog.locator('iframe')).toHaveAttribute('src', /theme=light/)
     if (width >= 900) {
       await expect(dialog.getByRole('textbox', { name: 'Your message' })).toBeVisible()
-      // The iframe mounts before the grid has placed the conversation beside it.
+      // The history is what travels: the split translates it, the identity and
+      // the composer a quarter of the viewport left rather than reflowing the
+      // popup, so the popup's own box stays centred. The iframe also mounts
+      // before the translate has landed.
       await expect.poll(async () => {
-        const conversation = await dialog.locator('.booking-conversation').boundingBox()
+        const history = await dialog.locator('.booking-history').boundingBox()
         const calendar = await dialog.locator('.booking-calendar-stage').boundingBox()
-        return conversation!.x + conversation!.width - calendar!.x
+        return history!.x + history!.width - calendar!.x
       }).toBeLessThan(0)
       const calendar = await dialog.locator('.booking-calendar-stage').boundingBox()
       expect(calendar!.x).toBeGreaterThanOrEqual(width / 2)
@@ -179,9 +182,11 @@ for (const width of [390, 1542]) {
     expect(bounds!.x).toBeGreaterThanOrEqual(0)
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
     if (width >= 900) {
+      // The popup's box stays centred; the history, the identity and the
+      // composer are what translate into the left half.
       await expect.poll(async () => {
-        const chatBounds = await chat.boundingBox()
-        return chatBounds!.x + chatBounds!.width / 2
+        const historyBounds = await chat.locator('.booking-history').boundingBox()
+        return historyBounds!.x + historyBounds!.width / 2
       }).toBeCloseTo(width / 4, 0)
       expect(bounds!.width).toBeCloseTo(width / 2 - 24, 0)
       await expect.poll(async () => {
@@ -259,7 +264,9 @@ test('replays saved email and delivered messages in conversation order', async (
   await expect(chat).toBeVisible()
   const entries = chat.locator('.booking-history > *')
   expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).animationDelay)))
-    .toEqual(['0.2s', '0.36s', '0.52s', '0.68s', '0.84s', '1s', '1.16s'])
+    // The three greetings keep their 160ms beat; everything saved after them
+    // replays on a 40ms step, so a full history lands in 200ms not 800ms.
+    .toEqual(['0.2s', '0.36s', '0.52s', '0.56s', '0.6s', '0.64s', '0.68s'])
   const receipt = chat.locator('.booking-delivery').last()
   await receipt.evaluate(node => {
     const animation = node.getAnimations()[0]

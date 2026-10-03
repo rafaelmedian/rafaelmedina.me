@@ -278,9 +278,11 @@
   pointer-events: none;
   /* Exit: opacity and transform share a duration so the card never finishes
      fading while it is still moving (or vice versa) — either mismatch reads as
-     a clipped animation. */
+     a clipped animation. The travel accelerates away on --ease-exit; the fade
+     decelerates so the dismissal registers on its first frame instead of
+     looking untouched for the first ~50ms. */
   transition:
-    opacity var(--duration-quick) var(--ease-exit),
+    opacity var(--duration-quick) var(--ease-standard),
     transform var(--duration-quick) var(--ease-exit);
 }
 

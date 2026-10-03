@@ -259,7 +259,7 @@
 }
 
 .mosaic-quote-profile-popup[data-ending-style] {
-  transition: opacity var(--duration-quick) var(--ease-exit), transform var(--duration-quick) var(--ease-exit);
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-exit);
 }
 
 .mosaic-quote-profile-popup .mosaic-x-card {
