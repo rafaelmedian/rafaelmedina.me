@@ -138,7 +138,13 @@ export type OriginTravelOptions = {
   closeDurationProperty: string
   /** Raised for the length of a flight, for clipping and compositing hints. */
   onFlight?: (flying: boolean) => void
+  /** The element whose CSS opacity fade the open flight starts with. */
+  getFadeNode?: () => Element | null
 }
+
+// Long enough for Base UI to lift `data-starting-style` and the fade to begin
+// on a 30fps frame, short enough that a surface with no fade still moves.
+const fadeWaitMs = 150
 
 /**
  * Runs the flight on demand. The caller decides when a surface opens and closes
@@ -148,6 +154,7 @@ export type OriginTravelOptions = {
 export function useOriginTravel(options: OriginTravelOptions) {
   const inputs = useRef(options)
   const animations = useRef<Animation[]>([])
+  const pendingStart = useRef<(() => void) | null>(null)
 
   // A layout effect, so a click that re-aims the flight and opens in the same
   // commit animates from the new anchor.
@@ -156,13 +163,15 @@ export function useOriginTravel(options: OriginTravelOptions) {
   })
 
   const cancel = useCallback(() => {
+    pendingStart.current?.()
+    pendingStart.current = null
     for (const animation of animations.current) animation.cancel()
     animations.current = []
     inputs.current.onFlight?.(false)
   }, [])
 
   const run = useCallback((mode: "open" | "close") => {
-    const { node, getOriginRect, enabled, onFlight, openDurationProperty, closeDurationProperty } =
+    const { node, getOriginRect, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode } =
       inputs.current
     if (!node || !enabled) return
     if (typeof node.animate !== "function") return
@@ -186,6 +195,45 @@ export function useOriginTravel(options: OriginTravelOptions) {
     })
     animations.current = [flight]
     onFlight?.(true)
+
+    // The open is created here, in the commit that mounts the dialog, but the
+    // popup's fade only begins once Base UI lifts `data-starting-style`, a
+    // frame or two later. Left to run, the flight led the fade by a frame, and
+    // over the home grid that frame is 33ms (the tile videos pace the page at
+    // 30fps): 19 of its 44px went by under a popup still at opacity 0, so the
+    // visible motion was a fade-in with a twitch at the end. Held at its first
+    // keyframe, it takes the fade's own start time instead, and the two run as
+    // one. It is created now rather than then, so anything waiting on
+    // `getAnimations()` still finds it.
+    const fadeNode = mode === "open" ? getFadeNode?.() : null
+    if (fadeNode) {
+      flight.pause()
+      const start = () => {
+        release()
+        if (flight.playState === "paused") flight.play()
+      }
+      const onFadeRun = (event: Event) => {
+        if (event.target !== fadeNode || (event as TransitionEvent).propertyName !== "opacity") return
+        const fade = fadeNode.getAnimations().find((animation) => (
+          animation instanceof CSSTransition && animation.transitionProperty === "opacity"
+        ))
+        if (!fade) return start()
+        release()
+        void fade.ready.then(() => {
+          if (flight.playState !== "paused") return
+          if (fade.startTime === null) flight.play()
+          else flight.startTime = fade.startTime
+        }, () => undefined)
+      }
+      const timeout = window.setTimeout(start, fadeWaitMs)
+      const release = () => {
+        window.clearTimeout(timeout)
+        fadeNode.removeEventListener("transitionrun", onFadeRun)
+        pendingStart.current = null
+      }
+      fadeNode.addEventListener("transitionrun", onFadeRun)
+      pendingStart.current = release
+    }
 
     // Only the open path lowers the flag on finish. On close the transform is
     // held by `fill: forwards` until the popup unmounts, so releasing early

@@ -355,6 +355,7 @@ export function PreviewGalleryDialog({
     openDurationProperty: "--pg-open-ms",
     closeDurationProperty: "--pg-close-ms",
     onFlight: flagOriginAnimating,
+    getFadeNode: () => popupRef.current,
   })
 
   const attachOriginWrap = useCallback((node: HTMLDivElement | null) => {
