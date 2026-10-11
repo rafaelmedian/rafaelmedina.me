@@ -144,6 +144,14 @@ export function PreviewGalleryDialog({
     if (!open) setHasPresented(false)
     else if (originWrapNode) setHasPresented(true)
   }, [open, originWrapNode])
+  // The feed mounts this component on a visit's first open, already open, and
+  // Base UI only plays an entrance for a dialog that opens after it mounted:
+  // that first preview skipped `data-starting-style` and presented its first
+  // frame at full opacity, backdrop and all, with the flight under a popup
+  // that had never faded. Every later open faded in. Mounted closed and opened
+  // in the same pre-paint pass, the first open gets the same entrance.
+  const [rootMounted, setRootMounted] = useState(false)
+  useIsomorphicLayoutEffect(() => setRootMounted(true), [])
   const [switchPhase, setSwitchPhase] = useState<PreviewSwitchPhase>("idle")
   const [switchDirection, setSwitchDirection] = useState<PreviewSwitchDirection>("next")
   const [isWide, setIsWide] = useState(shouldOpenPreviewWide)
@@ -530,7 +538,7 @@ export function PreviewGalleryDialog({
   const prevKeyshortcuts = isReaderSlide ? "ArrowLeft" : "ArrowUp ArrowLeft"
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
   return (
-    <Dialog.Root open={present && !leavingNote} onOpenChange={handleOpenChange}
+    <Dialog.Root open={rootMounted && present && !leavingNote} onOpenChange={handleOpenChange}
       onOpenChangeComplete={(isOpen) => { if (!isOpen) setLeavingNote(null) }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
