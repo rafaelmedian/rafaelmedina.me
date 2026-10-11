@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test"
+import { personalPhotoItems } from "../../src/data/personalPhotos"
 
 for (const width of [1440, 390]) {
   test(`the wall returns a selected photo before Escape closes it at ${width}px`, async ({ page }) => {
@@ -243,7 +244,7 @@ test("Wall arrows start at the nearest photo and wrap the collection", async ({ 
   const plane = wall.locator(".personal-photos-masonry")
   let previousX = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
   const tileCount = await wall.locator(".personal-photos-slide").count()
-  for (let i = 0; i < 54; i++) {
+  for (let i = 0; i < personalPhotoItems.length * 2; i++) {
     await page.keyboard.press("ArrowRight")
     await expect.poll(async () => {
       const box = (await main.boundingBox())!
@@ -253,7 +254,7 @@ test("Wall arrows start at the nearest photo and wrap the collection", async ({ 
     expect(x).toBeLessThan(previousX)
     previousX = x
   }
-  for (let i = 0; i < 27; i++) {
+  for (let i = 0; i < personalPhotoItems.length; i++) {
     await page.keyboard.press("ArrowLeft")
     const x = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
     expect(x).toBeGreaterThan(previousX)
@@ -281,8 +282,11 @@ for (const width of [1440, 390]) {
     const columnX = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
     let previousY = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-y")))
     const count = await wall.locator(".personal-photos-slide").count()
+    // The wall deals photos into five columns, so a full lap of office's
+    // column is every fifth photo.
+    const columnLength = Math.ceil(personalPhotoItems.length / 5)
     for (const key of ["ArrowDown", "ArrowUp"]) {
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < columnLength; i++) {
         await page.keyboard.press(key)
         await expect(main).toHaveCount(1)
         const y = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-y")))
