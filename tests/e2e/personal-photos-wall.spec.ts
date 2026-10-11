@@ -224,6 +224,8 @@ for (const width of [1440, 390]) {
 
 
 test("Wall arrows start at the nearest photo and wrap the collection", async ({ page }) => {
+  // Three laps of the collection, each press waiting for the camera to land.
+  test.setTimeout(30_000 + personalPhotoItems.length * 3 * 400)
   await page.setViewportSize({ width: 390, height: 900 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
