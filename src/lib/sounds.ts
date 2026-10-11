@@ -1,4 +1,44 @@
-import type { SoundDefinition } from "@web-kits/audio"
+import { useCallback } from "react"
+import { ensureReady, type SoundDefinition } from "@web-kits/audio"
+import { useSound } from "@web-kits/audio/react"
+
+// Building the shared AudioContext is not free: Chrome opens the output device
+// synchronously, 166-750ms on an M4 Max. The first sound of a visit is the
+// gallery's open "tock", played from the click that opens it, so that cost
+// landed in the frame that mounts the dialog and the first preview of a visit
+// appeared already settled, its entrance spent under a stalled main thread.
+//
+// There is no free moment before that click to pay it in: the context may only
+// be built after a user activation (before one, Chrome leaves it suspended and
+// logs a warning), and a visitor's first activation is usually that very
+// press. Even a hover warm-up lands there, since the tiles prefetch on the
+// pointerdown too. So the cold open goes silent, and the context is built in
+// idle time once its entrance has settled. Every sound after that plays at once.
+let audioWarm = false
+
+/** Whether a sound can play now without building the AudioContext first. */
+export const isAudioWarm = () => audioWarm
+
+export function warmAudioWhenIdle() {
+  if (audioWarm || typeof window === "undefined" || typeof AudioContext === "undefined") return
+  if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return
+  // Reduced motion mutes every sound here (useSound checks), so nothing to warm.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+
+  audioWarm = true
+  const build = () => void ensureReady().catch(() => undefined)
+  if ("requestIdleCallback" in window) window.requestIdleCallback(build, { timeout: 1000 })
+  else globalThis.setTimeout(build, 0)
+}
+
+/** `useSound`, noting that any sound it plays has built the context. */
+export function useWarmingSound(definition: SoundDefinition, options: { volume: number }) {
+  const play = useSound(definition, options)
+  return useCallback(() => {
+    audioWarm = true
+    return play()
+  }, [play])
+}
 
 // A soft, close "tock" rather than a rising flourish: a brief filtered
 // transient for the snap, then a short low body that lands almost immediately.

@@ -1,5 +1,4 @@
 import { Dialog } from "@base-ui/react/dialog"
-import { useSound } from "@web-kits/audio/react"
 import { ChevronRight, ChevronLeft, X } from "./NavigationIcons"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
@@ -20,7 +19,7 @@ import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
 import type { WritingsReaderStatus } from "./WritingsFolder"
-import { backSound, closeSound, nextSound, openSound } from "../lib/sounds"
+import { backSound, closeSound, isAudioWarm, nextSound, openSound, useWarmingSound, warmAudioWhenIdle } from "../lib/sounds"
 
 type PreviewGalleryDialogProps = {
   items: GalleryItem[]
@@ -278,10 +277,10 @@ export function PreviewGalleryDialog({
     }
   }, [activeCard, isWide, open, originWrapNode])
 
-  const playOpen = useSound(openSound, { volume: 0.3 })
-  const playClose = useSound(closeSound, { volume: 0.26 })
-  const playNext = useSound(nextSound, { volume: 0.26 })
-  const playBack = useSound(backSound, { volume: 0.26 })
+  const playOpen = useWarmingSound(openSound, { volume: 0.3 })
+  const playClose = useWarmingSound(closeSound, { volume: 0.26 })
+  const playNext = useWarmingSound(nextSound, { volume: 0.26 })
+  const playBack = useWarmingSound(backSound, { volume: 0.26 })
 
   // Large desktop previews use the available canvas immediately. Set this in
   // a layout effect so the portal reaches its opening-animation measurement in
@@ -296,7 +295,8 @@ export function PreviewGalleryDialog({
       window.clearTimeout(closeResetTimeoutRef.current)
       closeResetTimeoutRef.current = null
     }
-    if (open && !prevOpenRef.current) playOpen()
+    // Silent until the context exists: building it here stalls the entrance.
+    if (open && !prevOpenRef.current && isAudioWarm()) playOpen()
     prevOpenRef.current = open
   }, [open, playOpen])
 
@@ -540,7 +540,7 @@ export function PreviewGalleryDialog({
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
   return (
     <Dialog.Root open={rootMounted && present && !leavingNote} onOpenChange={handleOpenChange}
-      onOpenChangeComplete={(isOpen) => { if (!isOpen) setLeavingNote(null) }}>
+      onOpenChangeComplete={(isOpen) => { if (isOpen) warmAudioWhenIdle(); else setLeavingNote(null) }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
 
