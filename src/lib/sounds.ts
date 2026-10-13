@@ -14,19 +14,24 @@ import { useSound } from "@web-kits/audio/react"
 // press. Even a hover warm-up lands there, since the tiles prefetch on the
 // pointerdown too. So the cold open goes silent, and the context is built in
 // idle time once its entrance has settled. Every sound after that plays at once.
+// Two flags, not one: idle time can be a whole second away under load, and in
+// between a close or a second open would read a warm context that does not
+// exist yet and pay the build in the frame this is all here to keep clear.
 let audioWarm = false
+let warmScheduled = false
 
 /** Whether a sound can play now without building the AudioContext first. */
 export const isAudioWarm = () => audioWarm
 
 export function warmAudioWhenIdle() {
-  if (audioWarm || typeof window === "undefined" || typeof AudioContext === "undefined") return
+  if (audioWarm || warmScheduled || typeof window === "undefined" || typeof AudioContext === "undefined") return
   if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return
   // Reduced motion mutes every sound here (useSound checks), so nothing to warm.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
 
-  audioWarm = true
-  const build = () => void ensureReady().catch(() => undefined)
+  warmScheduled = true
+  // A failed build leaves both flags as they were, so the next open tries again.
+  const build = () => void ensureReady().then(() => { audioWarm = true }, () => { warmScheduled = false })
   if ("requestIdleCallback" in window) window.requestIdleCallback(build, { timeout: 1000 })
   else globalThis.setTimeout(build, 0)
 }
