@@ -3,6 +3,7 @@ import type { OpenPhoto } from "./PersonalPhotosPreview"
 import { X } from "./NavigationIcons"
 import { ChevronDown } from "lucide-react"
 import { PhotoWallControls } from "./PhotoWallControls"
+import { PhotoWallZoomHint } from "./PhotoWallZoomHint"
 import { Dialog } from "@base-ui/react/dialog"
 import { Fragment, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
@@ -525,6 +526,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
             <X size={16} strokeWidth={1.75} aria-hidden="true" />
             <span className="personal-photos-wall-close-label">Close</span>
           </Dialog.Close>}
+          {layout === "wall" && open && <PhotoWallZoomHint stage={sheetNode} />}
           {/* On the globe the stage takes every press: a drag anywhere turns
               it, a click on a photo brings it to the front, and only a click
               on the margin around the globe closes. */}
