@@ -25,12 +25,14 @@
   display: block;
   container-type: inline-size;
   width: min(64%, 15rem);
-  aspect-ratio: 237 / 280;
+  /* The comp's sheet is 237x280; cut to 250 high so the card sits squatter in
+     its tile. */
+  aspect-ratio: 237 / 250;
   overflow: hidden;
-  /* 40px corners on the 237x280 comp, up from its 24px. Percent radii resolve
+  /* 40px corners on the 237x250 sheet, up from its 24px. Percent radii resolve
      against width and height separately, so the slash form keeps them circular;
      cqw cannot be used here because the paper is the container itself. */
-  border-radius: 16.878% / 14.286%;
+  border-radius: 16.878% / 16%;
   filter: drop-shadow(0 4px 21px rgb(0 0 0 / 0.06)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.05));
   transition: transform var(--duration-base) var(--ease-smooth);
 }
@@ -69,7 +71,7 @@
    current job and the page still reads as one that carries on. */
 .resume-tile-copy {
   position: absolute;
-  inset: 11.6% 10.5% 0 10.1%;
+  inset: 13% 10.5% 0 10.1%;
   display: flex;
   flex-direction: column;
   gap: 1em;
