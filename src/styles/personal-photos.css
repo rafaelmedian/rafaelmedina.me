@@ -825,8 +825,9 @@
   --wall-release-duration: var(--duration-base);
   --wall-watch-shrink: 0;
   --wall-watch-power: 1.35;
+  /* Flat by default. The curved WebGL surface stays for the dev tuner. */
   --wall-bend: 0;
-  --wall-rim: 0.46;
+  --wall-rim: 0;
   --wall-gap: 0.5rem;
   /* The backdrop owns the white canvas. A second surface here would cover
      borrowed flights, which travel below the popup and above the backdrop. */
@@ -1110,13 +1111,82 @@
   position: static;
   translate: none;
 }
+
+/* The first-open zoom hint: Streamline's zoom gesture pair, bare in the
+   bottom-right corner, clear of the centred Close pill. Each loop plays the
+   gesture through: the hand touches down, its arrows travel (closing on the
+   pinch, parting on the spread), and the hand lifts away. One drop-shadow on
+   the group keeps it legible over light and dark photos alike. It arrives
+   once the open flight has landed and never takes a press. */
+.personal-photos-zoom-hint {
+  position: absolute;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 0.125rem;
+  color: var(--canvas);
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.35));
+  pointer-events: none;
+  animation: personal-photos-zoom-hint-in var(--duration-slow) var(--ease-smooth) 600ms backwards;
+  transition: opacity var(--duration-base) var(--ease-exit), translate var(--duration-base) var(--ease-exit);
+}
+.personal-photos-zoom-hint[data-leaving] { opacity: 0; translate: 0 0.5rem; }
+.personal-photos-zoom-hint p {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.25;
+}
+.personal-photos-zoom-hint-hands { display: flex; gap: 0.25rem; }
+.personal-photos-zoom-hint-hand {
+  overflow: visible;
+  transform-origin: 70% 80%;
+  animation: personal-photos-zoom-hint-touch 2s var(--ease-standard) 600ms infinite backwards;
+}
+.personal-photos-zoom-hint-arrow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: personal-photos-zoom-hint-travel 2s cubic-bezier(0.65, 0, 0.35, 1) 600ms infinite backwards;
+}
+/* Pinch: the arrows close on each other. Spread: the heads part and the
+   shaft between them stretches (its stroke does not scale with it). */
+.personal-photos-zoom-hint-hand[data-direction="in"] [data-arrow="down"] { --arrow-from: translate(0, -0.7px); --arrow-to: translate(0, 0.35px); }
+.personal-photos-zoom-hint-hand[data-direction="in"] [data-arrow="up"] { --arrow-from: translate(0, 0.7px); --arrow-to: translate(0, -0.35px); }
+.personal-photos-zoom-hint-hand[data-direction="out"] [data-arrow="up"] { --arrow-from: translate(0, 3px); --arrow-to: translate(0, -2.5px); }
+.personal-photos-zoom-hint-hand[data-direction="out"] [data-arrow="down"] { --arrow-from: translate(0, -3px); --arrow-to: translate(0, 2.5px); }
+.personal-photos-zoom-hint-hand[data-direction="out"] [data-arrow="shaft"] { --arrow-from: scale(1, 0.65); --arrow-to: scale(1, 1.3); }
+@keyframes personal-photos-zoom-hint-in {
+  from { opacity: 0; translate: 0 0.5rem; }
+}
+/* Hover in from above the glass, press down, hold, lift away. */
+@keyframes personal-photos-zoom-hint-touch {
+  0% { opacity: 0; scale: 1.12; }
+  12% { opacity: 1; scale: 1; }
+  16% { scale: 0.94; }
+  70% { opacity: 1; scale: 0.94; }
+  86%, 100% { opacity: 0; scale: 1.1; }
+}
+@keyframes personal-photos-zoom-hint-travel {
+  0%, 18% { opacity: 0; transform: var(--arrow-from); }
+  26% { opacity: 1; }
+  64%, 100% { opacity: 1; transform: var(--arrow-to); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* A still picture: the hint simply appears and leaves. */
+  .personal-photos-zoom-hint,
+  .personal-photos-zoom-hint-hand,
+  .personal-photos-zoom-hint-arrow { animation: none; }
+}
 .personal-photo-details-chevron {
   flex: 0 0 auto;
   transition: rotate var(--duration-fast) var(--ease-smooth);
 }
 .personal-photo-book[aria-expanded="true"] .personal-photo-details-chevron { rotate: 180deg; }
 
-/* Watch retains its independent scale treatment. The default curved surface
+/* Watch retains its independent scale treatment. The optional curved surface
    bends the complete composition in one render pass below. */
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span {
   display: block;

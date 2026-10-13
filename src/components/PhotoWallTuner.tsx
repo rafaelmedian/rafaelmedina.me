@@ -6,7 +6,7 @@ import "dialkit/styles.css"
 export default function PhotoWallTuner() {
   const values = useDialKit("Photo wall motion", {
     style: { type: "select", options: [{ value: "plate", label: "Curved surface" }, { value: "watch", label: "Watch" }], default: "plate" },
-    enabled: true,
+    enabled: false,
     bend: [0, 0, 1, 0.01],
     rim: [0.13, 0, 1, 0.01],
     gap: [8, 8, 64, 1],

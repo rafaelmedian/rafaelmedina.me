@@ -252,12 +252,6 @@
     bottom: auto;
   }
 
-  .about-intro-dock[data-intro-visible="true"][data-toc-open="true"] .mosaic-mobile-toc-surface {
-    left: auto;
-    bottom: auto;
-    max-width: calc(100vw - 24px);
-  }
-
   .about-intro {
     --intro-size: 64px;
     right: 12px;

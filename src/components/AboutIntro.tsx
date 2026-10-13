@@ -223,9 +223,12 @@ export default function AboutIntro({ media, portrait, visible, mobileMessages = 
           {media && animateTeaser && !teaserIsGif && <video ref={teaserRef} className="about-intro-teaser" src={media.assets.teaser}
             muted loop playsInline preload="metadata" aria-hidden="true" />}
           {(variant === "b" || media) && <button ref={portraitRef} type="button" className="about-intro-portrait-trigger"
-            aria-label={variant === "b" && mobileMessages ? `Open ${messageCount ? messageLabel : "messages"} from Rafa` : "Show introduction actions"}
+            aria-label={variant === "b" && mobileMessages
+              ? chatExpanded ? "Close messages from Rafa" : `Open ${messageCount ? messageLabel : "messages"} from Rafa`
+              : "Show introduction actions"}
             aria-expanded={variant === "b" ? chatExpanded : actionsOpen} aria-controls={variant === "b" ? `${id}-chat` : `${id}-actions`}
-            onClick={variant === "b" ? openChat : () => setActionsOpen(true)} />}
+            // The face toggles the chat: a second press puts it away again.
+            onClick={variant === "b" ? () => chatExpanded ? closeChat() : openChat() : () => setActionsOpen(true)} />}
         </div>
         {collapsedMessageCount > 0 && <span className="about-intro-chat-notification" aria-hidden="true">
           {notificationTransition.leaving && <span className="about-intro-chat-notification-ghost">{notificationTransition.leaving}</span>}

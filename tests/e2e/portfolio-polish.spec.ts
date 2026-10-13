@@ -1708,307 +1708,66 @@ test("uses the body type step at the narrowest visible local-time width", async 
   await expect(page.locator(".mosaic-social-time")).toHaveCSS("font-size", "14px")
 })
 
-for (const width of [390, 1440]) {
-  test(`TOC appears after a short scroll and hides again at the top at ${width}px`, async ({ page }) => {
+for (const width of [320, 390, 768, 1440]) {
+  test(`TOC keeps three labels visible and tracks navigation at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const toc = page.locator(".mosaic-mobile-toc")
-    const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+    const nav = page.getByRole("navigation", { name: "Table of contents" })
     await expect(toc).toBeHidden()
     await expect(toc).toHaveAttribute("inert", "")
-    await expect(trigger).toHaveCount(0)
-    await page.evaluate(() => window.scrollTo(0, 48))
-    await expect(toc).toBeHidden()
     await page.evaluate(() => window.scrollTo(0, 160))
-    await expect(trigger).toBeVisible()
-    await trigger.click()
-    await expect(trigger).toHaveAttribute("aria-expanded", "true")
-    await page.evaluate(() => window.scrollTo(0, 0))
-    await expect(toc).toBeHidden()
-    await expect(toc).toHaveAttribute("data-open", "false")
-    await expect(trigger).toHaveCount(0)
-    await page.evaluate(() => window.scrollTo(0, 160))
-    await expect(trigger).toHaveAttribute("aria-expanded", "false")
-    await page.goto("/#about-panel")
-    await expect(trigger).toBeVisible()
-    await expect(trigger).toHaveText("About")
-  })
-}
-
-test("keeps the mobile table of contents centered with comfortable targets", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, 160))
-  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
-  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
-  const before = await trigger.boundingBox()
-  expect(before!.y).toBeGreaterThan(mobileViewport.height - 110)
-  expect(before!.x + before!.width / 2).toBeCloseTo(mobileViewport.width / 2, 0)
-  expect(before!.width).toBeLessThan(220)
-  await trigger.click()
-  const contents = page.getByRole("navigation", { name: "Table of contents" })
-  await expect(contents.getByRole("link")).toHaveCount(2)
-  for (const link of await contents.getByRole("link").all()) {
-    const box = await link.boundingBox()
-    expect(box!.height).toBeGreaterThanOrEqual(44)
-  }
-  await page.keyboard.press("Escape")
-  await expect(contents.getByRole("link")).toHaveCount(0)
-  await expect(trigger).toHaveAttribute("aria-expanded", "false")
-  await page.evaluate(() => window.scrollTo(0, 600))
-  await expect.poll(async () => (await trigger.boundingBox())!.y).toBeCloseTo(before!.y, 0)
-})
-
-test("the TOC resizes one surface smoothly around its fixed bottom edge", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.emulateMedia({ reducedMotion: "no-preference" })
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, 160))
-  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
-  const surface = page.locator(".mosaic-mobile-toc-surface")
-  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
-  await expect.poll(() => page.locator(".mosaic-mobile-toc").evaluate((el) => el.style.getPropertyValue("--toc-compact-width"))).not.toBe("")
-  const frames = await surface.evaluate(async (element) => {
-    const samples: Array<{ width: number; height: number; bottom: number }> = []
-    const capture = () => {
-      const { width, height, bottom } = element.getBoundingClientRect()
-      samples.push({ width, height, bottom })
+    await expect(nav).toBeVisible()
+    await expect(nav.getByRole("link")).toHaveText(["Work", "About", "Services"])
+    const before = (await nav.boundingBox())!
+    expect(before.x + before.width / 2).toBeCloseTo(width / 2, 0)
+    const links = nav.getByRole("link")
+    for (const link of await links.all()) {
+      await expect(link).toBeVisible()
+      const box = (await link.boundingBox())!
+      expect(box.width).toBeGreaterThanOrEqual(44)
+      expect(box.height).toBeGreaterThanOrEqual(44)
+      // The 44px target reaches into the surface's padding, so it starts
+      // at the pill's top edge.
+      expect(box.y).toBeCloseTo(before.y, 0)
     }
-    capture()
-    element.querySelector("button")!.click()
-    const start = performance.now()
-    while (performance.now() - start < 450) {
-      await new Promise(requestAnimationFrame)
-      capture()
+    for (const [name, index] of [["About", 1], ["Services", 2], ["Work", 0]] as const) {
+      await nav.getByRole("link", { name, exact: true }).click()
+      await expect(nav.getByRole("link", { name, exact: true })).toHaveAttribute("aria-current", "location")
+      await expect(nav.locator("[aria-current]")).toHaveCount(1)
+      await expect.poll(() => nav.locator("ol").evaluate(el =>
+        getComputedStyle(el, "::before").transform)).toBe(`matrix(1, 0, 0, 1, ${index * 78}, 0)`)
+      expect((await nav.boundingBox())!.height).toBe(before.height)
+      expect((await nav.boundingBox())!.width).toBe(before.width)
+      await expect(links).toHaveCount(3)
     }
-    return samples
-  })
-  const first = frames[0]
-  const last = frames.at(-1)!
-  expect(last.width).toBeGreaterThan(first.width + 50)
-  expect(last.height).toBeGreaterThan(first.height + 100)
-  expect(frames.some((frame) => frame.height > first.height + 10 && frame.height < last.height - 10)).toBe(true)
-  for (const frame of frames) expect(frame.bottom).toBeCloseTo(first.bottom, 0)
-  for (let tap = 0; tap < 3; tap += 1) await trigger.dispatchEvent("click")
-  await expect(trigger).toHaveAttribute("aria-expanded", "false")
-  await expect.poll(async () => (await surface.boundingBox())!.height).toBeCloseTo(first.height, 0)
-  await expect(page.getByRole("navigation", { name: "Table of contents" }).getByRole("link")).toHaveCount(0)
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await expect(surface).toHaveCSS("transition-property", "none")
-})
-
-test("mobile table of contents selects and tracks each section", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, 160))
-  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
-  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
-  const contents = page.getByRole("navigation", { name: "Table of contents" })
-  await expect(trigger).toHaveText("Work")
-  await trigger.click()
-  await expect(trigger).toHaveAttribute("aria-current", "location")
-  for (const [label, target] of [["About", "about-panel"], ["Services", "about-panel-services"]]) {
-    await contents.getByRole("link", { name: label, exact: true }).click()
-    await expect(contents.getByRole("link")).toHaveCount(0)
-    await expect(page.locator(`#${target}`)).toBeFocused()
-    await expect(page).toHaveURL(new RegExp(`#${target}$`))
-    await expect(trigger).toHaveText(label)
-    await trigger.click()
-    await expect(trigger).toHaveAttribute("aria-current", "location")
-    await expect(contents.locator(".mosaic-mobile-toc-row")).toHaveText(["Work", "About", "Services"])
-  }
-  await contents.getByRole("link", { name: "Work", exact: true }).click()
-  await expect(page).toHaveURL(/#work$/)
-  await expect(page.locator("#work")).toBeFocused()
-  await expect(page.locator("#work")).toBeInViewport()
-  await page.evaluate(() => document.getElementById("about-panel-services")!.scrollIntoView())
-  await expect(trigger).toHaveText("Services")
-  await trigger.click()
-  await expect(trigger).toHaveAttribute("aria-current", "location")
-})
-
-test("lands on a section from the URL without drawing a ring around it", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.emulateMedia({ reducedMotion: "reduce" })
-
-  for (const id of ["work", "about-panel", "about-panel-services"]) {
-    await page.goto(`/#${id}`)
-    const section = page.locator(`#${id}`)
-    // The browser focuses the fragment target on load. Its default ring boxes
-    // the whole section, which reads as a selection rather than a landing.
-    await expect(section).toBeFocused()
-    await expect(section).toHaveCSS("outline-style", "none")
-  }
-})
-
-test("the TOC keeps its collapsed height while scrolling between sections", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 568 })
-  await page.emulateMedia({ reducedMotion: "no-preference" })
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, 160))
-  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
-  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
-  await expect(trigger).toHaveText("Work")
-  for (const [target, label] of [["about-panel", "About"], ["about-panel-services", "Services"], ["work", "Work"]]) {
-    const heights = await page.evaluate(async (id) => {
-      const surface = document.querySelector(".mosaic-mobile-toc-surface")!
-      const samples: number[] = []
-      document.getElementById(id)!.scrollIntoView({ behavior: "instant" })
-      const start = performance.now()
-      while (performance.now() - start < 300) {
-        await new Promise(requestAnimationFrame)
-        samples.push(surface.getBoundingClientRect().height)
-      }
-      return samples
-    }, target)
-    await expect(trigger).toHaveText(label)
-    for (const height of heights) expect(height).toBeCloseTo(48, 0)
-    await trigger.click()
-    await expect(page.locator(".mosaic-mobile-toc-row")).toHaveText(["Work", "About", "Services"])
-    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(164, 0)
-    await trigger.click()
-    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(48, 0)
-  }
-})
-
-test("the TOC label leaves in the direction the page is travelling", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.emulateMedia({ reducedMotion: "no-preference" })
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, 160))
-  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
-  // The swap lives for one exit beat, so record it as it happens rather than
-  // polling for a state that is meant to be gone by the time we look.
-  const swap = (target: string) => page.evaluate(async (id) => {
-    const root = document.querySelector<HTMLElement>(".mosaic-mobile-toc")!
-    const seen: Array<{ direction?: string; leaving: string; travel: number }> = []
-    const observer = new MutationObserver(() => {
-      const ghost = document.querySelector(".mosaic-mobile-toc-ghost")
-      if (!ghost) return
-      seen.push({
-        direction: root.dataset.swap,
-        leaving: ghost.textContent!.replace(/\s+/g, " ").trim(),
-        travel: Number(getComputedStyle(root).getPropertyValue("--toc-swap-direction")),
-      })
-    })
-    observer.observe(root, { attributes: true, childList: true, subtree: true })
-    document.getElementById(id)!.scrollIntoView({ behavior: "instant" })
-    await new Promise((resolve) => setTimeout(resolve, 400))
-    observer.disconnect()
-    return seen[0]
-  }, target)
-
-  expect(await swap("about-panel")).toMatchObject({ direction: "up", leaving: "Work", travel: 1 })
-  expect(await swap("work")).toMatchObject({ direction: "down", leaving: "About", travel: -1 })
-  await expect(page.locator(".mosaic-mobile-toc-ghost")).toHaveCount(0)
-  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("Work")
-
-  // Reduced motion keeps the label change, drops the departure.
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await expect(page.locator(".mosaic-mobile-toc-ghost")).toHaveCount(0)
-})
-
-test("the TOC contains all three rows in one inset card", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, 160))
-  const surface = page.locator(".mosaic-mobile-toc-surface")
-  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
-  await trigger.click()
-  await expect(surface).toHaveCSS("border-radius", "31.2px")
-  await expect(surface).toHaveCSS("background-color", "rgba(255, 255, 255, 0.86)")
-  await expect(surface).toHaveCSS("backdrop-filter", "blur(8px) saturate(1.6)")
-  await expect(surface).not.toHaveCSS("box-shadow", "none")
-  const card = (await surface.boundingBox())!
-  const rows = await page.locator(".mosaic-mobile-toc-row").all()
-  for (const [index, row] of rows.entries()) {
-    const bounds = (await row.boundingBox())!
-    expect(bounds.x).toBeCloseTo(card.x + 8, 0)
-    expect(bounds.width).toBeCloseTo(card.width - 16, 0)
-    expect(bounds.y).toBeCloseTo(card.y + 8 + index * (48 + 2), 0)
-    expect(bounds.height).toBe(48)
-    await expect(row).toHaveCSS("border-radius", "23.2px")
-    await expect(row).toHaveCSS("box-shadow", "none")
-  }
-  await page.keyboard.press("Escape")
-  await expect(surface).toHaveCSS("height", "48px")
-})
-
-test("table of contents dismisses outside and stays open when resizing to desktop", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.goto("/")
-  await page.evaluate(() => window.scrollTo(0, 160))
-  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
-  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
-  const contents = page.getByRole("navigation", { name: "Table of contents" })
-  await trigger.focus()
-  await page.keyboard.press("Enter")
-  await page.keyboard.press("Tab")
-  await expect(contents.getByRole("link", { name: "About", exact: true })).toBeFocused()
-  await page.keyboard.press("Escape")
-  await expect(trigger).toBeFocused()
-  await trigger.click()
-  await page.mouse.click(4, 4)
-  await expect(contents.getByRole("link")).toHaveCount(0)
-  await trigger.click()
-  await page.setViewportSize({ width: 900, height: 844 })
-  await expect(contents.getByRole("link")).toHaveCount(2)
-  await expect(trigger).toBeVisible()
-  await expect(trigger).toHaveAttribute("aria-expanded", "true")
-  await expect(page.getByRole("navigation", { name: "Sections" })).toBeVisible()
-})
-
-for (const width of [768, 1440]) {
-  test(`table of contents works beside the top navigation at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 })
-    await page.emulateMedia({ reducedMotion: "reduce" })
-    await page.goto("/")
-    await page.evaluate(() => window.scrollTo(0, 160))
-    await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
-    const trigger = page.getByRole("button", { name: /^Table of contents:/ })
-    const topNav = page.getByRole("navigation", { name: "Sections", exact: true })
-    const contents = page.getByRole("navigation", { name: "Table of contents" })
-    await expect(topNav).toBeVisible()
-    await expect(trigger).toHaveText("Work")
-    const pill = await trigger.boundingBox()
-    expect(pill!.x + pill!.width / 2).toBeCloseTo(width / 2, 0)
-    expect(pill!.y).toBeGreaterThan(800)
-    await trigger.click()
-    await contents.getByRole("link", { name: "About", exact: true }).click()
-    await expect(page.locator("#about-panel")).toBeFocused()
-    await expect(trigger).toHaveText("About")
-    await trigger.click()
-    await contents.getByRole("link", { name: "Services", exact: true }).click()
-    await expect(page.locator("#about-panel-services")).toBeFocused()
-    await expect(trigger).toHaveText("Services")
-    await trigger.click()
-    await contents.getByRole("link", { name: "Work", exact: true }).click()
-    await expect(trigger).toHaveText("Work")
-    await page.evaluate(() => window.scrollTo(0, 0))
-    await expect(topNav).toBeInViewport()
-    await topNav.getByRole("link", { name: "About", exact: true }).click()
-    await expect(trigger).toHaveText("About")
+    // Manual scrolling must also select the corresponding destination.
+    await page.locator("#about-panel").evaluate(el => el.scrollIntoView({ behavior: "instant" }))
+    await expect(nav.getByRole("link", { name: "About", exact: true })).toHaveAttribute("aria-current", "location")
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-    await expect(trigger).toHaveText("Services")
-    const about = await page.locator("#about-panel").boundingBox()
-    expect(about!.y + about!.height).toBeLessThan((await trigger.boundingBox())!.y)
+    await expect(nav.getByRole("link", { name: "Services", exact: true })).toHaveAttribute("aria-current", "location")
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(toc).toBeHidden()
   })
 }
 
-test("keeps the mobile profile and final content clear of the table of contents", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 568 })
+test("TOC supports keyboard navigation and reduced motion", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  const avatar = await page.getByRole("button", { name: "Chat with Rafael Medina" }).boundingBox()
-  expect(avatar!.y).toBeLessThan(96)
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("Services")
-  const trigger = await page.getByRole("button", { name: /^Table of contents:/ }).boundingBox()
-  const about = await page.locator("#about-panel").boundingBox()
-  expect(about!.y + about!.height).toBeLessThan(trigger!.y)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+  await page.evaluate(() => window.scrollTo(0, 160))
+  const nav = page.getByRole("navigation", { name: "Table of contents" })
+  await nav.getByRole("link", { name: "Work", exact: true }).focus()
+  await page.keyboard.press("Tab")
+  await expect(nav.getByRole("link", { name: "About", exact: true })).toBeFocused()
+  await page.keyboard.press("Tab")
+  await expect(nav.getByRole("link", { name: "Services", exact: true })).toBeFocused()
+  await page.keyboard.press("Shift+Tab")
+  await page.keyboard.press("Enter")
+  await expect(nav.getByRole("link", { name: "About", exact: true })).toHaveAttribute("aria-current", "location")
+  expect(await nav.locator("ol").evaluate(el => parseFloat(getComputedStyle(el, "::before").transitionDuration))).toBeLessThan(0.001)
 })
 
 test("gives the corner the address and the About sheet the clock", async ({ page }) => {

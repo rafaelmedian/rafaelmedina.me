@@ -239,8 +239,11 @@ test("Wall arrows start at the nearest photo and wrap the collection", async ({ 
   await expect(main).toHaveAttribute("data-photo-instance", nearest!)
   await page.keyboard.press("Escape")
   await wall.locator('[data-photo-id="office"]').click()
+  // Office can sit partly off-screen; let its hold land before browsing.
+  await expect(main).toHaveAttribute("data-photo-source", "office")
   await page.keyboard.press("ArrowLeft")
-  await expect(main).toHaveAttribute("data-photo-source", "rainy-night")
+  const last = personalPhotoItems.at(-1)!.id
+  await expect(main).toHaveAttribute("data-photo-source", last)
   const plane = wall.locator(".personal-photos-masonry")
   let previousX = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
   const tileCount = await wall.locator(".personal-photos-slide").count()
@@ -265,7 +268,7 @@ test("Wall arrows start at the nearest photo and wrap the collection", async ({ 
     }).toBeLessThan(2)
   }
   expect(await wall.locator(".personal-photos-slide").count()).toBe(tileCount)
-  await expect(main).toHaveAttribute("data-photo-source", "rainy-night")
+  await expect(main).toHaveAttribute("data-photo-source", last)
 })
 
 

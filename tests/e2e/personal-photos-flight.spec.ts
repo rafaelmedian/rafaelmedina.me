@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test"
 
+// The wall ships flat; these cover the optional curved WebGL surface.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => addEventListener("DOMContentLoaded", () => {
+    const style = document.createElement("style")
+    style.textContent = '.personal-photos-sheet[data-layout="wall"] { --wall-rim: 0.46; }'
+    document.head.append(style)
+  }))
+})
+
 for (const width of [1440, 390]) {
   test(`wall photos stay visible throughout open and close at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
