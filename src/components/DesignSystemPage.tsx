@@ -1369,10 +1369,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>display: contents</code> and the tiles form one two-column grid in the same DOM order.{" "}
                   <code>src/data/portfolio.ts</code> owns the order; <code>work-grid.css</code> owns both layouts.
                 </li>
-                <li data-ds-terms={terms("table of contents toc floating current section 48px")}>
+                <li data-ds-terms={terms("table of contents toc floating current section labels 44px")}>
                   <strong>A floating table of contents</strong> appears after 96px of scrolling, centred above the
-                  bottom safe area. It is a 48px <code>--radius-full</code> chip naming the current section, and it
-                  opens into a <code>--radius-lg</code> card with the overlay shadow.
+                  bottom safe area. Work, About, and Services stay visible in one <code>--radius-full</code> capsule with
+                  44px-tall targets, equal-width labels, and space inside the rim. A shared background follows the current section using <code>--duration-base</code>
+                  and <code>--ease-smooth</code>; reduced motion switches it immediately.
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway 100dvh z-index 1")}>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, the grid pins in a

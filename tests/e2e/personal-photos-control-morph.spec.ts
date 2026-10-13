@@ -23,7 +23,7 @@ for (const width of [390, 1440]) {
     await page.locator(".personal-photos-label").click()
     const close = page.getByRole("button", { name: "Close photo wall" })
     await expect(close).toBeVisible()
-    await expect(close.locator(".personal-photos-control-morph-label")).toContainText("Work")
+    await expect(close.locator(".personal-photos-control-morph-label")).toHaveText("Work")
     const opening = await close.boundingBox()
     expect(Math.abs(opening!.width - origin!.width)).toBeLessThan(1)
     expect(Math.abs(opening!.y - origin!.y)).toBeLessThan(1)
@@ -42,7 +42,7 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".personal-photos-dialog")).toHaveCSS("opacity", "1")
     await page.locator(".personal-photos-flight").evaluateAll(elements => elements.forEach(element => element.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
     await expect(close).toHaveCount(0)
-    await expect(page.getByRole("button", { name: "Table of contents: Work" })).toBeVisible()
+    await expect(page.getByRole("navigation", { name: "Table of contents" }).getByRole("link", { name: "Work", exact: true })).toBeVisible()
   })
 }
 

@@ -13,7 +13,7 @@ export function usePhotoControlMorph(open: boolean) {
     const control = button.current
     const toc = document.querySelector<HTMLElement>('.mosaic-mobile-toc[data-visible="true"]')
     const surface = toc?.querySelector<HTMLElement>(".mosaic-mobile-toc-surface")
-    const label = toc?.querySelector<HTMLElement>(".mosaic-mobile-toc-trigger .mosaic-mobile-toc-row-content")
+    const label = toc?.querySelector<HTMLElement>(".mosaic-mobile-toc-row[aria-current] .mosaic-mobile-toc-row-content")
     const content = control?.querySelector<HTMLElement>(".personal-photos-wall-close-content")
     if (!control || !toc || !surface || !label || !content || matchMedia("(prefers-reduced-motion: reduce)").matches) return
 
@@ -32,7 +32,8 @@ export function usePhotoControlMorph(open: boolean) {
     const duration = cssTimeToMilliseconds(settings.getPropertyValue(open ? "--photo-open-duration" : "--photo-close-duration"))
     const easing = settings.getPropertyValue("--photo-motion-ease").trim()
     const deltaX = target.left + target.width / 2 - resting.left - resting.width / 2
-    const deltaY = target.top + target.height / 2 - resting.top - resting.height / 2
+    // The toolbar is bottom-anchored, so height changes grow upward.
+    const deltaY = target.bottom - resting.bottom
     const tocPose = { width: `${target.width}px`, height: `${target.height}px`, transform: `translate(${deltaX}px, ${deltaY}px)` }
     const closePose = { width: `${resting.width}px`, height: `${resting.height}px`, transform: "translate(0px, 0px)" }
     const from = interrupted ? { width: `${current.width}px`, height: `${current.height}px`, transform: currentTransform } : open ? tocPose : closePose
