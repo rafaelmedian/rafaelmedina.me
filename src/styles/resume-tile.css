@@ -29,10 +29,10 @@
      its tile. */
   aspect-ratio: 237 / 250;
   overflow: hidden;
-  /* 40px corners on the 237x250 sheet, up from its 24px. Percent radii resolve
+  /* 48px corners on the 237x250 sheet, up from its 24px. Percent radii resolve
      against width and height separately, so the slash form keeps them circular;
      cqw cannot be used here because the paper is the container itself. */
-  border-radius: 16.878% / 16%;
+  border-radius: 20.253% / 19.2%;
   filter: drop-shadow(0 4px 21px rgb(0 0 0 / 0.06)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.05));
   transition: transform var(--duration-base) var(--ease-smooth);
 }
@@ -56,7 +56,7 @@
   inset: 1px;
   display: block;
   overflow: hidden;
-  border-radius: calc(16.88cqw - 1px);
+  border-radius: calc(20.25cqw - 1px);
   background: var(--canvas);
 }
 
