@@ -124,6 +124,18 @@ test("avatar greeting plays on hover and opens the conversation on request", asy
   await expect(page.locator("video[data-recording][src]")).toHaveCount(0)
   await page.keyboard.press("Escape")
   await expect(avatar).toBeFocused()
+  // Focus coming home from the booking must not restart the greeting.
+  await expect(teaser).toHaveCount(0)
+  await page.mouse.move(0, 0)
+  await expect(teaser).toHaveCount(0)
+  // A fresh hover asks again, and so does coming back by keyboard.
+  await avatar.hover()
+  await expect(teaser).toBeVisible()
+  await page.mouse.move(0, 0)
+  await page.keyboard.press("Tab")
+  await page.keyboard.press("Shift+Tab")
+  await expect(avatar).toBeFocused()
+  await expect(teaser).toBeVisible()
 })
 
 test("reduced motion keeps the avatar greeting still", async ({ page }) => {

@@ -604,8 +604,27 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   const { avatarRef, active: introActive } = useAvatarIntro()
   const [avatarHovered, setAvatarHovered] = useState(false)
   const [avatarFocused, setAvatarFocused] = useState(false)
+  // A click answers the greeting. Without this the clicked button keeps focus,
+  // focus comes back to it when the booking closes, and the loop plays on with
+  // nothing to stop it short of clicking elsewhere. Leaving the portrait, by
+  // pointer or by Tab, lets the next visit greet again.
+  const [avatarTeaserDismissed, setAvatarTeaserDismissed] = useState(false)
+  const avatarFocusReturningRef = useRef(false)
+  // The booking's cover sends the portrait a pointerleave and closing it sends
+  // a pointerenter, though the pointer never moved. So the pointer has to be
+  // seen outside the portrait's box, over the cover or not, to count as gone.
+  useEffect(() => {
+    if (!avatarTeaserDismissed) return
+    const onPointerMove = (event: PointerEvent) => {
+      const box = avatarRef.current?.getBoundingClientRect()
+      if (box && event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom) return
+      setAvatarTeaserDismissed(false)
+    }
+    window.addEventListener("pointermove", onPointerMove, { passive: true })
+    return () => window.removeEventListener("pointermove", onPointerMove)
+  }, [avatarTeaserDismissed, avatarRef])
   const lightweightMedia = useLightweightMedia()
-  const showAvatarTeaser = (avatarHovered || avatarFocused) && !bookingOpen && !prefersReducedMotion && !lightweightMedia
+  const showAvatarTeaser = (avatarHovered || avatarFocused) && !avatarTeaserDismissed && !bookingOpen && !prefersReducedMotion && !lightweightMedia
   const [isTakeoverCloseVisible, setIsTakeoverCloseVisible] = useState(false)
   const [isReturningToTop, setIsReturningToTop] = useState(false)
   const { itemId: galleryItemId, selectItem: selectGalleryItem, clearItem: clearGalleryItem } = useGalleryUrl()
@@ -951,9 +970,22 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               aria-expanded={bookingOpen}
               onPointerEnter={() => setAvatarHovered(true)}
               onPointerLeave={() => setAvatarHovered(false)}
-              onFocus={() => setAvatarFocused(true)}
-              onBlur={() => setAvatarFocused(false)}
-              onClick={event => openBooking(event.currentTarget, "portrait", links.booking)}
+              onFocus={event => {
+                // The booking handing focus back is not a visit, and a mouse
+                // click focuses the button too: only keyboard focus greets.
+                const returning = avatarFocusReturningRef.current
+                avatarFocusReturningRef.current = false
+                setAvatarFocused(!returning && event.currentTarget.matches(":focus-visible"))
+              }}
+              onBlur={() => {
+                setAvatarFocused(false)
+                if (!bookingOpen) setAvatarTeaserDismissed(false)
+              }}
+              onClick={event => {
+                setAvatarTeaserDismissed(true)
+                avatarFocusReturningRef.current = true
+                openBooking(event.currentTarget, "portrait", links.booking)
+              }}
             >
               <div className="mosaic-avatar-coin-inner">
                 <span className="mosaic-avatar-face mosaic-avatar-face-front">

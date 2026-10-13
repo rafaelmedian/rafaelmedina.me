@@ -13,7 +13,7 @@
 
 /* The paper is rebuilt from the Figma "Paper" component as three layers. The
    underside is the full page silhouette in gray with a hairline; the white
-   sheet sits 1px inside it with the comp's 24px corners, so the gray shows as a
+   sheet sits 1px inside it with concentric corners, so the gray shows as a
    stroke around the whole card; one SVG on the sheet's lower-right corner draws
    the sliced corner, the underside through it, and the curl, so the fold can
    grow from that corner on hover. The outer shadow sits on this wrapper so one
@@ -25,12 +25,14 @@
   display: block;
   container-type: inline-size;
   width: min(64%, 15rem);
-  aspect-ratio: 237 / 280;
+  /* The comp's sheet is 237x280; cut to 250 high so the card sits squatter in
+     its tile. */
+  aspect-ratio: 237 / 250;
   overflow: hidden;
-  /* 24px corners on the 237x280 comp. Percent radii resolve against width and
-     height separately, so the slash form keeps them circular; cqw cannot be used
-     here because the paper is the container itself. */
-  border-radius: 10.127% / 8.571%;
+  /* 48px corners on the 237x250 sheet, up from its 24px. Percent radii resolve
+     against width and height separately, so the slash form keeps them circular;
+     cqw cannot be used here because the paper is the container itself. */
+  border-radius: 20.253% / 19.2%;
   filter: drop-shadow(0 4px 21px rgb(0 0 0 / 0.06)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.05));
   transition: transform var(--duration-base) var(--ease-smooth);
 }
@@ -54,7 +56,7 @@
   inset: 1px;
   display: block;
   overflow: hidden;
-  border-radius: calc(10.13cqw - 1px);
+  border-radius: calc(20.25cqw - 1px);
   background: var(--canvas);
 }
 
@@ -69,7 +71,7 @@
    current job and the page still reads as one that carries on. */
 .resume-tile-copy {
   position: absolute;
-  inset: 11.6% 10.5% 0 10.1%;
+  inset: 13% 10.5% 0 10.1%;
   display: flex;
   flex-direction: column;
   gap: 1em;
