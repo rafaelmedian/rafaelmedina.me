@@ -21,6 +21,12 @@ for (const mode of ["flat", "watch"]) {
 }
 
 test("disabling curvature during opening releases the GPU flights", async ({ page }) => {
+  // The wall ships flat; opt into the curved surface so there is one to disable.
+  await page.addInitScript(() => addEventListener("DOMContentLoaded", () => {
+    const style = document.createElement("style")
+    style.textContent = '.personal-photos-sheet[data-layout="wall"] { --wall-rim: 0.46; }'
+    document.head.append(style)
+  }))
   await page.goto("/")
   await page.evaluate(() => {
     const animate = Element.prototype.animate

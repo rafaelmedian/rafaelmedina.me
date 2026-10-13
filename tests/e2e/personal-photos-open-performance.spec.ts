@@ -17,6 +17,12 @@ test("opening avoids a live full-screen backdrop filter", async ({ page }) => {
 
 test("wall textures upgrade at most one full-size photo per frame", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
+  // The wall ships flat; textures upload only for the optional curved surface.
+  await page.addInitScript(() => addEventListener("DOMContentLoaded", () => {
+    const style = document.createElement("style")
+    style.textContent = '.personal-photos-sheet[data-layout="wall"] { --wall-rim: 0.46; }'
+    document.head.append(style)
+  }))
   await page.addInitScript(() => {
     const upload = WebGLRenderingContext.prototype.texImage2D
     Object.assign(window, { photoUploads: {} as Record<string, number> })

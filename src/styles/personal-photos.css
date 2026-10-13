@@ -825,8 +825,9 @@
   --wall-release-duration: var(--duration-base);
   --wall-watch-shrink: 0;
   --wall-watch-power: 1.35;
+  /* Flat by default. The curved WebGL surface stays for the dev tuner. */
   --wall-bend: 0;
-  --wall-rim: 0.46;
+  --wall-rim: 0;
   --wall-gap: 0.5rem;
   /* The backdrop owns the white canvas. A second surface here would cover
      borrowed flights, which travel below the popup and above the backdrop. */
@@ -1116,7 +1117,7 @@
 }
 .personal-photo-book[aria-expanded="true"] .personal-photo-details-chevron { rotate: 180deg; }
 
-/* Watch retains its independent scale treatment. The default curved surface
+/* Watch retains its independent scale treatment. The optional curved surface
    bends the complete composition in one render pass below. */
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span {
   display: block;

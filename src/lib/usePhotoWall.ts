@@ -129,7 +129,7 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     const reset = () => {
       onNavigate()
       focus = { x: 0, y: 0 }
-      camera.current = { x: 20, y: 144, scale: stage.clientWidth < 700 ? 0.65 : 1 }
+      camera.current = { x: 20, y: 144, scale: 0.65 }
       paint()
     }
     const zoomCentre = (factor: number) => zoom(factor, { x: stage.clientWidth / 2, y: stage.clientHeight / 2 })

@@ -45,5 +45,5 @@ test("reduced-motion keyboard zoom keeps its bounds", async ({ page }) => {
   for (let i = 0; i < 15; i++) await wall.press("-")
   expect(await scale()).toBe(0.4)
   await wall.press("0")
-  expect(await scale()).toBe(1)
+  expect(await scale()).toBe(0.65)
 })
