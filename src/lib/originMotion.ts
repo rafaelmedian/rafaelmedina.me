@@ -219,11 +219,14 @@ export function useOriginTravel(options: OriginTravelOptions) {
         ))
         if (!fade) return start()
         release()
+        // A fade cancelled before it is ready rejects this, and the fallback is
+        // already released: start the flight rather than leave it paused at the
+        // origin. A cancelled flight is `idle`, so the close path stays put.
         void fade.ready.then(() => {
           if (flight.playState !== "paused") return
           if (fade.startTime === null) flight.play()
           else flight.startTime = fade.startTime
-        }, () => undefined)
+        }, start)
       }
       const timeout = window.setTimeout(start, fadeWaitMs)
       const release = () => {
