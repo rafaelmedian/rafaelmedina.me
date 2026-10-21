@@ -66,10 +66,12 @@ const galleryMotionVars = {
   "--pg-close-ms": "var(--duration-quick)",
   "--pg-open-ease": toCssEasing(originOpenEasePoints),
   "--pg-close-ease": toCssEasing(originCloseEasePoints),
-  // The full-screen layout's zoom out of the tile. Longer than the desktop
-  // nudge because it covers the whole screen, on a spring that is most of the
-  // way there in the first third; the close is the house slow step.
-  "--pg-zoom-open-ms": "480ms",
+  // The zoom out of the tile. Longer than the plain lift because the surface
+  // really travels from the tile, on a spring that is most of the way there in
+  // its first third; the close is the house slow step. Built from the shared
+  // tokens (registered as <time> in preview-gallery.css, so the sum computes
+  // to one value the flight can read) so a token change retimes the zoom.
+  "--pg-zoom-open-ms": "calc(var(--duration-slow) + var(--duration-fast))",
   "--pg-zoom-close-ms": "var(--duration-slow)",
   "--pg-content-in-ms": "var(--duration-base)",
   "--pg-content-out-ms": "var(--duration-quick)",
@@ -357,7 +359,10 @@ export function PreviewGalleryDialog({
   // inputs in a layout effect of its own.
   const { run: runOriginAnimation } = useOriginTravel({
     node: originWrapNode,
-    getOriginRect: () => getOriginRect?.(safeIndex) ?? null,
+    // A shared link opens with a plain lift: zooming out of a tile nobody
+    // pressed reads as the page doing something on its own. It still closes
+    // into the tile, which is where the visitor finds it again.
+    getOriginRect: (mode) => mode === "open" && !openedByGesture ? null : getOriginRect?.(safeIndex) ?? null,
     enabled: originMotionEnabled,
     openDurationProperty: "--pg-open-ms",
     closeDurationProperty: "--pg-close-ms",
@@ -366,6 +371,7 @@ export function PreviewGalleryDialog({
     getOriginRadius: () => getOriginRadius?.(safeIndex) ?? 0,
     getZoomAnchor: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
     getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
+    getZoomOutline: () => cardRef.current,
     zoomOpenDurationProperty: "--pg-zoom-open-ms",
     zoomCloseDurationProperty: "--pg-zoom-close-ms",
   })

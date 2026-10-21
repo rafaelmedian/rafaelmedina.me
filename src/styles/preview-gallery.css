@@ -10,6 +10,21 @@
   --preview-gallery-rail-clearance: calc(var(--preview-gallery-nav-size) + var(--preview-gallery-nav-gap));
 }
 
+/* Registered so a sum of duration tokens computes to a single time: the zoom
+   reads its duration from computed style, and an unregistered property would
+   hand it the unevaluated calc(). */
+@property --pg-zoom-open-ms {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 480ms;
+}
+
+@property --pg-zoom-close-ms {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 360ms;
+}
+
 .preview-gallery-backdrop {
   position: fixed;
   inset: 0;
@@ -176,6 +191,32 @@
   opacity: 0;
   transition:
     opacity var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
+}
+
+/* The zoom out of a tile (lib/originMotion): the tile becomes the gallery, the
+   way iOS opens an App Store card, instead of the gallery arriving from the
+   tile's direction. The surface is already in the tile's place, so it only has
+   to stop being transparent: a short fade, not the base one that carries the
+   lift. */
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion] {
+  transition: opacity var(--duration-fast) ease-out;
+}
+
+/* On the way back it stays solid while it shrinks and fades only once it is
+   over the tile. Base UI unmounts on this transition's end, so the delay is
+   also what keeps it mounted for the whole flight. */
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-ending-style] {
+  transition: opacity var(--duration-fast) linear calc(var(--pg-zoom-close-ms) - var(--duration-fast));
+}
+
+/* The page stays in view under the growing card for most of its flight
+   rather than dimming before the card is a third of the way there. */
+.preview-gallery-backdrop:has(+ .preview-gallery-shell[data-origin-zoom]) {
+  transition: opacity var(--pg-zoom-open-ms) ease-out;
+}
+
+.preview-gallery-backdrop[data-ending-style]:has(+ .preview-gallery-shell[data-origin-zoom]) {
+  transition: opacity var(--pg-zoom-close-ms) var(--ease-standard);
 }
 
 .preview-gallery-card {
@@ -1182,37 +1223,12 @@
     background: var(--canvas);
   }
 
-  /* The zoom out of a tile (lib/originMotion). The shell is clipped from the
-     tile's rounded rectangle out to the screen while the popup scales up
-     inside it, so the tile reads as becoming the page, the way iOS opens a
-     card. The shell's own fill steps aside for the flight: at tile scale the
-     popup already covers the clip, and the fill would only add an opaque
-     safe-area band. */
+  /* The full-screen zoom clips the shell from the tile's rounded rectangle out
+     to the screen while the popup scales up inside it. The shell's own fill
+     steps aside for the flight: at tile scale the popup already covers the
+     clip, and the fill would only add an opaque safe-area band. */
   .preview-gallery-shell[data-origin-zoom] {
     background: transparent;
-  }
-
-  /* The surface is already in the tile's place, so it only has to stop being
-     transparent: a short fade, not the base one that was carrying the lift. */
-  .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion] {
-    transition: opacity var(--duration-fast) ease-out;
-  }
-
-  /* On the way back it stays solid while it shrinks and fades only once it is
-     over the tile. Base UI unmounts on this transition's end, so the delay is
-     also what keeps it mounted for the whole flight. */
-  .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-ending-style] {
-    transition: opacity var(--duration-fast) linear calc(var(--pg-zoom-close-ms) - var(--duration-fast));
-  }
-
-  /* The page stays in view under the growing card for most of its flight
-     rather than whiting out before the card is a third of the way there. */
-  .preview-gallery-backdrop:has(+ .preview-gallery-shell[data-origin-zoom]) {
-    transition: opacity var(--pg-zoom-open-ms) ease-out;
-  }
-
-  .preview-gallery-backdrop[data-ending-style]:has(+ .preview-gallery-shell[data-origin-zoom]) {
-    transition: opacity var(--pg-zoom-close-ms) var(--ease-standard);
   }
 
   .preview-gallery-origin-wrap,

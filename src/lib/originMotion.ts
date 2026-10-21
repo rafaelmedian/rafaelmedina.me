@@ -20,21 +20,10 @@ export const originOpenEasePoints = [0.32, 0.8, 0.32, 1] as const
 export const originCloseEasePoints = [0.4, 0, 1, 1] as const
 export const toCssEasing = (points: readonly number[]) => `cubic-bezier(${points.join(", ")})`
 
-// Not a full flight from the card to the centre. Replaying the whole distance
-// reads as a journey — the modal has to cross the page, so it needs a long
-// duration to not feel thrown, and the wait is worse than the payoff. Instead
-// the travel is capped: enough to say "from over there" as the surface settles,
-// then it is out of the way. The direction survives the cap, the distance does
-// not.
-const originMaxTravel = 44
-const originScaleMin = 0.92
-const originScaleMax = 1
-// Used when the anchor is off-screen: a plain 20px lift, no travel.
+// Used when the anchor is off-screen (or there is none, as for a shared link):
+// a plain 20px lift, no travel. The full-screen layout lifts without scaling,
+// since scaling the whole viewport reads as a glitch rather than an entrance.
 const originFallback = { dx: 0, dy: 20, scale: 0.96 }
-// Match the gallery's full-screen layout. There the gallery is the whole
-// screen, so a capped nudge has nothing to say; it zooms out of the tile
-// instead, the way iOS opens an App Store card or a Photos thumbnail. Without
-// a tile to zoom from it lifts and lowers, without scaling the viewport.
 const fullScreenQuery = "(max-width: 699.98px), (hover: none), (pointer: coarse)"
 const verticalOffset = { dx: 0, dy: originFallback.dy, scale: 1 }
 
@@ -66,25 +55,6 @@ export function originCornerRadius(element: Element | null | undefined): number 
     if (radius > 0) return radius
   }
   return 0
-}
-
-function getOriginOffset(originRect: DOMRect, targetRect: DOMRect) {
-  if (targetRect.width <= 0 || targetRect.height <= 0) return null
-  if (originRect.width <= 0 || originRect.height <= 0) return null
-
-  // Clamped rather than a strict FLIP: the point is to hint at the origin, not
-  // to replay the geometry exactly.
-  const scale = Math.min(Math.max(originRect.width / targetRect.width, originScaleMin), originScaleMax)
-  const dx = originRect.left + originRect.width / 2 - (targetRect.left + targetRect.width / 2)
-  const dy = originRect.top + originRect.height / 2 - (targetRect.top + targetRect.height / 2)
-
-  // Keep the bearing, drop the distance: a card in the far corner and one just
-  // below the fold should both nudge in by the same amount, differing only in
-  // which way they come from.
-  const distance = Math.hypot(dx, dy)
-  const cap = distance > originMaxTravel ? originMaxTravel / distance : 1
-
-  return { dx: dx * cap, dy: dy * cap, scale }
 }
 
 // cubic-bezier(x1, y1, x2, y2) evaluated as a progress function.
@@ -182,62 +152,95 @@ type ZoomGeometry = {
   /** The part of the surface that lands on the tile, at rest: the artwork the
    *  tile is a thumbnail of, or the surface itself when there is none. */
   anchor: DOMRect
-  /** The full-screen element the clip is applied to, at rest. */
-  frame: DOMRect
 }
 
-// The zoom is two coordinated tracks: the surface scales so its artwork sits
-// exactly on the tile, the way a Photos thumbnail becomes the photo, and grows
-// from there to rest; and the full-screen frame around it
-// is clipped from the tile's rounded rectangle out to the screen edges. The
-// scaled surface is taller than the tile (a phone is taller than a 4:3 tile),
-// so the clip is what gives the moving shape the tile's proportions.
-function buildZoomKeyframes(mode: "open" | "close", geometry: ZoomGeometry) {
-  const { origin, radius, target, anchor, frame } = geometry
+type Corners = [number, number, number, number]
+
+// How far past the card the clip ends up, so the card's shadow (which reaches
+// ~100px below it) is whole by the time the flight lets go of the clip.
+const cardClipBleed = 120
+
+const insetPath = (inset: Corners, radii: Corners) =>
+  `inset(${inset.map((value) => `${value.toFixed(2)}px`).join(" ")} round ${radii.map((value) => `${Math.max(value, 0).toFixed(2)}px`).join(" ")})`
+
+// The zoom, after iOS's App Store cards and Photos thumbnails: the tile becomes
+// the surface rather than the surface arriving from the tile's direction. Two
+// coordinated tracks:
+//
+// - The surface scales so its artwork sits exactly on the tile, and grows from
+//   there to rest, pinned at its top-left corner.
+// - A clip starts on the tile's rounded rectangle and opens out to the surface's
+//   real outline. The scaled surface is taller than the tile, so the clip is
+//   what gives the moving shape the tile's proportions.
+//
+// Where the gallery fills the screen, the clip lives on the full-screen frame in
+// viewport coordinates and opens to the screen edges. Where it is a floating
+// card, the clip lives on the surface itself, in its own (pre-transform)
+// coordinates, and opens to just past the card's rounded corners.
+function buildZoomKeyframes(
+  mode: "open" | "close",
+  geometry: ZoomGeometry,
+  space: { kind: "screen"; frame: DOMRect } | { kind: "card"; radii: Corners },
+) {
+  const { origin, radius, target, anchor } = geometry
   const ease = mode === "open" ? zoomOpen : zoomClose
   const scaleFrom = origin.width / anchor.width
   // Scaled about the surface's top-left corner, the anchor's corner lands at
   // target + (anchor - target) * scale; this translate moves it onto the tile.
   const dx = origin.left - target.left - (anchor.left - target.left) * scaleFrom
   const dy = origin.top - target.top - (anchor.top - target.top) * scaleFrom
-  const clip = {
-    top: origin.top - frame.top,
-    right: frame.right - origin.right,
-    bottom: frame.bottom - origin.bottom,
-    left: origin.left - frame.left,
+
+  // Clip insets as [top, right, bottom, left] and radii as [tl, tr, br, bl].
+  let insetFrom: Corners
+  let insetTo: Corners
+  let radiiFrom: Corners
+  let radiiTo: Corners
+  if (space.kind === "screen") {
+    const { frame } = space
+    insetFrom = [origin.top - frame.top, frame.right - origin.right, frame.bottom - origin.bottom, origin.left - frame.left]
+    insetTo = [0, 0, 0, 0]
+    radiiFrom = [radius, radius, radius, radius]
+    radiiTo = [0, 0, 0, 0]
+  } else {
+    // The tile's rectangle, mapped back through the starting scale into the
+    // surface's own coordinates: the anchor's width and top, the tile's height.
+    const tileBottom = anchor.top - target.top + origin.height / scaleFrom
+    insetFrom = [anchor.top - target.top, target.right - anchor.right, target.height - tileBottom, anchor.left - target.left]
+    insetTo = [-cardClipBleed, -cardClipBleed, -cardClipBleed, -cardClipBleed]
+    const local = radius / scaleFrom
+    radiiFrom = [local, local, local, local]
+    radiiTo = space.radii.map((value) => value + cardClipBleed) as Corners
   }
 
   const surface: Keyframe[] = []
-  const frameKeyframes: Keyframe[] = []
+  const frame: Keyframe[] = []
 
   for (let step = 0; step < originSampleCount; step += 1) {
     const time = step / (originSampleCount - 1)
-    // `grown` is 0 at the tile and 1 at full screen.
+    // `grown` is 0 at the tile and 1 at rest.
     const grown = mode === "open" ? ease(time) : 1 - ease(time)
     const rest = 1 - grown
     const scale = scaleFrom + (1 - scaleFrom) * grown
+    const mix = (from: Corners, to: Corners) => from.map((value, index) => value * rest + to[index] * grown) as Corners
+    const transform = `translate3d(${(dx * rest).toFixed(2)}px, ${(dy * rest).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`
+    const clipPath = insetPath(mix(insetFrom, insetTo), mix(radiiFrom, radiiTo))
 
-    surface.push({
-      offset: time,
-      easing: "linear",
-      transformOrigin: "0 0",
-      transform: `translate3d(${(dx * rest).toFixed(2)}px, ${(dy * rest).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`,
-    })
-    frameKeyframes.push({
-      offset: time,
-      easing: "linear",
-      clipPath: `inset(${(clip.top * rest).toFixed(2)}px ${(clip.right * rest).toFixed(2)}px ${(clip.bottom * rest).toFixed(2)}px ${(clip.left * rest).toFixed(2)}px round ${(radius * rest).toFixed(2)}px)`,
-    })
+    if (space.kind === "screen") {
+      surface.push({ offset: time, easing: "linear", transformOrigin: "0 0", transform })
+      frame.push({ offset: time, easing: "linear", clipPath })
+    } else {
+      surface.push({ offset: time, easing: "linear", transformOrigin: "0 0", transform, clipPath })
+    }
   }
 
-  return { surface, frame: frameKeyframes }
+  return { surface, frame }
 }
 
 export type OriginTravelOptions = {
   /** The surface that flies. Null while the dialog's portal is unmounted. */
   node: HTMLElement | null
   /** Live geometry of the thing the surface comes out of, re-read per flight. */
-  getOriginRect: () => DOMRect | null
+  getOriginRect: (mode: "open" | "close") => DOMRect | null
   /** False leaves the surface's CSS pose in charge: reduced motion, or no anchor to aim at. */
   enabled: boolean
   /** Custom properties the two durations are read from, on the flying node. */
@@ -247,14 +250,17 @@ export type OriginTravelOptions = {
   onFlight?: (flying: boolean) => void
   /** The element whose CSS opacity fade the open flight starts with. */
   getFadeNode?: () => Element | null
-  /** The tile's corner radius in px, for the full-screen zoom's clip. */
+  /** The tile's corner radius in px, where the zoom's clip starts. */
   getOriginRadius?: () => number
   /** The element inside the surface that should land on the tile. */
   getZoomAnchor?: () => Element | null
-  /** The full-screen element the zoom clips. Without one, the full-screen
-   *  layout falls back to a plain lift. */
+  /** The full-screen element the zoom clips in the full-screen layout, and
+   *  where `data-origin-zoom` is raised for the length of any zoom. Without
+   *  one, the surface falls back to a lift. */
   getZoomFrame?: () => HTMLElement | null
-  /** Duration properties for the full-screen zoom, read from the frame. */
+  /** The element whose border radii are the surface's resting outline. */
+  getZoomOutline?: () => Element | null
+  /** Duration properties for the zoom, read from the frame. */
   zoomOpenDurationProperty?: string
   zoomCloseDurationProperty?: string
 }
@@ -293,7 +299,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
   const run = useCallback((mode: "open" | "close") => {
     const {
       node, getOriginRect, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode,
-      getOriginRadius, getZoomAnchor, getZoomFrame, zoomOpenDurationProperty, zoomCloseDurationProperty,
+      getOriginRadius, getZoomAnchor, getZoomFrame, getZoomOutline, zoomOpenDurationProperty, zoomCloseDurationProperty,
     } = inputs.current
     if (!node || !enabled) return
     if (typeof node.animate !== "function") return
@@ -303,8 +309,8 @@ export function useOriginTravel(options: OriginTravelOptions) {
     // The node sits at rest here (any in-flight animation was cancelled), so
     // this is its untransformed target geometry.
     const fullScreen = window.matchMedia(fullScreenQuery).matches
-    const originRect = getOriginRect()
-    const zoomFrame = fullScreen && originRect ? getZoomFrame?.() ?? null : null
+    const originRect = getOriginRect(mode)
+    const zoomFrame = originRect ? getZoomFrame?.() ?? null : null
     const durationOf = (element: Element, property: string) =>
       cssTimeToMilliseconds(getComputedStyle(element).getPropertyValue(property))
 
@@ -312,13 +318,12 @@ export function useOriginTravel(options: OriginTravelOptions) {
     if (zoomFrame && originRect && zoomOpenDurationProperty && zoomCloseDurationProperty) {
       const target = node.getBoundingClientRect()
       const anchor = getZoomAnchor?.()?.getBoundingClientRect()
-      const keyframes = buildZoomKeyframes(mode, {
+      const geometry = {
         origin: originRect,
         radius: getOriginRadius?.() ?? 0,
         target,
         anchor: anchor && anchor.width > 0 ? anchor : target,
-        frame: zoomFrame.getBoundingClientRect(),
-      })
+      }
       const timing: KeyframeAnimationOptions = {
         duration: durationOf(zoomFrame, mode === "open" ? zoomOpenDurationProperty : zoomCloseDurationProperty),
         easing: "linear",
@@ -328,11 +333,20 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // can step aside for the clip; lowered with the flight's other flags.
       zoomFrame.setAttribute("data-origin-zoom", "true")
       zoomFrameRef.current = zoomFrame
-      flights = [node.animate(keyframes.surface, timing), zoomFrame.animate(keyframes.frame, timing)]
+
+      if (fullScreen) {
+        const keyframes = buildZoomKeyframes(mode, geometry, { kind: "screen", frame: zoomFrame.getBoundingClientRect() })
+        flights = [node.animate(keyframes.surface, timing), zoomFrame.animate(keyframes.frame, timing)]
+      } else {
+        const outline = getZoomOutline?.()
+        const style = outline ? getComputedStyle(outline) : null
+        const radii = (style
+          ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
+          : [0, 0, 0, 0]) as Corners
+        flights = [node.animate(buildZoomKeyframes(mode, geometry, { kind: "card", radii }).surface, timing)]
+      }
     } else {
-      const offset = fullScreen
-        ? verticalOffset
-        : (originRect && getOriginOffset(originRect, node.getBoundingClientRect())) ?? originFallback
+      const offset = fullScreen ? verticalOffset : originFallback
       const durationProperty = mode === "open" ? openDurationProperty : closeDurationProperty
 
       flights = [node.animate(buildOriginKeyframes(mode, offset), {
