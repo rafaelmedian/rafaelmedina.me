@@ -1234,11 +1234,12 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Personal photos</p>
               <p className="ds-caption">
                 A fan of square prints, each framed by a thin <code>--canvas</code> border and a crisp print shadow
-                (a hairline edge, a tight contact shadow and a short lift; scoped to personal-photos.css). Opening flies every print to its
-                place on a full-screen photo wall over <code>--photo-open-duration</code> and back over{" "}
+                (a hairline edge, a tight contact shadow and a short lift; scoped to personal-photos.css). Opening fades a white canvas in over
+                the page while every photo appears in its own place on the full-screen wall, rippling out from the middle
+                over <code>--photo-open-duration</code>; closing flies the prints home to the fan over{" "}
                 <code>--photo-close-duration</code>. The wall wears the same print, its frame one fixed width on every
-                photo, so no photo loses its frame in flight. The only visible control is a <code>--radius-full</code> Close
-                pill.
+                photo. The only visible control is a solid <code>--canvas</code> Close pill with{" "}
+                <code>--shadow-overlay</code>.
               </p>
               <PersonalPhotos />
             </div>

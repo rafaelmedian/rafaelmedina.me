@@ -14,7 +14,8 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
   await page.locator(".personal-photos-label").click()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toBeVisible()
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCSS("opacity", "1")
-  await expect(page.locator(".personal-photos-print img").first()).toHaveCSS("opacity", "0")
+  // The wall opens in place: the fan keeps its photos until the close flies them home.
+  await expect(page.locator(".personal-photos-print img").first()).toHaveCSS("opacity", "1")
   await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
   await page.evaluate(() => {
     const animate = Element.prototype.animate

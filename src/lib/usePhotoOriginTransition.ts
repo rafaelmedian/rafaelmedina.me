@@ -120,7 +120,13 @@ export function usePhotoOriginTransition(
     // style on the fan right after the wall mounted, forcing that layout a
     // step early inside the open's own task.
     const prints = Array.from(opener.querySelectorAll<HTMLElement>(".personal-photos-print"))
-    prints.forEach((element) => { element.setAttribute("data-photo-away", "") })
+    // The flat wall opens in place (below), so on the way in no photo has
+    // left its print: the fan stays as it is under the fading canvas. The
+    // close flies them home, and they are away for that.
+    const tokens = getComputedStyle(strip)
+    const inPlace = open && strip.dataset.layout === "wall"
+      && !(parseFloat(tokens.getPropertyValue("--wall-bend")) || parseFloat(tokens.getPropertyValue("--wall-rim")))
+    if (!inPlace) prints.forEach((element) => { element.setAttribute("data-photo-away", "") })
     // The opener wears it only while the sheet is actually over it. The fan
     // answers to the pointer as a whole, and the pointer is still on the tile
     // — the sheet just happens to be covering it — so without this the hand
@@ -188,6 +194,45 @@ export function usePhotoOriginTransition(
 
     const slides = Array.from(strip.querySelectorAll<HTMLElement>(".personal-photos-slide"))
     const bounds = strip.getBoundingClientRect()
+
+    // The flat wall opens in place. Flying every print out of the five on the
+    // fan sent dozens of photos criss-crossing the screen to slots that had
+    // nothing to do with where they started, and the wall read as being
+    // reshuffled rather than revealed. Each photo now appears where it lives,
+    // growing the last few percent as it fades in, in a short ripple out from
+    // the middle of the screen. The close still gathers the prints home.
+    const curvedWall = Boolean(parseFloat(tokens.getPropertyValue("--wall-bend")) || parseFloat(tokens.getPropertyValue("--wall-rim")))
+    if (open && opaqueWall && !curvedWall) {
+      // A reopen while the prints were still flying home drops that return.
+      previousFlights.forEach(removeFlight)
+      sourceFades.current.forEach((animation) => animation.cancel())
+      sourceFades.current = []
+      const centreX = bounds.left + bounds.width / 2
+      const centreY = bounds.top + bounds.height / 2
+      const reach = Math.hypot(bounds.width, bounds.height) / 2
+      const entranceEasing = tokens.getPropertyValue("--ease-smooth").trim()
+      // Read every slot before starting any animation.
+      const onScreen = slides.map(slide => ({ slide, rect: slide.getBoundingClientRect() })).filter(({ rect }) =>
+        rect.width && rect.right > bounds.left && rect.left < bounds.right && rect.bottom > bounds.top && rect.top < bounds.bottom)
+      const entrance = onScreen.map(({ slide, rect }) => {
+        const distance = Math.min(1, Math.hypot(rect.left + rect.width / 2 - centreX, rect.top + rect.height / 2 - centreY) / reach)
+        return slide.animate([{ opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1 }], {
+          duration: duration * 0.75, delay: distance * duration * 0.25, easing: entranceEasing, fill: "backwards",
+        })
+      })
+      // Marks the wall while its photos are still arriving.
+      strip.setAttribute("data-entering", "")
+      let entered = false
+      void Promise.allSettled(entrance.map(animation => animation.finished)).then(() => {
+        if (!entered) strip.removeAttribute("data-entering")
+      })
+      // A close asked for mid-entrance measures the slides at rest.
+      return () => {
+        entered = true
+        entrance.forEach((animation) => animation.finish())
+        strip.removeAttribute("data-entering")
+      }
+    }
 
     // Snapshot all destinations before mounting or hiding any flight. Mixing
     // these reads with each clone's writes forces layout once per photo.

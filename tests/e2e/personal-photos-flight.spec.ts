@@ -123,29 +123,6 @@ test("focused opens keep a bitmap behind newly mounted flight images", async ({ 
 })
 
 
-test("the opening wall stays opaque through the flight handoff", async ({ page }) => {
-  await page.goto("/")
-  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
-  await page.evaluate(() => {
-    Object.assign(window, { openingOpacity: [] as number[] })
-    const sample = () => {
-      const dialog = document.querySelector(".personal-photos-dialog:not([data-ending-style])")
-      const backdrop = document.querySelector(".personal-photos-backdrop:not([data-ending-style])")
-      if (dialog && backdrop) (window as unknown as { openingOpacity: number[] }).openingOpacity.push(
-        Number(getComputedStyle(dialog).opacity), Number(getComputedStyle(backdrop).opacity),
-      )
-      requestAnimationFrame(sample)
-    }
-    requestAnimationFrame(sample)
-  })
-  await page.locator(".personal-photos-label").click()
-  await expect(page.getByRole("region", { name: "Photo wall" })).toBeVisible()
-  await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
-  const samples = await page.evaluate(() => (window as unknown as { openingOpacity: number[] }).openingOpacity)
-  expect(samples.length).toBeGreaterThan(1)
-  expect(Math.min(...samples)).toBe(1)
-})
-
 test("closing during a GPU opening returns the photos to their fan slots", async ({ page }) => {
   await page.goto("/")
   await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")

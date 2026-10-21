@@ -277,12 +277,15 @@
 }
 
 .personal-photos-dialog[data-starting-style] { opacity: 0; }
-/* Flights own the reveal. Keep their destination and the white canvas opaque
-   so the page never shows through as the photos grow and hand off. */
-.personal-photos-backdrop[data-layout="wall"]:not([data-ending-style]),
+/* The wall's photos open in place, so nothing flies over the page: the white
+   canvas fades in under them, a quick 200ms, while they ripple in. The popup
+   itself stays opaque; its photos carry their own entrance. */
 .personal-photos-dialog[data-layout="wall"]:not([data-ending-style]) {
   opacity: 1;
   transition: none;
+}
+.personal-photos-backdrop[data-layout="wall"]:not([data-ending-style]) {
+  transition-duration: var(--duration-base);
 }
 .personal-photos-dialog[data-ending-style] {
   opacity: 0;
