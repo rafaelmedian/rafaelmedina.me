@@ -1128,9 +1128,16 @@
   justify-content: center;
   gap: 0.5rem;
 }
+/* Over the wall's white canvas the glass had nothing to frost and read as a
+   grey smudge. The wall's Close is a solid white pill lifted by the house
+   floating-surface shadow instead. */
 .personal-photos-wall-toolbar .personal-photos-wall-close {
   position: static;
   translate: none;
+  background: var(--canvas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
 }
 
 /* The first-open zoom hint: Streamline's zoom gesture pair, bare in the
