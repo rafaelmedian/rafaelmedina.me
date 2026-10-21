@@ -3685,37 +3685,62 @@ for (const { layout, viewport, clipped } of [
     await tile.click()
     await expect(page.getByRole("dialog")).toBeVisible()
     // Measured now, not before the press: the grid's intro still moves the
-    // tile for a while after load, and the flight aims at where it was.
-    const box = (await tileHandle!.boundingBox())!
+    // tile for a while after load, and the flight aims at where it was. The
+    // tile letterboxes its 4:3 video, so the video is what the artwork hits.
+    const box = await tileHandle!.evaluate((tile) => {
+      // The box the video paints under object-fit: contain, from its ratio.
+      const video = tile.querySelector<HTMLVideoElement>("[data-origin-artwork] video")!
+      const rect = video.getBoundingClientRect()
+      const ratio = (video.videoWidth || Number(video.getAttribute("width"))) / (video.videoHeight || Number(video.getAttribute("height")))
+      const width = Math.min(rect.width, rect.height * ratio)
+      const height = width / ratio
+      return { x: rect.x + (rect.width - width) / 2, y: rect.y + (rect.height - height) / 2, width, height }
+    })
 
     const shell = page.locator(".preview-gallery-shell")
     await expect(shell).toHaveAttribute("data-origin-zoom", "true")
     const firstFrame = await page.locator(clipped).evaluate((element) => {
-      const frame = document.querySelector(".preview-gallery-media-frame")!.getBoundingClientRect()
-      return { clip: getComputedStyle(element).clipPath, frame: { x: frame.x, y: frame.y, width: frame.width } }
+      const video = document.querySelector<HTMLVideoElement>("video.preview-gallery-media")!
+      const rect = video.getBoundingClientRect()
+      const ratio = (video.videoWidth || Number(video.getAttribute("width"))) / (video.videoHeight || Number(video.getAttribute("height")))
+      const width = Math.min(rect.width, rect.height * ratio)
+      const height = width / ratio
+      const media = { x: rect.x + (rect.width - width) / 2, y: rect.y + (rect.height - height) / 2, width, height }
+      return { clip: getComputedStyle(element).clipPath, media }
     })
-    expect(firstFrame.frame.x).toBeCloseTo(box.x, 0)
-    expect(firstFrame.frame.y).toBeCloseTo(box.y, 0)
-    expect(firstFrame.frame.width).toBeCloseTo(box.width, 0)
-    // inset() serialises as CSS shorthand, so equal sides collapse.
-    const [insets, corners] = firstFrame.clip.replace(/^inset\(|\)$/g, "").split(" round ")
-    const [top, right = top, , left = right] = insets.split(" ").map(parseFloat)
-    expect(parseFloat(corners)).toBeGreaterThan(0)
+    expect(firstFrame.media.x).toBeCloseTo(box.x, 0)
+    expect(firstFrame.media.y).toBeCloseTo(box.y, 0)
+    expect(firstFrame.media.width).toBeCloseTo(box.width, 0)
+    expect(firstFrame.media.height).toBeCloseTo(box.height, 0)
     if (layout === "full-screen") {
+      // inset() serialises as CSS shorthand, so equal sides collapse.
+      const [top, right = top, , left = right] = firstFrame.clip.replace(/^inset\(|\)$/g, "").split(" round ")[0].split(" ").map(parseFloat)
       expect(top).toBeCloseTo(box.y, 0)
       expect(left).toBeCloseTo(box.x, 0)
     }
+    // The tile is still whole under the cut; it then dissolves rather than
+    // staying under the surface growing out of it (checked at rest below).
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
 
-    await page.evaluate(() => {
+    const finishFlights = () => page.evaluate(() => {
       for (const animation of document.getAnimations()) {
         if (animation.timeline !== document.timeline) continue
         animation.playbackRate = 1
         animation.finish()
       }
     })
+    await finishFlights()
     await expect(shell).not.toHaveAttribute("data-origin-zoom")
     await expect(page.locator(clipped)).toHaveCSS("clip-path", "none")
     await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
+    // Hidden while the gallery is up, as iOS leaves a gap where the card was.
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("0")
+
+    // And it comes back as the surface lands on it.
+    await page.keyboard.press("Escape")
+    await finishFlights()
+    await expect(page.getByRole("dialog")).toBeHidden()
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
   })
 }
 
