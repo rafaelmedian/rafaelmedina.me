@@ -30,7 +30,6 @@ import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { aboutIntro } from "../data/aboutIntro"
 import { useHoverCard } from "../lib/hoverCard"
-import { originCornerRadius, visibleOriginRect } from "../lib/originMotion"
 import { revealGalleryEntry } from "../lib/galleryEntry"
 import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
@@ -747,13 +746,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   }, [galleryItemId])
 
   // The gallery grows out of (and shrinks back into) the card it represents, so
-  // it needs that card's live geometry at open and close time.
-  const getPreviewOriginRect = useCallback(
-    (index: number) => visibleOriginRect(previewCardNodesRef.current.get(index)),
-    [],
-  )
-  const getPreviewOriginRadius = useCallback(
-    (index: number) => originCornerRadius(previewCardNodesRef.current.get(index)),
+  // it needs that card at open and close time.
+  const getPreviewOrigin = useCallback(
+    (index: number) => previewCardNodesRef.current.get(index) ?? null,
     [],
   )
 
@@ -1171,7 +1166,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 aria-label={`Open ${item.card.title} preview ${item.previewIndex + 1} of ${galleryItems.length}`}
                                 aria-describedby={`${itemKey}-description`}
                               >
-                                <span className="mosaic-row-card-media-clip">
+                                <span className="mosaic-row-card-media-clip" data-origin-artwork="">
                                   {media}
                                 </span>
                                 <span className="mosaic-row-card-scrim" aria-hidden="true">
@@ -1237,8 +1232,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   openedByGesture={openedByGesture}
                   selectedIndex={selectedWorkPreviewIndex}
                   prefersReducedMotion={prefersReducedMotion}
-                  getOriginRect={getPreviewOriginRect}
-                  getOriginRadius={getPreviewOriginRadius}
+                  getOrigin={getPreviewOrigin}
                   onOpenChange={(nextOpen) => {
                     if (nextOpen) return
                     writingsFolderRef.current?.cancelPending()

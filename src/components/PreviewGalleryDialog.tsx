@@ -30,8 +30,8 @@ type PreviewGalleryDialogProps = {
   prefersReducedMotion: boolean
   onOpenChange: (open: boolean) => void
   onSelectedIndexChange: (index: number) => void
-  getOriginRect?: (index: number) => DOMRect | null
-  getOriginRadius?: (index: number) => number
+  /** The tile an item opens from and closes into. */
+  getOrigin?: (index: number) => Element | null
   /** Where focus lands on close when the control that opened this is gone. */
   finalFocus?: React.ComponentProps<typeof Dialog.Popup>["finalFocus"]
   /** A row was pressed: fetch and select its nested article. */
@@ -73,6 +73,12 @@ const galleryMotionVars = {
   // to one value the flight can read) so a token change retimes the zoom.
   "--pg-zoom-open-ms": "calc(var(--duration-slow) + var(--duration-fast))",
   "--pg-zoom-close-ms": "var(--duration-slow)",
+  // How long the tile takes to give way to the surface at each end of the
+  // zoom. Only the tile fades: the surface's artwork lands on the tile's
+  // exactly, so the surface cuts in over it, and the tile's frame around the
+  // artwork dissolves underneath. A crossfade of both overlapped the spring's
+  // fastest frames and showed two copies sliding apart.
+  "--pg-zoom-handoff-ms": "var(--duration-fast)",
   "--pg-content-in-ms": "var(--duration-base)",
   "--pg-content-out-ms": "var(--duration-quick)",
   "--pg-backdrop-in-ms": "var(--duration-base)",
@@ -114,8 +120,7 @@ export function PreviewGalleryDialog({
   prefersReducedMotion,
   onOpenChange,
   onSelectedIndexChange,
-  getOriginRect,
-  getOriginRadius,
+  getOrigin,
   finalFocus,
   onSelectWriting,
   notesStatus,
@@ -352,7 +357,7 @@ export function PreviewGalleryDialog({
     else shell?.removeAttribute("data-origin-animating")
   }, [])
 
-  const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
+  const originMotionEnabled = !prefersReducedMotion && Boolean(getOrigin)
 
   // Declared before the open effect below, so a click that changes the index and
   // opens in the same commit animates from the new card: the hook latches these
@@ -362,16 +367,19 @@ export function PreviewGalleryDialog({
     // A shared link opens with a plain lift: zooming out of a tile nobody
     // pressed reads as the page doing something on its own. It still closes
     // into the tile, which is where the visitor finds it again.
-    getOriginRect: (mode) => mode === "open" && !openedByGesture ? null : getOriginRect?.(safeIndex) ?? null,
+    getOrigin: (mode) => mode === "open" && !openedByGesture ? null : getOrigin?.(safeIndex) ?? null,
     enabled: originMotionEnabled,
     openDurationProperty: "--pg-open-ms",
     closeDurationProperty: "--pg-close-ms",
     onFlight: flagOriginAnimating,
     getFadeNode: () => popupRef.current,
-    getOriginRadius: () => getOriginRadius?.(safeIndex) ?? 0,
-    getZoomAnchor: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
+    getZoomAnchor: () => {
+      const frame = popupRef.current?.querySelector(".preview-gallery-media-frame")
+      return frame?.querySelector(".preview-gallery-media") ?? frame ?? null
+    },
     getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
     getZoomOutline: () => cardRef.current,
+    handoffDurationProperty: "--pg-zoom-handoff-ms",
     zoomOpenDurationProperty: "--pg-zoom-open-ms",
     zoomCloseDurationProperty: "--pg-zoom-close-ms",
   })

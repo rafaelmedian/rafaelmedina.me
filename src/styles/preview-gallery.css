@@ -195,18 +195,22 @@
 
 /* The zoom out of a tile (lib/originMotion): the tile becomes the gallery, the
    way iOS opens an App Store card, instead of the gallery arriving from the
-   tile's direction. The surface is already in the tile's place, so it only has
-   to stop being transparent: a short fade, not the base one that carries the
-   lift. */
-.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion] {
-  transition: opacity var(--duration-fast) ease-out;
+   tile's direction. The surface's artwork lands exactly on the tile's, so it
+   cuts in over it with no fade; lib/originMotion dissolves the tile's frame
+   around it underneath. */
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion],
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-starting-style] {
+  opacity: 1;
+  transition: none;
 }
 
-/* On the way back it stays solid while it shrinks and fades only once it is
-   over the tile. Base UI unmounts on this transition's end, so the delay is
-   also what keeps it mounted for the whole flight. */
+/* On the way back it stays solid while it shrinks, the tile's frame fading in
+   beneath it, and cuts out once it is over the tile's artwork. A zero-length
+   transition with a delay still runs, and Base UI unmounts on its end, so the
+   delay is what keeps it mounted for the whole flight. */
 .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-ending-style] {
-  transition: opacity var(--duration-fast) linear calc(var(--pg-zoom-close-ms) - var(--duration-fast));
+  opacity: 0;
+  transition: opacity 0s linear var(--pg-zoom-close-ms);
 }
 
 /* The page stays in view under the growing card for most of its flight

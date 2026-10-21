@@ -2,15 +2,15 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from "react"
 
 import { cssTimeToMilliseconds } from "./cssTime"
 
-// Origin-aware open/close: a modal travels from (and back to) the thing that
-// opened it, so it reads as that card or tile growing into place rather than as
-// a surface appearing over the page. Shared by the project preview gallery and
-// the writings sheet, which open on the same line and now leave the same way.
+// Origin-aware open/close: the preview gallery zooms out of (and back into) the
+// tile that opened it, so the tile reads as opening rather than a surface
+// appearing over the page. With no tile in view it lifts in instead.
 //
-// The geometry is one Web Animations flight on the travelling surface, so the
-// translate and the scale stay a single coordinated motion; the fade stays in
-// CSS. Durations alias the shared CSS scale and are read from the element, so a
-// token change retimes the flight with the transitions around it.
+// Every track is a Web Animations flight sharing one timing, so the scale, the
+// clip and the hand-off with the tile stay a single coordinated motion; the
+// surface's own fade stays in CSS. Durations alias the shared CSS scale and are
+// read from computed style, so a token change retimes the flight with the
+// transitions around it.
 
 // The open is deliberately not an expo-out. A quintic curve is 97% done in its
 // first third, which for a surface growing out of a card means the growth is
@@ -31,7 +31,7 @@ const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : us
 
 // An anchor scrolled out of view would send the surface flying off-screen, so
 // only the ones the viewer can actually see get to aim a flight.
-export function visibleOriginRect(element: Element | null | undefined): DOMRect | null {
+function visibleOriginRect(element: Element | null | undefined): DOMRect | null {
   if (!element) return null
 
   const rect = element.getBoundingClientRect()
@@ -43,7 +43,10 @@ export function visibleOriginRect(element: Element | null | undefined): DOMRect 
 // The corner a tile shows, which is not always its own: several tiles round an
 // inner frame that fills them. The first element filling the tile's box with a
 // radius is the outline the eye reads.
-export function originCornerRadius(element: Element | null | undefined): number {
+const sameBox = (a: DOMRect, b: DOMRect) =>
+  Math.abs(a.width - b.width) <= 1 && Math.abs(a.height - b.height) <= 1
+
+function originCornerRadius(element: Element | null | undefined): number {
   if (!element) return 0
 
   const { width, height } = element.getBoundingClientRect()
@@ -152,6 +155,10 @@ type ZoomGeometry = {
   /** The part of the surface that lands on the tile, at rest: the artwork the
    *  tile is a thumbnail of, or the surface itself when there is none. */
   anchor: DOMRect
+  /** Artwork lands on artwork covering it, centred, the way the tile crops its
+   *  own image; a surface with no artwork lands width-for-width, top-aligned,
+   *  so the tile turns into the top of the page. */
+  fit: "cover" | "top"
 }
 
 type Corners = [number, number, number, number]
@@ -167,11 +174,11 @@ const insetPath = (inset: Corners, radii: Corners) =>
 // the surface rather than the surface arriving from the tile's direction. Two
 // coordinated tracks:
 //
-// - The surface scales so its artwork sits exactly on the tile, and grows from
+// - The surface scales so its artwork covers the tile's artwork, and grows from
 //   there to rest, pinned at its top-left corner.
 // - A clip starts on the tile's rounded rectangle and opens out to the surface's
-//   real outline. The scaled surface is taller than the tile, so the clip is
-//   what gives the moving shape the tile's proportions.
+//   real outline, so the first frame shows the artwork and nothing around it:
+//   no title text, no toolbar, just the image the eye was already on.
 //
 // Where the gallery fills the screen, the clip lives on the full-screen frame in
 // viewport coordinates and opens to the screen edges. Where it is a floating
@@ -182,13 +189,21 @@ function buildZoomKeyframes(
   geometry: ZoomGeometry,
   space: { kind: "screen"; frame: DOMRect } | { kind: "card"; radii: Corners },
 ) {
-  const { origin, radius, target, anchor } = geometry
+  const { origin, radius, target, anchor, fit } = geometry
   const ease = mode === "open" ? zoomOpen : zoomClose
-  const scaleFrom = origin.width / anchor.width
-  // Scaled about the surface's top-left corner, the anchor's corner lands at
-  // target + (anchor - target) * scale; this translate moves it onto the tile.
-  const dx = origin.left - target.left - (anchor.left - target.left) * scaleFrom
-  const dy = origin.top - target.top - (anchor.top - target.top) * scaleFrom
+  const scaleFrom = fit === "cover"
+    ? Math.max(origin.width / anchor.width, origin.height / anchor.height)
+    : origin.width / anchor.width
+  // Scaled about the surface's top-left corner, a point at `local` px into the
+  // surface lands at target + translate + local * scale. These translates put
+  // the anchor's centre on the tile's (cover) or its top-left corner on the
+  // tile's (top).
+  const dx = fit === "cover"
+    ? origin.left + origin.width / 2 - target.left - (anchor.left - target.left + anchor.width / 2) * scaleFrom
+    : origin.left - target.left - (anchor.left - target.left) * scaleFrom
+  const dy = fit === "cover"
+    ? origin.top + origin.height / 2 - target.top - (anchor.top - target.top + anchor.height / 2) * scaleFrom
+    : origin.top - target.top - (anchor.top - target.top) * scaleFrom
 
   // Clip insets as [top, right, bottom, left] and radii as [tl, tr, br, bl].
   let insetFrom: Corners
@@ -202,10 +217,16 @@ function buildZoomKeyframes(
     radiiFrom = [radius, radius, radius, radius]
     radiiTo = [0, 0, 0, 0]
   } else {
-    // The tile's rectangle, mapped back through the starting scale into the
-    // surface's own coordinates: the anchor's width and top, the tile's height.
-    const tileBottom = anchor.top - target.top + origin.height / scaleFrom
-    insetFrom = [anchor.top - target.top, target.right - anchor.right, target.height - tileBottom, anchor.left - target.left]
+    // The tile's rectangle, mapped back through the starting pose into the
+    // surface's own coordinates.
+    const localX = (x: number) => (x - target.left - dx) / scaleFrom
+    const localY = (y: number) => (y - target.top - dy) / scaleFrom
+    insetFrom = [
+      localY(origin.top),
+      target.width - localX(origin.right),
+      target.height - localY(origin.bottom),
+      localX(origin.left),
+    ]
     insetTo = [-cardClipBleed, -cardClipBleed, -cardClipBleed, -cardClipBleed]
     const local = radius / scaleFrom
     radiiFrom = [local, local, local, local]
@@ -236,11 +257,62 @@ function buildZoomKeyframes(
   return { surface, frame }
 }
 
+// The tile hands off to the surface rather than staying under it: two copies of
+// the same artwork, one growing out of the other, is what made the zoom read as
+// a surface flying over the page instead of the tile opening. It goes as the
+// surface appears, stays hidden while the surface is presented (iOS leaves the
+// same gap in the grid), and comes back as the surface lands. `handoff` is the
+// share of the flight that exchange takes; zero is a cut.
+function buildSourceKeyframes(mode: "open" | "close", handoff: number): Keyframe[] {
+  return mode === "open"
+    ? [{ opacity: 1, offset: 0 }, { opacity: 0, offset: handoff }, { opacity: 0, offset: 1 }]
+    : [{ opacity: 0, offset: 0 }, { opacity: 0, offset: 1 - handoff }, { opacity: 1, offset: 1 }]
+}
+
+// Marks the part of a tile its artwork occupies, so the surface's artwork can
+// land on it. A tile without one is the anchor itself.
+export const originArtworkAttribute = "data-origin-artwork"
+
+// The box an image or video actually paints, which under `object-fit: contain`
+// is not its element's: the work tiles letterbox 4:3 artwork inside a taller
+// frame, and landing the surface on the frame drew its artwork at twice the
+// tile's size on the frame it took over.
+export function paintedRect(element: Element): DOMRect {
+  const box = element.getBoundingClientRect()
+  // Before its metadata arrives a video (or a lazy image) reports 0x0; the
+  // width and height attributes every artwork carries give the same ratio.
+  const attribute = (name: string) => Number(element.getAttribute(name)) || 0
+  const [width, height] = element instanceof HTMLVideoElement
+    ? [element.videoWidth || attribute("width"), element.videoHeight || attribute("height")]
+    : element instanceof HTMLImageElement
+      ? [element.naturalWidth || attribute("width"), element.naturalHeight || attribute("height")]
+      : [0, 0]
+  if (!width || !height || getComputedStyle(element).objectFit !== "contain") return box
+
+  const scale = Math.min(box.width / width, box.height / height)
+  return new DOMRect(
+    box.left + (box.width - width * scale) / 2,
+    box.top + (box.height - height * scale) / 2,
+    width * scale,
+    height * scale,
+  )
+}
+
+// The tile's artwork: its one image or video when it has exactly one, else the
+// marked frame (a paired banner lands as a whole).
+function originArtwork(origin: Element | null) {
+  const frame = origin?.querySelector(`[${originArtworkAttribute}]`)
+  if (!frame) return null
+  const media = frame.querySelectorAll("img, video")
+  return media.length === 1 ? { element: media[0], frame } : { element: frame, frame }
+}
+
 export type OriginTravelOptions = {
   /** The surface that flies. Null while the dialog's portal is unmounted. */
   node: HTMLElement | null
-  /** Live geometry of the thing the surface comes out of, re-read per flight. */
-  getOriginRect: (mode: "open" | "close") => DOMRect | null
+  /** The tile the surface comes out of, re-read per flight. Only a tile the
+   *  viewer can see aims a flight. */
+  getOrigin: (mode: "open" | "close") => Element | null
   /** False leaves the surface's CSS pose in charge: reduced motion, or no anchor to aim at. */
   enabled: boolean
   /** Custom properties the two durations are read from, on the flying node. */
@@ -250,8 +322,6 @@ export type OriginTravelOptions = {
   onFlight?: (flying: boolean) => void
   /** The element whose CSS opacity fade the open flight starts with. */
   getFadeNode?: () => Element | null
-  /** The tile's corner radius in px, where the zoom's clip starts. */
-  getOriginRadius?: () => number
   /** The element inside the surface that should land on the tile. */
   getZoomAnchor?: () => Element | null
   /** The full-screen element the zoom clips in the full-screen layout, and
@@ -260,6 +330,8 @@ export type OriginTravelOptions = {
   getZoomFrame?: () => HTMLElement | null
   /** The element whose border radii are the surface's resting outline. */
   getZoomOutline?: () => Element | null
+  /** Duration of the crossfade between the tile and the surface. */
+  handoffDurationProperty?: string
   /** Duration properties for the zoom, read from the frame. */
   zoomOpenDurationProperty?: string
   zoomCloseDurationProperty?: string
@@ -298,8 +370,8 @@ export function useOriginTravel(options: OriginTravelOptions) {
 
   const run = useCallback((mode: "open" | "close") => {
     const {
-      node, getOriginRect, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode,
-      getOriginRadius, getZoomAnchor, getZoomFrame, getZoomOutline, zoomOpenDurationProperty, zoomCloseDurationProperty,
+      node, getOrigin, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode,
+      getZoomAnchor, getZoomFrame, getZoomOutline, handoffDurationProperty, zoomOpenDurationProperty, zoomCloseDurationProperty,
     } = inputs.current
     if (!node || !enabled) return
     if (typeof node.animate !== "function") return
@@ -309,7 +381,11 @@ export function useOriginTravel(options: OriginTravelOptions) {
     // The node sits at rest here (any in-flight animation was cancelled), so
     // this is its untransformed target geometry.
     const fullScreen = window.matchMedia(fullScreenQuery).matches
-    const originRect = getOriginRect(mode)
+    const origin = getOrigin(mode)
+    const artwork = originArtwork(origin)
+    // The artwork's painted box when the tile marks one, the tile's own
+    // otherwise. Only a tile in view aims a flight.
+    const originRect = visibleOriginRect(origin) && (artwork ? paintedRect(artwork.element) : origin!.getBoundingClientRect())
     const zoomFrame = originRect ? getZoomFrame?.() ?? null : null
     const durationOf = (element: Element, property: string) =>
       cssTimeToMilliseconds(getComputedStyle(element).getPropertyValue(property))
@@ -317,15 +393,21 @@ export function useOriginTravel(options: OriginTravelOptions) {
     let flights: Animation[]
     if (zoomFrame && originRect && zoomOpenDurationProperty && zoomCloseDurationProperty) {
       const target = node.getBoundingClientRect()
-      const anchor = getZoomAnchor?.()?.getBoundingClientRect()
-      const geometry = {
+      const anchorElement = getZoomAnchor?.()
+      const anchorRect = anchorElement ? paintedRect(anchorElement) : null
+      const anchor = anchorRect && anchorRect.width > 0 && anchorRect.height > 0 ? anchorRect : null
+      const geometry: ZoomGeometry = {
         origin: originRect,
-        radius: getOriginRadius?.() ?? 0,
+        // A letterboxed image is square-cornered; one filling its frame wears
+        // the frame's rounding.
+        radius: originCornerRadius(artwork && !sameBox(originRect, artwork.frame.getBoundingClientRect()) ? artwork.element : artwork?.frame ?? origin),
         target,
-        anchor: anchor && anchor.width > 0 ? anchor : target,
+        anchor: anchor ?? target,
+        fit: anchor ? "cover" : "top",
       }
+      const duration = durationOf(zoomFrame, mode === "open" ? zoomOpenDurationProperty : zoomCloseDurationProperty)
       const timing: KeyframeAnimationOptions = {
-        duration: durationOf(zoomFrame, mode === "open" ? zoomOpenDurationProperty : zoomCloseDurationProperty),
+        duration,
         easing: "linear",
         fill: mode === "open" ? "none" : "forwards",
       }
@@ -344,6 +426,17 @@ export function useOriginTravel(options: OriginTravelOptions) {
           ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
           : [0, 0, 0, 0]) as Corners
         flights = [node.animate(buildZoomKeyframes(mode, geometry, { kind: "card", radii }).surface, timing)]
+      }
+
+      // Held hidden after the open (until the close's `cancel` lets go of it);
+      // back to its own CSS after the close, whose last frame is fully shown.
+      const handoff = handoffDurationProperty ? durationOf(zoomFrame, handoffDurationProperty) : 0
+      if (origin && duration > 0) {
+        flights.push(origin.animate(buildSourceKeyframes(mode, Math.min(handoff / duration, 1)), {
+          duration,
+          easing: "linear",
+          fill: mode === "open" ? "forwards" : "none",
+        }))
       }
     } else {
       const offset = fullScreen ? verticalOffset : originFallback
@@ -369,7 +462,9 @@ export function useOriginTravel(options: OriginTravelOptions) {
     // keyframe, it takes the fade's own start time instead, and the two run as
     // one. It is created now rather than then, so anything waiting on
     // `getAnimations()` still finds it.
-    const fadeNode = mode === "open" ? getFadeNode?.() : null
+    // A zoom has no fade to wait for: the surface is solid from its first
+    // frame, standing in for the tile it covers.
+    const fadeNode = mode === "open" && !zoomFrameRef.current ? getFadeNode?.() : null
     if (fadeNode) {
       for (const animation of flights) animation.pause()
       const start = () => {
