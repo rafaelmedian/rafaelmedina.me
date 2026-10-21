@@ -1866,8 +1866,8 @@ test("hints at booking with a clip over the availability month", async ({ page }
   await expect(hint).toHaveText("")
   // Which is why the month has to survive somewhere a screen reader reaches:
   // once in the pill's own name, once in its description.
-  await expect(bookButton).toHaveAccessibleDescription("Available in September · 30 minutes in my calendar")
-  await expect(bookButton).toHaveAccessibleName("Book a call — Available in September")
+  await expect(bookButton).toHaveAccessibleDescription("Available in November · 30 minutes in my calendar")
+  await expect(bookButton).toHaveAccessibleName("Book a call — Available in November")
 })
 
 // One recipe for both wearers: a card that is a clip is a card that is a clip,
@@ -1970,7 +1970,7 @@ test("carries the availability month in the booking pill's hint and nowhere on t
   await bookButton.hover()
   // The hint is a clip now, so the month it carries is spoken rather than drawn.
   await expect(page.locator(".reaction-card")).toBeVisible()
-  await expect(bookButton).toHaveAccessibleDescription("Available in September · 30 minutes in my calendar")
+  await expect(bookButton).toHaveAccessibleDescription("Available in November · 30 minutes in my calendar")
 
   // With the dot gone the label is the pill's only content, so it has to sit on
   // the pill's own centre rather than off to one side of a vacated slot.
@@ -1993,6 +1993,24 @@ test("carries the availability month in the booking pill's hint and nowhere on t
   })
   expect(centring).not.toBeNull()
   expect(Math.abs(centring!.textCenterX - centring!.pillCenterX)).toBeLessThanOrEqual(1)
+})
+
+// The month is a value set in portfolio.ts, not "next month" from the clock, and
+// sighted visitors read it under the contact row rather than only hearing it.
+test("shows the set availability month under the contact row", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
+  await page.goto("/")
+  const line = page.locator(".mosaic-profile-availability")
+  await expect(line).toBeVisible()
+  await expect(line).toHaveText("Available in November")
+  await expect(line).toHaveAttribute("aria-hidden", "true")
+})
+
+test("says available now once the set month arrives", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-12-02T12:00:00Z"))
+  await page.goto("/")
+  await expect(page.locator(".mosaic-profile-availability")).toHaveText("Available now")
+  await expect(page.locator(".mosaic-booking-pill")).toHaveAccessibleName("Book a call — Available now")
 })
 
 // The dot was the site's one saturated pixel at rest, standing in for a month

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, ty
 import { Check, Copy, Search } from "lucide-react"
 import { X } from "./NavigationIcons"
 
-import { linkedinHoverMedia, xProfilePreview, type SiteLinks } from "../data/portfolio"
+import { linkedinHoverMedia, siteProfile, xProfilePreview, type SiteLinks } from "../data/portfolio"
 import { SiteLastUpdated } from "./SiteLastUpdated"
 import { ContactActionRow } from "./ContactActionRow"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -1055,7 +1055,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 data-ds-terms={terms("contact pill book a call booking linkedin x follow")}
               >
                 <ContactActionRow
-                  availabilityLabel={formatAvailability()}
+                  availabilityLabel={formatAvailability(siteProfile.availableFrom)}
                   bookingUrl={links.booking}
                   linkedinHref={links.linkedin}
                   xHref={links.x}

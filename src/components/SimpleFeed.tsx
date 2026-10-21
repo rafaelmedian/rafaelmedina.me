@@ -91,6 +91,8 @@ type SiteProfile = {
   name: string
   title: string
   photo: string
+  /** YYYY-MM; see siteProfile in src/data/portfolio.ts. */
+  availableFrom: string
 }
 
 type SimpleFeedProps = {
@@ -641,7 +643,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [availabilityLabel, setAvailabilityLabel] = useState(() =>
-    formatAvailability(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
+    formatAvailability(profile.availableFrom, new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
   const [readerModule, setReaderModule] = useState<typeof import("./WritingsReader") | null>(null)
   const { itemId: writingId, selectItem: selectWriting, clearItem: clearWriting } = usePortfolioItemUrl("writing")
@@ -799,7 +801,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
 
     const updatePuntaCanaTime = () => {
       setPuntaCanaTimeLabel(formatPuntaCanaLocalTime())
-      setAvailabilityLabel(formatAvailability())
+      setAvailabilityLabel(formatAvailability(profile.availableFrom))
     }
 
     updatePuntaCanaTime()
@@ -817,7 +819,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       if (timeoutId) window.clearTimeout(timeoutId)
       if (intervalId) window.clearInterval(intervalId)
     }
-  }, [])
+  }, [profile.availableFrom])
 
   useEffect(() => {
     const aboutPanel = document.getElementById("about-panel")
@@ -1052,6 +1054,12 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               xProfile={xProfilePreview}
               linkedinMedia={linkedinHoverMedia}
             />
+            {/* The month used to be only in the pill's spoken name and its
+                hint, so a sighted visitor deciding whether to reach out never
+                saw it. It sits under the row it qualifies; the pill keeps its
+                own label to two words. Hidden from assistive tech, which
+                already hears it on the pill. */}
+            <p className="mosaic-profile-availability" aria-hidden="true">{availabilityLabel}</p>
           </div>
         </div>
       </header>

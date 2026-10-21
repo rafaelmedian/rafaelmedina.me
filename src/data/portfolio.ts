@@ -196,6 +196,9 @@ export const siteProfile = {
   name: "Rafael Medina",
   title: "Senior Product Designer",
   photo: profilePhoto,
+  /** First month open for new work, as YYYY-MM. Edit by hand when it changes;
+   * once the month arrives the hero says "Available now" on its own. */
+  availableFrom: "2026-11",
 }
 
 export const siteLinks: SiteLinks = {
