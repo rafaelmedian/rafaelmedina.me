@@ -1028,14 +1028,14 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <div
                 className="ds-rule"
                 id="project-caption-visibility"
-                data-ds-terms={terms("--card-caption-blur --card-caption-tint --card-caption-delay scrim backdrop ramp mask caption hidden touch pill")}
+                data-ds-terms={terms("--card-caption-blur --card-caption-tint --card-caption-delay scrim backdrop ramp mask caption hidden touch")}
               >
                 <strong>Work-tile captions sit on a blur ramp, not a single blur.</strong>
                 <p>
                   Four masked layers step <code>--card-caption-blur</code> up toward the bottom edge under a tint in
                   the tile&rsquo;s own colour (<code>--card-caption-tint</code>), so the label clears 4.5:1 without a
                   seam. It shows on hover and focus only. Below 700px and on touch screens the entire scrim is hidden
-                  and the title sits on every tile as a small <code>--glass-fill-strong</code> pill on the bottom edge.
+                  and so is the caption; the title still reaches assistive technology through the link&rsquo;s name.
                 </p>
               </div>
             </div>
