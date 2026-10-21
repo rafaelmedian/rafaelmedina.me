@@ -216,6 +216,8 @@
 .personal-photos-backdrop[data-layout="wall"],
 .personal-photos-dialog[data-layout="wall"] {
   --photo-open-duration: 480ms;
+  /* A beat slower than the house 200ms, so the prints are seen going home. */
+  --photo-close-duration: 300ms;
 }
 
 /* Compact screens retain their longer return journey. */

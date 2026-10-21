@@ -59,7 +59,7 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
       distortion: Math.abs(Math.hypot(matrix.a, matrix.b) - Math.hypot(matrix.c, matrix.d)),
     }
   })
-  expect(landing.duration).toBe(200)
+  expect(landing.duration).toBe(300)
   expect(landing.frame, JSON.stringify(landing)).toBeLessThan(1)
   expect(landing.image).toBeLessThan(1)
   expect(landing.crop).toBe(landing.sourceCrop)
