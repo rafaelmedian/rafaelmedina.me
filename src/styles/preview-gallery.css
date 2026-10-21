@@ -204,13 +204,14 @@
   transition: none;
 }
 
-/* On the way back it stays solid while it shrinks, the tile's frame fading in
-   beneath it, and cuts out once it is over the tile's artwork. A zero-length
-   transition with a delay still runs, and Base UI unmounts on its end, so the
-   delay is what keeps it mounted for the whole flight. */
+/* On the way back it stays solid while it shrinks, and over the flight's last
+   --pg-zoom-handoff-ms -- once it lies on the tile's artwork -- it fades as
+   the tile fades back in beneath it. A cut there showed any last-pixel or
+   video-frame difference as a flicker. Base UI unmounts on this transition's
+   end, so the delay is also what keeps it mounted for the whole flight. */
 .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-ending-style] {
   opacity: 0;
-  transition: opacity 0s linear var(--pg-zoom-close-ms);
+  transition: opacity var(--pg-zoom-handoff-ms) linear calc(var(--pg-zoom-close-ms) - var(--pg-zoom-handoff-ms));
 }
 
 /* The page stays in view under the growing card for most of its flight
@@ -1227,10 +1228,9 @@
     background: var(--canvas);
   }
 
-  /* The full-screen zoom clips the shell from the tile's rounded rectangle out
-     to the screen while the popup scales up inside it. The shell's own fill
-     steps aside for the flight: at tile scale the popup already covers the
-     clip, and the fill would only add an opaque safe-area band. */
+  /* The shell's own fill steps aside for the zoom, so the clipped surface is
+     the only thing over the page; its safe-area bands show the backdrop,
+     which is the same canvas once it has faded in. */
   .preview-gallery-shell[data-origin-zoom] {
     background: transparent;
   }

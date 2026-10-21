@@ -163,8 +163,8 @@ type ZoomGeometry = {
 
 type Corners = [number, number, number, number]
 
-// How far past the card the clip ends up, so the card's shadow (which reaches
-// ~100px below it) is whole by the time the flight lets go of the clip.
+// How far past a floating card the clip ends up, so the card's shadow (which
+// reaches ~100px below it) is whole by the time the flight lets go of the clip.
 const cardClipBleed = 120
 
 const insetPath = (inset: Corners, radii: Corners) =>
@@ -180,14 +180,22 @@ const insetPath = (inset: Corners, radii: Corners) =>
 //   real outline, so the first frame shows the artwork and nothing around it:
 //   no title text, no toolbar, just the image the eye was already on.
 //
-// Where the gallery fills the screen, the clip lives on the full-screen frame in
-// viewport coordinates and opens to the screen edges. Where it is a floating
-// card, the clip lives on the surface itself, in its own (pre-transform)
-// coordinates, and opens to just past the card's rounded corners.
+// Both tracks are one keyframe list on one element, the clip in the surface's
+// own (pre-transform) coordinates. They used to be two -- the full-screen
+// layout clipped the shell around the scaling surface -- and the browser ran
+// the transform on the compositor while the clip waited for the main thread,
+// which a close keeps busy (the dialog unmounting, the tile videos resuming):
+// the surface outran its clip and the bottom of the card flickered out past
+// it. A clip-path in the same effect keeps the transform on the main thread
+// with it, so a busy frame stutters both together instead of tearing them.
+//
+// The clip opens to the surface's resting outline: flush and square where the
+// gallery fills the screen, just past the card's rounded corners where it
+// floats.
 function buildZoomKeyframes(
   mode: "open" | "close",
   geometry: ZoomGeometry,
-  space: { kind: "screen"; frame: DOMRect } | { kind: "card"; radii: Corners },
+  rest: { radii: Corners; bleed: number },
 ) {
   const { origin, radius, target, anchor, fit } = geometry
   const ease = mode === "open" ? zoomOpen : zoomClose
@@ -205,36 +213,23 @@ function buildZoomKeyframes(
     ? origin.top + origin.height / 2 - target.top - (anchor.top - target.top + anchor.height / 2) * scaleFrom
     : origin.top - target.top - (anchor.top - target.top) * scaleFrom
 
-  // Clip insets as [top, right, bottom, left] and radii as [tl, tr, br, bl].
-  let insetFrom: Corners
-  let insetTo: Corners
-  let radiiFrom: Corners
-  let radiiTo: Corners
-  if (space.kind === "screen") {
-    const { frame } = space
-    insetFrom = [origin.top - frame.top, frame.right - origin.right, frame.bottom - origin.bottom, origin.left - frame.left]
-    insetTo = [0, 0, 0, 0]
-    radiiFrom = [radius, radius, radius, radius]
-    radiiTo = [0, 0, 0, 0]
-  } else {
-    // The tile's rectangle, mapped back through the starting pose into the
-    // surface's own coordinates.
-    const localX = (x: number) => (x - target.left - dx) / scaleFrom
-    const localY = (y: number) => (y - target.top - dy) / scaleFrom
-    insetFrom = [
-      localY(origin.top),
-      target.width - localX(origin.right),
-      target.height - localY(origin.bottom),
-      localX(origin.left),
-    ]
-    insetTo = [-cardClipBleed, -cardClipBleed, -cardClipBleed, -cardClipBleed]
-    const local = radius / scaleFrom
-    radiiFrom = [local, local, local, local]
-    radiiTo = space.radii.map((value) => value + cardClipBleed) as Corners
-  }
+  // Clip insets as [top, right, bottom, left] and radii as [tl, tr, br, bl]:
+  // the tile's rectangle, mapped back through the starting pose into the
+  // surface's own coordinates.
+  const localX = (x: number) => (x - target.left - dx) / scaleFrom
+  const localY = (y: number) => (y - target.top - dy) / scaleFrom
+  const insetFrom: Corners = [
+    localY(origin.top),
+    target.width - localX(origin.right),
+    target.height - localY(origin.bottom),
+    localX(origin.left),
+  ]
+  const insetTo: Corners = [-rest.bleed, -rest.bleed, -rest.bleed, -rest.bleed]
+  const local = radius / scaleFrom
+  const radiiFrom: Corners = [local, local, local, local]
+  const radiiTo = rest.radii.map((value) => value + rest.bleed) as Corners
 
-  const surface: Keyframe[] = []
-  const frame: Keyframe[] = []
+  const keyframes: Keyframe[] = []
 
   for (let step = 0; step < originSampleCount; step += 1) {
     const time = step / (originSampleCount - 1)
@@ -242,31 +237,40 @@ function buildZoomKeyframes(
     const grown = mode === "open" ? ease(time) : 1 - ease(time)
     const rest = 1 - grown
     const scale = scaleFrom + (1 - scaleFrom) * grown
-    const mix = (from: Corners, to: Corners) => from.map((value, index) => value * rest + to[index] * grown) as Corners
+    // The clip runs ahead of the scale, on the square of the progress: closing,
+    // it is down to the artwork while the surface is still shrinking, so what
+    // lands is the image alone; at an even pace a band of the card's body hung
+    // under the tile until the last frames and then blinked out with the
+    // hand-off. Opening mirrors it: the image grows, then the card unfolds.
+    const opened = grown * grown
+    const mix = (from: Corners, to: Corners) => from.map((value, index) => value * (1 - opened) + to[index] * opened) as Corners
     const transform = `translate3d(${(dx * rest).toFixed(2)}px, ${(dy * rest).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`
     const clipPath = insetPath(mix(insetFrom, insetTo), mix(radiiFrom, radiiTo))
 
-    if (space.kind === "screen") {
-      surface.push({ offset: time, easing: "linear", transformOrigin: "0 0", transform })
-      frame.push({ offset: time, easing: "linear", clipPath })
-    } else {
-      surface.push({ offset: time, easing: "linear", transformOrigin: "0 0", transform, clipPath })
-    }
+    keyframes.push({ offset: time, easing: "linear", transformOrigin: "0 0", transform, clipPath })
   }
 
-  return { surface, frame }
+  return keyframes
 }
 
 // The tile hands off to the surface rather than staying under it: two copies of
 // the same artwork, one growing out of the other, is what made the zoom read as
 // a surface flying over the page instead of the tile opening. It goes as the
 // surface appears, stays hidden while the surface is presented (iOS leaves the
-// same gap in the grid), and comes back as the surface lands. `handoff` is the
-// share of the flight that exchange takes; zero is a cut.
+// same gap in the grid), and comes back under the surface as it lands, before
+// the surface fades off it. `handoff` is the share of the flight one fade takes.
 function buildSourceKeyframes(mode: "open" | "close", handoff: number): Keyframe[] {
   return mode === "open"
     ? [{ opacity: 1, offset: 0 }, { opacity: 0, offset: handoff }, { opacity: 0, offset: 1 }]
-    : [{ opacity: 0, offset: 0 }, { opacity: 0, offset: 1 - handoff }, { opacity: 1, offset: 1 }]
+    // Back in full before the surface on top of it starts to fade: crossing
+    // the two at once let the page show through both at the midpoint, a dip
+    // in the artwork right as it landed.
+    : [
+      { opacity: 0, offset: 0 },
+      { opacity: 0, offset: Math.max(1 - 2 * handoff, 0) },
+      { opacity: 1, offset: Math.max(1 - handoff, 0) },
+      { opacity: 1, offset: 1 },
+    ]
 }
 
 // Marks the part of a tile its artwork occupies, so the surface's artwork can
@@ -298,6 +302,17 @@ export function paintedRect(element: Element): DOMRect {
   )
 }
 
+function syncPlayback(from: Element | null | undefined, to: Element | null | undefined) {
+  if (!(from instanceof HTMLVideoElement) || !(to instanceof HTMLVideoElement)) return
+  const source = (video: HTMLVideoElement) => (video.currentSrc || video.src).split("/").pop()
+  if (!source(from) || source(from) !== source(to)) return
+  try {
+    to.currentTime = from.currentTime
+  } catch {
+    // Not seekable yet; it starts from its own beginning, as before.
+  }
+}
+
 // The tile's artwork: its one image or video when it has exactly one, else the
 // marked frame (a paired banner lands as a whole).
 function originArtwork(origin: Element | null) {
@@ -324,9 +339,9 @@ export type OriginTravelOptions = {
   getFadeNode?: () => Element | null
   /** The element inside the surface that should land on the tile. */
   getZoomAnchor?: () => Element | null
-  /** The full-screen element the zoom clips in the full-screen layout, and
-   *  where `data-origin-zoom` is raised for the length of any zoom. Without
-   *  one, the surface falls back to a lift. */
+  /** The frame around the surface: where `data-origin-zoom` is raised for the
+   *  length of a zoom, whose scroll is held still while it flies, and where
+   *  the durations are read. Without one, the surface falls back to a lift. */
   getZoomFrame?: () => HTMLElement | null
   /** The element whose border radii are the surface's resting outline. */
   getZoomOutline?: () => Element | null
@@ -431,17 +446,17 @@ export function useOriginTravel(options: OriginTravelOptions) {
         releaseScrollRef.current = null
       }
 
-      if (fullScreen) {
-        const keyframes = buildZoomKeyframes(mode, geometry, { kind: "screen", frame: zoomFrame.getBoundingClientRect() })
-        flights = [node.animate(keyframes.surface, timing), zoomFrame.animate(keyframes.frame, timing)]
-      } else {
-        const outline = getZoomOutline?.()
-        const style = outline ? getComputedStyle(outline) : null
-        const radii = (style
-          ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
-          : [0, 0, 0, 0]) as Corners
-        flights = [node.animate(buildZoomKeyframes(mode, geometry, { kind: "card", radii }).surface, timing)]
-      }
+      const outline = fullScreen ? null : getZoomOutline?.()
+      const style = outline ? getComputedStyle(outline) : null
+      const radii = (style
+        ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
+        : [0, 0, 0, 0]) as Corners
+      flights = [node.animate(buildZoomKeyframes(mode, geometry, { radii, bleed: fullScreen ? 0 : cardClipBleed }), timing)]
+
+      // The two videos loop on their own clocks, so the one taking over shows
+      // a different moment of the same loop and the hand-off jumped. The one
+      // arriving starts where the one leaving is.
+      syncPlayback(mode === "open" ? artwork?.element : anchorElement, mode === "open" ? anchorElement : artwork?.element)
 
       // Held hidden after the open (until the close's `cancel` lets go of it);
       // back to its own CSS after the close, whose last frame is fully shown.

@@ -73,11 +73,11 @@ const galleryMotionVars = {
   // to one value the flight can read) so a token change retimes the zoom.
   "--pg-zoom-open-ms": "calc(var(--duration-slow) + var(--duration-fast))",
   "--pg-zoom-close-ms": "var(--duration-slow)",
-  // How long the tile takes to give way to the surface at each end of the
-  // zoom. Only the tile fades: the surface's artwork lands on the tile's
-  // exactly, so the surface cuts in over it, and the tile's frame around the
-  // artwork dissolves underneath. A crossfade of both overlapped the spring's
-  // fastest frames and showed two copies sliding apart.
+  // How long the tile and the surface take to hand over at each end of the
+  // zoom. On the open only the tile fades: the surface's artwork lands on the
+  // tile's exactly, so it cuts in over it, and a crossfade of both overlapped
+  // the spring's fastest frames and showed two copies sliding apart. On the
+  // close both fade, over the flight's slow tail, where they lie together.
   "--pg-zoom-handoff-ms": "var(--duration-fast)",
   "--pg-content-in-ms": "var(--duration-base)",
   "--pg-content-out-ms": "var(--duration-quick)",

@@ -3656,13 +3656,14 @@ test("opens a prefetched gallery without passing through its loading state", asy
 })
 
 // The gallery zooms out of the tile the way iOS opens a card: its first frame
-// is clipped to the tile's rounded rectangle with the artwork lying on the
-// tile, and it lands unclipped and untransformed. Full screen, the clip is on
-// the shell; as a floating card, it is on the surface itself.
-for (const { layout, viewport, clipped } of [
-  { layout: "full-screen", viewport: mobileViewport, clipped: ".preview-gallery-shell" },
-  { layout: "card", viewport: { width: 1280, height: 860 }, clipped: ".preview-gallery-origin-wrap" },
+// is clipped to the tile's artwork with its own artwork lying on it, and it
+// lands unclipped and untransformed. The clip rides on the surface itself, in
+// the same effect as its transform, so the two cannot drift apart.
+for (const { layout, viewport } of [
+  { layout: "full-screen", viewport: mobileViewport },
+  { layout: "card", viewport: { width: 1280, height: 860 } },
 ]) {
+  const clipped = ".preview-gallery-origin-wrap"
   test(`zooms the ${layout} gallery out of the tapped tile`, async ({ page }) => {
     await page.setViewportSize(viewport)
     await page.goto("/")
@@ -3712,12 +3713,7 @@ for (const { layout, viewport, clipped } of [
     expect(firstFrame.media.y).toBeCloseTo(box.y, 0)
     expect(firstFrame.media.width).toBeCloseTo(box.width, 0)
     expect(firstFrame.media.height).toBeCloseTo(box.height, 0)
-    if (layout === "full-screen") {
-      // inset() serialises as CSS shorthand, so equal sides collapse.
-      const [top, right = top, , left = right] = firstFrame.clip.replace(/^inset\(|\)$/g, "").split(" round ")[0].split(" ").map(parseFloat)
-      expect(top).toBeCloseTo(box.y, 0)
-      expect(left).toBeCloseTo(box.x, 0)
-    }
+    expect(firstFrame.clip).toMatch(/^inset\(/)
     // The tile is still whole under the cut; it then dissolves rather than
     // staying under the surface growing out of it (checked at rest below).
     expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
