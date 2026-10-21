@@ -672,6 +672,24 @@
    ink steps up to the heading's, so the swap reads without a colour of its own. */
 .writing-copy-link[data-copied="true"] { color: var(--ink); }
 .writing-copy-link-icon { flex-shrink: 0; }
+/* The same control as a plain link: no chrome, no icon, the link archetype's
+   underline. It keeps inline-flex so the label swap can ease its width, but
+   not the pill's clip, which would cut the underline off below the baseline.
+   The colour and size come from where it sits. */
+.copy-page-link-text {
+  display: inline-flex;
+  white-space: nowrap;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+/* On the label's own text: InlineSwap lays it out as an inline grid, and an
+   underline does not reach into one from the link around it. */
+.copy-page-link-text :is(.inline-swap-current, .inline-swap-leaving) {
+  text-decoration-line: underline;
+  text-decoration-color: #c8c8c8;
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.11em;
+}
+.copy-page-link-text[data-copied="true"] { color: var(--ink); }
 
 @media (prefers-reduced-motion: reduce) {
   .writing-copy-link, .writing-contents a { transition: none; }

@@ -15,11 +15,14 @@ const COPY_CONFIRMATION_MS = 1600
  * rather than one read off `location`, so a copy made from a preview server or
  * a local build still pastes as the public link.
  */
-export function CopyPageLink({ href, subject, className }: {
+export function CopyPageLink({ href, subject, className, variant = "pill" }: {
   href: string
   /** What the link is to, for the spoken name: "note", "project", "résumé". */
   subject: string
   className?: string
+  /** "pill" is the notes' glass control; "text" is a plain link with no icon,
+   *  for places where a control would compete with what is beside it. */
+  variant?: "pill" | "text"
 }) {
   const [copied, setCopied] = useState(false)
   const resetRef = useRef<number | undefined>(undefined)
@@ -56,7 +59,8 @@ export function CopyPageLink({ href, subject, className }: {
       {/* An ordinary link underneath -- for the context menu, for a browser with
           no clipboard, for a middle-click -- and a plain press copies instead,
           the way the address in the About sheet does. */}
-      <a ref={linkRef} className={className ? `writing-copy-link ${className}` : "writing-copy-link"} href={href} data-copied={copied ? "true" : undefined}
+      <a ref={linkRef} className={[variant === "pill" ? "writing-copy-link" : "copy-page-link-text", className].filter(Boolean).join(" ")}
+        href={href} data-copied={copied ? "true" : undefined}
         onClick={(event) => {
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
           event.preventDefault()
@@ -68,7 +72,7 @@ export function CopyPageLink({ href, subject, className }: {
             resetRef.current = window.setTimeout(() => showCopied(false), COPY_CONFIRMATION_MS)
           }, () => undefined)
         }}>
-        {copied
+        {variant === "text" ? null : copied
           ? <Check className="writing-copy-link-icon" size={14} aria-hidden="true" />
           : <Link2 className="writing-copy-link-icon" size={14} aria-hidden="true" />}
         <span aria-hidden="true">

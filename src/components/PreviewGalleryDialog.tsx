@@ -757,19 +757,20 @@ export function PreviewGalleryDialog({
                           Keyed by project, so paging starts the next count
                           from scratch instead of carrying this one's over
                           while its own read is still in flight. */}
-                      {/* The project's own link rides the same line: a page
-                          worth liking is a page worth sending on, and each
-                          project has a prerendered URL that opens straight
-                          into this slide. */}
-                      <div className="preview-gallery-likes">
-                        {import.meta.env.VITE_LIKES_API_URL ? (
-                          <LikeButton key={activeCard.id} collection="projects" itemId={activeCard.id} />
-                        ) : null}
-                        <CopyPageLink key={`link-${activeCard.id}`} href={`${siteOrigin}${projectPath(activeCard)}`} subject="project" />
-                      </div>
+                      {import.meta.env.VITE_LIKES_API_URL ? (
+                        <LikeButton key={activeCard.id} collection="projects" itemId={activeCard.id}
+                          className="preview-gallery-likes" />
+                      ) : null}
 
                       <div className="preview-gallery-content">
-                        <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                        {/* The project's own address, as a quiet link on the
+                            title's line: the slot on the artwork's edge is the
+                            heart's, and this is something to read past. */}
+                        <div className="preview-gallery-title-row">
+                          <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                          <CopyPageLink key={`link-${activeCard.id}`} variant="text" className="preview-gallery-copy-link"
+                            href={`${siteOrigin}${projectPath(activeCard)}`} subject="project" />
+                        </div>
                         <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
                         {activeCollaborators.length > 0 ? (
                           <div className="preview-gallery-team">
@@ -877,7 +878,7 @@ export function PreviewGalleryDialog({
                                 View PDF
                               </a>
                             </p>
-                            <CopyPageLink href={`${siteOrigin}${resumePath}`} subject="résumé" />
+                            <CopyPageLink variant="text" className="mosaic-about-link" href={`${siteOrigin}${resumePath}`} subject="résumé" />
                           </div>
                         </div>
                       </header>
