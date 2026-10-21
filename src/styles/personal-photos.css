@@ -830,7 +830,7 @@
   /* Flat by default. The curved WebGL surface stays for the dev tuner. */
   --wall-bend: 0;
   --wall-rim: 0;
-  --wall-gap: 0.5rem;
+  --wall-gap: 3rem;
   /* The backdrop owns the white canvas. A second surface here would cover
      borrowed flights, which travel below the popup and above the backdrop. */
   background: transparent;
