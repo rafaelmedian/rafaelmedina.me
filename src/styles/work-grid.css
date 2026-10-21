@@ -1578,19 +1578,39 @@
 
 @media (max-width: 699.98px), (hover: none), (pointer: coarse) {
 
-  /* Without hover there is nothing to reveal the caption on, so it would have
-     to sit on every tile at once -- and a permanent name on each one is a label
-     stacked over artwork that already carries the project's own wordmark and
-     interface. The tiles read as work rather than as a captioned catalogue, and
-     it costs a phone nothing to paint. The title stays in the link's
-     accessible name and in the prerendered description, so assistive tech and
-     crawlers still get it.
+  /* Without hover there is nothing to reveal the caption on, and hiding it
+     outright left a phone with fourteen unnamed screenshots, most of them
+     Matcha. The name sits on every tile instead, as a small glass pill on the
+     bottom edge rather than the desktop band: a full-width blur on every tile
+     at once would bury the artwork, and the pill only needs to be read, not
+     revealed.
 
-     Dropping the caption takes the band with it: the scrim exists only to hold
-     the caption's ground, so on touch it was already a blur nobody read. */
-  .mosaic-row-card-title,
+     The scrim exists only to hold the hover caption's ground, so it goes. */
   .mosaic-row-card-scrim {
     display: none;
+  }
+
+  .mosaic-row-card-title {
+    bottom: 0.625rem;
+    max-width: calc(100% - 2.5rem);
+    overflow: hidden;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--radius-full);
+    background: var(--glass-fill-strong);
+    box-shadow: var(--glass-hairline);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    color: var(--ink);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.33;
+    text-overflow: ellipsis;
+    text-shadow: none;
+    white-space: nowrap;
+    transform: translate(-50%, 0);
+    opacity: 1;
+    transition: none;
   }
 
   .mosaic-row-card-preview-protector .mosaic-row-media {

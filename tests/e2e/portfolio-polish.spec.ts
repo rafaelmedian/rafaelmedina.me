@@ -4914,18 +4914,25 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
-// Without hover the caption would have to sit on every tile at once, over
-// artwork that already carries each project's own wordmark. Both it and the
-// band that made it legible are gone entirely, not merely faded — and the name
-// still reaches assistive tech through the link itself.
-test("hides project card names where there is no hover to reveal them", async ({ page }) => {
+// Without hover there is nothing to reveal the caption on, so each tile names
+// itself with a small pill instead. The desktop band stays gone: a full-width
+// blur on every tile at once would bury the artwork.
+test("names every project card where there is no hover to reveal it", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
   const firstCard = page.locator(".mosaic-row-card").first()
-  await expect(firstCard.locator(".mosaic-row-card-title")).toHaveCSS("display", "none")
+  const title = firstCard.locator(".mosaic-row-card-title")
+  await expect(title).toBeVisible()
+  await expect(title).toHaveCSS("opacity", "1")
   await expect(firstCard.locator(".mosaic-row-card-scrim")).toHaveCSS("display", "none")
   await expect(firstCard).toHaveAttribute("aria-label", /^Open .+ preview 1 of/)
+
+  // The pill stays inside the tile and clear of its rounded corners.
+  const [cardBox, titleBox] = await Promise.all([firstCard.boundingBox(), title.boundingBox()])
+  expect(titleBox!.x).toBeGreaterThanOrEqual(cardBox!.x + 16)
+  expect(titleBox!.x + titleBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width - 16)
+  expect(titleBox!.y + titleBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height - 8)
 })
 
 test("ramps the blur radius behind desktop project captions", async ({ page }) => {

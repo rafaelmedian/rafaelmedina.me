@@ -9,15 +9,15 @@ const openDesignSystem = async (page: Page) => {
   await expect(page.getByRole("heading", { name: "Design system" })).toBeVisible()
 }
 
-test("documents the caption dropping out where there is no hover", async ({ page }) => {
+test("documents the caption becoming a pill where there is no hover", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/")
-  await expect(page.locator(".mosaic-row-card-title").first()).toHaveCSS("display", "none")
+  await expect(page.locator(".mosaic-row-card-title").first()).toHaveCSS("opacity", "1")
   await expect(page.locator(".mosaic-row-card-scrim").first()).toHaveCSS("display", "none")
   await openDesignSystem(page)
   const captionRule = page.locator("#elevation .ds-rule")
   await expect(captionRule).toContainText("entire scrim is hidden")
-  await expect(captionRule).toContainText("and so is the caption")
+  await expect(captionRule).toContainText("small --glass-fill-strong pill")
   await expect(captionRule).not.toContainText("rgb(20 20 20 / 0.82)")
 })
 
