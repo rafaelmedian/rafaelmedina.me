@@ -131,8 +131,13 @@ function PhotoColumns({ panel = "0,0", gridColumns, held, previewCount, layout, 
             data-held={selected ? "" : undefined}
             style={selected ? { "--hold-dx": `${held.dx.toFixed(1)}px`, "--hold-dy": `${held.dy.toFixed(1)}px`, "--hold-scale": held.scale.toFixed(4), "--hold-layout-gap": `${held.layoutGap.toFixed(3)}px` } as CSSProperties : undefined}
             key={photo.id}
-            role="group"
-            aria-label={`${index + 1} of ${photos.length}`}
+            // A press enlarges the print and a second lets it go, so it is a
+            // toggle button: "group, 3 of 40" never said it could be pressed
+            // or that it was the one held. The photo's own description joins
+            // the name, since a button's contents are not read on their own.
+            role={copy ? undefined : "button"}
+            aria-pressed={copy ? undefined : selected}
+            aria-label={copy ? undefined : `Photo ${index + 1} of ${photos.length}: ${photo.alt}`}
             tabIndex={copy ? undefined : 0}
             onClick={(event) => toggleHold(event.currentTarget, photo)}
             onKeyDown={(event) => onSlideKeyDown(event, photo)}

@@ -151,7 +151,7 @@ test("Wall repeats in every direction without growing its DOM, and each copy sel
   await expect(wall).toBeVisible()
   expect(await copies.count()).toBeGreaterThan(0)
   const total = await wall.locator(".personal-photos-slide").count()
-  expect(await wall.getByRole("group").count()).toBe(await wall.locator(".personal-photos-slide[data-photo-id]").count())
+  expect(await wall.getByRole("button", { name: /^Photo \d+ of \d+: / }).count()).toBe(await wall.locator(".personal-photos-slide[data-photo-id]").count())
   await wall.focus()
   for (let i = 0; i < 5; i++) await page.keyboard.press("-")
   for (const [dx, dy] of [[8000, 8000], [-16000, 0], [0, -16000], [16000, 16000]]) {
@@ -312,3 +312,20 @@ for (const width of [1440, 390]) {
     await expect.poll(() => plane.evaluate(el => getComputedStyle(el).transform)).not.toBe(before)
   })
 }
+
+// A print is a toggle: pressing it enlarges it and says so, pressing it again
+// lets it go.
+test("Wall prints are toggle buttons that report being held", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.locator(".personal-photos-label").click()
+  const wall = page.getByRole("region", { name: "Photo wall" })
+  const print = wall.getByRole("button", { name: /^Photo 1 of \d+: / })
+  await expect(print).toHaveAttribute("aria-pressed", "false")
+  await print.focus()
+  await page.keyboard.press("Enter")
+  await expect(print).toHaveAttribute("aria-pressed", "true")
+  await page.keyboard.press("Enter")
+  await expect(print).toHaveAttribute("aria-pressed", "false")
+})
