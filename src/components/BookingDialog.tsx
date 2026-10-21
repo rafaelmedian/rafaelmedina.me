@@ -5,7 +5,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 import { siteProfile } from "../data/portfolio"
 import { isContactEmail } from "../lib/contactEmail"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
-import { sendContact, type ContactMessage } from "../lib/sendContact"
+import { contactMailto, sendContact, type ContactMessage } from "../lib/sendContact"
 import { useMessageDictation } from "../lib/useMessageDictation"
 import { BookingCalendar } from "./BookingCalendar"
 import { BookingContactPanel } from "./BookingContactPanel"
@@ -201,7 +201,7 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
                 <p className="booking-bubble booking-outgoing">{item.message}</p>
                 {item.status === "failed" ? <div className="booking-receipt" role="alert">
                   {item.error} <button type="button" onClick={() => void deliver({ email: item.email, message: item.message, requestId: item.requestId })}
-                    disabled={sending}>Retry message</button>
+                    disabled={sending}>Retry message</button> or <a href={contactMailto(item.message)}>email it instead</a>
                 </div> : <p className="booking-receipt" role="status">{item.status === "sending" ? "Sending…" : "Delivered"}</p>}
               </div>)}
             </div>

@@ -582,7 +582,9 @@ body:has(.booking-contact-panel) .booking-close {
   font-size: var(--text-xs);
 }
 
-.booking-receipt button {
+.booking-receipt button,
+.booking-receipt a {
+  color: inherit;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;

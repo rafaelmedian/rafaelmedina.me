@@ -696,6 +696,12 @@
   text-align: end;
 }
 
+.about-intro-chat .about-intro-chat-receipt a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .about-intro-chat-sent-message { transition: none; }
 }

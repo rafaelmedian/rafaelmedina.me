@@ -2059,6 +2059,30 @@ test("hints at booking on hover and opens the calendar only on click", async ({ 
 // Touch and keyboard have no hover to rest in, so the same line is a plain
 // button for them. Focus alone must not open it: tabbing past the hero would
 // otherwise trap the visitor in a calendar they never asked for.
+// Retry cannot help when delivery itself is down, and a visitor who has already
+// written the message should not have to retype it somewhere else.
+test("offers the visitor's own mail app when a message fails to send", async ({ page }) => {
+  await page.route("**/contact", (route) =>
+    route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ sent: false }) }),
+  )
+  await page.goto("/")
+  await settleAvatarIntro(page)
+  await page.locator(".mosaic-booking-pill").click()
+
+  const dialog = page.getByRole("dialog")
+  await dialog.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com")
+  await dialog.getByRole("button", { name: "Continue with email" }).click()
+  await dialog.getByRole("textbox", { name: "Your message" }).fill("Hi Rafa & co — a project?")
+  await dialog.getByRole("button", { name: "Send message" }).click()
+
+  await expect(dialog.getByRole("button", { name: "Retry message" })).toBeVisible()
+  const fallback = dialog.getByRole("link", { name: "email it instead" })
+  await expect(fallback).toHaveAttribute(
+    "href",
+    `mailto:hey@rafaelmedina.me?subject=Hello%20from%20rafaelmedina.me&body=${encodeURIComponent("Hi Rafa & co — a project?")}`,
+  )
+})
+
 // Identity and dismissal stay available when conversation turns into booking.
 test("keeps Rafael’s identity above the calendar", async ({ page }) => {
   await page.route("https://cal.com/**", (route) =>
