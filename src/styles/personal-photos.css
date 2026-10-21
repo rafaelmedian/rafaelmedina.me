@@ -277,15 +277,23 @@
 }
 
 .personal-photos-dialog[data-starting-style] { opacity: 0; }
-/* The wall's photos open in place, so nothing flies over the page: the white
-   canvas fades in under them, a quick 200ms, while they ripple in. The popup
+/* The wall's photos open and close in place, so nothing flies over the
+   page. The white canvas leads the open: it fades in over --duration-fast
+   and the photos only start to ripple in once it is down
+   (usePhotoOriginTransition waits the same token), so they never grow over
+   a half-faded page. On the close it trails: the photos leave first, and
+   only once they have gone does the canvas fade out over --duration-fast. The popup
    itself stays opaque; its photos carry their own entrance. */
 .personal-photos-dialog[data-layout="wall"]:not([data-ending-style]) {
   opacity: 1;
   transition: none;
 }
 .personal-photos-backdrop[data-layout="wall"]:not([data-ending-style]) {
-  transition-duration: var(--duration-base);
+  transition-duration: var(--duration-fast);
+}
+.personal-photos-backdrop[data-layout="wall"][data-ending-style] {
+  transition-duration: var(--duration-fast);
+  transition-delay: var(--photo-close-duration);
 }
 .personal-photos-dialog[data-ending-style] {
   opacity: 0;

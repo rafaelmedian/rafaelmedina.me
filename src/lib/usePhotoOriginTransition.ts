@@ -214,6 +214,9 @@ export function usePhotoOriginTransition(
       const centreY = bounds.top + bounds.height / 2
       const reach = Math.hypot(bounds.width, bounds.height) / 2
       const placeEasing = tokens.getPropertyValue(open ? "--ease-smooth" : "--ease-exit").trim()
+      // The white canvas fades in over --duration-fast first (see
+      // personal-photos.css); the photos start once it is down.
+      const lead = open ? cssTimeToMilliseconds(tokens.getPropertyValue("--duration-fast")) : 0
       // Read every slot, and where an interrupted move left each photo,
       // before starting or cancelling any animation.
       const onScreen = slides.map(slide => ({ slide, rect: slide.getBoundingClientRect() })).filter(({ rect }) =>
@@ -228,7 +231,7 @@ export function usePhotoOriginTransition(
       inPlace.current = onScreen.map(({ slide, rect, from }) => {
         const distance = Math.min(1, Math.hypot(rect.left + rect.width / 2 - centreX, rect.top + rect.height / 2 - centreY) / reach)
         return slide.animate(open ? [away, rest] : [from, away], {
-          duration: duration * 0.75, delay: (open ? distance : 1 - distance) * duration * 0.25,
+          duration: duration * 0.75, delay: lead + (open ? distance : 1 - distance) * duration * 0.25,
           easing: placeEasing, fill: open ? "backwards" : "forwards",
         })
       })
@@ -237,10 +240,14 @@ export function usePhotoOriginTransition(
       strip.setAttribute(marker, "")
       let interrupted = false
       const batch = inPlace.current
-      void Promise.allSettled(batch.map(animation => animation.finished)).then(() => {
+      void Promise.allSettled(batch.map(animation => animation.finished)).then(async () => {
         if (interrupted) return
         strip.removeAttribute(marker)
-        if (!open) onCloseComplete()
+        if (open) return
+        // The canvas trails the photos out; unmount once it has faded too.
+        const backdrop = document.querySelector(".personal-photos-backdrop[data-ending-style]")
+        await Promise.allSettled(backdrop?.getAnimations().map(animation => animation.finished) ?? [])
+        if (!interrupted) onCloseComplete()
       })
       return () => {
         interrupted = true
