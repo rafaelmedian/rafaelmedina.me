@@ -212,7 +212,7 @@ test("documents the computed resume-title weight", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
   const resumeTitleWeight = await page
-    .getByRole("dialog", { name: "Resume" })
+    .getByRole("dialog", { name: "Résumé" })
     .locator(".mosaic-about-resume-title")
     .first()
     .evaluate((title) => getComputedStyle(title).fontWeight)

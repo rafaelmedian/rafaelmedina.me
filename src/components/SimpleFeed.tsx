@@ -532,7 +532,7 @@ function SectionCorner({
             })
           }}
         >
-          Resume
+          Résumé
           <ExternalLink
             className="mosaic-social-link-external-icon"
             size={12}
