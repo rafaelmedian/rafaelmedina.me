@@ -31,9 +31,11 @@ const originScaleMin = 0.92
 const originScaleMax = 1
 // Used when the anchor is off-screen: a plain 20px lift, no travel.
 const originFallback = { dx: 0, dy: 20, scale: 0.96 }
-// Match the gallery's full-screen layout. Its entrance lifts and its exit
-// lowers, independent of the tile's position, without scaling the viewport.
-const verticalTravelQuery = "(max-width: 699.98px), (hover: none), (pointer: coarse)"
+// Match the gallery's full-screen layout. There the gallery is the whole
+// screen, so a capped nudge has nothing to say; it zooms out of the tile
+// instead, the way iOS opens an App Store card or a Photos thumbnail. Without
+// a tile to zoom from it lifts and lowers, without scaling the viewport.
+const fullScreenQuery = "(max-width: 699.98px), (hover: none), (pointer: coarse)"
 const verticalOffset = { dx: 0, dy: originFallback.dy, scale: 1 }
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
@@ -47,6 +49,23 @@ export function visibleOriginRect(element: Element | null | undefined): DOMRect 
   if (rect.width <= 0 || rect.height <= 0) return null
 
   return rect.bottom > 0 && rect.top < window.innerHeight ? rect : null
+}
+
+// The corner a tile shows, which is not always its own: several tiles round an
+// inner frame that fills them. The first element filling the tile's box with a
+// radius is the outline the eye reads.
+export function originCornerRadius(element: Element | null | undefined): number {
+  if (!element) return 0
+
+  const { width, height } = element.getBoundingClientRect()
+  const candidates = [element, ...Array.from(element.querySelectorAll("*")).slice(0, 24)]
+  for (const candidate of candidates) {
+    const rect = candidate.getBoundingClientRect()
+    if (Math.abs(rect.width - width) > 1 || Math.abs(rect.height - height) > 1) continue
+    const radius = parseFloat(getComputedStyle(candidate).borderTopLeftRadius)
+    if (radius > 0) return radius
+  }
+  return 0
 }
 
 function getOriginOffset(originRect: DOMRect, targetRect: DOMRect) {
@@ -94,6 +113,33 @@ function cubicBezierEasing([x1, y1, x2, y2]: readonly number[]) {
 const easeOpen = cubicBezierEasing(originOpenEasePoints)
 const easeClose = cubicBezierEasing(originCloseEasePoints)
 
+// The zoom runs on a spring rather than a bezier, as UIKit's does: it leaves
+// the tile fast and spends its tail easing into the edges of the screen, with
+// no visible overshoot. Expressed in normalised time so the duration still
+// comes from CSS -- `settle` is how many time constants fit in the duration,
+// enough that the last sample is within a fraction of a pixel of rest.
+function springEasing(dampingRatio: number, settle: number) {
+  const zeta = dampingRatio
+  const omega = settle / zeta
+
+  return (x: number) => {
+    if (x <= 0) return 0
+    if (x >= 1) return 1
+
+    const decay = Math.exp(-zeta * omega * x)
+    if (zeta >= 1) return 1 - decay * (1 + omega * x)
+
+    const damped = omega * Math.sqrt(1 - zeta * zeta)
+    return 1 - decay * (Math.cos(damped * x) + (zeta * omega / damped) * Math.sin(damped * x))
+  }
+}
+
+// Open: 0.86 damping, the bounce-free feel of a system sheet (a 0.5% overshoot
+// at most, under a pixel on a phone). Close: critically damped, because a
+// surface going back into its tile must not overshoot past the tile's edge.
+const zoomOpen = springEasing(0.86, 6.5)
+const zoomClose = springEasing(1, 8)
+
 // Enough samples that the linear interpolation between them is invisible at
 // 120Hz over the longest of these animations.
 const originSampleCount = 48
@@ -126,6 +172,67 @@ function buildOriginKeyframes(
   return keyframes
 }
 
+type ZoomGeometry = {
+  /** The tile, relative to the viewport. */
+  origin: DOMRect
+  /** The tile's corner radius, so the clip starts on the tile's own outline. */
+  radius: number
+  /** The surface at rest. */
+  target: DOMRect
+  /** The part of the surface that lands on the tile, at rest: the artwork the
+   *  tile is a thumbnail of, or the surface itself when there is none. */
+  anchor: DOMRect
+  /** The full-screen element the clip is applied to, at rest. */
+  frame: DOMRect
+}
+
+// The zoom is two coordinated tracks: the surface scales so its artwork sits
+// exactly on the tile, the way a Photos thumbnail becomes the photo, and grows
+// from there to rest; and the full-screen frame around it
+// is clipped from the tile's rounded rectangle out to the screen edges. The
+// scaled surface is taller than the tile (a phone is taller than a 4:3 tile),
+// so the clip is what gives the moving shape the tile's proportions.
+function buildZoomKeyframes(mode: "open" | "close", geometry: ZoomGeometry) {
+  const { origin, radius, target, anchor, frame } = geometry
+  const ease = mode === "open" ? zoomOpen : zoomClose
+  const scaleFrom = origin.width / anchor.width
+  // Scaled about the surface's top-left corner, the anchor's corner lands at
+  // target + (anchor - target) * scale; this translate moves it onto the tile.
+  const dx = origin.left - target.left - (anchor.left - target.left) * scaleFrom
+  const dy = origin.top - target.top - (anchor.top - target.top) * scaleFrom
+  const clip = {
+    top: origin.top - frame.top,
+    right: frame.right - origin.right,
+    bottom: frame.bottom - origin.bottom,
+    left: origin.left - frame.left,
+  }
+
+  const surface: Keyframe[] = []
+  const frameKeyframes: Keyframe[] = []
+
+  for (let step = 0; step < originSampleCount; step += 1) {
+    const time = step / (originSampleCount - 1)
+    // `grown` is 0 at the tile and 1 at full screen.
+    const grown = mode === "open" ? ease(time) : 1 - ease(time)
+    const rest = 1 - grown
+    const scale = scaleFrom + (1 - scaleFrom) * grown
+
+    surface.push({
+      offset: time,
+      easing: "linear",
+      transformOrigin: "0 0",
+      transform: `translate3d(${(dx * rest).toFixed(2)}px, ${(dy * rest).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`,
+    })
+    frameKeyframes.push({
+      offset: time,
+      easing: "linear",
+      clipPath: `inset(${(clip.top * rest).toFixed(2)}px ${(clip.right * rest).toFixed(2)}px ${(clip.bottom * rest).toFixed(2)}px ${(clip.left * rest).toFixed(2)}px round ${(radius * rest).toFixed(2)}px)`,
+    })
+  }
+
+  return { surface, frame: frameKeyframes }
+}
+
 export type OriginTravelOptions = {
   /** The surface that flies. Null while the dialog's portal is unmounted. */
   node: HTMLElement | null
@@ -140,6 +247,16 @@ export type OriginTravelOptions = {
   onFlight?: (flying: boolean) => void
   /** The element whose CSS opacity fade the open flight starts with. */
   getFadeNode?: () => Element | null
+  /** The tile's corner radius in px, for the full-screen zoom's clip. */
+  getOriginRadius?: () => number
+  /** The element inside the surface that should land on the tile. */
+  getZoomAnchor?: () => Element | null
+  /** The full-screen element the zoom clips. Without one, the full-screen
+   *  layout falls back to a plain lift. */
+  getZoomFrame?: () => HTMLElement | null
+  /** Duration properties for the full-screen zoom, read from the frame. */
+  zoomOpenDurationProperty?: string
+  zoomCloseDurationProperty?: string
 }
 
 // Long enough for Base UI to lift `data-starting-style` and the fade to begin
@@ -155,6 +272,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
   const inputs = useRef(options)
   const animations = useRef<Animation[]>([])
   const pendingStart = useRef<(() => void) | null>(null)
+  const zoomFrameRef = useRef<HTMLElement | null>(null)
 
   // A layout effect, so a click that re-aims the flight and opens in the same
   // commit animates from the new anchor.
@@ -167,12 +285,16 @@ export function useOriginTravel(options: OriginTravelOptions) {
     pendingStart.current = null
     for (const animation of animations.current) animation.cancel()
     animations.current = []
+    zoomFrameRef.current?.removeAttribute("data-origin-zoom")
+    zoomFrameRef.current = null
     inputs.current.onFlight?.(false)
   }, [])
 
   const run = useCallback((mode: "open" | "close") => {
-    const { node, getOriginRect, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode } =
-      inputs.current
+    const {
+      node, getOriginRect, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode,
+      getOriginRadius, getZoomAnchor, getZoomFrame, zoomOpenDurationProperty, zoomCloseDurationProperty,
+    } = inputs.current
     if (!node || !enabled) return
     if (typeof node.animate !== "function") return
 
@@ -180,20 +302,48 @@ export function useOriginTravel(options: OriginTravelOptions) {
 
     // The node sits at rest here (any in-flight animation was cancelled), so
     // this is its untransformed target geometry.
-    const verticalOnly = window.matchMedia(verticalTravelQuery).matches
-    const originRect = verticalOnly ? null : getOriginRect()
-    const offset = verticalOnly
-      ? verticalOffset
-      : (originRect && getOriginOffset(originRect, node.getBoundingClientRect())) ?? originFallback
-    const durationProperty = mode === "open" ? openDurationProperty : closeDurationProperty
+    const fullScreen = window.matchMedia(fullScreenQuery).matches
+    const originRect = getOriginRect()
+    const zoomFrame = fullScreen && originRect ? getZoomFrame?.() ?? null : null
+    const durationOf = (element: Element, property: string) =>
+      cssTimeToMilliseconds(getComputedStyle(element).getPropertyValue(property))
 
-    const flight = node.animate(buildOriginKeyframes(mode, offset), {
-      duration: cssTimeToMilliseconds(getComputedStyle(node).getPropertyValue(durationProperty)),
-      // The curve is already baked into the keyframes.
-      easing: "linear",
-      fill: mode === "open" ? "none" : "forwards",
-    })
-    animations.current = [flight]
+    let flights: Animation[]
+    if (zoomFrame && originRect && zoomOpenDurationProperty && zoomCloseDurationProperty) {
+      const target = node.getBoundingClientRect()
+      const anchor = getZoomAnchor?.()?.getBoundingClientRect()
+      const keyframes = buildZoomKeyframes(mode, {
+        origin: originRect,
+        radius: getOriginRadius?.() ?? 0,
+        target,
+        anchor: anchor && anchor.width > 0 ? anchor : target,
+        frame: zoomFrame.getBoundingClientRect(),
+      })
+      const timing: KeyframeAnimationOptions = {
+        duration: durationOf(zoomFrame, mode === "open" ? zoomOpenDurationProperty : zoomCloseDurationProperty),
+        easing: "linear",
+        fill: mode === "open" ? "none" : "forwards",
+      }
+      // Raised for the flight, so the frame's own fill and the popup's fades
+      // can step aside for the clip; lowered with the flight's other flags.
+      zoomFrame.setAttribute("data-origin-zoom", "true")
+      zoomFrameRef.current = zoomFrame
+      flights = [node.animate(keyframes.surface, timing), zoomFrame.animate(keyframes.frame, timing)]
+    } else {
+      const offset = fullScreen
+        ? verticalOffset
+        : (originRect && getOriginOffset(originRect, node.getBoundingClientRect())) ?? originFallback
+      const durationProperty = mode === "open" ? openDurationProperty : closeDurationProperty
+
+      flights = [node.animate(buildOriginKeyframes(mode, offset), {
+        duration: durationOf(node, durationProperty),
+        // The curve is already baked into the keyframes.
+        easing: "linear",
+        fill: mode === "open" ? "none" : "forwards",
+      })]
+    }
+    const [flight] = flights
+    animations.current = flights
     onFlight?.(true)
 
     // The open is created here, in the commit that mounts the dialog, but the
@@ -207,10 +357,10 @@ export function useOriginTravel(options: OriginTravelOptions) {
     // `getAnimations()` still finds it.
     const fadeNode = mode === "open" ? getFadeNode?.() : null
     if (fadeNode) {
-      flight.pause()
+      for (const animation of flights) animation.pause()
       const start = () => {
         release()
-        if (flight.playState === "paused") flight.play()
+        for (const animation of flights) if (animation.playState === "paused") animation.play()
       }
       const onFadeRun = (event: Event) => {
         if (event.target !== fadeNode || (event as TransitionEvent).propertyName !== "opacity") return
@@ -224,8 +374,10 @@ export function useOriginTravel(options: OriginTravelOptions) {
         // origin. A cancelled flight is `idle`, so the close path stays put.
         void fade.ready.then(() => {
           if (flight.playState !== "paused") return
-          if (fade.startTime === null) flight.play()
-          else flight.startTime = fade.startTime
+          for (const animation of flights) {
+            if (fade.startTime === null) animation.play()
+            else animation.startTime = fade.startTime
+          }
         }, start)
       }
       const timeout = window.setTimeout(start, fadeWaitMs)
@@ -242,7 +394,13 @@ export function useOriginTravel(options: OriginTravelOptions) {
     // held by `fill: forwards` until the popup unmounts, so releasing early
     // would flash the very clipping the flag exists to suppress; the next
     // `cancel` clears it instead.
-    if (mode === "open") flight.finished.then(() => onFlight?.(false)).catch(() => undefined)
+    if (mode === "open") {
+      flight.finished.then(() => {
+        zoomFrameRef.current?.removeAttribute("data-origin-zoom")
+        zoomFrameRef.current = null
+        onFlight?.(false)
+      }).catch(() => undefined)
+    }
   }, [cancel])
 
   useEffect(() => () => cancel(), [cancel])

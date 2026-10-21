@@ -1182,6 +1182,39 @@
     background: var(--canvas);
   }
 
+  /* The zoom out of a tile (lib/originMotion). The shell is clipped from the
+     tile's rounded rectangle out to the screen while the popup scales up
+     inside it, so the tile reads as becoming the page, the way iOS opens a
+     card. The shell's own fill steps aside for the flight: at tile scale the
+     popup already covers the clip, and the fill would only add an opaque
+     safe-area band. */
+  .preview-gallery-shell[data-origin-zoom] {
+    background: transparent;
+  }
+
+  /* The surface is already in the tile's place, so it only has to stop being
+     transparent: a short fade, not the base one that was carrying the lift. */
+  .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion] {
+    transition: opacity var(--duration-fast) ease-out;
+  }
+
+  /* On the way back it stays solid while it shrinks and fades only once it is
+     over the tile. Base UI unmounts on this transition's end, so the delay is
+     also what keeps it mounted for the whole flight. */
+  .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-ending-style] {
+    transition: opacity var(--duration-fast) linear calc(var(--pg-zoom-close-ms) - var(--duration-fast));
+  }
+
+  /* The page stays in view under the growing card for most of its flight
+     rather than whiting out before the card is a third of the way there. */
+  .preview-gallery-backdrop:has(+ .preview-gallery-shell[data-origin-zoom]) {
+    transition: opacity var(--pg-zoom-open-ms) ease-out;
+  }
+
+  .preview-gallery-backdrop[data-ending-style]:has(+ .preview-gallery-shell[data-origin-zoom]) {
+    transition: opacity var(--pg-zoom-close-ms) var(--ease-standard);
+  }
+
   .preview-gallery-origin-wrap,
   .preview-gallery-origin-wrap[data-wide="true"],
   .preview-gallery-popup {

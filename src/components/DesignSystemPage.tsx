@@ -358,6 +358,12 @@ const EASINGS_ENTRIES = [
     use: "The preview gallery and notes opening from their tile (--pg-open-ease).",
   },
   {
+    name: "Origin zoom",
+    css: "spring, damping 0.86 open / 1 close",
+    duration: "480ms open, 360ms close",
+    use: "The full-screen (touch, under 700px) gallery zooming out of its tile and back, as iOS opens a card (--pg-zoom-open-ms, --pg-zoom-close-ms).",
+  },
+  {
     name: "Photo carousel — --photo-motion-ease",
     css: "cubic-bezier(0.25, 0.1, 0.25, 1)",
     duration: "200–360ms",

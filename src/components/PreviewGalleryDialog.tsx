@@ -31,6 +31,7 @@ type PreviewGalleryDialogProps = {
   onOpenChange: (open: boolean) => void
   onSelectedIndexChange: (index: number) => void
   getOriginRect?: (index: number) => DOMRect | null
+  getOriginRadius?: (index: number) => number
   /** Where focus lands on close when the control that opened this is gone. */
   finalFocus?: React.ComponentProps<typeof Dialog.Popup>["finalFocus"]
   /** A row was pressed: fetch and select its nested article. */
@@ -65,6 +66,11 @@ const galleryMotionVars = {
   "--pg-close-ms": "var(--duration-quick)",
   "--pg-open-ease": toCssEasing(originOpenEasePoints),
   "--pg-close-ease": toCssEasing(originCloseEasePoints),
+  // The full-screen layout's zoom out of the tile. Longer than the desktop
+  // nudge because it covers the whole screen, on a spring that is most of the
+  // way there in the first third; the close is the house slow step.
+  "--pg-zoom-open-ms": "480ms",
+  "--pg-zoom-close-ms": "var(--duration-slow)",
   "--pg-content-in-ms": "var(--duration-base)",
   "--pg-content-out-ms": "var(--duration-quick)",
   "--pg-backdrop-in-ms": "var(--duration-base)",
@@ -107,6 +113,7 @@ export function PreviewGalleryDialog({
   onOpenChange,
   onSelectedIndexChange,
   getOriginRect,
+  getOriginRadius,
   finalFocus,
   onSelectWriting,
   notesStatus,
@@ -356,6 +363,11 @@ export function PreviewGalleryDialog({
     closeDurationProperty: "--pg-close-ms",
     onFlight: flagOriginAnimating,
     getFadeNode: () => popupRef.current,
+    getOriginRadius: () => getOriginRadius?.(safeIndex) ?? 0,
+    getZoomAnchor: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
+    getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
+    zoomOpenDurationProperty: "--pg-zoom-open-ms",
+    zoomCloseDurationProperty: "--pg-zoom-close-ms",
   })
 
   const attachOriginWrap = useCallback((node: HTMLDivElement | null) => {

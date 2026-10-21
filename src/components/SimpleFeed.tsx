@@ -30,7 +30,7 @@ import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { aboutIntro } from "../data/aboutIntro"
 import { useHoverCard } from "../lib/hoverCard"
-import { visibleOriginRect } from "../lib/originMotion"
+import { originCornerRadius, visibleOriginRect } from "../lib/originMotion"
 import { revealGalleryEntry } from "../lib/galleryEntry"
 import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
@@ -752,6 +752,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     (index: number) => visibleOriginRect(previewCardNodesRef.current.get(index)),
     [],
   )
+  const getPreviewOriginRadius = useCallback(
+    (index: number) => originCornerRadius(previewCardNodesRef.current.get(index)),
+    [],
+  )
 
   const renderRowMedia = (
     card: PortfolioCard,
@@ -1234,6 +1238,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                   selectedIndex={selectedWorkPreviewIndex}
                   prefersReducedMotion={prefersReducedMotion}
                   getOriginRect={getPreviewOriginRect}
+                  getOriginRadius={getPreviewOriginRadius}
                   onOpenChange={(nextOpen) => {
                     if (nextOpen) return
                     writingsFolderRef.current?.cancelPending()
