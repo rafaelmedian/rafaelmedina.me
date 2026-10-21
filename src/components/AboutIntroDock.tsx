@@ -95,18 +95,28 @@ export function AboutIntroDock(props: {
     // semantic state instead of coupling every gallery/booking/photo reader
     // to this optional corner. Ignore persistent, closed Base UI popups.
     const sync = () => {
+      frame = 0
       const covered = [...document.querySelectorAll<HTMLElement>("[role='dialog'], dialog[open]")]
         .some(dialog => !dialog.closest(".about-intro") && !dialog.hasAttribute("data-closed") &&
           dialog.getAttribute("aria-hidden") !== "true" && dialog.getClientRects().length > 0)
       setObscured(covered)
     }
-    const observer = new MutationObserver(sync)
+    // Read once per frame, not per mutation. `getClientRects` forces layout,
+    // and a dialog opening fires its mutations from inside the click's own
+    // task: the photo wall paid a 17ms layout of a page it was about to cover
+    // before mounting a single photo. The frame's own layout serves the read.
+    let frame = 0
+    const schedule = () => { frame ||= requestAnimationFrame(sync) }
+    const observer = new MutationObserver(schedule)
     observer.observe(document.body, {
       subtree: true, childList: true, attributes: true,
       attributeFilter: ["open", "data-open", "data-closed", "aria-hidden"],
     })
     sync()
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+    }
   }, [])
 
   const visible = active && !obscured
