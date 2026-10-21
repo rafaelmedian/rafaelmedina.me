@@ -3602,16 +3602,18 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
   await page.setViewportSize({ width: 1024, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
-  // A shared-token change must retime both CSS fades and the JS flight.
-  await page.addStyleTag({ content: ":root { --duration-base: .32s; }" })
+  // A shared-token change must retime both CSS fades and the JS flight. The
+  // zoom out of the tile runs --duration-slow plus --duration-fast.
+  await page.addStyleTag({ content: ":root { --duration-slow: .4s; }" })
 
-  // Hold Web Animations at their first frame so the short opening motion is
-  // still inspectable after React mounts the dialog portal.
+  // Hold Web Animations at their first frame so the opening motion is still
+  // inspectable after React mounts the dialog portal. Frozen rather than
+  // paused: the flight restarts itself on the popup's fade.
   await page.evaluate(() => {
     const animate = Element.prototype.animate
     Element.prototype.animate = function (...args) {
       const animation = animate.apply(this, args)
-      animation.pause()
+      animation.playbackRate = 0
       return animation
     }
   })
@@ -3621,8 +3623,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
   const cardInner = page.locator(".preview-gallery-card-inner")
-  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([320])
-  await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.32s")
+  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([520])
+  await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.52s")
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 
@@ -3653,60 +3655,69 @@ test("opens a prefetched gallery without passing through its loading state", asy
   expect(await firstSurface).toContain("preview-gallery-popup")
 })
 
-// The full-screen gallery zooms out of the tile the way iOS opens a card: its
-// first frame is clipped to the tile's rounded rectangle with the artwork lying
-// on the tile, and it lands unclipped and untransformed.
-test("zooms the full-screen gallery out of the tapped tile", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.goto("/")
-  await settleWorkCards(page)
-  const tile = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
-  await tile.scrollIntoViewIfNeeded()
-  // A handle, not the role locator: the open dialog aria-hides the page.
-  const tileHandle = await tile.elementHandle()
+// The gallery zooms out of the tile the way iOS opens a card: its first frame
+// is clipped to the tile's rounded rectangle with the artwork lying on the
+// tile, and it lands unclipped and untransformed. Full screen, the clip is on
+// the shell; as a floating card, it is on the surface itself.
+for (const { layout, viewport, clipped } of [
+  { layout: "full-screen", viewport: mobileViewport, clipped: ".preview-gallery-shell" },
+  { layout: "card", viewport: { width: 1280, height: 860 }, clipped: ".preview-gallery-origin-wrap" },
+]) {
+  test(`zooms the ${layout} gallery out of the tapped tile`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.goto("/")
+    await settleWorkCards(page)
+    const tile = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
+    await tile.scrollIntoViewIfNeeded()
+    // A handle, not the role locator: the open dialog aria-hides the page.
+    const tileHandle = await tile.elementHandle()
 
-  // Frozen rather than paused: the flight restarts itself on the popup's fade,
-  // and a zero rate holds it at its first frame through that restart.
-  await page.evaluate(() => {
-    const animate = Element.prototype.animate
-    Element.prototype.animate = function (...args) {
-      const animation = animate.apply(this, args)
-      animation.playbackRate = 0
-      return animation
+    // Frozen rather than paused: the flight restarts itself on the popup's
+    // fade, and a zero rate holds it at its first frame through that restart.
+    await page.evaluate(() => {
+      const animate = Element.prototype.animate
+      Element.prototype.animate = function (...args) {
+        const animation = animate.apply(this, args)
+        animation.playbackRate = 0
+        return animation
+      }
+    })
+    await tile.click()
+    await expect(page.getByRole("dialog")).toBeVisible()
+    // Measured now, not before the press: the grid's intro still moves the
+    // tile for a while after load, and the flight aims at where it was.
+    const box = (await tileHandle!.boundingBox())!
+
+    const shell = page.locator(".preview-gallery-shell")
+    await expect(shell).toHaveAttribute("data-origin-zoom", "true")
+    const firstFrame = await page.locator(clipped).evaluate((element) => {
+      const frame = document.querySelector(".preview-gallery-media-frame")!.getBoundingClientRect()
+      return { clip: getComputedStyle(element).clipPath, frame: { x: frame.x, y: frame.y, width: frame.width } }
+    })
+    expect(firstFrame.frame.x).toBeCloseTo(box.x, 0)
+    expect(firstFrame.frame.y).toBeCloseTo(box.y, 0)
+    expect(firstFrame.frame.width).toBeCloseTo(box.width, 0)
+    // inset() serialises as CSS shorthand, so equal sides collapse.
+    const [insets, corners] = firstFrame.clip.replace(/^inset\(|\)$/g, "").split(" round ")
+    const [top, right = top, , left = right] = insets.split(" ").map(parseFloat)
+    expect(parseFloat(corners)).toBeGreaterThan(0)
+    if (layout === "full-screen") {
+      expect(top).toBeCloseTo(box.y, 0)
+      expect(left).toBeCloseTo(box.x, 0)
     }
-  })
-  await tile.click()
-  await expect(page.getByRole("dialog")).toBeVisible()
-  // Measured now, not before the press: the grid's intro still moves the tile
-  // for a while after load, and the flight aims at where it was when pressed.
-  const tileBox = await tileHandle!.boundingBox()
-  expect(tileBox).not.toBeNull()
 
-  const shell = page.locator(".preview-gallery-shell")
-  await expect(shell).toHaveAttribute("data-origin-zoom", "true")
-  const firstFrame = await shell.evaluate((element) => {
-    const frame = document.querySelector(".preview-gallery-media-frame")!.getBoundingClientRect()
-    return { clip: getComputedStyle(element).clipPath, frame: { x: frame.x, y: frame.y, width: frame.width } }
+    await page.evaluate(() => {
+      for (const animation of document.getAnimations()) {
+        if (animation.timeline !== document.timeline) continue
+        animation.playbackRate = 1
+        animation.finish()
+      }
+    })
+    await expect(shell).not.toHaveAttribute("data-origin-zoom")
+    await expect(page.locator(clipped)).toHaveCSS("clip-path", "none")
+    await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
   })
-  const box = tileBox!
-  const insets = firstFrame.clip.match(/-?[\d.]+px/g)!.map(parseFloat)
-  expect(insets[0]).toBeCloseTo(box.y, 0)
-  expect(insets[3]).toBeCloseTo(box.x, 0)
-  expect(insets[4]).toBeGreaterThan(0)
-  expect(firstFrame.frame.x).toBeCloseTo(box.x, 0)
-  expect(firstFrame.frame.y).toBeCloseTo(box.y, 0)
-  expect(firstFrame.frame.width).toBeCloseTo(box.width, 0)
-
-  await page.evaluate(() => {
-    for (const animation of document.getAnimations()) {
-      animation.playbackRate = 1
-      animation.finish()
-    }
-  })
-  await expect(shell).not.toHaveAttribute("data-origin-zoom")
-  await expect(shell).toHaveCSS("clip-path", "none")
-  await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
-})
+}
 
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
