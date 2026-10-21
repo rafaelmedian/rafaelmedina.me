@@ -19,7 +19,6 @@ import { WritingsFolder, type WritingsFolderHandle, type WritingsReaderStatus } 
 import { ContactActionRow } from "./ContactActionRow"
 import { ProfileEmailCopy } from "./ProfileEmailCopy"
 import { ProfileLocation } from "./ProfileLocation"
-import { SiteLastUpdated } from "./SiteLastUpdated"
 import { AboutIntroDock } from "./AboutIntroDock"
 import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
@@ -1035,7 +1034,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           <div className="mosaic-profile-location">
             <ProfileLocation timeLabel={puntaCanaTimeLabel} />
             <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
-            <SiteLastUpdated />
+            {/* What a visitor deciding whether to get in touch needs, where
+                "Last updated" used to be. Plain text: the booking pill below
+                is the thing to press. */}
+            <span className="mosaic-profile-availability">Available for work</span>
             {/* The corner is not rendered below 700px, so on a phone the address
                 comes back to the line it left. It is one control either way --
                 CSS decides which end of the page it appears at, so no visitor
@@ -1054,12 +1056,6 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
               xProfile={xProfilePreview}
               linkedinMedia={linkedinHoverMedia}
             />
-            {/* The month used to be only in the pill's spoken name and its
-                hint, so a sighted visitor deciding whether to reach out never
-                saw it. It sits under the row it qualifies; the pill keeps its
-                own label to two words. Hidden from assistive tech, which
-                already hears it on the pill. */}
-            <p className="mosaic-profile-availability" aria-hidden="true">{availabilityLabel}</p>
           </div>
         </div>
       </header>

@@ -1364,7 +1364,8 @@ test("keeps the links inside focus-opened cards out of the tab order", async ({ 
     await expect(page.locator(".mosaic-profile-location-card")).toHaveAttribute("data-state", "open", { timeout: 500 })
   }).toPass()
   await page.keyboard.press("Tab")
-  await expect(page.locator(".mosaic-last-updated")).toBeFocused()
+  // "Available for work" is text, so the next stop is the booking pill.
+  await expect(page.locator(".mosaic-booking-pill")).toBeFocused()
 
   const lastChip = page.locator(".mosaic-work-history-chip").last()
   await lastChip.focus()
@@ -1789,59 +1790,11 @@ test("gives the corner the address and the About sheet the clock", async ({ page
 
   const location = page.locator(".mosaic-profile-location")
   await expect(location).toContainText("Punta Cana & NYC")
-  await expect(location).toContainText("Last updated")
+  await expect(location).toContainText("Available for work")
+  await expect(location).not.toContainText("Last updated")
   await expect(location).not.toContainText("Local time:")
   await expect(location).not.toContainText("Available in")
   await expect(page.locator(".mosaic-profile-contact > .mosaic-profile-email")).toHaveCount(0)
-})
-
-// The clause is the site's own commit history, read out of git at build time,
-// and its hint is the GitHub hovercard the trigger links to.
-test("previews the GitHub profile behind the last-updated clause", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/")
-  await settleAvatarIntro(page)
-
-  const clause = page.locator(".mosaic-last-updated")
-  await expect(clause).toContainText("Last updated")
-  await expect(clause).toHaveAttribute("href", "https://github.com/rafaelmedian")
-  // A machine-readable date beside the human one, so the clause is not just a
-  // string that happens to look like a day.
-  await expect(clause.locator("time")).toHaveAttribute("dateTime", /^\d{4}-\d{2}-\d{2}$/)
-
-  await clause.hover()
-  const card = page.locator(".activity-card")
-  await expect(card).toBeVisible()
-  await expect(card.locator(".activity-card-names")).toContainText("Rafael Medina")
-  await expect(card.locator(".activity-card-names")).toContainText("@rafaelmedian")
-  // Self-hosted: nothing on this card waits on githubusercontent.com.
-  await expect(card.locator(".activity-card-avatar")).toHaveAttribute("src", "/people/github-rafaelmedian.jpg")
-
-  // Whole weeks, every one of them seven cells, including the half-weeks the
-  // six-month window cuts at either end.
-  const weeks = card.locator(".activity-card-week")
-  const weekCount = await weeks.count()
-  expect(weekCount).toBeGreaterThanOrEqual(26)
-  await expect(card.locator(".activity-card-day")).toHaveCount(weekCount * 7)
-
-  // "Contributions", not "commits": the graph counts pull requests, reviews,
-  // and issues across every repository, so calling them commits would undercount
-  // and mislabel at the same time.
-  const grid = card.getByRole("img", { name: /^[\d,]+ contributions in the last six months$/ })
-  await expect(grid).toBeVisible()
-  await expect(card.locator(".activity-card-footer")).toHaveText(
-    /^[\d,]+ contributions in the last six months$/,
-  )
-
-  // The card is exactly as wide as the grid it is built around, padding and all.
-  // Measured after the entrance settles: the card arrives at scale(0.98), and
-  // boundingBox() reports the transformed box, so a read taken mid-transition
-  // is a fraction short of the width being asserted.
-  await card.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
-  const [cardBox, gridBox] = await Promise.all([card.boundingBox(), card.locator(".activity-card-grid").boundingBox()])
-  expect(gridBox!.width).toBeCloseTo(weekCount * 10 - 2, 0)
-  expect(cardBox!.width).toBeCloseTo(gridBox!.width + 26, 0)
-  expect(gridBox!.x + gridBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width)
 })
 
 // The pill's hint was a line of grey type; it is a clip now, the same card the
@@ -1896,38 +1849,6 @@ test("gives the address and the booking pill the same reaction card", async ({ p
 
   expect(bookingCard).toEqual(addressCard)
   expect(addressCard.width).toBe("200px")
-})
-
-test("draws the contribution grid on GitHub's borrowed greens", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/")
-  await settleAvatarIntro(page)
-
-  await page.locator(".mosaic-last-updated").hover()
-  const days = page.locator(".activity-card-day")
-  await expect(days.first()).toBeVisible()
-
-  const palette = await days.evaluateAll((cells) => {
-    const byLevel: Record<string, string> = {}
-    for (const cell of cells) {
-      const level = cell.getAttribute("data-level") ?? "?"
-      byLevel[level] ??= getComputedStyle(cell).backgroundColor
-    }
-    return byLevel
-  })
-
-  // Empty days are grey; every step above that is GitHub's own ramp, and the
-  // days the calendar has not reached leave no mark at all.
-  expect(palette["0"]).toBe("rgb(235, 237, 240)")
-  expect(palette["1"]).toBe("rgb(155, 233, 168)")
-  // The cells outside the six-month window keep the grid rectangular and draw
-  // nothing, so a half-week never reads as a quiet week.
-  expect(palette["outside"]).toBe("rgba(0, 0, 0, 0)")
-  // The busier steps only appear when the history has them, so assert on
-  // whichever of them this repository actually produced.
-  for (const [level, expected] of [["2", "rgb(64, 196, 99)"], ["3", "rgb(48, 161, 78)"], ["4", "rgb(33, 110, 57)"]]) {
-    if (palette[level]) expect(palette[level]).toBe(expected)
-  }
 })
 
 test("keeps the location and address copy together at 320px", async ({ page }) => {
@@ -1995,21 +1916,20 @@ test("carries the availability month in the booking pill's hint and nowhere on t
   expect(Math.abs(centring!.textCenterX - centring!.pillCenterX)).toBeLessThanOrEqual(1)
 })
 
-// The month is a value set in portfolio.ts, not "next month" from the clock, and
-// sighted visitors read it under the contact row rather than only hearing it.
-test("shows the set availability month under the contact row", async ({ page }) => {
-  await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
+// "Available for work" took the place "Last updated" had in the location line,
+// as plain text rather than another thing to press.
+test("says available for work in the location line", async ({ page }) => {
   await page.goto("/")
-  const line = page.locator(".mosaic-profile-availability")
+  const line = page.locator(".mosaic-profile-location .mosaic-profile-availability")
   await expect(line).toBeVisible()
-  await expect(line).toHaveText("Available in November")
-  await expect(line).toHaveAttribute("aria-hidden", "true")
+  await expect(line).toHaveText("Available for work")
+  await expect(page.locator(".mosaic-last-updated")).toHaveCount(0)
+  await expect(page.locator(".mosaic-profile-contact .mosaic-profile-availability")).toHaveCount(0)
 })
 
 test("says available now once the set month arrives", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-12-02T12:00:00Z"))
   await page.goto("/")
-  await expect(page.locator(".mosaic-profile-availability")).toHaveText("Available now")
   await expect(page.locator(".mosaic-booking-pill")).toHaveAccessibleName("Book a call — Available now")
 })
 
@@ -2211,8 +2131,8 @@ test("keeps the whole location line gray at rest", async ({ page }) => {
   // Both clauses read as one sentence until pointed at -- the repository link
   // included, which is why it inherits its colour rather than taking a link's.
   await expect(page.locator(".mosaic-profile-location-place")).toHaveCSS("color", "rgb(107, 107, 107)")
-  await expect(page.locator(".mosaic-last-updated")).toHaveCSS("color", "rgb(107, 107, 107)")
-  await expect(page.locator(".mosaic-last-updated")).toHaveCSS("text-decoration-line", "none")
+  await expect(page.locator(".mosaic-profile-availability")).toHaveCSS("color", "rgb(107, 107, 107)")
+  await expect(page.locator(".mosaic-profile-availability")).toHaveCSS("text-decoration-line", "none")
 })
 
 // An open dialog aria-hides the rest of the page, including the place name's
@@ -2222,7 +2142,7 @@ test("holds the location line still while a modal is open", async ({ page }) => 
   await page.goto("/")
   await settleAvatarIntro(page)
 
-  const lastUpdated = page.locator(".mosaic-profile-location .mosaic-last-updated")
+  const lastUpdated = page.locator(".mosaic-profile-location .mosaic-profile-availability")
   const before = await lastUpdated.boundingBox()
 
   await page.getByText("Notes & tools").first().click()

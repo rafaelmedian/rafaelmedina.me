@@ -457,15 +457,10 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   align-items: center;
 }
 
-/* The month under the contact row: a footnote to "Book a call", so it takes the
-   location line's muted ink one size down rather than competing with it. */
+/* "Available for work" takes the place "Last updated" had: plain text in the
+   location line's own muted ink, not a link, so it adds nothing to press. */
 .mosaic-profile-availability {
-  margin: 0.625rem 0 0;
-  font-family: var(--font-ui);
-  font-size: var(--text-xs);
-  line-height: 1.5;
-  letter-spacing: -0.005em;
-  color: var(--muted);
+  white-space: nowrap;
 }
 
 /* The address is the location line's second clause, so it reads as text until
