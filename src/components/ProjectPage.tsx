@@ -7,7 +7,8 @@ import { ProjectCaseStudy } from "./ProjectCaseStudy"
 /** Direct project visits have useful HTML even without hydration or a modal. */
 export function ProjectPage({ card }: { card: PortfolioCard }) {
   useEffect(() => updatePageMetadata(card), [card])
-  const team = [collaborators.rafael, ...(card.team ?? [])]
+  // Solo work carries no credit row, as in the gallery.
+  const team = card.team?.length ? [collaborators.rafael, ...card.team] : []
 
   return (
     <article className="standalone-page">
@@ -18,7 +19,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
       <header>
         <h1 className="standalone-title">{card.title}</h1>
         <p className="standalone-description">{card.detail}</p>
-        {card.caseStudy ? <ul className="preview-gallery-people" aria-label="Collaborators">
+        {card.caseStudy && team.length > 0 ? <ul className="preview-gallery-people" aria-label="Collaborators">
           {team.map((person) => <li key={person.href}><a className="preview-gallery-person" href={person.href}>
             {person.photo ? <img className="preview-gallery-person-avatar" src={person.photo} alt="" width={22} height={22} /> : null}
             <span>{person.name}</span>

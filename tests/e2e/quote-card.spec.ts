@@ -49,15 +49,24 @@ test("carries the team quotes as a band between the project groups", async ({ pa
   await expect(slide).toContainText("You did a great job!")
   // Named on the card but never linked: these came from Slack, not from X.
   await expect(card.getByRole("button", { name: /on X$/ })).toHaveCount(0)
-  // A band across the grid, above the closing projects.
+  // A band across the grid, above the closing projects, shared with the
+  // marketing tile: the two halves run edge to edge across the row.
   const bounds = await page.evaluate(() => {
     const band = document.querySelector(".mosaic-tile-quote2")!.getBoundingClientRect()
-    const closing = document.querySelector(".mosaic-tile-mobile")!.getBoundingClientRect()
+    const marketing = document.querySelector(".mosaic-tile-marketing")!.getBoundingClientRect()
+    const closing = document.querySelector(".mosaic-tile-relaunch")!.getBoundingClientRect()
     const row = document.querySelector(".mosaic-group-closing")!.getBoundingClientRect()
-    return { bandBottom: band.bottom, closingTop: closing.top, bandWidth: band.width, rowWidth: row.width }
+    return {
+      bandBottom: Math.max(band.bottom, marketing.bottom), closingTop: closing.top,
+      bandLeft: band.left, marketingRight: marketing.right, marketingTop: marketing.top, bandTop: band.top,
+      rowLeft: row.left, rowRight: row.right, quoteWidth: band.width,
+    }
   })
   expect(bounds.closingTop).toBeGreaterThanOrEqual(bounds.bandBottom - 1)
-  expect(bounds.bandWidth).toBeCloseTo(bounds.rowWidth, 0)
+  expect(bounds.marketingTop).toBeCloseTo(bounds.bandTop, 0)
+  expect(bounds.bandLeft).toBeCloseTo(bounds.rowLeft, 0)
+  expect(bounds.marketingRight).toBeCloseTo(bounds.rowRight, 0)
+  expect(bounds.quoteWidth).toBeGreaterThanOrEqual(340)
 })
 
 test("commits a drag well short of a card width, and lands it quickly", async ({ page }) => {
@@ -75,10 +84,10 @@ test("commits a drag well short of a card width, and lands it quickly", async ({
   expect(Number.parseFloat(dragDuration)).toBeLessThan(Number.parseFloat(dotDuration))
 })
 
-test("exposes 24 by 40 dot targets and selected emphasis", async ({ page }) => {
+test("exposes 12 by 40 dot targets at a 12px pitch and selected emphasis", async ({ page }) => {
   await openHome(page)
   for (const dot of await carousel(page).locator(".mosaic-quote-dot").all()) {
-    await expect(dot).toHaveCSS("width", "24px")
+    await expect(dot).toHaveCSS("width", "12px")
     await expect(dot).toHaveCSS("height", "40px")
   }
   const markers = carousel(page).locator(".mosaic-quote-dot span")
@@ -88,7 +97,7 @@ test("exposes 24 by 40 dot targets and selected emphasis", async ({ page }) => {
     const second = nodes[1]?.getBoundingClientRect()
     return first && second ? second.left - first.right : -1
   })
-  expect(markerGap).toBeCloseTo(18, 0)
+  expect(markerGap).toBeCloseTo(6, 0)
   await expect(carousel(page).locator('.mosaic-quote-dot[aria-pressed="true"] span')).toHaveCSS("opacity", "0.75")
   await expect(carousel(page).locator('.mosaic-quote-dot[aria-pressed="false"] span').first()).toHaveCSS("opacity", "0.3")
 })
@@ -312,7 +321,7 @@ test("the quote card is one Tab stop that the arrows browse", async ({ page }) =
   // The name, the preview, and the dots are not stops of their own: the next
   // Tab is the next tile, and Shift+Tab comes straight back to the card.
   await page.keyboard.press("Tab")
-  await expect(page.getByRole("link", { name: /Open Matcha security audit preview/ })).toBeFocused()
+  await expect(page.getByRole("link", { name: /Open Matcha limit orders preview/ })).toBeFocused()
   await page.keyboard.press("Shift+Tab")
   await expect(card).toBeFocused()
 })

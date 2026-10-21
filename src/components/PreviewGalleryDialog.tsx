@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
-import { projectPath, resumePath, siteOrigin } from "../lib/projectMetadata"
+import { resumePath, siteOrigin } from "../lib/projectMetadata"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
 import { revealGalleryEntry } from "../lib/galleryEntry"
@@ -22,6 +22,7 @@ import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
 import type { WritingsReaderStatus } from "./WritingsFolder"
 import { backSound, closeSound, isAudioWarm, nextSound, openSound, useWarmingSound, warmAudioWhenIdle } from "../lib/sounds"
+import { formatPostDate } from "../lib/postDate"
 
 type PreviewGalleryDialogProps = {
   items: GalleryItem[]
@@ -112,9 +113,10 @@ function getPreviewDescription(card: PortfolioCard) {
 }
 
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
-  // Credited on every project, with or without company: a shot with no names
-  // under it reads as unattributed rather than as solo work.
-  return [...(card.team ?? []), collaborators.rafael]
+  // Work done alone needs no credit row: the whole site is already Rafael's,
+  // and his face under his own solo piece was a byline restating the page.
+  // Shared work names the team, Rafael beside them.
+  return card.team?.length ? [...card.team, collaborators.rafael] : []
 }
 
 function getInitials(name: string) {
@@ -407,9 +409,12 @@ export function PreviewGalleryDialog({
       const frame = popupRef.current?.querySelector(".preview-gallery-media-frame")
       return frame?.querySelector(".preview-gallery-media") ?? frame ?? null
     },
-    getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
     getZoomKeep: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
+    getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
     getZoomOutline: () => cardRef.current,
+    // The notes list comes out of a paper in the folder, a page the size of a
+    // thumbnail: it lands as a whole card rather than clipped to the paper.
+    getZoomWhole: () => activeItem?.kind === "writings" ? cardRef.current : null,
     handoffDurationProperty: "--pg-zoom-handoff-ms",
     zoomOpenDurationProperty: "--pg-zoom-open-ms",
     zoomCloseDurationProperty: "--pg-zoom-close-ms",
@@ -652,11 +657,12 @@ export function PreviewGalleryDialog({
                   than its first child: the card carries the paging transition,
                   and a control that slid and faded under the finger that
                   pressed it read as the button leaving rather than the slide.
-                  The count sits in the empty middle column, between paging and
-                  close. When a step wraps around either end it says so for a
-                  moment, then goes back to the number. */}
+                  The position is announced rather than shown: a "16 / 19" on
+                  the page was a number to read, not something to act on. When
+                  a step wraps around either end it says so, then goes back to
+                  the number. */}
               <div className="preview-gallery-toolbar">
-                <span className="preview-gallery-count" data-wrapped={wrapLabel ? "true" : undefined} aria-live="polite">
+                <span className="preview-gallery-count sr-only" data-wrapped={wrapLabel ? "true" : undefined} aria-live="polite">
                   {wrapLabel ?? positionLabel}
                 </span>
 
@@ -763,15 +769,13 @@ export function PreviewGalleryDialog({
                       ) : null}
 
                       <div className="preview-gallery-content">
-                        {/* The project's own address, as a quiet link on the
-                            title's line: the slot on the artwork's edge is the
-                            heart's, and this is something to read past. */}
-                        <div className="preview-gallery-title-row">
-                          <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
-                          <CopyPageLink key={`link-${activeCard.id}`} variant="text" className="preview-gallery-copy-link"
-                            href={`${siteOrigin}${projectPath(activeCard)}`} subject="project" />
-                        </div>
+                        <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
                         <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
+                        {activeCard.post ? (
+                          <a className="preview-gallery-post" href={activeCard.post.href} target="_blank" rel="noreferrer">
+                            Watch the original on {activeCard.post.site} · <time dateTime={activeCard.post.date}>{formatPostDate(activeCard.post.date)}</time>
+                          </a>
+                        ) : null}
                         {activeCollaborators.length > 0 ? (
                           <div className="preview-gallery-team">
                             <ul className="preview-gallery-people" aria-label="Collaborators">
@@ -936,12 +940,6 @@ export function PreviewGalleryDialog({
                 >
                   <ChevronRight aria-hidden="true" className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                 </button>
-                {/* The desktop twin of the toolbar's count, under the chevron
-                    that moves it. Only one of the two is ever displayed, so
-                    only one announces. */}
-                <span className="preview-gallery-rail-count" data-wrapped={wrapLabel ? "true" : undefined} aria-live="polite">
-                  {wrapLabel ?? positionLabel}
-                </span>
               </div>
             </Dialog.Popup>
           </div>

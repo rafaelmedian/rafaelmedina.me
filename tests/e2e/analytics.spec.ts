@@ -33,6 +33,7 @@ test("attributes the floating table-of-contents About action to the TOC", async 
   await page.goto(analyticsBaseUrl)
   await page.evaluate(() => window.scrollTo(0, 160))
 
+  await page.getByRole("button", { name: /^Table of contents:/ }).click()
   await page.getByRole("navigation", { name: "Table of contents" }).getByRole("link", { name: "About" }).click()
 
   const aboutScrollEvent = await page.evaluate(() =>

@@ -81,7 +81,8 @@ for (const width of [390, 768, 1440]) {
 }
 
 test("a CV visible on initial load waits for the first scroll before loading chat", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1800 })
+  // Tall enough to reach the résumé tile under the films on first paint.
+  await page.setViewportSize({ width: 1440, height: 2600 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   const requests: string[] = []
   page.on("request", request => {

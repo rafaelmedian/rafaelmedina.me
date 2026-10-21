@@ -24,7 +24,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await expect(page).toHaveURL(/\/notes\/$/)
   await expect(page).toHaveTitle("Notes — Rafael Medina")
   await expect(popup(page)).toHaveAttribute("data-preview-kind", "writings")
-  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 17")
   await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   await expect(popup(page).locator(".writings-category > h3")).toHaveText(["Tools", "Notes"])
   await expect(popup(page).getByRole("button", { name: "Make pull requests easier to review", exact: true })
@@ -34,7 +34,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
 
   // Either arrow leaves for the tile on that side, in the same popup.
   await page.keyboard.press("ArrowRight")
-  await expect(page).toHaveURL(/\/work\/popparazi-v1\/$/)
+  await expect(page).toHaveURL(/\/work\/matcha-gasless-film\/$/)
   await expect(popup(page)).toHaveAttribute("data-preview-kind", "project")
   await page.keyboard.press("ArrowLeft")
   await expect(page).toHaveURL(/\/notes\/$/)
@@ -120,7 +120,7 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   await expect(sheet(page)).toBeHidden()
   await expect(page).toHaveURL(/\/notes\/\?ref=portfolio$/)
   await expect(popup(page)).toBeVisible()
-  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 17")
   // The row the sheet was opened from is back, and focus is in the list's
   // popup rather than stranded on the tile behind it.
   await expect(entry).toBeVisible()

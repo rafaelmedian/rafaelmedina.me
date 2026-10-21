@@ -31,6 +31,9 @@ export type PortfolioCard = {
   outcome: string
   /** Teammates on this work; Rafael is credited automatically alongside them. */
   team?: Collaborator[]
+  /** Where a piece that shipped as a public post first went out; the gallery
+      links to the original under the summary. */
+  post?: { site: "X" | "YouTube"; href: string; date: string }
   previewAspectRatio?: number
   previewMediaPadding?: string
   /** The grid tile crops this shot; the gallery repeats the same crop. */
@@ -38,6 +41,9 @@ export type PortfolioCard = {
   /** Alternate artwork used only in the home mosaic. The project preview and
       social metadata continue to use `image` as their single hero source. */
   homeImages?: PortfolioImage[]
+  /** The gallery shows `homeImages` laid out as the tile lays them out, so the
+      open grows the tile's own picture instead of swapping in `image`. */
+  galleryUsesHomeImages?: boolean
   /** Long-form project narrative. Matcha tiles share one body because they are
       chapters of the same end-to-end product redesign, not isolated shots. */
   caseStudy?: ProjectCaseStudy
@@ -48,6 +54,9 @@ export type PortfolioImage = {
   label: string
   width: number
   height: number
+  /** Where the artwork was published, for work that shipped as a post. Only
+      link a post the artwork was actually attached to. */
+  post?: { href: string; date: string }
 }
 
 export type ProjectCaseStudySection = {
@@ -110,7 +119,7 @@ export type HomeTile = HomeTilePlacement & (
 )
 
 export type HomeGroup = {
-  layout: "opening" | "portraits" | "aside" | "offset" | "closing"
+  layout: "opening" | "videos" | "portraits" | "aside" | "offset" | "closing"
   columns: 2 | 3
   items: HomeTile[]
 }
@@ -128,6 +137,18 @@ export const homeGroups: HomeGroup[] = [
       { kind: "writings", area: "writings", share: 3 / 12 },
     ],
   },
+  // Two of Matcha's launch films, high on the page where they read as work
+  // rather than as a footnote. The motion pieces run full bleed. The other two
+  // films are spread further down: limit orders in the portraits group and the
+  // relaunch in the closing row.
+  {
+    layout: "videos",
+    columns: 2,
+    items: [
+      { kind: "project", area: "gasless", cardId: "preview-matcha-gasless-film", share: 7 / 12, fit: "cover" },
+      { kind: "project", area: "crosschain", cardId: "preview-matcha-cross-chain-film", share: 5 / 12, fit: "cover" },
+    ],
+  },
   {
     layout: "portraits",
     columns: 3,
@@ -136,7 +157,9 @@ export const homeGroups: HomeGroup[] = [
       { kind: "resume", area: "resume", share: 3 / 12, compactWide: true },
       { kind: "project", area: "protector", cardId: "preview-protector", share: 5 / 12, fit: "cover", compactWide: true },
       { kind: "quote", area: "quote", source: "internet", share: 4 / 12, compactWide: true },
-      { kind: "project", area: "security", cardId: "preview-shot-20", share: 4 / 12, fit: "contain" },
+      // A screen recording of the whole app, so it sits in the grey mat where
+      // it reads as the app rather than as a zoomed crop of it.
+      { kind: "project", area: "limitorders", cardId: "preview-matcha-limit-orders-film", share: 4 / 12, fit: "contain", compactWide: true },
       // The photos used to sit inside About, below the hobbies. They read
       // better as a tile in the grid, and this group is where there was room
       // for one: a third band under the quote and Security, so the personal
@@ -175,18 +198,23 @@ export const homeGroups: HomeGroup[] = [
   // never be read.
   {
     layout: "aside",
-    columns: 3,
+    columns: 2,
     items: [
-      { kind: "quote", area: "quote2", source: "team", share: 1, compactWide: true },
+      { kind: "quote", area: "quote2", source: "team", share: 1 / 2, compactWide: true },
+      // The marketing tile is a 2x2 sheet of 2:1 posts, so a short, wide half
+      // of this band is the one slot on the grid already the artwork's shape.
+      // Partnered, the quote is no longer the lone card floating in an empty
+      // row that kept it full width.
+      { kind: "project", area: "marketing", cardId: "preview-matcha-marketing", share: 1 / 2, fit: "contain", compactWide: true },
     ],
   },
   {
     layout: "closing",
     columns: 3,
     items: [
-      { kind: "project", area: "mobile", cardId: "preview-shot-14", share: 1 / 3, fit: "contain" },
-      { kind: "project", area: "trade", cardId: "preview-shot-1", share: 1 / 3, fit: "contain" },
-      { kind: "project", area: "pro", cardId: "preview-shot-23", share: 1 / 3, fit: "contain" },
+      { kind: "project", area: "relaunch", cardId: "preview-matcha-relaunch-film", share: 1 / 2, fit: "cover", compactWide: true },
+      { kind: "project", area: "trade", cardId: "preview-shot-1", share: 1 / 4, fit: "contain" },
+      { kind: "project", area: "pro", cardId: "preview-shot-23", share: 1 / 4, fit: "contain" },
     ],
   },
 ]
@@ -518,10 +546,11 @@ const portfolioCardEntries: PortfolioCard[] = [
     role: "I designed the campaign key visual and the variants it ships in.",
     outcome:
       "The rewards program launched with one visual system shared by its social posts and link previews.",
-    // The project preview keeps the compact campaign composite, while the home
-    // tile lays out the two complete deliverables independently. Keeping their
-    // rounded ends inside the card prevents an intentional bleed from reading
-    // as an accidental crop when the organic grid changes shape.
+    // Social metadata keeps the compact campaign composite, while the home
+    // tile and the gallery lay out the two complete deliverables
+    // independently. Keeping their rounded ends inside the card prevents an
+    // intentional bleed from reading as an accidental crop when the organic
+    // grid changes shape.
     image: "/Projects/matcha-rewards.webp",
     previewWidth: 1540,
     previewHeight: 1325,
@@ -539,8 +568,146 @@ const portfolioCardEntries: PortfolioCard[] = [
         height: 480,
       },
     ],
+    galleryUsesHomeImages: true,
     ...matchaMeta,
     previewAspectRatio: 1540 / 1325,
+  },
+  {
+    id: "preview-matcha-marketing",
+    slug: "matcha-marketing",
+    category: "Case study",
+    title: "Matcha marketing materials",
+    summary: "",
+    detail:
+      "I designed marketing materials for Matcha, the decentralized trading platform by 0x: network and feature launches, trading milestones, product promos, and the It’s a Match(a) campaign. The posts and blog covers share one visual language, a headline figure beside the network’s mark and Matcha’s cup, with a color for each chain, so every announcement reads as Matcha.",
+    role: "I designed the social posts, blog covers, and campaign artwork, and the system their variants follow.",
+    outcome:
+      "Launches, milestones, and campaigns went out as one recognizable series across X and the blog.",
+    // The gallery keeps the flat 2x2 sheet; the home tile hangs the posts as
+    // a tilted wall, four across and five down, reading left to right. The
+    // middle three rows are the twelve worth reading; the first and last run
+    // off the tile's top and bottom so the wall reads as continuing past it:
+    // blog covers and the variants that never went out.
+    image: "/Projects/matcha-marketing.webp",
+    previewWidth: 1600,
+    previewHeight: 816,
+    homeImages: [
+      ["limit-orders", "Limit orders on BSC and Polygon"],
+      ["match-headline", "It’s a Match(a) campaign"],
+      ["optimism-blog", "Optimism launch blog cover"],
+      ["bsc-1-billion", "$1 billion traded on BSC"],
+      ["optimism", "Launching on Optimism"],
+      ["polygon", "$1B traded on Polygon"],
+      ["50-billion-bars", "$50B traded on Matcha"],
+      ["bnb-chain", "$1B traded on BNB Chain"],
+      ["fantom", "$500M traded on Fantom"],
+      ["40-billion", "$40B trade volume"],
+      ["arbitrum", "Now live on Arbitrum"],
+      ["avalanche-750m", "$750M traded on Avalanche"],
+      ["savings", "Savings shown on a Matcha order"],
+      ["2-million", "Two million transactions"],
+      ["bnb-250k", "250,000 trades on BNB Chain"],
+      ["50-billion", "$50B traded on Ethereum"],
+      ["polygon-alt", "$1B traded on Polygon, alternate"],
+      ["bnb-chain-icon", "$1B traded on BNB Chain, alternate"],
+      ["arbitrum-cover", "Arbitrum launch blog cover"],
+      ["bnb-chain-alt", "$1B traded on BNB Chain, second alternate"],
+    ].map(([name, label]) => ({
+      source: `/Projects/matcha-marketing-${name}.webp`,
+      label,
+      width: 1200,
+      height: 600,
+    })),
+    ...matchaMeta,
+    previewAspectRatio: 1600 / 816,
+  },
+  {
+    id: "preview-matcha-relaunch-film",
+    slug: "matcha-relaunch-film",
+    category: "Video",
+    title: "The new Matcha",
+    summary: "",
+    detail:
+      "I worked on the film that introduced the redesigned Matcha in May 2023. It runs the new product’s own screens in its new green identity: one search across every chain, the best price, MEV protection, then the trade, ending on “Search. Trade. Done.”",
+    role: "I worked on the relaunch and on the film that announced it.",
+    outcome:
+      "The launch post reached 141K views and nearly 3,900 likes on X.",
+    image: "/Projects/matcha-video-relaunch-2023.webm",
+    previewWidth: 960,
+    previewHeight: 540,
+    previewPoster: "/Projects/matcha-video-relaunch-2023-poster.webp",
+    previewPosterWidth: 640,
+    previewPosterHeight: 360,
+    ...matchaMeta,
+    ctaHref: "https://x.com/matchaxyz/status/1661401872811565056",
+    post: { site: "X", href: "https://x.com/matchaxyz/status/1661401872811565056", date: "2023-05-24" },
+    previewAspectRatio: 16 / 9,
+  },
+  {
+    id: "preview-matcha-cross-chain-film",
+    slug: "matcha-cross-chain-film",
+    category: "Video",
+    title: "Matcha cross-chain swaps",
+    summary: "",
+    detail:
+      "I worked on the teaser and launch film for cross-chain swaps on Matcha, posted a week apart in late 2023. The teaser is pure motion; the launch film says goodbye to broken bridges and wrapping, then shows a swap from one chain to another in the new cross-chain tab.",
+    role: "I worked on cross-chain swaps and on the teaser and launch film.",
+    outcome:
+      "The teaser and the launch post drew about 1,600 likes each on X.",
+    image: "/Projects/matcha-video-cross-chain-2023.webm",
+    previewWidth: 960,
+    previewHeight: 540,
+    previewPoster: "/Projects/matcha-video-cross-chain-2023-poster.webp",
+    previewPosterWidth: 640,
+    previewPosterHeight: 360,
+    ...matchaMeta,
+    ctaHref: "https://x.com/matchaxyz/status/1732070138281918806",
+    post: { site: "X", href: "https://x.com/matchaxyz/status/1732070138281918806", date: "2023-12-05" },
+    previewAspectRatio: 16 / 9,
+  },
+  {
+    id: "preview-matcha-gasless-film",
+    slug: "matcha-gasless-film",
+    category: "Video",
+    title: "Matcha gasless trading",
+    summary: "",
+    detail:
+      "I worked on the launch film for Gasless Trading on Matcha in October 2021: an umbrella keeps gas off the coins, then the trade form shows the gasless toggle and the rate with no gas to pay.",
+    role: "I worked on the Gasless Trading launch film.",
+    outcome:
+      "Gasless Trading launched with a film that explains the feature before showing it.",
+    image: "/Projects/matcha-video-gasless-2021.webm",
+    previewWidth: 960,
+    previewHeight: 540,
+    previewPoster: "/Projects/matcha-video-gasless-2021-poster.webp",
+    previewPosterWidth: 640,
+    previewPosterHeight: 360,
+    ...matchaMeta,
+    ctaHref: "https://x.com/matchaxyz/status/1447592326424055816",
+    post: { site: "X", href: "https://x.com/matchaxyz/status/1447592326424055816", date: "2021-10-11" },
+    previewAspectRatio: 16 / 9,
+  },
+  {
+    id: "preview-matcha-limit-orders-film",
+    slug: "matcha-limit-orders-film",
+    category: "Video",
+    title: "Matcha limit orders",
+    summary: "",
+    detail:
+      "I worked on this short walkthrough of limit orders on Matcha from November 2022: set a price and an expiry, sign once, and the order waits in Open Orders.",
+    role: "I worked on limit orders and on this walkthrough.",
+    outcome:
+      "The walkthrough shows the full flow, from setting a price to the open order, in twelve seconds.",
+    image: "/Projects/matcha-video-limit-orders-2022.webm",
+    previewWidth: 960,
+    previewHeight: 540,
+    previewPoster: "/Projects/matcha-video-limit-orders-2022-poster.webp",
+    previewPosterWidth: 640,
+    previewPosterHeight: 360,
+    ...matchaMeta,
+    ctaHref: "https://x.com/matchaxyz/status/1597349650104610816",
+    post: { site: "X", href: "https://x.com/matchaxyz/status/1597349650104610816", date: "2022-11-28" },
+    previewAspectRatio: 16 / 9,
   },
 ]
 

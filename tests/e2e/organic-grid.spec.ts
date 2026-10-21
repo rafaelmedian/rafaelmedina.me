@@ -8,10 +8,10 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
-    await expect(tiles).toHaveCount(17)
-    // Twelve projects and the résumé: its reader has a page of its own now, so
+    await expect(tiles).toHaveCount(20)
+    // Fifteen projects and the résumé: its reader has a page of its own now, so
     // its tile is a link on the grid like theirs.
-    await expect(page.locator("a.mosaic-row-card")).toHaveCount(13)
+    await expect(page.locator("a.mosaic-row-card")).toHaveCount(16)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect()
       return { x, y, width, height }
@@ -28,32 +28,38 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       }
     }
     if (width < 900) {
-      // The opening projects must remain side by side even on phones.
+      // The opening projects must remain side by side even on phones, and the
+      // notes folder takes the next row alone, ahead of the films.
       expect(boxes[0].y).toBeCloseTo(boxes[1].y, 0)
       expect(boxes[0].height).toBeCloseTo(boxes[0].width, 0)
       expect(boxes[1].x).toBeGreaterThan(boxes[0].x + boxes[0].width)
-      const protector = boxes[5]
-      const quote = boxes[6]
+      const protector = boxes[7]
+      const quote = boxes[8]
       expect(protector.width).toBeCloseTo(boxes[1].x + boxes[1].width - boxes[0].x, 0)
       expect(quote.width).toBeCloseTo(protector.width, 0)
-      // The personal-photo band and the team quotes span both compact columns.
-      expect(boxes[8].width).toBeCloseTo(protector.width, 0)
-      expect(boxes[13].width).toBeCloseTo(protector.width, 0)
+      // The personal-photo band, the team quotes, and the marketing tile span
+      // both compact columns.
+      expect(boxes[10].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[15].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[16].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[16].y).toBeGreaterThan(boxes[15].y + boxes[15].height - 1)
     } else {
       // The personal-photo band spans the portraits group on its own line.
-      expect(boxes[8].x).toBeCloseTo(boxes[3].x, 0)
-      expect(boxes[8].x + boxes[8].width).toBeCloseTo(boxes[7].x + boxes[7].width, 0)
-      expect(boxes[8].y).toBeGreaterThan(boxes[7].y + boxes[7].height - 1)
-      // The team quotes are a band of their own between the project groups.
-      expect(boxes[13].x).toBeCloseTo(boxes[8].x, 0)
-      expect(boxes[13].width).toBeCloseTo(boxes[8].width, 0)
-      expect(boxes[13].y).toBeGreaterThan(boxes[12].y + boxes[12].height - 1)
-      expect(boxes[14].y).toBeGreaterThan(boxes[13].y + boxes[13].height - 1)
+      expect(boxes[10].x).toBeCloseTo(boxes[5].x, 0)
+      expect(boxes[10].x + boxes[10].width).toBeCloseTo(boxes[9].x + boxes[9].width, 0)
+      expect(boxes[10].y).toBeGreaterThan(boxes[9].y + boxes[9].height - 1)
+      // The team quotes and the marketing tile share a band of their own
+      // between the project groups, edge to edge across it.
+      expect(boxes[15].x).toBeCloseTo(boxes[10].x, 0)
+      expect(boxes[16].y).toBeCloseTo(boxes[15].y, 0)
+      expect(boxes[16].x + boxes[16].width).toBeCloseTo(boxes[10].x + boxes[10].width, 0)
+      expect(boxes[15].y).toBeGreaterThan(boxes[14].y + boxes[14].height - 1)
+      expect(boxes[17].y).toBeGreaterThan(boxes[15].y + boxes[15].height - 1)
       // The long middle cards bridge the smaller stack alongside them.
-      expect(boxes[5].height).toBeGreaterThan(boxes[6].height + 100)
-      expect(boxes[5].y + boxes[5].height).toBeCloseTo(boxes[7].y + boxes[7].height, 0)
-      expect(boxes[9].y + boxes[9].height).toBeGreaterThan(boxes[10].y + boxes[10].height + 30)
-      expect(boxes[11].y + boxes[11].height).toBeCloseTo(boxes[12].y + boxes[12].height, 0)
+      expect(boxes[7].height).toBeGreaterThan(boxes[8].height + 100)
+      expect(boxes[7].y + boxes[7].height).toBeCloseTo(boxes[9].y + boxes[9].height, 0)
+      expect(boxes[11].y + boxes[11].height).toBeGreaterThan(boxes[12].y + boxes[12].height + 30)
+      expect(boxes[13].y + boxes[13].height).toBeCloseTo(boxes[14].y + boxes[14].height, 0)
     }
   })
 }
@@ -87,7 +93,7 @@ test("reserves the mosaic layout before scripts or media load", async ({ browser
   await page.route(/\.(webp|jpg|png|webm)(\?.*)?$/, route => route.abort())
   await page.goto("/")
   const cards = page.locator("a.mosaic-row-card")
-  await expect(cards).toHaveCount(13)
+  await expect(cards).toHaveCount(16)
   const first = await cards.nth(0).boundingBox()
   const second = await cards.nth(1).boundingBox()
   expect(first!.height).toBeGreaterThan(100)
@@ -158,11 +164,11 @@ test("separates Rewards artwork and extends Matcha product backgrounds", async (
     expect(mediaBox!.y + mediaBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height + 1)
   }
 
-  // The other two closing tiles are the same fix on the light side: both
-  // exports sit on a flat rgb(231 231 233) that is five levels off the pale
-  // card surface, close enough to blend at a glance and wrong enough to draw a
-  // rectangle inside the card once seen.
-  for (const name of [/Open Matcha trade page/, /Open Matcha on mobile/]) {
+  // The trade tile is the same fix on the light side: its export sits on a
+  // flat rgb(231 231 233) that is five levels off the pale card surface, close
+  // enough to blend at a glance and wrong enough to draw a rectangle inside the
+  // card once seen.
+  for (const name of [/Open Matcha trade page/]) {
     const card = page.getByRole("link", { name })
     await card.scrollIntoViewIfNeeded()
     await expect(card).toHaveCSS("padding", "0px")

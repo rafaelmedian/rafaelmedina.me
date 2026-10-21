@@ -116,6 +116,56 @@ export const projectCaseStudies = {
       "Adapted that visual into weekly countdowns and link previews so the campaign stayed recognizable.",
     ] },
   ]),
+  "matcha-marketing": study("Marketing Matcha in one voice", [
+    "I designed Matcha’s marketing materials: launch posts, milestones, promos, and campaigns.",
+    "Most of it went out on @matchaxyz through 2022, one milestone after another.",
+  ], [
+    { heading: "Something new to announce", paragraphs: [
+      "Gave each launch a headline people could read at feed size: the network or feature, and nothing else.",
+      "Used the partner’s own mark and colors so the post reads as theirs as much as Matcha’s.",
+    ], media: [
+      { source: "/Projects/matcha-marketing-optimism.webp", label: "Launching on Optimism", width: 1200, height: 600 },
+      { source: "/Projects/matcha-marketing-arbitrum.webp", label: "Now live on Arbitrum", width: 1200, height: 600, post: { href: "https://x.com/matchaxyz/status/1598421719940681728", date: "2022-12-01" } },
+    ] },
+    { heading: "Checked where it lands", paragraphs: [
+      "Reviewed posts inside a mock X timeline, at the size people actually scroll past them.",
+      "Then the real thing: the $50B milestone as it went out on Twitter in March 2022.",
+    ], media: [
+      { source: "/Projects/matcha-marketing-arbitrum-feed.webp", label: "The Arbitrum launch in an X timeline", width: 1200, height: 686 },
+      { source: "/Projects/matcha-marketing-50-billion-tweet.webp", label: "The $50B milestone tweet", width: 1200, height: 1202, post: { href: "https://x.com/matchaxyz/status/1505926434958753792", date: "2022-03-21" } },
+    ] },
+    { heading: "A number worth sharing", paragraphs: [
+      "Milestones lead with the figure itself, set large enough to carry the post on its own.",
+      "The chart and the cup stay in the background, so the number is what gets reposted.",
+      "Between February and May 2022 they landed every few weeks, each one recognizably part of the same run.",
+    ], media: [
+      { source: "/Projects/matcha-marketing-40-billion.webp", label: "$40B in trade volume", width: 1200, height: 600, post: { href: "https://x.com/matchaxyz/status/1489264665955815424", date: "2022-02-03" } },
+      { source: "/Projects/matcha-marketing-2-million.webp", label: "Two million transactions", width: 1200, height: 600, post: { href: "https://x.com/matchaxyz/status/1491054562358468611", date: "2022-02-08" } },
+      { source: "/Projects/matcha-marketing-50-billion-bars.webp", label: "$50B traded on Matcha", width: 1200, height: 600, post: { href: "https://x.com/matchaxyz/status/1505926434958753792", date: "2022-03-21" } },
+      { source: "/Projects/matcha-marketing-50-billion.webp", label: "$50B traded on Ethereum", width: 1200, height: 600, post: { href: "https://x.com/matchaxyz/status/1522213692460335104", date: "2022-05-05" } },
+    ] },
+    { heading: "One layout, a color per chain", paragraphs: [
+      "Kept the structure fixed and let each network’s color change, so a new chain needed a palette, not a new design.",
+      "The series stays recognizable across chains while each post still belongs to its network.",
+    ], media: [
+      { source: "/Projects/matcha-marketing-polygon.webp", label: "$1B traded on Polygon", width: 1200, height: 600, post: { href: "https://x.com/matchaxyz/status/1508483724190621705", date: "2022-03-28" } },
+      { source: "/Projects/matcha-marketing-bnb-chain.webp", label: "$1B traded on BNB Chain", width: 1200, height: 600, post: { href: "https://x.com/matchaxyz/status/1520037557437964290", date: "2022-04-29" } },
+      { source: "/Projects/matcha-marketing-bnb-250k.webp", label: "250,000 trades on BNB Chain", width: 1200, height: 600, post: { href: "https://x.com/matchaxyz/status/1539617064033427457", date: "2022-06-22" } },
+      { source: "/Projects/matcha-marketing-avalanche-750m.webp", label: "$750M traded on Avalanche", width: 1200, height: 600 },
+    ] },
+    { heading: "Showing the product’s edge", paragraphs: [
+      "Promos put the swap itself in the post, with the saving against other exchanges called out beneath it.",
+    ], media: [
+      { source: "/Projects/matcha-marketing-savings.webp", label: "Swap savings compared with Uniswap", width: 1200, height: 600 },
+    ] },
+    { heading: "It’s a Match(a)", paragraphs: [
+      "A lighter campaign built on the name: fill-in-the-blank token pairs and short verses about trading.",
+      "Swapped the dark trading palette for coral and glass, while the cup kept it recognizably Matcha.",
+    ], media: [
+      { source: "/Projects/matcha-marketing-match-markets.webp", label: "“The markets are red, Matcha green”", width: 1200, height: 1043 },
+      { source: "/Projects/matcha-marketing-match-roses.webp", label: "“Roses are red, Matcha is the best”", width: 1200, height: 1043 },
+    ] },
+  ]),
   "protector-booking": study("Making a personal-security booking clear", [
     "I was the sole product designer for Protector’s booking experience.",
     "The flow brings the person, their attire, and transportation into one request.",

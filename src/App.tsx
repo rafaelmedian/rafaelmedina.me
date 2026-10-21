@@ -1,9 +1,10 @@
-import { lazy, Suspense, useState, useSyncExternalStore } from "react"
+import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from "react"
 
 import { BookingProvider } from "./components/BookingProvider"
 import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
-import { portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
+import { homeGroups, portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
+import { revealGalleryEntry } from "./lib/galleryEntry"
 import { isNotesPath, isResumePath, projectAtPath, writingAtPath } from "./lib/projectMetadata"
 import { ProjectPage } from "./components/ProjectPage"
 import { ResumePage } from "./components/ResumePage"
@@ -65,7 +66,16 @@ function App({ pathname }: { pathname?: string }) {
   // that item over it. The article still renders on the first client pass,
   // so hydration matches the prerendered markup before the swap.
   const isHydrated = useIsHydrated()
-  const standaloneProject = isHydrated ? undefined : projectAtPath(currentPath)
+  const project = projectAtPath(currentPath)
+  // The grid is a selection of work. Published projects outside that selection
+  // retain their article: there is no gallery item to take over on hydration.
+  const hasProjectTile = project && homeGroups.some(group =>
+    group.items.some(item => item.kind === "project" && item.cardId === project.id),
+  )
+  const standaloneProject = !isHydrated || !hasProjectTile ? project : undefined
+  useEffect(() => {
+    if (isHydrated && standaloneProject) revealGalleryEntry()
+  }, [isHydrated, standaloneProject])
   const standaloneResume = !isHydrated && isResumePath(currentPath)
   const standaloneWriting = isHydrated ? undefined : writingAtPath(currentPath)
   const standaloneNotes = !isHydrated && isNotesPath(currentPath)

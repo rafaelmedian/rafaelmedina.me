@@ -253,6 +253,34 @@ function buildZoomKeyframes(
   return keyframes
 }
 
+// A surface that lands whole: its card scales down onto the tile, centred
+// and contained, corners and shadow and all, with nothing clipped. For a
+// tile whose artwork is itself a small page (a paper in the notes folder), a
+// clip that started on the page cut the card's shadow off and left its
+// bottom corners square while it grew.
+function buildWholeKeyframes(mode: "open" | "close", origin: DOMRect, target: DOMRect, card: DOMRect) {
+  const ease = mode === "open" ? zoomOpen : zoomClose
+  const scaleFrom = Math.min(origin.width / card.width, origin.height / card.height)
+  // Scaled about the surface's top-left corner: these put the card's centre
+  // on the tile's.
+  const dx = origin.left + origin.width / 2 - target.left - (card.left - target.left + card.width / 2) * scaleFrom
+  const dy = origin.top + origin.height / 2 - target.top - (card.top - target.top + card.height / 2) * scaleFrom
+  const keyframes: Keyframe[] = []
+  for (let step = 0; step < originSampleCount; step += 1) {
+    const time = step / (originSampleCount - 1)
+    const grown = mode === "open" ? ease(time) : 1 - ease(time)
+    const scale = scaleFrom + (1 - scaleFrom) * grown
+    const rest = 1 - grown
+    keyframes.push({
+      offset: time,
+      easing: "linear",
+      transformOrigin: "0 0",
+      transform: `translate3d(${(dx * rest).toFixed(2)}px, ${(dy * rest).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`,
+    })
+  }
+  return keyframes
+}
+
 // The tile hands off to the surface rather than staying under it: two copies of
 // the same artwork, one growing out of the other, is what made the zoom read as
 // a surface flying over the page instead of the tile opening. It goes as the
@@ -324,12 +352,24 @@ export function paintedRect(element: Element): DOMRect {
     : element instanceof HTMLImageElement
       ? [element.naturalWidth || attribute("width"), element.naturalHeight || attribute("height")]
       : [0, 0]
-  if (!width || !height || getComputedStyle(element).objectFit !== "contain") return box
+  const style = getComputedStyle(element)
+  if (!width || !height || (style.objectFit !== "contain" && style.objectFit !== "cover")) return box
 
-  const scale = Math.min(box.width / width, box.height / height)
+  // A covering image paints past its box: the whole picture, of which the box
+  // shows a window. Matching those whole pictures is what lands a cropped
+  // tile on a differently cropped gallery frame without zooming into it --
+  // Protector's portrait tile, matched box-to-box on the gallery's landscape
+  // frame, came out of a 1.3x zoom on one phone. The box is already the
+  // transformed one, and a uniform scale leaves object-position's percentages
+  // where they were.
+  const scale = style.objectFit === "cover"
+    ? Math.max(box.width / width, box.height / height)
+    : Math.min(box.width / width, box.height / height)
+  const [x = "50%", y = "50%"] = style.objectPosition.split(" ")
+  const fraction = (value: string) => value.endsWith("%") ? parseFloat(value) / 100 : 0.5
   return new DOMRect(
-    box.left + (box.width - width * scale) / 2,
-    box.top + (box.height - height * scale) / 2,
+    box.left + (box.width - width * scale) * fraction(x),
+    box.top + (box.height - height * scale) * fraction(y),
     width * scale,
     height * scale,
   )
@@ -346,6 +386,49 @@ function syncPlayback(from: Element | null | undefined, to: Element | null | und
   } catch {
     // Not seekable yet; it starts from its own beginning, as before.
   }
+}
+
+// The gallery mounts its own <video>, which has no frame decoded when the open
+// starts: it showed its poster -- an earlier moment of the clip, the wallet
+// list still in skeletons where the tile had its balances and network menu
+// open -- and then jumped to the synced moment once it caught up. The tile's
+// current frame, painted over it, holds that moment until the gallery's video
+// can show it itself.
+function holdFrame(from: Element | null | undefined, to: Element | null | undefined) {
+  if (!(from instanceof HTMLVideoElement) || !(to instanceof HTMLVideoElement)) return
+  if (to.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !to.seeking) return
+  if (from.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !from.videoWidth) return
+  const canvas = document.createElement("canvas")
+  canvas.width = from.videoWidth
+  canvas.height = from.videoHeight
+  try {
+    canvas.getContext("2d")?.drawImage(from, 0, 0)
+  } catch {
+    return
+  }
+  canvas.className = "preview-gallery-media-hold"
+  canvas.setAttribute("aria-hidden", "true")
+  to.after(canvas)
+  const release = () => {
+    if (to.seeking || to.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
+    to.removeEventListener("seeked", release)
+    to.removeEventListener("loadeddata", release)
+    to.removeEventListener("error", drop)
+    window.clearTimeout(timeout)
+    // One more frame, so the video has painted what it decoded before the
+    // stand-in leaves.
+    requestAnimationFrame(() => canvas.remove())
+  }
+  const drop = () => {
+    to.removeEventListener("seeked", release)
+    to.removeEventListener("loadeddata", release)
+    canvas.remove()
+  }
+  // A video that never catches up falls back to its poster, as before.
+  const timeout = window.setTimeout(drop, 4000)
+  to.addEventListener("seeked", release)
+  to.addEventListener("loadeddata", release)
+  to.addEventListener("error", drop, { once: true })
 }
 
 // The tile's artwork: its one image or video when it has exactly one, else the
@@ -384,6 +467,9 @@ export type OriginTravelOptions = {
   getZoomFrame?: () => HTMLElement | null
   /** The element whose border radii are the surface's resting outline. */
   getZoomOutline?: () => Element | null
+  /** A card to land whole on the tile instead of clipping the surface down
+   *  to it; everything around the card fades. */
+  getZoomWhole?: () => Element | null
   /** Duration of the crossfade between the tile and the surface. */
   handoffDurationProperty?: string
   /** Duration properties for the zoom, read from the frame. */
@@ -427,7 +513,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
   const run = useCallback((mode: "open" | "close") => {
     const {
       node, getOrigin, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode,
-      getZoomAnchor, getZoomKeep, getZoomFrame, getZoomOutline, handoffDurationProperty, zoomOpenDurationProperty, zoomCloseDurationProperty,
+      getZoomAnchor, getZoomKeep, getZoomFrame, getZoomOutline, getZoomWhole, handoffDurationProperty, zoomOpenDurationProperty, zoomCloseDurationProperty,
     } = inputs.current
     if (!node || !enabled) return
     if (typeof node.animate !== "function") return
@@ -493,9 +579,24 @@ export function useOriginTravel(options: OriginTravelOptions) {
       const radii = (style
         ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
         : [0, 0, 0, 0]) as Corners
-      flights = [node.animate(buildZoomKeyframes(mode, geometry, { radii, bleed: fullScreen ? 0 : cardClipBleed }), timing)]
+      const whole = getZoomWhole?.()
+      const wholeRect = whole?.getBoundingClientRect()
+      if (whole && wholeRect && wholeRect.width > 0 && wholeRect.height > 0) {
+        flights = [node.animate(buildWholeKeyframes(mode, originRect, target, wholeRect), timing)]
+        const { chrome, fills } = surroundings(node, whole)
+        for (const element of chrome) {
+          flights.push(element.animate(buildMatchKeyframes(mode, "0", "1", "opacity"), timing))
+        }
+        // The card keeps its own fill: it is the page that lands.
+        for (const { element, color } of fills) {
+          if (element === whole) continue
+          flights.push(element.animate(buildMatchKeyframes(mode, "rgba(0, 0, 0, 0)", color, "backgroundColor"), timing))
+        }
+      } else {
+        flights = [node.animate(buildZoomKeyframes(mode, geometry, { radii, bleed: fullScreen ? 0 : cardClipBleed }), timing)]
+      }
 
-      const keep = matched ? getZoomKeep?.() : null
+      const keep = matched && !whole ? getZoomKeep?.() : null
       const tileFill = origin ? getComputedStyle(origin).backgroundColor : "transparent"
       if (keep && !transparent(tileFill)) {
         const { chrome, fills } = surroundings(node, keep)
@@ -511,6 +612,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // a different moment of the same loop and the hand-off jumped. The one
       // arriving starts where the one leaving is.
       syncPlayback(mode === "open" ? artwork?.element : anchorElement, mode === "open" ? anchorElement : artwork?.element)
+      if (mode === "open") holdFrame(artwork?.element, anchorElement)
 
       // Held hidden after the open (until the close's `cancel` lets go of it);
       // back to its own CSS after the close, whose last frame is fully shown.
@@ -597,7 +699,10 @@ export function useOriginTravel(options: OriginTravelOptions) {
     }
   }, [cancel])
 
-  useEffect(() => () => cancel(), [cancel])
+  // The gallery component survives popup removal. Release effects on the
+  // source tile when the travelling node detaches, including controlled
+  // closes from browser history that never run the close animation.
+  useIsomorphicLayoutEffect(() => () => cancel(), [options.node, cancel])
 
   return { run, cancel }
 }

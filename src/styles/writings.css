@@ -21,10 +21,13 @@
   font-family: var(--font-ui);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  /* The folder's open and drop (below): a soft spring with a 2% settle. */
+  --folder-spring: linear(0, 0.025, 0.09, 0.178, 0.277, 0.381, 0.481, 0.575, 0.66, 0.735, 0.799, 0.853, 0.897, 0.932, 0.959, 0.98, 0.995, 1.006, 1.013, 1.017, 1.019, 1.02, 1.019, 1.018, 1.016, 1.014, 1.012, 1.01, 1.008, 1.007, 1.005, 1.004, 1);
+  --folder-move: calc(var(--duration-slow) * 1.5);
 }
 .writings-folder { position: relative; width: 150px; height: 156px; isolation: isolate; }
 .writings-folder-back { position: absolute; max-width: none; width: 118px; height: 100px; left: 15px; top: 40px; }
-.writings-folder-front { position: absolute; width: 118px; height: 83px; left: 15px; top: 57px; overflow: hidden; border-radius: calc(var(--radius-lg) / 2); box-shadow: var(--shadow-overlay); pointer-events: none; }
+.writings-folder-front { position: absolute; width: 118px; height: 83px; left: 15px; top: 57px; overflow: hidden; border-radius: calc(var(--radius-lg) / 2); box-shadow: var(--shadow-overlay); pointer-events: none; transform-origin: 50% 100%; transition: transform var(--duration-slow) var(--ease-smooth); }
 .writings-folder-front img { position: absolute; max-width: none; width: 149px; height: 133px; left: -15px; top: -26px; }
 .writings-paper {
   position: absolute;
@@ -52,6 +55,24 @@
   .writings-tile:hover .writings-paper:nth-of-type(3) { transform: translate(4px, -8px) rotate(18deg); }
 }
 .writings-tile:focus-visible .writings-paper { translate: 0 -8px; }
+/* Open, after a Finder folder: the flap drops forward, the outer papers fan
+   clear, and the middle one (the gallery's origin) is drawn out, then opens
+   into the list. The list lands back on that raised paper; then the papers
+   drop in, middle first, and the flap closes over them (WritingsFolder holds
+   "open" through the landing and "closing" through the drop). Both run on
+   --folder-spring, so the paper reads as having weight. */
+.writings-tile[data-folder] .writings-paper,
+.writings-tile[data-folder] .writings-folder-front { transition: transform var(--folder-move) var(--folder-spring); }
+.writings-tile[data-folder="open"] .writings-folder-front { transform: perspective(240px) rotateX(-32deg); }
+.writings-tile[data-folder="open"] .writings-paper:nth-of-type(1) { transform: translate(-18px, -14px) rotate(-24deg); transition-delay: 40ms; }
+/* The lift runs ahead of the gallery (WritingsFolder opens it
+   --duration-fast in, and presenting takes a few frames more), so it is
+   quick and settles without overshoot: the list measures the paper about
+   where it stops. Raised clear of the open flap. */
+.writings-tile[data-folder="open"] .writings-paper:nth-of-type(2) { transform: translateY(-46px); transition: transform var(--duration-base) var(--ease-smooth); }
+.writings-tile[data-folder="open"] .writings-paper:nth-of-type(3) { transform: translate(18px, -12px) rotate(26deg); transition-delay: 40ms; }
+.writings-tile[data-folder="closing"] .writings-paper:not(:nth-of-type(2)) { transition-delay: 50ms; }
+.writings-tile[data-folder="closing"] .writings-folder-front { transition-delay: 90ms; }
 /* The compact mosaic gives the folder a half-width portrait slot. Scale the
    actual layout box, so its fixed-position artwork cannot cover the label. */
 @media (max-width: 899.98px) {
@@ -612,7 +633,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .writings-paper, .writings-backdrop { transition: none; }
+  .writings-paper, .writings-folder-front, .writings-backdrop,
+  .writings-tile[data-folder] :is(.writings-paper, .writings-folder-front) { transition: none; }
   .writings-dialog :is(.writings-toolbar, .writings-toolbar-leading, .writings-pages, .writings-archive, .writing-reader, .writings-navigation, .writings-navigation > *) { transition: none !important; }
   .writings-tile .writings-paper { translate: none; }
   .writings-tile:hover .writings-paper:nth-of-type(1) { transform: rotate(-10deg); }

@@ -27,6 +27,7 @@ import { portfolioQuotes, teamQuotes, type PortfolioQuote } from "../data/quotes
 import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type QuoteSource, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { aboutIntro } from "../data/aboutIntro"
 import { useHoverCard } from "../lib/hoverCard"
 import { revealGalleryEntry } from "../lib/galleryEntry"
@@ -708,6 +709,19 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     setLastWorkPreviewIndex(activeWorkPreviewIndex)
   }
   const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(galleryItems.length - 1, 0))
+  // The tile videos stay paused until the close has landed. Resumed the
+  // moment the gallery let go, their decoding paced the whole page at 30fps
+  // for the length of the shrink (and the notes folder's drop after it): 23
+  // of 50 frames went long, against none with the videos held.
+  const galleryOpen = activeWorkPreviewIndex !== null
+  const [holdTileVideos, setHoldTileVideos] = useState(galleryOpen)
+  if (galleryOpen && !holdTileVideos) setHoldTileVideos(true)
+  useEffect(() => {
+    if (galleryOpen) return
+    const landed = cssTimeToMilliseconds(getComputedStyle(document.documentElement).getPropertyValue("--duration-slow")) * 3
+    const timeout = window.setTimeout(() => setHoldTileVideos(false), landed)
+    return () => window.clearTimeout(timeout)
+  }, [galleryOpen])
   const setSelectedWorkPreviewIndex = (index: number) => {
     const item = galleryItems[index]
     if (item) selectGalleryItem(item.id, galleryItemId !== null)
@@ -773,8 +787,8 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
           prefersReducedMotion={prefersReducedMotion}
           // A modal covers the feed even though its videos still intersect
           // the viewport. Rest their decoders and defer new video loads until
-          // the preview closes, just as we do during the return from About.
-          pausePlayback={introActive || isReturningToTop || activeWorkPreviewIndex !== null}
+          // the preview has closed and landed, as during the return from About.
+          pausePlayback={introActive || isReturningToTop || holdTileVideos}
         />
       )
     }
@@ -1109,8 +1123,11 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                                 onPrefetch={prefetchPreviewGallery}
                                 onReaderReady={setReaderModule}
                                 onStatusChange={setNotesStatus}
-                                tileRef={(node) => {
-                                  writingsFolderTileRef.current = node
+                                open={activeWorkPreviewIndex === item.previewIndex}
+                                tileRef={(node) => { writingsFolderTileRef.current = node }}
+                                // The list grows out of a paper in the folder, not
+                                // the folder: the document is what opens.
+                                originRef={(node) => {
                                   const nodes = previewCardNodesRef.current
                                   if (node) nodes.set(item.previewIndex, node)
                                   else nodes.delete(item.previewIndex)
@@ -1132,15 +1149,17 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           )
                           const media = item.card.homeImages ? (
                             <span className="mosaic-row-media-pair">
-                              {item.card.homeImages.map(homeImage => renderRowMedia(
-                                item.card,
-                                homeImage.source,
-                                homeImage.label,
-                                groupIndex === 0,
-                                mediaSizes,
-                                homeImage.width,
-                                homeImage.height,
-                              ))}
+                              <span className="mosaic-row-media-wall">
+                                {item.card.homeImages.map(homeImage => renderRowMedia(
+                                  item.card,
+                                  homeImage.source,
+                                  homeImage.label,
+                                  groupIndex === 0,
+                                  mediaSizes,
+                                  homeImage.width,
+                                  homeImage.height,
+                                ))}
+                              </span>
                             </span>
                           ) : renderRowMedia(
                             item.card,

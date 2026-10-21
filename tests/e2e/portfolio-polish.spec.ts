@@ -1709,66 +1709,307 @@ test("uses the body type step at the narrowest visible local-time width", async 
   await expect(page.locator(".mosaic-social-time")).toHaveCSS("font-size", "14px")
 })
 
-for (const width of [320, 390, 768, 1440]) {
-  test(`TOC keeps three labels visible and tracks navigation at ${width}px`, async ({ page }) => {
+for (const width of [390, 1440]) {
+  test(`TOC appears after a short scroll and hides again at the top at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const toc = page.locator(".mosaic-mobile-toc")
-    const nav = page.getByRole("navigation", { name: "Table of contents" })
+    const trigger = page.getByRole("button", { name: /^Table of contents:/ })
     await expect(toc).toBeHidden()
     await expect(toc).toHaveAttribute("inert", "")
+    await expect(trigger).toHaveCount(0)
+    await page.evaluate(() => window.scrollTo(0, 48))
+    await expect(toc).toBeHidden()
     await page.evaluate(() => window.scrollTo(0, 160))
-    await expect(nav).toBeVisible()
-    await expect(nav.getByRole("link")).toHaveText(["Work", "About", "Services"])
-    const before = (await nav.boundingBox())!
-    expect(before.x + before.width / 2).toBeCloseTo(width / 2, 0)
-    const links = nav.getByRole("link")
-    for (const link of await links.all()) {
-      await expect(link).toBeVisible()
-      const box = (await link.boundingBox())!
-      expect(box.width).toBeGreaterThanOrEqual(44)
-      expect(box.height).toBeGreaterThanOrEqual(44)
-      // The 44px target reaches into the surface's padding, so it starts
-      // at the pill's top edge.
-      expect(box.y).toBeCloseTo(before.y, 0)
-    }
-    for (const [name, index] of [["About", 1], ["Services", 2], ["Work", 0]] as const) {
-      await nav.getByRole("link", { name, exact: true }).click()
-      await expect(nav.getByRole("link", { name, exact: true })).toHaveAttribute("aria-current", "location")
-      await expect(nav.locator("[aria-current]")).toHaveCount(1)
-      await expect.poll(() => nav.locator("ol").evaluate(el =>
-        getComputedStyle(el, "::before").transform)).toBe(`matrix(1, 0, 0, 1, ${index * 78}, 0)`)
-      expect((await nav.boundingBox())!.height).toBe(before.height)
-      expect((await nav.boundingBox())!.width).toBe(before.width)
-      await expect(links).toHaveCount(3)
-    }
-    // Manual scrolling must also select the corresponding destination.
-    await page.locator("#about-panel").evaluate(el => el.scrollIntoView({ behavior: "instant" }))
-    await expect(nav.getByRole("link", { name: "About", exact: true })).toHaveAttribute("aria-current", "location")
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-    await expect(nav.getByRole("link", { name: "Services", exact: true })).toHaveAttribute("aria-current", "location")
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+    await expect(trigger).toBeVisible()
+    await trigger.click()
+    await expect(trigger).toHaveAttribute("aria-expanded", "true")
     await page.evaluate(() => window.scrollTo(0, 0))
     await expect(toc).toBeHidden()
+    await expect(toc).toHaveAttribute("data-open", "false")
+    await expect(trigger).toHaveCount(0)
+    await page.evaluate(() => window.scrollTo(0, 160))
+    await expect(trigger).toHaveAttribute("aria-expanded", "false")
+    await page.goto("/#about-panel")
+    await expect(trigger).toBeVisible()
+    await expect(trigger).toHaveText("About")
   })
 }
 
-test("TOC supports keyboard navigation and reduced motion", async ({ page }) => {
+test("keeps the mobile table of contents centered with comfortable targets", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, 160))
+  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
+  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+  const before = await trigger.boundingBox()
+  expect(before!.y).toBeGreaterThan(mobileViewport.height - 110)
+  expect(before!.x + before!.width / 2).toBeCloseTo(mobileViewport.width / 2, 0)
+  expect(before!.width).toBeLessThan(220)
+  await trigger.click()
+  const contents = page.getByRole("navigation", { name: "Table of contents" })
+  await expect(contents.getByRole("link")).toHaveCount(2)
+  for (const link of await contents.getByRole("link").all()) {
+    const box = await link.boundingBox()
+    expect(box!.height).toBeGreaterThanOrEqual(44)
+  }
+  await page.keyboard.press("Escape")
+  await expect(contents.getByRole("link")).toHaveCount(0)
+  await expect(trigger).toHaveAttribute("aria-expanded", "false")
+  await page.evaluate(() => window.scrollTo(0, 600))
+  await expect.poll(async () => (await trigger.boundingBox())!.y).toBeCloseTo(before!.y, 0)
+})
+
+test("the TOC resizes one surface smoothly around its fixed bottom edge", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, 160))
+  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
+  const surface = page.locator(".mosaic-mobile-toc-surface")
+  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+  await expect.poll(() => page.locator(".mosaic-mobile-toc").evaluate((el) => el.style.getPropertyValue("--toc-compact-width"))).not.toBe("")
+  const frames = await surface.evaluate(async (element) => {
+    const samples: Array<{ width: number; height: number; bottom: number }> = []
+    const capture = () => {
+      const { width, height, bottom } = element.getBoundingClientRect()
+      samples.push({ width, height, bottom })
+    }
+    capture()
+    element.querySelector("button")!.click()
+    const start = performance.now()
+    while (performance.now() - start < 450) {
+      await new Promise(requestAnimationFrame)
+      capture()
+    }
+    return samples
+  })
+  const first = frames[0]
+  const last = frames.at(-1)!
+  expect(last.width).toBeGreaterThan(first.width + 50)
+  expect(last.height).toBeGreaterThan(first.height + 100)
+  expect(frames.some((frame) => frame.height > first.height + 10 && frame.height < last.height - 10)).toBe(true)
+  for (const frame of frames) expect(frame.bottom).toBeCloseTo(first.bottom, 0)
+  for (let tap = 0; tap < 3; tap += 1) await trigger.dispatchEvent("click")
+  await expect(trigger).toHaveAttribute("aria-expanded", "false")
+  await expect.poll(async () => (await surface.boundingBox())!.height).toBeCloseTo(first.height, 0)
+  await expect(page.getByRole("navigation", { name: "Table of contents" }).getByRole("link")).toHaveCount(0)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect(surface).toHaveCSS("transition-property", "none")
+})
+
+test("mobile table of contents selects and tracks each section", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, 160))
-  const nav = page.getByRole("navigation", { name: "Table of contents" })
-  await nav.getByRole("link", { name: "Work", exact: true }).focus()
-  await page.keyboard.press("Tab")
-  await expect(nav.getByRole("link", { name: "About", exact: true })).toBeFocused()
-  await page.keyboard.press("Tab")
-  await expect(nav.getByRole("link", { name: "Services", exact: true })).toBeFocused()
-  await page.keyboard.press("Shift+Tab")
+  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
+  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+  const contents = page.getByRole("navigation", { name: "Table of contents" })
+  await expect(trigger).toHaveText("Work")
+  await trigger.click()
+  await expect(trigger).toHaveAttribute("aria-current", "location")
+  for (const [label, target] of [["About", "about-panel"], ["Services", "about-panel-services"]]) {
+    await contents.getByRole("link", { name: label, exact: true }).click()
+    await expect(contents.getByRole("link")).toHaveCount(0)
+    await expect(page.locator(`#${target}`)).toBeFocused()
+    await expect(page).toHaveURL(new RegExp(`#${target}$`))
+    await expect(trigger).toHaveText(label)
+    await trigger.click()
+    await expect(trigger).toHaveAttribute("aria-current", "location")
+    await expect(contents.locator(".mosaic-mobile-toc-row")).toHaveText(["Work", "About", "Services"])
+  }
+  await contents.getByRole("link", { name: "Work", exact: true }).click()
+  await expect(page).toHaveURL(/#work$/)
+  await expect(page.locator("#work")).toBeFocused()
+  await expect(page.locator("#work")).toBeInViewport()
+  await page.evaluate(() => document.getElementById("about-panel-services")!.scrollIntoView())
+  await expect(trigger).toHaveText("Services")
+  await trigger.click()
+  await expect(trigger).toHaveAttribute("aria-current", "location")
+})
+
+test("lands on a section from the URL without drawing a ring around it", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+
+  for (const id of ["work", "about-panel", "about-panel-services"]) {
+    await page.goto(`/#${id}`)
+    const section = page.locator(`#${id}`)
+    // The browser focuses the fragment target on load. Its default ring boxes
+    // the whole section, which reads as a selection rather than a landing.
+    await expect(section).toBeFocused()
+    await expect(section).toHaveCSS("outline-style", "none")
+  }
+})
+
+test("the TOC keeps its collapsed height while scrolling between sections", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 })
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, 160))
+  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
+  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+  await expect(trigger).toHaveText("Work")
+  for (const [target, label] of [["about-panel", "About"], ["about-panel-services", "Services"], ["work", "Work"]]) {
+    const heights = await page.evaluate(async (id) => {
+      const surface = document.querySelector(".mosaic-mobile-toc-surface")!
+      const samples: number[] = []
+      document.getElementById(id)!.scrollIntoView({ behavior: "instant" })
+      const start = performance.now()
+      while (performance.now() - start < 300) {
+        await new Promise(requestAnimationFrame)
+        samples.push(surface.getBoundingClientRect().height)
+      }
+      return samples
+    }, target)
+    await expect(trigger).toHaveText(label)
+    for (const height of heights) expect(height).toBeCloseTo(48, 0)
+    await trigger.click()
+    await expect(page.locator(".mosaic-mobile-toc-row")).toHaveText(["Work", "About", "Services"])
+    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(164, 0)
+    await trigger.click()
+    await expect.poll(async () => (await page.locator(".mosaic-mobile-toc-surface").boundingBox())!.height).toBeCloseTo(48, 0)
+  }
+})
+
+test("the TOC label leaves in the direction the page is travelling", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "no-preference" })
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, 160))
+  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
+  // The swap lives for one exit beat, so record it as it happens rather than
+  // polling for a state that is meant to be gone by the time we look.
+  const swap = (target: string) => page.evaluate(async (id) => {
+    const root = document.querySelector<HTMLElement>(".mosaic-mobile-toc")!
+    const seen: Array<{ direction?: string; leaving: string; travel: number }> = []
+    const observer = new MutationObserver(() => {
+      const ghost = document.querySelector(".mosaic-mobile-toc-ghost")
+      if (!ghost) return
+      seen.push({
+        direction: root.dataset.swap,
+        leaving: ghost.textContent!.replace(/\s+/g, " ").trim(),
+        travel: Number(getComputedStyle(root).getPropertyValue("--toc-swap-direction")),
+      })
+    })
+    observer.observe(root, { attributes: true, childList: true, subtree: true })
+    document.getElementById(id)!.scrollIntoView({ behavior: "instant" })
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    observer.disconnect()
+    return seen[0]
+  }, target)
+
+  expect(await swap("about-panel")).toMatchObject({ direction: "up", leaving: "Work", travel: 1 })
+  expect(await swap("work")).toMatchObject({ direction: "down", leaving: "About", travel: -1 })
+  await expect(page.locator(".mosaic-mobile-toc-ghost")).toHaveCount(0)
+  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("Work")
+
+  // Reduced motion keeps the label change, drops the departure.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect(page.locator(".mosaic-mobile-toc-ghost")).toHaveCount(0)
+})
+
+test("the TOC contains all three rows in one inset card", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, 160))
+  const surface = page.locator(".mosaic-mobile-toc-surface")
+  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+  await trigger.click()
+  await expect(surface).toHaveCSS("border-radius", "31.2px")
+  await expect(surface).toHaveCSS("background-color", "rgb(255, 255, 255)")
+  await expect(surface).toHaveCSS("backdrop-filter", "none")
+  await expect(surface).not.toHaveCSS("box-shadow", "none")
+  const card = (await surface.boundingBox())!
+  const rows = await page.locator(".mosaic-mobile-toc-row").all()
+  for (const [index, row] of rows.entries()) {
+    const bounds = (await row.boundingBox())!
+    expect(bounds.x).toBeCloseTo(card.x + 8, 0)
+    expect(bounds.width).toBeCloseTo(card.width - 16, 0)
+    expect(bounds.y).toBeCloseTo(card.y + 8 + index * (48 + 2), 0)
+    expect(bounds.height).toBe(48)
+    await expect(row).toHaveCSS("border-radius", "23.2px")
+    await expect(row).toHaveCSS("box-shadow", "none")
+  }
+  await page.keyboard.press("Escape")
+  await expect(surface).toHaveCSS("height", "48px")
+})
+
+test("table of contents dismisses outside and stays open when resizing to desktop", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await page.evaluate(() => window.scrollTo(0, 160))
+  await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
+  const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+  const contents = page.getByRole("navigation", { name: "Table of contents" })
+  await trigger.focus()
   await page.keyboard.press("Enter")
-  await expect(nav.getByRole("link", { name: "About", exact: true })).toHaveAttribute("aria-current", "location")
-  expect(await nav.locator("ol").evaluate(el => parseFloat(getComputedStyle(el, "::before").transitionDuration))).toBeLessThan(0.001)
+  await page.keyboard.press("Tab")
+  await expect(contents.getByRole("link", { name: "About", exact: true })).toBeFocused()
+  await page.keyboard.press("Escape")
+  await expect(trigger).toBeFocused()
+  await trigger.click()
+  await page.mouse.click(4, 4)
+  await expect(contents.getByRole("link")).toHaveCount(0)
+  await trigger.click()
+  await page.setViewportSize({ width: 900, height: 844 })
+  await expect(contents.getByRole("link")).toHaveCount(2)
+  await expect(trigger).toBeVisible()
+  await expect(trigger).toHaveAttribute("aria-expanded", "true")
+  await expect(page.getByRole("navigation", { name: "Sections" })).toBeVisible()
+})
+
+for (const width of [768, 1440]) {
+  test(`table of contents works beside the top navigation at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/")
+    await page.evaluate(() => window.scrollTo(0, 160))
+    await expect(page.locator(".mosaic-mobile-toc")).toHaveCSS("opacity", "1")
+    const trigger = page.getByRole("button", { name: /^Table of contents:/ })
+    const topNav = page.getByRole("navigation", { name: "Sections", exact: true })
+    const contents = page.getByRole("navigation", { name: "Table of contents" })
+    await expect(topNav).toBeVisible()
+    await expect(trigger).toHaveText("Work")
+    const pill = await trigger.boundingBox()
+    expect(pill!.x + pill!.width / 2).toBeCloseTo(width / 2, 0)
+    expect(pill!.y).toBeGreaterThan(800)
+    await trigger.click()
+    await contents.getByRole("link", { name: "About", exact: true }).click()
+    await expect(page.locator("#about-panel")).toBeFocused()
+    await expect(trigger).toHaveText("About")
+    await trigger.click()
+    await contents.getByRole("link", { name: "Services", exact: true }).click()
+    await expect(page.locator("#about-panel-services")).toBeFocused()
+    await expect(trigger).toHaveText("Services")
+    await trigger.click()
+    await contents.getByRole("link", { name: "Work", exact: true }).click()
+    await expect(trigger).toHaveText("Work")
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(topNav).toBeInViewport()
+    await topNav.getByRole("link", { name: "About", exact: true }).click()
+    await expect(trigger).toHaveText("About")
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    await expect(trigger).toHaveText("Services")
+    const about = await page.locator("#about-panel").boundingBox()
+    expect(about!.y + about!.height).toBeLessThan((await trigger.boundingBox())!.y)
+  })
+}
+
+test("keeps the mobile profile and final content clear of the table of contents", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 })
+  await page.goto("/")
+  const avatar = await page.getByRole("button", { name: "Chat with Rafael Medina" }).boundingBox()
+  expect(avatar!.y).toBeLessThan(96)
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await expect(page.getByRole("button", { name: /^Table of contents:/ })).toHaveText("Services")
+  const trigger = await page.getByRole("button", { name: /^Table of contents:/ }).boundingBox()
+  const about = await page.locator("#about-panel").boundingBox()
+  expect(about!.y + about!.height).toBeLessThan(trigger!.y)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
 test("gives the corner the address and the About sheet the clock", async ({ page }) => {
@@ -1916,6 +2157,16 @@ test("carries the availability month in the booking pill's hint and nowhere on t
   expect(Math.abs(centring!.textCenterX - centring!.pillCenterX)).toBeLessThanOrEqual(1)
 })
 
+// The month is a value set in portfolio.ts, not "next month" from the clock. It
+// rides the booking pill's accessible name; the line that repeated it under the
+// contact row was taken out of the hero.
+test("names the set availability month on the booking pill only", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
+  await page.goto("/")
+  await expect(page.locator(".mosaic-booking-pill")).toHaveAccessibleName("Book a call — Available in November")
+  await expect(page.locator(".mosaic-profile-contact .mosaic-profile-availability")).toHaveCount(0)
+})
+
 // "Available for work" took the place "Last updated" had in the location line,
 // as plain text rather than another thing to press.
 test("says available for work in the location line", async ({ page }) => {
@@ -1924,7 +2175,6 @@ test("says available for work in the location line", async ({ page }) => {
   await expect(line).toBeVisible()
   await expect(line).toHaveText("Available for work")
   await expect(page.locator(".mosaic-last-updated")).toHaveCount(0)
-  await expect(page.locator(".mosaic-profile-contact .mosaic-profile-availability")).toHaveCount(0)
 })
 
 test("says available now once the set month arrives", async ({ page }) => {
@@ -2066,6 +2316,11 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   // Scheduling occupies the right half with 24px of panel margin and
   // two 12px iframe gutters; wait for the panel to settle.
   const calendarWidth = page.viewportSize()!.width / 2 - 48
+  // Width is already final during the stage's translate entrance. Measuring
+  // the two children in separate frames before it settles compares different
+  // positions even though their centres are aligned throughout the animation.
+  await page.locator(".booking-calendar-stage").evaluate(stage =>
+    Promise.allSettled(stage.getAnimations().map(animation => animation.finished)))
   await expect.poll(async () => (await frame.locator(".booking-iframe").boundingBox())!.width).toBeCloseTo(calendarWidth, 0)
   const skeletonPanel = await skeleton.locator(".booking-skeleton-panel").boundingBox()
   const iframe = await frame.locator(".booking-iframe").boundingBox()
@@ -2429,7 +2684,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
   const stage = page.locator(".mosaic-takeover-stage")
   const groups = stage.locator(".mosaic-group")
 
-  await expect(groups).toHaveCount(5)
+  await expect(groups).toHaveCount(6)
 
   const gaps = await groups.evaluateAll((elements) =>
     elements.slice(1).map((element, index) => {
@@ -2438,7 +2693,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
     }),
   )
 
-  expect(gaps).toEqual([16, 16, 16, 16])
+  expect(gaps).toEqual([16, 16, 16, 16, 16])
 })
 
 test("leaves a generous white runway after the final project group before the about takeover", async ({ page }) => {
@@ -3102,8 +3357,8 @@ test("shows every project immediately on mobile", async ({ page }) => {
   await page.goto("/")
 
   const cards = page.locator("a.mosaic-row-card")
-  // The résumé tile is a link among the twelve projects.
-  await expect(cards).toHaveCount(13)
+  // The résumé tile is a link among the fifteen projects.
+  await expect(cards).toHaveCount(16)
   await expect(cards.first()).toBeVisible()
   await expect(cards.last()).toBeVisible()
   await expect(page.getByRole("button", { name: /View \d+ more projects/ })).toHaveCount(0)
@@ -3125,7 +3380,7 @@ test("loads each preview video only when it reaches the viewport", async ({ page
   await expect(offscreenVideo).toHaveAttribute("preload", "none")
 
   await offscreenVideo.scrollIntoViewIfNeeded()
-  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/shot-small-20.webm")
+  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/matcha-video-gasless-2021.webm")
   await expect(offscreenVideo).toHaveAttribute("preload", "metadata")
 })
 
@@ -3295,7 +3550,7 @@ for (const width of [1440, 390]) {
     const drawings = dialog.locator(".resume-margin-drawing")
     const titleTop = (await title.boundingBox())!.y
 
-    await expect(drawings).toHaveCount(3)
+    await expect(drawings).toHaveCount(4)
     if (width === 1440) await expect(drawings.first()).toBeVisible()
 
     await card.evaluate((element) => element.scrollTo({ top: 500, behavior: "instant" }))
@@ -3507,34 +3762,35 @@ test("uses narrower left and wider right columns in the offset group", async ({ 
   expect(dealershipBox!.width).toBeGreaterThan(tokenBox!.width)
 })
 
-test("closes with the three Matcha projects and omits Mobile navigation", async ({ page }) => {
+test("closes with the relaunch film and two Matcha projects", async ({ page }) => {
   await page.goto("/")
 
-  const mobileCard = page.getByRole("link", { name: /Open Matcha on mobile/ })
-  const cards = page.locator(".mosaic-group").filter({ has: mobileCard }).locator(".mosaic-row-card")
+  const tradeCard = page.getByRole("link", { name: /Open Matcha trade page/ })
+  const cards = page.locator(".mosaic-group").filter({ has: tradeCard }).locator(".mosaic-row-card")
 
   await expect(cards).toHaveCount(3)
-  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Matcha on mobile/)
+  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open The new Matcha/)
   await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha trade page/)
   await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha Pro/)
-  await expect(page.getByRole("link", { name: /Open Matcha mobile navigation/ })).toHaveCount(0)
-  await expect(cards.nth(0).locator("img")).toHaveAttribute("src", /shot-small-14\.jpg$/)
+  await expect(page.getByRole("link", { name: /Open Matcha on mobile/ })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: /Open Matcha security audit/ })).toHaveCount(0)
   await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-1\.jpg$/)
   await expect(cards.nth(2).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
 })
 
-test("keeps the closing row's projects equal width", async ({ page }) => {
+test("gives the relaunch film half the closing row and splits the rest evenly", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/")
 
-  const mobileCard = page.getByRole("link", { name: /Open Matcha on mobile/ })
-  const cards = page.locator(".mosaic-group").filter({ has: mobileCard }).locator(".mosaic-row-card")
+  const tradeCard = page.getByRole("link", { name: /Open Matcha trade page/ })
+  const cards = page.locator(".mosaic-group").filter({ has: tradeCard }).locator(".mosaic-row-card")
   await expect(cards).toHaveCount(3)
-  const widths = await cards.evaluateAll((elements) =>
-    elements.map((element) => Math.round(element.getBoundingClientRect().width)),
+  const [film, trade, pro] = await cards.evaluateAll((elements) =>
+    elements.map((element) => element.getBoundingClientRect().width),
   )
 
-  expect(new Set(widths).size).toBe(1)
+  expect(trade).toBeCloseTo(pro, 0)
+  expect(film).toBeGreaterThan(trade * 1.8)
 })
 
 test("moves directly from selected work to about without a repeated contact card", async ({ page }) => {
@@ -3756,7 +4012,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
     )
   })
   // The position label follows the swipe after its outgoing number settles.
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 17")
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -3820,10 +4076,10 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
       animations: 0,
     })
   }
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 17")
 
-  // The visible counter sits with close, away from the paging controls, without
-  // moving either end of the toolbar.
+  // Paging on the left and close on the right; the position is announced
+  // rather than drawn between them.
   const [prevBox, nextBox, closeBox] = await Promise.all(
     ["Previous preview", "Next preview", "Close preview"].map((name) =>
       dialog.getByRole("button", { name }).boundingBox(),
@@ -3832,10 +4088,7 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(prevBox!.x).toBeLessThan(nextBox!.x)
   expect(nextBox!.x + nextBox!.width).toBeLessThan(mobileViewport.width / 2)
   expect(closeBox!.x).toBeGreaterThan(mobileViewport.width / 2)
-  // The count is visible, in the empty middle column between paging and close.
-  const countBox = await dialog.locator(".preview-gallery-count").boundingBox()
-  expect(countBox!.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
-  expect(countBox!.x + countBox!.width).toBeLessThan(closeBox!.x)
+  await expect(dialog.locator(".preview-gallery-count")).toHaveClass(/\bsr-only\b/)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
 
@@ -3893,7 +4146,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 14")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 17")
   await context.close()
 })
 
@@ -3930,7 +4183,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 14")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 17")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -3940,7 +4193,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 14")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 17")
   await context.close()
 })
 
@@ -4337,13 +4590,13 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   // One hop, not two: the stop after the homepage is the notes folder, which
   // closes this preview and opens the folder's own sheet.
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 17")
 
   // A taller or shorter preview must not move them.
   expect(await placement()).toEqual(initial)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 17")
 
   // Nor may a slide with no artwork. The notes list is shorter than the
   // artwork, an open note grows the card to the viewport's foot, and the
@@ -4352,7 +4605,7 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   const railNext = rail.locator(".preview-gallery-nav-next")
   await railNext.click()
   await railNext.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 17")
   await expect(dialog).toHaveAttribute("data-preview-kind", "writings")
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
   expect(await placement()).toEqual(initial)
@@ -4364,8 +4617,8 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
 
   await page.keyboard.press("Escape")
   await expect(dialog).not.toHaveAttribute("data-reading-note")
-  await railNext.click()
-  await railNext.click()
+  // Two films and Popparazi sit between the notes and the résumé.
+  for (let step = 0; step < 4; step += 1) await railNext.click()
   await expect(dialog).toHaveAttribute("data-preview-kind", "resume")
   expect(await placement()).toEqual(initial)
 })
@@ -4435,7 +4688,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(forward.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(forward.at(-1)!.from).toBeGreaterThan(4)
   expect(Math.max(...forward.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 17")
 
   const back = await poses(".preview-gallery-rail .preview-gallery-nav-prev")
   expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(4)
@@ -4443,7 +4696,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(back.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(back.at(-1)!.from).toBeLessThan(-4)
   expect(Math.max(...back.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 17")
 })
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
@@ -5236,7 +5489,7 @@ test("keeps Matcha authors below the summary with signatures disabled", async ({
   await expect(dialog.locator(".preview-gallery-project-link")).toHaveCount(0)
 
   // Paging must update the prose and credits, including solo projects, which
-  // carry my credit alone rather than none. The counter is the gate: it turns
+  // carry no credit row at all rather than mine alone. The counter is the gate: it turns
   // over with the card's content, so waiting for it means these read the slide
   // that arrived rather than the one still leaving -- which this walk used to
   // do, and which is the only reason it ever passed over the résumé.
@@ -5251,13 +5504,13 @@ test("keeps Matcha authors below the summary with signatures disabled", async ({
       await expect(description).toHaveCount(0)
     } else {
       await expect(description).not.toBeEmpty()
-      await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined)|sole product designer/)
+      await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined|worked on)|sole product designer/)
       await expect(dialog.locator("dl")).toHaveCount(0)
-      if (await dialog.locator(".project-case-study").count()) {
+      if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
+        await expect(team).toHaveCount(0)
+      } else if (await dialog.locator(".project-case-study").count() && await team.count()) {
         await expect(team.getByRole("link").last()).toHaveText("Rafael Medina")
         await expect(signatures).toHaveCount(0)
-      } else if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
-        await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
       }
     }
     await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
@@ -5273,17 +5526,21 @@ test("marks the step that wraps the gallery back to the start", async ({ page })
   await page.getByRole("link", { name: /Open Matcha multiwallet flow preview 1 of/ }).click()
 
   const dialog = page.getByRole("dialog")
-  const railCount = dialog.locator(".preview-gallery-rail-count")
-  await expect(railCount).toBeVisible()
-  await expect(railCount).toHaveText("1 / 14")
+  // The position is announced, not shown: one screen-reader-only live region
+  // and no visible counter beside the rail or in the toolbar.
+  const railCount = dialog.locator(".preview-gallery-count")
+  await expect(dialog.locator(".preview-gallery-rail-count")).toHaveCount(0)
+  await expect(railCount).toHaveClass(/\bsr-only\b/)
+  await expect(railCount).toHaveAttribute("aria-live", "polite")
+  await expect(railCount).toHaveText("1 / 17")
 
   await dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true }).click()
   await expect(railCount).toHaveText("Jumped to the end")
-  await expect(railCount).toHaveText("14 / 14", { timeout: 4000 })
+  await expect(railCount).toHaveText("17 / 17", { timeout: 4000 })
 
   await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   await expect(railCount).toHaveText("Back to the start")
-  await expect(railCount).toHaveText("1 / 14", { timeout: 4000 })
+  await expect(railCount).toHaveText("1 / 17", { timeout: 4000 })
 })
 
 test("updates Matcha authors when paging from solo work", async ({ page }) => {
@@ -5298,13 +5555,14 @@ test("updates Matcha authors when paging from solo work", async ({ page }) => {
   const next = dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true })
   const previous = dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true })
 
-  await expect(counter).toHaveText("10 / 14")
+  await expect(counter).toHaveText("12 / 17")
   await previous.click()
-  await expect(counter).toHaveText("9 / 14")
-  await expect(team.getByRole("link")).toHaveText(["Rafael Medina"])
+  await expect(counter).toHaveText("11 / 17")
+  // Solo work has no credit row at all.
+  await expect(team).toHaveCount(0)
 
   await next.click()
-  await expect(counter).toHaveText("10 / 14")
+  await expect(counter).toHaveText("12 / 17")
   await expect(team.getByRole("link")).toHaveText(["Jakub Antalik", "Rafael Medina"])
   await expect(dialog.locator(".project-case-study-signatures")).toHaveCount(0)
 })
@@ -5403,10 +5661,10 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   expect(addresses).toEqual([contactEmail])
 })
 
-// Notes always had a "Copy link"; projects and the résumé have prerendered
-// pages of their own too, and now offer the same pill. The clipboard is stubbed:
-// a parallel run's page is rarely frontmost, and writeText rejects off-front.
-test("offers each project and the résumé their public link to copy", async ({ page }) => {
+// Notes and the résumé offer their public link to copy. Project dialogs don't:
+// the title stands alone there. The clipboard is stubbed: a parallel run's
+// page is rarely frontmost, and writeText rejects off-front.
+test("offers the résumé its public link to copy, and projects none", async ({ page }) => {
   await page.addInitScript(() => {
     const copied: string[] = []
     Object.assign(window, { copiedLinks: copied })
@@ -5418,11 +5676,8 @@ test("offers each project and the résumé their public link to copy", async ({ 
   await page.getByRole("link", { name: /Open Matcha homepage preview/ }).click()
 
   const dialog = page.getByRole("dialog")
-  const projectLink = dialog.getByRole("link", { name: "Copy a link to this project" })
-  await expect(projectLink).toHaveAttribute("href", "https://rafaelmedina.me/work/matcha-homepage/")
-  await projectLink.click()
-  await expect(projectLink).toHaveAttribute("data-copied", "true")
-  await expect(dialog.getByRole("status").filter({ hasText: "Link to this project copied to clipboard" })).toBeAttached()
+  await expect(dialog.getByRole("heading", { name: "Matcha homepage" })).toBeVisible()
+  await expect(dialog.getByRole("link", { name: "Copy a link to this project" })).toHaveCount(0)
 
   await page.goto("/resume/")
   const resumeLink = page.getByRole("dialog", { name: "Résumé" }).getByRole("link", { name: "Copy a link to this résumé" })
