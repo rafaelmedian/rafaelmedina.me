@@ -283,8 +283,9 @@
    spread an expo-out curve would finish before it was seen, and the photos start
    rippling in halfway into --duration-base (usePhotoOriginTransition), by
    which time the circle has covered the middle and is racing ahead of them
-   to the edges. On the close it shrinks back to the middle with the photos,
-   over the whole close. The canvas never fades as a sheet; the popup stays
+   to the edges. On the close it shrinks back to the middle over the same
+   --duration-slow, starting with the photos, so the page returns around
+   them from the edges in. The canvas never fades as a sheet; the popup stays
    opaque, and its photos carry their own entrance. */
 .personal-photos-dialog[data-layout="wall"]:not([data-ending-style]) {
   opacity: 1;
@@ -301,7 +302,7 @@
   --wall-reveal: 0;
 }
 .personal-photos-backdrop[data-layout="wall"][data-ending-style] {
-  transition-duration: var(--photo-close-duration);
+  transition-duration: var(--duration-slow);
   transition-timing-function: var(--photo-motion-ease);
 }
 .personal-photos-dialog[data-ending-style] {
@@ -853,14 +854,17 @@
   /* A soft-edged circle of white, grown from the middle a step ahead of the
      photos' ripple, so each photo fades in just after the canvas reaches it;
      the close shrinks it back to the middle as the photos leave from the
-     edges inwards. The edge is a 25vmax fade, and at 1 the transparent rim
-     sits beyond the screen's corners (71vmax from the middle at most). */
-  --wall-reveal: 1;
+     edges inwards. The edge is a 25vmax fade. Open, it rests at 0.8: the
+     white is solid to 75vmax, just past the screen's corners (71vmax from
+     the middle at most), so the close's shrinking circle shows from its
+     first frame instead of spending a quarter of its time off-screen. */
+  --wall-reveal: 0.8;
   background: radial-gradient(circle at 50% 50%,
     var(--canvas) calc(var(--wall-reveal) * 125vmax - 25vmax),
     transparent calc(var(--wall-reveal) * 125vmax));
 }
 .personal-photos-sheet[data-layout="wall"] {
+  --wall-reveal: 0.8;
   --wall-release-duration: var(--duration-base);
   --wall-watch-shrink: 0;
   --wall-watch-power: 1.35;
@@ -1283,10 +1287,19 @@
   opacity: 0;
   transition: opacity var(--photo-close-duration) var(--photo-motion-ease);
 }
-/* Closing in place, each photo carries its own exit; fading the stage on top
-   of them would hide the ripple. */
+/* Closing in place, the stage does not fade as a sheet. It closes into the
+   middle as the same feathered circle as the white canvas behind it, on the
+   same clock, so the photos vanish with the white rather than hanging over
+   the page as it returns; each photo still shrinks and fades a little
+   inside it. --wall-reveal is registered with the backdrop's, and rests
+   at 0.8 on the wall's sheet. */
 .personal-photos-dialog[data-layout="wall"][data-ending-style] .personal-photos-sheet[data-leaving] {
+  --wall-reveal: 0;
   opacity: 1;
+  transition: --wall-reveal var(--duration-slow) var(--photo-motion-ease);
+  mask-image: radial-gradient(circle at 50% 50%,
+    #000 calc(var(--wall-reveal) * 125vmax - 25vmax),
+    transparent calc(var(--wall-reveal) * 125vmax));
 }
 .personal-photos-wall-close-content {
   display: inline-flex;
