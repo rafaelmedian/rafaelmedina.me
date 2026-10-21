@@ -31,6 +31,7 @@ export function AboutIntroDock(props: {
   const [approached, setApproached] = useState(false)
   const [active, setActive] = useState(false)
   const [obscured, setObscured] = useState(false)
+  const [tocOpen, setTocOpen] = useState(false)
 
   useEffect(() => {
     const dock = dockRef.current
@@ -122,14 +123,14 @@ export function AboutIntroDock(props: {
   const visible = active && !obscured
   return (
     <div ref={dockRef} className="about-intro-dock" data-about-active={active}
-      data-obscured={obscured} data-intro-visible={approached && visible}>
-      <MobileTableOfContents {...props} />
+      data-obscured={obscured} data-intro-visible={approached && visible} data-toc-open={tocOpen}>
+      <MobileTableOfContents {...props} onOpenChange={setTocOpen} />
       {approached && (
         <IntroBoundary>
           <Suspense fallback={null}>
             <AboutIntro key={option} variant={option} media={media ?? undefined}
               portrait={siteProfile.photo} mobileMessages
-              repliesAvailable={!obscured} visible={visible} />
+              repliesAvailable={!tocOpen && !obscured} visible={visible} />
           </Suspense>
         </IntroBoundary>
       )}
