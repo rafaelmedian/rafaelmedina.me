@@ -3,7 +3,7 @@ import type { ProjectCaseStudy } from "./portfolio"
 // Different projects need different amounts of explanation. Media can be
 // added to these sections later without changing the reading layout.
 const study = (title: string, introduction: string[], sections: ProjectCaseStudy["sections"]): ProjectCaseStudy => ({
-  label: "Case study", period: "", title, introduction, sections,
+  label: "Case study", title, introduction, sections,
 })
 
 export const projectCaseStudies = {

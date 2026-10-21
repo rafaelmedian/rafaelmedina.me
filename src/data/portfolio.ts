@@ -59,7 +59,6 @@ export type ProjectCaseStudySection = {
 export type ProjectCaseStudy = {
   showSignatures?: boolean
   label: string
-  period: string
   title: string
   introduction: string[]
   sections: ProjectCaseStudySection[]
