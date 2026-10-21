@@ -88,6 +88,18 @@ const galleryMotionVars = {
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 
+/** True when `target` sits inside something below `boundary` that scrolls
+ * sideways itself. */
+function startsInHorizontalScroller(target: Element, boundary: Element) {
+  for (let node: Element | null = target; node && node !== boundary; node = node.parentElement) {
+    if (node.scrollWidth > node.clientWidth + 1) {
+      const overflowX = getComputedStyle(node).overflowX
+      if (overflowX === "auto" || overflowX === "scroll") return true
+    }
+  }
+  return false
+}
+
 function wrapIndex(index: number, length: number) {
   if (length === 0) return 0
   return (index % length + length) % length
@@ -699,8 +711,11 @@ export function PreviewGalleryDialog({
                   )
                 }}
                 onTouchStart={(event) => {
-                  // A horizontal drag on the video is the seek bar, not a swipe.
-                  if (event.target instanceof Element && event.target.closest("video")) {
+                  // A horizontal drag on the video is the seek bar, not a swipe,
+                  // and one inside a note's code block or install command is
+                  // that block scrolling sideways: paging there turned to
+                  // another note mid-read.
+                  if (event.target instanceof Element && (event.target.closest("video") || startsInHorizontalScroller(event.target, event.currentTarget))) {
                     touchStartRef.current = null
                     return
                   }

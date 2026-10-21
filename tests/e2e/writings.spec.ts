@@ -878,3 +878,33 @@ test("prints a highlighted Markdown sample without a sideways read", async ({ pa
   await expect(block).toHaveCSS("white-space", "pre-wrap")
   await expect.poll(() => block.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
 })
+
+// A note's install command scrolls sideways on a phone (code blocks wrap
+// there instead). A drag across it is that scroll, not a swipe to the next
+// note -- which used to turn the page mid-read.
+test("a sideways drag inside a scrolling command does not page to another note", async ({ browser }) => {
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, reducedMotion: "reduce", viewport: { width: 390, height: 844 } })
+  const page = await context.newPage()
+  await page.goto("/notes/review-ready-pull-requests/")
+  const command = page.locator(".writing-tool-command code")
+  await command.scrollIntoViewIfNeeded()
+  expect(await command.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
+
+  const swipe = (selector: string) => page.locator(selector).first().evaluate((element) => {
+    const box = element.getBoundingClientRect()
+    const y = box.top + Math.min(box.height / 2, 40)
+    const start = new Touch({ identifier: 1, target: element, clientX: box.right - 10, clientY: y })
+    const end = new Touch({ identifier: 1, target: element, clientX: box.right - 150, clientY: y })
+    element.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, changedTouches: [start], touches: [start] }))
+    element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
+  })
+
+  await swipe(".writing-tool-command code")
+  await page.waitForTimeout(400)
+  await expect(page).toHaveURL(/\/notes\/review-ready-pull-requests\/?$/)
+
+  // The same drag on the prose still pages.
+  await swipe(".writing-reader-prose p")
+  await expect(page).not.toHaveURL(/\/notes\/review-ready-pull-requests\/?$/)
+  await context.close()
+})
