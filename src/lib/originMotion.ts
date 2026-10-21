@@ -351,6 +351,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
   const animations = useRef<Animation[]>([])
   const pendingStart = useRef<(() => void) | null>(null)
   const zoomFrameRef = useRef<HTMLElement | null>(null)
+  const releaseScrollRef = useRef<(() => void) | null>(null)
 
   // A layout effect, so a click that re-aims the flight and opens in the same
   // commit animates from the new anchor.
@@ -363,6 +364,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
     pendingStart.current = null
     for (const animation of animations.current) animation.cancel()
     animations.current = []
+    releaseScrollRef.current?.()
     zoomFrameRef.current?.removeAttribute("data-origin-zoom")
     zoomFrameRef.current = null
     inputs.current.onFlight?.(false)
@@ -415,6 +417,19 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // can step aside for the clip; lowered with the flight's other flags.
       zoomFrame.setAttribute("data-origin-zoom", "true")
       zoomFrameRef.current = zoomFrame
+
+      // The dialog focuses the card as it opens, and the browser scrolls the
+      // frame to bring that card into view -- but mid-flight the card is
+      // drawn over the tile, so the frame scrolled towards the tile and the
+      // card came to rest 41px above its place. Hold the frame where the
+      // flight measured it until the flight lets go.
+      const scrollTop = zoomFrame.scrollTop
+      const holdScroll = () => { zoomFrame.scrollTop = scrollTop }
+      zoomFrame.addEventListener("scroll", holdScroll)
+      releaseScrollRef.current = () => {
+        zoomFrame.removeEventListener("scroll", holdScroll)
+        releaseScrollRef.current = null
+      }
 
       if (fullScreen) {
         const keyframes = buildZoomKeyframes(mode, geometry, { kind: "screen", frame: zoomFrame.getBoundingClientRect() })
@@ -505,6 +520,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
     // `cancel` clears it instead.
     if (mode === "open") {
       flight.finished.then(() => {
+        releaseScrollRef.current?.()
         zoomFrameRef.current?.removeAttribute("data-origin-zoom")
         zoomFrameRef.current = null
         onFlight?.(false)
