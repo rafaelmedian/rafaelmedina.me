@@ -225,11 +225,11 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
               <form onSubmit={send}>
                 <div className="booking-composer">
                   <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : dictation.status ? `${hintId}-dictation` : undefined} rows={1} maxLength={2000}
-                    {...ignorePasswordManagers} placeholder="Tell me a little about it…" value={message}
+                    {...ignorePasswordManagers} placeholder={atLimit ? "Message limit reached" : "Tell me a little about it…"} value={message}
                     onChange={event => setMessage(event.target.value)} disabled={atLimit} readOnly={dictation.listening} />
                   {message.trim() && !dictation.listening ? <button className="booking-send" type="submit" aria-label="Send message" disabled={sending || atLimit}><ArrowUp size={24} /></button>
                     : <button className="booking-microphone" type="button" disabled={sending || atLimit || calendar}
-                      aria-label={dictation.listening ? "Stop dictation" : "Dictate message"} aria-pressed={dictation.listening}
+                      aria-label="Dictate message" aria-pressed={dictation.listening}
                       onClick={event => {
                         event.preventDefault()
                         if (dictation.listening) {
@@ -239,7 +239,9 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
                       }}>{dictation.listening ? <Square size={18} fill="currentColor" aria-hidden="true" /> : <Mic size={24} strokeWidth={1.75} aria-hidden="true" />}</button>}
                 </div>
                 {dictation.status && <p className="booking-dictation-status" id={`${hintId}-dictation`} role="status">{dictation.status}</p>}
-                {atLimit && <p className="sr-only" id={hintId} role="status">Message limit reached. You can still book a time.</p>}
+                {/* Visible, as the About chat's is: a field that only went
+                    grey, still asking to be told more, read as broken. */}
+                {atLimit && <p className="booking-dictation-status" id={hintId} role="status">That’s five messages. You can still book a time with the calendar button.</p>}
               </form>
 
             </div>}

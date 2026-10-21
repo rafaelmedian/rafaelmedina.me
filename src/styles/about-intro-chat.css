@@ -720,9 +720,14 @@
   box-shadow: var(--shadow-ring), var(--shadow-control);
 }
 
-/* Focus lifts the field rather than outlining it; the caret marks the rest. */
+/* Focus lifts the field and rings it: the lift alone was too faint to find. */
 .about-intro-chat-composer:focus-within {
   box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+}
+
+.about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .about-intro-chat-composer :is(input, textarea) {
@@ -1098,4 +1103,11 @@
 
 .about-intro-chat-sent-message:has(+ .about-intro-chat-sent-message) .about-intro-chat-outgoing {
   border-bottom-right-radius: var(--radius-md);
+}
+
+/* Windows High Contrast drops box-shadows, and the composer's edge is drawn
+   with nothing else. The shared buttons are covered in booking.css. */
+@media (forced-colors: active) {
+  .about-intro-chat-composer { outline: 1px solid CanvasText; }
+  .about-intro-chat-composer:has(:is(input, textarea):focus-visible) { outline: 2px solid Highlight; }
 }

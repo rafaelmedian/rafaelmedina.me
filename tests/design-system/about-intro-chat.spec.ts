@@ -712,7 +712,7 @@ for (const width of [390, 1542]) {
     await chat.getByRole('textbox', { name: 'Your email', exact: true }).fill('portrait@example.com')
     await chat.getByRole('button', { name: 'Continue with email' }).click()
     await chat.getByRole('button', { name: 'Dictate message' }).click()
-    await expect(chat.getByRole('button', { name: 'Stop dictation' })).toBeVisible()
+    await expect(chat.getByRole('button', { name: 'Dictate message', pressed: true })).toBeVisible()
     await page.evaluate(() => {
       const speech = (window as unknown as { activeSpeech: { onresult: (event: unknown) => void } }).activeSpeech
       speech.onresult({ results: [[{ transcript: 'Let’s talk about the project' }]] })

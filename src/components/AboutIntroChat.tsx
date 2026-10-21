@@ -450,7 +450,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
             value={message} onChange={event => setMessage(event.target.value)} />
           {(!message.trim() || dictation.listening) && <button type="button" className="booking-microphone"
             disabled={sending || atCheckpoint || atLimit}
-            aria-label={dictation.listening ? "Stop dictation" : "Dictate message"} aria-pressed={dictation.listening}
+            aria-label="Dictate message" aria-pressed={dictation.listening}
             onClick={() => {
               if (dictation.listening) dictation.stop()
               else dictation.start()

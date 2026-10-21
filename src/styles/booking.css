@@ -641,6 +641,13 @@ body:has(.booking-contact-panel) .booking-close {
 .booking-composer :is(input, textarea)::placeholder { color: var(--muted-soft); }
 .booking-composer :is(input, textarea):focus-visible { outline: none; }
 .booking-composer:focus-within { box-shadow: var(--shadow-ring), var(--shadow-control-hover); }
+/* The lift alone (8% to 12% shadow) was too faint to find the field by. The
+   ring sits on the composer, not the field inside it, so it follows the
+   rounded edge. */
+.booking-composer:has(:is(input, textarea):focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
 
 .booking-microphone {
   border: 0;
@@ -653,7 +660,14 @@ body:has(.booking-contact-panel) .booking-close {
   width: 44px;
   height: 44px;
   color: var(--muted-soft);
+}
+
+/* --muted-soft alone is 4.6:1; the old 0.6 opacity at rest took the icon to
+   about 2.3:1, under the 3:1 a control's graphic needs. Only a microphone that
+   cannot be used is dimmed. */
+.booking-microphone:disabled {
   opacity: 0.6;
+  cursor: default;
 }
 
 .booking-send {
@@ -1001,4 +1015,17 @@ body:has(.booking-contact-panel) .booking-close {
 
 .booking-delivery:has(+ .booking-delivery) .booking-outgoing {
   border-bottom-right-radius: var(--radius-md);
+}
+
+/* Windows High Contrast drops box-shadows, and the composers' edges and the
+   glass buttons are drawn with nothing else. */
+@media (forced-colors: active) {
+  .booking-composer,
+  .booking-time-button {
+    outline: 1px solid CanvasText;
+  }
+
+  .booking-composer:has(:is(input, textarea):focus-visible) {
+    outline: 2px solid Highlight;
+  }
 }
