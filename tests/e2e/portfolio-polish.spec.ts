@@ -712,6 +712,7 @@ test("expands the contact pills' internal shine on hover and focus", async ({ pa
 })
 
 test("leads the contact row with the booking pill", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
   await page.setViewportSize({ width: 1728, height: 913 })
   await page.goto("/")
 
@@ -2194,6 +2195,7 @@ test("leaves no availability dot anywhere on the page", async ({ page }) => {
 })
 
 test("hints at booking on hover and opens the calendar only on click", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-18T12:00:00Z"))
   let calendarRequests = 0
   await page.route("https://cal.com/**", (route) => {
     calendarRequests++
@@ -3548,6 +3550,7 @@ for (const width of [1440, 390]) {
     const card = dialog.locator(".preview-gallery-card")
     const title = dialog.getByRole("heading", { name: "Résumé" })
     const drawings = dialog.locator(".resume-margin-drawing")
+    await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
     const titleTop = (await title.boundingBox())!.y
 
     await expect(drawings).toHaveCount(4)

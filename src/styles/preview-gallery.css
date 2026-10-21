@@ -234,13 +234,14 @@
    flight and only reaches past its shadow at the end, so the shadow showed as
    a dark band cut off flat along the clip. It waits for the clip to let go
    and then settles in. A card that lands whole (the notes) has no clip and
-   keeps its shadow throughout. */
+   keeps its shadow throughout. Paging can begin during the entrance, so
+   preserve its phase-specific timing while holding the shadow. */
 .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup:not([data-ending-style]) .preview-gallery-card:has(.preview-gallery-media-frame) {
   box-shadow:
     0 1px 1px rgb(0 0 0 / 0),
     0 18px 44px -18px rgb(0 0 0 / 0),
     0 48px 92px -42px rgb(0 0 0 / 0);
-  transition: none;
+  transition-property: opacity, transform;
 }
 
 /* The page stays in view under the growing card for most of its flight

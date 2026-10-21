@@ -30,7 +30,7 @@ test("reduced-motion visitors keep posters without requesting feed video data", 
   })
   await page.goto("/")
   const videos = page.locator("video.mosaic-row-media")
-  await expect(videos).toHaveCount(7)
+  await expect(videos).toHaveCount(6)
   // Visiting About crosses every feed row and lets its visibility observers run.
   await page.getByRole("link", { name: "About", exact: true }).click()
   await expect(page.locator("#about-panel")).toBeFocused()
@@ -59,7 +59,7 @@ test("uses posters on 3g and responds when the connection changes", async ({ pag
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
   const videos = page.locator("video.mosaic-row-media")
-  await expect(videos).toHaveCount(7)
+  await expect(videos).toHaveCount(6)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).hover()
   expect(requests).toEqual([])
   await page.evaluate(() => {
