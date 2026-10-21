@@ -965,6 +965,37 @@
   pointer-events: auto;
 }
 
+/* Where the visitor is in the sequence, centred under the chevron that moves
+   it. It sits on the dimmed backdrop beside the card, so it takes white at the
+   same weight as the backdrop's own dimming rather than the card's ink. Out of
+   flow, or it would take the middle of the rail's space-between. */
+.preview-gallery-rail-count {
+  position: absolute;
+  top: calc(100% + 0.625rem);
+  right: calc(var(--preview-gallery-nav-size) / 2);
+  translate: 50% 0;
+  color: rgb(255 255 255 / 0.86);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.preview-gallery-count {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.preview-gallery-count[data-wrapped="true"],
+.preview-gallery-rail-count[data-wrapped="true"] {
+  font-weight: 500;
+}
+
 .preview-gallery-title {
   margin: 0;
   color: var(--ink);
@@ -1282,6 +1313,11 @@
 
   .preview-gallery-controls {
     grid-column: 1;
+    grid-row: 1;
+  }
+
+  .preview-gallery-count {
+    grid-column: 2;
     grid-row: 1;
   }
 

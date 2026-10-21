@@ -3912,8 +3912,10 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
   expect(prevBox!.x).toBeLessThan(nextBox!.x)
   expect(nextBox!.x + nextBox!.width).toBeLessThan(mobileViewport.width / 2)
   expect(closeBox!.x).toBeGreaterThan(mobileViewport.width / 2)
-  // Position is available to screen readers without a visible pill.
-  await expect(dialog.locator(".preview-gallery-count")).toHaveClass(/sr-only/)
+  // The count is visible, in the empty middle column between paging and close.
+  const countBox = await dialog.locator(".preview-gallery-count").boundingBox()
+  expect(countBox!.x).toBeGreaterThan(nextBox!.x + nextBox!.width)
+  expect(countBox!.x + countBox!.width).toBeLessThan(closeBox!.x)
   // Both ends sit on the same inset, which is the card's own.
   expect(mobileViewport.width - (closeBox!.x + closeBox!.width)).toBeCloseTo(prevBox!.x, 0)
 
@@ -5347,6 +5349,28 @@ test("keeps Matcha authors below the summary with signatures disabled", async ({
     }
     await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   }
+})
+
+// Paging wraps at both ends, so the step that wraps says so before the count
+// comes back -- otherwise a visitor can loop the whole set without noticing.
+test("marks the step that wraps the gallery back to the start", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow preview 1 of/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const railCount = dialog.locator(".preview-gallery-rail-count")
+  await expect(railCount).toBeVisible()
+  await expect(railCount).toHaveText("1 / 14")
+
+  await dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true }).click()
+  await expect(railCount).toHaveText("Jumped to the end")
+  await expect(railCount).toHaveText("14 / 14", { timeout: 4000 })
+
+  await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
+  await expect(railCount).toHaveText("Back to the start")
+  await expect(railCount).toHaveText("1 / 14", { timeout: 4000 })
 })
 
 test("updates Matcha authors when paging from solo work", async ({ page }) => {

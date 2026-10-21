@@ -1122,7 +1122,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Nav link
                 </a>
                 <span className="mosaic-social-time">Local time · 5:03pm AST</span>
-                <span className="preview-gallery-count">3 of 12</span>
+                <span className="preview-gallery-count">3 / 14</span>
                 <button
                   type="button"
                   className="mosaic-takeover-close"

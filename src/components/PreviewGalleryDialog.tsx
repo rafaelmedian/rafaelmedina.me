@@ -196,6 +196,31 @@ export function PreviewGalleryDialog({
   const listScrollTop = useRef(0)
   const focusNoteTitle = useRef(true)
   const orderedNotes = useMemo(() => groupWritingsByCategory(writingSummaries).flatMap(group => group.entries), [])
+  // Paging wraps at both ends. Without a cue, Next on the last slide looked
+  // like any other step and a visitor could loop the set without knowing it.
+  const [wrapCue, setWrapCue] = useState<"start" | "end" | null>(null)
+  const wrapCueTimeoutRef = useRef<number | null>(null)
+  const flagWrap = useCallback((wrapped: boolean, direction: number) => {
+    if (wrapCueTimeoutRef.current !== null) window.clearTimeout(wrapCueTimeoutRef.current)
+    wrapCueTimeoutRef.current = null
+    if (!wrapped) {
+      setWrapCue(null)
+      return
+    }
+    setWrapCue(direction > 0 ? "start" : "end")
+    wrapCueTimeoutRef.current = window.setTimeout(() => {
+      setWrapCue(null)
+      wrapCueTimeoutRef.current = null
+    }, 1800)
+  }, [])
+  useEffect(() => () => {
+    if (wrapCueTimeoutRef.current !== null) window.clearTimeout(wrapCueTimeoutRef.current)
+  }, [])
+  const notePosition = readingNote ? orderedNotes.findIndex(note => note.id === writingId) : -1
+  const positionLabel = notePosition >= 0
+    ? `${notePosition + 1} / ${orderedNotes.length}`
+    : `${safeIndex + 1} / ${items.length}`
+  const wrapLabel = wrapCue === "start" ? "Back to the start" : wrapCue === "end" ? "Jumped to the end" : null
   const [listHeight, setListHeight] = useState<number | null>(null)
 
   useIsomorphicLayoutEffect(() => {
@@ -465,6 +490,7 @@ export function PreviewGalleryDialog({
         const index = orderedNotes.findIndex(note => note.id === writingId)
         const next = orderedNotes[wrapIndex(index + direction, orderedNotes.length)]
         if (next) {
+          flagWrap(index + direction < 0 || index + direction >= orderedNotes.length, direction)
           if (direction > 0) playNext()
           else playBack()
           pageNote(next.id, direction < 0 ? "prev" : "next")
@@ -472,9 +498,11 @@ export function PreviewGalleryDialog({
         return
       }
       if (items.length <= 1) return
-      goToIndex(wrapIndex(safeIndex + direction, items.length), direction < 0 ? "prev" : "next")
+      if (goToIndex(wrapIndex(safeIndex + direction, items.length), direction < 0 ? "prev" : "next")) {
+        flagWrap(safeIndex + direction < 0 || safeIndex + direction >= items.length, direction)
+      }
     },
-    [goToIndex, items.length, safeIndex, writingId, orderedNotes, pageNote, playNext, playBack],
+    [goToIndex, items.length, safeIndex, writingId, orderedNotes, pageNote, playNext, playBack, flagWrap],
   )
 
   useEffect(() => {
@@ -609,11 +637,12 @@ export function PreviewGalleryDialog({
                   than its first child: the card carries the paging transition,
                   and a control that slid and faded under the finger that
                   pressed it read as the button leaving rather than the slide.
-                  Position remains available to assistive technology without
-                  adding a visible counter to every preview. */}
+                  The count sits in the empty middle column, between paging and
+                  close. When a step wraps around either end it says so for a
+                  moment, then goes back to the number. */}
               <div className="preview-gallery-toolbar">
-                <span className="preview-gallery-count sr-only">
-                  {safeIndex + 1} / {items.length}
+                <span className="preview-gallery-count" data-wrapped={wrapLabel ? "true" : undefined} aria-live="polite">
+                  {wrapLabel ?? positionLabel}
                 </span>
 
                 <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
@@ -879,6 +908,12 @@ export function PreviewGalleryDialog({
                 >
                   <ChevronRight aria-hidden="true" className="preview-gallery-nav-icon preview-gallery-nav-icon-next" />
                 </button>
+                {/* The desktop twin of the toolbar's count, under the chevron
+                    that moves it. Only one of the two is ever displayed, so
+                    only one announces. */}
+                <span className="preview-gallery-rail-count" data-wrapped={wrapLabel ? "true" : undefined} aria-live="polite">
+                  {wrapLabel ?? positionLabel}
+                </span>
               </div>
             </Dialog.Popup>
           </div>
