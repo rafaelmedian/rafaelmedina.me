@@ -214,9 +214,9 @@ export function usePhotoOriginTransition(
       const centreY = bounds.top + bounds.height / 2
       const reach = Math.hypot(bounds.width, bounds.height) / 2
       const placeEasing = tokens.getPropertyValue(open ? "--ease-smooth" : "--ease-exit").trim()
-      // The white canvas fades in over --duration-fast first (see
-      // personal-photos.css); the photos start once it is down.
-      const lead = open ? cssTimeToMilliseconds(tokens.getPropertyValue("--duration-fast")) : 0
+      // The white canvas fades in over --duration-base (see
+      // personal-photos.css); the photos start halfway through it.
+      const lead = open ? cssTimeToMilliseconds(tokens.getPropertyValue("--duration-base")) / 2 : 0
       // Read every slot, and where an interrupted move left each photo,
       // before starting or cancelling any animation.
       const onScreen = slides.map(slide => ({ slide, rect: slide.getBoundingClientRect() })).filter(({ rect }) =>
@@ -244,7 +244,7 @@ export function usePhotoOriginTransition(
         if (interrupted) return
         strip.removeAttribute(marker)
         if (open) return
-        // The canvas trails the photos out; unmount once it has faded too.
+        // The canvas fades out with the photos; unmount once it has gone too.
         const backdrop = document.querySelector(".personal-photos-backdrop[data-ending-style]")
         await Promise.allSettled(backdrop?.getAnimations().map(animation => animation.finished) ?? [])
         if (!interrupted) onCloseComplete()

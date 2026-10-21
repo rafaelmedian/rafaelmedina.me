@@ -278,22 +278,31 @@
 
 .personal-photos-dialog[data-starting-style] { opacity: 0; }
 /* The wall's photos open and close in place, so nothing flies over the
-   page. The white canvas leads the open: it fades in over --duration-fast
-   and the photos only start to ripple in once it is down
-   (usePhotoOriginTransition waits the same token), so they never grow over
-   a half-faded page. On the close it trails: the photos leave first, and
-   only once they have gone does the canvas fade out over --duration-fast. The popup
-   itself stays opaque; its photos carry their own entrance. */
+   page. The white canvas spreads from the middle as a circle (see the wall
+   backdrop below) over --duration-slow on --photo-motion-ease, an even
+   spread an expo-out curve would finish before it was seen, and the photos start
+   rippling in halfway into --duration-base (usePhotoOriginTransition), by
+   which time the circle has covered the middle and is racing ahead of them
+   to the edges. On the close it shrinks back to the middle with the photos,
+   over the whole close. The canvas never fades as a sheet; the popup stays
+   opaque, and its photos carry their own entrance. */
 .personal-photos-dialog[data-layout="wall"]:not([data-ending-style]) {
   opacity: 1;
   transition: none;
 }
-.personal-photos-backdrop[data-layout="wall"]:not([data-ending-style]) {
-  transition-duration: var(--duration-fast);
+.personal-photos-backdrop[data-layout="wall"],
+.personal-photos-backdrop[data-layout="wall"][data-starting-style],
+.personal-photos-backdrop[data-layout="wall"][data-ending-style] {
+  opacity: 1;
+  transition: --wall-reveal var(--duration-slow) var(--photo-motion-ease);
+}
+.personal-photos-backdrop[data-layout="wall"][data-starting-style],
+.personal-photos-backdrop[data-layout="wall"][data-ending-style] {
+  --wall-reveal: 0;
 }
 .personal-photos-backdrop[data-layout="wall"][data-ending-style] {
-  transition-duration: var(--duration-fast);
-  transition-delay: var(--photo-close-duration);
+  transition-duration: var(--photo-close-duration);
+  transition-timing-function: var(--photo-motion-ease);
 }
 .personal-photos-dialog[data-ending-style] {
   opacity: 0;
@@ -831,10 +840,25 @@
 
 /* Wall: a loose, edge-to-edge arrangement using the grid's selection and
    flight machinery. */
+/* How far the wall's white canvas has spread from the middle of the screen:
+   0 is none of it, 1 the whole screen. Registered so it can transition. */
+@property --wall-reveal {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
 .personal-photos-backdrop[data-layout="wall"] {
   /* Cover Safari chrome and rubber-band exposure outside the visual viewport. */
   inset-block: -100lvh;
-  background: var(--canvas);
+  /* A soft-edged circle of white, grown from the middle a step ahead of the
+     photos' ripple, so each photo fades in just after the canvas reaches it;
+     the close shrinks it back to the middle as the photos leave from the
+     edges inwards. The edge is a 25vmax fade, and at 1 the transparent rim
+     sits beyond the screen's corners (71vmax from the middle at most). */
+  --wall-reveal: 1;
+  background: radial-gradient(circle at 50% 50%,
+    var(--canvas) calc(var(--wall-reveal) * 125vmax - 25vmax),
+    transparent calc(var(--wall-reveal) * 125vmax));
 }
 .personal-photos-sheet[data-layout="wall"] {
   --wall-release-duration: var(--duration-base);
