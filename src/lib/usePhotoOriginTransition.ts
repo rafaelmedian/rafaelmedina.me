@@ -109,8 +109,11 @@ export function usePhotoOriginTransition(
 
   useClientLayoutEffect(() => {
     if (!strip || !opener) return
-    const sources = measurePhotoOrigins(opener)
-    sources.forEach(({ element }) => { element.setAttribute("data-photo-away", "") })
+    // Only the prints themselves: measuring them here read every computed
+    // style on the fan right after the wall mounted, forcing that layout a
+    // step early inside the open's own task.
+    const prints = Array.from(opener.querySelectorAll<HTMLElement>(".personal-photos-print"))
+    prints.forEach((element) => { element.setAttribute("data-photo-away", "") })
     // The opener wears it only while the sheet is actually over it. The fan
     // answers to the pointer as a whole, and the pointer is still on the tile
     // — the sheet just happens to be covering it — so without this the hand
@@ -122,7 +125,7 @@ export function usePhotoOriginTransition(
     // the frames they will actually sit in.
     if (open) opener.setAttribute("data-photo-away", "")
     return () => {
-      sources.forEach(({ element }) => { element.removeAttribute("data-photo-away") })
+      prints.forEach((element) => { element.removeAttribute("data-photo-away") })
       opener.removeAttribute("data-photo-away")
     }
   }, [strip, origins, reducedMotion, opener, open])
