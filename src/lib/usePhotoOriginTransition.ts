@@ -301,6 +301,7 @@ export function usePhotoOriginTransition(
       const currentImage = previous ? readStyles(image, imageProperties) : targetImage
       const currentOpacity = previous ? getComputedStyle(clone).opacity : "1"
       const currentCaptionOpacity = previous ? getComputedStyle(caption).opacity : "1"
+      const currentShadow = previous ? getComputedStyle(clone).boxShadow : frame.boxShadow
       previous?.animations.forEach((animation) => animation.cancel())
       slide.style.opacity = "0"
       // Every wall photo borrows its destination print's frame and crop,
@@ -313,6 +314,16 @@ export function usePhotoOriginTransition(
         clone.animate([open ? originFrame(source) : currentFrame, open ? targetFrame : originFrame(source)], timing),
         image.animate([open ? originImage(source) : currentImage, open ? targetImage : originImage(source)], timing),
         caption.animate([{ opacity: open ? 0 : currentCaptionOpacity }, { opacity: open ? 1 : 0 }], timing),
+        // A borrowed photo stays shadowless while it is stacked under the
+        // fan, as above, but its wall slot wears the print's shadow. It takes
+        // that shadow on over the second half of the trip out and gives it
+        // up over the first half of the trip home, so the handoff to its
+        // slot never pops a shadow on or off. Added last, it wins over the
+        // frame's own `none`.
+        ...(opaqueWall && !own && frame.boxShadow ? [clone.animate(open
+          ? [{ boxShadow: "none" }, { boxShadow: "none", offset: 0.5 }, { boxShadow: frame.boxShadow }]
+          : [{ boxShadow: currentShadow }, { boxShadow: "none", offset: 0.5 }, { boxShadow: "none" }],
+        timing)] : []),
       ] : open ? [
         // The same trip, run backwards. There is no print-shaped frame for
         // this one to grow out of, so the whole card swells from the print it

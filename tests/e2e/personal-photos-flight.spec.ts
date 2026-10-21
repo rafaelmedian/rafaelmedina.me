@@ -59,10 +59,12 @@ for (const width of [1440, 390]) {
       })
       expect(frames.flat().every(frame => !frame.covered), `${direction}: white wall covers flying photos`).toBe(true)
       expect(frames.flat().every(frame => frame.opacity === 1), `${direction}: photos fade independently`).toBe(true)
-      expect(frames.flat().every(frame => frame.borrowedShadow === "none"), `${direction}: borrowed photos stack extra shadows beneath the fan`).toBe(true)
-      if (direction === "close") {
-        expect(frames[2].every(frame => frame.frame > 0), "every collapsing photo gains a white frame").toBe(true)
-      }
+      // Borrowed photos only take on the print's shadow away from the fan,
+      // where it cannot stack into a halo beneath the cards.
+      const atFan = direction === "open" ? frames[0] : frames[4]
+      expect(atFan.every(frame => frame.borrowedShadow === "none"), `${direction}: borrowed photos stack extra shadows beneath the fan`).toBe(true)
+      // The wall wears the fan's print, so no photo loses its frame mid-air.
+      expect(frames.flat().every(frame => frame.frame > 0), `${direction}: every photo keeps its white frame`).toBe(true)
       if (direction === "close") {
         const count = await flights.count()
         // The first flight can finish a frame before its neighbours. Keep it
