@@ -3653,6 +3653,61 @@ test("opens a prefetched gallery without passing through its loading state", asy
   expect(await firstSurface).toContain("preview-gallery-popup")
 })
 
+// The full-screen gallery zooms out of the tile the way iOS opens a card: its
+// first frame is clipped to the tile's rounded rectangle with the artwork lying
+// on the tile, and it lands unclipped and untransformed.
+test("zooms the full-screen gallery out of the tapped tile", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await settleWorkCards(page)
+  const tile = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
+  await tile.scrollIntoViewIfNeeded()
+  // A handle, not the role locator: the open dialog aria-hides the page.
+  const tileHandle = await tile.elementHandle()
+
+  // Frozen rather than paused: the flight restarts itself on the popup's fade,
+  // and a zero rate holds it at its first frame through that restart.
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      animation.playbackRate = 0
+      return animation
+    }
+  })
+  await tile.click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+  // Measured now, not before the press: the grid's intro still moves the tile
+  // for a while after load, and the flight aims at where it was when pressed.
+  const tileBox = await tileHandle!.boundingBox()
+  expect(tileBox).not.toBeNull()
+
+  const shell = page.locator(".preview-gallery-shell")
+  await expect(shell).toHaveAttribute("data-origin-zoom", "true")
+  const firstFrame = await shell.evaluate((element) => {
+    const frame = document.querySelector(".preview-gallery-media-frame")!.getBoundingClientRect()
+    return { clip: getComputedStyle(element).clipPath, frame: { x: frame.x, y: frame.y, width: frame.width } }
+  })
+  const box = tileBox!
+  const insets = firstFrame.clip.match(/-?[\d.]+px/g)!.map(parseFloat)
+  expect(insets[0]).toBeCloseTo(box.y, 0)
+  expect(insets[3]).toBeCloseTo(box.x, 0)
+  expect(insets[4]).toBeGreaterThan(0)
+  expect(firstFrame.frame.x).toBeCloseTo(box.x, 0)
+  expect(firstFrame.frame.y).toBeCloseTo(box.y, 0)
+  expect(firstFrame.frame.width).toBeCloseTo(box.width, 0)
+
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) {
+      animation.playbackRate = 1
+      animation.finish()
+    }
+  })
+  await expect(shell).not.toHaveAttribute("data-origin-zoom")
+  await expect(shell).toHaveCSS("clip-path", "none")
+  await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
+})
+
 test("keeps gallery controls inside the mobile viewport and exposes a close button", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
