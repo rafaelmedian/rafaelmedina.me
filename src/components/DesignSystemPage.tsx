@@ -1236,7 +1236,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 A fan of square prints, each framed by a thin <code>--canvas</code> border and a crisp print shadow
                 (a hairline edge, a tight contact shadow and a short lift; scoped to personal-photos.css). Opening fades a white canvas in over
                 the page while every photo appears in its own place on the full-screen wall, rippling out from the middle
-                over <code>--photo-open-duration</code>; closing flies the prints home to the fan over{" "}
+                over <code>--photo-open-duration</code>; closing runs it backwards, edges first, over{" "}
                 <code>--photo-close-duration</code>. The wall wears the same print, its frame one fixed width on every
                 photo. The only visible control is a solid <code>--canvas</code> Close pill with{" "}
                 <code>--shadow-overlay</code>.

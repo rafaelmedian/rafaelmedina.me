@@ -1251,6 +1251,11 @@
   opacity: 0;
   transition: opacity var(--photo-close-duration) var(--photo-motion-ease);
 }
+/* Closing in place, each photo carries its own exit; fading the stage on top
+   of them would hide the ripple. */
+.personal-photos-dialog[data-layout="wall"][data-ending-style] .personal-photos-sheet[data-leaving] {
+  opacity: 1;
+}
 .personal-photos-wall-close-content {
   display: inline-flex;
   align-items: center;

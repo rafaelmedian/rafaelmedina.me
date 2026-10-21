@@ -112,6 +112,8 @@ export function usePhotoOriginTransition(
 ) {
   const flights = useRef<Flight[]>([])
   const sourceFades = useRef<Animation[]>([])
+  /** The wall's in-place entrance or exit, if one is running. */
+  const inPlace = useRef<Animation[]>([])
 
 
   useClientLayoutEffect(() => {
@@ -120,13 +122,12 @@ export function usePhotoOriginTransition(
     // style on the fan right after the wall mounted, forcing that layout a
     // step early inside the open's own task.
     const prints = Array.from(opener.querySelectorAll<HTMLElement>(".personal-photos-print"))
-    // The flat wall opens in place (below), so on the way in no photo has
-    // left its print: the fan stays as it is under the fading canvas. The
-    // close flies them home, and they are away for that.
+    // The flat wall opens and closes in place (below), so no photo ever
+    // leaves its print: the fan stays as it is under the fading canvas.
     const tokens = getComputedStyle(strip)
-    const inPlace = open && strip.dataset.layout === "wall"
+    const stays = strip.dataset.layout === "wall"
       && !(parseFloat(tokens.getPropertyValue("--wall-bend")) || parseFloat(tokens.getPropertyValue("--wall-rim")))
-    if (!inPlace) prints.forEach((element) => { element.setAttribute("data-photo-away", "") })
+    if (!stays) prints.forEach((element) => { element.setAttribute("data-photo-away", "") })
     // The opener wears it only while the sheet is actually over it. The fan
     // answers to the pointer as a whole, and the pointer is still on the tile
     // — the sheet just happens to be covering it — so without this the hand
@@ -195,14 +196,16 @@ export function usePhotoOriginTransition(
     const slides = Array.from(strip.querySelectorAll<HTMLElement>(".personal-photos-slide"))
     const bounds = strip.getBoundingClientRect()
 
-    // The flat wall opens in place. Flying every print out of the five on the
-    // fan sent dozens of photos criss-crossing the screen to slots that had
-    // nothing to do with where they started, and the wall read as being
-    // reshuffled rather than revealed. Each photo now appears where it lives,
-    // growing the last few percent as it fades in, in a short ripple out from
-    // the middle of the screen. The close still gathers the prints home.
+    // The flat wall opens and closes in place. Flying every print out of the
+    // five on the fan sent dozens of photos criss-crossing the screen to
+    // slots that had nothing to do with where they started, and the wall read
+    // as being reshuffled rather than revealed. Each photo now appears where
+    // it lives, growing the last few percent as it fades in, in a short ripple
+    // out from the middle of the screen; the close runs the same move
+    // backwards, the edges leaving first and the middle last, while the white
+    // canvas fades away over the page.
     const curvedWall = Boolean(parseFloat(tokens.getPropertyValue("--wall-bend")) || parseFloat(tokens.getPropertyValue("--wall-rim")))
-    if (open && opaqueWall && !curvedWall) {
+    if (opaqueWall && !curvedWall) {
       // A reopen while the prints were still flying home drops that return.
       previousFlights.forEach(removeFlight)
       sourceFades.current.forEach((animation) => animation.cancel())
@@ -210,27 +213,41 @@ export function usePhotoOriginTransition(
       const centreX = bounds.left + bounds.width / 2
       const centreY = bounds.top + bounds.height / 2
       const reach = Math.hypot(bounds.width, bounds.height) / 2
-      const entranceEasing = tokens.getPropertyValue("--ease-smooth").trim()
-      // Read every slot before starting any animation.
+      const placeEasing = tokens.getPropertyValue(open ? "--ease-smooth" : "--ease-exit").trim()
+      // Read every slot, and where an interrupted move left each photo,
+      // before starting or cancelling any animation.
       const onScreen = slides.map(slide => ({ slide, rect: slide.getBoundingClientRect() })).filter(({ rect }) =>
         rect.width && rect.right > bounds.left && rect.left < bounds.right && rect.bottom > bounds.top && rect.top < bounds.bottom)
-      const entrance = onScreen.map(({ slide, rect }) => {
+        .map(({ slide, rect }) => {
+          const style = getComputedStyle(slide)
+          return { slide, rect, from: { opacity: style.opacity, scale: style.scale === "none" ? "1" : style.scale } }
+        })
+      inPlace.current.forEach((animation) => animation.cancel())
+      const rest = { opacity: 1, scale: 1 }
+      const away = { opacity: 0, scale: 0.94 }
+      inPlace.current = onScreen.map(({ slide, rect, from }) => {
         const distance = Math.min(1, Math.hypot(rect.left + rect.width / 2 - centreX, rect.top + rect.height / 2 - centreY) / reach)
-        return slide.animate([{ opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1 }], {
-          duration: duration * 0.75, delay: distance * duration * 0.25, easing: entranceEasing, fill: "backwards",
+        return slide.animate(open ? [away, rest] : [from, away], {
+          duration: duration * 0.75, delay: (open ? distance : 1 - distance) * duration * 0.25,
+          easing: placeEasing, fill: open ? "backwards" : "forwards",
         })
       })
-      // Marks the wall while its photos are still arriving.
-      strip.setAttribute("data-entering", "")
-      let entered = false
-      void Promise.allSettled(entrance.map(animation => animation.finished)).then(() => {
-        if (!entered) strip.removeAttribute("data-entering")
+      // Marks the wall while its photos are arriving or leaving.
+      const marker = open ? "data-entering" : "data-leaving"
+      strip.setAttribute(marker, "")
+      let interrupted = false
+      const batch = inPlace.current
+      void Promise.allSettled(batch.map(animation => animation.finished)).then(() => {
+        if (interrupted) return
+        strip.removeAttribute(marker)
+        if (!open) onCloseComplete()
       })
-      // A close asked for mid-entrance measures the slides at rest.
       return () => {
-        entered = true
-        entrance.forEach((animation) => animation.finish())
-        strip.removeAttribute("data-entering")
+        interrupted = true
+        strip.removeAttribute(marker)
+        // Unmounting, nothing is left to read; otherwise the next move
+        // reads these where they stand and cancels them itself.
+        if (!strip.isConnected) batch.forEach((animation) => animation.cancel())
       }
     }
 

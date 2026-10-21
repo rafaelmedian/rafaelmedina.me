@@ -52,3 +52,29 @@ test("the wall opens in place over a white canvas that only fades in", async ({ 
   expect(backdrop.every((opacity, index) => index === 0 || opacity >= backdrop[index - 1])).toBe(true)
   expect(backdrop.at(-1)).toBe(1)
 })
+
+test("the wall closes in place and leaves the fan's prints where they are", async ({ page }) => {
+  await page.goto("/")
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
+  await page.locator(".personal-photos-label").click()
+  await expect(page.getByRole("region", { name: "Photo wall" })).toBeVisible()
+  await expect(page.locator(".personal-photos-sheet[data-entering]")).toHaveCount(0)
+  await page.evaluate(() => {
+    Object.assign(window, { closeSamples: [] as { flights: number; away: number }[] })
+    const sample = () => {
+      (window as unknown as { closeSamples: { flights: number; away: number }[] }).closeSamples.push({
+        flights: document.querySelectorAll(".personal-photos-flight").length,
+        away: document.querySelectorAll(".personal-photos-print[data-photo-away]").length,
+      })
+      if (document.querySelector(".personal-photos-dialog")) requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+  await page.keyboard.press("Escape")
+  await expect(page.locator(".personal-photos-sheet[data-leaving]")).toHaveCount(1)
+  await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
+  const samples = await page.evaluate(() => (window as unknown as { closeSamples: { flights: number; away: number }[] }).closeSamples)
+  expect(samples.length).toBeGreaterThan(1)
+  // Nothing flies home, and no print on the fan ever gives up its photo.
+  expect(samples.every(({ flights, away }) => flights === 0 && away === 0)).toBe(true)
+})
