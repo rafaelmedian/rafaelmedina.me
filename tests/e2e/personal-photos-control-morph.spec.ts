@@ -13,7 +13,9 @@ for (const width of [390, 1440]) {
       const animate = Element.prototype.animate
       Element.prototype.animate = function (...args) {
         const animation = animate.apply(this, args)
-        if (this.closest(".personal-photos-wall-close, .personal-photos-flight")) {
+        // The flat wall animates its slides in place; those animations own
+        // unmounting, so hold them along with the control under inspection.
+        if (this.closest(".personal-photos-wall-close, .personal-photos-slide, .personal-photos-flight")) {
           animation.pause()
           animation.currentTime = 0
         }
@@ -28,7 +30,7 @@ for (const width of [390, 1440]) {
     expect(Math.abs(opening!.width - origin!.width)).toBeLessThan(1)
     expect(Math.abs(opening!.y - origin!.y)).toBeLessThan(1)
     await close.evaluate(element => element.getAnimations({ subtree: true }).forEach(animation => animation.finish()))
-    await page.locator(".personal-photos-flight").evaluateAll(elements => elements.forEach(element => element.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
+    await page.locator(".personal-photos-slide, .personal-photos-flight").evaluateAll(elements => elements.forEach(element => element.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
     await expect(close.locator(".personal-photos-control-morph-label")).toHaveCount(0)
     await close.click()
     await close.evaluate(async element => {
@@ -40,7 +42,7 @@ for (const width of [390, 1440]) {
     expect(Math.abs(returning!.width - origin!.width)).toBeLessThan(1)
     expect(Math.abs(returning!.y - origin!.y)).toBeLessThan(1)
     await expect(page.locator(".personal-photos-dialog")).toHaveCSS("opacity", "1")
-    await page.locator(".personal-photos-flight").evaluateAll(elements => elements.forEach(element => element.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
+    await page.locator(".personal-photos-wall-close, .personal-photos-slide, .personal-photos-flight").evaluateAll(elements => elements.forEach(element => element.getAnimations({ subtree: true }).forEach(animation => animation.finish())))
     await expect(close).toHaveCount(0)
     await expect(page.getByRole("button", { name: "Table of contents: Work" })).toBeVisible()
   })

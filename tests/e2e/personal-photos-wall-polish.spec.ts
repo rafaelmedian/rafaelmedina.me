@@ -4,11 +4,15 @@ test("wall photos stay still on hover and show hand cursors for interaction", as
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await page.locator(".personal-photos-label").click()
+  // A zero-count entrance assertion also passes before the deferred sheet
+  // mounts. Establish its presence before waiting for the entrance to finish.
+  await expect(page.getByRole("region", { name: "Photo wall" })).toBeVisible()
   await expect(page.locator(".personal-photos-flight")).toHaveCount(0)
   // The photos open in place; let them finish growing in before measuring.
   await expect(page.locator(".personal-photos-sheet[data-entering]")).toHaveCount(0)
   await page.mouse.move(5, 5)
   const photo = page.locator('.personal-photos-sheet [data-photo-id="office"]')
+  await expect(photo).toHaveCSS("scale", "none")
   const before = (await photo.boundingBox())!
   await photo.hover()
   await expect(photo).toHaveCSS("cursor", "pointer")
