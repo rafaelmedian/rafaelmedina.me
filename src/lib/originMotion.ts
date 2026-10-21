@@ -43,9 +43,6 @@ function visibleOriginRect(element: Element | null | undefined): DOMRect | null 
 // The corner a tile shows, which is not always its own: several tiles round an
 // inner frame that fills them. The first element filling the tile's box with a
 // radius is the outline the eye reads.
-const sameBox = (a: DOMRect, b: DOMRect) =>
-  Math.abs(a.width - b.width) <= 1 && Math.abs(a.height - b.height) <= 1
-
 function originCornerRadius(element: Element | null | undefined): number {
   if (!element) return 0
 
@@ -146,10 +143,13 @@ function buildOriginKeyframes(
 }
 
 type ZoomGeometry = {
-  /** The tile, relative to the viewport. */
+  /** The tile's outline, relative to the viewport: where the clip starts. */
   origin: DOMRect
   /** The tile's corner radius, so the clip starts on the tile's own outline. */
   radius: number
+  /** The tile's painted artwork, which the surface's artwork lands on. The
+   *  tile itself when it marks none. */
+  artwork: DOMRect
   /** The surface at rest. */
   target: DOMRect
   /** The part of the surface that lands on the tile, at rest: the artwork the
@@ -197,21 +197,21 @@ function buildZoomKeyframes(
   geometry: ZoomGeometry,
   rest: { radii: Corners; bleed: number },
 ) {
-  const { origin, radius, target, anchor, fit } = geometry
+  const { origin, radius, artwork, target, anchor, fit } = geometry
   const ease = mode === "open" ? zoomOpen : zoomClose
   const scaleFrom = fit === "cover"
-    ? Math.max(origin.width / anchor.width, origin.height / anchor.height)
-    : origin.width / anchor.width
+    ? Math.max(artwork.width / anchor.width, artwork.height / anchor.height)
+    : artwork.width / anchor.width
   // Scaled about the surface's top-left corner, a point at `local` px into the
   // surface lands at target + translate + local * scale. These translates put
   // the anchor's centre on the tile's (cover) or its top-left corner on the
   // tile's (top).
   const dx = fit === "cover"
-    ? origin.left + origin.width / 2 - target.left - (anchor.left - target.left + anchor.width / 2) * scaleFrom
-    : origin.left - target.left - (anchor.left - target.left) * scaleFrom
+    ? artwork.left + artwork.width / 2 - target.left - (anchor.left - target.left + anchor.width / 2) * scaleFrom
+    : artwork.left - target.left - (anchor.left - target.left) * scaleFrom
   const dy = fit === "cover"
-    ? origin.top + origin.height / 2 - target.top - (anchor.top - target.top + anchor.height / 2) * scaleFrom
-    : origin.top - target.top - (anchor.top - target.top) * scaleFrom
+    ? artwork.top + artwork.height / 2 - target.top - (anchor.top - target.top + anchor.height / 2) * scaleFrom
+    : artwork.top - target.top - (anchor.top - target.top) * scaleFrom
 
   // Clip insets as [top, right, bottom, left] and radii as [tl, tr, br, bl]:
   // the tile's rectangle, mapped back through the starting pose into the
@@ -273,6 +273,39 @@ function buildSourceKeyframes(mode: "open" | "close", handoff: number): Keyframe
     ]
 }
 
+const transparent = (color: string) => color === "transparent" || /rgba\(.*,\s*0\)$/.test(color)
+
+// Everything on the surface that is not the artwork, and every fill between
+// the artwork and the surface's edge. Matching the tile means the surface
+// lands as the tile does: the artwork on the tile's own fill, inside its
+// outline, with no card body, title, or controls around it.
+function surroundings(root: Element, keep: Element) {
+  const chrome: Element[] = []
+  const fills: { element: Element; color: string }[] = []
+  const fill = (candidate: Element) => {
+    const color = getComputedStyle(candidate).backgroundColor
+    if (!transparent(color)) fills.push({ element: candidate, color })
+  }
+  fill(keep)
+  let element: Element = keep
+  while (element !== root && element.parentElement) {
+    const parent: Element = element.parentElement
+    for (const sibling of Array.from(parent.children)) if (sibling !== element) chrome.push(sibling)
+    if (parent !== root) fill(parent)
+    element = parent
+  }
+  return { chrome, fills }
+}
+
+// Closing, the card's body and controls are gone and its fills are the tile's
+// a third of the way down, so what lands is the tile. Opening holds the
+// tile's look while the image grows, then unfolds the card around it.
+function buildMatchKeyframes(mode: "open" | "close", tile: string, rest: string, property: "opacity" | "backgroundColor"): Keyframe[] {
+  return mode === "open"
+    ? [{ [property]: tile, offset: 0 }, { [property]: tile, offset: 0.25 }, { [property]: rest, offset: 0.7 }, { [property]: rest, offset: 1 }]
+    : [{ [property]: rest, offset: 0 }, { [property]: tile, offset: 0.35 }, { [property]: tile, offset: 1 }]
+}
+
 // Marks the part of a tile its artwork occupies, so the surface's artwork can
 // land on it. A tile without one is the anchor itself.
 export const originArtworkAttribute = "data-origin-artwork"
@@ -304,8 +337,10 @@ export function paintedRect(element: Element): DOMRect {
 
 function syncPlayback(from: Element | null | undefined, to: Element | null | undefined) {
   if (!(from instanceof HTMLVideoElement) || !(to instanceof HTMLVideoElement)) return
-  const source = (video: HTMLVideoElement) => (video.currentSrc || video.src).split("/").pop()
-  if (!source(from) || source(from) !== source(to)) return
+  // The tile and the gallery load different renditions of the same clip (the
+  // gallery's is larger), so the file names differ; the same length is the
+  // same clip.
+  if (!Number.isFinite(from.duration) || Math.abs(from.duration - to.duration) > 0.1) return
   try {
     to.currentTime = from.currentTime
   } catch {
@@ -339,6 +374,10 @@ export type OriginTravelOptions = {
   getFadeNode?: () => Element | null
   /** The element inside the surface that should land on the tile. */
   getZoomAnchor?: () => Element | null
+  /** The part of the surface that stays while it stands in for the tile:
+   *  the artwork's frame. Everything around it fades, and the fills between
+   *  it and the surface's edge take the tile's colour. */
+  getZoomKeep?: () => Element | null
   /** The frame around the surface: where `data-origin-zoom` is raised for the
    *  length of a zoom, whose scroll is held still while it flies, and where
    *  the durations are read. Without one, the surface falls back to a lift. */
@@ -388,7 +427,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
   const run = useCallback((mode: "open" | "close") => {
     const {
       node, getOrigin, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode,
-      getZoomAnchor, getZoomFrame, getZoomOutline, handoffDurationProperty, zoomOpenDurationProperty, zoomCloseDurationProperty,
+      getZoomAnchor, getZoomKeep, getZoomFrame, getZoomOutline, handoffDurationProperty, zoomOpenDurationProperty, zoomCloseDurationProperty,
     } = inputs.current
     if (!node || !enabled) return
     if (typeof node.animate !== "function") return
@@ -400,9 +439,8 @@ export function useOriginTravel(options: OriginTravelOptions) {
     const fullScreen = window.matchMedia(fullScreenQuery).matches
     const origin = getOrigin(mode)
     const artwork = originArtwork(origin)
-    // The artwork's painted box when the tile marks one, the tile's own
-    // otherwise. Only a tile in view aims a flight.
-    const originRect = visibleOriginRect(origin) && (artwork ? paintedRect(artwork.element) : origin!.getBoundingClientRect())
+    // Only a tile in view aims a flight.
+    const originRect = visibleOriginRect(origin)
     const zoomFrame = originRect ? getZoomFrame?.() ?? null : null
     const durationOf = (element: Element, property: string) =>
       cssTimeToMilliseconds(getComputedStyle(element).getPropertyValue(property))
@@ -413,11 +451,15 @@ export function useOriginTravel(options: OriginTravelOptions) {
       const anchorElement = getZoomAnchor?.()
       const anchorRect = anchorElement ? paintedRect(anchorElement) : null
       const anchor = anchorRect && anchorRect.width > 0 && anchorRect.height > 0 ? anchorRect : null
+      // The clip starts and ends on the tile's whole outline, and the
+      // surface's artwork lands on the tile's painted artwork. A tile and a
+      // surface that both have artwork match the rest too (below); without,
+      // the surface lands as a whole.
+      const matched = Boolean(artwork && anchor)
       const geometry: ZoomGeometry = {
         origin: originRect,
-        // A letterboxed image is square-cornered; one filling its frame wears
-        // the frame's rounding.
-        radius: originCornerRadius(artwork && !sameBox(originRect, artwork.frame.getBoundingClientRect()) ? artwork.element : artwork?.frame ?? origin),
+        radius: originCornerRadius(origin),
+        artwork: matched ? paintedRect(artwork!.element) : originRect,
         target,
         anchor: anchor ?? target,
         fit: anchor ? "cover" : "top",
@@ -452,6 +494,18 @@ export function useOriginTravel(options: OriginTravelOptions) {
         ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
         : [0, 0, 0, 0]) as Corners
       flights = [node.animate(buildZoomKeyframes(mode, geometry, { radii, bleed: fullScreen ? 0 : cardClipBleed }), timing)]
+
+      const keep = matched ? getZoomKeep?.() : null
+      const tileFill = origin ? getComputedStyle(origin).backgroundColor : "transparent"
+      if (keep && !transparent(tileFill)) {
+        const { chrome, fills } = surroundings(node, keep)
+        for (const element of chrome) {
+          flights.push(element.animate(buildMatchKeyframes(mode, "0", "1", "opacity"), timing))
+        }
+        for (const { element, color } of fills) {
+          flights.push(element.animate(buildMatchKeyframes(mode, tileFill, color, "backgroundColor"), timing))
+        }
+      }
 
       // The two videos loop on their own clocks, so the one taking over shows
       // a different moment of the same loop and the hand-off jumped. The one

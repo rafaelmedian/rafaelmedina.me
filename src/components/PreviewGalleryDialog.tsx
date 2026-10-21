@@ -408,6 +408,7 @@ export function PreviewGalleryDialog({
       return frame?.querySelector(".preview-gallery-media") ?? frame ?? null
     },
     getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
+    getZoomKeep: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
     getZoomOutline: () => cardRef.current,
     handoffDurationProperty: "--pg-zoom-handoff-ms",
     zoomOpenDurationProperty: "--pg-zoom-open-ms",
