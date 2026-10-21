@@ -5489,3 +5489,31 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   const addresses = [...new Set(text.match(/[\w.+-]+@[\w.-]+\.\w{2,}/g) ?? [])]
   expect(addresses).toEqual([contactEmail])
 })
+
+// Notes always had a "Copy link"; projects and the résumé have prerendered
+// pages of their own too, and now offer the same pill. The clipboard is stubbed:
+// a parallel run's page is rarely frontmost, and writeText rejects off-front.
+test("offers each project and the résumé their public link to copy", async ({ page }) => {
+  await page.addInitScript(() => {
+    const copied: string[] = []
+    Object.assign(window, { copiedLinks: copied })
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: async (text: string) => { copied.push(text) } } })
+  })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha homepage preview/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const projectLink = dialog.getByRole("link", { name: "Copy a link to this project" })
+  await expect(projectLink).toHaveAttribute("href", "https://rafaelmedina.me/work/matcha-homepage/")
+  await projectLink.click()
+  await expect(projectLink).toHaveAttribute("data-copied", "true")
+  await expect(dialog.getByRole("status").filter({ hasText: "Link to this project copied to clipboard" })).toBeAttached()
+
+  await page.goto("/resume/")
+  const resumeLink = page.getByRole("dialog", { name: "Résumé" }).getByRole("link", { name: "Copy a link to this résumé" })
+  await expect(resumeLink).toHaveAttribute("href", "https://rafaelmedina.me/resume/")
+  await resumeLink.click()
+  expect(await page.evaluate(() => (window as unknown as { copiedLinks: string[] }).copiedLinks)).toEqual(["https://rafaelmedina.me/resume/"])
+})

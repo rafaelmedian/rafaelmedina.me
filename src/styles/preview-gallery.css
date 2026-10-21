@@ -573,6 +573,7 @@
 .preview-gallery-likes {
   position: relative;
   z-index: 1;
+  display: flex;
   height: 0;
   min-height: 0;
   flex-wrap: nowrap;
@@ -591,7 +592,12 @@
 /* Floating chrome rather than a control on a page: no border, the overlay tier
    the rest of this dialog's floating pieces wear, and enough opacity to stay
    legible over whatever the shot puts under it. */
-.preview-gallery-likes .like-button {
+.preview-gallery-likes .like-row {
+  min-height: 0;
+}
+
+.preview-gallery-likes .like-button,
+.preview-gallery-likes .writing-copy-link {
   height: 36px;
   padding-inline: 0.85rem;
   border: none;
@@ -600,7 +606,8 @@
 }
 
 @media (hover: hover) {
-  .preview-gallery-likes .like-button:hover {
+  .preview-gallery-likes .like-button:hover,
+  .preview-gallery-likes .writing-copy-link:hover {
     box-shadow: var(--glass-hairline), var(--shadow-overlay-hover), var(--glass-rim);
   }
 }
@@ -896,6 +903,15 @@
   margin: 0;
   font-size: var(--text-sm);
   line-height: 1.5;
+}
+
+/* The PDF link and this page's address, side by side at the heading's end:
+   the PDF is the document, the pill is the link to send. */
+.preview-gallery-resume-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .preview-gallery-resume-body {

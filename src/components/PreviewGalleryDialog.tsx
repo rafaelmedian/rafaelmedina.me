@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
+import { projectPath, resumePath, siteOrigin } from "../lib/projectMetadata"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
 import { revealGalleryEntry } from "../lib/galleryEntry"
@@ -14,6 +15,7 @@ import { groupWritingsByCategory } from "../lib/writings"
 import { useGalleryPage, type GalleryPageDirection } from "../lib/useGalleryPage"
 import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
+import { CopyPageLink } from "./CopyPageLink"
 import { PreviewMedia } from "./PreviewMedia"
 import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
@@ -754,10 +756,16 @@ export function PreviewGalleryDialog({
                           Keyed by project, so paging starts the next count
                           from scratch instead of carrying this one's over
                           while its own read is still in flight. */}
-                      {import.meta.env.VITE_LIKES_API_URL ? (
-                        <LikeButton key={activeCard.id} collection="projects" itemId={activeCard.id}
-                          className="preview-gallery-likes" />
-                      ) : null}
+                      {/* The project's own link rides the same line: a page
+                          worth liking is a page worth sending on, and each
+                          project has a prerendered URL that opens straight
+                          into this slide. */}
+                      <div className="preview-gallery-likes">
+                        {import.meta.env.VITE_LIKES_API_URL ? (
+                          <LikeButton key={activeCard.id} collection="projects" itemId={activeCard.id} />
+                        ) : null}
+                        <CopyPageLink key={`link-${activeCard.id}`} href={`${siteOrigin}${projectPath(activeCard)}`} subject="project" />
+                      </div>
 
                       <div className="preview-gallery-content">
                         <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
@@ -850,23 +858,26 @@ export function PreviewGalleryDialog({
                           <Dialog.Title className="preview-gallery-title preview-gallery-resume-title">
                             {resumeItemTitle}
                           </Dialog.Title>
-                          <p className="mosaic-about-resume-download">
-                            <a
-                              href={siteLinks.resumePdf}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mosaic-about-link"
-                              onClick={() => {
-                                trackEvent("social_link_click", {
-                                  social_label: "View Resume",
-                                  social_href: siteLinks.resumePdf,
-                                  social_placement: "resume_dialog",
-                                })
-                              }}
-                            >
-                              View PDF
-                            </a>
-                          </p>
+                          <div className="preview-gallery-resume-actions">
+                            <p className="mosaic-about-resume-download">
+                              <a
+                                href={siteLinks.resumePdf}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mosaic-about-link"
+                                onClick={() => {
+                                  trackEvent("social_link_click", {
+                                    social_label: "View Resume",
+                                    social_href: siteLinks.resumePdf,
+                                    social_placement: "resume_dialog",
+                                  })
+                                }}
+                              >
+                                View PDF
+                              </a>
+                            </p>
+                            <CopyPageLink href={`${siteOrigin}${resumePath}`} subject="résumé" />
+                          </div>
                         </div>
                       </header>
                       <Dialog.Description className="sr-only">
