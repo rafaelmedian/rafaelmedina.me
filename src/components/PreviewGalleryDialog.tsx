@@ -48,7 +48,6 @@ type PreviewGalleryDialogProps = {
 type PreviewSwitchDirection = "prev" | "next"
 type PreviewSwitchPhase = "idle" | "out" | "in"
 
-const previewCloseResetMs = 260
 const largeDesktopPreviewQuery = "(min-width: 1320px)"
 
 function shouldOpenPreviewWide() {
@@ -139,7 +138,6 @@ export function PreviewGalleryDialog({
   const prevOpenRef = useRef(open && !openedByGesture)
   const switchTimeoutRef = useRef<number | null>(null)
   const switchFrameRef = useRef<number | null>(null)
-  const closeResetTimeoutRef = useRef<number | null>(null)
   const originWrapRef = useRef<HTMLDivElement | null>(null)
   const popupRef = useRef<HTMLDivElement | null>(null)
   // The card is the surface that scrolls, so it is also what opening focuses:
@@ -305,10 +303,6 @@ export function PreviewGalleryDialog({
   }, [open])
 
   useEffect(() => {
-    if (open && closeResetTimeoutRef.current !== null) {
-      window.clearTimeout(closeResetTimeoutRef.current)
-      closeResetTimeoutRef.current = null
-    }
     // Silent until the context exists: building it here stalls the entrance.
     if (open && !prevOpenRef.current && isAudioWarm()) playOpen()
     prevOpenRef.current = open
@@ -321,9 +315,6 @@ export function PreviewGalleryDialog({
       }
       if (switchFrameRef.current !== null) {
         window.cancelAnimationFrame(switchFrameRef.current)
-      }
-      if (closeResetTimeoutRef.current !== null) {
-        window.clearTimeout(closeResetTimeoutRef.current)
       }
     }
   }, [])
@@ -410,14 +401,6 @@ export function PreviewGalleryDialog({
         playClose()
         runOriginAnimation("close")
         cancelSwitchTransition()
-        if (closeResetTimeoutRef.current !== null) {
-          window.clearTimeout(closeResetTimeoutRef.current)
-        }
-        closeResetTimeoutRef.current = window.setTimeout(() => {
-          setSwitchPhase("idle")
-          setIsWide(false)
-          closeResetTimeoutRef.current = null
-        }, previewCloseResetMs)
       }
       onOpenChange(nextOpen)
     },
@@ -566,7 +549,19 @@ export function PreviewGalleryDialog({
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
   return (
     <Dialog.Root open={rootMounted && present && !leavingNote} onOpenChange={handleOpenChange}
-      onOpenChangeComplete={(isOpen) => { if (isOpen) warmAudioWhenIdle(); else setLeavingNote(null) }}>
+      onOpenChangeComplete={(isOpen) => {
+        if (isOpen) {
+          warmAudioWhenIdle()
+          return
+        }
+        setLeavingNote(null)
+        // Reset only once the exit has finished. A 260ms timer used to drop
+        // the wide layout mid-way through the 360ms zoom back into the tile:
+        // the card reflowed narrower under a clip measured for the wide one,
+        // and a shrunken copy of the whole card flashed beside the tile.
+        setSwitchPhase("idle")
+        setIsWide(false)
+      }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
 
