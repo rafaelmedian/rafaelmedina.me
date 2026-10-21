@@ -44,24 +44,26 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const backRef = useRef<HTMLButtonElement>(null)
   const bookRef = useRef<HTMLButtonElement>(null)
+  const calLinkRef = useRef<HTMLAnchorElement>(null)
+  const calendarOpenerRef = useRef<"link" | "button">("button")
   const historyRef = useRef<HTMLDivElement>(null)
   const hintId = useId()
   const sending = outbox.some(item => item.status === "sending")
   const atLimit = outbox.length >= 5
   const dictation = useMessageDictation(open && !calendar && !!confirmedEmail && !atLimit, setMessage)
-  const [entrance, setEntrance] = useState({ open, keys: ["hello", "catch-up", "email-prompt"] })
+  const [entrance, setEntrance] = useState({ open, keys: ["hello", "catch-up", "email-prompt", "cal-note", "cal-link"] })
   if (entrance.open !== open) {
     setEntrance({ open, keys: [
-      "hello", "catch-up", "email-prompt",
+      "hello", "catch-up", "email-prompt", "cal-note", "cal-link",
       ...(confirmedEmail ? ["address", "message-prompt"] : []),
       ...outbox.map(item => item.requestId),
     ] })
   }
-  // The three greeting bubbles keep a conversational 160ms beat. A reopen
+  // The five greeting bubbles keep a conversational 160ms beat. A reopen
   // replays everything saved after them on a 40ms step instead, so five sent
   // messages land in 200ms rather than 800ms, and the composer arrives with the
   // last of them instead of at a fixed 680ms that put it mid-replay.
-  const entranceDelay = (order: number) => order < 3 ? 200 + order * 160 : 520 + (order - 2) * 40
+  const entranceDelay = (order: number) => order < 5 ? 200 + order * 160 : 840 + (order - 4) * 40
   const entryStyle = (key: string, newDelay = 0) => {
     const order = entrance.keys.indexOf(key)
     return { animationDelay: `${order < 0 ? newDelay : entranceDelay(order)}ms` }
@@ -70,6 +72,15 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
     "--booking-compose-delay": `${entranceDelay(entrance.keys.length - 1) + 160}ms`,
   } as CSSProperties
 
+
+  const openCalendar = (email: string, from: "link" | "button") => {
+    popupRef.current?.focus({ preventScroll: true })
+    setContactOpen(false)
+    setCalendarEmail(email)
+    setCalendar(true)
+    calendarOpenerRef.current = from
+    requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
+  }
 
   const composerRef = useCallback((node: HTMLElement | null) => {
     if (!node) return
@@ -161,7 +172,8 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
             aria-label="Back to conversation" onClick={() => {
               popupRef.current?.focus({ preventScroll: true })
               setCalendar(false)
-              requestAnimationFrame(() => bookRef.current?.focus({ preventScroll: true }))
+              const opener = calendarOpenerRef.current === "link" ? calLinkRef.current : bookRef.current
+              requestAnimationFrame(() => (opener ?? calLinkRef.current)?.focus({ preventScroll: true }))
             }}><PanelRightClose size={20} /></button>}
           <header className="booking-identity">
             <img ref={portraitRef} src={siteProfile.photo} width="52" height="52" alt="" />
@@ -171,10 +183,23 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
             }} calendarFocus={calendar ? backRef : undefined} />
           </header>
           <section className="booking-conversation" aria-label="Conversation with Rafael">
-            <div className="booking-history" ref={historyRef} role="log" aria-label="Conversation" aria-live={open ? "polite" : "off"}>
+            <div className="booking-history" ref={historyRef} style={{ "--booking-avatar": `url("${siteProfile.photo}")` } as CSSProperties} role="log" aria-label="Conversation" aria-live={open ? "polite" : "off"}>
               <div className="booking-bubble" style={entryStyle("hello")}>Hey, what’s up?</div>
               <div className="booking-bubble" style={entryStyle("catch-up")}>we should chat properly</div>
               <div className="booking-bubble" style={entryStyle("email-prompt")}>where should i email you?</div>
+              <div className="booking-bubble" style={entryStyle("cal-note")}>or just grab a time</div>
+              <a ref={calLinkRef} className="booking-bubble booking-link-preview" href={bookingUrl} style={entryStyle("cal-link")}
+                onClick={event => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+                  event.preventDefault()
+                  openCalendar(confirmedEmail, "link")
+                }}>
+                <CalendarThumbnail />
+                <span className="booking-link-preview-caption">
+                  <span className="booking-link-preview-title">30-min call with Rafael</span>
+                  <span className="booking-link-preview-domain">cal.com</span>
+                </span>
+              </a>
               {confirmedEmail && <>
                 <div className="booking-email-confirmation" style={entryStyle("address")}>
                   <Menu.Root modal={false}>
@@ -209,19 +234,13 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
               <label className="sr-only" htmlFor={`${hintId}-email`}>Your email</label>
               <div className="booking-composer">
                 <input id={`${hintId}-email`} type="email" autoComplete="email" required maxLength={254}
-                  {...ignorePasswordManagers} placeholder="Your email address" value={email}
+                  {...ignorePasswordManagers} placeholder="you@example.com" value={email}
                   onChange={event => setEmail(event.target.value)} aria-describedby={hintId} />
                 <button className="booking-send" type="submit" aria-label="Continue with email" disabled={!isContactEmail(email)}><ArrowUp size={24} /></button>
               </div>
               <p className="booking-hint" id={hintId}>Just for our conversation. No mailing list.</p>
             </form> : <div ref={composerRef} className="booking-compose-area booking-compose-row" style={composeStyle}>
-              <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" title="Book a time · 30 min" onClick={() => {
-                popupRef.current?.focus({ preventScroll: true })
-                setContactOpen(false)
-                setCalendarEmail(confirmedEmail)
-                setCalendar(true)
-                requestAnimationFrame(() => backRef.current?.focus({ preventScroll: true }))
-              }}><Calendar size={20} strokeWidth={1.75} aria-hidden="true" /></button>
+              <button ref={bookRef} className="booking-time-button" type="button" aria-label="Book a time" title="Book a time · 30 min" onClick={() => openCalendar(confirmedEmail, "button")}><Calendar size={20} strokeWidth={1.75} aria-hidden="true" /></button>
               <form onSubmit={send}>
                 <div className="booking-composer">
                   <textarea ref={messageRef} aria-label="Your message" aria-describedby={atLimit ? hintId : dictation.status ? `${hintId}-dictation` : undefined} rows={1} maxLength={2000}
@@ -253,4 +272,44 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
       </div>
     </Dialog.Portal>
   </Dialog.Root>
+}
+
+// The link preview's thumbnail: this month at a glance. It is drawn rather
+// than fetched, so it never shows a stale screenshot or waits on cal.com, and
+// it is only a hint -- the real slots are in the embed. Every week takes one
+// weekday off and the rest are nearly full or open, picked by a hash of the
+// date, so the month looks lived-in and stays the same across reloads.
+function thumbnailHash(seed: number) {
+  let hash = (seed + 0x9e3779b9) >>> 0
+  hash = Math.imul(hash ^ (hash >>> 15), 0x85ebca6b)
+  hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35)
+  return (hash ^ (hash >>> 16)) >>> 0
+}
+
+function thumbnailDayState(year: number, month: number, day: number, weekday: number, week: number) {
+  if (thumbnailHash(year * 1000 + month * 10 + week) % 5 + 1 === weekday) return "off"
+  return thumbnailHash(year * 10000 + month * 100 + day) % 2 ? "busy" : "open"
+}
+
+function CalendarThumbnail() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = today.getMonth()
+  const lead = new Date(year, month, 1).getDay()
+  const days = new Date(year, month + 1, 0).getDate()
+  return <span className="booking-link-preview-thumbnail" aria-hidden="true">
+    <span className="booking-thumbnail-month">{today.toLocaleDateString("en-US", { month: "long" })}</span>
+    <span className="booking-thumbnail-grid">
+      {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => <span key={index} className="booking-thumbnail-weekday">{day}</span>)}
+      {Array.from({ length: lead }, (_, index) => <span key={`lead-${index}`} />)}
+      {Array.from({ length: days }, (_, index) => {
+        const day = index + 1
+        const weekday = (lead + index) % 7
+        const ahead = day > today.getDate() && weekday > 0 && weekday < 6
+        return <span key={day} className="booking-thumbnail-day"
+          data-state={ahead ? thumbnailDayState(year, month, day, weekday, Math.floor((lead + index) / 7)) : undefined}
+          data-today={day === today.getDate() || undefined}>{day}</span>
+      })}
+    </span>
+  </span>
 }

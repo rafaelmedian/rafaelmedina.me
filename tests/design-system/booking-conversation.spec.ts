@@ -144,13 +144,15 @@ test('replays staggered greetings on open and skips motion when requested', asyn
         animation.currentTime = 100
         const hidden = getComputedStyle(node).opacity
         const delay = animation.effect!.getTiming().delay
-        animation.currentTime = 1000
+        animation.finish()
         return { delay, hidden, visible: getComputedStyle(node).opacity }
       }))
     expect(entrances).toEqual([
       { delay: 200, hidden: '0', visible: '1' },
       { delay: 360, hidden: '0', visible: '1' },
       { delay: 520, hidden: '0', visible: '1' },
+      { delay: 680, hidden: '0', visible: '1' },
+      { delay: 840, hidden: '0', visible: '1' },
     ])
     await dialog.getByRole('button', { name: 'Close conversation' }).click()
     await expect(dialog).toBeHidden()
@@ -264,9 +266,9 @@ test('replays saved email and delivered messages in conversation order', async (
   await expect(chat).toBeVisible()
   const entries = chat.locator('.booking-history > *')
   expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).animationDelay)))
-    // The three greetings keep their 160ms beat; everything saved after them
+    // The five greetings keep their 160ms beat; everything saved after them
     // replays on a 40ms step, so a full history lands in 200ms not 800ms.
-    .toEqual(['0.2s', '0.36s', '0.52s', '0.56s', '0.6s', '0.64s', '0.68s'])
+    .toEqual(['0.2s', '0.36s', '0.52s', '0.68s', '0.84s', '0.88s', '0.92s', '0.96s', '1s'])
   const receipt = chat.locator('.booking-delivery').last()
   await receipt.evaluate(node => {
     const animation = node.getAnimations()[0]
