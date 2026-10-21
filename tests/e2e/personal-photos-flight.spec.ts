@@ -49,7 +49,10 @@ for (const width of [1440, 390]) {
           return flights.map(flight => ({
             opacity: Number(getComputedStyle(flight).opacity),
             borrowedShadow: flight.hasAttribute("data-photo-trailing") ? getComputedStyle(flight).boxShadow : "none",
-            frame: parseFloat(getComputedStyle(flight).paddingTop),
+            // The fan's border is padding; the wall's is the print shadow's
+            // first layer, a white spread drawn outside the photo.
+            frame: parseFloat(getComputedStyle(flight).paddingTop)
+              + Number(getComputedStyle(flight).boxShadow.match(/^rgba?\([^)]*\) 0px 0px 0px ([\d.]+)px/)?.[1] ?? 0),
             // A copy below the popup is visible only if the wall surface does
             // not paint over it. The opaque backdrop belongs below both.
             covered: Number(getComputedStyle(flight).zIndex) < Number(getComputedStyle(dialog).zIndex)
@@ -62,7 +65,8 @@ for (const width of [1440, 390]) {
       // Borrowed photos only take on the print's shadow away from the fan,
       // where it cannot stack into a halo beneath the cards.
       const atFan = direction === "open" ? frames[0] : frames[4]
-      expect(atFan.every(frame => frame.borrowedShadow === "none"), `${direction}: borrowed photos stack extra shadows beneath the fan`).toBe(true)
+      // At most the white frame layer, at (near) zero width: no dark layer.
+      expect(atFan.every(frame => frame.borrowedShadow === "none" || /^rgb\(255, 255, 255\) 0px 0px 0px [\de.-]+px$/.test(frame.borrowedShadow)), `${direction}: borrowed photos stack extra shadows beneath the fan`).toBe(true)
       // The wall wears the fan's print, so no photo loses its frame mid-air.
       expect(frames.flat().every(frame => frame.frame > 0), `${direction}: every photo keeps its white frame`).toBe(true)
       if (direction === "close") {

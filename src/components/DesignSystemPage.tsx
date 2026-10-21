@@ -1233,11 +1233,11 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-block" data-ds-terms={terms("personal photos fan print white border wall close pill")}>
               <p className="ds-subhead">Personal photos</p>
               <p className="ds-caption">
-                A fan of square prints, each framed by a thin <code>--canvas</code> border with{" "}
-                <code>--shadow-ring</code> and <code>--shadow-control-hover</code>. Opening flies every print to its
+                A fan of square prints, each framed by a thin <code>--canvas</code> border and a crisp print shadow
+                (a hairline edge, a tight contact shadow and a short lift; scoped to personal-photos.css). Opening flies every print to its
                 place on a full-screen photo wall over <code>--photo-open-duration</code> and back over{" "}
-                <code>--photo-close-duration</code>. The wall wears the same print, so no photo loses its frame in
-                flight. The only visible control is a <code>--radius-full</code> Close
+                <code>--photo-close-duration</code>. The wall wears the same print, its frame one fixed width on every
+                photo, so no photo loses its frame in flight. The only visible control is a <code>--radius-full</code> Close
                 pill.
               </p>
               <PersonalPhotos />

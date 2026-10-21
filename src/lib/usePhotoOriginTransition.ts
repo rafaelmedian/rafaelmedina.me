@@ -35,6 +35,13 @@ function readFlightTransform(element: HTMLElement) {
   return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${angle}deg) scale(${Math.hypot(matrix.a, matrix.b)})`
 }
 
+/** The white frame layer of a computed print shadow alone, at a share of
+    its width: the first layer of the list, "rgb(…) 0px 0px 0px 10px". */
+function printFrame(shadow: string, share: number) {
+  const frame = shadow.match(/^(rgba?\([^)]*\)) 0px 0px 0px ([\d.]+)px/)
+  return frame ? `${frame[1]} 0px 0px 0px ${Number(frame[2]) * share}px` : "none"
+}
+
 type PhotoOrigin = {
   id: string | undefined
   element: HTMLElement
@@ -314,15 +321,16 @@ export function usePhotoOriginTransition(
         clone.animate([open ? originFrame(source) : currentFrame, open ? targetFrame : originFrame(source)], timing),
         image.animate([open ? originImage(source) : currentImage, open ? targetImage : originImage(source)], timing),
         caption.animate([{ opacity: open ? 0 : currentCaptionOpacity }, { opacity: open ? 1 : 0 }], timing),
-        // A borrowed photo stays shadowless while it is stacked under the
-        // fan, as above, but its wall slot wears the print's shadow. It takes
-        // that shadow on over the second half of the trip out and gives it
-        // up over the first half of the trip home, so the handoff to its
-        // slot never pops a shadow on or off. Added last, it wins over the
-        // frame's own `none`.
+        // A borrowed photo casts no shadow while it is stacked under the
+        // fan, as above, but its wall slot wears the print shadow, whose
+        // first layer is the white frame. The frame grows from the first
+        // frame as the borrowed print's padding gives way to it; the dark
+        // layers only arrive over the second half of the trip out and leave
+        // over the first half of the trip home, so the handoff to its slot
+        // never pops a shadow or a frame. Added last, it wins over `none`.
         ...(opaqueWall && !own && frame.boxShadow ? [clone.animate(open
-          ? [{ boxShadow: "none" }, { boxShadow: "none", offset: 0.5 }, { boxShadow: frame.boxShadow }]
-          : [{ boxShadow: currentShadow }, { boxShadow: "none", offset: 0.5 }, { boxShadow: "none" }],
+          ? [{ boxShadow: printFrame(frame.boxShadow, 0) }, { boxShadow: printFrame(frame.boxShadow, 0.5) }, { boxShadow: frame.boxShadow }]
+          : [{ boxShadow: currentShadow }, { boxShadow: printFrame(frame.boxShadow, 0.5) }, { boxShadow: printFrame(frame.boxShadow, 0) }],
         timing)] : []),
       ] : open ? [
         // The same trip, run backwards. There is no print-shaped frame for

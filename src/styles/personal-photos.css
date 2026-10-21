@@ -102,7 +102,9 @@
   padding: calc(var(--photo-frame) * 0.035);
   border-radius: 4px;
   background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+  /* Its border is padding; the print shadow below draws no frame of its own. */
+  --print-frame: 0px;
+  --print-unit: 1px;
   transform: translate(var(--print-offset-x, 0%), var(--print-offset-y)) rotate(var(--print-tilt));
   transition: transform var(--duration-slow) var(--ease-smooth);
 }
@@ -866,30 +868,40 @@
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(3n) {
   margin-top: 3rem;
 }
-/* Every photo on the wall wears the fan's print: the same 3.5% white border,
-   4px corners and lift (background and shadow come from the base slide). The
-   flights used to thin that border to nothing and drop its shadow on the way
-   out, and grow it back on the way home, so the prints visibly turned into
-   something else mid-air. Now a print lands as the print it left as. */
+/* Every photo on the wall is a print: a thin white frame, the same width on
+   every photo whatever its size, and the print shadow. The frame is drawn
+   outside the photo by the shadow's spread rather than padding, so it never
+   changes the photo's box; a held photo divides it by its own zoom and keeps
+   the same drawn width while it grows. */
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
-  --photo-padding: calc(var(--photo-frame) * 0.035);
-  --photo-radius: 4px;
+  --photo-padding: 0px;
+  --photo-radius: calc(2px / var(--hold-scale, 1));
+  --print-unit: calc(1px / var(--hold-scale, 1));
+  --print-frame: calc(10 * var(--print-unit));
   transform-style: flat;
   width: 100%;
   transition: transform var(--wall-release-duration) var(--ease-standard), scale var(--wall-release-duration) var(--ease-standard);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
+/* The print shadow, shared by the fan and the wall so a flight only ever
+   grows or shrinks the same four layers: the white frame, a hairline edge
+   that keeps it off the white canvas, a tight contact shadow and a short
+   lift. Crisp and close, the way a print sits on a table, instead of a wide
+   pale wash. */
+.personal-photos-print,
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
+  box-shadow:
+    0 0 0 var(--print-frame) var(--canvas),
+    0 0 0 calc(var(--print-frame) + 0.5 * var(--print-unit)) rgb(0 0 0 / 0.08),
+    0 var(--print-unit) calc(2 * var(--print-unit)) var(--print-frame) rgb(0 0 0 / 0.16),
+    0 calc(6 * var(--print-unit)) calc(12 * var(--print-unit)) calc(var(--print-frame) - 4 * var(--print-unit)) rgb(0 0 0 / 0.14);
+}
 .personal-photos-sheet[data-layout="wall"][data-held] .personal-photos-slide:not([data-held]) {
   opacity: 0.12;
   /* Only selection fades. Flights hide their destinations synchronously. */
   transition: transform var(--grid-focus-duration) var(--ease-smooth), scale var(--grid-focus-duration) var(--ease-smooth), opacity var(--grid-focus-duration) var(--ease-smooth);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] {
-  /* Held, it is the same print brought closer: border and corners scale
-     with it. Re-drawing the border thinner changed the box's size, so the
-     photo jumped as it was let go. */
-  --photo-padding: calc(var(--photo-frame) * 0.035);
-  --photo-radius: 4px;
   transition-duration: var(--grid-focus-duration), var(--duration-base);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-stage-caption {
