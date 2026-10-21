@@ -1161,7 +1161,15 @@
   font-weight: 500;
   line-height: 1.25;
 }
+.personal-photos-zoom-hint-touch { display: grid; justify-items: center; gap: 0.125rem; }
 .personal-photos-zoom-hint-hands { display: flex; gap: 0.25rem; }
+/* The keys take the hint's white labels: KeyboardHint's muted ink is written
+   for a pale control, and here it sits over photographs. */
+.personal-photos-zoom-hint-keys { display: none; color: inherit; font-weight: 500; }
+@media (hover: hover) and (pointer: fine) {
+  .personal-photos-zoom-hint-touch { display: none; }
+  .personal-photos-zoom-hint-keys { display: inline-flex; }
+}
 .personal-photos-zoom-hint-hand {
   overflow: visible;
   transform-origin: 70% 80%;

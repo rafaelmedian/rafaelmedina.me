@@ -33,3 +33,23 @@ test("the hint never takes a press from the wall", async ({ page }) => {
   await expect(page.locator(hint)).toBeVisible()
   await expect(page.locator(hint)).toHaveCSS("pointer-events", "none")
 })
+
+// "Pinch to zoom" named a gesture a mouse cannot make, and the wall's keys
+// were only in the screen-reader description. A fine pointer gets the keys.
+test("the hint shows keys under a mouse and the pinch on touch", async ({ page, browser }) => {
+  await page.goto("/")
+  await page.locator(".personal-photos-label").click()
+  const desktop = page.getByRole("dialog", { name: "Personal photos" })
+  await expect(desktop.locator(`${hint}-keys`)).toBeVisible()
+  await expect(desktop.locator(`${hint}-keys kbd`)).toHaveText(["+", "\u2212", "0", "\u2190", "\u2192"])
+  await expect(desktop.getByText("Pinch to zoom")).toBeHidden()
+
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } })
+  const phone = await context.newPage()
+  await phone.goto("/")
+  await phone.locator(".personal-photos-label").click()
+  const sheet = phone.getByRole("dialog", { name: "Personal photos" })
+  await expect(sheet.getByText("Pinch to zoom")).toBeVisible()
+  await expect(sheet.locator(`${hint}-keys`)).toBeHidden()
+  await context.close()
+})

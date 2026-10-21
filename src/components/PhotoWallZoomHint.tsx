@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 
+import { KeyboardHint, type KeyboardHintItem } from "./KeyboardHint"
+
 const storageKey = "photo-wall-zoom-hint"
 /** Three gestures, then the hint leaves on its own. */
 const visibleFor = 6200
@@ -18,6 +20,15 @@ function alreadySeen() {
    and its separate arrows so the gesture can play out: the hand touches
    down, the arrows travel, the hand lifts. The Flex icon is recoloured to
    the Plump palette so the pair reads as one set. */
+/* What a mouse has instead of a pinch. A trackpad can pinch too, but "Pinch
+   to zoom" over a mouse named a gesture it cannot make, and the keys the wall
+   answers to were only ever in the screen-reader description. */
+const keys: KeyboardHintItem[] = [
+  { keys: ["+", "\u2212"], label: "Zoom" },
+  { keys: ["0"], label: "Reset" },
+  { keys: ["\u2190", "\u2192"], label: "Browse" },
+]
+
 const fill = "#8fbffa"
 const ink = "#2859c5"
 
@@ -52,7 +63,7 @@ function PinchHand() {
 }
 
 /** The wall's one introduction to zooming: in the corner, one hand
-    pinches in and the other spreads out. Shown on a browser's first open of
+    pinches in and the other spreads out -- or, under a mouse, the keys. Shown on a browser's first open of
     the wall only, and gone as soon as the visitor zooms themselves. */
 export function PhotoWallZoomHint({ stage }: { stage: HTMLElement | null }) {
   const [phase, setPhase] = useState<"hidden" | "shown" | "leaving">(() => alreadySeen() ? "hidden" : "shown")
@@ -105,10 +116,13 @@ export function PhotoWallZoomHint({ stage }: { stage: HTMLElement | null }) {
   // The dialog's description already says how to zoom, so the hint is a
   // picture of it rather than a second announcement.
   return <div className="personal-photos-zoom-hint" data-leaving={phase === "leaving" ? "" : undefined} aria-hidden="true">
-    <div className="personal-photos-zoom-hint-hands">
-      <PinchHand />
-      <SpreadHand />
+    <div className="personal-photos-zoom-hint-touch">
+      <div className="personal-photos-zoom-hint-hands">
+        <PinchHand />
+        <SpreadHand />
+      </div>
+      <p>Pinch to zoom</p>
     </div>
-    <p>Pinch to zoom</p>
+    <KeyboardHint className="personal-photos-zoom-hint-keys" items={keys} />
   </div>
 }
