@@ -864,13 +864,16 @@
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(3n) {
   margin-top: 3rem;
 }
+/* Every photo on the wall wears the fan's print: the same 3.5% white border,
+   4px corners and lift (background and shadow come from the base slide). The
+   flights used to thin that border to nothing and drop its shadow on the way
+   out, and grow it back on the way home, so the prints visibly turned into
+   something else mid-air. Now a print lands as the print it left as. */
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
-  --photo-padding: 0px;
-  --photo-radius: var(--radius-md);
+  --photo-padding: calc(var(--photo-frame) * 0.035);
+  --photo-radius: 4px;
   transform-style: flat;
-  background: transparent;
   width: 100%;
-  box-shadow: none;
   transition: transform var(--wall-release-duration) var(--ease-standard), scale var(--wall-release-duration) var(--ease-standard);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
@@ -880,7 +883,11 @@
   transition: transform var(--grid-focus-duration) var(--ease-smooth), scale var(--grid-focus-duration) var(--ease-smooth), opacity var(--grid-focus-duration) var(--ease-smooth);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] {
-  --photo-radius: calc(var(--radius-md) / var(--hold-scale, 1));
+  /* Held, it is the same print brought closer: border and corners scale
+     with it. Re-drawing the border thinner changed the box's size, so the
+     photo jumped as it was let go. */
+  --photo-padding: calc(var(--photo-frame) * 0.035);
+  --photo-radius: 4px;
   transition-duration: var(--grid-focus-duration), var(--duration-base);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-stage-caption {
@@ -1191,7 +1198,6 @@
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span {
   display: block;
   border-radius: inherit;
-  box-shadow: var(--shadow-ring);
   transform: scale(var(--wall-watch-scale, 1));
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] > span {

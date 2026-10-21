@@ -53,7 +53,8 @@ const spherePhotoSizes = `${photoSphereHoldShare * 100}vw`
 // columns, as --photo-gutter and --photo-column-gap set them.
 // Start at the actual column width. The camera upgrades sizes as it zooms,
 // rather than decoding maximum-zoom originals for every initial tile.
-const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * 0.5rem) / 5)"
+// The print's white border takes 3.5% off each side of the column.
+const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * 0.5rem) / 5 * 0.93)"
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
@@ -268,7 +269,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     const scale = Math.min(holdShare * availableWidth / width, holdShare * availableHeight / height) / cameraScale
     // Keep the preview mat's drawn thickness. Account for the changed padding
     // before centring, so portrait and landscape photos keep their ratio.
-    const padding = parseFloat(frame.paddingTop) / scale
+    // The wall's print keeps its border in proportion, as a zoomed print
+    // would, so its box never changes size.
+    const padding = parseFloat(frame.paddingTop) / (layout === "wall" ? 1 : scale)
     const framedHeight = (width - padding * 2) * photo.height / photo.width + padding * 2
     const heldWidth = width * scale * cameraScale
     const heldHeight = framedHeight * scale * cameraScale

@@ -1236,7 +1236,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 A fan of square prints, each framed by a thin <code>--canvas</code> border with{" "}
                 <code>--shadow-ring</code> and <code>--shadow-control-hover</code>. Opening flies every print to its
                 place on a full-screen photo wall over <code>--photo-open-duration</code> and back over{" "}
-                <code>--photo-close-duration</code>. The only visible control is a <code>--radius-full</code> Close
+                <code>--photo-close-duration</code>. The wall wears the same print, so no photo loses its frame in
+                flight. The only visible control is a <code>--radius-full</code> Close
                 pill.
               </p>
               <PersonalPhotos />

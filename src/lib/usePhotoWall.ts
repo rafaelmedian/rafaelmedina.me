@@ -63,7 +63,8 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       const pose = camera.current
       const width = plane.offsetWidth
       const heights = columns[0]?.map(column => column.offsetHeight) ?? []
-      const nextImageWidth = Math.ceil((columns[0]?.[0]?.offsetWidth ?? 0) * pose.scale)
+      // The photo inside the print's white border, not the whole column.
+      const nextImageWidth = Math.ceil((columns[0]?.[0]?.querySelector("img")?.offsetWidth ?? 0) * pose.scale)
       if (nextImageWidth && nextImageWidth !== imageWidth) {
         imageWidth = nextImageWidth
         slides.forEach(slide => {
