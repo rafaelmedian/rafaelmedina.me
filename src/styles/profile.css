@@ -458,9 +458,47 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 }
 
 /* "Available for work" takes the place "Last updated" had: plain text in the
-   location line's own muted ink, not a link, so it adds nothing to press. */
+   location line's own muted ink, not a link, so it adds nothing to press.
+   A band of full ink sweeps across it now and then, so the one piece of news
+   on the line catches the eye without turning into a badge. The gradient is
+   clipped to the glyphs and is muted at both ends, so between sweeps the
+   text is exactly the colour of its neighbours. The sweep takes 40% of the
+   cycle and the rest is a pause, which keeps it a glint rather than a loop. */
 .mosaic-profile-availability {
   white-space: nowrap;
+  background-image: linear-gradient(
+    100deg,
+    var(--muted) 0%,
+    var(--muted) 40%,
+    var(--ink) 50%,
+    var(--muted) 60%,
+    var(--muted) 100%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: mosaic-availability-shimmer 4.5s var(--ease-standard) 1.2s infinite;
+}
+
+@keyframes mosaic-availability-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  40%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-profile-availability {
+    animation: none;
+    background: none;
+    color: inherit;
+  }
 }
 
 /* The address is the location line's second clause, so it reads as text until

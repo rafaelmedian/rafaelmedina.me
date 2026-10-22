@@ -2445,8 +2445,18 @@ test("keeps the whole location line gray at rest", async ({ page }) => {
   // Both clauses read as one sentence until pointed at -- the repository link
   // included, which is why it inherits its colour rather than taking a link's.
   await expect(page.locator(".mosaic-profile-location-place")).toHaveCSS("color", "rgb(107, 107, 107)")
-  await expect(page.locator(".mosaic-profile-availability")).toHaveCSS("color", "rgb(107, 107, 107)")
-  await expect(page.locator(".mosaic-profile-availability")).toHaveCSS("text-decoration-line", "none")
+  // The availability clause paints through a glint clipped to its glyphs; the
+  // gradient is muted at both ends, so between sweeps it is the same gray.
+  const availability = page.locator(".mosaic-profile-availability")
+  await expect(availability).toHaveCSS("background-clip", "text")
+  const gradient = await availability.evaluate((element) => getComputedStyle(element).backgroundImage)
+  expect(gradient.startsWith("linear-gradient(100deg, rgb(107, 107, 107) 0%")).toBe(true)
+  expect(gradient.endsWith("rgb(107, 107, 107) 100%)")).toBe(true)
+  await expect(availability).toHaveCSS("text-decoration-line", "none")
+
+  // Without motion there is no glint: the clause is plain gray text.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect(availability).toHaveCSS("color", "rgb(107, 107, 107)")
 })
 
 // An open dialog aria-hides the rest of the page, including the place name's
@@ -3994,11 +4004,13 @@ for (const { layout, viewport } of [
     expect(firstFrame.clip).toMatch(/^inset\(/)
     // The tile is still whole under the cut; it then dissolves rather than
     // staying under the surface growing out of it (checked at rest below).
-    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("1")
 
     const finishFlights = () => page.evaluate(() => {
       for (const animation of document.getAnimations()) {
         if (animation.timeline !== document.timeline) continue
+        // Ambient loops (the availability shimmer) have no end to finish at.
+        if (animation.effect?.getComputedTiming().endTime === Infinity) continue
         animation.playbackRate = 1
         animation.finish()
       }
@@ -4007,14 +4019,16 @@ for (const { layout, viewport } of [
     await expect(shell).not.toHaveAttribute("data-origin-zoom")
     await expect(page.locator(clipped)).toHaveCSS("clip-path", "none")
     await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
-    // Hidden while the gallery is up, as iOS leaves a gap where the card was.
-    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("0")
+    // The artwork is hidden while the gallery is up; the tile's empty fill
+    // stays behind as the slot it came out of.
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("0")
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
 
     // And it comes back as the surface lands on it.
     await page.keyboard.press("Escape")
     await finishFlights()
     await expect(page.getByRole("dialog")).toBeHidden()
-    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("1")
   })
 }
 
@@ -5257,8 +5271,9 @@ test("ramps the blur radius behind desktop project captions", async ({ page }) =
 // tile. Most tiles letterbox their artwork against the pale card surface, so the
 // band washes toward that surface and the label is ink -- what it has to survive
 // there is dark artwork under the label, because the pale tint is the thing
-// doing the lifting. The four tiles whose artwork runs dark to the bottom edge
-// keep the black band and the white label, where the worst case is the opposite.
+// doing the lifting. Full-bleed tiles and the tiles whose artwork runs dark to
+// the bottom edge keep the black band and the white label, where the worst case
+// is the opposite.
 // Both alphas are read off the eased stop list at the caption's own top edge
 // rather than assumed to fall in a straight line.
 test("keeps desktop project captions readable over the artwork underneath", async ({ page }) => {
@@ -5341,6 +5356,13 @@ test("keeps desktop project captions readable over the artwork underneath", asyn
 
   const darkGround = dark!.tint.map((channel) => channel * dark!.alpha + 255 * (1 - dark!.alpha))
   expect(contrast(darkGround, [255, 255, 255])).toBeGreaterThanOrEqual(4.5)
+
+  // A full-bleed film has no pale surface to wash toward; a pale band there
+  // read as grey fog over the dark footage.
+  const fullBleed = await captionGround(/Open Matcha cross-chain swaps/)
+  expect(fullBleed).not.toBeNull()
+  expect(fullBleed!.tint).toEqual([0, 0, 0])
+  expect(fullBleed!.ink).toBe("rgb(255, 255, 255)")
 })
 
 test("contains the featured Matcha previews inside their mobile cards", async ({ page }) => {
@@ -5382,7 +5404,7 @@ test("clips the Protector artwork to its full-width card on mobile", async ({ pa
   expect(mediaBox!.y + mediaBox!.height).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height)
 })
 
-test("zooms the family stories preview past its empty corner", async ({ page }) => {
+test("frames the family stories preview whole, pinned to its bottom-left", async ({ page }) => {
   await page.setViewportSize({ width: 1320, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
@@ -5400,21 +5422,17 @@ test("zooms the family stories preview past its empty corner", async ({ page }) 
       .getBoundingClientRect().toJSON(),
   ])
 
+  // The gallery frames it the way the tile does, so the open flight scales one
+  // composition: no zoom into a different crop that made the phones jump left
+  // as the card landed. Cover, pinned left and bottom, trims only the export's
+  // transparent margin on the right and top.
   await expect(media).toHaveCSS("object-fit", "cover")
-  expect(frameBox).not.toBeNull()
-  expect(mediaBox).not.toBeNull()
-
-  // The export's two devices are tilted, so the artwork carries an empty wedge
-  // above and to the left of the front phone. The frame has to run past it on
-  // both axes or the card opens on a corner of the mat's grey.
-  expect(mediaBox!.x).toBeLessThanOrEqual(frameBox!.x - frameBox!.width * 0.1)
-  expect(mediaBox!.y).toBeLessThanOrEqual(frameBox!.y - frameBox!.height * 0.1)
-
-  // What it must not do is take the composition off the bottom edge it is built
-  // on: the zoom is pinned there, and only grazes the right.
-  expect(mediaBox!.y + mediaBox!.height).toBeCloseTo(frameBox!.y + frameBox!.height, 0)
-  expect(mediaBox!.x + mediaBox!.width).toBeGreaterThanOrEqual(frameBox!.x + frameBox!.width)
-  expect(mediaBox!.x + mediaBox!.width).toBeLessThan(frameBox!.x + frameBox!.width * 1.03)
+  await expect(media).toHaveCSS("object-position", "0% 100%")
+  await expect(media).toHaveCSS("transform", "none")
+  expect(mediaBox.x).toBeCloseTo(frameBox.x, 0)
+  expect(mediaBox.y).toBeCloseTo(frameBox.y, 0)
+  expect(mediaBox.width).toBeCloseTo(frameBox.width, 0)
+  expect(mediaBox.height).toBeCloseTo(frameBox.height, 0)
 })
 
 test("describes the stakes and choices in a Protector booking", async ({ page }) => {
