@@ -2394,9 +2394,8 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "1")
 })
 
-// A blocked third-party frame never fires onError, so the only signal that the
-// calendar is not coming is that it has not come. The link the header used to
-// hold from the start now waits for that moment.
+// A stalled frame keeps a loading status, but its external link is already
+// available outside the iframe and remains available after the stall timer.
 test("offers cal.com directly when the embedded calendar never loads", async ({ page }) => {
   // Never resolves: the frame stays blank exactly the way a blocked one does.
   await page.route("https://cal.com/**", () => {})
@@ -2410,11 +2409,12 @@ test("offers cal.com directly when the embedded calendar never loads", async ({ 
 
   const status = page.getByRole("dialog").locator(".booking-loading")
   await expect(status).toHaveText("Loading calendar…")
-  await expect(status.getByRole("link")).toHaveCount(0)
+  const escape = page.getByRole("dialog").getByRole("link", { name: "Open it on cal.com" })
+  await expect(escape).toBeVisible()
 
   await page.clock.fastForward(6_000)
-  await expect(status).toContainText("The calendar didn\u2019t load.")
-  const escape = status.getByRole("link", { name: "Open it on cal.com" })
+  await expect(status).toContainText("Having trouble loading the calendar?")
+  await expect(escape).toBeVisible()
   await expect(escape).toHaveAttribute("href", "https://cal.com/rafaelmedian/30min?email=visitor%40example.com")
   await expect(escape).toHaveAttribute("target", "_blank")
 })
@@ -2489,7 +2489,7 @@ test("places the resume link beside about in the section navigation", async ({ p
   const navigation = page.getByRole("navigation", { name: "Sections" })
   const about = navigation.getByRole("link", { name: "About", exact: true })
   const resume = navigation.getByRole("link", { name: "Résumé", exact: true })
-  await expect(navigation.getByRole("link")).toHaveCount(2)
+  await expect(navigation.getByRole("link")).toHaveCount(3)
   await expect(about).toBeVisible()
   await expect(resume).toBeVisible()
 
@@ -2506,7 +2506,7 @@ test("keeps the section links compact with the hero tooltip-link corners", async
   const navigation = page.getByRole("navigation", { name: "Sections" })
   const links = navigation.getByRole("link")
 
-  await expect(links).toHaveCount(2)
+  await expect(links).toHaveCount(3)
   for (const link of await links.all()) {
     await expect(link).toHaveCSS("min-height", "32px")
     await expect(link).toHaveCSS("border-radius", "10.4px")
