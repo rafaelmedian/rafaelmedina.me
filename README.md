@@ -84,3 +84,29 @@ E2E_PORT=4184 LIKES_API_URL=http://127.0.0.1:8799 npm run test:e2e
 The [runbook](docs/operations.md) covers test setup, environment variables,
 asset generation, and likes deployment. [AGENTS.md](AGENTS.md) holds the repo’s
 working conventions.
+
+
+## AI chat budget
+
+The optional `/chat` endpoint has a shared D1 budget: at most 25 model
+attempts per UTC day and 300 per UTC month, across every visitor and Worker
+instance. Change `CHAT_DAILY_LIMIT` and `CHAT_MONTHLY_LIMIT` in
+`workers/likes/wrangler.jsonc`; zero, missing, or invalid limits disable
+inference. Deploy with the existing migration-then-Worker workflow so
+`0005_chat_budget.sql` exists before the new handler runs.
+
+A reservation is atomic and happens before inference. Failed calls keep their
+reservation because the provider may already have done billable work. A
+separate `CHAT_LIMITER` binding throttles each Cloudflare-provided client IP to
+five requests per minute per location; the D1 budget provides the global cap.
+Requests remain limited to 12 KB and model output to 220 tokens. These are
+request caps for this endpoint, not a currency cap for the Cloudflare account.
+
+When a budget is reached, configuration or infrastructure is unavailable, or
+the provider fails, the endpoint returns a predefined professional summary
+and contact link in the normal `answer` field. It does not expose billing or
+quota errors. New requests no longer store visitors' email addresses. The
+current contact/email chat is independent and continues to deliver messages.
+
+Run `npm run likes:test` for the budget, rollover, and fallback tests. Browser
+tests disable paid inference and use only local D1.

@@ -17,6 +17,7 @@
     "likes:migrate:local": "wrangler d1 migrations apply DB --local --config workers/likes/wrangler.jsonc",
     "likes:migrate:remote": "wrangler d1 migrations apply DB --remote --config workers/likes/wrangler.jsonc",
     "likes:deploy": "wrangler deploy --config workers/likes/wrangler.jsonc",
+    "likes:test": "node --test tests/likes-chat.test.mjs",
     "likes:check": "tsc -p workers/likes/tsconfig.json",
     "contact:dev": "wrangler dev --config workers/contact/wrangler.jsonc --port 8788",
     "contact:deploy": "wrangler deploy --config workers/contact/wrangler.jsonc",

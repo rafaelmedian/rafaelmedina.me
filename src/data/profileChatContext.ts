@@ -35,3 +35,7 @@ ${commonQuestions}
 
 Selected work on the site includes a redesign of Matcha.xyz, Matcha's multi-wallet flow, token pages, mobile trading, rewards and referral flows, a family-story product, a dealership lead hub, and a privacy/security product. Rafael's role covers research, product strategy, UX, visual design, prototyping, design systems, front-end implementation, and close collaboration with engineers.
 `.trim()
+
+
+/** Stable, useful content when inference is capped or its provider fails. */
+export const profileChatFallback = "Rafael Medina is a senior product designer working across web3, fintech, and consumer products. His work spans research, product strategy, UX, visual design, and prototyping in code. Explore his projects at https://rafaelmedina.me/ or book a conversation at https://cal.com/rafaelmedian/30min."

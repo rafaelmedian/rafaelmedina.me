@@ -1,10 +1,17 @@
-import type { Ai, D1Database } from "@cloudflare/workers-types"
+import type { Ai, D1Database, RateLimit } from "@cloudflare/workers-types"
 import { maxLikesPerVisitor } from "../../src/data/likeLimits"
 import { projectIds } from "../../src/data/projectIds"
-import { profileChatContext } from "../../src/data/profileChatContext"
+import { profileChatContext, profileChatFallback } from "../../src/data/profileChatContext"
 import { writingIds } from "../../src/data/writingIds"
 
-type Env = { AI: Ai; DB: D1Database; ALLOWED_ORIGINS: string }
+type Env = {
+  AI: Ai
+  DB: D1Database
+  ALLOWED_ORIGINS: string
+  CHAT_LIMITER: RateLimit
+  CHAT_DAILY_LIMIT: string
+  CHAT_MONTHLY_LIMIT: string
+}
 
 /* Notes and projects are counted in tables of their own, so one collection's
    read never scans the other's rows. Table and column names come from this map
@@ -15,7 +22,6 @@ const collections = {
 }
 const visitorPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const maxQuestionsPerDay = 12
 const maxChatMessages = 10
 
 type ChatMessage = { role: "user" | "assistant"; content: string }
@@ -74,26 +80,35 @@ export default {
       if (email.length > 254 || !emailPattern.test(email) || !validChatMessages(messages)) {
         return json({ error: "Invalid chat request" }, 400)
       }
-      const day = new Date().toISOString().slice(0, 10)
+      // Invalid/missing configuration disables inference. The generic answer
+      // remains useful without revealing account or infrastructure details.
+      const fallback = () => json({ answer: profileChatFallback })
+      const dailyLimit = Number(env.CHAT_DAILY_LIMIT)
+      const monthlyLimit = Number(env.CHAT_MONTHLY_LIMIT)
+      if (!Number.isSafeInteger(dailyLimit) || dailyLimit <= 0 ||
+          !Number.isSafeInteger(monthlyLimit) || monthlyLimit <= 0) return fallback()
       try {
-        const quota = await env.DB.prepare(`
-          INSERT INTO profile_chat_visitors
-            (visitor_id, email, question_day, questions_today)
-          VALUES (?1, ?2, ?3, 1)
-          ON CONFLICT(visitor_id) DO UPDATE SET
-            email = excluded.email,
-            last_seen_at = CURRENT_TIMESTAMP,
-            question_day = excluded.question_day,
-            questions_today = CASE
-              WHEN profile_chat_visitors.question_day = excluded.question_day
-                THEN MIN(profile_chat_visitors.questions_today + 1, ?4 + 1)
-              ELSE 1
-            END
-          RETURNING questions_today AS questionsToday
-        `).bind(visitorId, email, day, maxQuestionsPerDay).first<{ questionsToday: number }>()
-        if (!quota || quota.questionsToday > maxQuestionsPerDay) {
-          return json({ error: "That’s enough questions for today. Try again tomorrow or email Rafael directly." }, 429)
-        }
+        const { success } = await env.CHAT_LIMITER.limit({
+          key: request.headers.get("CF-Connecting-IP") ?? "unknown",
+        })
+        if (!success) return fallback()
+        // One atomic reservation on D1's primary, shared across every visitor
+        // and Worker instance. Database UTC time owns rollover. Reserve before
+        // inference, and never refund failures: the provider may have billed
+        // work even when its response was lost. No visitor emails are stored.
+        const reservation = await env.DB.prepare(`
+          INSERT INTO profile_chat_budget (id, day, month, daily_calls, monthly_calls)
+          VALUES (1, date('now'), strftime('%Y-%m', 'now'), 1, 1)
+          ON CONFLICT(id) DO UPDATE SET
+            day = excluded.day,
+            month = excluded.month,
+            daily_calls = CASE WHEN day = excluded.day THEN daily_calls + 1 ELSE 1 END,
+            monthly_calls = CASE WHEN month = excluded.month THEN monthly_calls + 1 ELSE 1 END
+          WHERE (CASE WHEN day = excluded.day THEN daily_calls ELSE 0 END) < ?1
+            AND (CASE WHEN month = excluded.month THEN monthly_calls ELSE 0 END) < ?2
+          RETURNING id
+        `).bind(dailyLimit, monthlyLimit).first<{ id: number }>()
+        if (!reservation) return fallback()
         const answer = await env.AI.run("@cf/openai/gpt-oss-20b", {
           messages: [
             {
@@ -109,7 +124,7 @@ export default {
         if (!response) throw new Error("Missing model response")
         return json({ answer: response.slice(0, 1600) })
       } catch {
-        return json({ error: "The chat is unavailable right now. You can still email Rafael directly." }, 503)
+        return fallback()
       }
     }
     const match = /^\/(notes|projects)\/([a-z0-9-]+)\/likes$/.exec(path)
