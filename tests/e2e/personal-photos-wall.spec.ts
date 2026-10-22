@@ -223,53 +223,55 @@ for (const width of [1440, 390]) {
 }
 
 
-test("Wall arrows start at the nearest photo and wrap the collection", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 900 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.locator(".personal-photos-label").click()
-  const wall = page.getByRole("region", { name: "Photo wall" })
-  await expect(wall).toBeVisible()
-  const nearest = await wall.locator(".personal-photos-slide").evaluateAll(slides => slides.map(slide => {
-    const r = slide.getBoundingClientRect()
-    return { instance: (slide as HTMLElement).dataset.photoInstance, distance: Math.hypot(r.x + r.width / 2 - innerWidth / 2, r.y + r.height / 2 - innerHeight / 2) }
-  }).sort((a, b) => a.distance - b.distance)[0].instance)
-  await page.keyboard.press("ArrowRight")
-  const main = wall.locator(".personal-photos-slide[data-held]")
-  await expect(main).toHaveAttribute("data-photo-instance", nearest!)
-  await page.keyboard.press("Escape")
-  await wall.locator('[data-photo-id="office"]').click()
-  // Office can sit partly off-screen; let its hold land before browsing.
-  await expect(main).toHaveAttribute("data-photo-source", "office")
-  await page.keyboard.press("ArrowLeft")
-  const last = personalPhotoItems.at(-1)!.id
-  await expect(main).toHaveAttribute("data-photo-source", last)
-  const plane = wall.locator(".personal-photos-masonry")
-  let previousX = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
-  const tileCount = await wall.locator(".personal-photos-slide").count()
-  for (let i = 0; i < personalPhotoItems.length * 2; i++) {
-    await page.keyboard.press("ArrowRight")
-    await expect.poll(async () => {
-      const box = (await main.boundingBox())!
-      return Math.hypot(box.x + box.width / 2 - 195, box.y + box.height / 2 - 450)
-    }).toBeLessThan(2)
-    const x = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
-    expect(x).toBeLessThan(previousX)
-    previousX = x
-  }
-  for (let i = 0; i < personalPhotoItems.length; i++) {
-    await page.keyboard.press("ArrowLeft")
-    const x = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
-    expect(x).toBeGreaterThan(previousX)
-    previousX = x
-    await expect.poll(async () => {
-      const box = (await main.boundingBox())!
-      return Math.hypot(box.x + box.width / 2 - 195, box.y + box.height / 2 - 450)
-    }).toBeLessThan(2)
-  }
-  expect(await wall.locator(".personal-photos-slide").count()).toBe(tileCount)
-  await expect(main).toHaveAttribute("data-photo-source", last)
-})
+for (const direction of ["ArrowRight", "ArrowLeft"] as const) {
+  test(`Wall ${direction} starts at the nearest photo and wraps the collection`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/")
+    await page.locator(".personal-photos-label").click()
+    const wall = page.getByRole("region", { name: "Photo wall" })
+    await expect(wall).toBeVisible()
+    const nearest = await wall.locator(".personal-photos-slide").evaluateAll(slides => slides.map(slide => {
+      const r = slide.getBoundingClientRect()
+      return { instance: (slide as HTMLElement).dataset.photoInstance, distance: Math.hypot(r.x + r.width / 2 - innerWidth / 2, r.y + r.height / 2 - innerHeight / 2) }
+    }).sort((a, b) => a.distance - b.distance)[0].instance)
+    await page.keyboard.press(direction)
+    const main = wall.locator(".personal-photos-slide[data-held]")
+    await expect(main).toHaveAttribute("data-photo-instance", nearest!)
+    await page.keyboard.press("Escape")
+    await wall.locator('[data-photo-id="office"]').click()
+    // Office can sit partly off-screen; let its hold land before browsing.
+    await expect(main).toHaveAttribute("data-photo-source", "office")
+    // Start just before this direction's wrap boundary. One full collection
+    // plus one step crosses it twice, exercising recycling without making one
+    // test perform three complete traversals (141 key presses).
+    const last = personalPhotoItems.at(-1)!.id
+    if (direction === "ArrowRight") {
+      await page.keyboard.press("ArrowLeft")
+      await expect(main).toHaveAttribute("data-photo-source", last)
+    }
+    const plane = wall.locator(".personal-photos-masonry")
+    let previousX = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
+    const tileCount = await wall.locator(".personal-photos-slide").count()
+    for (let i = 0; i <= personalPhotoItems.length; i++) {
+      await page.keyboard.press(direction)
+      const index = direction === "ArrowRight"
+        ? i % personalPhotoItems.length
+        : personalPhotoItems.length - 1 - i % personalPhotoItems.length
+      await expect(main).toHaveAttribute("data-photo-source", personalPhotoItems[index].id)
+      await expect.poll(async () => {
+        const box = (await main.boundingBox())!
+        return Math.hypot(box.x + box.width / 2 - 195, box.y + box.height / 2 - 450)
+      }).toBeLessThan(2)
+      const x = await plane.evaluate(el => parseFloat((el as HTMLElement).style.getPropertyValue("--wall-focus-x")))
+      if (direction === "ArrowRight") expect(x).toBeLessThan(previousX)
+      else expect(x).toBeGreaterThan(previousX)
+      previousX = x
+    }
+    expect(await wall.locator(".personal-photos-slide").count()).toBe(tileCount)
+  })
+}
+
 
 
 for (const width of [1440, 390]) {
