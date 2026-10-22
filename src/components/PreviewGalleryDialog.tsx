@@ -412,9 +412,10 @@ export function PreviewGalleryDialog({
     getZoomKeep: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
     getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
     getZoomOutline: () => cardRef.current,
-    // The notes list comes out of a paper in the folder, a page the size of a
-    // thumbnail: it lands as a whole card rather than clipped to the paper.
-    getZoomWhole: () => activeItem?.kind === "writings" ? cardRef.current : null,
+    // The notes list and the résumé come out of a paper on their tiles -- a
+    // page the size of a thumbnail -- so they land as a whole card rather
+    // than clipped down to the paper.
+    getZoomWhole: () => activeItem?.kind === "writings" || activeItem?.kind === "resume" ? cardRef.current : null,
     handoffDurationProperty: "--pg-zoom-handoff-ms",
     zoomOpenDurationProperty: "--pg-zoom-open-ms",
     zoomCloseDurationProperty: "--pg-zoom-close-ms",

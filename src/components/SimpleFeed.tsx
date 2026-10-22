@@ -1097,7 +1097,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
                           if (item.kind === "resume") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
                               <ResumeTile
-                                ref={(node) => {
+                                // The reader grows out of the paper, not the tile
+                                // around it: the page is what opens.
+                                originRef={(node) => {
                                   const nodes = previewCardNodesRef.current
                                   if (node) nodes.set(item.previewIndex, node)
                                   else nodes.delete(item.previewIndex)

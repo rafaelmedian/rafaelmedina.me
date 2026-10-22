@@ -1208,8 +1208,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-caption">
                 A standard work tile holding a folded sheet. On hover or focus the paper lifts and the corner peels
                 over <code>--duration-base</code> on <code>--ease-smooth</code>. It opens the résumé as a slide of
-                the preview gallery, not a modal of its own. Its miniature type is the one exception to the type
-                scale.
+                the preview gallery, not a modal of its own, grown whole out of the paper. Its miniature type is the
+                one exception to the type scale.
               </p>
               <div className="ds-resume-tile-specimen mosaic-row-item">
                 <ResumeTile />
