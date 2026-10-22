@@ -5391,7 +5391,14 @@ test("zooms the family stories preview past its empty corner", async ({ page }) 
   const dialog = page.getByRole("dialog")
   const media = dialog.locator(".preview-gallery-media:not(.preview-gallery-media-placeholder)")
   const frame = dialog.locator(".preview-gallery-media-frame")
-  const [frameBox, mediaBox] = await Promise.all([frame.boundingBox(), media.boundingBox()])
+  await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+  // Capture both rectangles in one settled layout, including under reduced
+  // motion where the card still mounts with an initial entrance transform.
+  const [frameBox, mediaBox] = await frame.evaluate(element => [
+    element.getBoundingClientRect().toJSON(),
+    element.querySelector(".preview-gallery-media:not(.preview-gallery-media-placeholder)")!
+      .getBoundingClientRect().toJSON(),
+  ])
 
   await expect(media).toHaveCSS("object-fit", "cover")
   expect(frameBox).not.toBeNull()
