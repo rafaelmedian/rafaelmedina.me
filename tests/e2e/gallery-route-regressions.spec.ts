@@ -17,10 +17,13 @@ for (const [slug, title] of [
 test("browser Back restores the tile hidden by the gallery entrance", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
-  const tile = page.locator(".mosaic-row-card-preview-shot-9")
-  await tile.click()
+  const card = page.locator(".mosaic-row-card-preview-shot-9")
+  const tile = card.locator(".mosaic-row-card-media-clip")
+  await card.click()
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect(tile).toHaveCSS("opacity", "0")
+  // The tile's empty fill stays as the slot the artwork left.
+  await expect(card).toHaveCSS("opacity", "1")
   await page.goBack()
   await expect(page.getByRole("dialog")).toHaveCount(0)
   await expect(tile).toHaveCSS("opacity", "1")

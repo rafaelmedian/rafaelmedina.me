@@ -3994,11 +3994,13 @@ for (const { layout, viewport } of [
     expect(firstFrame.clip).toMatch(/^inset\(/)
     // The tile is still whole under the cut; it then dissolves rather than
     // staying under the surface growing out of it (checked at rest below).
-    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("1")
 
     const finishFlights = () => page.evaluate(() => {
       for (const animation of document.getAnimations()) {
         if (animation.timeline !== document.timeline) continue
+        // Ambient loops (the availability shimmer) have no end to finish at.
+        if (animation.effect?.getComputedTiming().endTime === Infinity) continue
         animation.playbackRate = 1
         animation.finish()
       }
@@ -4007,14 +4009,16 @@ for (const { layout, viewport } of [
     await expect(shell).not.toHaveAttribute("data-origin-zoom")
     await expect(page.locator(clipped)).toHaveCSS("clip-path", "none")
     await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
-    // Hidden while the gallery is up, as iOS leaves a gap where the card was.
-    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("0")
+    // The artwork is hidden while the gallery is up; the tile's empty fill
+    // stays behind as the slot it came out of.
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("0")
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
 
     // And it comes back as the surface lands on it.
     await page.keyboard.press("Escape")
     await finishFlights()
     await expect(page.getByRole("dialog")).toBeHidden()
-    expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("1")
   })
 }
 
@@ -5257,8 +5261,9 @@ test("ramps the blur radius behind desktop project captions", async ({ page }) =
 // tile. Most tiles letterbox their artwork against the pale card surface, so the
 // band washes toward that surface and the label is ink -- what it has to survive
 // there is dark artwork under the label, because the pale tint is the thing
-// doing the lifting. The four tiles whose artwork runs dark to the bottom edge
-// keep the black band and the white label, where the worst case is the opposite.
+// doing the lifting. Full-bleed tiles and the tiles whose artwork runs dark to
+// the bottom edge keep the black band and the white label, where the worst case
+// is the opposite.
 // Both alphas are read off the eased stop list at the caption's own top edge
 // rather than assumed to fall in a straight line.
 test("keeps desktop project captions readable over the artwork underneath", async ({ page }) => {
@@ -5341,6 +5346,13 @@ test("keeps desktop project captions readable over the artwork underneath", asyn
 
   const darkGround = dark!.tint.map((channel) => channel * dark!.alpha + 255 * (1 - dark!.alpha))
   expect(contrast(darkGround, [255, 255, 255])).toBeGreaterThanOrEqual(4.5)
+
+  // A full-bleed film has no pale surface to wash toward; a pale band there
+  // read as grey fog over the dark footage.
+  const fullBleed = await captionGround(/Open Matcha cross-chain swaps/)
+  expect(fullBleed).not.toBeNull()
+  expect(fullBleed!.tint).toEqual([0, 0, 0])
+  expect(fullBleed!.ink).toBe("rgb(255, 255, 255)")
 })
 
 test("contains the featured Matcha previews inside their mobile cards", async ({ page }) => {

@@ -952,7 +952,7 @@
    full range to itself -- so it runs half again as heavy and reaches the tile
    colour outright at the bottom edge.
 
-   The four tiles whose artwork or backdrop runs dark to the bottom edge keep the
+   Full-bleed tiles and the dark tiles whose backdrop runs to the bottom edge keep the
    black band and the white label; they are listed directly below. */
 .mosaic-row-card {
   --card-caption-tint: 236 236 238; /* --mosaic-card-surface */
@@ -1013,11 +1013,14 @@
   corner-shape: inherit;
 }
 
-/* Protector is a full-bleed photograph, Family Stories seats its phones on the
+/* Full-bleed (cover) tiles -- the Matcha films and the Protector photograph --
+   have no pale card surface showing at all: the artwork is the tile, and the
+   films run dark. A pale wash over them read as grey fog, so they take the
+   black band like the dark tiles below. Family Stories seats its phones on the
    bottom edge, and Token and Pro carry their own rgb(63 62 68) backdrop to all
    four. There is no pale surface for the band to wash toward on any of them,
    and ink would land on artwork it cannot beat. */
-.mosaic-row-card-preview-protector,
+.mosaic-row-item-fit-cover .mosaic-row-card,
 .mosaic-row-card-preview-family-stories,
 .mosaic-row-card-preview-shot-21,
 .mosaic-row-card-preview-shot-23 {

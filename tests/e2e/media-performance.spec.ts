@@ -102,7 +102,7 @@ test("keeps a thumbnail visible during a slow preview and offers retry after fai
   await expect(mediaStatus).toHaveCount(0)
 })
 
-test("slow connections only fetch a preview video after an explicit play", async ({ page }) => {
+test("slow connections hold preview video downloads until play is requested", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "connection", {
       value: Object.assign(new EventTarget(), { effectiveType: "3g", saveData: true }),
@@ -117,7 +117,7 @@ test("slow connections only fetch a preview video after an explicit play", async
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   const video = page.getByRole("dialog").locator("video")
   await expect(video).toBeVisible()
-  await expect(video).toHaveAttribute("controls", "")
+  await expect(video).not.toHaveAttribute("controls")
   await expect(video).toHaveAttribute("preload", "none")
   expect(requests).toEqual([])
   await video.evaluate(element => element.play())
@@ -132,7 +132,7 @@ test("resumes preview autoplay when the connection improves", async ({ page }) =
   await page.goto("/")
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   const video = page.getByRole("dialog").locator("video")
-  await expect(video).toHaveAttribute("controls", "")
+  await expect(video).not.toHaveAttribute("controls")
   await expect(video).toHaveJSProperty("paused", true)
   await page.evaluate(() => {
     const connection = (navigator as Navigator & { connection: EventTarget & { effectiveType: string } }).connection
@@ -176,7 +176,7 @@ for (const slow of [false, true]) {
       expect(requests).toEqual([])
       await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
       const preview = page.getByRole("dialog").locator("video")
-      await expect(preview).toHaveAttribute("controls", "")
+      await expect(preview).not.toHaveAttribute("controls")
       await expect(preview).toHaveAttribute("preload", "none")
     } else {
       await expect.poll(() => video.evaluate(element => element.paused)).toBe(false)

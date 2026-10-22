@@ -284,9 +284,9 @@ function buildWholeKeyframes(mode: "open" | "close", origin: DOMRect, target: DO
 // The tile hands off to the surface rather than staying under it: two copies of
 // the same artwork, one growing out of the other, is what made the zoom read as
 // a surface flying over the page instead of the tile opening. It goes as the
-// surface appears, stays hidden while the surface is presented (iOS leaves the
-// same gap in the grid), and comes back under the surface as it lands, before
-// the surface fades off it. `handoff` is the share of the flight one fade takes.
+// surface appears, stays hidden while the surface is presented (the tile's
+// empty fill holds its place in the grid), and comes back under the surface
+// as it lands, before the surface fades off it. `handoff` is the share of the flight one fade takes.
 function buildSourceKeyframes(mode: "open" | "close", handoff: number): Keyframe[] {
   return mode === "open"
     ? [{ opacity: 1, offset: 0 }, { opacity: 0, offset: handoff }, { opacity: 0, offset: 1 }]
@@ -616,13 +616,20 @@ export function useOriginTravel(options: OriginTravelOptions) {
 
       // Held hidden after the open (until the close's `cancel` lets go of it);
       // back to its own CSS after the close, whose last frame is fully shown.
+      // Only what the tile holds goes: its own fill stays behind as an empty
+      // slot in the grid, so the page keeps its shape while the surface is up.
       const handoff = handoffDurationProperty ? durationOf(zoomFrame, handoffDurationProperty) : 0
       if (origin && duration > 0) {
-        flights.push(origin.animate(buildSourceKeyframes(mode, Math.min(handoff / duration, 1)), {
-          duration,
-          easing: "linear",
-          fill: mode === "open" ? "forwards" : "none",
-        }))
+        const contents = Array.from(origin.children)
+        const sources = contents.length > 0 && !transparent(getComputedStyle(origin).backgroundColor) ? contents : [origin]
+        const keyframes = buildSourceKeyframes(mode, Math.min(handoff / duration, 1))
+        for (const source of sources) {
+          flights.push(source.animate(keyframes, {
+            duration,
+            easing: "linear",
+            fill: mode === "open" ? "forwards" : "none",
+          }))
+        }
       }
     } else {
       const offset = fullScreen ? verticalOffset : originFallback
