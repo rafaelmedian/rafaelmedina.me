@@ -38,7 +38,7 @@ import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
 import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl, usePortfolioItemUrl } from "../lib/portfolioUrl"
-import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
+import { isNotesPath, notesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
 import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
@@ -516,13 +516,16 @@ function SectionCorner({
           {link.label}
         </a>
       ))}
-      {/* Notes has no section of its own to scroll to: it opens the same
-          folder the mosaic tile does, so this is a button, not a link. It hands
-          itself over as the opener, so the sheet flies out of this corner
-          rather than out of a tile that may be pages down. */}
-      <button type="button" className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent} onClick={onNotes}>
+      {/* Keep the public archive address available to crawlers, no-JS
+          visits, and modified clicks while plain clicks open its gallery. */}
+      <a href={notesPath} className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent}
+        onClick={event => {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+          event.preventDefault()
+          onNotes()
+        }}>
         Notes
-      </button>
+      </a>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
         <a
           href={resumeHref}
@@ -643,7 +646,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   // Keyed by gallery index, and the résumé tile is one of the keys: the sheet
   // grows out of whichever tile the slide belongs to.
   const previewCardNodesRef = useRef(new Map<number, HTMLElement>())
-  const writingsFolderTileRef = useRef<HTMLButtonElement | null>(null)
+  const writingsFolderTileRef = useRef<HTMLAnchorElement | null>(null)
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )

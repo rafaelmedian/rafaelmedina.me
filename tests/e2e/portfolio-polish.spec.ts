@@ -660,9 +660,9 @@ test("fades the notes card at its foot, clear of the last row and the article's 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
+  await page.getByRole("link", { name: "Open writings folder" }).click()
   const popup = page.locator(".preview-gallery-popup")
-  await expect(popup.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+  await expect(popup.getByRole("link", { name: "Designing Matcha", exact: true })).toBeVisible()
 
   const scrollToEndAndMeasure = async (lastContent: string) => {
     await popup.locator(".notes-gallery-viewport").evaluate((viewport) => {
@@ -697,7 +697,7 @@ test("fades the notes card at its foot, clear of the last row and the article's 
 
   // It rides the card down as the card grows to an article, and clears that
   // article's last line too.
-  await popup.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await popup.getByRole("link", { name: "Designing Matcha", exact: true }).click()
   await expect(popup).toHaveAttribute("data-reading-note", "true")
   await page.evaluate(() => document.getAnimations().forEach((animation) => animation.finish()))
   const article = await scrollToEndAndMeasure(".writing-reader > *")
@@ -4675,7 +4675,7 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
   expect(await placement()).toEqual(initial)
 
-  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await dialog.getByRole("link", { name: "Designing Matcha", exact: true }).click()
   await expect(dialog).toHaveAttribute("data-reading-note", "true")
   await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
   expect(await placement()).toEqual(initial)

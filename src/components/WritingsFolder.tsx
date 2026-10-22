@@ -6,6 +6,7 @@ import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { createModuleLoader, useDeferredModule } from "../lib/deferredModule"
 import { beginDialogIntent, subscribeDialogIntent } from "../lib/dialogIntent"
 import { usePortfolioItemUrl } from "../lib/portfolioUrl"
+import { notesPath } from "../lib/projectMetadata"
 import { openSound } from "../lib/sounds"
 
 const loadReader = createModuleLoader(() => import("./WritingsReader"), "WritingsReader")
@@ -32,7 +33,7 @@ type WritingsFolderProps = {
   onReaderReady: (module: typeof import("./WritingsReader")) => void
   onStatusChange?: (status: WritingsReaderStatus) => void
   /** The tile: the fallback origin when a reader has no list underneath it. */
-  tileRef?: (node: HTMLButtonElement | null) => void
+  tileRef?: (node: HTMLAnchorElement | null) => void
   /** The front paper, which the notes list grows out of and shrinks back into. */
   originRef?: (node: HTMLElement | null) => void
   /** The gallery is open on the notes: the folder stays open behind it. */
@@ -85,7 +86,7 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
       window.clearTimeout(rest)
     }
   }, [open])
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const triggerRef = useRef<HTMLAnchorElement>(null)
   const [request, setRequest] = useState<{ id: string; isCurrent: () => boolean } | null>(null)
   const { itemId: writingId, selectItem: selectWriting, clearItem, discardItem } = usePortfolioItemUrl("writing")
 
@@ -140,7 +141,7 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
 
   return (
     <>
-      <button type="button" className="writings-tile" aria-label="Open writings folder" aria-haspopup="dialog"
+      <a href={notesPath} className="writings-tile" aria-label="Open writings folder" aria-haspopup="dialog"
         ref={(node) => {
           triggerRef.current = node
           tileRef?.(node)
@@ -148,7 +149,9 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
         aria-busy={status === "loading" || undefined}
         data-folder={folderState ?? undefined}
         onPointerEnter={onPrefetch} onFocus={onPrefetch}
-        onClick={() => {
+        onClick={event => {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+          event.preventDefault()
           // A shared link's reader that failed to arrive is retried from here:
           // the tile is wearing the failure, and opening the list instead would
           // drop the note the link was for.
@@ -172,7 +175,7 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
         {/* The tile wears the reader's status too: a shared link opens a note
             with no list on screen to say what is happening. */}
         <span className="writings-tile-label" role="status">{statusLabel ?? "Notes & tools"}</span>
-      </button>
+      </a>
     </>
   )
 }

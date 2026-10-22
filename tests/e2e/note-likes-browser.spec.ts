@@ -4,7 +4,7 @@ import { likesApiUrl } from "./likesApi"
 
 async function openNote(page: import("@playwright/test").Page, title = "Designing Matcha") {
   await page.goto("/notes/")
-  await page.locator(".preview-gallery-popup").getByRole("button", { name: title, exact: true }).click()
+  await page.locator(".preview-gallery-popup").getByRole("link", { name: title, exact: true }).click()
   await expect(page.locator(".writings-dialog")).toBeVisible()
 }
 

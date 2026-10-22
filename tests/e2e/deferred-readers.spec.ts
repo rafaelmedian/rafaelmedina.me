@@ -10,7 +10,7 @@ test("keeps reader chunks off the initial load and opens them on demand", async 
   expect(scripts.some(url => /WritingsReader|WritingArticle|PersonalPhotosSheet/.test(url))).toBe(false)
   // The tile opens the gallery on the list of notes; the reader is warmed
   // while that list is on screen, so a row opens without a wait.
-  await page.getByRole("button", { name: "Open writings folder" }).click()
+  await page.getByRole("link", { name: "Open writings folder" }).click()
   await expect(page.locator(".preview-gallery-popup")).toBeVisible()
   await expect.poll(() => scripts.some(url => url.includes("WritingsReader"))).toBe(true)
   await expect.poll(() => scripts.some(url => url.includes("WritingArticle"))).toBe(true)
@@ -64,7 +64,7 @@ for (const { chunk, triggerName, dialogName, retryLabel } of [
         await page.locator(".mosaic-row-card").first().click()
         await expect(page.locator(".preview-gallery-popup")).toBeVisible()
       } else {
-        await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
+        await page.getByRole("link", { name: "Open writings folder", exact: true }).click()
         await expect(page.locator(".preview-gallery-popup")).toBeVisible()
       }
       release()
@@ -97,9 +97,9 @@ for (const { chunk, triggerName, dialogName, retryLabel } of [
    gallery, so its cases are their own: the trigger is a row, the busy state is
    on that row, and the retry labels are printed under the list's heading. */
 const notesRow = (page: import("@playwright/test").Page, title = "Designing Matcha") =>
-  page.locator(".preview-gallery-popup").getByRole("button", { name: title, exact: true })
+  page.locator(".preview-gallery-popup").getByRole("link", { name: title, exact: true })
 const openNotesList = async (page: import("@playwright/test").Page) => {
-  await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
+  await page.getByRole("link", { name: "Open writings folder", exact: true }).click()
   await expect(page.locator(".preview-gallery-popup")).toBeVisible()
 }
 
