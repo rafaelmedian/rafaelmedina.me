@@ -1,10 +1,13 @@
 import { Fragment, type CSSProperties } from "react"
 
 import { cvEducation, cvExperience, type CvExperience } from "../data/cv"
+// One object per role it sits beside, drawn from the work rather than the desk:
+// the colmado wallet, Matcha's bowl, an analyst's chart, Google Edu's cap.
 const RESUME_DRAWINGS = [
-  { row: 1, object: "pencil", place: "right", size: "3rem", pull: "0.3", drop: "1.25rem", tilt: "8deg" },
-  { row: 3, object: "cup", place: "left", size: "3.5rem", pull: "0.65", drop: "0.5rem", tilt: "-7deg" },
-  { row: 5, object: "sheet", place: "right", size: "3.25rem", pull: "0.1", drop: "1rem", tilt: "5deg" },
+  { row: 0, object: "resume-phone", place: "left", size: "4rem", pull: "0.5", drop: "0.25rem", tilt: "-5deg" },
+  { row: 1, object: "resume-matcha", place: "right", size: "4.25rem", pull: "0.3", drop: "0.5rem", tilt: "4deg" },
+  { row: 3, object: "resume-chart", place: "left", size: "4rem", pull: "0.6", drop: "0.25rem", tilt: "-4deg" },
+  { row: 5, object: "resume-cap", place: "right", size: "4.25rem", pull: "0.15", drop: "0.25rem", tilt: "6deg" },
 ] as const
 
 type ResumeDrawing = (typeof RESUME_DRAWINGS)[number]

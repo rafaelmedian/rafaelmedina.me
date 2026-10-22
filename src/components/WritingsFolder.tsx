@@ -2,6 +2,7 @@ import { useSound } from "@web-kits/audio/react"
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react"
 
 import { writingPreviews } from "../data/writingPreviews"
+import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { createModuleLoader, useDeferredModule } from "../lib/deferredModule"
 import { beginDialogIntent, subscribeDialogIntent } from "../lib/dialogIntent"
 import { usePortfolioItemUrl } from "../lib/portfolioUrl"
@@ -32,6 +33,10 @@ type WritingsFolderProps = {
   onStatusChange?: (status: WritingsReaderStatus) => void
   /** The tile: the fallback origin when a reader has no list underneath it. */
   tileRef?: (node: HTMLButtonElement | null) => void
+  /** The front paper, which the notes list grows out of and shrinks back into. */
+  originRef?: (node: HTMLElement | null) => void
+  /** The gallery is open on the notes: the folder stays open behind it. */
+  open?: boolean
   ref?: Ref<WritingsFolderHandle>
 }
 
@@ -42,11 +47,44 @@ type WritingsFolderProps = {
  * fetched, cancelled, and retried. A shared link to a note fetches it the same
  * way, without the list first.
  */
-export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChange, tileRef, ref }: WritingsFolderProps) {
+export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChange, tileRef, originRef, open = false, ref }: WritingsFolderProps) {
   const { module, status, load, warm } = useDeferredModule(loadReader)
   const Reader = module?.WritingsReader
   useEffect(() => { if (module) onReaderReady(module) }, [module, onReaderReady])
   const playOpen = useSound(openSound, { volume: 0.3 })
+  // The folder stays open until the list has shrunk back into its paper, so
+  // the papers drop in after the landing rather than slide out from under it.
+  // "closing" is the drop itself, which runs on its own staggered timing.
+  const [folderState, setFolderState] = useState<"open" | "closing" | null>(open ? "open" : null)
+  if (open && folderState !== "open") setFolderState("open")
+  // A press draws the paper out of the folder first, and the list opens out
+  // of it as it clears: taken out, then opened, as a document is.
+  const lifting = useRef<number | null>(null)
+  useEffect(() => () => { if (lifting.current !== null) window.clearTimeout(lifting.current) }, [])
+  const liftThenOpen = () => {
+    if (lifting.current !== null) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return onOpen()
+    setFolderState("open")
+    // Opened partway through the lift, because presenting the gallery takes
+    // a few frames of its own: waiting out the whole lift left the paper
+    // hanging over the folder for ~150ms before the list came out of it.
+    const lift = cssTimeToMilliseconds(getComputedStyle(document.documentElement).getPropertyValue("--duration-fast"))
+    lifting.current = window.setTimeout(() => {
+      lifting.current = null
+      onOpen()
+    }, lift)
+  }
+  useEffect(() => {
+    if (open) return
+    const token = (name: string) => cssTimeToMilliseconds(getComputedStyle(document.documentElement).getPropertyValue(name))
+    const landed = token("--duration-slow")
+    const drop = window.setTimeout(() => setFolderState(state => state && "closing"), landed)
+    const rest = window.setTimeout(() => setFolderState(null), landed * 3)
+    return () => {
+      window.clearTimeout(drop)
+      window.clearTimeout(rest)
+    }
+  }, [open])
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [request, setRequest] = useState<{ id: string; isCurrent: () => boolean } | null>(null)
   const { itemId: writingId, selectItem: selectWriting, clearItem, discardItem } = usePortfolioItemUrl("writing")
@@ -108,18 +146,21 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
           tileRef?.(node)
         }}
         aria-busy={status === "loading" || undefined}
+        data-folder={folderState ?? undefined}
         onPointerEnter={onPrefetch} onFocus={onPrefetch}
         onClick={() => {
           // A shared link's reader that failed to arrive is retried from here:
           // the tile is wearing the failure, and opening the list instead would
           // drop the note the link was for.
           if (writingId && !Reader) void load()
-          else onOpen()
+          else liftThenOpen()
         }}>
         <span className="writings-folder" aria-hidden="true">
           <img className="writings-folder-back" src="/writings/folder-back.png" alt="" width={237} height={200} loading="lazy" />
-          {writingPreviews.map(writing => (
-            <span className="writings-paper" key={writing.id}>
+          {/* The middle paper is the one that opens: the list grows out of it
+              while the flap drops and the papers either side fan away. */}
+          {writingPreviews.map((writing, index) => (
+            <span className="writings-paper" key={writing.id} ref={index === 1 ? originRef : undefined}>
               <span className="writings-paper-content">
                 <strong>{writing.title}</strong>
                 {writing.paragraphs.map((paragraph, index) => <span key={index}>{paragraph.split(/`([^`]+)`/).map((part, index) => index % 2 ? <code className="writing-code" key={index}>{part}</code> : part)}</span>)}

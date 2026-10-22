@@ -102,7 +102,9 @@
   padding: calc(var(--photo-frame) * 0.035);
   border-radius: 4px;
   background: var(--canvas);
-  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+  /* Its border is padding; the print shadow below draws no frame of its own. */
+  --print-frame: 0px;
+  --print-unit: 1px;
   transform: translate(var(--print-offset-x, 0%), var(--print-offset-y)) rotate(var(--print-tilt));
   transition: transform var(--duration-slow) var(--ease-smooth);
 }
@@ -216,6 +218,8 @@
 .personal-photos-backdrop[data-layout="wall"],
 .personal-photos-dialog[data-layout="wall"] {
   --photo-open-duration: 480ms;
+  /* A beat slower than the house 200ms, so the prints are seen going home. */
+  --photo-close-duration: 300ms;
 }
 
 /* Compact screens retain their longer return journey. */
@@ -273,12 +277,33 @@
 }
 
 .personal-photos-dialog[data-starting-style] { opacity: 0; }
-/* Flights own the reveal. Keep their destination and the white canvas opaque
-   so the page never shows through as the photos grow and hand off. */
-.personal-photos-backdrop[data-layout="wall"]:not([data-ending-style]),
+/* The wall's photos open and close in place, so nothing flies over the
+   page. The white canvas spreads from the middle as a circle (see the wall
+   backdrop below) over --duration-slow on --photo-motion-ease, an even
+   spread an expo-out curve would finish before it was seen, and the photos start
+   rippling in halfway into --duration-base (usePhotoOriginTransition), by
+   which time the circle has covered the middle and is racing ahead of them
+   to the edges. On the close it shrinks back to the middle over the same
+   --duration-slow, starting with the photos, so the page returns around
+   them from the edges in. The canvas never fades as a sheet; the popup stays
+   opaque, and its photos carry their own entrance. */
 .personal-photos-dialog[data-layout="wall"]:not([data-ending-style]) {
   opacity: 1;
   transition: none;
+}
+.personal-photos-backdrop[data-layout="wall"],
+.personal-photos-backdrop[data-layout="wall"][data-starting-style],
+.personal-photos-backdrop[data-layout="wall"][data-ending-style] {
+  opacity: 1;
+  transition: --wall-reveal var(--duration-slow) var(--photo-motion-ease);
+}
+.personal-photos-backdrop[data-layout="wall"][data-starting-style],
+.personal-photos-backdrop[data-layout="wall"][data-ending-style] {
+  --wall-reveal: 0;
+}
+.personal-photos-backdrop[data-layout="wall"][data-ending-style] {
+  transition-duration: var(--duration-slow);
+  transition-timing-function: var(--photo-motion-ease);
 }
 .personal-photos-dialog[data-ending-style] {
   opacity: 0;
@@ -816,19 +841,37 @@
 
 /* Wall: a loose, edge-to-edge arrangement using the grid's selection and
    flight machinery. */
+/* How far the wall's white canvas has spread from the middle of the screen:
+   0 is none of it, 1 the whole screen. Registered so it can transition. */
+@property --wall-reveal {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
 .personal-photos-backdrop[data-layout="wall"] {
   /* Cover Safari chrome and rubber-band exposure outside the visual viewport. */
   inset-block: -100lvh;
-  background: var(--canvas);
+  /* A soft-edged circle of white, grown from the middle a step ahead of the
+     photos' ripple, so each photo fades in just after the canvas reaches it;
+     the close shrinks it back to the middle as the photos leave from the
+     edges inwards. The edge is a 25vmax fade. Open, it rests at 0.8: the
+     white is solid to 75vmax, just past the screen's corners (71vmax from
+     the middle at most), so the close's shrinking circle shows from its
+     first frame instead of spending a quarter of its time off-screen. */
+  --wall-reveal: 0.8;
+  background: radial-gradient(circle at 50% 50%,
+    var(--canvas) calc(var(--wall-reveal) * 125vmax - 25vmax),
+    transparent calc(var(--wall-reveal) * 125vmax));
 }
 .personal-photos-sheet[data-layout="wall"] {
+  --wall-reveal: 0.8;
   --wall-release-duration: var(--duration-base);
   --wall-watch-shrink: 0;
   --wall-watch-power: 1.35;
   /* Flat by default. The curved WebGL surface stays for the dev tuner. */
   --wall-bend: 0;
   --wall-rim: 0;
-  --wall-gap: 0.5rem;
+  --wall-gap: 3rem;
   /* The backdrop owns the white canvas. A second surface here would cover
      borrowed flights, which travel below the popup and above the backdrop. */
   background: transparent;
@@ -864,23 +907,40 @@
 .personal-photos-sheet[data-layout="wall"] .personal-photos-column:nth-child(3n) {
   margin-top: 3rem;
 }
+/* Every photo on the wall is a print: a thin white frame, the same width on
+   every photo whatever its size, and the print shadow. The frame is drawn
+   outside the photo by the shadow's spread rather than padding, so it never
+   changes the photo's box; a held photo divides it by its own zoom and keeps
+   the same drawn width while it grows. */
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
   --photo-padding: 0px;
-  --photo-radius: var(--radius-md);
+  --photo-radius: calc(2px / var(--hold-scale, 1));
+  --print-unit: calc(1px / var(--hold-scale, 1));
+  --print-frame: calc(10 * var(--print-unit));
   transform-style: flat;
-  background: transparent;
   width: 100%;
-  box-shadow: none;
   transition: transform var(--wall-release-duration) var(--ease-standard), scale var(--wall-release-duration) var(--ease-standard);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
+/* The print shadow, shared by the fan and the wall so a flight only ever
+   grows or shrinks the same four layers: the white frame, a hairline edge
+   that keeps it off the white canvas, a tight contact shadow and a short
+   lift. Crisp and close, the way a print sits on a table, instead of a wide
+   pale wash. */
+.personal-photos-print,
+.personal-photos-sheet[data-layout="wall"] .personal-photos-slide {
+  box-shadow:
+    0 0 0 var(--print-frame) var(--canvas),
+    0 0 0 calc(var(--print-frame) + 0.5 * var(--print-unit)) rgb(0 0 0 / 0.08),
+    0 var(--print-unit) calc(2 * var(--print-unit)) var(--print-frame) rgb(0 0 0 / 0.16),
+    0 calc(6 * var(--print-unit)) calc(12 * var(--print-unit)) calc(var(--print-frame) - 4 * var(--print-unit)) rgb(0 0 0 / 0.14);
+}
 .personal-photos-sheet[data-layout="wall"][data-held] .personal-photos-slide:not([data-held]) {
   opacity: 0.12;
   /* Only selection fades. Flights hide their destinations synchronously. */
   transition: transform var(--grid-focus-duration) var(--ease-smooth), scale var(--grid-focus-duration) var(--ease-smooth), opacity var(--grid-focus-duration) var(--ease-smooth);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] {
-  --photo-radius: calc(var(--radius-md) / var(--hold-scale, 1));
   transition-duration: var(--grid-focus-duration), var(--duration-base);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-stage-caption {
@@ -1107,9 +1167,16 @@
   justify-content: center;
   gap: 0.5rem;
 }
+/* Over the wall's white canvas the glass had nothing to frost and read as a
+   grey smudge. The wall's Close is a solid white pill lifted by the house
+   floating-surface shadow instead. */
 .personal-photos-wall-toolbar .personal-photos-wall-close {
   position: static;
   translate: none;
+  background: var(--canvas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
 }
 
 /* The first-open zoom hint: Streamline's zoom gesture pair, bare in the
@@ -1140,7 +1207,15 @@
   font-weight: 500;
   line-height: 1.25;
 }
+.personal-photos-zoom-hint-touch { display: grid; justify-items: center; gap: 0.125rem; }
 .personal-photos-zoom-hint-hands { display: flex; gap: 0.25rem; }
+/* The keys take the hint's white labels: KeyboardHint's muted ink is written
+   for a pale control, and here it sits over photographs. */
+.personal-photos-zoom-hint-keys { display: none; color: inherit; font-weight: 500; }
+@media (hover: hover) and (pointer: fine) {
+  .personal-photos-zoom-hint-touch { display: none; }
+  .personal-photos-zoom-hint-keys { display: inline-flex; }
+}
 .personal-photos-zoom-hint-hand {
   overflow: visible;
   transform-origin: 70% 80%;
@@ -1191,7 +1266,6 @@
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide > span {
   display: block;
   border-radius: inherit;
-  box-shadow: var(--shadow-ring);
   transform: scale(var(--wall-watch-scale, 1));
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-slide[data-held] > span {
@@ -1212,6 +1286,20 @@
 .personal-photos-dialog[data-layout="wall"][data-ending-style] .personal-photos-sheet {
   opacity: 0;
   transition: opacity var(--photo-close-duration) var(--photo-motion-ease);
+}
+/* Closing in place, the stage does not fade as a sheet. It closes into the
+   middle as the same feathered circle as the white canvas behind it, on the
+   same clock, so the photos vanish with the white rather than hanging over
+   the page as it returns; each photo still shrinks and fades a little
+   inside it. --wall-reveal is registered with the backdrop's, and rests
+   at 0.8 on the wall's sheet. */
+.personal-photos-dialog[data-layout="wall"][data-ending-style] .personal-photos-sheet[data-leaving] {
+  --wall-reveal: 0;
+  opacity: 1;
+  transition: --wall-reveal var(--duration-slow) var(--photo-motion-ease);
+  mask-image: radial-gradient(circle at 50% 50%,
+    #000 calc(var(--wall-reveal) * 125vmax - 25vmax),
+    transparent calc(var(--wall-reveal) * 125vmax));
 }
 .personal-photos-wall-close-content {
   display: inline-flex;

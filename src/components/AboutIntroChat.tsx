@@ -8,7 +8,7 @@ import { ArrowUp } from "./NavigationIcons"
 import { isContactEmail } from "../lib/contactEmail"
 import { trackEvent } from "../lib/analytics"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
-import { sendContact, type ContactMessage } from "../lib/sendContact"
+import { contactMailto, sendContact, type ContactMessage } from "../lib/sendContact"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 
 const greeting = ["Hey, what’s up?", "we should catch up properly", "where should i email you?"]
@@ -417,6 +417,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
           {/* Like Messages, only the latest send carries its receipt; a failure keeps its own. */}
           {(item === lastSent || item.status === "failed") && <p className="about-intro-chat-receipt" role="status">
             {item.status === "sending" ? "Sending…" : item.status === "delivered" ? "Delivered" : item.error}
+            {item.status === "failed" && <> <a href={contactMailto(item.message)}>Email it instead</a></>}
           </p>}
         </div>)}
       </>}
@@ -449,7 +450,7 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
             value={message} onChange={event => setMessage(event.target.value)} />
           {(!message.trim() || dictation.listening) && <button type="button" className="booking-microphone"
             disabled={sending || atCheckpoint || atLimit}
-            aria-label={dictation.listening ? "Stop dictation" : "Dictate message"} aria-pressed={dictation.listening}
+            aria-label="Dictate message" aria-pressed={dictation.listening}
             onClick={() => {
               if (dictation.listening) dictation.stop()
               else dictation.start()

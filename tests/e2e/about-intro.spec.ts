@@ -81,7 +81,8 @@ for (const width of [390, 768, 1440]) {
 }
 
 test("a CV visible on initial load waits for the first scroll before loading chat", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1800 })
+  // Tall enough to reach the résumé tile under the films on first paint.
+  await page.setViewportSize({ width: 1440, height: 2600 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   const requests: string[] = []
   page.on("request", request => {
@@ -94,4 +95,22 @@ test("a CV visible on initial load waits for the first scroll before loading cha
   await expect(page.locator(".about-intro")).toHaveCount(0)
   await page.evaluate(() => window.scrollTo(0, 97))
   await expect(page.getByRole("region", { name: "A quick hello from Rafael" })).toBeVisible()
+})
+
+test("a failed message offers the visitor's own mail app", async ({ page }) => {
+  await page.route("**/contact", route =>
+    route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ sent: false }) }))
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.getByRole("link", { name: "About", exact: true }).click()
+  await page.getByRole("region", { name: "A quick hello from Rafael" }).locator(".about-intro-portrait-trigger").click()
+  const chat = page.getByRole("region", { name: "Chat with Rafa" })
+  await chat.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com")
+  await chat.getByRole("button", { name: "Continue with email" }).click()
+  await chat.getByRole("textbox", { name: "Your message (optional)" }).fill("Are you free in November?")
+  await chat.getByRole("button", { name: "Send message" }).click()
+
+  await expect(chat.getByRole("button", { name: "Retry message: Are you free in November?" })).toBeVisible()
+  await expect(chat.getByRole("link", { name: "Email it instead" })).toHaveAttribute(
+    "href", `mailto:hey@rafaelmedina.me?subject=Hello%20from%20rafaelmedina.me&body=${encodeURIComponent("Are you free in November?")}`)
 })

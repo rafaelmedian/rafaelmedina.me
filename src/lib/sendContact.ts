@@ -1,3 +1,5 @@
+import { siteLinks } from "../data/portfolio"
+
 export type ContactMessage = { email: string; message: string; requestId: string }
 
 export async function sendContact(payload: ContactMessage): Promise<void> {
@@ -19,4 +21,14 @@ export async function sendContact(payload: ContactMessage): Promise<void> {
   if (!response.ok || result?.sent !== true) {
     throw new Error(result?.error || "Couldn't send just now. Please retry.")
   }
+}
+
+/**
+ * A failed send is a visitor who already wrote to Rafael and got stuck. Retry
+ * cannot help when the endpoint is missing or down, so every failure also
+ * offers this: their own mail app, addressed and with the message in it.
+ */
+export function contactMailto(message: string) {
+  const subject = encodeURIComponent("Hello from rafaelmedina.me")
+  return `mailto:${siteLinks.email}?subject=${subject}&body=${encodeURIComponent(message)}`
 }

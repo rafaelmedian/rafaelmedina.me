@@ -144,13 +144,15 @@ test('replays staggered greetings on open and skips motion when requested', asyn
         animation.currentTime = 100
         const hidden = getComputedStyle(node).opacity
         const delay = animation.effect!.getTiming().delay
-        animation.currentTime = 1000
+        animation.finish()
         return { delay, hidden, visible: getComputedStyle(node).opacity }
       }))
     expect(entrances).toEqual([
       { delay: 200, hidden: '0', visible: '1' },
       { delay: 360, hidden: '0', visible: '1' },
       { delay: 520, hidden: '0', visible: '1' },
+      { delay: 680, hidden: '0', visible: '1' },
+      { delay: 840, hidden: '0', visible: '1' },
     ])
     await dialog.getByRole('button', { name: 'Close conversation' }).click()
     await expect(dialog).toBeHidden()
@@ -264,9 +266,9 @@ test('replays saved email and delivered messages in conversation order', async (
   await expect(chat).toBeVisible()
   const entries = chat.locator('.booking-history > *')
   expect(await entries.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).animationDelay)))
-    // The three greetings keep their 160ms beat; everything saved after them
+    // The five greetings keep their 160ms beat; everything saved after them
     // replays on a 40ms step, so a full history lands in 200ms not 800ms.
-    .toEqual(['0.2s', '0.36s', '0.52s', '0.56s', '0.6s', '0.64s', '0.68s'])
+    .toEqual(['0.2s', '0.36s', '0.52s', '0.68s', '0.84s', '0.88s', '0.92s', '0.96s', '1s'])
   const receipt = chat.locator('.booking-delivery').last()
   await receipt.evaluate(node => {
     const animation = node.getAnimations()[0]
@@ -298,7 +300,7 @@ test('dictates into a draft, handles permission errors, and stops on close', asy
   await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
   await chat.getByRole('button', { name: 'Continue with email' }).click()
   await chat.getByRole('button', { name: 'Dictate message' }).click()
-  await expect(chat.getByRole('button', { name: 'Stop dictation' })).toBeVisible()
+  await expect(chat.getByRole('button', { name: 'Dictate message', pressed: true })).toBeVisible()
   await page.evaluate(() => {
     const speech = (window as unknown as { activeSpeech: { onresult: (event: unknown) => void } }).activeSpeech
     speech.onresult({ results: [[{ transcript: 'Let’s discuss my project' }]] })
@@ -306,7 +308,7 @@ test('dictates into a draft, handles permission errors, and stops on close', asy
   const message = chat.getByRole('textbox', { name: 'Your message' })
   await expect(message).toHaveValue('Let’s discuss my project')
   await expect(message).toHaveAttribute('readonly', '')
-  await chat.getByRole('button', { name: 'Stop dictation' }).click()
+  await chat.getByRole('button', { name: 'Dictate message', pressed: true }).click()
   await expect(message).not.toHaveAttribute('readonly')
   await expect(chat.getByRole('button', { name: 'Send message', exact: true })).toBeEnabled()
   await message.fill('')
@@ -419,4 +421,29 @@ test('keeps one close control visible while contact info exits', async ({ page }
     const image = await page.locator('.booking-identity img').boundingBox()
     return Math.abs(image!.x + image!.width / 2 - 771)
   }).toBeLessThan(1)
+})
+
+test('keeps the composer findable: a visible focus ring, a full-contrast microphone, and a visible limit', async ({ page }) => {
+  await page.route('**/contact', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sent: true }) }))
+  await page.goto('/?tune=off')
+  await page.locator('.mosaic-booking-pill').click()
+  const chat = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
+  await chat.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+
+  const field = chat.getByRole('textbox', { name: 'Your message' })
+  await expect(field).toBeFocused()
+  await expect(chat.locator('.booking-composer')).toHaveCSS('outline-style', 'solid')
+  await expect(chat.locator('.booking-composer')).toHaveCSS('outline-width', '2px')
+  // Dimmed only when it cannot be used; at rest it carries --muted-soft's 4.6:1.
+  await expect(chat.getByRole('button', { name: 'Dictate message', pressed: false })).toHaveCSS('opacity', '1')
+
+  for (let index = 0; index < 5; index += 1) {
+    await field.fill(`Message ${index + 1}`)
+    await chat.getByRole('button', { name: 'Send message' }).click()
+    await expect(chat.getByText(`Message ${index + 1}`, { exact: true })).toBeVisible()
+  }
+  await expect(field).toBeDisabled()
+  await expect(field).toHaveAttribute('placeholder', 'Message limit reached')
+  await expect(chat.getByRole('status').filter({ hasText: 'You can still book a time' })).toBeVisible()
 })

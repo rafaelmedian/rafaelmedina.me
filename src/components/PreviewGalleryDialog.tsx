@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
+import { resumePath, siteOrigin } from "../lib/projectMetadata"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
 import { revealGalleryEntry } from "../lib/galleryEntry"
@@ -14,12 +15,14 @@ import { groupWritingsByCategory } from "../lib/writings"
 import { useGalleryPage, type GalleryPageDirection } from "../lib/useGalleryPage"
 import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
+import { CopyPageLink } from "./CopyPageLink"
 import { PreviewMedia } from "./PreviewMedia"
 import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
 import type { WritingsReaderStatus } from "./WritingsFolder"
 import { backSound, closeSound, isAudioWarm, nextSound, openSound, useWarmingSound, warmAudioWhenIdle } from "../lib/sounds"
+import { formatPostDate } from "../lib/postDate"
 
 type PreviewGalleryDialogProps = {
   items: GalleryItem[]
@@ -30,7 +33,8 @@ type PreviewGalleryDialogProps = {
   prefersReducedMotion: boolean
   onOpenChange: (open: boolean) => void
   onSelectedIndexChange: (index: number) => void
-  getOriginRect?: (index: number) => DOMRect | null
+  /** The tile an item opens from and closes into. */
+  getOrigin?: (index: number) => Element | null
   /** Where focus lands on close when the control that opened this is gone. */
   finalFocus?: React.ComponentProps<typeof Dialog.Popup>["finalFocus"]
   /** A row was pressed: fetch and select its nested article. */
@@ -47,7 +51,6 @@ type PreviewGalleryDialogProps = {
 type PreviewSwitchDirection = "prev" | "next"
 type PreviewSwitchPhase = "idle" | "out" | "in"
 
-const previewCloseResetMs = 260
 const largeDesktopPreviewQuery = "(min-width: 1320px)"
 
 function shouldOpenPreviewWide() {
@@ -65,6 +68,19 @@ const galleryMotionVars = {
   "--pg-close-ms": "var(--duration-quick)",
   "--pg-open-ease": toCssEasing(originOpenEasePoints),
   "--pg-close-ease": toCssEasing(originCloseEasePoints),
+  // The zoom out of the tile. Longer than the plain lift because the surface
+  // really travels from the tile, on a spring that is most of the way there in
+  // its first third; the close is the house slow step. Built from the shared
+  // tokens (registered as <time> in preview-gallery.css, so the sum computes
+  // to one value the flight can read) so a token change retimes the zoom.
+  "--pg-zoom-open-ms": "calc(var(--duration-slow) + var(--duration-fast))",
+  "--pg-zoom-close-ms": "var(--duration-slow)",
+  // How long the tile and the surface take to hand over at each end of the
+  // zoom. On the open only the tile fades: the surface's artwork lands on the
+  // tile's exactly, so it cuts in over it, and a crossfade of both overlapped
+  // the spring's fastest frames and showed two copies sliding apart. On the
+  // close both fade, over the flight's slow tail, where they lie together.
+  "--pg-zoom-handoff-ms": "var(--duration-fast)",
   "--pg-content-in-ms": "var(--duration-base)",
   "--pg-content-out-ms": "var(--duration-quick)",
   "--pg-backdrop-in-ms": "var(--duration-base)",
@@ -74,6 +90,18 @@ const galleryMotionVars = {
 } as CSSProperties
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
+
+/** True when `target` sits inside something below `boundary` that scrolls
+ * sideways itself. */
+function startsInHorizontalScroller(target: Element, boundary: Element) {
+  for (let node: Element | null = target; node && node !== boundary; node = node.parentElement) {
+    if (node.scrollWidth > node.clientWidth + 1) {
+      const overflowX = getComputedStyle(node).overflowX
+      if (overflowX === "auto" || overflowX === "scroll") return true
+    }
+  }
+  return false
+}
 
 function wrapIndex(index: number, length: number) {
   if (length === 0) return 0
@@ -85,9 +113,10 @@ function getPreviewDescription(card: PortfolioCard) {
 }
 
 function getPreviewCollaborators(card: PortfolioCard): Collaborator[] {
-  // Credited on every project, with or without company: a shot with no names
-  // under it reads as unattributed rather than as solo work.
-  return [...(card.team ?? []), collaborators.rafael]
+  // Work done alone needs no credit row: the whole site is already Rafael's,
+  // and his face under his own solo piece was a byline restating the page.
+  // Shared work names the team, Rafael beside them.
+  return card.team?.length ? [...card.team, collaborators.rafael] : []
 }
 
 function getInitials(name: string) {
@@ -106,7 +135,7 @@ export function PreviewGalleryDialog({
   prefersReducedMotion,
   onOpenChange,
   onSelectedIndexChange,
-  getOriginRect,
+  getOrigin,
   finalFocus,
   onSelectWriting,
   notesStatus,
@@ -125,7 +154,6 @@ export function PreviewGalleryDialog({
   const prevOpenRef = useRef(open && !openedByGesture)
   const switchTimeoutRef = useRef<number | null>(null)
   const switchFrameRef = useRef<number | null>(null)
-  const closeResetTimeoutRef = useRef<number | null>(null)
   const originWrapRef = useRef<HTMLDivElement | null>(null)
   const popupRef = useRef<HTMLDivElement | null>(null)
   // The card is the surface that scrolls, so it is also what opening focuses:
@@ -184,6 +212,31 @@ export function PreviewGalleryDialog({
   const listScrollTop = useRef(0)
   const focusNoteTitle = useRef(true)
   const orderedNotes = useMemo(() => groupWritingsByCategory(writingSummaries).flatMap(group => group.entries), [])
+  // Paging wraps at both ends. Without a cue, Next on the last slide looked
+  // like any other step and a visitor could loop the set without knowing it.
+  const [wrapCue, setWrapCue] = useState<"start" | "end" | null>(null)
+  const wrapCueTimeoutRef = useRef<number | null>(null)
+  const flagWrap = useCallback((wrapped: boolean, direction: number) => {
+    if (wrapCueTimeoutRef.current !== null) window.clearTimeout(wrapCueTimeoutRef.current)
+    wrapCueTimeoutRef.current = null
+    if (!wrapped) {
+      setWrapCue(null)
+      return
+    }
+    setWrapCue(direction > 0 ? "start" : "end")
+    wrapCueTimeoutRef.current = window.setTimeout(() => {
+      setWrapCue(null)
+      wrapCueTimeoutRef.current = null
+    }, 1800)
+  }, [])
+  useEffect(() => () => {
+    if (wrapCueTimeoutRef.current !== null) window.clearTimeout(wrapCueTimeoutRef.current)
+  }, [])
+  const notePosition = readingNote ? orderedNotes.findIndex(note => note.id === writingId) : -1
+  const positionLabel = notePosition >= 0
+    ? `${notePosition + 1} / ${orderedNotes.length}`
+    : `${safeIndex + 1} / ${items.length}`
+  const wrapLabel = wrapCue === "start" ? "Back to the start" : wrapCue === "end" ? "Jumped to the end" : null
   const [listHeight, setListHeight] = useState<number | null>(null)
 
   useIsomorphicLayoutEffect(() => {
@@ -291,10 +344,6 @@ export function PreviewGalleryDialog({
   }, [open])
 
   useEffect(() => {
-    if (open && closeResetTimeoutRef.current !== null) {
-      window.clearTimeout(closeResetTimeoutRef.current)
-      closeResetTimeoutRef.current = null
-    }
     // Silent until the context exists: building it here stalls the entrance.
     if (open && !prevOpenRef.current && isAudioWarm()) playOpen()
     prevOpenRef.current = open
@@ -307,9 +356,6 @@ export function PreviewGalleryDialog({
       }
       if (switchFrameRef.current !== null) {
         window.cancelAnimationFrame(switchFrameRef.current)
-      }
-      if (closeResetTimeoutRef.current !== null) {
-        window.clearTimeout(closeResetTimeoutRef.current)
       }
     }
   }, [])
@@ -343,19 +389,35 @@ export function PreviewGalleryDialog({
     else shell?.removeAttribute("data-origin-animating")
   }, [])
 
-  const originMotionEnabled = !prefersReducedMotion && Boolean(getOriginRect)
+  const originMotionEnabled = !prefersReducedMotion && Boolean(getOrigin)
 
   // Declared before the open effect below, so a click that changes the index and
   // opens in the same commit animates from the new card: the hook latches these
   // inputs in a layout effect of its own.
   const { run: runOriginAnimation } = useOriginTravel({
     node: originWrapNode,
-    getOriginRect: () => getOriginRect?.(safeIndex) ?? null,
+    // A shared link opens with a plain lift: zooming out of a tile nobody
+    // pressed reads as the page doing something on its own. It still closes
+    // into the tile, which is where the visitor finds it again.
+    getOrigin: (mode) => mode === "open" && !openedByGesture ? null : getOrigin?.(safeIndex) ?? null,
     enabled: originMotionEnabled,
     openDurationProperty: "--pg-open-ms",
     closeDurationProperty: "--pg-close-ms",
     onFlight: flagOriginAnimating,
     getFadeNode: () => popupRef.current,
+    getZoomAnchor: () => {
+      const frame = popupRef.current?.querySelector(".preview-gallery-media-frame")
+      return frame?.querySelector(".preview-gallery-media") ?? frame ?? null
+    },
+    getZoomKeep: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
+    getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
+    getZoomOutline: () => cardRef.current,
+    // The notes list comes out of a paper in the folder, a page the size of a
+    // thumbnail: it lands as a whole card rather than clipped to the paper.
+    getZoomWhole: () => activeItem?.kind === "writings" ? cardRef.current : null,
+    handoffDurationProperty: "--pg-zoom-handoff-ms",
+    zoomOpenDurationProperty: "--pg-zoom-open-ms",
+    zoomCloseDurationProperty: "--pg-zoom-close-ms",
   })
 
   const attachOriginWrap = useCallback((node: HTMLDivElement | null) => {
@@ -384,14 +446,6 @@ export function PreviewGalleryDialog({
         playClose()
         runOriginAnimation("close")
         cancelSwitchTransition()
-        if (closeResetTimeoutRef.current !== null) {
-          window.clearTimeout(closeResetTimeoutRef.current)
-        }
-        closeResetTimeoutRef.current = window.setTimeout(() => {
-          setSwitchPhase("idle")
-          setIsWide(false)
-          closeResetTimeoutRef.current = null
-        }, previewCloseResetMs)
       }
       onOpenChange(nextOpen)
     },
@@ -456,6 +510,7 @@ export function PreviewGalleryDialog({
         const index = orderedNotes.findIndex(note => note.id === writingId)
         const next = orderedNotes[wrapIndex(index + direction, orderedNotes.length)]
         if (next) {
+          flagWrap(index + direction < 0 || index + direction >= orderedNotes.length, direction)
           if (direction > 0) playNext()
           else playBack()
           pageNote(next.id, direction < 0 ? "prev" : "next")
@@ -463,9 +518,11 @@ export function PreviewGalleryDialog({
         return
       }
       if (items.length <= 1) return
-      goToIndex(wrapIndex(safeIndex + direction, items.length), direction < 0 ? "prev" : "next")
+      if (goToIndex(wrapIndex(safeIndex + direction, items.length), direction < 0 ? "prev" : "next")) {
+        flagWrap(safeIndex + direction < 0 || safeIndex + direction >= items.length, direction)
+      }
     },
-    [goToIndex, items.length, safeIndex, writingId, orderedNotes, pageNote, playNext, playBack],
+    [goToIndex, items.length, safeIndex, writingId, orderedNotes, pageNote, playNext, playBack, flagWrap],
   )
 
   useEffect(() => {
@@ -540,7 +597,19 @@ export function PreviewGalleryDialog({
   const nextKeyshortcuts = isReaderSlide ? "ArrowRight" : "ArrowDown ArrowRight"
   return (
     <Dialog.Root open={rootMounted && present && !leavingNote} onOpenChange={handleOpenChange}
-      onOpenChangeComplete={(isOpen) => { if (isOpen) warmAudioWhenIdle(); else setLeavingNote(null) }}>
+      onOpenChangeComplete={(isOpen) => {
+        if (isOpen) {
+          warmAudioWhenIdle()
+          return
+        }
+        setLeavingNote(null)
+        // Reset only once the exit has finished. A 260ms timer used to drop
+        // the wide layout mid-way through the 360ms zoom back into the tile:
+        // the card reflowed narrower under a clip measured for the wide one,
+        // and a shrunken copy of the whole card flashed beside the tile.
+        setSwitchPhase("idle")
+        setIsWide(false)
+      }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
 
@@ -588,11 +657,13 @@ export function PreviewGalleryDialog({
                   than its first child: the card carries the paging transition,
                   and a control that slid and faded under the finger that
                   pressed it read as the button leaving rather than the slide.
-                  Position remains available to assistive technology without
-                  adding a visible counter to every preview. */}
+                  The position is announced rather than shown: a "16 / 19" on
+                  the page was a number to read, not something to act on. When
+                  a step wraps around either end it says so, then goes back to
+                  the number. */}
               <div className="preview-gallery-toolbar">
-                <span className="preview-gallery-count sr-only">
-                  {safeIndex + 1} / {items.length}
+                <span className="preview-gallery-count sr-only" data-wrapped={wrapLabel ? "true" : undefined} aria-live="polite">
+                  {wrapLabel ?? positionLabel}
                 </span>
 
                 <div className="preview-gallery-controls" role="group" aria-label="Preview controls">
@@ -649,8 +720,11 @@ export function PreviewGalleryDialog({
                   )
                 }}
                 onTouchStart={(event) => {
-                  // A horizontal drag on the video is the seek bar, not a swipe.
-                  if (event.target instanceof Element && event.target.closest("video")) {
+                  // A horizontal drag on the video is the seek bar, not a swipe,
+                  // and one inside a note's code block or install command is
+                  // that block scrolling sideways: paging there turned to
+                  // another note mid-read.
+                  if (event.target instanceof Element && (event.target.closest("video") || startsInHorizontalScroller(event.target, event.currentTarget))) {
                     touchStartRef.current = null
                     return
                   }
@@ -697,6 +771,11 @@ export function PreviewGalleryDialog({
                       <div className="preview-gallery-content">
                         <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
                         <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
+                        {activeCard.post ? (
+                          <a className="preview-gallery-post" href={activeCard.post.href} target="_blank" rel="noreferrer">
+                            Watch the original on {activeCard.post.site} · <time dateTime={activeCard.post.date}>{formatPostDate(activeCard.post.date)}</time>
+                          </a>
+                        ) : null}
                         {activeCollaborators.length > 0 ? (
                           <div className="preview-gallery-team">
                             <ul className="preview-gallery-people" aria-label="Collaborators">
@@ -785,23 +864,26 @@ export function PreviewGalleryDialog({
                           <Dialog.Title className="preview-gallery-title preview-gallery-resume-title">
                             {resumeItemTitle}
                           </Dialog.Title>
-                          <p className="mosaic-about-resume-download">
-                            <a
-                              href={siteLinks.resumePdf}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mosaic-about-link"
-                              onClick={() => {
-                                trackEvent("social_link_click", {
-                                  social_label: "View Resume",
-                                  social_href: siteLinks.resumePdf,
-                                  social_placement: "resume_dialog",
-                                })
-                              }}
-                            >
-                              View PDF
-                            </a>
-                          </p>
+                          <div className="preview-gallery-resume-actions">
+                            <p className="mosaic-about-resume-download">
+                              <a
+                                href={siteLinks.resumePdf}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mosaic-about-link"
+                                onClick={() => {
+                                  trackEvent("social_link_click", {
+                                    social_label: "View Resume",
+                                    social_href: siteLinks.resumePdf,
+                                    social_placement: "resume_dialog",
+                                  })
+                                }}
+                              >
+                                View PDF
+                              </a>
+                            </p>
+                            <CopyPageLink variant="text" className="mosaic-about-link" href={`${siteOrigin}${resumePath}`} subject="résumé" />
+                          </div>
                         </div>
                       </header>
                       <Dialog.Description className="sr-only">

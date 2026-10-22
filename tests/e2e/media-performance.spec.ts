@@ -4,18 +4,19 @@ test("rests feed videos while a project preview covers them and resumes on close
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/")
+  // The opening row's two loops and the first row of films.
   const feedVideos = page.locator("video.mosaic-row-media")
   const playingCount = () => feedVideos.evaluateAll(videos =>
     videos.filter(video => !(video as HTMLVideoElement).paused).length,
   )
-  await expect.poll(playingCount).toBe(2)
+  await expect.poll(playingCount).toBe(4)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect.poll(playingCount).toBe(0)
   await expect.poll(() => page.getByRole("dialog").locator("video").evaluate(video => video.paused)).toBe(false)
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()
-  await expect.poll(playingCount).toBe(2)
+  await expect.poll(playingCount).toBe(4)
 })
 
 test("reduced-motion visitors keep posters without requesting feed video data", async ({ page }) => {
@@ -29,7 +30,7 @@ test("reduced-motion visitors keep posters without requesting feed video data", 
   })
   await page.goto("/")
   const videos = page.locator("video.mosaic-row-media")
-  await expect(videos).toHaveCount(3)
+  await expect(videos).toHaveCount(6)
   // Visiting About crosses every feed row and lets its visibility observers run.
   await page.getByRole("link", { name: "About", exact: true }).click()
   await expect(page.locator("#about-panel")).toBeFocused()
@@ -58,7 +59,7 @@ test("uses posters on 3g and responds when the connection changes", async ({ pag
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
   const videos = page.locator("video.mosaic-row-media")
-  await expect(videos).toHaveCount(3)
+  await expect(videos).toHaveCount(6)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).hover()
   expect(requests).toEqual([])
   await page.evaluate(() => {

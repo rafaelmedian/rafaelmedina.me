@@ -63,7 +63,8 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
       const pose = camera.current
       const width = plane.offsetWidth
       const heights = columns[0]?.map(column => column.offsetHeight) ?? []
-      const nextImageWidth = Math.ceil((columns[0]?.[0]?.offsetWidth ?? 0) * pose.scale)
+      // The photo inside the print's white border, not the whole column.
+      const nextImageWidth = Math.ceil((columns[0]?.[0]?.querySelector("img")?.offsetWidth ?? 0) * pose.scale)
       if (nextImageWidth && nextImageWidth !== imageWidth) {
         imageWidth = nextImageWidth
         slides.forEach(slide => {
@@ -129,7 +130,8 @@ export function usePhotoWall(stage: HTMLElement | null, open: boolean, onNavigat
     const reset = () => {
       onNavigate()
       focus = { x: 0, y: 0 }
-      camera.current = { x: 20, y: 144, scale: 0.65 }
+      // Far enough out to read as a wall of prints rather than a few close-ups.
+      camera.current = { x: 20, y: 144, scale: 0.55 }
       paint()
     }
     const zoomCentre = (factor: number) => zoom(factor, { x: stage.clientWidth / 2, y: stage.clientHeight / 2 })

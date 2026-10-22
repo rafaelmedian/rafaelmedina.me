@@ -35,6 +35,13 @@ function readFlightTransform(element: HTMLElement) {
   return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${angle}deg) scale(${Math.hypot(matrix.a, matrix.b)})`
 }
 
+/** The white frame layer of a computed print shadow alone, at a share of
+    its width: the first layer of the list, "rgb(…) 0px 0px 0px 10px". */
+function printFrame(shadow: string, share: number) {
+  const frame = shadow.match(/^(rgba?\([^)]*\)) 0px 0px 0px ([\d.]+)px/)
+  return frame ? `${frame[1]} 0px 0px 0px ${Number(frame[2]) * share}px` : "none"
+}
+
 type PhotoOrigin = {
   id: string | undefined
   element: HTMLElement
@@ -105,12 +112,22 @@ export function usePhotoOriginTransition(
 ) {
   const flights = useRef<Flight[]>([])
   const sourceFades = useRef<Animation[]>([])
+  /** The wall's in-place entrance or exit, if one is running. */
+  const inPlace = useRef<Animation[]>([])
 
 
   useClientLayoutEffect(() => {
     if (!strip || !opener) return
-    const sources = measurePhotoOrigins(opener)
-    sources.forEach(({ element }) => { element.setAttribute("data-photo-away", "") })
+    // Only the prints themselves: measuring them here read every computed
+    // style on the fan right after the wall mounted, forcing that layout a
+    // step early inside the open's own task.
+    const prints = Array.from(opener.querySelectorAll<HTMLElement>(".personal-photos-print"))
+    // The flat wall opens and closes in place (below), so no photo ever
+    // leaves its print: the fan stays as it is under the fading canvas.
+    const tokens = getComputedStyle(strip)
+    const stays = strip.dataset.layout === "wall"
+      && !(parseFloat(tokens.getPropertyValue("--wall-bend")) || parseFloat(tokens.getPropertyValue("--wall-rim")))
+    if (!stays) prints.forEach((element) => { element.setAttribute("data-photo-away", "") })
     // The opener wears it only while the sheet is actually over it. The fan
     // answers to the pointer as a whole, and the pointer is still on the tile
     // — the sheet just happens to be covering it — so without this the hand
@@ -122,7 +139,7 @@ export function usePhotoOriginTransition(
     // the frames they will actually sit in.
     if (open) opener.setAttribute("data-photo-away", "")
     return () => {
-      sources.forEach(({ element }) => { element.removeAttribute("data-photo-away") })
+      prints.forEach((element) => { element.removeAttribute("data-photo-away") })
       opener.removeAttribute("data-photo-away")
     }
   }, [strip, origins, reducedMotion, opener, open])
@@ -178,6 +195,68 @@ export function usePhotoOriginTransition(
 
     const slides = Array.from(strip.querySelectorAll<HTMLElement>(".personal-photos-slide"))
     const bounds = strip.getBoundingClientRect()
+
+    // The flat wall opens and closes in place. Flying every print out of the
+    // five on the fan sent dozens of photos criss-crossing the screen to
+    // slots that had nothing to do with where they started, and the wall read
+    // as being reshuffled rather than revealed. Each photo now appears where
+    // it lives, growing the last few percent as it fades in, in a short ripple
+    // out from the middle of the screen; the close runs the same move
+    // backwards, the edges leaving first and the middle last, while the white
+    // canvas fades away over the page.
+    const curvedWall = Boolean(parseFloat(tokens.getPropertyValue("--wall-bend")) || parseFloat(tokens.getPropertyValue("--wall-rim")))
+    if (opaqueWall && !curvedWall) {
+      // A reopen while the prints were still flying home drops that return.
+      previousFlights.forEach(removeFlight)
+      sourceFades.current.forEach((animation) => animation.cancel())
+      sourceFades.current = []
+      const centreX = bounds.left + bounds.width / 2
+      const centreY = bounds.top + bounds.height / 2
+      const reach = Math.hypot(bounds.width, bounds.height) / 2
+      const placeEasing = tokens.getPropertyValue(open ? "--ease-smooth" : "--ease-exit").trim()
+      // The white canvas fades in over --duration-base (see
+      // personal-photos.css); the photos start halfway through it.
+      const lead = open ? cssTimeToMilliseconds(tokens.getPropertyValue("--duration-base")) / 2 : 0
+      // Read every slot, and where an interrupted move left each photo,
+      // before starting or cancelling any animation.
+      const onScreen = slides.map(slide => ({ slide, rect: slide.getBoundingClientRect() })).filter(({ rect }) =>
+        rect.width && rect.right > bounds.left && rect.left < bounds.right && rect.bottom > bounds.top && rect.top < bounds.bottom)
+        .map(({ slide, rect }) => {
+          const style = getComputedStyle(slide)
+          return { slide, rect, from: { opacity: style.opacity, scale: style.scale === "none" ? "1" : style.scale } }
+        })
+      inPlace.current.forEach((animation) => animation.cancel())
+      const rest = { opacity: 1, scale: 1 }
+      const away = { opacity: 0, scale: 0.94 }
+      inPlace.current = onScreen.map(({ slide, rect, from }) => {
+        const distance = Math.min(1, Math.hypot(rect.left + rect.width / 2 - centreX, rect.top + rect.height / 2 - centreY) / reach)
+        return slide.animate(open ? [away, rest] : [from, away], {
+          duration: duration * 0.75, delay: lead + (open ? distance : 1 - distance) * duration * 0.25,
+          easing: placeEasing, fill: open ? "backwards" : "forwards",
+        })
+      })
+      // Marks the wall while its photos are arriving or leaving.
+      const marker = open ? "data-entering" : "data-leaving"
+      strip.setAttribute(marker, "")
+      let interrupted = false
+      const batch = inPlace.current
+      void Promise.allSettled(batch.map(animation => animation.finished)).then(async () => {
+        if (interrupted) return
+        strip.removeAttribute(marker)
+        if (open) return
+        // The canvas fades out with the photos; unmount once it has gone too.
+        const backdrop = document.querySelector(".personal-photos-backdrop[data-ending-style]")
+        await Promise.allSettled(backdrop?.getAnimations().map(animation => animation.finished) ?? [])
+        if (!interrupted) onCloseComplete()
+      })
+      return () => {
+        interrupted = true
+        strip.removeAttribute(marker)
+        // Unmounting, nothing is left to read; otherwise the next move
+        // reads these where they stand and cancels them itself.
+        if (!strip.isConnected) batch.forEach((animation) => animation.cancel())
+      }
+    }
 
     // Snapshot all destinations before mounting or hiding any flight. Mixing
     // these reads with each clone's writes forces layout once per photo.
@@ -298,6 +377,7 @@ export function usePhotoOriginTransition(
       const currentImage = previous ? readStyles(image, imageProperties) : targetImage
       const currentOpacity = previous ? getComputedStyle(clone).opacity : "1"
       const currentCaptionOpacity = previous ? getComputedStyle(caption).opacity : "1"
+      const currentShadow = previous ? getComputedStyle(clone).boxShadow : frame.boxShadow
       previous?.animations.forEach((animation) => animation.cancel())
       slide.style.opacity = "0"
       // Every wall photo borrows its destination print's frame and crop,
@@ -310,6 +390,17 @@ export function usePhotoOriginTransition(
         clone.animate([open ? originFrame(source) : currentFrame, open ? targetFrame : originFrame(source)], timing),
         image.animate([open ? originImage(source) : currentImage, open ? targetImage : originImage(source)], timing),
         caption.animate([{ opacity: open ? 0 : currentCaptionOpacity }, { opacity: open ? 1 : 0 }], timing),
+        // A borrowed photo casts no shadow while it is stacked under the
+        // fan, as above, but its wall slot wears the print shadow, whose
+        // first layer is the white frame. The frame grows from the first
+        // frame as the borrowed print's padding gives way to it; the dark
+        // layers only arrive over the second half of the trip out and leave
+        // over the first half of the trip home, so the handoff to its slot
+        // never pops a shadow or a frame. Added last, it wins over `none`.
+        ...(opaqueWall && !own && frame.boxShadow ? [clone.animate(open
+          ? [{ boxShadow: printFrame(frame.boxShadow, 0) }, { boxShadow: printFrame(frame.boxShadow, 0.5) }, { boxShadow: frame.boxShadow }]
+          : [{ boxShadow: currentShadow }, { boxShadow: printFrame(frame.boxShadow, 0.5) }, { boxShadow: printFrame(frame.boxShadow, 0) }],
+        timing)] : []),
       ] : open ? [
         // The same trip, run backwards. There is no print-shaped frame for
         // this one to grow out of, so the whole card swells from the print it

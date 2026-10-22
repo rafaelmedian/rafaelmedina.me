@@ -2,6 +2,7 @@ import { collaborators, type PortfolioCard } from "../data/portfolio"
 import { ArticleContents } from "./ArticleContents"
 import { buildPreviewSrcSet } from "../lib/media"
 import { useId } from "react"
+import { formatPostDate } from "../lib/postDate"
 
 export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
   const signatureId = useId()
@@ -57,7 +58,15 @@ export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
                             loading="lazy"
                             decoding="async"
                           />
-                          <figcaption>{item.label}</figcaption>
+                          <figcaption>
+                            {item.label}
+                            {item.post ? <>
+                              {" · "}
+                              <a href={item.post.href} target="_blank" rel="noreferrer">
+                                Posted on X, <time dateTime={item.post.date}>{formatPostDate(item.post.date)}</time>
+                              </a>
+                            </> : null}
+                          </figcaption>
                         </figure>
                       )
                     })}

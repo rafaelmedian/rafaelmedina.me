@@ -7,8 +7,20 @@ async function openHome(page: Page) {
   await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
 }
 
+/** The flat wall opens and closes in place; only the optional curved
+    surface still flies its photos home to the fan, so the return-flight
+    specs opt into it. */
+async function curveTheWall(page: Page) {
+  await page.addInitScript(() => addEventListener("DOMContentLoaded", () => {
+    const style = document.createElement("style")
+    style.textContent = '.personal-photos-sheet[data-layout="wall"] { --wall-rim: 0.46; }'
+    document.head.append(style)
+  }))
+}
+
 test("returning photos match the thumbnail crop and frame before the handoff", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
+  await curveTheWall(page)
   await openHome(page)
   // Opening the wall leaves every photo at rest, so one Escape closes.
   await page.locator(".personal-photos-label").click()
@@ -59,7 +71,7 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
       distortion: Math.abs(Math.hypot(matrix.a, matrix.b) - Math.hypot(matrix.c, matrix.d)),
     }
   })
-  expect(landing.duration).toBe(200)
+  expect(landing.duration).toBe(300)
   expect(landing.frame, JSON.stringify(landing)).toBeLessThan(1)
   expect(landing.image).toBeLessThan(1)
   expect(landing.crop).toBe(landing.sourceCrop)
@@ -70,6 +82,7 @@ test("returning photos match the thumbnail crop and frame before the handoff", a
 
 test("the returning photo travels straight to its print instead of arcing above it", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 })
+  await curveTheWall(page)
   await openHome(page)
   // Beside the prints, so nothing is held and one Escape closes.
   await page.locator(".personal-photos-label").click()
@@ -192,33 +205,6 @@ test("a print and keyboard activation both open the wall without a selection", a
 
 const dialog = (page: Page) => page.getByRole("dialog", { name: "Personal photos" })
 
-/** Pause every flight at its first frame so the deal can be inspected. */
-async function holdFlights(page: Page) {
-  await page.evaluate(() => {
-    const animate = Element.prototype.animate
-    Element.prototype.animate = function (...args) {
-      const animation = animate.apply(this, args)
-      if (this.closest(".personal-photos-flight")) {
-        animation.pause()
-        animation.currentTime = 0
-      }
-      return animation
-    }
-  })
-}
-
-async function finishFlights(flights: Locator) {
-  // Closing builds a screenful of clones in a layout effect. Under a starved
-  // runner, another clone can mount after a one-shot snapshot; keep finishing
-  // the current set until every return flight has completed and unmounted.
-  await expect.poll(async () => {
-    await flights.evaluateAll((elements) => elements
-      .flatMap((element) => element.getAnimations({ subtree: true }))
-      .forEach((animation) => animation.finish()))
-    return flights.count()
-  }, { timeout: 5000 }).toBe(0)
-}
-
 test("the hand comes to rest when the sheet closes and only opens again for a moving pointer", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openHome(page)
@@ -238,17 +224,14 @@ test("the hand comes to rest when the sheet closes and only opens again for a mo
   // over the tile throughout the return flight.
   await trigger.locator(".personal-photos-label").click()
   await expect(dialog(page)).toBeVisible()
-  await holdFlights(page)
   await page.keyboard.press("Escape")
-  const flights = page.locator(".personal-photos-flight")
-  await expect(flights).not.toHaveCount(0)
-  // The hand is at rest under the sheet, so the flights are aimed at the
-  // frames it keeps at rest. It used to open here on the focus the sheet
-  // handed back, and again on :hover once the sheet stopped taking the
-  // pointer, which read as a print still picked after the close.
+  // The wall leaves in place over the tile, and the hand stays at rest under
+  // it. It used to open here on the focus the sheet handed back, and again
+  // on :hover once the sheet stopped taking the pointer, which read as a
+  // print still picked after the close.
+  await expect(page.locator(".personal-photos-sheet[data-leaving]")).toHaveCount(1)
   expect(await rects()).toEqual(resting)
 
-  await finishFlights(flights)
   await expect(dialog(page)).toBeHidden()
   await expect(trigger).toBeFocused()
   // The pointer is still over the tile and the tile holds focus; neither is

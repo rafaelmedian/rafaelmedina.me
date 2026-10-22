@@ -117,9 +117,10 @@
   gap: 0.6rem;
 }
 
-/* Three quiet objects punctuate the long sheet. They are the generated pencil
-   strips already used by Notes, so hovering or tabbing into the role makes the
-   line retrace itself instead of moving the object around. */
+/* Quiet objects punctuate the long sheet, each drawn from the role beside it.
+   They are pencil strips from the same generator as Notes' drawings, so
+   hovering or tabbing into the role makes the line retrace itself instead of
+   moving the object around. */
 .resume-margin-drawing {
   display: none;
 }
@@ -137,7 +138,7 @@
       width: min(var(--resume-drawing-size), calc(var(--resume-drawing-gutter) - var(--resume-drawing-inset)));
       aspect-ratio: 1;
       background-color: var(--muted);
-      opacity: 0.48;
+      opacity: 0.6;
       rotate: var(--resume-drawing-tilt);
       -webkit-mask: var(--resume-drawing-mark) 0 0 / 300% 100% no-repeat;
       mask: var(--resume-drawing-mark) 0 0 / 300% 100% no-repeat;

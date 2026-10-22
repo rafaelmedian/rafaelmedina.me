@@ -1,7 +1,6 @@
-import { ArrowUpRight, Check, Copy, Link2 } from "lucide-react"
+import { ArrowUpRight, Check, Copy } from "lucide-react"
 import {
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -11,13 +10,13 @@ import {
 
 import { writingSummaries } from "../data/writingIndex"
 import type { Writing, WritingAnnotation, WritingCode, WritingImage, WritingTool } from "../data/writings"
-import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { archiveDate, noteDate } from "../lib/writingDate"
 import { noteHash, pickFrom } from "../lib/writings"
 import { siteOrigin, writingPath } from "../lib/projectMetadata"
 import { LikeButton } from "./LikeButton"
 import { ArticleContents } from "./ArticleContents"
 import { InlineSwap } from "./InlineSwap"
+import { CopyPageLink } from "./CopyPageLink"
 
 function inlineProse(text: string) {
   return text.split(/`([^`]+)`/).map((part, index) => (index % 2 ? <code className="writing-code" key={index}>{part}</code> : part))
@@ -195,83 +194,6 @@ const sectionSlug = (heading: string) => heading.toLowerCase().replace(/[^\w\s-]
 /** How long a copied link stays confirmed, matching the address chip's window. */
 const COPY_CONFIRMATION_MS = 1600
 
-/**
- * The note's own address, offered rather than left in the URL bar. A note has a
- * page of its own -- `/notes/<id>/`, prerendered like a project's -- and the
- * reader is showing it, but a visitor reading inside a sheet has no reason to
- * look up there, and the one thing they might want to do with a note they
- * liked is send it to someone. The absolute URL is built rather than read off
- * `location` so a copy made from a preview server or a local build still pastes
- * as the public link.
- */
-function CopyNoteLink({ writing }: { writing: Writing }) {
-  const [copied, setCopied] = useState(false)
-  const resetRef = useRef<number | undefined>(undefined)
-  const linkRef = useRef<HTMLAnchorElement>(null)
-  const fromWidthRef = useRef(0)
-  const resizeRef = useRef<Animation | null>(null)
-  useEffect(() => () => window.clearTimeout(resetRef.current), [])
-  const href = `${siteOrigin}${writingPath(writing)}`
-
-  // Read the width the pill is showing -- mid-resize, if a press lands during
-  // one -- before the label changes, so the next resize starts from there.
-  function showCopied(next: boolean) {
-    fromWidthRef.current = linkRef.current?.offsetWidth ?? 0
-    setCopied(next)
-  }
-
-  // The pill hugs whichever label it wears, the way the like pill hugs its
-  // count, and eases between the two widths rather than jumping.
-  useLayoutEffect(() => {
-    const link = linkRef.current
-    const from = fromWidthRef.current
-    if (!link || !from) return
-    resizeRef.current?.cancel()
-    const to = link.offsetWidth
-    if (from === to || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    const style = getComputedStyle(link)
-    resizeRef.current = link.animate([{ width: `${from}px` }, { width: `${to}px` }], {
-      duration: cssTimeToMilliseconds(style.getPropertyValue("--duration-quick")),
-      easing: style.getPropertyValue("--ease-standard").trim() || "ease",
-    })
-  }, [copied])
-
-  return (
-    <>
-      {/* An ordinary link underneath -- for the context menu, for a browser with
-          no clipboard, for a middle-click -- and a plain press copies instead,
-          the way the address in the About sheet does. */}
-      <a ref={linkRef} className="writing-copy-link" href={href} data-copied={copied ? "true" : undefined}
-        onClick={(event) => {
-          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
-          event.preventDefault()
-          void navigator.clipboard?.writeText(href).then(() => {
-            showCopied(true)
-            // Restart the window on every copy so a second press gets its own
-            // full confirmation instead of the tail of the first.
-            window.clearTimeout(resetRef.current)
-            resetRef.current = window.setTimeout(() => showCopied(false), COPY_CONFIRMATION_MS)
-          }, () => undefined)
-        }}>
-        {copied
-          ? <Check className="writing-copy-link-icon" size={14} aria-hidden="true" />
-          : <Link2 className="writing-copy-link-icon" size={14} aria-hidden="true" />}
-        <span aria-hidden="true">
-          <InlineSwap value={copied ? "Link copied" : "Copy link"} direction={copied ? "up" : "down"} />
-        </span>
-        {/* The name says what the control does and stays saying it: the label
-            beside the icon is the confirmation, and a name that changed with it
-            would leave a screen reader hunting for the button it just used. */}
-        <span className="sr-only">Copy a link to this note</span>
-      </a>
-      {/* Outside the link, so the confirmation is announced without joining the
-          control's accessible name. */}
-      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {copied ? "Link to this note copied to clipboard" : ""}
-      </span>
-    </>
-  )
-}
 
 type WritingArticleProps = {
   writing: Writing
@@ -309,7 +231,7 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
             note is worth sending on for the same reason it is worth liking. */}
         <div className="writing-reader-actions">
           {showLikes && import.meta.env.VITE_LIKES_API_URL ? <LikeButton key={writing.id} collection="notes" itemId={writing.id} /> : null}
-          <CopyNoteLink writing={writing} />
+          <CopyPageLink href={`${siteOrigin}${writingPath(writing)}`} subject="note" />
         </div>
       </header>
       {/* One section is not an outline, so a note needs two to list them. */}

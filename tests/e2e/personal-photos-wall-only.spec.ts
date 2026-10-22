@@ -11,7 +11,9 @@ test("older layout preferences open the full-screen wall with one exit", async (
   await expect(wall).toBeVisible()
   expect(await wall.boundingBox()).toEqual({ x: 0, y: 0, width: 390, height: 844 })
   await expect(dialog.getByRole("group", { name: "Layout" })).toHaveCount(0)
-  await expect(dialog.getByRole("button")).toHaveCount(1)
+  // One control to leave by. The prints are toggle buttons of their own, but
+  // they are the photos rather than the wall's chrome.
+  await expect(dialog.getByRole("button").and(page.locator(":not(.personal-photos-slide)"))).toHaveCount(1)
   const close = dialog.getByRole("button", { name: "Close photo wall" })
   const closeBox = (await close.boundingBox())!
   expect(closeBox.height).toBeGreaterThanOrEqual(44)

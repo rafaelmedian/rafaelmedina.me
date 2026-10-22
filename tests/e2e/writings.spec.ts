@@ -24,7 +24,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await expect(page).toHaveURL(/\/notes\/$/)
   await expect(page).toHaveTitle("Notes — Rafael Medina")
   await expect(popup(page)).toHaveAttribute("data-preview-kind", "writings")
-  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 17")
   await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   await expect(popup(page).locator(".writings-category > h3")).toHaveText(["Tools", "Notes"])
   await expect(popup(page).getByRole("button", { name: "Make pull requests easier to review", exact: true })
@@ -34,7 +34,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
 
   // Either arrow leaves for the tile on that side, in the same popup.
   await page.keyboard.press("ArrowRight")
-  await expect(page).toHaveURL(/\/work\/popparazi-v1\/$/)
+  await expect(page).toHaveURL(/\/work\/matcha-gasless-film\/$/)
   await expect(popup(page)).toHaveAttribute("data-preview-kind", "project")
   await page.keyboard.press("ArrowLeft")
   await expect(page).toHaveURL(/\/notes\/$/)
@@ -58,6 +58,9 @@ test("the header Notes link opens the list on the project preview's line", async
   await card.scrollIntoViewIfNeeded()
   await card.click()
   await expect(popup(page)).toBeVisible()
+  // Reduced motion still mounts an initial pose. Use the settled project
+  // position as the baseline, just as the Notes position below is settled.
+  await expect(popup(page)).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
   const previewTop = (await popup(page).boundingBox())!.y
   await page.keyboard.press("Escape")
   await expect(popup(page)).toBeHidden()
@@ -120,7 +123,7 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   await expect(sheet(page)).toBeHidden()
   await expect(page).toHaveURL(/\/notes\/\?ref=portfolio$/)
   await expect(popup(page)).toBeVisible()
-  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 14")
+  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 17")
   // The row the sheet was opened from is back, and focus is in the list's
   // popup rather than stranded on the tile behind it.
   await expect(entry).toBeVisible()
@@ -156,6 +159,12 @@ test("a press outside a note closes the gallery once, with the note still on it"
   await page.goto("/")
   const folder = page.getByRole("button", { name: "Open writings folder" })
   await folder.click()
+  // This test exercises dismissal. Let the list finish measuring and entering
+  // before clicking a row, so its hit target cannot move during the press.
+  await expect(popup(page).locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
+  await page.evaluate(() => document.getAnimations().forEach(animation => {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+  }))
   await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
   await page.evaluate(() => document.getAnimations().forEach(animation => {
@@ -877,4 +886,34 @@ test("prints a highlighted Markdown sample without a sideways read", async ({ pa
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(block).toHaveCSS("white-space", "pre-wrap")
   await expect.poll(() => block.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
+})
+
+// A note's install command scrolls sideways on a phone (code blocks wrap
+// there instead). A drag across it is that scroll, not a swipe to the next
+// note -- which used to turn the page mid-read.
+test("a sideways drag inside a scrolling command does not page to another note", async ({ browser }) => {
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, reducedMotion: "reduce", viewport: { width: 390, height: 844 } })
+  const page = await context.newPage()
+  await page.goto("/notes/review-ready-pull-requests/")
+  const command = page.locator(".writing-tool-command code")
+  await command.scrollIntoViewIfNeeded()
+  expect(await command.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
+
+  const swipe = (selector: string) => page.locator(selector).first().evaluate((element) => {
+    const box = element.getBoundingClientRect()
+    const y = box.top + Math.min(box.height / 2, 40)
+    const start = new Touch({ identifier: 1, target: element, clientX: box.right - 10, clientY: y })
+    const end = new Touch({ identifier: 1, target: element, clientX: box.right - 150, clientY: y })
+    element.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, changedTouches: [start], touches: [start] }))
+    element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
+  })
+
+  await swipe(".writing-tool-command code")
+  await page.waitForTimeout(400)
+  await expect(page).toHaveURL(/\/notes\/review-ready-pull-requests\/?$/)
+
+  // The same drag on the prose still pages.
+  await swipe(".writing-reader-prose p")
+  await expect(page).not.toHaveURL(/\/notes\/review-ready-pull-requests\/?$/)
+  await context.close()
 })

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, ty
 import { Check, Copy, Search } from "lucide-react"
 import { X } from "./NavigationIcons"
 
-import { linkedinHoverMedia, xProfilePreview, type SiteLinks } from "../data/portfolio"
+import { linkedinHoverMedia, siteProfile, xProfilePreview, type SiteLinks } from "../data/portfolio"
 import { SiteLastUpdated } from "./SiteLastUpdated"
 import { ContactActionRow } from "./ContactActionRow"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
@@ -355,7 +355,13 @@ const EASINGS_ENTRIES = [
     name: "Origin open",
     css: "cubic-bezier(0.32, 0.8, 0.32, 1)",
     duration: "200ms",
-    use: "The preview gallery and notes opening from their tile (--pg-open-ease).",
+    use: "The preview gallery's lift when there is no visible tile to zoom from (--pg-open-ease).",
+  },
+  {
+    name: "Origin zoom",
+    css: "spring, damping 0.86 open / 1 close",
+    duration: "480ms open, 360ms close",
+    use: "The preview gallery and notes zooming out of their tile and back, as iOS opens a card (--pg-zoom-open-ms, --pg-zoom-close-ms).",
   },
   {
     name: "Photo carousel — --photo-motion-ease",
@@ -1049,7 +1055,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 data-ds-terms={terms("contact pill book a call booking linkedin x follow")}
               >
                 <ContactActionRow
-                  availabilityLabel={formatAvailability()}
+                  availabilityLabel={formatAvailability(siteProfile.availableFrom)}
                   bookingUrl={links.booking}
                   linkedinHref={links.linkedin}
                   xHref={links.x}
@@ -1101,7 +1107,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Chips &amp; controls</p>
               <div
                 className="ds-specimen ds-specimen-canvas"
-                data-ds-terms={terms("chip nav link local time count pill takeover close booking copy email address last updated #f2f2f2 #e9e9e9")}
+                data-ds-terms={terms("chip nav link local time pill takeover close booking copy email address last updated #f2f2f2 #e9e9e9")}
               >
                 <button type="button" className="mosaic-work-history-chip">
                   Chip · rest
@@ -1116,7 +1122,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   Nav link
                 </a>
                 <span className="mosaic-social-time">Local time · 5:03pm AST</span>
-                <span className="preview-gallery-count">3 of 12</span>
                 <button
                   type="button"
                   className="mosaic-takeover-close"
@@ -1227,11 +1232,13 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
             <div className="ds-block" data-ds-terms={terms("personal photos fan print white border wall close pill")}>
               <p className="ds-subhead">Personal photos</p>
               <p className="ds-caption">
-                A fan of square prints, each framed by a thin <code>--canvas</code> border with{" "}
-                <code>--shadow-ring</code> and <code>--shadow-control-hover</code>. Opening flies every print to its
-                place on a full-screen photo wall over <code>--photo-open-duration</code> and back over{" "}
-                <code>--photo-close-duration</code>. The only visible control is a <code>--radius-full</code> Close
-                pill.
+                A fan of square prints, each framed by a thin <code>--canvas</code> border and a crisp print shadow
+                (a hairline edge, a tight contact shadow and a short lift; scoped to personal-photos.css). Opening fades a white canvas in over
+                the page while every photo appears in its own place on the full-screen wall, rippling out from the middle
+                over <code>--photo-open-duration</code>; closing runs it backwards, edges first, over{" "}
+                <code>--photo-close-duration</code>. The wall wears the same print, its frame one fixed width on every
+                photo. The only visible control is a solid <code>--canvas</code> Close pill with{" "}
+                <code>--shadow-overlay</code>.
               </p>
               <PersonalPhotos />
             </div>
@@ -1369,11 +1376,10 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <code>display: contents</code> and the tiles form one two-column grid in the same DOM order.{" "}
                   <code>src/data/portfolio.ts</code> owns the order; <code>work-grid.css</code> owns both layouts.
                 </li>
-                <li data-ds-terms={terms("table of contents toc floating current section labels 44px")}>
+                <li data-ds-terms={terms("table of contents toc floating current section 48px")}>
                   <strong>A floating table of contents</strong> appears after 96px of scrolling, centred above the
-                  bottom safe area. Work, About, and Services stay visible in one <code>--radius-full</code> capsule with
-                  44px-tall targets, equal-width labels, and space inside the rim. A shared background follows the current section using <code>--duration-base</code>
-                  and <code>--ease-smooth</code>; reduced motion switches it immediately.
+                  bottom safe area. It is a 48px <code>--radius-full</code> chip naming the current section, and it
+                  opens into a <code>--radius-lg</code> card with the overlay shadow.
                 </li>
                 <li data-ds-terms={terms("about takeover sticky stage runway 100dvh z-index 1")}>
                   <strong>The About takeover is one viewport of scrolling.</strong> From 700px up, the grid pins in a

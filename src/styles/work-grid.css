@@ -66,7 +66,7 @@
   grid-template-areas: "wallet homepage writings";
 }
 
-/* The personal-photo fan is a third band under the quote and Security rather
+/* The personal-photo fan is a third band under the quote and limit orders rather
    than a fifth column beside them: it is five overlapping prints and a label,
    so it wants a wide, short box, while the four project slots above are cut to
    the shapes their own artwork needs. The band carries its own height and the
@@ -81,7 +81,7 @@
   grid-template-rows: minmax(340px, 3fr) minmax(180px, 2fr) var(--portraits-photos);
   grid-template-areas:
     "popparazi protector quote"
-    "resume protector security"
+    "resume protector limitorders"
     "photos photos photos";
 }
 
@@ -98,18 +98,39 @@
 /* A band across the grid, like the personal-photo fan. A third of the row,
    centred, was tried first: at the width the card actually wants it leaves two
    empty columns, and a lone card floating in a row of nothing reads as a hole
-   in the grid rather than as a pull quote. Full width, the card centres its own
-   quote, face, and dots and the extra width is margin -- the same bargain the
-   photo band makes. It carries that band's floor so the two match. */
+   in the grid rather than as a pull quote. It now shares the band with the
+   marketing tile, whose 2x2 sheet of 2:1 posts is about as wide and short
+   as half this band, so neither tile is the lone card that problem was about.
+   Half the band is still past the 340px the quote needs. It carries the photo
+   band's floor so the two match. */
 .mosaic-group-aside {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: minmax(clamp(260px, 21.39cqw, 320px), auto);
-  grid-template-areas: "quote2";
+  grid-template-areas: "quote2 marketing";
+}
+
+/* Gasless leads at seven twelfths, its height half of what the old two-row
+   band had, so each slot stays near the films' 16:9. The motion pieces run
+   full bleed like the other product tiles. */
+.mosaic-group-videos {
+  height: clamp(260px, 24.4cqw, 372px);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas:
+    "gasless gasless gasless gasless gasless gasless gasless crosschain crosschain crosschain crosschain crosschain";
+}
+
+/* Limit orders is a screen recording of the whole app, which full bleed blew
+   up into a zoomed crop, so it sits in the grey mat instead. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-limit-orders-film .mosaic-row-media {
+  border-radius: var(--radius-sm);
 }
 
 .mosaic-group-closing {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-areas: "mobile trade pro";
+  /* The relaunch film takes half the row, which at the row's height is
+     close to its 16:9; the two product tiles split the rest. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "relaunch trade pro";
 }
 
 .mosaic-tile-resume .resume-tile {
@@ -480,7 +501,11 @@
 .mosaic-quote-dot {
   display: grid;
   place-items: center;
-  width: 10px;
+  /* A 12px pitch: the dots read as one row of marks, which is how the card
+     wants them. 24px (WCAG 2.5.8's minimum) spread nine of them across 216px
+     and the row read as loose beads. They are a secondary control -- the card
+     itself advances on a tap or a drag -- so the tighter row wins here. */
+  width: 12px;
   height: 40px;
   padding: 0;
   border: 0;
@@ -488,15 +513,14 @@
   corner-shape: round;
   background: transparent;
   cursor: pointer;
-  /* The tap target is four times the dot it draws; the dot filling in says
+  /* The tap target is several times the dot it draws; the dot filling in says
      enough without a grey slab around it. */
   -webkit-tap-highlight-color: transparent;
 }
 
-/* The ring goes round the dot it draws, not the 10x40 target around it: inset
-   on the button it was a 4x34px capsule, narrower than the dot it marked. Tab no longer
-   reaches the dots, but a screen reader's cursor still moves focus onto them.
-   1px of offset keeps the ring clear of the neighbouring dots 4px away. */
+/* The ring goes round the dot it draws, not the 12x40 target around it: inset
+   on the button it was a capsule taller than anything it marked. Tab no longer
+   reaches the dots, but a screen reader's cursor still moves focus onto them. */
 .mosaic-quote-dot:focus-visible {
   outline: none;
 }
@@ -1294,10 +1318,9 @@
 }
 
 /* Cropped tiles focus on the first row of phones, with the next row peeking in.
-   The gallery reads the same two values, so opening the card keeps you looking
-   at what you clicked instead of swapping in a differently framed image. */
-.mosaic-row-card-preview-protector,
-.preview-gallery-popup[data-preview-crop="true"] {
+   The gallery frames the same rows from further out (preview-gallery.css); the
+   flight matches the two whole pictures, so either crop can change alone. */
+.mosaic-row-card-preview-protector {
   --preview-crop-scale: 1.38;
   --preview-crop-position: 21% 14%;
 }
@@ -1329,13 +1352,12 @@
    below. */
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-marketing,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-1,
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-14,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16,
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-20 {
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16 {
   padding: 0;
 }
 
@@ -1390,19 +1412,16 @@
   place-items: end center;
 }
 
-/* The other two closing tiles are the same situation in the light half of the
-   set: both 4:3 exports sit on a flat rgb(231 231 233) that runs to all four
+/* The trade tile is the same situation in the light half of the set: its
+   4:3 export sits on a flat rgb(231 231 233) that runs to all four
    edges of the file, five levels off --mosaic-card-surface. Contained inside
    the pale mat that was close enough to read as one surface at a glance and
    wrong enough to read as a rectangle drawn inside the card once you looked.
    Painting the card the export's own value removes the inner edge, so the
    letterbox above and below the artwork is the artwork's backdrop continuing.
 
-   Not cover: the closing slots are wider than 4:3, and filling them would cut
-   the tab row off the trade module and the top and bottom off all three
-   phones. */
-.mosaic-row-card-preview-shot-1,
-.mosaic-row-card-preview-shot-14 {
+   Not cover: filling the slot would cut the tab row off the trade module. */
+.mosaic-row-card-preview-shot-1 {
   background: rgb(231 231 233);
 }
 
@@ -1410,6 +1429,12 @@
    media boxes keeps every rounded end inside the tile; the previous flattened
    composite baked both banners into a single crop whose cut edges read as a
    layout mistake whenever this organic slot changed ratio. */
+/* A layout hook for compositions that arrange their images as one unit (the
+   marketing wall); everywhere else it steps out of the way. */
+.mosaic-row-media-wall {
+  display: contents;
+}
+
 .mosaic-row-media-pair {
   position: relative;
   width: 100%;
@@ -1441,6 +1466,46 @@
   bottom: 3%;
 }
 
+/* Marketing hangs as a wall: posts in an even four-by-five grid, tilted back
+   in perspective so the rows recede to the upper right and the outer posts
+   run off the tile. The first and last rows are mostly past its top and
+   bottom edges; they are there so the wall reads as full rather than as a
+   block floating in the tile. The grid keeps it orderly -- every headline is a
+   whole post, none tucked behind another -- and the tilt and the bleed keep it
+   from reading as a contact sheet. The wall is sized from the tile's width so
+   it bleeds by the same share at any slot ratio. It holds still on hover. */
+.mosaic-row-card-preview-matcha-marketing {
+  background: rgb(236 234 240);
+}
+
+.mosaic-row-card-preview-matcha-marketing .mosaic-row-media-pair {
+  container-type: size;
+  perspective: 1400px;
+}
+
+.mosaic-row-card-preview-matcha-marketing .mosaic-row-media-wall {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2.4cqw;
+  width: max(124cqw, 248cqh);
+  transform: translate(-50%, -50%) rotateX(24deg) rotateZ(-14deg);
+  transform-style: preserve-3d;
+}
+
+.mosaic-row-card-preview-matcha-marketing .mosaic-row-media-wall .mosaic-row-media {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  border-radius: 1.4cqw;
+  box-shadow:
+    0 1px 2px rgb(20 16 40 / 0.12),
+    0 10px 28px -8px rgb(20 16 40 / 0.3);
+}
+
 /* Below desktop the group wrappers release their boxes so adjacent tiles can
    share a row across group boundaries. Explicit areas keep keyboard/DOM order
    aligned with the visual reading order; no dense placement or CSS ordering. */
@@ -1453,32 +1518,36 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows:
       var(--compact-tile)
+      calc(var(--compact-tile) * 0.75)
+      calc(var(--compact-tile) * 0.75)
       calc(var(--compact-tile) * 1.25)
       auto
-      auto
       minmax(340px, auto)
+      calc(var(--compact-tile) * 1.2)
       minmax(260px, auto)
       var(--compact-tile)
-      calc(var(--compact-tile) * 0.25)
       var(--compact-tile)
       calc(var(--compact-tile) * 1.25)
       minmax(340px, auto)
       var(--compact-tile)
-      calc(var(--compact-tile) * 0.75);
+      calc(var(--compact-tile) * 1.125)
+      var(--compact-tile);
     grid-template-areas:
       "wallet homepage"
-      "writings popparazi"
-      "resume resume"
+      "writings writings"
+      "gasless crosschain"
+      "popparazi resume"
       "protector protector"
       "quote quote"
+      "limitorders limitorders"
       "photos photos"
-      "security family"
-      "dealership family"
-      "dealership token"
+      "family dealership"
+      "family token"
       "rewards rewards"
       "quote2 quote2"
-      "mobile trade"
-      "pro pro";
+      "marketing marketing"
+      "relaunch relaunch"
+      "trade pro";
     padding-inline: 1rem;
   }
 
@@ -1486,9 +1555,19 @@
     display: contents;
   }
 
-  .mosaic-tile-resume,
   .mosaic-tile-protector {
     aspect-ratio: 1354 / 1025;
+  }
+
+  /* The films follow the opening row in the DOM, so the notes folder no
+     longer has Popparazi beside it: the folder takes the row on its own and
+     the phone pairs with the résumé, which drops its wide-tile ratio here. */
+  .mosaic-tile-resume {
+    aspect-ratio: auto;
+  }
+
+  .mosaic-group-videos {
+    height: auto;
   }
 
   .mosaic-row-quote .mosaic-quote {
@@ -1507,13 +1586,12 @@
 
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-marketing,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-1,
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-14,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-23,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-9,
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16,
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-20 {
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-16 {
     padding: 0;
   }
 

@@ -10,6 +10,21 @@
   --preview-gallery-rail-clearance: calc(var(--preview-gallery-nav-size) + var(--preview-gallery-nav-gap));
 }
 
+/* Registered so a sum of duration tokens computes to a single time: the zoom
+   reads its duration from computed style, and an unregistered property would
+   hand it the unevaluated calc(). */
+@property --pg-zoom-open-ms {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 480ms;
+}
+
+@property --pg-zoom-close-ms {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 360ms;
+}
+
 .preview-gallery-backdrop {
   position: fixed;
   inset: 0;
@@ -178,6 +193,67 @@
     opacity var(--pg-close-ms, var(--duration-quick)) var(--pg-close-ease, var(--ease-exit));
 }
 
+/* The zoom out of a tile (lib/originMotion): the tile becomes the gallery, the
+   way iOS opens an App Store card, instead of the gallery arriving from the
+   tile's direction. The surface's artwork lands exactly on the tile's, so it
+   cuts in over it with no fade; lib/originMotion dissolves the tile's frame
+   around it underneath. */
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion],
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-starting-style] {
+  opacity: 1;
+  transition: none;
+}
+
+/* On the way back it stays solid while it shrinks, and over the flight's last
+   --pg-zoom-handoff-ms -- once it lies on the tile's artwork -- it fades as
+   the tile fades back in beneath it. A cut there showed any last-pixel or
+   video-frame difference as a flicker. Base UI unmounts on this transition's
+   end, so the delay is also what keeps it mounted for the whole flight. */
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-ending-style] {
+  opacity: 0;
+  transition: opacity var(--pg-zoom-handoff-ms) linear calc(var(--pg-zoom-close-ms) - var(--pg-zoom-handoff-ms));
+}
+
+/* The lift goes first. A tile sits flat in the grid, so a card still casting
+   its deep shadow as it lands read as a second card hovering over the tile;
+   gone in the flight's opening beat, the card shrinks as flat as the tile it
+   becomes. Same three layers at zero, so the shadow interpolates rather than
+   cutting. */
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-ending-style] .preview-gallery-card {
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0),
+    0 18px 44px -18px rgb(0 0 0 / 0),
+    0 48px 92px -42px rgb(0 0 0 / 0);
+  transition:
+    opacity var(--pg-switch-ms, var(--duration-base)) ease-out,
+    transform var(--pg-switch-ms, var(--duration-base)) var(--ease-standard),
+    box-shadow var(--duration-fast) ease-out;
+}
+
+/* Opening, the clip runs just outside the card's edges for most of the
+   flight and only reaches past its shadow at the end, so the shadow showed as
+   a dark band cut off flat along the clip. It waits for the clip to let go
+   and then settles in. A card that lands whole (the notes) has no clip and
+   keeps its shadow throughout. Paging can begin during the entrance, so
+   preserve its phase-specific timing while holding the shadow. */
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup:not([data-ending-style]) .preview-gallery-card:has(.preview-gallery-media-frame) {
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0),
+    0 18px 44px -18px rgb(0 0 0 / 0),
+    0 48px 92px -42px rgb(0 0 0 / 0);
+  transition-property: opacity, transform;
+}
+
+/* The page stays in view under the growing card for most of its flight
+   rather than dimming before the card is a third of the way there. */
+.preview-gallery-backdrop:has(+ .preview-gallery-shell[data-origin-zoom]) {
+  transition: opacity var(--pg-zoom-open-ms) ease-out;
+}
+
+.preview-gallery-backdrop[data-ending-style]:has(+ .preview-gallery-shell[data-origin-zoom]) {
+  transition: opacity var(--pg-zoom-close-ms) var(--ease-standard);
+}
+
 .preview-gallery-card {
   max-height: var(--preview-gallery-room);
   overflow-x: hidden;
@@ -200,10 +276,12 @@
      one transform list rather than falling back to matrix interpolation. */
   transform: translateX(0) scale(1);
   /* This transition belongs to the between-previews switch below, which is
-     stepped by a JS timer — hence the shared duration. */
+     stepped by a JS timer — hence the shared duration. The shadow's is for
+     the end of the zoom open, which holds it back until the clip lets go. */
   transition:
     opacity var(--pg-switch-ms, var(--duration-base)) ease-out,
-    transform var(--pg-switch-ms, var(--duration-base)) var(--ease-standard);
+    transform var(--pg-switch-ms, var(--duration-base)) var(--ease-standard),
+    box-shadow var(--duration-base) ease-out;
   box-shadow:
     0 1px 1px rgb(0 0 0 / 0.04),
     0 18px 44px -18px rgb(0 0 0 / 0.28),
@@ -407,6 +485,24 @@
   opacity: 0;
 }
 
+/* The tile's frame, held over a video that has not caught up to it yet
+   (lib/originMotion). It sits exactly where the video paints. */
+.preview-gallery-media-hold {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-hold {
+  object-fit: cover;
+  object-position: var(--preview-crop-position);
+  transform: scale(var(--preview-crop-scale));
+  transform-origin: var(--preview-crop-position);
+}
+
 .preview-gallery-media-status {
   position: absolute;
   bottom: 1rem;
@@ -456,15 +552,31 @@
   transform: translateZ(0);
 }
 
-/* The Rewards composite's two banners run off its own left and right edges, so
-   unlike every other preview it has no margin to be letterboxed in. Contained,
-   the shared `max-height` mats it as soon as the viewport is short, and those
-   cut edges then float mid-frame and read as a mishandled crop rather than as a
-   bleed. `cover` keeps it meeting the frame the way it meets its grid tile; on
-   a tall viewport the frame already matches the artwork's ratio and nothing is
-   taken, and on a short one what goes is the shadow room above and below. */
-.preview-gallery-popup[data-preview-id="preview-matcha-rewards"] .preview-gallery-media {
-  object-fit: cover;
+/* Rewards shows its tile's two banners, placed as the tile places them
+   (work-grid.css), in a box of the tile's shape: the open grows the tile's own
+   picture rather than handing over to the baked composite, whose banners sat
+   in different places and ran off its edges. The box keeps its ratio under
+   the media cap, so the banners' percentages never meet a squashed frame. */
+.preview-gallery-media-pair {
+  position: relative;
+  width: min(100%, calc(var(--preview-gallery-media-cap) * 1.6));
+  aspect-ratio: 1.6;
+}
+
+.preview-gallery-media-pair img {
+  position: absolute;
+  width: 71%;
+  height: auto;
+}
+
+.preview-gallery-media-pair img:first-child {
+  top: 3%;
+  left: 1.7%;
+}
+
+.preview-gallery-media-pair img:last-child {
+  right: 1.8%;
+  bottom: 3%;
 }
 
 /* Family Stories is a transparent export of two tilted devices. They already
@@ -487,10 +599,18 @@
   transform-origin: 92% 100%;
 }
 
-/* The frame, not the image, carries the landscape shape of the grid tile, so
-   the crop stays put while the popup width changes. */
+/* The frame, not the image, carries the crop's shape, so it stays put while
+   the popup width changes. It used to be 16:9 at the tile's 1.38 zoom: one row
+   of phones, cut at the knees, out of a tile that shows nearly two -- the open
+   read as a lurch into the middle phone. 4:3 at the picture's own scale keeps
+   the tile's two rows in view, with the full width of the first. */
+.preview-gallery-popup[data-preview-crop="true"] {
+  --preview-crop-scale: 1;
+  --preview-crop-position: 50% 4%;
+}
+
 .preview-gallery-popup[data-preview-crop="true"] .preview-gallery-media-frame {
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 4 / 3;
   max-height: var(--preview-gallery-media-cap);
 }
 
@@ -654,6 +774,11 @@
   letter-spacing: -0.00563rem;
 }
 
+/* The post link reads at the summary's size above it. */
+.preview-gallery-popup[data-case-study="true"] .preview-gallery-post {
+  font-size: var(--text-sm);
+}
+
 .project-case-study :is(h2, h3) {
   margin: 0;
   color: var(--ink);
@@ -713,11 +838,45 @@
   outline-offset: -1px;
 }
 
+/* Films that first went out as a post link back to it, under the summary. */
+.preview-gallery-post {
+  display: inline-block;
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: var(--text-md);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 0.18em;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .preview-gallery-post:hover {
+    color: var(--ink);
+  }
+}
+
 .project-case-study-media figcaption {
   margin-top: 0.6rem;
   color: var(--muted-soft);
   font-size: var(--text-xs);
   line-height: 1.35;
+}
+
+/* Work that shipped as a post links back to it, quietly: the caption's own
+   colour with an underline, darkening on hover. */
+.project-case-study-media figcaption a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 0.18em;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .project-case-study-media figcaption a:hover {
+    color: var(--muted);
+  }
 }
 
 .project-case-study-signatures {
@@ -850,6 +1009,17 @@
   margin: 0;
   font-size: var(--text-sm);
   line-height: 1.5;
+}
+
+/* The PDF link and this page's address, side by side at the heading's end,
+   in the same link style: the PDF is the document, the other the link to send. */
+.preview-gallery-resume-actions {
+  flex: none;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .preview-gallery-resume-body {
@@ -1180,6 +1350,13 @@
     --preview-gallery-fixed-bottom: env(safe-area-inset-bottom);
     padding: var(--preview-gallery-fixed-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     background: var(--canvas);
+  }
+
+  /* The shell's own fill steps aside for the zoom, so the clipped surface is
+     the only thing over the page; its safe-area bands show the backdrop,
+     which is the same canvas once it has faded in. */
+  .preview-gallery-shell[data-origin-zoom] {
+    background: transparent;
   }
 
   .preview-gallery-origin-wrap,

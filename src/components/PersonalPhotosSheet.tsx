@@ -53,7 +53,7 @@ const spherePhotoSizes = `${photoSphereHoldShare * 100}vw`
 // columns, as --photo-gutter and --photo-column-gap set them.
 // Start at the actual column width. The camera upgrades sizes as it zooms,
 // rather than decoding maximum-zoom originals for every initial tile.
-const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * 0.5rem) / 5)"
+const wallPhotoSizes = "calc((max(80rem, 125vw) - 5 * 3rem) / 5)"
 const gridPhotoSizes = "(max-width: 699.98px) calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 1rem) / 2), calc((100vw - 0.5rem - 2 * clamp(1.25rem, 4vw, 5rem) - 3rem) / 3)"
 
 /** A grid photo held at the centre of the stage: the slide's own id, and
@@ -131,8 +131,13 @@ function PhotoColumns({ panel = "0,0", gridColumns, held, previewCount, layout, 
             data-held={selected ? "" : undefined}
             style={selected ? { "--hold-dx": `${held.dx.toFixed(1)}px`, "--hold-dy": `${held.dy.toFixed(1)}px`, "--hold-scale": held.scale.toFixed(4), "--hold-layout-gap": `${held.layoutGap.toFixed(3)}px` } as CSSProperties : undefined}
             key={photo.id}
-            role="group"
-            aria-label={`${index + 1} of ${photos.length}`}
+            // A press enlarges the print and a second lets it go, so it is a
+            // toggle button: "group, 3 of 40" never said it could be pressed
+            // or that it was the one held. The photo's own description joins
+            // the name, since a button's contents are not read on their own.
+            role={copy ? undefined : "button"}
+            aria-pressed={copy ? undefined : selected}
+            aria-label={copy ? undefined : `Photo ${index + 1} of ${photos.length}: ${photo.alt}`}
             tabIndex={copy ? undefined : 0}
             onClick={(event) => toggleHold(event.currentTarget, photo)}
             onKeyDown={(event) => onSlideKeyDown(event, photo)}

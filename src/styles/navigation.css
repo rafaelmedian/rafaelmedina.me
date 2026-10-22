@@ -148,6 +148,13 @@
 }
 
 .mosaic-mobile-toc {
+  --toc-row-height: 48px;
+  --toc-row-gap: 2px;
+  --toc-inset: 8px;
+  /* Fallback only: MobileTableOfContents sets this from `SECTIONS.length` on
+     the root, so the open card's height always matches the rows it renders. */
+  --toc-slot-count: 3;
+  --toc-swap-duration: var(--duration-quick);
   position: fixed;
   z-index: var(--z-social);
   bottom: calc(0.75rem + env(safe-area-inset-bottom));
@@ -177,108 +184,233 @@
   pointer-events: none;
 }
 
-/* Three persistent destinations share one sliding active background. The
-   highlight and the rows are pills inside the pill, so they take its round
-   corner shape too: the house squircle on a 999px radius squares them off
-   against the outer curve. */
+/* One continuous card grows upward around the section rows. */
 .mosaic-mobile-toc-surface {
-  --toc-item-width: 4.75rem;
-  --toc-item-gap: 0.125rem;
-  padding: 0.25rem;
-  font-family: var(--font-ui);
-  font-size: var(--text-sm);
+  --toc-resize-duration: var(--duration-base);
+  position: relative;
+  display: block;
+  width: var(--toc-compact-width, max-content);
+  height: var(--toc-row-height);
+  max-width: calc(100vw - 2rem);
+  overflow: hidden;
   border-radius: var(--radius-full);
   corner-shape: round;
-  background: var(--glass-fill-strong);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  box-shadow: var(--glass-hairline), var(--shadow-overlay), var(--glass-rim);
+  /* Solid white rather than glass: the chip sits over busy tiles, and an
+     opaque card with the overlay shadow reads cleaner there. */
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  transition: width var(--toc-resize-duration) var(--ease-smooth), height var(--toc-resize-duration) var(--ease-smooth);
+}
+
+.mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-surface {
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-curve);
+  --toc-resize-duration: var(--duration-slow);
+  width: min(17rem, calc(100vw - 2rem));
+  height: calc(var(--toc-slot-count) * var(--toc-row-height) + (var(--toc-slot-count) - 1) * var(--toc-row-gap) + 2 * var(--toc-inset));
+}
+
+/* Keep the development feedback control clear of the expanded contents. */
+body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
+  bottom: calc(18rem + env(safe-area-inset-bottom)) !important;
 }
 
 .mosaic-mobile-toc-list {
-  position: relative;
-  display: flex;
-  gap: var(--toc-item-gap);
+  position: absolute;
+  inset: 0;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.mosaic-mobile-toc-list::before {
-  content: "";
+.mosaic-mobile-toc-slot {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--toc-item-width);
-  border-radius: var(--radius-full);
-  corner-shape: round;
-  background: rgb(0 0 0 / 0.06);
-  transform: translateX(calc(var(--toc-active-index) * (var(--toc-item-width) + var(--toc-item-gap))));
-  transition: transform var(--duration-base) var(--ease-smooth);
-  pointer-events: none;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--toc-row-height);
+  opacity: 0;
+  filter: blur(var(--blur-reveal));
+  transform: translateY(0);
+  transition:
+    transform var(--toc-resize-duration) var(--ease-smooth),
+    left var(--toc-resize-duration) var(--ease-smooth),
+    right var(--toc-resize-duration) var(--ease-smooth),
+    opacity var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
 }
 
-.mosaic-mobile-toc-slot {
-  position: relative;
+.mosaic-mobile-toc-slot[data-current="true"] {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-slot {
+  left: var(--toc-inset);
+  right: var(--toc-inset);
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(calc(var(--toc-slot) * (var(--toc-row-height) + var(--toc-row-gap)) * -1 - var(--toc-inset)));
 }
 
 .mosaic-mobile-toc-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: var(--toc-item-width);
-  /* A 44px touch target drawn as a 36px pill: the transparent borders reach
-     into the surface's padding, and the negative margins keep them from
-     adding to its height, so only the hit area is full size. */
-  height: 44px;
-  margin-block: -0.25rem;
-  padding: 0 0.75rem;
-  border-block: 0.25rem solid transparent;
-  background-clip: padding-box;
-  line-height: 1.25;
+  width: 100%;
+  height: 100%;
+  padding: 0.75rem 1rem;
+  border: 0;
   border-radius: var(--radius-full);
   corner-shape: round;
+  background: transparent;
   color: var(--muted);
+  font: inherit;
+  line-height: 1.25;
+  text-align: left;
   text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: color var(--duration-quick) var(--ease-standard), background-color var(--duration-quick) var(--ease-standard);
+  -webkit-user-select: none;
+  user-select: none;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
-.mosaic-mobile-toc-row[aria-current],
+.mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-row {
+  border-radius: calc(var(--radius-lg) - var(--toc-inset));
+  corner-shape: var(--corner-curve);
+}
+
+.mosaic-mobile-toc-row:focus-visible {
+  background: rgb(233 233 233 / 0.5);
+  outline-offset: -2px;
+}
+
+.mosaic-mobile-toc-trigger,
 .mosaic-mobile-toc-row:focus-visible {
   color: var(--ink);
 }
 
-.mosaic-mobile-toc-row:focus-visible {
-  outline-offset: -6px;
-}
-
 @media (hover: hover) and (pointer: fine) {
-  /* background-color, not the shorthand: the shorthand resets
-     background-clip, and the hover would fill the full 44px target. */
   .mosaic-mobile-toc-row:hover {
-    background-color: rgb(233 233 233 / 0.5);
+    background: rgb(233 233 233 / 0.5);
     color: var(--ink);
   }
 }
 
+.mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-trigger {
+  background: rgb(0 0 0 / 0.06);
+}
+
 .mosaic-mobile-toc-row-content {
-  display: flex;
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: center;
+  gap: 0.75rem;
   transition: transform var(--duration-fast) var(--ease-standard);
 }
 
-.mosaic-mobile-toc-row:active .mosaic-mobile-toc-row-content {
+.mosaic-mobile-toc-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mosaic-mobile-toc-icon {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  flex: 0 0 16px;
+  color: var(--muted);
+}
+
+.mosaic-mobile-toc-icon svg {
+  position: absolute;
+  inset: 0;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+/* Open, the rows are the controls; the chevron steps aside rather than
+   handing off to a close icon. */
+.mosaic-mobile-toc[data-open="true"] .mosaic-mobile-toc-chevron {
+  opacity: 0;
+}
+
+.mosaic-mobile-toc-trigger:active .mosaic-mobile-toc-row-content {
   transform: scale(0.96);
+}
+
+/* ------------------------------------------------------------ label swap --- */
+
+/* Scrolling into a section sends the old label out of the chip and brings the
+   new one in from the opposite edge, so the change carries a direction. */
+.mosaic-mobile-toc-ghost {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--toc-row-height);
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: var(--ink);
+  line-height: 1.25;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: mosaic-toc-label-exit var(--duration-fast) var(--ease-exit) both;
+}
+
+/* data-swap names where the label travels: scrolling further down the page
+   sends the old label up and brings the new one in from below. */
+.mosaic-mobile-toc[data-swap="up"] {
+  --toc-swap-direction: 1;
+}
+
+.mosaic-mobile-toc[data-swap="down"] {
+  --toc-swap-direction: -1;
+}
+
+.mosaic-mobile-toc[data-swap][data-open="false"] .mosaic-mobile-toc-slot[data-current="true"] .mosaic-mobile-toc-label {
+  animation: mosaic-toc-label-enter var(--toc-swap-duration) var(--ease-standard) both;
+}
+
+@keyframes mosaic-toc-label-exit {
+  to {
+    transform: translateY(calc(var(--toc-swap-direction, 1) * -0.25rem));
+    filter: blur(var(--blur-swap));
+    opacity: 0;
+  }
+}
+
+@keyframes mosaic-toc-label-enter {
+  from {
+    transform: translateY(calc(var(--toc-swap-direction, 1) * 0.25rem));
+    filter: blur(var(--blur-swap));
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .mosaic-mobile-toc,
-  .mosaic-mobile-toc-list::before,
+  .mosaic-mobile-toc-surface,
+  .mosaic-mobile-toc-slot,
+  .mosaic-mobile-toc-icon svg,
   .mosaic-mobile-toc-row-content,
   .mosaic-mobile-toc-row {
     transition: none;
   }
 
-  .mosaic-mobile-toc-row:active .mosaic-mobile-toc-row-content {
+  .mosaic-mobile-toc-ghost {
+    display: none;
+  }
+
+  .mosaic-mobile-toc-trigger:active .mosaic-mobile-toc-row-content {
     transform: none;
   }
 }
