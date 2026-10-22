@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react"
 import { Popover } from "@base-ui/react/popover"
 import { KeyboardHint } from "./KeyboardHint"
-import { QuotesDialog } from "./QuotesDialog"
 import { XProfileHoverCard } from "./XProfileHoverCard"
 import type { PortfolioQuote } from "../data/quotes"
 import { RICH_CARD_OPEN_DELAY_MS } from "../lib/hoverIntent"
+import { createModuleLoader, useDeferredModule } from "../lib/deferredModule"
+
+// The opened card is a chunk of its own: it brings Base UI's dialog, which the
+// main bundle otherwise does without. Intent on the tile warms it.
+const loadQuotesDialog = createModuleLoader(() => import("./QuotesDialog"), "QuotesDialog")
 
 // The distance that tells a swipe apart from a click that wandered. It is the
 // only gate the gesture has: past it the drag takes an axis, and a horizontal
@@ -154,10 +158,26 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
   // card, larger, pages through the quotes on every press. The tile itself
   // pages by swipe, dots and arrows.
   const [listOpen, setListOpen] = useState(false)
+  const { module: dialogModule, load: loadDialog, warm: warmDialog } = useDeferredModule(loadQuotesDialog)
+  const QuotesDialog = dialogModule?.QuotesDialog
+  // A press before the chunk is here opens the card when it lands.
+  const [openWhenLoaded, setOpenWhenLoaded] = useState(false)
   const setList = (open: boolean) => {
+    if (open && !QuotesDialog) {
+      setOpenWhenLoaded(true)
+      void loadDialog()
+      return
+    }
     setListOpen(open)
     onDialogOpenChange?.(open)
   }
+  if (openWhenLoaded && QuotesDialog) {
+    setOpenWhenLoaded(false)
+    setListOpen(true)
+  }
+  useEffect(() => {
+    if (listOpen) onDialogOpenChange?.(true)
+  }, [listOpen, onDialogOpenChange])
   // `settle` is how the change was asked for, not how far it travels: a pointer
   // gesture lands on the next quote quickly, a dot chosen across the card keeps
   // the longer, more deliberate move.
@@ -393,6 +413,7 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
       data-inside={inside}
       style={{ "--quote-drag-x": `${dragOffset}px` } as CSSProperties}
       onKeyDown={handleKeyDown}
+      onPointerEnter={expanded ? undefined : warmDialog}
       onFocus={(event) => {
         // Shift+Tab back from the name lands here, and so does Escape.
         if (event.target === event.currentTarget) setInside(false)
@@ -487,7 +508,7 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
       <span id={authorKeysId} className="sr-only">
         Press Enter to go in to the profile card, or Escape to go back to the quotes.
       </span>
-      {expanded ? null : (
+      {expanded || !QuotesDialog ? null : (
         <QuotesDialog open={listOpen} onOpenChange={setList} title={title} originRef={cardRef}
           onMove={(travel) => expandedRef.current?.move(travel)}>
           <QuoteCard

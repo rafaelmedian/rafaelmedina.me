@@ -28,6 +28,11 @@ type QuotesDialogProps = {
  */
 export function QuotesDialog({ open, onOpenChange, title, children, onMove, originRef }: QuotesDialogProps) {
   const [wrap, setWrap] = useState<HTMLDivElement | null>(null)
+  // Loaded on demand, this mounts already open, and Base UI plays no entrance
+  // for a dialog open at mount: the backdrop arrived at full strength. Mounted
+  // closed and opened in the same pre-paint pass, it fades in like any other.
+  const [mounted, setMounted] = useState(false)
+  useIsomorphicLayoutEffect(() => setMounted(true), [])
   const popupRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLElement>(null)
   const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -64,7 +69,7 @@ export function QuotesDialog({ open, onOpenChange, title, children, onMove, orig
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+    <Dialog.Root open={mounted && open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Backdrop className="preview-gallery-backdrop" style={galleryMotionVars} />
         <div
