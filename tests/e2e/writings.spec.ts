@@ -58,6 +58,9 @@ test("the header Notes link opens the list on the project preview's line", async
   await card.scrollIntoViewIfNeeded()
   await card.click()
   await expect(popup(page)).toBeVisible()
+  // Reduced motion still mounts an initial pose. Use the settled project
+  // position as the baseline, just as the Notes position below is settled.
+  await expect(popup(page)).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
   const previewTop = (await popup(page).boundingBox())!.y
   await page.keyboard.press("Escape")
   await expect(popup(page)).toBeHidden()
