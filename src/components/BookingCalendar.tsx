@@ -28,6 +28,7 @@ export function BookingCalendar({ bookingUrl, email, active }: { bookingUrl: str
     return () => window.clearTimeout(timer)
   }, [active, isCalendarReady])
   return (
+    <>
     <div
       className={`booking-frame t-skel${isCalendarReady ? " is-revealed" : ""}`}
       data-ready={isCalendarReady ? "true" : undefined}
@@ -63,20 +64,7 @@ export function BookingCalendar({ bookingUrl, email, active }: { bookingUrl: str
       </div>
       {isCalendarReady ? null : (
         <p className={hasStalled ? "booking-loading" : "booking-loading sr-only"} role="status">
-          {hasStalled ? (
-            <>
-              {/* The header used to carry this link from the start. It
-                  is the only way through a browser that blocks
-                  third-party frames, so it still has to exist — it just
-                  waits until there is something to escape from. */}
-              The calendar didn&rsquo;t load.{" "}
-              <a className="booking-external" href={toBookingUrl(bookingUrl, email)} target="_blank" rel="noreferrer">
-                Open it on cal.com
-              </a>
-            </>
-          ) : (
-            "Loading calendar…"
-          )}
+          {hasStalled ? "Having trouble loading the calendar? Open it directly below." : "Loading calendar…"}
         </p>
       )}
       <iframe
@@ -91,5 +79,13 @@ export function BookingCalendar({ bookingUrl, email, active }: { bookingUrl: str
         referrerPolicy="no-referrer"
       />
     </div>
+    {/* iframe load also fires for blocked/error documents. This escape route
+        must survive it, even when the skeleton has already been dismissed. */}
+    <p className="booking-calendar-fallback">
+      <a className="booking-external" href={toBookingUrl(bookingUrl, email)} target="_blank" rel="noreferrer">
+        Open it on cal.com
+      </a>
+    </p>
+    </>
   )
 }

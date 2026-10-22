@@ -71,8 +71,7 @@
   transition-duration: var(--duration-quick);
 }
 
-/* The last resort inside the loading line, once the frame has had its six
-   seconds and shown nothing. It used to sit in a header above the calendar. */
+/* A persistent route around blocked embeds, using the shared link treatment. */
 .booking-external {
   color: var(--ink);
   text-decoration: underline;
@@ -780,12 +779,21 @@ body:has(.booking-contact-panel) .booking-close {
 
 .booking-calendar-stage {
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   flex: 1;
   min-height: 0;
   overflow: hidden;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-ring), var(--shadow-overlay);
   animation: booking-calendar-enter var(--duration-slow) var(--ease-smooth) both;
+}
+
+/* A separate row keeps the fallback reachable without overlaying the embed. */
+.booking-calendar-fallback {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: var(--text-xs);
 }
 
 .booking-conversation[hidden],
