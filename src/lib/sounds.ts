@@ -1,5 +1,5 @@
-import { useCallback } from "react"
-import { ensureReady, type SoundDefinition } from "@web-kits/audio"
+import { useCallback, useEffect } from "react"
+import type { SoundDefinition } from "@web-kits/audio"
 import { useSound } from "@web-kits/audio/react"
 
 // Building the shared AudioContext is not free: Chrome opens the output device
@@ -14,34 +14,65 @@ import { useSound } from "@web-kits/audio/react"
 // press. Even a hover warm-up lands there, since the tiles prefetch on the
 // pointerdown too. So the cold open goes silent, and the context is built in
 // idle time once its entrance has settled. Every sound after that plays at once.
-// Two flags, not one: idle time can be a whole second away under load, and in
-// between a close or a second open would read a warm context that does not
-// exist yet and pay the build in the frame this is all here to keep clear.
+// An idle callback alone is not a safe boundary: the browser can offer idle
+// time between animation frames. Wait for the actual surface's animations,
+// including the origin wrapper that Base UI's popup callback does not track.
 let audioWarm = false
-let warmScheduled = false
+
+const silentWarmup: SoundDefinition = {
+  source: { type: "sine", frequency: 440 },
+  envelope: { attack: 0, decay: 0.001 },
+  gain: 0,
+}
 
 /** Whether a sound can play now without building the AudioContext first. */
 export const isAudioWarm = () => audioWarm
 
-export function warmAudioWhenIdle() {
-  if (audioWarm || warmScheduled || typeof window === "undefined" || typeof AudioContext === "undefined") return
-  if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return
-  // Reduced motion mutes every sound here (useSound checks), so nothing to warm.
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+export function useAudioWarmup(surface: HTMLElement | null, open: boolean) {
+  // The package's core and React entry points own separate contexts. Warm
+  // through useSound itself so the first real sound reuses this exact one.
+  const warm = useSound(silentWarmup, { volume: 0 })
+  useEffect(() => {
+    if (!open || !surface || audioWarm || typeof AudioContext === "undefined") return
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
 
-  warmScheduled = true
-  // A failed build leaves both flags as they were, so the next open tries again.
-  const build = () => void ensureReady().then(() => { audioWarm = true }, () => { warmScheduled = false })
-  if ("requestIdleCallback" in window) window.requestIdleCallback(build, { timeout: 1000 })
-  else globalThis.setTimeout(build, 0)
+    let cancelled = false
+    let idle: number | undefined
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    const pending = () => surface.getAnimations({ subtree: true }).filter(animation =>
+      (animation.playState === "running" || animation.playState === "paused")
+      && Number.isFinite(animation.effect?.getComputedTiming().endTime))
+    const settle = () => {
+      if (cancelled || audioWarm) return
+      const animations = pending()
+      if (animations.length) {
+        void Promise.allSettled(animations.map(animation => animation.finished)).then(settle)
+        return
+      }
+      const build = () => {
+        if (cancelled || audioWarm) return
+        // A page switch can start between settling and receiving idle time.
+        if (pending().length) { settle(); return }
+        try { audioWarm = Boolean(warm()) } catch { /* Retry on the next open. */ }
+      }
+      if ("requestIdleCallback" in window) idle = window.requestIdleCallback(build, { timeout: 1000 })
+      else timeout = setTimeout(build, 0)
+    }
+    settle()
+    return () => {
+      cancelled = true
+      if (idle !== undefined) window.cancelIdleCallback(idle)
+      if (timeout !== undefined) clearTimeout(timeout)
+    }
+  }, [surface, open, warm])
 }
 
-/** `useSound`, noting that any sound it plays has built the context. */
-export function useWarmingSound(definition: SoundDefinition, options: { volume: number }) {
+/** A quick close or page turn must stay silent while the context is cold. */
+export function useReadySound(definition: SoundDefinition, options: { volume: number }) {
   const play = useSound(definition, options)
   return useCallback(() => {
-    audioWarm = true
-    return play()
+    if (audioWarm) return play()
   }, [play])
 }
 

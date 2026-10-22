@@ -21,7 +21,7 @@ import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
 import type { WritingsReaderStatus } from "./WritingsFolder"
-import { backSound, closeSound, isAudioWarm, nextSound, openSound, useWarmingSound, warmAudioWhenIdle } from "../lib/sounds"
+import { backSound, closeSound, isAudioWarm, nextSound, openSound, useReadySound, useAudioWarmup } from "../lib/sounds"
 import { formatPostDate } from "../lib/postDate"
 
 type PreviewGalleryDialogProps = {
@@ -330,10 +330,10 @@ export function PreviewGalleryDialog({
     }
   }, [activeCard, isWide, open, originWrapNode])
 
-  const playOpen = useWarmingSound(openSound, { volume: 0.3 })
-  const playClose = useWarmingSound(closeSound, { volume: 0.26 })
-  const playNext = useWarmingSound(nextSound, { volume: 0.26 })
-  const playBack = useWarmingSound(backSound, { volume: 0.26 })
+  const playOpen = useReadySound(openSound, { volume: 0.3 })
+  const playClose = useReadySound(closeSound, { volume: 0.26 })
+  const playNext = useReadySound(nextSound, { volume: 0.26 })
+  const playBack = useReadySound(backSound, { volume: 0.26 })
 
   // Large desktop previews use the available canvas immediately. Set this in
   // a layout effect so the portal reaches its opening-animation measurement in
@@ -430,6 +430,8 @@ export function PreviewGalleryDialog({
     runOriginAnimation("open")
     revealGalleryEntry()
   }, [open, originWrapNode, runOriginAnimation])
+
+  useAudioWarmup(originWrapNode, open)
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean, details?: Pick<Dialog.Root.ChangeEventDetails, "reason">) => {
@@ -598,10 +600,7 @@ export function PreviewGalleryDialog({
   return (
     <Dialog.Root open={rootMounted && present && !leavingNote} onOpenChange={handleOpenChange}
       onOpenChangeComplete={(isOpen) => {
-        if (isOpen) {
-          warmAudioWhenIdle()
-          return
-        }
+        if (isOpen) return
         setLeavingNote(null)
         // Reset only once the exit has finished. A 260ms timer used to drop
         // the wide layout mid-way through the 360ms zoom back into the tile:
