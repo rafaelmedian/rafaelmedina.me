@@ -5404,7 +5404,7 @@ test("clips the Protector artwork to its full-width card on mobile", async ({ pa
   expect(mediaBox!.y + mediaBox!.height).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height)
 })
 
-test("zooms the family stories preview past its empty corner", async ({ page }) => {
+test("frames the family stories preview whole, pinned to its bottom-left", async ({ page }) => {
   await page.setViewportSize({ width: 1320, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
@@ -5422,21 +5422,17 @@ test("zooms the family stories preview past its empty corner", async ({ page }) 
       .getBoundingClientRect().toJSON(),
   ])
 
+  // The gallery frames it the way the tile does, so the open flight scales one
+  // composition: no zoom into a different crop that made the phones jump left
+  // as the card landed. Cover, pinned left and bottom, trims only the export's
+  // transparent margin on the right and top.
   await expect(media).toHaveCSS("object-fit", "cover")
-  expect(frameBox).not.toBeNull()
-  expect(mediaBox).not.toBeNull()
-
-  // The export's two devices are tilted, so the artwork carries an empty wedge
-  // above and to the left of the front phone. The frame has to run past it on
-  // both axes or the card opens on a corner of the mat's grey.
-  expect(mediaBox!.x).toBeLessThanOrEqual(frameBox!.x - frameBox!.width * 0.1)
-  expect(mediaBox!.y).toBeLessThanOrEqual(frameBox!.y - frameBox!.height * 0.1)
-
-  // What it must not do is take the composition off the bottom edge it is built
-  // on: the zoom is pinned there, and only grazes the right.
-  expect(mediaBox!.y + mediaBox!.height).toBeCloseTo(frameBox!.y + frameBox!.height, 0)
-  expect(mediaBox!.x + mediaBox!.width).toBeGreaterThanOrEqual(frameBox!.x + frameBox!.width)
-  expect(mediaBox!.x + mediaBox!.width).toBeLessThan(frameBox!.x + frameBox!.width * 1.03)
+  await expect(media).toHaveCSS("object-position", "0% 100%")
+  await expect(media).toHaveCSS("transform", "none")
+  expect(mediaBox.x).toBeCloseTo(frameBox.x, 0)
+  expect(mediaBox.y).toBeCloseTo(frameBox.y, 0)
+  expect(mediaBox.width).toBeCloseTo(frameBox.width, 0)
+  expect(mediaBox.height).toBeCloseTo(frameBox.height, 0)
 })
 
 test("describes the stakes and choices in a Protector booking", async ({ page }) => {
