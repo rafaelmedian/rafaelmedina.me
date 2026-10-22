@@ -307,8 +307,20 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
   // which intentionally skips the fade. This test covers a painted pull:
   // commit its frame and finish its rise before explicitly releasing it.
   await page.clock.runFor(32)
-  await edge.evaluate(element => element.getAnimations()
-    .find(animation => (animation as CSSTransition).transitionProperty === "opacity")?.finish())
+  await edge.evaluate(element => new Promise<void>((resolve) => {
+    const rise = element.getAnimations()
+      .find(animation => (animation as CSSTransition).transitionProperty === "opacity")
+    if (!rise) return resolve()
+    const onEnd = (event: Event) => {
+      if ((event as TransitionEvent).propertyName !== "opacity") return
+      element.removeEventListener("transitionend", onEnd)
+      resolve()
+    }
+    // Drain the rise's completion event while the pull is still active;
+    // delivering it after release would reset the curtain animation gate.
+    element.addEventListener("transitionend", onEnd)
+    rise.finish()
+  }))
   await page.evaluate(() => document.dispatchEvent(new Event("touchend")))
   await page.clock.runFor(32)
   await expect(edge).toHaveAttribute("data-pulling", "false")
@@ -438,8 +450,20 @@ test("continues the elastic scroll edge from its visible position when release i
   // Paint the pull before releasing it, then hold the fade so a delayed CI
   // frame cannot skip the visible state this interruption test exercises.
   await page.clock.runFor(32)
-  await edge.evaluate(element => element.getAnimations()
-    .find(animation => (animation as CSSTransition).transitionProperty === "opacity")?.finish())
+  await edge.evaluate(element => new Promise<void>((resolve) => {
+    const rise = element.getAnimations()
+      .find(animation => (animation as CSSTransition).transitionProperty === "opacity")
+    if (!rise) return resolve()
+    const onEnd = (event: Event) => {
+      if ((event as TransitionEvent).propertyName !== "opacity") return
+      element.removeEventListener("transitionend", onEnd)
+      resolve()
+    }
+    // Drain the rise's completion event while the pull is still active;
+    // delivering it after release would reset the curtain animation gate.
+    element.addEventListener("transitionend", onEnd)
+    rise.finish()
+  }))
   await page.evaluate(() => document.dispatchEvent(new Event("touchend")))
   await page.clock.runFor(32)
   await expect.poll(() => edge.evaluate(element => element.getAnimations()
