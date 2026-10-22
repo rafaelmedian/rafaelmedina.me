@@ -2445,8 +2445,18 @@ test("keeps the whole location line gray at rest", async ({ page }) => {
   // Both clauses read as one sentence until pointed at -- the repository link
   // included, which is why it inherits its colour rather than taking a link's.
   await expect(page.locator(".mosaic-profile-location-place")).toHaveCSS("color", "rgb(107, 107, 107)")
-  await expect(page.locator(".mosaic-profile-availability")).toHaveCSS("color", "rgb(107, 107, 107)")
-  await expect(page.locator(".mosaic-profile-availability")).toHaveCSS("text-decoration-line", "none")
+  // The availability clause paints through a glint clipped to its glyphs; the
+  // gradient is muted at both ends, so between sweeps it is the same gray.
+  const availability = page.locator(".mosaic-profile-availability")
+  await expect(availability).toHaveCSS("background-clip", "text")
+  const gradient = await availability.evaluate((element) => getComputedStyle(element).backgroundImage)
+  expect(gradient.startsWith("linear-gradient(100deg, rgb(107, 107, 107) 0%")).toBe(true)
+  expect(gradient.endsWith("rgb(107, 107, 107) 100%)")).toBe(true)
+  await expect(availability).toHaveCSS("text-decoration-line", "none")
+
+  // Without motion there is no glint: the clause is plain gray text.
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await expect(availability).toHaveCSS("color", "rgb(107, 107, 107)")
 })
 
 // An open dialog aria-hides the rest of the page, including the place name's
