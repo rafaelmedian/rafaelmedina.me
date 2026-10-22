@@ -827,14 +827,18 @@ test("wraps primary contact actions when their mobile container is too narrow", 
 test("centers a wrapped contact action on narrow mobile widths", async ({ page }) => {
   await page.setViewportSize({ width: 328, height: 844 })
   await page.goto("/")
+  await settleAvatarIntro(page)
+  await page.evaluate(() => document.fonts.ready)
 
   const actions = page.getByRole("group", { name: "Profile contact actions" })
-  await actions.evaluate((element) => { element.style.width = "220px" })
-  const [actionsBox, firstActionBox, followBox] = await Promise.all([
-    actions.boundingBox(),
-    actions.locator(".mosaic-contact-pill").first().boundingBox(),
-    page.getByRole("link", { name: "Follow on X" }).boundingBox(),
-  ])
+  const [actionsBox, firstActionBox, followBox] = await actions.evaluate((element) => {
+    const pills = [...element.querySelectorAll<HTMLElement>(".mosaic-contact-pill")]
+    const gap = parseFloat(getComputedStyle(element).columnGap)
+    // SF and Inter have different widths. Reserve one row for the first two
+    // actions so this checks a lone wrapped Follow, not a two-pill second row.
+    element.style.width = `${Math.ceil(pills[0].getBoundingClientRect().width + pills[1].getBoundingClientRect().width + gap)}px`
+    return [element, pills[0], pills[2]].map(node => node.getBoundingClientRect().toJSON())
+  })
 
   expect(actionsBox).not.toBeNull()
   expect(firstActionBox).not.toBeNull()
