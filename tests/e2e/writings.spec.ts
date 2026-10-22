@@ -159,6 +159,12 @@ test("a press outside a note closes the gallery once, with the note still on it"
   await page.goto("/")
   const folder = page.getByRole("button", { name: "Open writings folder" })
   await folder.click()
+  // This test exercises dismissal. Let the list finish measuring and entering
+  // before clicking a row, so its hit target cannot move during the press.
+  await expect(popup(page).locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
+  await page.evaluate(() => document.getAnimations().forEach(animation => {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+  }))
   await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
   await page.evaluate(() => document.getAnimations().forEach(animation => {
