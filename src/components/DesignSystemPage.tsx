@@ -1221,8 +1221,9 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <p className="ds-subhead">Writings folder</p>
               <p className="ds-caption">
                 A tile on <code>--mosaic-card-surface</code> whose papers fan over 360ms on{" "}
-                <code>--ease-smooth</code>. It opens the notes list as a gallery slide; a note is a nested view in
-                the same dialog. The reader sets <code>--text-sm</code> prose under a <code>--text-lg</code> title on
+                <code>--ease-smooth</code>. A press opens the folder on <code>--folder-spring</code>: the middle
+                paper is drawn out over <code>--duration-base</code> and the notes list, a gallery slide, grows whole
+                out of it. A note is a nested view in the same dialog. The reader sets <code>--text-sm</code> prose under a <code>--text-lg</code> title on
                 a 34rem measure, with Handlee marginalia in <code>--muted</code>.
               </p>
               <div style={{ maxWidth: "24rem", height: "420px", display: "flex" }}>
