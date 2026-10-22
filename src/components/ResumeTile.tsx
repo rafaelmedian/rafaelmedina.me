@@ -34,15 +34,17 @@ const CURL_OUTLINE =
 /**
  * The folded CV sheet on the work grid. It reads as one of the grid's tiles and
  * behaves like one: it links to the résumé's own prerendered page, and a plain
- * click opens that page as a slide of the preview gallery instead. `ref` is the
- * tile the gallery grows out of.
+ * click opens that page as a slide of the preview gallery instead. `originRef`
+ * is the paper the gallery's résumé grows out of, as a page taken off the tile.
  */
 export function ResumeTile({
   ref,
+  originRef,
   onOpen,
   onPrefetch,
 }: {
   ref?: Ref<HTMLAnchorElement>;
+  originRef?: Ref<HTMLSpanElement>;
   onOpen?: () => void;
   /* The reader is a slide of a lazily loaded gallery, so this tile warms the
      same chunk a project tile does rather than paying for it at click time. */
@@ -72,7 +74,7 @@ export function ResumeTile({
         onOpen?.();
       }}
     >
-      <span className="resume-tile-paper" aria-hidden="true">
+      <span className="resume-tile-paper" aria-hidden="true" ref={originRef}>
         <span className="resume-tile-backing" />
         <span className="resume-tile-sheet">
           <span className="resume-tile-copy">

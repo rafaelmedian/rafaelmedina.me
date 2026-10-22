@@ -184,6 +184,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   const selectedPhoto = photos.find(photo => photo.id === held?.id)
   /** The hold as the handlers see it, ahead of the render. */
   const heldRef = useRef<GridHold | null>(null)
+  const shiftedWallSlides = useRef<HTMLElement[]>([])
   const [origins, setOrigins] = useState<ReturnType<typeof measurePhotoOrigins>>([])
   const sheetRef = useRef<HTMLDivElement>(null)
   const [sheetNode, setSheetNode] = useState<HTMLDivElement | null>(null)
@@ -313,7 +314,23 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
   usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
   useLayoutEffect(() => {
-    if (layout !== "wall" || !sheetNode) return
+    if (layout !== "wall" || !sheetNode) {
+      shiftedWallSlides.current = []
+      return
+    }
+    // The camera has already placed an unselected wall. Measuring all nine
+    // copies here only to write zero shifts forced another full layout while
+    // opening. A release only needs to clear the shifts we previously wrote.
+    if (!held?.wallSlot) {
+      if (!shiftedWallSlides.current.length) return
+      wall.current.followFocus(0, 0)
+      for (const slide of shiftedWallSlides.current) {
+        slide.style.removeProperty("--wall-shift-x")
+        slide.style.removeProperty("--wall-shift-y")
+      }
+      shiftedWallSlides.current = []
+      return
+    }
     wall.current.followFocus(held?.wallFocus?.x ?? 0, held?.wallFocus?.y ?? 0)
     const scale = wall.current.scale()
     const readSlot = wallSlotReader(sheetNode, scale)
@@ -327,9 +344,16 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
         ? Math.sign(slot.top - selected.top) * (Math.max(0, (held.height - selected.height) / 2) + (detailsOpen ? 120 : 64)) / scale : 0
       return { slide, x, y }
     })
+    shiftedWallSlides.current = []
     for (const { slide, x, y } of shifts) {
-      slide.style.setProperty("--wall-shift-x", `${x}px`)
-      slide.style.setProperty("--wall-shift-y", `${y}px`)
+      if (x || y) {
+        slide.style.setProperty("--wall-shift-x", `${x}px`)
+        slide.style.setProperty("--wall-shift-y", `${y}px`)
+        shiftedWallSlides.current.push(slide)
+      } else {
+        slide.style.removeProperty("--wall-shift-x")
+        slide.style.removeProperty("--wall-shift-y")
+      }
     }
   }, [held, detailsOpen, layout, sheetNode, wall])
 
