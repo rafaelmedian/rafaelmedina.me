@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -6,7 +7,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', '.ssr', '.context', '**/.wrangler/**', '.playwright-mcp', 'test-results*/**', 'playwright-report']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -18,6 +19,7 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: { tsconfigRootDir: fileURLToPath(new URL('.', import.meta.url)) },
     },
   },
 ])
