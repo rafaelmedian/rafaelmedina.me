@@ -281,6 +281,7 @@ test("previews the gradient while applying live height and shape settings", asyn
 test("staggers low aurora curtains and resets them after the shortened fade", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await pausePageClock(page)
 
   const edge = page.locator(".elastic-scroll-edge")
   const pullingState = await edge.evaluate((element) => {
@@ -302,6 +303,14 @@ test("staggers low aurora curtains and resets them after the shortened fade", as
 
   expect(pullingState).toEqual({ pulling: "true", transitionDuration: "0.12s" })
 
+  // A starved frame can run the 90ms release before the pull ever paints,
+  // which intentionally skips the fade. This test covers a painted pull:
+  // commit its frame and finish its rise before explicitly releasing it.
+  await page.clock.runFor(32)
+  await edge.evaluate(element => element.getAnimations()
+    .find(animation => (animation as CSSTransition).transitionProperty === "opacity")?.finish())
+  await page.evaluate(() => document.dispatchEvent(new Event("touchend")))
+  await page.clock.runFor(32)
   await expect(edge).toHaveAttribute("data-pulling", "false")
   // The transitionrun listener above holds the release fade inside the page,
   // before a busy CI runner can finish it between Playwright round trips. The
@@ -4482,16 +4491,21 @@ test("aligns work locations with their roles", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const jobs = page
-    .getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+  const jobs = dialog
     .getByRole("list", { name: "Work history" })
     .locator(":scope > li")
 
   for (const index of [0, 1]) {
-    const [roleBox, locationBox] = await Promise.all([
-      jobs.nth(index).locator(".resume-experience-role").boundingBox(),
-      jobs.nth(index).locator(".mosaic-about-resume-location").boundingBox(),
-    ])
+    // Read both rectangles in one browser task so an entry frame cannot
+    // advance between measurements, even with reduced motion enabled.
+    const [roleBox, locationBox] = await jobs.nth(index).evaluate((job) =>
+      [".resume-experience-role", ".mosaic-about-resume-location"].map((selector) => {
+        const box = job.querySelector(selector)?.getBoundingClientRect()
+        return box ? { y: box.y, height: box.height } : null
+      }),
+    )
 
     expect(roleBox).not.toBeNull()
     expect(locationBox).not.toBeNull()
