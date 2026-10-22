@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react"
+import { Component, lazy, memo, Suspense, useEffect, useRef, useState, type ReactNode } from "react"
 
 import { getAboutIntro } from "../data/aboutIntro"
 import { siteProfile } from "../data/portfolio"
@@ -16,7 +16,9 @@ class IntroBoundary extends Component<{ children: ReactNode }, { failed: boolean
   render() { return this.state.failed ? null : this.props.children }
 }
 
-export function AboutIntroDock(props: {
+// Memoized for the same reason as AboutPanel: the intro chat inside it was the
+// costliest part of the feed's re-render on a gallery open.
+export const AboutIntroDock = memo(function AboutIntroDock(props: {
   onWork: () => void
   onAbout: () => void
   onServices: () => void
@@ -136,4 +138,4 @@ export function AboutIntroDock(props: {
       )}
     </div>
   )
-}
+})

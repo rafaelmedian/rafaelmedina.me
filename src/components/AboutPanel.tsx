@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { memo, useEffect, useRef } from "react"
 
 import { faq } from "../data/faq"
 import type { SiteLinks } from "../data/portfolio"
@@ -25,7 +25,9 @@ const hobbies = [
   { emoji: "🥋", label: "Jiu jitsu", learning: true },
 ]
 
-export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
+// Memoized: the feed re-renders on every gallery open and close, in the same
+// commit the zoom starts from, and this sheet never changes with it.
+export const AboutPanel = memo(function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
   const prefersReducedMotion = usePrefersReducedMotion()
 
@@ -340,4 +342,4 @@ export function AboutPanel({ links, localTimeLabel }: AboutPanelProps) {
       </div>
     </article>
   )
-}
+})

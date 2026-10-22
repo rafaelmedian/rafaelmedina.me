@@ -924,7 +924,9 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
     }
   }, [isReturningToTop])
 
-  const scrollToSection = (trigger: string, sectionId = "about-panel") => {
+  // Stable, so the memoized intro dock skips the feed's re-render on every
+  // gallery open and close.
+  const scrollToSection = useCallback((trigger: string, sectionId = "about-panel") => {
     if (sectionId === "work") {
       trackEvent("section_scroll", { section_id: sectionId, section_scroll_trigger: trigger })
     } else {
@@ -948,7 +950,10 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
       block: "start",
     })
     aboutPanel.focus({ preventScroll: true })
-  }
+  }, [prefersReducedMotion])
+  const scrollToWork = useCallback(() => scrollToSection("toc_work", "work"), [scrollToSection])
+  const scrollToAbout = useCallback(() => scrollToSection("toc_about"), [scrollToSection])
+  const scrollToServices = useCallback(() => scrollToSection("toc_services", "about-panel-services"), [scrollToSection])
 
   const closeAbout = () => {
     const url = new URL(window.location.href)
@@ -979,9 +984,9 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
       />
       <SocialCorner email={links.email} />
       <AboutIntroDock
-        onWork={() => scrollToSection("toc_work", "work")}
-        onAbout={() => scrollToSection("toc_about")}
-        onServices={() => scrollToSection("toc_services", "about-panel-services")}
+        onWork={scrollToWork}
+        onAbout={scrollToAbout}
+        onServices={scrollToServices}
       />
       <button
         type="button"
