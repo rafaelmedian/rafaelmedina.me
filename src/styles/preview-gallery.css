@@ -1672,3 +1672,47 @@
     transition: none;
   }
 }
+
+/* ------------------------------------------------------- the quote card --- */
+
+/* A quote tile, opened (QuotesDialog): the same card at reading size, in this
+   frame -- backdrop, card, compact close -- grown whole out of the tile the
+   way the paper slides are. The gallery card is only the surface here; the
+   quote card inside fills it edge to edge and pages on every press. The type
+   is the tile's: the scale stops at --text-lg, so the card gets the room. */
+.preview-gallery-shell[data-kind="quotes"] {
+  --preview-gallery-width: min(32rem, 100%);
+  /* One short card: it sits in the middle of the window, not under the
+     gallery's top inset, which is there for slides taller than the screen. */
+  align-items: center;
+}
+
+/* The arrows ride the card's middle, where the quote is. */
+.preview-gallery-popup[data-preview-kind="quotes"] .preview-gallery-rail {
+  --preview-gallery-rail-anchor: 50%;
+}
+
+.quotes-gallery-card {
+  padding: 0;
+}
+
+.quotes-gallery-card .mosaic-quote {
+  --quote-inline-padding: clamp(2rem, 6vw, 4rem);
+  min-height: min(24rem, var(--preview-gallery-room));
+  padding-block: 3.5rem;
+  border: 0;
+  border-radius: inherit;
+}
+
+/* The tile reserves 12rem and sets a short quote on its floor, so credits line
+   up across quotes in a card that cannot grow. Here every quote, with its
+   credit, sits in the middle of the card, the dots in its foot padding: the
+   slides take the longest quote's height, and each centres its own. */
+.quotes-gallery-card .mosaic-quote-slides {
+  min-height: 0;
+}
+
+.quotes-gallery-card .mosaic-quote-slide {
+  grid-template-rows: auto auto;
+  align-content: center;
+}

@@ -1,6 +1,7 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react"
+import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react"
 import { Popover } from "@base-ui/react/popover"
 import { KeyboardHint } from "./KeyboardHint"
+import { QuotesDialog } from "./QuotesDialog"
 import { XProfileHoverCard } from "./XProfileHoverCard"
 import type { PortfolioQuote } from "../data/quotes"
 import { RICH_CARD_OPEN_DELAY_MS } from "../lib/hoverIntent"
@@ -19,7 +20,7 @@ const SWIPE_DISTANCE = 6
 const VERTICAL_INTENT = 1.5
 
 // How far a press may wander and still be a tap. Under it the card was pressed,
-// not swiped, and the click advances the quote as it would from a still finger.
+// not swiped, and the click opens the quotes as it would from a still finger.
 const TAP_DISTANCE = 10
 
 function QuoteCredit({
@@ -135,16 +136,40 @@ function QuoteCredit({
   )
 }
 
-export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
+/** The opened card's paging, for the dialog's side arrows. */
+export type QuoteCardHandle = { move: (travel: number) => void }
+
+export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false, initialIndex = 0, onActiveChange, ref }: {
+  quotes: PortfolioQuote[]
+  /** The heading of the dialog the card opens into. */
+  title: string
+  onDialogOpenChange?: (open: boolean) => void
+  /** The card inside its dialog: a press pages to the next quote there. */
+  expanded?: boolean
+  initialIndex?: number
+  onActiveChange?: (index: number) => void
+  ref?: Ref<QuoteCardHandle>
+}) {
+  // A press on the tile opens the card in a dialog of its own, where the same
+  // card, larger, pages through the quotes on every press. The tile itself
+  // pages by swipe, dots and arrows.
+  const [listOpen, setListOpen] = useState(false)
+  const setList = (open: boolean) => {
+    setListOpen(open)
+    onDialogOpenChange?.(open)
+  }
   // `settle` is how the change was asked for, not how far it travels: a pointer
   // gesture lands on the next quote quickly, a dot chosen across the card keeps
   // the longer, more deliberate move.
   const [{ activeIndex, previousIndex, direction, settle }, setSelection] = useState({
-    activeIndex: 0,
-    previousIndex: 0,
+    activeIndex: initialIndex,
+    previousIndex: initialIndex,
     direction: 1,
     settle: "slow" as "quick" | "slow",
   })
+  const followDialog = useCallback((index: number) => {
+    setSelection(selection => selection.activeIndex === index ? selection : { activeIndex: index, previousIndex: index, direction: 1, settle: "quick" })
+  }, [])
   const slidesRef = useRef<HTMLDivElement>(null)
   const preparedSlide = useRef<HTMLElement | null>(null)
   const [dragOffset, setDragOffset] = useState(0)
@@ -193,6 +218,8 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     }
   }, [inside])
 
+  useEffect(() => { onActiveChange?.(activeIndex) }, [activeIndex, onActiveChange])
+
   useLayoutEffect(() => {
     const slide = preparedSlide.current
     if (!slide) return
@@ -200,8 +227,6 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
     slide.style.removeProperty("transform")
     preparedSlide.current = null
   }, [activeIndex])
-
-  if (!activeQuote) return null
 
   // Keep the preceding and following slides one card-width from the current
   // quote. Only the offscreen slide jumps sides when the carousel wraps.
@@ -238,6 +263,10 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
 
   const moveQuote = (travel: number, settleAs: "quick" | "slow" = "slow") =>
     selectQuote((activeIndex + travel + quotes.length) % quotes.length, travel, settleAs)
+  useImperativeHandle(ref, () => ({ move: (travel: number) => moveQuote(travel, "quick") }))
+  const expandedRef = useRef<QuoteCardHandle>(null)
+
+  if (!activeQuote) return null
 
   const startDrag = (event: PointerEvent<HTMLButtonElement>) => {
     if (!event.isPrimary || event.button !== 0) return
@@ -323,6 +352,12 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
       return
     }
 
+    if (event.key === " " && target === card && !expanded) {
+      event.preventDefault()
+      setList(true)
+      return
+    }
+
     if (event.key === "Enter" && target === card) {
       const author = card.querySelector<HTMLElement>('.mosaic-quote-slide[data-active="true"] .mosaic-quote-profile-link')
       if (!author) return
@@ -369,7 +404,7 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
       <button
         type="button"
         className="mosaic-quote-next"
-        aria-label="Advance quote"
+        aria-label={expanded ? "Advance quote" : "Open all quotes"}
         tabIndex={-1}
         onPointerDown={startDrag}
         onPointerMove={moveDrag}
@@ -378,9 +413,10 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
         onLostPointerCapture={(event) => finishDrag(event, true)}
         onClick={(event) => {
           // Pointer release also fires click. Only a tap (or keyboard activation)
-          // advances here; completed and cancelled drags have already been handled.
+          // opens the list; completed and cancelled drags have already been handled.
           if (event.detail !== 0 && suppressClick.current) return
-          moveQuote(1, "quick")
+          if (expanded) moveQuote(1, "quick")
+          else setList(true)
         }}
       />
       <div ref={slidesRef} className="mosaic-quote-slides">
@@ -442,15 +478,30 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
         className="mosaic-quote-keys"
         items={inside
           ? [{ keys: ["Enter"], label: "Profile" }, { keys: ["Esc"], label: "Back" }]
-          : [{ keys: ["←", "→"], label: "Browse" }, ...(canGoIn ? [{ keys: ["Enter"], label: "Go in" }] : [])]}
+          : [{ keys: ["←", "→"], label: "Browse" }, ...(expanded ? [] : [{ keys: ["Space"], label: "Open" }]), ...(canGoIn ? [{ keys: ["Enter"], label: "Go in" }] : [])]}
       />
       <span id={keysId} className="sr-only">
-        Use the left and right arrow keys to change the quote.
+        Use the left and right arrow keys to change the quote{expanded ? "." : ", and Space to open the quotes."}
         {canGoIn ? " Press Enter to go in to the author's profile." : ""}
       </span>
       <span id={authorKeysId} className="sr-only">
         Press Enter to go in to the profile card, or Escape to go back to the quotes.
       </span>
+      {expanded ? null : (
+        <QuotesDialog open={listOpen} onOpenChange={setList} title={title} originRef={cardRef}
+          onMove={(travel) => expandedRef.current?.move(travel)}>
+          <QuoteCard
+            ref={expandedRef}
+            quotes={quotes}
+            title={title}
+            expanded
+            initialIndex={activeIndex}
+            // The tile follows along under the dialog, so the close lands on
+            // the quote the visitor was reading.
+            onActiveChange={followDialog}
+          />
+        </QuotesDialog>
+      )}
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {activeIndex + 1} of {quotes.length}. {activeQuote.attribution}. {activeQuote.caption}: {activeQuote.text} {activeQuote.emphasis}.
       </p>

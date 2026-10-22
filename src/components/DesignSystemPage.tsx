@@ -1192,15 +1192,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
             </div>
 
-            <div className="ds-block" data-ds-terms={terms("quote slider carousel attribution portrait keyboard hint swipe drag --radius-lg --text-lg --text-md")}>
+            <div className="ds-block" data-ds-terms={terms("quote slider carousel attribution portrait keyboard hint swipe drag dialog modal --radius-lg --text-lg --text-md")}>
               <p className="ds-subhead">Quote slider</p>
               <p className="ds-caption">
                 A white card on <code>--radius-lg</code>. Quotes up to 80 characters use <code>--text-lg</code>,
                 longer ones <code>--text-md</code>. The card is one Tab stop: arrows page, Enter goes in, Escape comes
-                out, and a <code>KeyboardHint</code> shows the keys. Drag or tap to advance; slides travel over{" "}
-                <code>--duration-slow</code> on <code>--ease-smooth</code>.
+                out, and a <code>KeyboardHint</code> shows the keys. Drag to page; slides travel over{" "}
+                <code>--duration-slow</code> on <code>--ease-smooth</code>. A tap (or Space) opens the same card in
+                the preview gallery's frame, grown whole out of the tile, where a tap or the side arrows page.
               </p>
-              <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} />
+              <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} title="Kind words from the timeline" />
             </div>
 
             <div className="ds-block" data-ds-terms={terms("resume résumé folded paper tile curl gallery slide cv pdf")}>
