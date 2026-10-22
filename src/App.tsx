@@ -104,7 +104,12 @@ function App({ pathname }: { pathname?: string }) {
                 <DeferredWritingPage writing={standaloneWriting} />
               ) : (
                 <>
-                  <SimpleFeed cards={portfolioCards} profile={siteProfile} links={siteLinks} />
+                  <SimpleFeed
+                    cards={portfolioCards}
+                    profile={siteProfile}
+                    links={siteLinks}
+                    deferMedia={Boolean(project || isResumePath(currentPath) || isNotesPath(currentPath) || writingAtPath(currentPath))}
+                  />
                   <BottomOverscrollEffect />
                 </>
               )}
