@@ -641,6 +641,9 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
               </Fragment>
             )}
           </div>
+          {layout === "wall" && <div className="personal-photos-wall-edges" aria-hidden="true">
+            {["top", "right", "bottom", "left"].map(edge => <div key={edge} data-edge={edge}><span /><span /></div>)}
+          </div>}
           {layout === "wall" && held && selectedPhoto && (
             <div className="personal-photo-inspector" style={{
               "--detail-photo-image": `url(/images/personal/${selectedPhoto.name}-800w.webp)`,
