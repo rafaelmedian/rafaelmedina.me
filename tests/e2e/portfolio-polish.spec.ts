@@ -424,12 +424,32 @@ test("a thumb\u2019s worth of overscroll fills the elastic edge the way a fling 
 test("continues the elastic scroll edge from its visible position when release is interrupted", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await pausePageClock(page)
 
   const edge = page.locator(".elastic-scroll-edge")
-  const interruption = await edge.evaluate(async (element) => {
+  await edge.evaluate((element) => {
+    element.addEventListener("transitionrun", (event) => {
+      if ((event as TransitionEvent).propertyName !== "opacity" || element.getAttribute("data-pulling") !== "false") return
+      element.getAnimations()
+        .find(animation => (animation as CSSTransition).transitionProperty === "opacity")?.pause()
+    })
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 600 }))
-    await new Promise((resolve) => window.setTimeout(resolve, 210))
+  })
+  // Paint the pull before releasing it, then hold the fade so a delayed CI
+  // frame cannot skip the visible state this interruption test exercises.
+  await page.clock.runFor(32)
+  await edge.evaluate(element => element.getAnimations()
+    .find(animation => (animation as CSSTransition).transitionProperty === "opacity")?.finish())
+  await page.evaluate(() => document.dispatchEvent(new Event("touchend")))
+  await page.clock.runFor(32)
+  await expect.poll(() => edge.evaluate(element => element.getAnimations()
+    .some(animation => (animation as CSSTransition).transitionProperty === "opacity"))).toBe(true)
 
+  const interruption = await edge.evaluate((element) => {
+    const fade = element.getAnimations()
+      .find(animation => (animation as CSSTransition).transitionProperty === "opacity")!
+    fade.pause()
+    fade.currentTime = 200
     const opacityBeforeInterruption = Number.parseFloat(getComputedStyle(element).opacity)
     window.dispatchEvent(new WheelEvent("wheel", { deltaY: 20 }))
     const opacityAfterInterruption = Number.parseFloat(getComputedStyle(element).opacity)
