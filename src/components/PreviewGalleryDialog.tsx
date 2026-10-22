@@ -184,7 +184,7 @@ export function PreviewGalleryDialog({
   const notesListRef = useRef<HTMLDivElement>(null)
   const notesScrollRef = useRef<HTMLDivElement>(null)
   const notesTitleRef = useRef<HTMLHeadingElement>(null)
-  const returnRow = useRef<HTMLButtonElement | null>(null)
+  const returnRow = useRef<HTMLAnchorElement | null>(null)
   const listScrollTop = useRef(0)
   const focusNoteTitle = useRef(true)
   const orderedNotes = useMemo(() => groupWritingsByCategory(writingSummaries).flatMap(group => group.entries), [])
@@ -242,7 +242,7 @@ export function PreviewGalleryDialog({
     if (!scroller) return
     if (notesPage.displayed) {
       scroller.scrollTop = 0
-      returnRow.current = notesListRef.current?.querySelector<HTMLButtonElement>(
+      returnRow.current = notesListRef.current?.querySelector<HTMLAnchorElement>(
         `[data-writing-id="${notesPage.displayed}"]`,
       ) ?? returnRow.current
       if (focusNoteTitle.current) noteTitleRef.current?.focus({ preventScroll: true })

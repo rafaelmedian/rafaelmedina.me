@@ -277,21 +277,16 @@ export function WritingArticle({ writing, titleRef, heading: Heading = "h2", sho
             <li key={entry.id}>
               {/* The reader turns to its neighbour; the static page has no
                   reader to turn, so it goes to the note's own address. */}
-              {onSelectWriting ? (
-                <button type="button" className="writing-entry-trigger" onClick={() => onSelectWriting(entry.id)}>
-                  <span className="writing-entry-title">{entry.title}</span>
-                  {entry.publishedAt ? <time className="writing-entry-date" dateTime={entry.publishedAt} aria-hidden="true">
-                    {archiveDate(entry.publishedAt)}
-                  </time> : null}
-                </button>
-              ) : (
-                <a className="writing-entry-trigger" href={writingPath(entry)}>
-                  <span className="writing-entry-title">{entry.title}</span>
-                  {entry.publishedAt ? <time className="writing-entry-date" dateTime={entry.publishedAt} aria-hidden="true">
-                    {archiveDate(entry.publishedAt)}
-                  </time> : null}
-                </a>
-              )}
+              <a className="writing-entry-trigger" href={writingPath(entry)} onClick={event => {
+                if (!onSelectWriting || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                event.preventDefault()
+                onSelectWriting(entry.id)
+              }}>
+                <span className="writing-entry-title">{entry.title}</span>
+                {entry.publishedAt ? <time className="writing-entry-date" dateTime={entry.publishedAt} aria-hidden="true">
+                  {archiveDate(entry.publishedAt)}
+                </time> : null}
+              </a>
             </li>
           ))}</ul>
         </section>

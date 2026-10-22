@@ -104,31 +104,27 @@ function ArchiveDrawing({ drawing }: { drawing: DrawingPlacement }) {
 // Notes kept only as an archive year have no exact date to put there.
 //
 // The date is a scanning aid rather than part of the entry's name, so it stays
-// out of the accessible name: "Designing Matcha, button" beats reading a row as
+// out of the accessible name: "Designing Matcha, link" beats reading a row as
 // "Designing Matcha Sep 1", and the note's own header announces
 // the full date the moment it opens.
 function WritingEntry({ writing, busy, onClick }: {
   writing: WritingSummary
   busy?: boolean
-  onClick?: (trigger: HTMLButtonElement) => void
+  onClick?: (trigger: HTMLAnchorElement) => void
 }) {
   const date = writing.publishedAt ? (
     <time className="writing-entry-date" dateTime={writing.publishedAt} aria-hidden="true">{archiveDate(writing.publishedAt)}</time>
   ) : null
-  if (!onClick) {
-    return (
-      <a className="writing-entry-trigger" href={writingPath(writing)}>
-        <span className="writing-entry-title">{writing.title}</span>
-        {date}
-      </a>
-    )
-  }
   return (
-    <button type="button" className="writing-entry-trigger" data-writing-id={writing.id}
-      onClick={(event) => onClick?.(event.currentTarget)} aria-busy={busy || undefined}>
+    <a className="writing-entry-trigger" href={writingPath(writing)} data-writing-id={writing.id}
+      onClick={event => {
+        if (!onClick || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+        event.preventDefault()
+        onClick(event.currentTarget)
+      }} aria-busy={busy || undefined}>
       <span className="writing-entry-title">{writing.title}</span>
       {date}
-    </button>
+    </a>
   )
 }
 
@@ -179,7 +175,7 @@ type WritingsArchiveProps = {
    * Open a nested note within the gallery; the static `/notes/` page has no dialog, so its
    * rows are ordinary links to each note's own address.
    */
-  onSelectWriting?: (id: string, trigger: HTMLButtonElement) => void
+  onSelectWriting?: (id: string, trigger: HTMLAnchorElement) => void
   /** The note whose reader is on its way, while its chunk downloads. */
   pendingId?: string | null
   /** What to say under the heading while a reader fails to arrive. */

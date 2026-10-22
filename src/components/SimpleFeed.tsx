@@ -38,7 +38,7 @@ import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
 import { closePortfolioUrl, pushPortfolioUrl, useGalleryUrl, usePortfolioItemUrl } from "../lib/portfolioUrl"
-import { isNotesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
+import { isNotesPath, notesPath, projectPath, writingsItemId } from "../lib/projectMetadata"
 import { galleryItemTitle, projectGalleryItem, resumeGalleryItem, writingsGalleryItem, type GalleryItem } from "../lib/galleryItems"
 import { WorkedWithCompaniesInline } from "./WorkedWithCompaniesInline"
 
@@ -99,6 +99,8 @@ type SimpleFeedProps = {
   cards: PortfolioCard[]
   profile: SiteProfile
   links: SiteLinks
+  /** A direct gallery entry has not shown its background work grid yet. */
+  deferMedia?: boolean
 }
 
 
@@ -110,6 +112,7 @@ type RowVideoMediaProps = {
   height?: number
   prefersReducedMotion: boolean
   pausePlayback: boolean
+  loadMedia: boolean
 }
 
 const puntaCanaTimeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -189,7 +192,7 @@ function prefetchPreviewGallery() {
 // has to clear on the poster's own decode rather than the video's. The element's
 // poster request and this one resolve to the same resource, so it costs no bytes.
 function usePosterReady(poster: string | undefined) {
-  const [ready, setReady] = useState(!poster)
+  const [readyPoster, setReadyPoster] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     if (!poster) return
@@ -197,7 +200,7 @@ function usePosterReady(poster: string | undefined) {
     // Listeners go on before `src`, so a poster already in the cache still
     // arrives through `load` rather than needing a synchronous `complete` check.
     const image = new Image()
-    const finish = () => setReady(true)
+    const finish = () => setReadyPoster(poster)
     image.addEventListener("load", finish)
     // A poster that fails is not going to paint, so stop waiting on it rather
     // than leaving the tile under a skeleton for the rest of the session.
@@ -209,7 +212,7 @@ function usePosterReady(poster: string | undefined) {
     }
   }, [poster])
 
-  return ready
+  return !poster || readyPoster === poster
 }
 
 function RowVideoMedia({
@@ -220,6 +223,7 @@ function RowVideoMedia({
   height,
   prefersReducedMotion,
   pausePlayback,
+  loadMedia,
 }: RowVideoMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const supportsIntersectionObserver = useSyncExternalStore(
@@ -239,12 +243,12 @@ function RowVideoMedia({
   const [shouldLoad, setShouldLoad] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const posterReady = usePosterReady(poster)
+  const posterReady = usePosterReady(loadMedia ? poster : undefined)
 
   // With no observer to flip the state, `src` would stay undefined for the whole
   // session and only the poster would ever show -- so fall back to loading up
   // front instead.
-  const loadNow = !holdForLightweightMedia && !prefersReducedMotion &&
+  const loadNow = loadMedia && !holdForLightweightMedia && !prefersReducedMotion &&
     (shouldLoad || !supportsIntersectionObserver)
   const visibleNow = isVisible || !supportsIntersectionObserver
 
@@ -299,7 +303,7 @@ function RowVideoMedia({
     <video
       ref={videoRef}
       src={loadNow ? source : undefined}
-      poster={poster}
+      poster={loadMedia ? poster : undefined}
       width={width}
       height={height}
       muted
@@ -322,12 +326,13 @@ type RowImageMediaProps = {
   height?: number
   eager: boolean
   sizes: string
+  loadMedia: boolean
 }
 
 // Owns its own loaded flag on purpose. Hoisting it into SimpleFeed meant every
 // one of the ~11 images re-rendered the entire mosaic when it decoded, which
 // re-ran the row/tile tree eleven times during load.
-function RowImageMedia({ source, label, width, height, eager, sizes }: RowImageMediaProps) {
+function RowImageMedia({ source, label, width, height, eager, sizes, loadMedia }: RowImageMediaProps) {
   const [loaded, setLoaded] = useState(false)
   const [approached, setApproached] = useState(false)
   const imageRef = useRef<HTMLImageElement | null>(null)
@@ -362,8 +367,8 @@ function RowImageMedia({ source, label, width, height, eager, sizes }: RowImageM
 
   return (
     <img
-      src={source}
-      srcSet={srcSet}
+      src={loadMedia ? source : undefined}
+      srcSet={loadMedia ? srcSet : undefined}
       sizes={srcSet ? sizes : undefined}
       // Auto sizing implies size containment. Preserve each original canvas
       // instead of the browser's 300 by 150px intrinsic placeholder.
@@ -376,7 +381,7 @@ function RowImageMedia({ source, label, width, height, eager, sizes }: RowImageM
       fetchPriority={eager ? "high" : "auto"}
       className="mosaic-row-media"
       data-loaded={loaded ? "true" : "false"}
-      data-pending={armed && !loaded ? "true" : "false"}
+      data-pending={loadMedia && armed && !loaded ? "true" : "false"}
       onLoad={(event) => {
         if (event.currentTarget.naturalWidth > 0) setLoaded(true)
       }}
@@ -516,13 +521,16 @@ function SectionCorner({
           {link.label}
         </a>
       ))}
-      {/* Notes has no section of its own to scroll to: it opens the same
-          folder the mosaic tile does, so this is a button, not a link. It hands
-          itself over as the opener, so the sheet flies out of this corner
-          rather than out of a tile that may be pages down. */}
-      <button type="button" className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent} onClick={onNotes}>
+      {/* Keep the public archive address available to crawlers, no-JS
+          visits, and modified clicks while plain clicks open its gallery. */}
+      <a href={notesPath} className="mosaic-social-link" onPointerEnter={onNotesIntent} onFocus={onNotesIntent}
+        onClick={event => {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+          event.preventDefault()
+          onNotes()
+        }}>
         Notes
-      </button>
+      </a>
       <span className="mosaic-hover-anchor mosaic-resume-anchor" {...hoverProps}>
         <a
           href={resumeHref}
@@ -603,7 +611,7 @@ function SocialCorner({ email }: { email: string }) {
   )
 }
 
-export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
+export function SimpleFeed({ cards, profile, links, deferMedia = false }: SimpleFeedProps) {
   const { open: bookingOpen, openBooking } = useBooking()
   const prefersReducedMotion = usePrefersReducedMotion()
   const { gridRef, runwayRef } = useWorkGridHeight()
@@ -643,7 +651,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
   // Keyed by gallery index, and the résumé tile is one of the keys: the sheet
   // grows out of whichever tile the slide belongs to.
   const previewCardNodesRef = useRef(new Map<number, HTMLElement>())
-  const writingsFolderTileRef = useRef<HTMLButtonElement | null>(null)
+  const writingsFolderTileRef = useRef<HTMLAnchorElement | null>(null)
   const [puntaCanaTimeLabel, setPuntaCanaTimeLabel] = useState(() =>
     formatPuntaCanaLocalTime(new Date(globalThis.__PRERENDERED_AT__ ?? Date.now())),
   )
@@ -713,6 +721,12 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     setHasOpenedWorkPreview(true)
     setLastWorkPreviewIndex(activeWorkPreviewIndex)
   }
+  // Native lazy loading sees the grid behind the dialog as near the viewport.
+  // Keep its geometry, but withhold media URLs until a direct entry returns
+  // to the feed. Once released, never remove images on subsequent opens.
+  const [mediaReleased, setMediaReleased] = useState(!deferMedia)
+  if (!mediaReleased && activeWorkPreviewIndex === null) setMediaReleased(true)
+  const loadFeedMedia = mediaReleased || activeWorkPreviewIndex === null
   const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(galleryItems.length - 1, 0))
   // The tile videos stay paused while a dialog covers them (the gallery or
   // a card's quotes) and until its close has landed. Resumed the
@@ -787,6 +801,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       return (
         <RowVideoMedia
           source={source}
+          loadMedia={loadFeedMedia}
           poster={card.previewPoster}
           label={label}
           width={width}
@@ -802,6 +817,7 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     return (
       <RowImageMedia
         key={source}
+        loadMedia={loadFeedMedia}
         source={source}
         label={label}
         width={width}
@@ -908,7 +924,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
     }
   }, [isReturningToTop])
 
-  const scrollToSection = (trigger: string, sectionId = "about-panel") => {
+  // Stable, so the memoized intro dock skips the feed's re-render on every
+  // gallery open and close.
+  const scrollToSection = useCallback((trigger: string, sectionId = "about-panel") => {
     if (sectionId === "work") {
       trackEvent("section_scroll", { section_id: sectionId, section_scroll_trigger: trigger })
     } else {
@@ -932,7 +950,10 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       block: "start",
     })
     aboutPanel.focus({ preventScroll: true })
-  }
+  }, [prefersReducedMotion])
+  const scrollToWork = useCallback(() => scrollToSection("toc_work", "work"), [scrollToSection])
+  const scrollToAbout = useCallback(() => scrollToSection("toc_about"), [scrollToSection])
+  const scrollToServices = useCallback(() => scrollToSection("toc_services", "about-panel-services"), [scrollToSection])
 
   const closeAbout = () => {
     const url = new URL(window.location.href)
@@ -963,9 +984,9 @@ export function SimpleFeed({ cards, profile, links }: SimpleFeedProps) {
       />
       <SocialCorner email={links.email} />
       <AboutIntroDock
-        onWork={() => scrollToSection("toc_work", "work")}
-        onAbout={() => scrollToSection("toc_about")}
-        onServices={() => scrollToSection("toc_services", "about-panel-services")}
+        onWork={scrollToWork}
+        onAbout={scrollToAbout}
+        onServices={scrollToServices}
       />
       <button
         type="button"

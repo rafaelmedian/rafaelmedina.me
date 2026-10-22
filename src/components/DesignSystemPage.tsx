@@ -1153,7 +1153,7 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <code>#e9e9e9</code> for hover, focus, and selected alike. Nav links extend an invisible{" "}
                 <code>::before</code> so the tap target reaches 40px while the visible label stays 2rem. Hover hints
                 on the address, booking pill, and last-updated clause share one card: <code>--canvas</code>,{" "}
-                <code>--radius-md</code>, and the overlay shadow.
+                <code>--radius-md</code>, and the overlay shadow. The calendar keeps its external fallback link in a separate <code>--text-xs</code> row so blocked embeds still have a way through.
               </p>
             </div>
 

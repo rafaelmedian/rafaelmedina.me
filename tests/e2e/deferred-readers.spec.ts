@@ -10,7 +10,7 @@ test("keeps reader chunks off the initial load and opens them on demand", async 
   expect(scripts.some(url => /WritingsReader|WritingArticle|PersonalPhotosSheet/.test(url))).toBe(false)
   // The tile opens the gallery on the list of notes; the reader is warmed
   // while that list is on screen, so a row opens without a wait.
-  await page.getByRole("button", { name: "Open writings folder" }).click()
+  await page.getByRole("link", { name: "Open writings folder" }).click()
   await expect(page.locator(".preview-gallery-popup")).toBeVisible()
   await expect.poll(() => scripts.some(url => url.includes("WritingsReader"))).toBe(true)
   await expect.poll(() => scripts.some(url => url.includes("WritingArticle"))).toBe(true)
@@ -64,7 +64,7 @@ for (const { chunk, triggerName, dialogName, retryLabel } of [
         await page.locator(".mosaic-row-card").first().click()
         await expect(page.locator(".preview-gallery-popup")).toBeVisible()
       } else {
-        await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
+        await page.getByRole("link", { name: "Open writings folder", exact: true }).click()
         await expect(page.locator(".preview-gallery-popup")).toBeVisible()
       }
       release()
@@ -97,9 +97,9 @@ for (const { chunk, triggerName, dialogName, retryLabel } of [
    gallery, so its cases are their own: the trigger is a row, the busy state is
    on that row, and the retry labels are printed under the list's heading. */
 const notesRow = (page: import("@playwright/test").Page, title = "Designing Matcha") =>
-  page.locator(".preview-gallery-popup").getByRole("button", { name: title, exact: true })
+  page.locator(".preview-gallery-popup").getByRole("link", { name: title, exact: true })
 const openNotesList = async (page: import("@playwright/test").Page) => {
-  await page.getByRole("button", { name: "Open writings folder", exact: true }).click()
+  await page.getByRole("link", { name: "Open writings folder", exact: true }).click()
   await expect(page.locator(".preview-gallery-popup")).toBeVisible()
 }
 
@@ -182,12 +182,10 @@ test("WritingsReader retries a failed download without losing the list", async (
 /* A chunk a reader needs but does not own. Retrying cannot recover it -- the
    module registry keeps the rejection -- so the reader offers a reload instead.
 
-   The name is whatever Rollup emits for the imports two lazy modules have in
-   common, not something this repo authors: the notes entry here is the article
-   the reader shares with a note's own page, and the photos entry took the name
-   of the dialog title both sheets pull in. So the route counts what it
-   stopped, and the test fails on a pattern that has gone stale rather than
-   quietly blocking nothing and reporting a missing error message. */
+   WritingArticle is an authored entry shared with a note's own page. For
+   photos, inject a dependency at the network boundary: shared dialog chunks
+   can merge or disappear as the bundle graph changes. Both cases exercise
+   the browser's real module registry and the reader's retry/reload flow. */
 test("offers a reload when a cached WritingArticle dependency cannot be retried", async ({ page }) => {
   let fail = true
   let blocked = 0
@@ -215,18 +213,25 @@ test("offers a reload when a cached WritingArticle dependency cannot be retried"
   await expect(page.locator(".writings-dialog").getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
 })
 
-test("offers a reload when a cached DialogTitle dependency cannot be retried", async ({ page }) => {
+test("offers a reload when a cached photo dependency cannot be retried", async ({ page }) => {
   let fail = true
   let blocked = 0
-  await page.route("**/DialogTitle-*.js*", route => {
-    if (!fail) return route.continue()
+  await page.route("**/PersonalPhotosSheet-*.js*", async route => {
+    const response = await route.fetch()
+    await route.fulfill({
+      response,
+      body: `import "/__test__/photo-dependency.js";\n${await response.text()}`,
+    })
+  })
+  await page.route("**/__test__/photo-dependency.js", route => {
+    if (!fail) return route.fulfill({ contentType: "text/javascript", body: "export {}" })
     blocked++
     return route.abort("failed")
   })
   await page.goto("/")
   await page.getByRole("button", { name: "Personal life", exact: true }).click()
+  await expect.poll(() => blocked).toBeGreaterThan(0)
   await expect(page.getByText("Try opening photos again", { exact: true })).toBeVisible()
-  expect(blocked).toBeGreaterThan(0)
   fail = false
   await page.getByRole("button", { name: "Try opening photos again", exact: true }).click()
   await expect(page.getByText("Reload to try photos again", { exact: true })).toBeVisible()

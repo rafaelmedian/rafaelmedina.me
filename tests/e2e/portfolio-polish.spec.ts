@@ -660,9 +660,9 @@ test("fades the notes card at its foot, clear of the last row and the article's 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
+  await page.getByRole("link", { name: "Open writings folder" }).click()
   const popup = page.locator(".preview-gallery-popup")
-  await expect(popup.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+  await expect(popup.getByRole("link", { name: "Designing Matcha", exact: true })).toBeVisible()
 
   const scrollToEndAndMeasure = async (lastContent: string) => {
     await popup.locator(".notes-gallery-viewport").evaluate((viewport) => {
@@ -697,7 +697,7 @@ test("fades the notes card at its foot, clear of the last row and the article's 
 
   // It rides the card down as the card grows to an article, and clears that
   // article's last line too.
-  await popup.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await popup.getByRole("link", { name: "Designing Matcha", exact: true }).click()
   await expect(popup).toHaveAttribute("data-reading-note", "true")
   await page.evaluate(() => document.getAnimations().forEach((animation) => animation.finish()))
   const article = await scrollToEndAndMeasure(".writing-reader > *")
@@ -2394,9 +2394,8 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   await expect(frame.locator(".booking-iframe")).toHaveCSS("opacity", "1")
 })
 
-// A blocked third-party frame never fires onError, so the only signal that the
-// calendar is not coming is that it has not come. The link the header used to
-// hold from the start now waits for that moment.
+// A stalled frame keeps a loading status, but its external link is already
+// available outside the iframe and remains available after the stall timer.
 test("offers cal.com directly when the embedded calendar never loads", async ({ page }) => {
   // Never resolves: the frame stays blank exactly the way a blocked one does.
   await page.route("https://cal.com/**", () => {})
@@ -2410,11 +2409,12 @@ test("offers cal.com directly when the embedded calendar never loads", async ({ 
 
   const status = page.getByRole("dialog").locator(".booking-loading")
   await expect(status).toHaveText("Loading calendar…")
-  await expect(status.getByRole("link")).toHaveCount(0)
+  const escape = page.getByRole("dialog").getByRole("link", { name: "Open it on cal.com" })
+  await expect(escape).toBeVisible()
 
   await page.clock.fastForward(6_000)
-  await expect(status).toContainText("The calendar didn\u2019t load.")
-  const escape = status.getByRole("link", { name: "Open it on cal.com" })
+  await expect(status).toContainText("Having trouble loading the calendar?")
+  await expect(escape).toBeVisible()
   await expect(escape).toHaveAttribute("href", "https://cal.com/rafaelmedian/30min?email=visitor%40example.com")
   await expect(escape).toHaveAttribute("target", "_blank")
 })
@@ -2489,7 +2489,7 @@ test("places the resume link beside about in the section navigation", async ({ p
   const navigation = page.getByRole("navigation", { name: "Sections" })
   const about = navigation.getByRole("link", { name: "About", exact: true })
   const resume = navigation.getByRole("link", { name: "Résumé", exact: true })
-  await expect(navigation.getByRole("link")).toHaveCount(2)
+  await expect(navigation.getByRole("link")).toHaveCount(3)
   await expect(about).toBeVisible()
   await expect(resume).toBeVisible()
 
@@ -2506,7 +2506,7 @@ test("keeps the section links compact with the hero tooltip-link corners", async
   const navigation = page.getByRole("navigation", { name: "Sections" })
   const links = navigation.getByRole("link")
 
-  await expect(links).toHaveCount(2)
+  await expect(links).toHaveCount(3)
   for (const link of await links.all()) {
     await expect(link).toHaveCSS("min-height", "32px")
     await expect(link).toHaveCSS("border-radius", "10.4px")
@@ -4675,7 +4675,7 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
   expect(await placement()).toEqual(initial)
 
-  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await dialog.getByRole("link", { name: "Designing Matcha", exact: true }).click()
   await expect(dialog).toHaveAttribute("data-reading-note", "true")
   await expect(dialog.getByRole("heading", { name: "Designing Matcha", exact: true })).toBeVisible()
   expect(await placement()).toEqual(initial)

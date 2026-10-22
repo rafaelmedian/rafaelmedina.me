@@ -15,7 +15,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  const folder = page.getByRole("button", { name: "Open writings folder" })
+  const folder = page.getByRole("link", { name: "Open writings folder" })
   await expect(folder.locator(".writings-tile-label")).toHaveText("Notes & tools")
   await folder.click()
   // The same popup a project opens, on the list's own address, counted in the
@@ -27,7 +27,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 17")
   await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   await expect(popup(page).locator(".writings-category > h3")).toHaveText(["Tools", "Notes"])
-  await expect(popup(page).getByRole("button", { name: "Make pull requests easier to review", exact: true })
+  await expect(popup(page).getByRole("link", { name: "Make pull requests easier to review", exact: true })
     .locator(".writing-entry-date")).toHaveText("Sep 11 '26")
   await expect(popup(page).getByRole("searchbox")).toHaveCount(0)
   await expect(sheet(page)).toHaveCount(0)
@@ -41,7 +41,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await page.keyboard.press("ArrowLeft")
   await expect(page).toHaveURL(/\/work\/matcha-homepage\/$/)
   await page.keyboard.press("ArrowRight")
-  await expect(popup(page).getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+  await expect(popup(page).getByRole("link", { name: "Designing Matcha", exact: true })).toBeVisible()
 
   await page.keyboard.press("Escape")
   await expect(popup(page)).toBeHidden()
@@ -66,9 +66,9 @@ test("the header Notes link opens the list on the project preview's line", async
   await expect(popup(page)).toBeHidden()
   await page.evaluate(() => window.scrollTo(0, 0))
 
-  const notes = page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Notes", exact: true })
+  const notes = page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name: "Notes", exact: true })
   await notes.click()
-  await expect(popup(page).getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+  await expect(popup(page).getByRole("link", { name: "Designing Matcha", exact: true })).toBeVisible()
   // One modal, so the header cannot move between a project and the notes.
   // Polled, because the popup's first frames are its starting pose and the
   // attribute that marks it lands a frame after the popup does.
@@ -85,9 +85,9 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/?ref=portfolio")
-  const folder = page.getByRole("button", { name: "Open writings folder" })
+  const folder = page.getByRole("link", { name: "Open writings folder" })
   await folder.click()
-  const entry = popup(page).getByRole("button", { name: "Designing Matcha", exact: true })
+  const entry = popup(page).getByRole("link", { name: "Designing Matcha", exact: true })
   await entry.click()
   // The reader takes the list's frame; the retained list must not paint behind it.
   await expect(page).toHaveURL(/\/notes\/designing-matcha\/\?ref=portfolio$/)
@@ -157,7 +157,7 @@ test("a press outside a note closes the gallery once, with the note still on it"
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/")
-  const folder = page.getByRole("button", { name: "Open writings folder" })
+  const folder = page.getByRole("link", { name: "Open writings folder" })
   await folder.click()
   // This test exercises dismissal. Let the list finish measuring and entering
   // before clicking a row, so its hit target cannot move during the press.
@@ -165,7 +165,7 @@ test("a press outside a note closes the gallery once, with the note still on it"
   await page.evaluate(() => document.getAnimations().forEach(animation => {
     if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
   }))
-  await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await popup(page).getByRole("link", { name: "Designing Matcha", exact: true }).click()
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
   await page.evaluate(() => document.getAnimations().forEach(animation => {
     if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
@@ -237,7 +237,7 @@ for (const viewport of [{ width: 2283, height: 1239 }, { width: 1024, height: 76
     // a row preserves that list's frame instead of jumping back to the deep link size.
     await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
     await expect(dialog).toBeHidden()
-    await popup(page).getByRole("button", { name: "Designing Matcha", exact: true }).click()
+    await popup(page).getByRole("link", { name: "Designing Matcha", exact: true }).click()
     await waitForSettledDialog()
     await expect.poll(() => dialog.boundingBox()).toEqual(reading)
   })
@@ -247,16 +247,16 @@ test("the nested reader grows downward without replacing its dialog", async ({ p
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/")
-  await page.getByRole("button", { name: "Open writings folder" }).click()
+  await page.getByRole("link", { name: "Open writings folder" }).click()
   const dialog = popup(page)
-  await expect(dialog.getByRole("button", { name: "Designing Matcha", exact: true })).toBeVisible()
+  await expect(dialog.getByRole("link", { name: "Designing Matcha", exact: true })).toBeVisible()
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
   await page.evaluate(() => document.getAnimations().forEach(animation => {
     if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
   }))
   const listBox = (await dialog.boundingBox())!
   const original = await dialog.elementHandle()
-  await dialog.getByRole("button", { name: "Designing Matcha", exact: true }).click()
+  await dialog.getByRole("link", { name: "Designing Matcha", exact: true }).click()
   await expect(dialog).toHaveAttribute("data-reading-note", "true")
   await expect.poll(async () => (await dialog.boundingBox())!.height).toBeCloseTo(900, 0)
   const readingBox = (await dialog.boundingBox())!
@@ -274,7 +274,7 @@ test("the nested reader grows downward without replacing its dialog", async ({ p
   await expect(dialog).not.toHaveAttribute("data-reading-note")
   await expect.poll(async () => (await dialog.boundingBox())!.height).toBeCloseTo(listBox.height, 0)
   expect(await original!.evaluate(element => element === document.querySelector('[role="dialog"]'))).toBe(true)
-  await expect(dialog.getByRole("button", { name: "Designing Matcha", exact: true })).toBeFocused()
+  await expect(dialog.getByRole("link", { name: "Designing Matcha", exact: true })).toBeFocused()
 })
 
 test("the phone reader keeps the gallery's full-height frame and reachable controls", async ({ page }) => {
@@ -351,7 +351,7 @@ test("the review-ready tool can be installed and links to its source", async ({ 
   )
   await install.getByRole("button", { name: "Copy install command", exact: true }).click()
   await expect(install.getByRole("status")).toHaveText("Install command copied")
-  const skills = dialog.getByRole("region", { name: "More tools" }).getByRole("button", { name: "Skills for craft and code", exact: true })
+  const skills = dialog.getByRole("region", { name: "More tools" }).getByRole("link", { name: "Skills for craft and code", exact: true })
   await skills.click()
   await expect(page).toHaveURL(/\/notes\/skills-i-reach-for\/$/)
   const resources = dialog.getByRole("list", { name: "Resources" })
@@ -392,7 +392,7 @@ test("note navigation follows the archive and resets the reader scroll", async (
   // Back puts the list's slide forward; a row of it opens the next sheet.
   await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
   await expect(dialog).toBeHidden()
-  await popup(page).getByRole("button", { name: "My project context is moving into Markdown", exact: true }).click()
+  await popup(page).getByRole("link", { name: "My project context is moving into Markdown", exact: true }).click()
   await expect(dialog.getByRole("heading", { name: "My project context is moving into Markdown", exact: true })).toBeFocused()
   await page.keyboard.press("ArrowLeft")
   await expect(dialog.getByRole("heading", { name: "Make pull requests easier to review", exact: true })).toBeFocused()
@@ -752,7 +752,7 @@ test("inline contents leave both marginalia gutters available", async ({ page })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/")
   const dialog = sheet(page)
-  const entries = popup(page).locator(".writings-category li button")
+  const entries = popup(page).locator(".writings-category li a")
   await expect(entries.first()).toBeVisible()
   const count = await entries.count()
   for (let index = 0; index < count; index += 1) {
@@ -816,7 +816,7 @@ test("keeps marginalia to two notes an article, one in each gutter", async ({ pa
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/notes/")
   const dialog = sheet(page)
-  const entries = popup(page).locator(".writings-category li button")
+  const entries = popup(page).locator(".writings-category li a")
   await expect(entries.first()).toBeVisible()
   const count = await entries.count()
   expect(count).toBeGreaterThan(0)

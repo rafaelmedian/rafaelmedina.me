@@ -1,0 +1,35 @@
+import { expect, test } from '@playwright/test'
+
+test('notes stay linked from the homepage through the hydrated archive', async ({ page, context }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  const notes = page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Notes', exact: true })
+  await expect(notes).toHaveAttribute('href', '/notes/')
+  await expect(page.getByRole('link', { name: 'Open writings folder' })).toHaveAttribute('href', '/notes/')
+  await notes.click()
+  const archive = page.getByRole('dialog')
+  await expect(archive.locator('a.writing-entry-trigger')).toHaveCount(10)
+  const note = archive.getByRole('link', { name: 'Designing Matcha', exact: true })
+  await expect(note).toHaveAttribute('href', '/notes/designing-matcha/')
+  const opened = context.waitForEvent('page')
+  await note.click({ modifiers: ['ControlOrMeta'] })
+  const tab = await opened
+  await tab.waitForURL('**/notes/designing-matcha/')
+  await tab.close()
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await note.click()
+  await expect(page).toHaveURL(/\/notes\/designing-matcha\/$/)
+  await page.keyboard.press('Escape')
+  await expect(note).toBeFocused()
+})
+
+test('notes can be reached from the homepage without JavaScript', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
+  const page = await context.newPage()
+  await page.goto('/')
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Notes', exact: true }).click()
+  await expect(page).toHaveURL(/\/notes\/$/)
+  await page.getByRole('link', { name: 'Designing Matcha', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Designing Matcha' })).toBeVisible()
+  await context.close()
+})
