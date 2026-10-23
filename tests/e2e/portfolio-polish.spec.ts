@@ -3739,12 +3739,17 @@ test("gives the mobile resume reader its own close control", async ({ page }) =>
   await expect(close).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Next preview" })).toBeVisible()
 
+  // The sheet's entrance scales the toolbar up from just under full size, and
+  // under load a single read can land on a frame where the 44px target still
+  // measures 42. Poll until it has settled rather than sampling once.
+  await expect.poll(async () => {
+    const box = await close.boundingBox()
+    return Math.min(box?.width ?? 0, box?.height ?? 0)
+  }).toBeGreaterThanOrEqual(44)
   const [closeBox, titleBox] = await Promise.all([
     close.boundingBox(),
     dialog.getByRole("heading", { name: "Résumé" }).boundingBox(),
   ])
-  expect(closeBox!.width).toBeGreaterThanOrEqual(44)
-  expect(closeBox!.height).toBeGreaterThanOrEqual(44)
   // It rides the toolbar above the heading rather than overlapping it.
   expect(closeBox!.y + closeBox!.height).toBeLessThanOrEqual(titleBox!.y)
 
