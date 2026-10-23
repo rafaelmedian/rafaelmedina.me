@@ -166,50 +166,70 @@ export const projectCaseStudies = {
       { source: "/Projects/matcha-marketing-match-roses.webp", label: "“Roses are red, Matcha is the best”", width: 1200, height: 1043 },
     ] },
   ]),
-  "dealership-lead-hub": study("Replacing a lead table with a dealership hub", [
-    "The old CRM was one screen: a table of customers and a send button.",
-    "Everything else — the workshop, the customer’s history, who on the team was behind — lived somewhere else.",
-    "I designed and built Dealership Hub to bring those into one app, with the lead flow kept at its centre.",
+  "dealership-lead-hub": study("From a lead table to a dealership hub", [
+    "The old CRM did one thing: list customers and send them a campaign.",
+    "Everything around that list — the workshop, the customer’s history, who on the team was falling behind — lived in other tools.",
+    "I designed and built Dealership Hub to replace it: one app for sales, service, customers, and staff, with the lead flow still at its centre.",
   ], [
+    { heading: "Where it started", paragraphs: [
+      "The lead hub was a dense table under a row of numbers nobody could act on: “Not the Owner”, “Another Workshop”.",
+      "Every row looked the same, the send button was the loudest thing on the page, and nothing said who to call first.",
+      "Its strongest idea, filtering customers and sending a batch to the dealer app, was worth keeping. The rest needed rethinking.",
+    ], media: [
+      { source: "/Projects/dealership-hub-old-lead-hub.webp", label: "The old lead hub this replaces", width: 1600, height: 1147 },
+    ] },
     { heading: "Start with what needs doing", paragraphs: [
-      "The hub opens on three things worth doing first, each with the reason beside it.",
-      "Sales, workshop, issues, and team sit below as one line each, and a shared to-do list stays on the right.",
+      "The hub opens on the three things worth doing first, each with its reason: a customer waiting in the lounge, six leads never contacted.",
+      "Sales, workshop, issues, and team follow as one line each, and a shared to-do list stays alongside.",
+      "Picking one drafts the question for you — who should I call first? — ready to send or edit.",
     ], media: [
       { source: "/Projects/dealership-hub-hub-light.webp", label: "The hub, opening on the day’s first three things", width: 1600, height: 1147 },
     ] },
     { heading: "Ask instead of hunting", paragraphs: [
-      "Staff can ask a plain question — what’s running late? — from any page.",
-      "Answers come back as rows that open the job or the customer, with the next questions offered underneath.",
+      "Every page has the same bar at the bottom for plain questions, like what’s running late.",
+      "Answers come back as rows that open the job or the customer, not paragraphs to read, with the likely next questions underneath.",
     ], media: [
       { source: "/Projects/dealership-hub-hub-answer.webp", label: "An answer listing the three late jobs", width: 1600, height: 1147 },
     ] },
     { heading: "Leads, kept and sharpened", paragraphs: [
-      "Kept what worked in the old table: search, filters, and sending a selected batch to the dealer app.",
       "Rewrote the metrics as things to act on — ready for follow-up, due this week — each measured against a goal.",
-      "Masked registrations and flagged customers who have never been contacted.",
+      "Folded six dropdowns into one Filters menu that composes dealer, model, campaign, ownership, and last sent.",
+      "Rows lead with the person and their car, mask the registration, and flag anyone who has never been contacted.",
+      "Batch sends confirm the count and can be undone; an offline send keeps the selection so it can be retried.",
     ], media: [
-      { source: "/Projects/dealership-hub-generate-leads-selected.webp", label: "Generate leads, with two customers selected to send", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-leads-filters.webp", label: "One Filters menu in place of six dropdowns", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-leads-confirm.webp", label: "Confirming a send to four customers", width: 1600, height: 1147 },
     ] },
     { heading: "The workshop floor at a glance", paragraphs: [
-      "Every car on the floor in one board, grouped by stage, with how many in each are running late.",
-      "Each row pairs the car, the customer, the job, and the technician with the time promised.",
-      "Light and dark themes share the same tokens, so the board reads the same at a desk or on a floor screen.",
+      "Service was invisible in the old CRM. Now every car on the floor sits on one board, grouped by stage.",
+      "Each stage says how many cars are running late, and each row pairs car, customer, job, and technician with the time promised.",
     ], media: [
-      { source: "/Projects/dealership-hub-workshop-light.webp", label: "The workshop board", width: 1600, height: 1147 },
-      { source: "/Projects/dealership-hub-workshop-dark.webp", label: "The workshop board in the dark theme", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-workshop-light.webp", label: "The workshop board, grouped by stage", width: 1600, height: 1147 },
     ] },
     { heading: "One page per customer", paragraphs: [
-      "The directory leads with who needs attention, then lists everyone with their advisor and next contact.",
-      "A customer’s page holds their cars, bookings, notes from staff, and the conversation, side by side.",
+      "The directory opens on who needs attention — follow-ups, an advisor on leave, an unbooked recall — before the list itself.",
+      "A customer’s page holds their cars, bookings, staff notes, and the conversation side by side, so nobody asks them the same thing twice.",
     ], media: [
       { source: "/Projects/dealership-hub-customers-light.webp", label: "The customer directory", width: 1600, height: 1147 },
       { source: "/Projects/dealership-hub-customer-profile.webp", label: "A customer profile with bookings and messages", width: 1600, height: 1147 },
     ] },
     { heading: "Who needs a hand", paragraphs: [
-      "The team view tracks each advisor’s sales against target and open leads.",
-      "Leave, unassigned leads, and pending invites surface as tasks with a single action each.",
+      "The team view tracks each advisor’s sales against target, open leads, and what’s overdue.",
+      "Leave, unassigned leads, and pending invites surface as tasks with one action each: reassign, assign, resend.",
     ], media: [
-      { source: "/Projects/dealership-hub-team-light.webp", label: "The team view with sales against target", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-team-light.webp", label: "The team view, with sales against target", width: 1600, height: 1147 },
+    ] },
+    { heading: "One system under it", paragraphs: [
+      "Neutral surfaces carry the work; one brand blue moves it forward, and orange is saved for what’s urgent.",
+      "Every screen is built from the same tokens and components, documented on a live design-system page, so the dark theme is the same components on different tokens.",
+    ], media: [
+      { source: "/Projects/dealership-hub-design-system-light.webp", label: "The live design-system page", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-workshop-dark.webp", label: "The workshop board in the dark theme", width: 1600, height: 1147 },
+    ] },
+    { heading: "Built to be used, not just shown", paragraphs: [
+      "It’s a working Next.js app on sample data, not a click-through: filters, sends, undo, comments, and to-dos all hold state.",
+      "Single-letter shortcuts move between pages without stealing the browser’s own, and menus and dialogs work from the keyboard.",
+      "More than 90 Playwright tests cover those flows, from offline retries to mobile tables that scroll inside themselves.",
     ] },
   ]),
   "protector-booking": study("Making a personal-security booking clear", [
