@@ -201,7 +201,7 @@ export const projectCaseStudies = {
     { heading: "Start from your team", paragraphs: [
       "A Team › Roles switcher replaced the long list from top to bottom. By default you see your own team’s deployments, pipelines, and dashboards.",
       "Editing a team’s access policy went from six steps to three.",
-    ], media: [
+    ], mediaLayout: "stack", media: [
       { source: "/Projects/twilio-admiral-team-switcher.webp", label: "Switching team and role from the header", width: 1600, height: 693 },
       { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1600, height: 612 },
     ] },
@@ -230,7 +230,7 @@ export const projectCaseStudies = {
     ] },
     { heading: "Research that reads at a glance", paragraphs: [
       "Designed issuer pages for financial analysts and asset managers. They put credit ratings, outlooks, and ESG scores in one header, with commentary beside each score.",
-    ], media: [
+    ], mediaLayout: "stack", media: [
       { source: "/Projects/moodys-esg.webp", label: "ESG performance for asset managers", width: 1600, height: 1000 },
       { source: "/Projects/moodys-company-overview.webp", label: "A company overview with news, ownership, and key ratios", width: 1600, height: 1230 },
     ] },
@@ -242,7 +242,7 @@ export const projectCaseStudies = {
     { heading: "Month by month", paragraphs: [
       "Over the next four sprints we explored alternatives and iterated on what testing had shown, from a modular header to peer comparison.",
       "The testing went well enough that our team was asked to design the new Moodys.com.",
-    ], media: [
+    ], mediaLayout: "stack", media: [
       { source: "/Projects/moodys-iterations.webp", label: "A modular header and an alternative", width: 1600, height: 981 },
       { source: "/Projects/moodys-peer-comparison.webp", label: "Comparing an issuer’s ESG scores with its peers", width: 1600, height: 1032 },
     ] },
@@ -260,13 +260,13 @@ export const projectCaseStudies = {
     { heading: "One system, in Figma and in code", paragraphs: [
       "Built, scaled, and documented the design system both in Figma and in React and TypeScript.",
       "Took on front-end work so my teammates could focus on the back end and the logic.",
-    ], media: [
+    ], mediaLayout: "stack", media: [
       { source: "/Projects/onit-process-builder-design-system.webp", label: "Buttons, inputs, and type in the Figma library", width: 1600, height: 867 },
       { source: "/Projects/onit-process-builder-frontend.webp", label: "The same components in code", width: 1600, height: 864 },
     ] },
     { heading: "Tested before it shipped", paragraphs: [
       "Prototyped each new feature against different use cases before it went to development, like editing a block in place and reviewing changes before publishing them.",
-    ], media: [
+    ], mediaLayout: "stack", media: [
       { source: "/Projects/onit-process-builder-action-block.webp", label: "Editing an action block", width: 1600, height: 1094 },
       { source: "/Projects/onit-process-builder-history.webp", label: "Reviewing changes before publishing", width: 1600, height: 992 },
     ] },

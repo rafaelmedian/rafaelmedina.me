@@ -63,6 +63,9 @@ export type ProjectCaseStudySection = {
   heading: string
   paragraphs: string[]
   media?: PortfolioImage[]
+  /** Two or more images sit side by side unless they are dense screens that
+      need the column's full width to read; those stack. */
+  mediaLayout?: "pair" | "stack"
 }
 
 export type ProjectCaseStudy = {

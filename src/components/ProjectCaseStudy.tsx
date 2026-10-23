@@ -3,6 +3,7 @@ import { ArticleContents } from "./ArticleContents"
 import { buildPreviewSrcSet } from "../lib/media"
 import { useId } from "react"
 import { formatPostDate } from "../lib/postDate"
+import { ZoomableImage } from "./ZoomableImage"
 
 export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
   const signatureId = useId()
@@ -41,22 +42,19 @@ export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
                   </ul>
                 </div>
                 {section.media?.length ? (
-                  <div className="project-case-study-media" data-layout={section.media.length === 1 ? "feature" : "pair"}>
+                  <div className="project-case-study-media"
+                    data-layout={section.media.length === 1 ? "feature" : section.mediaLayout ?? "pair"}>
                     {section.media.map((item) => {
                       const srcSet = buildPreviewSrcSet(item.source, item.width)
+                      const half = section.media!.length > 1 && section.mediaLayout !== "stack"
                       return (
-                        <figure key={item.source}>
-                          <img
-                            src={item.source}
+                        <figure key={item.source} data-orientation={item.height > item.width ? "portrait" : undefined}>
+                          <ZoomableImage
+                            item={item}
                             srcSet={srcSet}
-                            sizes={srcSet ? section.media?.length === 1
-                              ? "(max-width: 699px) calc(100vw - 2.5rem), 36rem"
-                              : "(max-width: 699px) calc(100vw - 2.5rem), 18rem" : undefined}
-                            alt={item.label}
-                            width={item.width}
-                            height={item.height}
-                            loading="lazy"
-                            decoding="async"
+                            sizes={srcSet ? half
+                              ? "(max-width: 699px) calc(100vw - 2.5rem), 22rem"
+                              : "(max-width: 699px) calc(100vw - 2.5rem), 45rem" : undefined}
                           />
                           <figcaption>
                             {item.label}
