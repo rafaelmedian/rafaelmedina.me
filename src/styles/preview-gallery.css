@@ -1115,6 +1115,32 @@
   text-align: left;
 }
 
+/* When the work shipped, set ahead of the title at the title's own size and
+   weight, in the muted ink so the name still leads. The ruled metadata rows
+   were taken out because they read as a form (#113); recency is the one fact
+   the prose does not carry, so it comes back alone. A sibling of the heading
+   rather than inside it, so the dialog's name stays the project's name. */
+.preview-gallery-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.preview-gallery-year {
+  flex: none;
+  color: var(--muted);
+  font-size: var(--text-md);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+.standalone-page .preview-gallery-year {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .preview-gallery-description {
   margin: 0.5rem 0 0;
   max-width: 46rem;

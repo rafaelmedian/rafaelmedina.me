@@ -29,6 +29,11 @@ export type PortfolioCard = {
   /** Gallery "Outcome" row: what changed because of the work. Qualitative by
       design; no confidential metrics. */
   outcome: string
+  /** When the work shipped, as "2023" or "2021 - 2023". The gallery and the
+      project page set it ahead of the title, so a reviewer can tell recent work
+      from old without a metadata table. Left off, nothing is drawn. A card with
+      a `post` already dates itself and can skip it. */
+  year?: string
   /** Teammates on this work; Rafael is credited automatically alongside them. */
   team?: Collaborator[]
   /** Where a piece that shipped as a public post first went out; the gallery

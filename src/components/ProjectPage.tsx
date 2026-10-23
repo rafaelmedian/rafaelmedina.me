@@ -18,7 +18,10 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
         <a href={emailHref()}>Contact Rafael</a>
       </nav>
       <header>
-        <h1 className="standalone-title">{card.title}</h1>
+        <div className="preview-gallery-heading">
+          {card.year ? <span className="preview-gallery-year">{card.year}</span> : null}
+          <h1 className="standalone-title">{card.title}</h1>
+        </div>
         <p className="standalone-description">{card.detail}</p>
         {card.caseStudy && team.length > 0 ? <ul className="preview-gallery-people" aria-label="Collaborators">
           {team.map((person) => <li key={person.href}><a className="preview-gallery-person" href={person.href}>
