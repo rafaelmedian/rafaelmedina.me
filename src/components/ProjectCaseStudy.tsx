@@ -9,9 +9,10 @@ export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
   const caseStudy = card.caseStudy
   if (!caseStudy) return null
   const signatures = [collaborators.rafael, ...(card.team ?? [])]
+  const wide = caseStudy.media === "wide"
 
   return (
-    <section className="project-case-study" aria-labelledby={`${card.id}-case-study-title`}>
+    <section className="project-case-study" data-media={wide ? "wide" : undefined} aria-labelledby={`${card.id}-case-study-title`}>
       <div className="project-case-study-layout">
         {caseStudy.sections.length > 1 ? <ArticleContents label="Case study contents" revealAfter={`${card.id}-case-study-section-1`}
           sections={caseStudy.sections.map((section, index) => ({
@@ -41,7 +42,7 @@ export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
                   </ul>
                 </div>
                 {section.media?.length ? (
-                  <div className="project-case-study-media" data-layout={section.media.length === 1 ? "feature" : "pair"}>
+                  <div className="project-case-study-media" data-layout={section.media.length === 1 ? "feature" : wide ? "stack" : "pair"}>
                     {section.media.map((item) => {
                       const srcSet = buildPreviewSrcSet(item.source, item.width)
                       return (
@@ -49,7 +50,9 @@ export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
                           <img
                             src={item.source}
                             srcSet={srcSet}
-                            sizes={srcSet ? section.media?.length === 1
+                            sizes={srcSet ? wide
+                              ? "(max-width: 699px) calc(100vw - 2.5rem), 52rem"
+                              : section.media?.length === 1
                               ? "(max-width: 699px) calc(100vw - 2.5rem), 36rem"
                               : "(max-width: 699px) calc(100vw - 2.5rem), 18rem" : undefined}
                             alt={item.label}

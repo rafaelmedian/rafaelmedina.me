@@ -67,6 +67,10 @@ export type ProjectCaseStudySection = {
 
 export type ProjectCaseStudy = {
   showSignatures?: boolean
+  /** Dense product screenshots stack one per row and run the card's full
+      width, past the text measure, so their UI stays legible. Artwork that
+      reads at half width (posts, campaign stills) keeps the default pairs. */
+  media?: "wide"
   label: string
   title: string
   introduction: string[]

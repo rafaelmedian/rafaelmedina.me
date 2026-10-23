@@ -2,8 +2,11 @@ import type { ProjectCaseStudy } from "./portfolio"
 
 // Different projects need different amounts of explanation. Media can be
 // added to these sections later without changing the reading layout.
-const study = (title: string, introduction: string[], sections: ProjectCaseStudy["sections"]): ProjectCaseStudy => ({
-  label: "Case study", title, introduction, sections,
+const study = (
+  title: string, introduction: string[], sections: ProjectCaseStudy["sections"],
+  options: Pick<ProjectCaseStudy, "media"> = {},
+): ProjectCaseStudy => ({
+  label: "Case study", title, introduction, sections, ...options,
 })
 
 export const projectCaseStudies = {
@@ -231,7 +234,7 @@ export const projectCaseStudies = {
       "Single-letter shortcuts move between pages without stealing the browser’s own, and menus and dialogs work from the keyboard.",
       "More than 90 Playwright tests cover those flows, from offline retries to mobile tables that scroll inside themselves.",
     ] },
-  ]),
+  ], { media: "wide" }),
   "protector-booking": study("Making a personal-security booking clear", [
     "I was the sole product designer for Protector’s booking experience.",
     "The flow brings the person, their attire, and transportation into one request.",
