@@ -179,20 +179,20 @@ export const projectCaseStudies = {
       "Every row looked the same, the send button was the loudest thing on the page, and nothing said who to call first.",
       "Its strongest idea, filtering customers and sending a batch to the dealer app, was worth keeping. The rest needed rethinking.",
     ], media: [
-      { source: "/Projects/dealership-hub-old-lead-hub.webp", label: "The old lead hub this replaces", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-old-lead-hub.webp", label: "The old lead hub this replaces", width: 1400, height: 1004 },
     ] },
     { heading: "Start with what needs doing", paragraphs: [
       "The hub opens on the three things worth doing first, each with its reason: a customer waiting in the lounge, six leads never contacted.",
       "Sales, workshop, issues, and team follow as one line each, and a shared to-do list stays alongside.",
       "Picking one drafts the question for you — who should I call first? — ready to send or edit.",
     ], media: [
-      { source: "/Projects/dealership-hub-hub-light.webp", label: "The hub, opening on the day’s first three things", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-hub-light.webp", label: "The hub, opening on the day’s first three things", width: 2880, height: 2064 },
     ] },
     { heading: "Ask instead of hunting", paragraphs: [
       "Every page has the same bar at the bottom for plain questions, like what’s running late.",
       "Answers come back as rows that open the job or the customer, not paragraphs to read, with the likely next questions underneath.",
     ], media: [
-      { source: "/Projects/dealership-hub-hub-answer.webp", label: "An answer listing the three late jobs", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-hub-answer.webp", label: "An answer listing the three late jobs", width: 2880, height: 2064 },
     ] },
     { heading: "Leads, kept and sharpened", paragraphs: [
       "Rewrote the metrics as things to act on — ready for follow-up, due this week — each measured against a goal.",
@@ -200,34 +200,34 @@ export const projectCaseStudies = {
       "Rows lead with the person and their car, mask the registration, and flag anyone who has never been contacted.",
       "Batch sends confirm the count and can be undone; an offline send keeps the selection so it can be retried.",
     ], media: [
-      { source: "/Projects/dealership-hub-leads-filters.webp", label: "One Filters menu in place of six dropdowns", width: 1600, height: 1147 },
-      { source: "/Projects/dealership-hub-leads-confirm.webp", label: "Confirming a send to four customers", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-leads-filters.webp", label: "One Filters menu in place of six dropdowns", width: 2880, height: 2064 },
+      { source: "/Projects/dealership-hub-leads-confirm.webp", label: "Confirming a send to four customers", width: 2880, height: 2064 },
     ] },
     { heading: "The workshop floor at a glance", paragraphs: [
       "Service was invisible in the old CRM. Now every car on the floor sits on one board, grouped by stage.",
       "Each stage says how many cars are running late, and each row pairs car, customer, job, and technician with the time promised.",
     ], media: [
-      { source: "/Projects/dealership-hub-workshop-light.webp", label: "The workshop board, grouped by stage", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-workshop-light.webp", label: "The workshop board, grouped by stage", width: 2880, height: 2064 },
     ] },
     { heading: "One page per customer", paragraphs: [
       "The directory opens on who needs attention — follow-ups, an advisor on leave, an unbooked recall — before the list itself.",
       "A customer’s page holds their cars, bookings, staff notes, and the conversation side by side, so nobody asks them the same thing twice.",
     ], media: [
-      { source: "/Projects/dealership-hub-customers-light.webp", label: "The customer directory", width: 1600, height: 1147 },
-      { source: "/Projects/dealership-hub-customer-profile.webp", label: "A customer profile with bookings and messages", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-customers-light.webp", label: "The customer directory", width: 2880, height: 2064 },
+      { source: "/Projects/dealership-hub-customer-profile.webp", label: "A customer profile with bookings and messages", width: 2880, height: 2064 },
     ] },
     { heading: "Who needs a hand", paragraphs: [
       "The team view tracks each advisor’s sales against target, open leads, and what’s overdue.",
       "Leave, unassigned leads, and pending invites surface as tasks with one action each: reassign, assign, resend.",
     ], media: [
-      { source: "/Projects/dealership-hub-team-light.webp", label: "The team view, with sales against target", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-team-light.webp", label: "The team view, with sales against target", width: 2880, height: 2064 },
     ] },
     { heading: "One system under it", paragraphs: [
       "Neutral surfaces carry the work; one brand blue moves it forward, and orange is saved for what’s urgent.",
       "Every screen is built from the same tokens and components, documented on a live design-system page, so the dark theme is the same components on different tokens.",
     ], media: [
-      { source: "/Projects/dealership-hub-design-system-light.webp", label: "The live design-system page", width: 1600, height: 1147 },
-      { source: "/Projects/dealership-hub-workshop-dark.webp", label: "The workshop board in the dark theme", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-design-system-light.webp", label: "The live design-system page", width: 2880, height: 2064 },
+      { source: "/Projects/dealership-hub-workshop-dark.webp", label: "The workshop board in the dark theme", width: 2880, height: 2064 },
     ] },
     { heading: "Built to be used, not just shown", paragraphs: [
       "It’s a working Next.js app on sample data, not a click-through: filters, sends, undo, comments, and to-dos all hold state.",

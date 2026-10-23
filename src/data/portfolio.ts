@@ -513,8 +513,8 @@ const portfolioCardEntries: PortfolioCard[] = [
     outcome:
       "One app in place of the old single-table CRM: staff can start from what needs doing and follow a customer from a sales lead to a car on the lift.",
     image: "/Projects/dealership-lead-hub.webp",
-    previewWidth: 1600,
-    previewHeight: 1200,
+    previewWidth: 3200,
+    previewHeight: 2400,
     ctaHref: "#",
     product: "Dealership CRM",
     industry: "Automotive Retail",
