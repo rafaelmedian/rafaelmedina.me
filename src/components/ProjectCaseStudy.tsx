@@ -10,9 +10,10 @@ export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
   const caseStudy = card.caseStudy
   if (!caseStudy) return null
   const signatures = [collaborators.rafael, ...(card.team ?? [])]
+  const wide = caseStudy.media === "wide"
 
   return (
-    <section className="project-case-study" aria-labelledby={`${card.id}-case-study-title`}>
+    <section className="project-case-study" data-media={wide ? "wide" : undefined} aria-labelledby={`${card.id}-case-study-title`}>
       <div className="project-case-study-layout">
         {caseStudy.sections.length > 1 ? <ArticleContents label="Case study contents" revealAfter={`${card.id}-case-study-section-1`}
           sections={caseStudy.sections.map((section, index) => ({
@@ -43,16 +44,18 @@ export function ProjectCaseStudy({ card }: { card: PortfolioCard }) {
                 </div>
                 {section.media?.length ? (
                   <div className="project-case-study-media"
-                    data-layout={section.media.length === 1 ? "feature" : section.mediaLayout ?? "pair"}>
+                    data-layout={section.media.length === 1 ? "feature" : wide ? "stack" : section.mediaLayout ?? "pair"}>
                     {section.media.map((item) => {
                       const srcSet = buildPreviewSrcSet(item.source, item.width)
-                      const half = section.media!.length > 1 && section.mediaLayout !== "stack"
+                      const half = section.media!.length > 1 && !wide && section.mediaLayout !== "stack"
                       return (
                         <figure key={item.source} data-orientation={item.height > item.width ? "portrait" : undefined}>
                           <ZoomableImage
                             item={item}
                             srcSet={srcSet}
-                            sizes={srcSet ? half
+                            sizes={srcSet ? wide
+                              ? "(max-width: 699px) calc(100vw - 2.5rem), 52rem"
+                              : half
                               ? "(max-width: 699px) calc(100vw - 2.5rem), 22rem"
                               : "(max-width: 699px) calc(100vw - 2.5rem), 45rem" : undefined}
                           />

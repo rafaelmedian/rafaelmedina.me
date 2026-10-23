@@ -9,12 +9,25 @@ import path from "node:path"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const variantWidths = [96, 160, 240, 320, 480, 640, 800, 960]
+// Larger steps for the product screenshots in hiDpiPreviewSources (media.ts).
+const hiDpiVariantWidths = [1280, 1600, 1920, 2400]
 
-// [source, intrinsic width] — widths at or above the intrinsic width are skipped.
+// [source, intrinsic width, extra widths?] — widths at or above the intrinsic width are skipped.
 const sources = [
   ["public/Projects/protector.webp", 1200],
   ["public/Projects/popparazi_v1.webp", 630],
-  ["public/Projects/dealership-lead-hub.webp", 1600],
+  ["public/Projects/dealership-lead-hub.webp", 3200, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-hub-light.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-hub-answer.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-old-lead-hub.webp", 1400],
+  ["public/Projects/dealership-hub-leads-filters.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-leads-confirm.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-design-system-light.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-workshop-light.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-workshop-dark.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-customers-light.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-customer-profile.webp", 2880, hiDpiVariantWidths],
+  ["public/Projects/dealership-hub-team-light.webp", 2880, hiDpiVariantWidths],
   ["public/Projects/shared-family-stories.webp", 1600],
   ["public/Projects/matcha-rewards.webp", 1540],
   ["public/Projects/matcha-rewards-link-preview.webp", 805],
@@ -101,10 +114,10 @@ function resize(input, output, width) {
   })
 }
 
-for (const [source, intrinsicWidth] of sources) {
+for (const [source, intrinsicWidth, extraWidths = []] of sources) {
   const input = path.join(root, source)
   const stem = input.slice(0, -".webp".length)
-  for (const width of variantWidths) {
+  for (const width of [...variantWidths, ...extraWidths]) {
     if (width >= intrinsicWidth) continue
     const output = `${stem}-${width}w.webp`
     await resize(input, output, width)

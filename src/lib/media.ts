@@ -20,6 +20,17 @@ const webpPreviewVariantSources = new Set([
   "/Projects/protector.webp",
   "/Projects/popparazi_v1.webp",
   "/Projects/dealership-lead-hub.webp",
+  "/Projects/dealership-hub-hub-light.webp",
+  "/Projects/dealership-hub-hub-answer.webp",
+  "/Projects/dealership-hub-old-lead-hub.webp",
+  "/Projects/dealership-hub-leads-filters.webp",
+  "/Projects/dealership-hub-leads-confirm.webp",
+  "/Projects/dealership-hub-design-system-light.webp",
+  "/Projects/dealership-hub-workshop-light.webp",
+  "/Projects/dealership-hub-workshop-dark.webp",
+  "/Projects/dealership-hub-customers-light.webp",
+  "/Projects/dealership-hub-customer-profile.webp",
+  "/Projects/dealership-hub-team-light.webp",
   "/Projects/shared-family-stories.webp",
   "/Projects/matcha-rewards.webp",
   "/Projects/matcha-rewards-link-preview.webp",
@@ -82,6 +93,23 @@ const webpPreviewVariantSources = new Set([
   "/Projects/turtle-product-hunt.webp",
   "/Projects/turtle-business-insider.webp",
 ])
+// Product screenshots carry small UI text and run 800-900px wide in the
+// gallery, so a 2x screen needs ~1800 real pixels. These keep their full
+// capture resolution and add the larger steps; everything else stops at 960.
+const hiDpiVariantWidths = [1280, 1600, 1920, 2400]
+const hiDpiPreviewSources = new Set([
+  "/Projects/dealership-lead-hub.webp",
+  "/Projects/dealership-hub-hub-light.webp",
+  "/Projects/dealership-hub-hub-answer.webp",
+  "/Projects/dealership-hub-workshop-light.webp",
+  "/Projects/dealership-hub-workshop-dark.webp",
+  "/Projects/dealership-hub-customers-light.webp",
+  "/Projects/dealership-hub-customer-profile.webp",
+  "/Projects/dealership-hub-team-light.webp",
+  "/Projects/dealership-hub-leads-filters.webp",
+  "/Projects/dealership-hub-leads-confirm.webp",
+  "/Projects/dealership-hub-design-system-light.webp",
+])
 const hasPreviewVariants = (source: string) =>
   /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)
 
@@ -120,7 +148,8 @@ export function buildPreviewSrcSet(source: string, intrinsicWidth?: number) {
   const stem = source.slice(0, -extension.length)
   // Skip variants at or above the source width (popparazi is only 630px wide,
   // so a -960w sibling would be an upscale that doesn't exist).
-  const candidates = previewVariantWidths
+  const widths = hiDpiPreviewSources.has(source) ? [...previewVariantWidths, ...hiDpiVariantWidths] : previewVariantWidths
+  const candidates = widths
     .filter((width) => !intrinsicWidth || width < intrinsicWidth)
     .map((width) => `${stem}-${width}w${extension} ${width}w`)
   if (intrinsicWidth) candidates.push(`${source} ${intrinsicWidth}w`)

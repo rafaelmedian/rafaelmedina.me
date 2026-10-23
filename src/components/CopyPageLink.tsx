@@ -20,7 +20,7 @@ export function CopyPageLink({ href, subject, className, variant = "pill" }: {
   /** What the link is to, for the spoken name: "note", "project", "résumé". */
   subject: string
   className?: string
-  /** "pill" is the notes' glass control; "text" is a plain link with no icon,
+  /** "pill" is the notes' icon-only glass control; "text" is a plain link with no icon,
    *  for places where a control would compete with what is beside it. */
   variant?: "pill" | "text"
 }) {
@@ -72,14 +72,17 @@ export function CopyPageLink({ href, subject, className, variant = "pill" }: {
             resetRef.current = window.setTimeout(() => showCopied(false), COPY_CONFIRMATION_MS)
           }, () => undefined)
         }}>
-        {variant === "text" ? null : copied
+        {/* The pill is the heart's twin, so it is an icon alone: the link
+            turning into a check is the confirmation. */}
+        {variant === "text" ? (
+          <span aria-hidden="true">
+            <InlineSwap value={copied ? "Link copied" : "Copy link"} direction={copied ? "up" : "down"} />
+          </span>
+        ) : copied
           ? <Check className="writing-copy-link-icon" size={14} aria-hidden="true" />
           : <Link2 className="writing-copy-link-icon" size={14} aria-hidden="true" />}
-        <span aria-hidden="true">
-          <InlineSwap value={copied ? "Link copied" : "Copy link"} direction={copied ? "up" : "down"} />
-        </span>
-        {/* The name says what the control does and stays saying it: the label
-            beside the icon is the confirmation, and a name that changed with it
+        {/* The name says what the control does and stays saying it: the icon or
+            label is the confirmation, and a name that changed with it
             would leave a screen reader hunting for the button it just used. */}
         <span className="sr-only">Copy a link to this {subject}</span>
       </a>

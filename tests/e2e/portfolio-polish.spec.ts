@@ -2385,7 +2385,14 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   const iframe = await frame.locator(".booking-iframe").boundingBox()
   expect(skeletonPanel!.width).toBeCloseTo(Math.min(760, calendarWidth), 0)
   expect(iframe!.width).toBeCloseTo(calendarWidth, 0)
-  expect(skeletonPanel!.x + skeletonPanel!.width / 2).toBeCloseTo(iframe!.x + iframe!.width / 2, 5)
+  // Measure both centres in the same frame: the panel can still be moving
+  // when its width first reaches the expected value.
+  const centreOffset = await frame.evaluate(element => {
+    const panel = element.querySelector(".booking-skeleton-panel")!.getBoundingClientRect()
+    const iframe = element.querySelector(".booking-iframe")!.getBoundingClientRect()
+    return panel.x + panel.width / 2 - iframe.x - iframe.width / 2
+  })
+  expect(centreOffset).toBeCloseTo(0, 5)
 
   expect(finishCalendarRequest).toBeDefined()
   finishCalendarRequest!()
@@ -3806,7 +3813,7 @@ test("keeps the staggered projects in the offset group", async ({ page }) => {
 
   await expect(cards).toHaveCount(4)
   await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Shared family stories/)
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Dealership lead hub/)
+  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Dealership Hub/)
   await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha token page/)
   await expect(cards.nth(3)).toHaveAttribute("aria-label", /Open Matcha Rewards/)
 })
@@ -3818,7 +3825,7 @@ test("uses narrower left and wider right columns in the offset group", async ({ 
   const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
   const familyCard = page.getByRole("link", { name: /Open Shared family stories/ })
   const rewardsCard = page.getByRole("link", { name: /Open Matcha Rewards/ })
-  const dealershipCard = page.getByRole("link", { name: /Open Dealership lead hub/ })
+  const dealershipCard = page.getByRole("link", { name: /Open Dealership Hub/ })
   const group = page.locator(".mosaic-group").filter({ has: tokenCard })
   await expect(group.locator(".mosaic-row-item")).toHaveCount(4)
 

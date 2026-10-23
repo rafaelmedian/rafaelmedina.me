@@ -219,7 +219,7 @@ test("shows the dealership preview large and crops it at the card edge", async (
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  const card = page.getByRole("link", { name: /Open Dealership lead hub/ })
+  const card = page.getByRole("link", { name: /Open Dealership Hub/ })
   await card.scrollIntoViewIfNeeded()
 
   const [cardBox, mediaClipBox, mediaBox] = await Promise.all([

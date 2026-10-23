@@ -70,12 +70,17 @@ export type ProjectCaseStudySection = {
   paragraphs: string[]
   media?: PortfolioImage[]
   /** Two or more images sit side by side unless they are dense screens that
-      need the column's full width to read; those stack. */
+      need the column's full width to read; those stack. A study marked
+      `media: "wide"` stacks every section regardless. */
   mediaLayout?: "pair" | "stack"
 }
 
 export type ProjectCaseStudy = {
   showSignatures?: boolean
+  /** Dense product screenshots stack one per row and run the card's full
+      width, past the text measure, so their UI stays legible. Artwork that
+      reads at half width (posts, campaign stills) keeps the default pairs. */
+  media?: "wide"
   label: string
   title: string
   introduction: string[]
@@ -524,18 +529,18 @@ const portfolioCardEntries: PortfolioCard[] = [
     id: "preview-dealership-lead-hub",
     slug: "dealership-lead-hub",
     category: "Preview",
-    title: "Dealership lead hub",
+    title: "Dealership Hub",
     summary: "",
     detail:
-      "I designed a lead hub for a dealership retention platform, helping staff find sales and service opportunities in their existing customer base. I owned the layout, outreach metrics, retention comparisons, filters, and bulk-send flow, so staff can see how outreach performed and send a filtered batch of customers to the dealer app without leaving the page.",
-    role: "I designed the hub layout, its overview metrics, and the filtering and bulk-send flow for leads.",
+      "I designed and built Dealership Hub, the app that replaces the dealership's older CRM. The old tool was a single lead table; the Hub brings sales, the workshop floor, customer records, and the team into one place, opens on the few things worth doing first, and answers plain questions with rows that link straight to the job or the customer.",
+    role: "I designed the app end to end and built it as a working Next.js prototype: the hub, the leads flow, the workshop board, customer profiles, team views, and the design system under them.",
     outcome:
-      "Staff can read how recent outreach landed and send a filtered batch of customers without leaving the page.",
+      "One app in place of the old single-table CRM: staff can start from what needs doing and follow a customer from a sales lead to a car on the lift.",
     image: "/Projects/dealership-lead-hub.webp",
-    previewWidth: 1600,
-    previewHeight: 1200,
+    previewWidth: 3200,
+    previewHeight: 2400,
     ctaHref: "#",
-    product: "Dealer retention platform",
+    product: "Dealership CRM",
     industry: "Automotive Retail",
     previewAspectRatio: 4 / 3,
   },
