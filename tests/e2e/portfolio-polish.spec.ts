@@ -6,6 +6,8 @@ import { createElasticEdgePalette } from "../../src/lib/elasticEdgeGradient"
 // rather than let the PDF and the page drift apart. `src/data/portfolio` cannot
 // be imported directly -- it pulls in a .webp the test loader will not parse.
 const contactEmail = "hey@rafaelmedina.me"
+// Bare "write to me" links open on src/lib/mailto.ts's default subject.
+const contactMailto = `mailto:${contactEmail}?subject=${encodeURIComponent("Hello from [your name / company]")}`
 
 const mobileViewport = { width: 390, height: 844 }
 const openStreetMapTileUrl = /tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png/
@@ -1115,7 +1117,7 @@ test("copies the About sheet's address from a press in the prose", async ({ cont
   // It stays a link, so the crawler, the context menu, and a browser with no
   // clipboard all still get the address; the plain press is the only one this
   // component takes.
-  await expect(address).toHaveAttribute("href", `mailto:${contactEmail}`)
+  await expect(address).toHaveAttribute("href", contactMailto)
   await expect(address).toHaveAccessibleName(contactEmail)
   await expect(address).toHaveAccessibleDescription("Click to copy")
 
@@ -4398,7 +4400,7 @@ test("shows the about introduction without restating the résumé", async ({ pag
   const emailLinks = panel.getByRole("link", { name: contactEmail, exact: true })
   await expect(emailLinks).toHaveCount(2)
   for (const link of await emailLinks.all()) {
-    await expect(link).toHaveAttribute("href", `mailto:${contactEmail}`)
+    await expect(link).toHaveAttribute("href", contactMailto)
   }
   await expect(panel.locator(".mosaic-about-email")).toHaveCount(1)
   await expect(

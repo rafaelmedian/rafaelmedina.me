@@ -178,7 +178,7 @@ for (const width of [390, 1542]) {
     const contact = page.getByRole('dialog', { name: 'Rafael Medina', exact: true })
     await expect(contact).toBeVisible()
     await expect(contact.getByRole('button', { name: 'Close contact info' })).toBeFocused()
-    await expect(contact.getByRole('link', { name: /email hey@rafaelmedina.me/ })).toHaveAttribute('href', 'mailto:hey@rafaelmedina.me')
+    await expect(contact.getByRole('link', { name: /email hey@rafaelmedina.me/ })).toHaveAttribute('href', `mailto:hey@rafaelmedina.me?subject=${encodeURIComponent('Hello from [your name / company]')}`)
     await expect(contact.getByRole('link', { name: /linkedin/ })).toHaveAttribute('href', 'https://www.linkedin.com/in/rafaelmedian')
     const bounds = await contact.boundingBox()
     expect(bounds!.x).toBeGreaterThanOrEqual(0)

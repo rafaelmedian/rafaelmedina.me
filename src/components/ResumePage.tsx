@@ -2,6 +2,7 @@ import { useEffect } from "react"
 
 import { siteLinks } from "../data/portfolio"
 import { resumeItemId, updatePageMetadata } from "../lib/projectMetadata"
+import { emailHref } from "../lib/mailto"
 import { ResumeContent } from "./ResumeContent"
 
 /**
@@ -17,7 +18,7 @@ export function ResumePage() {
     <article className="standalone-page standalone-resume">
       <nav aria-label="Résumé navigation" className="standalone-nav">
         <a href="/#work">All work</a>
-        <a href={`mailto:${siteLinks.email}`}>Contact Rafael</a>
+        <a href={emailHref()}>Contact Rafael</a>
       </nav>
       <header>
         <h1 className="standalone-title">Résumé</h1>

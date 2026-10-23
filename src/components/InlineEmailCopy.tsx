@@ -2,6 +2,7 @@ import { Tooltip } from "@base-ui/react/tooltip"
 import { useId, useState } from "react"
 
 import { trackEvent } from "../lib/analytics"
+import { emailHref } from "../lib/mailto"
 import { useEmailCopy } from "../lib/useEmailCopy"
 import { EMAIL_COPY_CONFIRMATION, EMAIL_COPY_INVITATION } from "./emailCopyReactions"
 import { ReactionCard } from "./ReactionCard"
@@ -42,7 +43,7 @@ export function InlineEmailCopy({ email, placement, className }: InlineEmailCopy
         className={className}
         data-copied={isCopied ? "true" : undefined}
         aria-describedby={hintId}
-        render={<a href={`mailto:${email}`} />}
+        render={<a href={emailHref(email)} />}
         onClick={(event) => {
           trackEvent("social_link_click", {
             social_label: "Email",

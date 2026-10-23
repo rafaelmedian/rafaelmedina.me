@@ -1,9 +1,9 @@
 import { useEffect } from "react"
 
-import { siteLinks } from "../data/portfolio"
 import type { WritingSummary } from "../data/writingIndex"
 import { writings } from "../data/writings"
 import { updatePageMetadata } from "../lib/projectMetadata"
+import { emailHref } from "../lib/mailto"
 import { WritingArticle } from "./WritingArticle"
 
 /**
@@ -24,7 +24,7 @@ export function WritingPage({ writing }: { writing: WritingSummary }) {
     <div className="standalone-page standalone-writing">
       <nav aria-label="Note navigation" className="standalone-nav">
         <a href="/#work">All work</a>
-        <a href={`mailto:${siteLinks.email}`}>Contact Rafael</a>
+        <a href={emailHref()}>Contact Rafael</a>
       </nav>
       {article ? <WritingArticle writing={article} heading="h1" /> : (
         <header>

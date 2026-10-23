@@ -2,6 +2,7 @@ import { Dialog } from "@base-ui/react/dialog"
 import { PanelRightClose, ChevronRight, X } from "lucide-react"
 import { useRef, type RefObject } from "react"
 import { siteLinks, siteProfile } from "../data/portfolio"
+import { emailHref } from "../lib/mailto"
 
 export function BookingContactPanel({ open, onOpenChange, calendarFocus }: {
   open: boolean
@@ -31,7 +32,7 @@ export function BookingContactPanel({ open, onOpenChange, calendarFocus }: {
             <div className="booking-contact-row"><small>title</small>{siteProfile.title}</div>
           </div>
           <div className="booking-contact-group">
-            <a href={`mailto:${siteLinks.email}`}><small>email</small>{siteLinks.email}</a>
+            <a href={emailHref()}><small>email</small>{siteLinks.email}</a>
             <a href="https://rafaelmedina.me" target="_blank" rel="noreferrer"><small>website</small>rafaelmedina.me</a>
           </div>
           <div className="booking-contact-group">

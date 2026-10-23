@@ -1,6 +1,7 @@
 import { useEffect } from "react"
-import { collaborators, siteLinks, type PortfolioCard } from "../data/portfolio"
+import { collaborators, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
+import { emailHref } from "../lib/mailto"
 import { updatePageMetadata } from "../lib/projectMetadata"
 import { ProjectCaseStudy } from "./ProjectCaseStudy"
 
@@ -14,7 +15,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
     <article className="standalone-page">
       <nav aria-label="Project navigation" className="standalone-nav">
         <a href="/#work">All work</a>
-        <a href={`mailto:${siteLinks.email}`}>Contact Rafael</a>
+        <a href={emailHref()}>Contact Rafael</a>
       </nav>
       <header>
         <h1 className="standalone-title">{card.title}</h1>

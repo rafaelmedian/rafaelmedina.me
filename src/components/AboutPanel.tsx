@@ -5,6 +5,7 @@ import type { SiteLinks } from "../data/portfolio"
 import { processSteps } from "../data/process"
 import { services } from "../data/services"
 import { trackEvent } from "../lib/analytics"
+import { emailHref } from "../lib/mailto"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { CompanyLogoGrid } from "./CompanyLogoGrid"
 import { InlineBookingLink } from "./InlineBookingLink"
@@ -309,7 +310,7 @@ export const AboutPanel = memo(function AboutPanel({ links, localTimeLabel }: Ab
                     clipboard. The address is still spelled out either way. */}
                 Email me at{" "}
                 <a
-                  href={`mailto:${links.email}`}
+                  href={emailHref(links.email)}
                   className="mosaic-about-link"
                   onClick={() => {
                     trackEvent("social_link_click", {
