@@ -31,8 +31,8 @@ export type PortfolioCard = {
   outcome: string
   /** When the work shipped, as "2023" or "2021 - 2023". The gallery and the
       project page set it ahead of the title, so a reviewer can tell recent work
-      from old without a metadata table. Left off, nothing is drawn. A card with
-      a `post` already dates itself and can skip it. */
+      from old without a metadata table. Left off, nothing is drawn. Each year traces to a public date: a post,
+      the May 2023 relaunch, or the April 2025 Solana launch coverage. */
   year?: string
   /** Teammates on this work; Rafael is credited automatically alongside them. */
   team?: Collaborator[]
@@ -302,6 +302,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-9",
     slug: "matcha-multiwallet-flow",
+    year: "2025",
     category: "Case study",
     title: "Matcha multiwallet flow",
     summary: "",
@@ -340,6 +341,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-16",
     slug: "matcha-homepage",
+    year: "2023",
     category: "Case study",
     title: "Matcha homepage",
     summary: "",
@@ -401,6 +403,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-21",
     slug: "matcha-token-page",
+    year: "2025",
     category: "Case study",
     title: "Matcha token page",
     summary: "",
@@ -419,6 +422,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-1",
     slug: "matcha-trade-page",
+    year: "2023",
     category: "Case study",
     title: "Matcha trade page",
     summary: "",
@@ -436,6 +440,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-19",
     slug: "matcha-trade-module",
+    year: "2023",
     category: "Case study",
     title: "Matcha trade module",
     summary: "",
@@ -453,6 +458,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-14",
     slug: "matcha-on-mobile",
+    year: "2023",
     category: "Case study",
     title: "Matcha on mobile",
     summary: "",
@@ -487,6 +493,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-20",
     slug: "matcha-security-audit",
+    year: "2025",
     category: "Case study",
     title: "Matcha security audit",
     summary: "",
@@ -543,6 +550,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-rewards",
     slug: "matcha-rewards",
+    year: "2025",
     category: "Case study",
     title: "Matcha Rewards",
     summary: "",
@@ -580,6 +588,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-marketing",
     slug: "matcha-marketing",
+    year: "2022",
     category: "Case study",
     title: "Matcha marketing materials",
     summary: "",
@@ -629,6 +638,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-relaunch-film",
     slug: "matcha-relaunch-film",
+    year: "2023",
     category: "Video",
     title: "The new Matcha",
     summary: "",
@@ -651,6 +661,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-cross-chain-film",
     slug: "matcha-cross-chain-film",
+    year: "2023",
     category: "Video",
     title: "Matcha cross-chain swaps",
     summary: "",
@@ -673,6 +684,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-gasless-film",
     slug: "matcha-gasless-film",
+    year: "2021",
     category: "Video",
     title: "Matcha gasless trading",
     summary: "",
@@ -695,6 +707,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-limit-orders-film",
     slug: "matcha-limit-orders-film",
+    year: "2022",
     category: "Video",
     title: "Matcha limit orders",
     summary: "",
