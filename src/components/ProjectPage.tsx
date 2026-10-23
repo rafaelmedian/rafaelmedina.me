@@ -17,7 +17,10 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
         <a href={`mailto:${siteLinks.email}`}>Contact Rafael</a>
       </nav>
       <header>
-        <h1 className="standalone-title">{card.title}</h1>
+        <h1 className="standalone-title">
+          {card.title}
+          {card.years ? <span className="preview-gallery-years"> · {card.years}</span> : null}
+        </h1>
         <p className="standalone-description">{card.detail}</p>
         {card.caseStudy && team.length > 0 ? <ul className="preview-gallery-people" aria-label="Collaborators">
           {team.map((person) => <li key={person.href}><a className="preview-gallery-person" href={person.href}>
@@ -39,6 +42,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
         {[
           ["Role", card.role], ["Outcome", card.outcome],
           ["Product", card.product ?? card.title], ["Industry", card.industry ?? "Product Design"],
+          ...(card.years ? [["Year", card.years]] : []),
         ].map(([label, value]) => (
           <div className="preview-gallery-detail-row" key={label}><dt>{label}</dt><dd>{value}</dd></div>
         ))}

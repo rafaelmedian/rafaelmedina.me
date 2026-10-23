@@ -748,7 +748,10 @@ export function PreviewGalleryDialog({
                       ) : null}
 
                       <div className="preview-gallery-content">
-                        <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                        <Dialog.Title className="preview-gallery-title">
+                          {activeCard.title}
+                          {activeCard.years ? <span className="preview-gallery-years"> · {activeCard.years}</span> : null}
+                        </Dialog.Title>
                         <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
                         {activeCard.post ? (
                           <a className="preview-gallery-post" href={activeCard.post.href} target="_blank" rel="noreferrer">

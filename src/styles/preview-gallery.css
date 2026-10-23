@@ -1252,6 +1252,12 @@
   transition: filter var(--pg-content-in-ms, var(--duration-base)) var(--ease-smooth);
 }
 
+/* The year reads as part of the title line, a step quieter than the name. */
+.preview-gallery-years {
+  color: var(--muted);
+  font-weight: inherit;
+}
+
 /* --------------------------------------------------------- the notes slide --- */
 
 /* The folder's slide, for the same reason the CV sheet has one: the tile is on

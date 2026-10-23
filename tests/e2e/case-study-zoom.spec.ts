@@ -47,3 +47,9 @@ test("a press anywhere on the zoom closes it", async ({ page }) => {
   await expect(page.locator("dialog.image-zoom")).toHaveCount(0)
   await expect(page.getByRole("dialog").first()).toBeVisible()
 })
+
+test("older work carries its years beside the title", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/work/moodys-design-sprints/")
+  await expect(page.getByRole("dialog").first().locator(".preview-gallery-title")).toHaveText("Moody’s design sprints · 2021")
+})

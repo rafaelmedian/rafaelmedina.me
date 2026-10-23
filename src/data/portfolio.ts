@@ -23,6 +23,9 @@ export type PortfolioCard = {
   product?: string
   /** Gallery "Industry" row; falls back to "Product Design". */
   industry?: string
+  /** When the work happened, e.g. "2021" or "2018–2019". Shown beside the
+      title for work old enough that the date is part of the story. */
+  years?: string
   /** Gallery "Role" row: what I owned on this work. Required — a preview
       without it leaves a hiring reviewer unable to judge scope. */
   role: string
@@ -729,6 +732,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-twilio-admiral",
     slug: "twilio-admiral",
+    years: "2019–2020",
     category: "Case study",
     title: "Twilio Admiral",
     summary: "",
@@ -748,6 +752,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-moodys-sprints",
     slug: "moodys-design-sprints",
+    years: "2021",
     category: "Case study",
     title: "Moody’s design sprints",
     summary: "",
@@ -766,6 +771,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-turtle",
     slug: "turtle",
+    years: "2018–2019",
     category: "Case study",
     title: "Turtle",
     summary: "",
@@ -785,6 +791,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-onit-process-builder",
     slug: "onit-process-builder",
+    years: "2019–2020",
     category: "Case study",
     title: "Onit Process Builder",
     summary: "",
