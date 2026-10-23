@@ -166,6 +166,52 @@ export const projectCaseStudies = {
       { source: "/Projects/matcha-marketing-match-roses.webp", label: "“Roses are red, Matcha is the best”", width: 1200, height: 1043 },
     ] },
   ]),
+  "dealership-lead-hub": study("Replacing a lead table with a dealership hub", [
+    "The old CRM was one screen: a table of customers and a send button.",
+    "Everything else — the workshop, the customer’s history, who on the team was behind — lived somewhere else.",
+    "I designed and built Dealership Hub to bring those into one app, with the lead flow kept at its centre.",
+  ], [
+    { heading: "Start with what needs doing", paragraphs: [
+      "The hub opens on three things worth doing first, each with the reason beside it.",
+      "Sales, workshop, issues, and team sit below as one line each, and a shared to-do list stays on the right.",
+    ], media: [
+      { source: "/Projects/dealership-hub-hub-light.webp", label: "The hub, opening on the day’s first three things", width: 1600, height: 1147 },
+    ] },
+    { heading: "Ask instead of hunting", paragraphs: [
+      "Staff can ask a plain question — what’s running late? — from any page.",
+      "Answers come back as rows that open the job or the customer, with the next questions offered underneath.",
+    ], media: [
+      { source: "/Projects/dealership-hub-hub-answer.webp", label: "An answer listing the three late jobs", width: 1600, height: 1147 },
+    ] },
+    { heading: "Leads, kept and sharpened", paragraphs: [
+      "Kept what worked in the old table: search, filters, and sending a selected batch to the dealer app.",
+      "Rewrote the metrics as things to act on — ready for follow-up, due this week — each measured against a goal.",
+      "Masked registrations and flagged customers who have never been contacted.",
+    ], media: [
+      { source: "/Projects/dealership-hub-generate-leads-selected.webp", label: "Generate leads, with two customers selected to send", width: 1600, height: 1147 },
+    ] },
+    { heading: "The workshop floor at a glance", paragraphs: [
+      "Every car on the floor in one board, grouped by stage, with how many in each are running late.",
+      "Each row pairs the car, the customer, the job, and the technician with the time promised.",
+      "Light and dark themes share the same tokens, so the board reads the same at a desk or on a floor screen.",
+    ], media: [
+      { source: "/Projects/dealership-hub-workshop-light.webp", label: "The workshop board", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-workshop-dark.webp", label: "The workshop board in the dark theme", width: 1600, height: 1147 },
+    ] },
+    { heading: "One page per customer", paragraphs: [
+      "The directory leads with who needs attention, then lists everyone with their advisor and next contact.",
+      "A customer’s page holds their cars, bookings, notes from staff, and the conversation, side by side.",
+    ], media: [
+      { source: "/Projects/dealership-hub-customers-light.webp", label: "The customer directory", width: 1600, height: 1147 },
+      { source: "/Projects/dealership-hub-customer-profile.webp", label: "A customer profile with bookings and messages", width: 1600, height: 1147 },
+    ] },
+    { heading: "Who needs a hand", paragraphs: [
+      "The team view tracks each advisor’s sales against target and open leads.",
+      "Leave, unassigned leads, and pending invites surface as tasks with a single action each.",
+    ], media: [
+      { source: "/Projects/dealership-hub-team-light.webp", label: "The team view with sales against target", width: 1600, height: 1147 },
+    ] },
+  ]),
   "protector-booking": study("Making a personal-security booking clear", [
     "I was the sole product designer for Protector’s booking experience.",
     "The flow brings the person, their attire, and transportation into one request.",

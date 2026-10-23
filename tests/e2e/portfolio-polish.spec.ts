@@ -3801,7 +3801,7 @@ test("keeps the staggered projects in the offset group", async ({ page }) => {
 
   await expect(cards).toHaveCount(4)
   await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Shared family stories/)
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Dealership lead hub/)
+  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Dealership Hub/)
   await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha token page/)
   await expect(cards.nth(3)).toHaveAttribute("aria-label", /Open Matcha Rewards/)
 })
@@ -3813,7 +3813,7 @@ test("uses narrower left and wider right columns in the offset group", async ({ 
   const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
   const familyCard = page.getByRole("link", { name: /Open Shared family stories/ })
   const rewardsCard = page.getByRole("link", { name: /Open Matcha Rewards/ })
-  const dealershipCard = page.getByRole("link", { name: /Open Dealership lead hub/ })
+  const dealershipCard = page.getByRole("link", { name: /Open Dealership Hub/ })
   const group = page.locator(".mosaic-group").filter({ has: tokenCard })
   await expect(group.locator(".mosaic-row-item")).toHaveCount(4)
 
