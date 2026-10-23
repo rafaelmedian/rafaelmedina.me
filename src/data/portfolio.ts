@@ -54,6 +54,9 @@ export type PortfolioCard = {
 
 export type PortfolioImage = {
   source: string
+  /** A muted loop of the same frame, e.g. a prototype recording. It plays over
+      the still once the still is near the reader; `source` stays the poster. */
+  video?: string
   label: string
   width: number
   height: number

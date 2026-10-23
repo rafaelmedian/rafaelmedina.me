@@ -267,8 +267,8 @@ export const projectCaseStudies = {
     { heading: "Tested before it shipped", paragraphs: [
       "Prototyped each new feature against different use cases before it went to development, like editing a block in place and reviewing changes before publishing them.",
     ], mediaLayout: "stack", media: [
-      { source: "/Projects/onit-process-builder-action-block.webp", label: "Editing an action block", width: 1600, height: 1094 },
-      { source: "/Projects/onit-process-builder-history.webp", label: "Reviewing changes before publishing", width: 1600, height: 992 },
+      { source: "/Projects/onit-process-builder-action-block.webp", video: "/Projects/onit-process-builder-action-block.webm", label: "Editing an action block", width: 1600, height: 1094 },
+      { source: "/Projects/onit-process-builder-history.webp", video: "/Projects/onit-process-builder-history.webm", label: "Reviewing changes before publishing", width: 1600, height: 992 },
     ] },
   ]),
   "turtle": study("Friends first, names later", [

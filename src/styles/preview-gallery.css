@@ -857,6 +857,7 @@
 }
 
 .zoomable-image {
+  position: relative;
   display: block;
   width: 100%;
   margin: 0;
@@ -869,6 +870,28 @@
 
 .zoomable-image img {
   transition: filter var(--duration-quick) var(--ease-standard);
+}
+
+/* A prototype loop lies exactly over its still and only shows once frames are
+   actually playing, so a slow fetch never flashes an empty box. */
+.loop-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+.loop-video[data-started] {
+  opacity: 1;
+}
+
+.zoomable-image .loop-video {
+  border-radius: var(--radius-md);
 }
 
 @media (hover: hover) {
@@ -917,6 +940,16 @@
   margin: 0;
   min-width: 0;
   max-width: 100%;
+}
+
+.image-zoom-media {
+  position: relative;
+  border-radius: var(--radius-md);
+  transform-origin: center;
+}
+
+.image-zoom-media .loop-video {
+  border-radius: var(--radius-md);
 }
 
 .image-zoom img {

@@ -48,6 +48,40 @@ test("a press anywhere on the zoom closes it", async ({ page }) => {
   await expect(page.getByRole("dialog").first()).toBeVisible()
 })
 
+// Prototype loops cost nothing until a reader opens the project and reaches
+// them, and someone who asked for reduced motion never downloads them.
+test("prototype loops load only once their still is in view", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const loops: string[] = []
+  page.on("request", (request) => {
+    if (/onit-process-builder-.*\.webm$/.test(request.url())) loops.push(request.url())
+  })
+  await page.goto("/work/onit-process-builder/")
+  await expect(page.getByRole("dialog").first()).toBeVisible()
+  expect(loops).toHaveLength(0)
+
+  const trigger = page.getByRole("button", { name: "Enlarge: Editing an action block" })
+  await trigger.scrollIntoViewIfNeeded()
+  await expect.poll(() => loops.length).toBeGreaterThan(0)
+  await expect(trigger.locator("video")).toHaveAttribute("data-started", "true")
+})
+
+test("reduced motion keeps the prototype stills", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  const loops: string[] = []
+  page.on("request", (request) => {
+    if (request.url().endsWith(".webm") && request.url().includes("onit-process-builder-")) loops.push(request.url())
+  })
+  await page.goto("/work/onit-process-builder/")
+  const trigger = page.getByRole("button", { name: "Enlarge: Editing an action block" })
+  await trigger.scrollIntoViewIfNeeded()
+  await expect(trigger.locator("img")).toBeVisible()
+  await page.waitForTimeout(500)
+  expect(loops).toHaveLength(0)
+  await expect(trigger.locator("video")).toHaveCount(0)
+})
+
 test("older work carries its years beside the title", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/work/moodys-design-sprints/")

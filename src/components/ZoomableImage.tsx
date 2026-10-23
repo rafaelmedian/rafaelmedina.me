@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from "react"
 import type { PortfolioImage } from "../data/portfolio"
 
 // Case-study screenshots are dense UI shown at half a reading column, so a
@@ -9,6 +9,53 @@ import type { PortfolioImage } from "../data/portfolio"
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+/** Prototypes that exist as a loop play over their still, but only once the
+ * still has scrolled near the reader inside an open case study. The video is
+ * never fetched for a project nobody opened, or for someone who asked for
+ * reduced motion. It pauses off-screen and stays mounted after the first load,
+ * so scrolling back resumes it rather than fetching it again. */
+function useLoopInView(target: RefObject<HTMLElement | null>, enabled: boolean) {
+  const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const element = target.current
+    if (!enabled || !element || prefersReducedMotion() || !("IntersectionObserver" in window)) return
+    const observer = new IntersectionObserver(([entry]) => {
+      setVisible(entry.isIntersecting)
+      if (entry.isIntersecting) setMounted(true)
+    }, { rootMargin: "200px 0px" })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [enabled, target])
+  return { mounted, visible }
+}
+
+function LoopVideo({ source, poster, playing }: { source: string; poster: string; playing: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  const [started, setStarted] = useState(false)
+  useEffect(() => {
+    const video = ref.current
+    if (!video) return
+    if (playing) void video.play().catch(() => {})
+    else video.pause()
+  }, [playing])
+  return (
+    <video
+      ref={ref}
+      className="loop-video"
+      src={source}
+      poster={poster}
+      muted
+      loop
+      playsInline
+      preload="auto"
+      aria-hidden="true"
+      data-started={started || undefined}
+      onPlaying={() => setStarted(true)}
+    />
+  )
+}
 
 /** The transform that lays `to` exactly over `from`. */
 function flipTransform(from: DOMRect, to: DOMRect) {
@@ -26,8 +73,10 @@ export function ZoomableImage({ item, srcSet, sizes }: {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const zoomedRef = useRef<HTMLImageElement>(null)
+  const zoomedRef = useRef<HTMLDivElement>(null)
+  const zoomedImageRef = useRef<HTMLImageElement>(null)
   const closing = useRef(false)
+  const loop = useLoopInView(triggerRef, Boolean(item.video))
 
   const animate = useCallback((direction: "in" | "out") => {
     const dialog = dialogRef.current
@@ -76,7 +125,7 @@ export function ZoomableImage({ item, srcSet, sizes }: {
   useEffect(() => {
     if (!open) return
     const dialog = dialogRef.current
-    const zoomed = zoomedRef.current
+    const zoomed = zoomedImageRef.current
     if (!dialog || !zoomed) return
     dialog.showModal()
     // Escape belongs to the zoom alone. Stopped here, before it bubbles to the
@@ -126,6 +175,9 @@ export function ZoomableImage({ item, srcSet, sizes }: {
           loading="lazy"
           decoding="async"
         />
+        {item.video && loop.mounted
+          ? <LoopVideo source={item.video} poster={item.source} playing={loop.visible && !open} />
+          : null}
       </button>
       {open ? (
         <dialog
@@ -141,8 +193,9 @@ export function ZoomableImage({ item, srcSet, sizes }: {
           onClick={close}
         >
           <figure>
+            <div ref={zoomedRef} className="image-zoom-media">
             <img
-              ref={zoomedRef}
+              ref={zoomedImageRef}
               src={item.source}
               srcSet={srcSet}
               sizes={`(max-width: 699px) min(170vw, ${item.width}px), min(92vw, ${item.width}px)`}
@@ -151,6 +204,8 @@ export function ZoomableImage({ item, srcSet, sizes }: {
               height={item.height}
               decoding="async"
             />
+            {item.video && loop.mounted ? <LoopVideo source={item.video} poster={item.source} playing /> : null}
+            </div>
             <p aria-hidden="true">{item.label}</p>
           </figure>
           {/* showModal() focuses this, the dialog's only control. React's
