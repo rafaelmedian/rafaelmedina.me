@@ -512,6 +512,9 @@ export function PreviewGalleryDialog({
       // moving a caret -- and only fall through to gallery paging otherwise.
       // Escape still closes from anywhere.
       const target = event.target
+      // A zoomed case-study image owns its keys: Escape shrinks it back into
+      // the card rather than closing the gallery behind it.
+      if (target instanceof Element && target.closest("[data-image-zoom]")) return
       const typingOrScrubbing =
         target instanceof HTMLElement &&
         (target.isContentEditable ||
@@ -745,7 +748,10 @@ export function PreviewGalleryDialog({
                       ) : null}
 
                       <div className="preview-gallery-content">
-                        <Dialog.Title className="preview-gallery-title">{activeCard.title}</Dialog.Title>
+                        <Dialog.Title className="preview-gallery-title">
+                          {activeCard.title}
+                          {activeCard.years ? <span className="preview-gallery-years"> · {activeCard.years}</span> : null}
+                        </Dialog.Title>
                         <Dialog.Description className="preview-gallery-description">{activeDescription}</Dialog.Description>
                         {activeCard.post ? (
                           <a className="preview-gallery-post" href={activeCard.post.href} target="_blank" rel="noreferrer">

@@ -35,7 +35,7 @@ the crop properties shared with the preview gallery, so it follows the profile
 and About styles. Preserve cascade order when moving shared selectors.
 
 `src/data/portfolio.ts` owns the grid's semantic source and reading order: its
-named opening, portraits, offset, and closing groups assign each tile a CSS area
+named opening, portraits, offset, agency, and closing groups assign each tile a CSS area
 and desktop width share. `work-grid.css` owns both compositions: independent,
 container-relative group heights on desktop, and the explicit two-column area
 map used after group wrappers become `display: contents` below 900px. Keep those

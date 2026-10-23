@@ -2760,7 +2760,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
   const stage = page.locator(".mosaic-takeover-stage")
   const groups = stage.locator(".mosaic-group")
 
-  await expect(groups).toHaveCount(6)
+  await expect(groups).toHaveCount(7)
 
   const gaps = await groups.evaluateAll((elements) =>
     elements.slice(1).map((element, index) => {
@@ -2769,7 +2769,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
     }),
   )
 
-  expect(gaps).toEqual([16, 16, 16, 16, 16])
+  expect(gaps).toEqual([16, 16, 16, 16, 16, 16])
 })
 
 test("leaves a generous white runway after the final project group before the about takeover", async ({ page }) => {
@@ -3433,8 +3433,8 @@ test("shows every project immediately on mobile", async ({ page }) => {
   await page.goto("/")
 
   const cards = page.locator("a.mosaic-row-card")
-  // The résumé tile is a link among the fifteen projects.
-  await expect(cards).toHaveCount(16)
+  // The résumé tile is a link among the nineteen projects.
+  await expect(cards).toHaveCount(20)
   await expect(cards.first()).toBeVisible()
   await expect(cards.last()).toBeVisible()
   await expect(page.getByRole("button", { name: /View \d+ more projects/ })).toHaveCount(0)
@@ -3746,12 +3746,17 @@ test("gives the mobile resume reader its own close control", async ({ page }) =>
   await expect(close).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Next preview" })).toBeVisible()
 
+  // The sheet's entrance scales the toolbar up from just under full size, and
+  // under load a single read can land on a frame where the 44px target still
+  // measures 42. Poll until it has settled rather than sampling once.
+  await expect.poll(async () => {
+    const box = await close.boundingBox()
+    return Math.min(box?.width ?? 0, box?.height ?? 0)
+  }).toBeGreaterThanOrEqual(44)
   const [closeBox, titleBox] = await Promise.all([
     close.boundingBox(),
     dialog.getByRole("heading", { name: "Résumé" }).boundingBox(),
   ])
-  expect(closeBox!.width).toBeGreaterThanOrEqual(44)
-  expect(closeBox!.height).toBeGreaterThanOrEqual(44)
   // It rides the toolbar above the heading rather than overlapping it.
   expect(closeBox!.y + closeBox!.height).toBeLessThanOrEqual(titleBox!.y)
 
@@ -4093,7 +4098,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
     )
   })
   // The position label follows the swipe after its outgoing number settles.
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 17")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 21")
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -4157,7 +4162,7 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
       animations: 0,
     })
   }
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 17")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 21")
 
   // Paging on the left and close on the right; the position is announced
   // rather than drawn between them.
@@ -4227,7 +4232,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 17")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 21")
   await context.close()
 })
 
@@ -4264,7 +4269,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 17")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 21")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -4274,7 +4279,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 17")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 21")
   await context.close()
 })
 
@@ -4676,13 +4681,13 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   // One hop, not two: the stop after the homepage is the notes folder, which
   // closes this preview and opens the folder's own sheet.
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 17")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 21")
 
   // A taller or shorter preview must not move them.
   expect(await placement()).toEqual(initial)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 17")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 21")
 
   // Nor may a slide with no artwork. The notes list is shorter than the
   // artwork, an open note grows the card to the viewport's foot, and the
@@ -4691,7 +4696,7 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   const railNext = rail.locator(".preview-gallery-nav-next")
   await railNext.click()
   await railNext.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 17")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 21")
   await expect(dialog).toHaveAttribute("data-preview-kind", "writings")
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
   expect(await placement()).toEqual(initial)
@@ -4774,7 +4779,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(forward.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(forward.at(-1)!.from).toBeGreaterThan(4)
   expect(Math.max(...forward.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 17")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 21")
 
   const back = await poses(".preview-gallery-rail .preview-gallery-nav-prev")
   expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(4)
@@ -4782,7 +4787,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(back.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(back.at(-1)!.from).toBeLessThan(-4)
   expect(Math.max(...back.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 17")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 21")
 })
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
@@ -5629,15 +5634,15 @@ test("marks the step that wraps the gallery back to the start", async ({ page })
   await expect(dialog.locator(".preview-gallery-rail-count")).toHaveCount(0)
   await expect(railCount).toHaveClass(/\bsr-only\b/)
   await expect(railCount).toHaveAttribute("aria-live", "polite")
-  await expect(railCount).toHaveText("1 / 17")
+  await expect(railCount).toHaveText("1 / 21")
 
   await dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true }).click()
   await expect(railCount).toHaveText("Jumped to the end")
-  await expect(railCount).toHaveText("17 / 17", { timeout: 4000 })
+  await expect(railCount).toHaveText("21 / 21", { timeout: 4000 })
 
   await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   await expect(railCount).toHaveText("Back to the start")
-  await expect(railCount).toHaveText("1 / 17", { timeout: 4000 })
+  await expect(railCount).toHaveText("1 / 21", { timeout: 4000 })
 })
 
 test("updates Matcha authors when paging from solo work", async ({ page }) => {
@@ -5652,14 +5657,14 @@ test("updates Matcha authors when paging from solo work", async ({ page }) => {
   const next = dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true })
   const previous = dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true })
 
-  await expect(counter).toHaveText("12 / 17")
+  await expect(counter).toHaveText("12 / 21")
   await previous.click()
-  await expect(counter).toHaveText("11 / 17")
+  await expect(counter).toHaveText("11 / 21")
   // Solo work has no credit row at all.
   await expect(team).toHaveCount(0)
 
   await next.click()
-  await expect(counter).toHaveText("12 / 17")
+  await expect(counter).toHaveText("12 / 21")
   await expect(team.getByRole("link")).toHaveText(["Jakub Antalik", "Rafael Medina"])
   await expect(dialog.locator(".project-case-study-signatures")).toHaveCount(0)
 })
