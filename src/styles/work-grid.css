@@ -96,8 +96,9 @@
 }
 
 /* Two rows of two on a twelve-column track, wide and narrow swapping between
-   rows like the offset group's seams. The 7/12 slots sit near the 2:1 heroes
-   and the 5/12 slots near the 3:2 ones, so `cover` trims only the margins. */
+   rows like the offset group's seams. Twilio and Moody's are flat UI exports,
+   so they sit in the grey mat like the dealership hub; Turtle and Onit are
+   mockups with their own backdrops, so they run full bleed. */
 .mosaic-group-agency {
   height: clamp(520px, 56cqw, 840px);
   grid-template-columns: repeat(12, minmax(0, 1fr));

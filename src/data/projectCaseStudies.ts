@@ -189,27 +189,32 @@ export const projectCaseStudies = {
       "We interviewed seven Admiral users and had each one rank their top five workflows. Two groups emerged: daily work and administration.",
       "Then we asked them to rename and regroup its sections. Everyone came back with a different picture of how Admiral was structured.",
     ], media: [
-      { source: "/Projects/twilio-admiral-card-sort.webp", label: "Grouping and labeling exercises from the interviews", width: 1200, height: 413 },
+      { source: "/Projects/twilio-admiral-card-sort.webp", label: "Grouping and labeling exercises from the interviews", width: 1600, height: 653 },
     ] },
     { heading: "A sliver of a huge list", paragraphs: [
       "Admiral held 2,351 roles across 246 teams, about ten per team. Each team only owned 0.4–4% of them.",
       "So the structure became contextual instead of flat, the way Slack only shows the channels you’ve joined.",
     ], media: [
-      { source: "/Projects/twilio-admiral-ownership.webp", label: "The share of roles each team owns", width: 1200, height: 631 },
-      { source: "/Projects/twilio-admiral-hierarchy.webp", label: "Flat hierarchy versus contextual hierarchy", width: 1200, height: 631 },
+      { source: "/Projects/twilio-admiral-ownership.webp", label: "The few roles one team owns among thousands", width: 1600, height: 724 },
+      { source: "/Projects/twilio-admiral-hierarchy.webp", label: "Flat hierarchy versus contextual hierarchy", width: 1600, height: 729 },
     ] },
     { heading: "Start from your team", paragraphs: [
       "A Team › Roles switcher replaced the long list from top to bottom. By default you see your own team’s deployments, pipelines, and dashboards.",
       "Editing a team’s access policy went from six steps to three.",
     ], media: [
-      { source: "/Projects/twilio-admiral-team-switcher.webp", label: "Switching team and role from the header", width: 1200, height: 500 },
-      { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1200, height: 631 },
+      { source: "/Projects/twilio-admiral-team-switcher.webp", label: "Switching team and role from the header", width: 1600, height: 693 },
+      { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1600, height: 612 },
+    ] },
+    { heading: "One level down", paragraphs: [
+      "The same structure carried the detailed tools: a deployment’s events and configuration sit under the team that owns it.",
+    ], media: [
+      { source: "/Projects/twilio-admiral-deployment.webp", label: "A deployment inside the team’s view", width: 1600, height: 822 },
     ] },
     { heading: "A system to build it on", paragraphs: [
       "Worked with the team to bring a design system into Admiral, and drew an icon set for the platform’s own concepts.",
     ], media: [
-      { source: "/Projects/twilio-admiral-design-system.webp", label: "Typography and color in the design system", width: 1200, height: 531 },
-      { source: "/Projects/twilio-admiral-icons.webp", label: "The Admiral icon set", width: 1200, height: 500 },
+      { source: "/Projects/twilio-admiral-design-system.webp", label: "Typography and color in the design system", width: 1600, height: 986 },
+      { source: "/Projects/twilio-admiral-icons.webp", label: "The Admiral icon set", width: 1600, height: 896 },
     ] },
   ]),
   "moodys-design-sprints": study("Five sprints toward a new Moodys.com", [
@@ -220,25 +225,26 @@ export const projectCaseStudies = {
       "Each sprint started with agreed goals, questions, and assumptions. Workshops gathered everyone’s input before anything was decided.",
       "Sketches came on Tuesday and decisions on Wednesday. I designed the prototype on Thursday, and four users tested it on Friday.",
     ], media: [
-      { source: "/Projects/moodys-sprint-week.webp", label: "The sprint week", width: 1200, height: 494 },
-      { source: "/Projects/moodys-journey-map.webp", label: "Mapping how analysts find research", width: 1200, height: 494 },
+      { source: "/Projects/moodys-sprint-week.webp", label: "The sprint week", width: 1024, height: 576 },
+      { source: "/Projects/moodys-journey-map.webp", label: "Mapping how analysts find research", width: 1600, height: 927 },
     ] },
     { heading: "Research that reads at a glance", paragraphs: [
       "Designed issuer pages for financial analysts and asset managers. They put credit ratings, outlooks, and ESG scores in one header, with commentary beside each score.",
     ], media: [
-      { source: "/Projects/moodys-esg.webp", label: "ESG performance for asset managers", width: 1200, height: 845 },
+      { source: "/Projects/moodys-esg.webp", label: "ESG performance for asset managers", width: 1600, height: 1000 },
+      { source: "/Projects/moodys-company-overview.webp", label: "A company overview with news, ownership, and key ratios", width: 1600, height: 1230 },
     ] },
     { heading: "Dense data, still readable", paragraphs: [
       "Built key-indicator tables that turn into charts, with peer comparison and annotations, for people who work in spreadsheets all day.",
     ], media: [
-      { source: "/Projects/moodys-key-indicators.webp", label: "Key indicators and peer comparison", width: 1200, height: 488 },
+      { source: "/Projects/moodys-key-indicators.webp", label: "Key indicators, from table to chart", width: 1600, height: 783 },
     ] },
     { heading: "Month by month", paragraphs: [
-      "Over the next four sprints we explored alternatives and iterated on what testing had shown, from a modular header to longer-term outlooks.",
+      "Over the next four sprints we explored alternatives and iterated on what testing had shown, from a modular header to peer comparison.",
       "The testing went well enough that our team was asked to design the new Moodys.com.",
     ], media: [
-      { source: "/Projects/moodys-iterations.webp", label: "A modular header and an alternative", width: 1200, height: 438 },
-      { source: "/Projects/moodys-prototypes.webp", label: "Prototypes from the later sprints", width: 1200, height: 381 },
+      { source: "/Projects/moodys-iterations.webp", label: "A modular header and an alternative", width: 1600, height: 981 },
+      { source: "/Projects/moodys-peer-comparison.webp", label: "Comparing an issuer’s ESG scores with its peers", width: 1600, height: 1032 },
     ] },
   ]),
   "onit-process-builder": study("Document logic lawyers can build themselves", [
@@ -249,19 +255,20 @@ export const projectCaseStudies = {
       "Each rule is a stack of events, conditions, and actions. An if/else branch reads top to bottom, the way the people writing it would say it.",
       "Optimized the editor for the paths people used most, and mapped every state the blocks could be in.",
     ], media: [
-      { source: "/Projects/onit-process-builder-workflow.webp", label: "Annotated workflow through the editor", width: 1200, height: 506 },
+      { source: "/Projects/onit-process-builder-workflow.webp", label: "Annotated workflow through the editor", width: 1600, height: 823 },
     ] },
     { heading: "One system, in Figma and in code", paragraphs: [
       "Built, scaled, and documented the design system both in Figma and in React and TypeScript.",
       "Took on front-end work so my teammates could focus on the back end and the logic.",
     ], media: [
-      { source: "/Projects/onit-process-builder-design-system.webp", label: "Design tokens in code beside the Figma library", width: 1200, height: 494 },
-      { source: "/Projects/onit-process-builder-frontend.webp", label: "Front-end work in progress", width: 1200, height: 488 },
+      { source: "/Projects/onit-process-builder-design-system.webp", label: "Buttons, inputs, and type in the Figma library", width: 1600, height: 867 },
+      { source: "/Projects/onit-process-builder-frontend.webp", label: "The same components in code", width: 1600, height: 864 },
     ] },
     { heading: "Tested before it shipped", paragraphs: [
-      "Prototyped each new feature against different use cases before it went to development.",
+      "Prototyped each new feature against different use cases before it went to development, like editing a block in place and reviewing changes before publishing them.",
     ], media: [
-      { source: "/Projects/onit-process-builder-prototypes.webp", label: "Prototypes for two scenarios", width: 1200, height: 494 },
+      { source: "/Projects/onit-process-builder-action-block.webp", label: "Editing an action block", width: 1600, height: 1094 },
+      { source: "/Projects/onit-process-builder-history.webp", label: "Reviewing changes before publishing", width: 1600, height: 992 },
     ] },
   ]),
   "turtle": study("Friends first, names later", [
@@ -272,28 +279,32 @@ export const projectCaseStudies = {
       "Conversations started anonymous. After a set number of days, both people were revealed.",
       "The countdown kept it playful while lowering the stakes that make anonymous apps go wrong.",
     ], media: [
-      { source: "/Projects/turtle-conversations.webp", label: "The countdown to a reveal", width: 1200, height: 501 },
-      { source: "/Projects/turtle-reveal.webp", label: "An inbox of revealed chats", width: 1200, height: 501 },
+      { source: "/Projects/turtle-conversations.webp", label: "The countdown to a reveal", width: 1600, height: 842 },
+      { source: "/Projects/turtle-reveal.webp", label: "An inbox of revealed chats", width: 1600, height: 842 },
     ] },
     { heading: "Guess who", paragraphs: [
       "Hints and guess games gave people something to talk about while they were still anonymous.",
     ], media: [
-      { source: "/Projects/turtle-guess-games.webp", label: "Hints and guesses", width: 1200, height: 501 },
+      { source: "/Projects/turtle-guess-games.webp", label: "Hints and guesses", width: 1600, height: 842 },
+    ] },
+    { heading: "In within a minute", paragraphs: [
+      "Onboarding took a phone number, a code, a username, and a photo, one question per screen.",
+    ], media: [
+      { source: "/Projects/turtle-onboarding.webp", label: "The onboarding flow", width: 1200, height: 1677 },
     ] },
     { heading: "Built to spread", paragraphs: [
-      "Onboarding took a phone number and a username. Profiles came with one-tap sharing to Snapchat and a link of their own.",
+      "Profiles came with one-tap sharing to Snapchat and a link of their own.",
       "Schools were the network: you found people through your high school or college.",
     ], media: [
-      { source: "/Projects/turtle-onboarding.webp", label: "Onboarding", width: 1200, height: 506 },
-      { source: "/Projects/turtle-profiles.webp", label: "Profiles and sharing", width: 1200, height: 506 },
-      { source: "/Projects/turtle-schools.webp", label: "Finding people by school", width: 1200, height: 501 },
-      { source: "/Projects/turtle-share.webp", label: "A profile link on the web", width: 1200, height: 501 },
+      { source: "/Projects/turtle-profiles.webp", label: "Profiles and sharing", width: 1600, height: 842 },
+      { source: "/Projects/turtle-schools.webp", label: "Finding people by school", width: 1600, height: 840 },
     ] },
     { heading: "Launch week", paragraphs: [
       "Over 500 students around Virginia signed up for the beta. At launch we asked those groups to share it with their friends.",
       "10,000 people signed up in the first week. Turtle was #4 Product of the Day on Product Hunt, Business Insider covered it, and investors and product leads reached out.",
     ], media: [
-      { source: "/Projects/turtle-press.webp", label: "Product Hunt and Business Insider", width: 1200, height: 494 },
+      { source: "/Projects/turtle-product-hunt.webp", label: "Ryan Hoover on Product Hunt", width: 1600, height: 1177 },
+      { source: "/Projects/turtle-business-insider.webp", label: "Business Insider’s coverage", width: 1534, height: 870 },
     ] },
   ]),
 } satisfies Record<string, ProjectCaseStudy>
