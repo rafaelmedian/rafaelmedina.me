@@ -817,8 +817,23 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.project-case-study-media[data-layout="feature"] {
+.project-case-study-media:is([data-layout="feature"], [data-layout="stack"]) {
   grid-template-columns: minmax(0, 1fr);
+}
+
+/* Screenshots of a working product carry small UI text: at half the measure
+   a table row is unreadable. They stack one per row instead of pairing. */
+.project-case-study-media[data-layout="stack"] {
+  gap: 2rem;
+}
+
+/* In the gallery they also step out of the text measure to the card's full
+   inner width, the same width as the hero above them. The standalone page has
+   no inline-size container, so `cqi` would resolve against the viewport there;
+   it keeps the measure. */
+.preview-gallery-card .project-case-study[data-media="wide"] .project-case-study-media {
+  width: 100cqi;
+  margin-inline: calc((100% - 100cqi) / 2);
 }
 
 .project-case-study-media figure {
