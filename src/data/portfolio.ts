@@ -31,8 +31,7 @@ export type PortfolioCard = {
   outcome: string
   /** When the work shipped, as "2023" or "2021 - 2023". The gallery and the
       project page set it ahead of the title, so a reviewer can tell recent work
-      from old without a metadata table. Left off, nothing is drawn. Each year traces to a public date: a post,
-      the May 2023 relaunch, or the April 2025 Solana launch coverage. */
+      from old without a metadata table. Left off, nothing is drawn. Every card carries one. */
   year?: string
   /** Teammates on this work; Rafael is credited automatically alongside them. */
   team?: Collaborator[]
@@ -324,6 +323,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-22",
     slug: "matcha-dark-mode",
+    year: "2023",
     category: "Case study",
     title: "Matcha dark mode",
     summary: "",
@@ -361,6 +361,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-protector",
     slug: "protector-booking",
+    year: "2023",
     category: "Case study",
     title: "Protector booking",
     summary: "",
@@ -382,6 +383,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-popparazi-v1",
     slug: "popparazi-v1",
+    year: "2019",
     category: "Preview",
     title: "Popparazi V1",
     summary: "",
@@ -476,6 +478,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-23",
     slug: "matcha-pro",
+    year: "2024",
     category: "Case study",
     title: "Matcha Pro",
     summary: "",
@@ -512,6 +515,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-dealership-lead-hub",
     slug: "dealership-lead-hub",
+    year: "2024",
     category: "Preview",
     title: "Dealership lead hub",
     summary: "",
@@ -531,6 +535,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-family-stories",
     slug: "shared-family-stories",
+    year: "2019",
     category: "Preview",
     title: "Shared family stories",
     summary: "",
