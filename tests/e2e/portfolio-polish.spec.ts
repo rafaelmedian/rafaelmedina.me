@@ -2385,7 +2385,14 @@ test("shows a calendar skeleton until the embedded calendar is ready", async ({ 
   const iframe = await frame.locator(".booking-iframe").boundingBox()
   expect(skeletonPanel!.width).toBeCloseTo(Math.min(760, calendarWidth), 0)
   expect(iframe!.width).toBeCloseTo(calendarWidth, 0)
-  expect(skeletonPanel!.x + skeletonPanel!.width / 2).toBeCloseTo(iframe!.x + iframe!.width / 2, 5)
+  // Measure both centres in the same frame: the panel can still be moving
+  // when its width first reaches the expected value.
+  const centreOffset = await frame.evaluate(element => {
+    const panel = element.querySelector(".booking-skeleton-panel")!.getBoundingClientRect()
+    const iframe = element.querySelector(".booking-iframe")!.getBoundingClientRect()
+    return panel.x + panel.width / 2 - iframe.x - iframe.width / 2
+  })
+  expect(centreOffset).toBeCloseTo(0, 5)
 
   expect(finishCalendarRequest).toBeDefined()
   finishCalendarRequest!()

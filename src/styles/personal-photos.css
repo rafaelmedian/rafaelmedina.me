@@ -1281,6 +1281,44 @@
 .personal-photos-wall-surface[data-warp-ready] .personal-photos-masonry { opacity: 0; }
 .personal-photos-wall-surface[data-warp-ready] .personal-photos-wall-canvas { display: block; }
 
+/* A faint soft rim where the wall meets the screen, so photos drift out of
+   focus as they leave rather than being cut by the viewport. Four strips, not
+   one full-screen layer, keep the backdrop blur off the middle of the wall.
+   Two layers per strip step the radius up toward the edge, each reaching less
+   far in, on the bottom fades' eased falloff (page-edge.css). */
+.personal-photos-wall-edges {
+  --wall-edge-size: clamp(2.5rem, 6vmin, 4.5rem);
+  --wall-edge-blur: 6px;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.personal-photos-wall-edges > div {
+  position: absolute;
+  --wall-edge-mask-1: linear-gradient(var(--wall-edge-dir), #000 0%, rgb(0 0 0 / 0.54) 35%, rgb(0 0 0 / 0.28) 55%, rgb(0 0 0 / 0.13) 72%, rgb(0 0 0 / 0.04) 86%, transparent 100%);
+  --wall-edge-mask-2: linear-gradient(var(--wall-edge-dir), #000 0%, rgb(0 0 0 / 0.54) 17%, rgb(0 0 0 / 0.28) 28%, rgb(0 0 0 / 0.13) 36%, rgb(0 0 0 / 0.04) 43%, transparent 50%);
+}
+.personal-photos-wall-edges > [data-edge="top"] { --wall-edge-dir: to bottom; inset: 0 0 auto; height: var(--wall-edge-size); }
+.personal-photos-wall-edges > [data-edge="bottom"] { --wall-edge-dir: to top; inset: auto 0 0; height: var(--wall-edge-size); }
+.personal-photos-wall-edges > [data-edge="left"] { --wall-edge-dir: to right; inset: 0 auto 0 0; width: var(--wall-edge-size); }
+.personal-photos-wall-edges > [data-edge="right"] { --wall-edge-dir: to left; inset: 0 0 0 auto; width: var(--wall-edge-size); }
+.personal-photos-wall-edges span {
+  position: absolute;
+  inset: 0;
+}
+.personal-photos-wall-edges span:nth-child(1) {
+  -webkit-backdrop-filter: blur(calc(var(--wall-edge-blur) * 0.4));
+  backdrop-filter: blur(calc(var(--wall-edge-blur) * 0.4));
+  -webkit-mask-image: var(--wall-edge-mask-1);
+  mask-image: var(--wall-edge-mask-1);
+}
+.personal-photos-wall-edges span:nth-child(2) {
+  -webkit-backdrop-filter: blur(var(--wall-edge-blur));
+  backdrop-filter: blur(var(--wall-edge-blur));
+  -webkit-mask-image: var(--wall-edge-mask-2);
+  mask-image: var(--wall-edge-mask-2);
+}
+
 /* Keep the morphing control opaque while the photo stage retreats. */
 .personal-photos-dialog[data-layout="wall"][data-ending-style] { opacity: 1; }
 .personal-photos-dialog[data-layout="wall"][data-ending-style] .personal-photos-sheet {
