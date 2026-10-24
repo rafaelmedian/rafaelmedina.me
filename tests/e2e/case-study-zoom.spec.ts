@@ -82,8 +82,12 @@ test("reduced motion keeps the prototype stills", async ({ page }) => {
   await expect(trigger.locator("video")).toHaveCount(0)
 })
 
-test("older work carries its years beside the title", async ({ page }) => {
+test("every project carries its year ahead of the title", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/work/moodys-design-sprints/")
-  await expect(page.getByRole("dialog").first().locator(".preview-gallery-title")).toHaveText("Moody’s design sprints · 2021")
+  const dialog = page.getByRole("dialog").first()
+  await expect(dialog.locator(".preview-gallery-heading")).toHaveText(/^2021\s*Moody’s design sprints$/)
+  // Beside the heading, not inside it, so the dialog is still named for the project.
+  await expect(dialog.locator(".preview-gallery-title")).toHaveText("Moody’s design sprints")
+  await expect(dialog).toHaveAccessibleName("Moody’s design sprints")
 })

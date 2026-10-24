@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
+import { emailHref } from "./mailto"
+
 /** How long a copy stays confirmed before the address goes back to being an
     offer. Long enough to be read, short enough that the next hover is an
     invitation again rather than the tail of the last press. */
@@ -23,7 +25,7 @@ export function useEmailCopy(email: string) {
     } catch {
       // No clipboard permission (or no clipboard at all): fall back to the
       // thing the address was for.
-      window.location.href = `mailto:${email}`
+      window.location.href = emailHref(email)
       return
     }
     setIsCopied(true)

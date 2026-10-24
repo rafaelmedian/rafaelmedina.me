@@ -1,6 +1,7 @@
 import { useEffect } from "react"
-import { collaborators, siteLinks, type PortfolioCard } from "../data/portfolio"
+import { collaborators, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
+import { emailHref } from "../lib/mailto"
 import { updatePageMetadata } from "../lib/projectMetadata"
 import { ProjectCaseStudy } from "./ProjectCaseStudy"
 
@@ -14,13 +15,13 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
     <article className="standalone-page">
       <nav aria-label="Project navigation" className="standalone-nav">
         <a href="/#work">All work</a>
-        <a href={`mailto:${siteLinks.email}`}>Contact Rafael</a>
+        <a href={emailHref()}>Contact Rafael</a>
       </nav>
       <header>
-        <h1 className="standalone-title">
-          {card.title}
-          {card.years ? <span className="preview-gallery-years"> · {card.years}</span> : null}
-        </h1>
+        <div className="preview-gallery-heading">
+          {card.year ? <span className="preview-gallery-year">{card.year}</span> : null}
+          <h1 className="standalone-title">{card.title}</h1>
+        </div>
         <p className="standalone-description">{card.detail}</p>
         {card.caseStudy && team.length > 0 ? <ul className="preview-gallery-people" aria-label="Collaborators">
           {team.map((person) => <li key={person.href}><a className="preview-gallery-person" href={person.href}>
@@ -42,7 +43,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
         {[
           ["Role", card.role], ["Outcome", card.outcome],
           ["Product", card.product ?? card.title], ["Industry", card.industry ?? "Product Design"],
-          ...(card.years ? [["Year", card.years]] : []),
+          ...(card.year ? [["Year", card.year]] : []),
         ].map(([label, value]) => (
           <div className="preview-gallery-detail-row" key={label}><dt>{label}</dt><dd>{value}</dd></div>
         ))}

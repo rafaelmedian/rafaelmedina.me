@@ -23,15 +23,16 @@ export type PortfolioCard = {
   product?: string
   /** Gallery "Industry" row; falls back to "Product Design". */
   industry?: string
-  /** When the work happened, e.g. "2021" or "2018–2019". Shown beside the
-      title for work old enough that the date is part of the story. */
-  years?: string
   /** Gallery "Role" row: what I owned on this work. Required — a preview
       without it leaves a hiring reviewer unable to judge scope. */
   role: string
   /** Gallery "Outcome" row: what changed because of the work. Qualitative by
       design; no confidential metrics. */
   outcome: string
+  /** When the work shipped, as "2023" or "2018–2019". The gallery and the
+      project page set it ahead of the title, so a reviewer can tell recent work
+      from old without a metadata table. Left off, nothing is drawn. Every card carries one. */
+  year?: string
   /** Teammates on this work; Rafael is credited automatically alongside them. */
   team?: Collaborator[]
   /** Where a piece that shipped as a public post first went out; the gallery
@@ -325,6 +326,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-9",
     slug: "matcha-multiwallet-flow",
+    year: "2025",
     category: "Case study",
     title: "Matcha multiwallet flow",
     summary: "",
@@ -346,6 +348,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-22",
     slug: "matcha-dark-mode",
+    year: "2023",
     category: "Case study",
     title: "Matcha dark mode",
     summary: "",
@@ -363,6 +366,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-16",
     slug: "matcha-homepage",
+    year: "2023",
     category: "Case study",
     title: "Matcha homepage",
     summary: "",
@@ -382,6 +386,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-protector",
     slug: "protector-booking",
+    year: "2023",
     category: "Case study",
     title: "Protector booking",
     summary: "",
@@ -403,6 +408,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-popparazi-v1",
     slug: "popparazi-v1",
+    year: "2019",
     category: "Preview",
     title: "Popparazi V1",
     summary: "",
@@ -424,6 +430,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-21",
     slug: "matcha-token-page",
+    year: "2025",
     category: "Case study",
     title: "Matcha token page",
     summary: "",
@@ -442,6 +449,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-1",
     slug: "matcha-trade-page",
+    year: "2023",
     category: "Case study",
     title: "Matcha trade page",
     summary: "",
@@ -459,6 +467,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-19",
     slug: "matcha-trade-module",
+    year: "2023",
     category: "Case study",
     title: "Matcha trade module",
     summary: "",
@@ -476,6 +485,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-14",
     slug: "matcha-on-mobile",
+    year: "2023",
     category: "Case study",
     title: "Matcha on mobile",
     summary: "",
@@ -493,6 +503,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-23",
     slug: "matcha-pro",
+    year: "2024",
     category: "Case study",
     title: "Matcha Pro",
     summary: "",
@@ -510,6 +521,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-shot-20",
     slug: "matcha-security-audit",
+    year: "2025",
     category: "Case study",
     title: "Matcha security audit",
     summary: "",
@@ -528,6 +540,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-dealership-lead-hub",
     slug: "dealership-lead-hub",
+    year: "2024",
     category: "Preview",
     title: "Dealership Hub",
     summary: "",
@@ -547,6 +560,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-family-stories",
     slug: "shared-family-stories",
+    year: "2019",
     category: "Preview",
     title: "Shared family stories",
     summary: "",
@@ -566,6 +580,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-rewards",
     slug: "matcha-rewards",
+    year: "2025",
     category: "Case study",
     title: "Matcha Rewards",
     summary: "",
@@ -603,6 +618,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-marketing",
     slug: "matcha-marketing",
+    year: "2022",
     category: "Case study",
     title: "Matcha marketing materials",
     summary: "",
@@ -652,6 +668,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-relaunch-film",
     slug: "matcha-relaunch-film",
+    year: "2023",
     category: "Video",
     title: "The new Matcha",
     summary: "",
@@ -674,6 +691,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-cross-chain-film",
     slug: "matcha-cross-chain-film",
+    year: "2023",
     category: "Video",
     title: "Matcha cross-chain swaps",
     summary: "",
@@ -696,6 +714,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-gasless-film",
     slug: "matcha-gasless-film",
+    year: "2021",
     category: "Video",
     title: "Matcha gasless trading",
     summary: "",
@@ -718,6 +737,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-limit-orders-film",
     slug: "matcha-limit-orders-film",
+    year: "2022",
     category: "Video",
     title: "Matcha limit orders",
     summary: "",
@@ -740,7 +760,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-twilio-admiral",
     slug: "twilio-admiral",
-    years: "2019–2020",
+    year: "2019–2020",
     category: "Case study",
     title: "Twilio Admiral",
     summary: "",
@@ -760,7 +780,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-moodys-sprints",
     slug: "moodys-design-sprints",
-    years: "2021",
+    year: "2021",
     category: "Case study",
     title: "Moody’s design sprints",
     summary: "",
@@ -779,7 +799,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-turtle",
     slug: "turtle",
-    years: "2018–2019",
+    year: "2018–2019",
     category: "Case study",
     title: "Turtle",
     summary: "",
@@ -799,7 +819,7 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-onit-process-builder",
     slug: "onit-process-builder",
-    years: "2019–2020",
+    year: "2019–2020",
     category: "Case study",
     title: "Onit Process Builder",
     summary: "",

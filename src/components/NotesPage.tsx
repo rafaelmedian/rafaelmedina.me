@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 
-import { siteLinks } from "../data/portfolio"
 import { updatePageMetadata, writingsItemId } from "../lib/projectMetadata"
+import { emailHref } from "../lib/mailto"
 import { WritingsArchive } from "./WritingsArchive"
 
 /**
@@ -16,7 +16,7 @@ export function NotesPage() {
     <div className="standalone-page standalone-notes writings-surface">
       <nav aria-label="Notes navigation" className="standalone-nav">
         <a href="/#work">All work</a>
-        <a href={`mailto:${siteLinks.email}`}>Contact Rafael</a>
+        <a href={emailHref()}>Contact Rafael</a>
       </nav>
       <header>
         <h1 className="standalone-title">Notes</h1>
