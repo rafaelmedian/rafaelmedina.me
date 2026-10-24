@@ -8,10 +8,10 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
-    await expect(tiles).toHaveCount(20)
-    // Fifteen projects and the résumé: its reader has a page of its own now, so
+    await expect(tiles).toHaveCount(24)
+    // Nineteen projects and the résumé: its reader has a page of its own now, so
     // its tile is a link on the grid like theirs.
-    await expect(page.locator("a.mosaic-row-card")).toHaveCount(16)
+    await expect(page.locator("a.mosaic-row-card")).toHaveCount(20)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect()
       return { x, y, width, height }
@@ -40,9 +40,16 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       // The personal-photo band, the team quotes, and the marketing tile span
       // both compact columns.
       expect(boxes[10].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[19].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[20].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[20].y).toBeGreaterThan(boxes[19].y + boxes[19].height - 1)
+      // Twilio and Onit span both columns, with Moody's and Turtle paired
+      // between them.
       expect(boxes[15].width).toBeCloseTo(protector.width, 0)
-      expect(boxes[16].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[18].width).toBeCloseTo(protector.width, 0)
+      expect(boxes[16].y).toBeCloseTo(boxes[17].y, 0)
       expect(boxes[16].y).toBeGreaterThan(boxes[15].y + boxes[15].height - 1)
+      expect(boxes[18].y).toBeGreaterThan(boxes[16].y + boxes[16].height - 1)
     } else {
       // The personal-photo band spans the portraits group on its own line.
       expect(boxes[10].x).toBeCloseTo(boxes[5].x, 0)
@@ -50,11 +57,21 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(boxes[10].y).toBeGreaterThan(boxes[9].y + boxes[9].height - 1)
       // The team quotes and the marketing tile share a band of their own
       // between the project groups, edge to edge across it.
+      expect(boxes[19].x).toBeCloseTo(boxes[10].x, 0)
+      expect(boxes[20].y).toBeCloseTo(boxes[19].y, 0)
+      expect(boxes[20].x + boxes[20].width).toBeCloseTo(boxes[10].x + boxes[10].width, 0)
+      expect(boxes[19].y).toBeGreaterThan(boxes[18].y + boxes[18].height - 1)
+      expect(boxes[21].y).toBeGreaterThan(boxes[19].y + boxes[19].height - 1)
+      // The agency group sits between the offset group and the aside band,
+      // two rows whose wide and narrow slots swap sides.
+      expect(boxes[15].y).toBeGreaterThan(boxes[14].y + boxes[14].height - 1)
       expect(boxes[15].x).toBeCloseTo(boxes[10].x, 0)
       expect(boxes[16].y).toBeCloseTo(boxes[15].y, 0)
       expect(boxes[16].x + boxes[16].width).toBeCloseTo(boxes[10].x + boxes[10].width, 0)
-      expect(boxes[15].y).toBeGreaterThan(boxes[14].y + boxes[14].height - 1)
+      expect(boxes[17].y).toBeCloseTo(boxes[18].y, 0)
       expect(boxes[17].y).toBeGreaterThan(boxes[15].y + boxes[15].height - 1)
+      expect(boxes[15].width).toBeGreaterThan(boxes[16].width)
+      expect(boxes[18].width).toBeGreaterThan(boxes[17].width)
       // The long middle cards bridge the smaller stack alongside them.
       expect(boxes[7].height).toBeGreaterThan(boxes[8].height + 100)
       expect(boxes[7].y + boxes[7].height).toBeCloseTo(boxes[9].y + boxes[9].height, 0)
@@ -93,7 +110,7 @@ test("reserves the mosaic layout before scripts or media load", async ({ browser
   await page.route(/\.(webp|jpg|png|webm)(\?.*)?$/, route => route.abort())
   await page.goto("/")
   const cards = page.locator("a.mosaic-row-card")
-  await expect(cards).toHaveCount(16)
+  await expect(cards).toHaveCount(20)
   const first = await cards.nth(0).boundingBox()
   const second = await cards.nth(1).boundingBox()
   expect(first!.height).toBeGreaterThan(100)
@@ -202,7 +219,7 @@ test("shows the dealership preview large and crops it at the card edge", async (
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  const card = page.getByRole("link", { name: /Open Dealership lead hub/ })
+  const card = page.getByRole("link", { name: /Open Dealership Hub/ })
   await card.scrollIntoViewIfNeeded()
 
   const [cardBox, mediaClipBox, mediaBox] = await Promise.all([

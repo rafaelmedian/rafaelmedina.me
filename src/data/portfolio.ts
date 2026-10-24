@@ -29,7 +29,7 @@ export type PortfolioCard = {
   /** Gallery "Outcome" row: what changed because of the work. Qualitative by
       design; no confidential metrics. */
   outcome: string
-  /** When the work shipped, as "2023" or "2021 - 2023". The gallery and the
+  /** When the work shipped, as "2023" or "2018–2019". The gallery and the
       project page set it ahead of the title, so a reviewer can tell recent work
       from old without a metadata table. Left off, nothing is drawn. Every card carries one. */
   year?: string
@@ -55,6 +55,9 @@ export type PortfolioCard = {
 
 export type PortfolioImage = {
   source: string
+  /** A muted loop of the same frame, e.g. a prototype recording. It plays over
+      the still once the still is near the reader; `source` stays the poster. */
+  video?: string
   label: string
   width: number
   height: number
@@ -67,10 +70,18 @@ export type ProjectCaseStudySection = {
   heading: string
   paragraphs: string[]
   media?: PortfolioImage[]
+  /** Two or more images sit side by side unless they are dense screens that
+      need the column's full width to read; those stack. A study marked
+      `media: "wide"` stacks every section regardless. */
+  mediaLayout?: "pair" | "stack"
 }
 
 export type ProjectCaseStudy = {
   showSignatures?: boolean
+  /** Dense product screenshots stack one per row and run the card's full
+      width, past the text measure, so their UI stays legible. Artwork that
+      reads at half width (posts, campaign stills) keeps the default pairs. */
+  media?: "wide"
   label: string
   title: string
   introduction: string[]
@@ -123,7 +134,7 @@ export type HomeTile = HomeTilePlacement & (
 )
 
 export type HomeGroup = {
-  layout: "opening" | "videos" | "portraits" | "aside" | "offset" | "closing"
+  layout: "opening" | "videos" | "portraits" | "aside" | "offset" | "agency" | "closing"
   columns: 2 | 3
   items: HomeTile[]
 }
@@ -188,6 +199,20 @@ export const homeGroups: HomeGroup[] = [
       { kind: "project", area: "dealership", cardId: "preview-dealership-lead-hub", share: 7 / 12, fit: "contain" },
       { kind: "project", area: "token", cardId: "preview-shot-21", share: 5 / 12, fit: "contain" },
       { kind: "project", area: "rewards", cardId: "preview-matcha-rewards", share: 7 / 12, fit: "contain" },
+    ],
+  },
+  // The agency years, 2018-2021: the work behind the Twilio, Moody's, and Onit
+  // logos already in the résumé, plus Turtle. Mid-grid rather than closing,
+  // because the About takeover covers the last row. Wide and narrow slots
+  // swap between the rows, the way the offset group staggers its seams.
+  {
+    layout: "agency",
+    columns: 2,
+    items: [
+      { kind: "project", area: "twilio", cardId: "preview-twilio-admiral", share: 7 / 12, fit: "contain", compactWide: true },
+      { kind: "project", area: "moodys", cardId: "preview-moodys-sprints", share: 5 / 12, fit: "contain" },
+      { kind: "project", area: "turtle", cardId: "preview-turtle", share: 5 / 12, fit: "cover" },
+      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 7 / 12, fit: "cover", compactWide: true },
     ],
   },
   // The second quote card is a band of its own rather than a fourth tile in a
@@ -517,18 +542,18 @@ const portfolioCardEntries: PortfolioCard[] = [
     slug: "dealership-lead-hub",
     year: "2024",
     category: "Preview",
-    title: "Dealership lead hub",
+    title: "Dealership Hub",
     summary: "",
     detail:
-      "I designed a lead hub for a dealership retention platform, helping staff find sales and service opportunities in their existing customer base. I owned the layout, outreach metrics, retention comparisons, filters, and bulk-send flow, so staff can see how outreach performed and send a filtered batch of customers to the dealer app without leaving the page.",
-    role: "I designed the hub layout, its overview metrics, and the filtering and bulk-send flow for leads.",
+      "I designed and built Dealership Hub, the app that replaces the dealership's older CRM. The old tool was a single lead table; the Hub brings sales, the workshop floor, customer records, and the team into one place, opens on the few things worth doing first, and answers plain questions with rows that link straight to the job or the customer.",
+    role: "I designed the app end to end and built it as a working Next.js prototype: the hub, the leads flow, the workshop board, customer profiles, team views, and the design system under them.",
     outcome:
-      "Staff can read how recent outreach landed and send a filtered batch of customers without leaving the page.",
+      "One app in place of the old single-table CRM: staff can start from what needs doing and follow a customer from a sales lead to a car on the lift.",
     image: "/Projects/dealership-lead-hub.webp",
-    previewWidth: 1600,
-    previewHeight: 1200,
+    previewWidth: 3200,
+    previewHeight: 2400,
     ctaHref: "#",
-    product: "Dealer retention platform",
+    product: "Dealership CRM",
     industry: "Automotive Retail",
     previewAspectRatio: 4 / 3,
   },
@@ -731,6 +756,85 @@ const portfolioCardEntries: PortfolioCard[] = [
     ctaHref: "https://x.com/matchaxyz/status/1597349650104610816",
     post: { site: "X", href: "https://x.com/matchaxyz/status/1597349650104610816", date: "2022-11-28" },
     previewAspectRatio: 16 / 9,
+  },
+  {
+    id: "preview-twilio-admiral",
+    slug: "twilio-admiral",
+    year: "2019–2020",
+    category: "Case study",
+    title: "Twilio Admiral",
+    summary: "",
+    detail:
+      "I redesigned the navigation of Admiral, the internal platform Twilio’s engineers use to deploy and run their services. Interviews showed each team only cares about a small slice of 2,351 roles, so I rebuilt the structure around your own team: contextual dashboards, a Team › Roles switcher, and shorter paths to everyday tasks.",
+    role: "As a contract product designer I led the navigation research, the information architecture, and the team dashboards.",
+    outcome:
+      "Engineers land on their own team’s deployments and pipelines by default, and editing an access policy takes three steps instead of six.",
+    image: "/Projects/twilio-admiral.webp",
+    previewWidth: 1920,
+    previewHeight: 1093,
+    ctaHref: "#",
+    product: "Twilio Admiral, internal developer platform",
+    industry: "Developer Tools",
+    previewAspectRatio: 1920 / 1093,
+  },
+  {
+    id: "preview-moodys-sprints",
+    slug: "moodys-design-sprints",
+    year: "2021",
+    category: "Case study",
+    title: "Moody’s design sprints",
+    summary: "",
+    detail:
+      "I designed and prototyped with Moody’s research and product teams through a five-day design sprint and four month-long sprints, working on the tools financial analysts and asset managers use to read credit research: issuer pages, ESG scores, and data-heavy key indicators. Every sprint ended with a prototype tested with users.",
+    role: "I designed and prototyped each sprint’s concept, building the prototype that users tested at the end of the week.",
+    outcome: "The testing earned our team the brief to design the new Moodys.com.",
+    image: "/Projects/moodys-sprints.webp",
+    previewWidth: 1920,
+    previewHeight: 1200,
+    ctaHref: "#",
+    product: "Moodys.com research tools",
+    industry: "Financial Services",
+    previewAspectRatio: 1920 / 1200,
+  },
+  {
+    id: "preview-turtle",
+    slug: "turtle",
+    year: "2018–2019",
+    category: "Case study",
+    title: "Turtle",
+    summary: "",
+    detail:
+      "Turtle was a chat app for high school and college students to meet their classmates. Conversations started anonymous and revealed both people after a few days, with hints and guess games in between. As its founding designer I designed everything from onboarding and profiles to the school networks that drove signups.",
+    role: "As founding designer and design co-lead I owned the product’s design and direction, and the growth experiments around its launch.",
+    outcome:
+      "10,000 people signed up in the first week. Turtle was #4 Product of the Day on Product Hunt and was covered by Business Insider.",
+    image: "/Projects/turtle.webp",
+    previewWidth: 1920,
+    previewHeight: 1011,
+    ctaHref: "#",
+    product: "Turtle, social app for students",
+    industry: "Consumer Social",
+    previewAspectRatio: 1920 / 1011,
+  },
+  {
+    id: "preview-onit-process-builder",
+    slug: "onit-process-builder",
+    year: "2019–2020",
+    category: "Case study",
+    title: "Onit Process Builder",
+    summary: "",
+    detail:
+      "Process Builder lets legal teams automate what happens when a transaction or matter changes, using if/else blocks instead of code. I designed its visual language and front end from the start of development, and built the design system in Figma and React that the product shipped on.",
+    role: "I owned the visual design, the design system in Figma and in code, and front-end work in React and TypeScript.",
+    outcome:
+      "Design and development worked from one documented system, which made building the product faster and simpler.",
+    image: "/Projects/onit-process-builder.webp",
+    previewWidth: 1920,
+    previewHeight: 1200,
+    ctaHref: "#",
+    product: "Onit, legal workflow automation",
+    industry: "Legal Tech",
+    previewAspectRatio: 1920 / 1200,
   },
 ]
 

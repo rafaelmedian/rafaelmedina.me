@@ -20,6 +20,17 @@ const webpPreviewVariantSources = new Set([
   "/Projects/protector.webp",
   "/Projects/popparazi_v1.webp",
   "/Projects/dealership-lead-hub.webp",
+  "/Projects/dealership-hub-hub-light.webp",
+  "/Projects/dealership-hub-hub-answer.webp",
+  "/Projects/dealership-hub-old-lead-hub.webp",
+  "/Projects/dealership-hub-leads-filters.webp",
+  "/Projects/dealership-hub-leads-confirm.webp",
+  "/Projects/dealership-hub-design-system-light.webp",
+  "/Projects/dealership-hub-workshop-light.webp",
+  "/Projects/dealership-hub-workshop-dark.webp",
+  "/Projects/dealership-hub-customers-light.webp",
+  "/Projects/dealership-hub-customer-profile.webp",
+  "/Projects/dealership-hub-team-light.webp",
   "/Projects/shared-family-stories.webp",
   "/Projects/matcha-rewards.webp",
   "/Projects/matcha-rewards-link-preview.webp",
@@ -49,6 +60,55 @@ const webpPreviewVariantSources = new Set([
   "/Projects/matcha-marketing-polygon-alt.webp",
   "/Projects/matcha-marketing-bnb-chain-alt.webp",
   "/Projects/matcha-marketing-bnb-chain-icon.webp",
+  "/Projects/twilio-admiral.webp",
+  "/Projects/twilio-admiral-card-sort.webp",
+  "/Projects/twilio-admiral-ownership.webp",
+  "/Projects/twilio-admiral-hierarchy.webp",
+  "/Projects/twilio-admiral-team-switcher.webp",
+  "/Projects/twilio-admiral-access-flow.webp",
+  "/Projects/twilio-admiral-deployment.webp",
+  "/Projects/twilio-admiral-design-system.webp",
+  "/Projects/twilio-admiral-icons.webp",
+  "/Projects/moodys-sprints.webp",
+  "/Projects/moodys-esg.webp",
+  "/Projects/moodys-company-overview.webp",
+  "/Projects/moodys-sprint-week.webp",
+  "/Projects/moodys-journey-map.webp",
+  "/Projects/moodys-key-indicators.webp",
+  "/Projects/moodys-iterations.webp",
+  "/Projects/moodys-peer-comparison.webp",
+  "/Projects/onit-process-builder.webp",
+  "/Projects/onit-process-builder-workflow.webp",
+  "/Projects/onit-process-builder-design-system.webp",
+  "/Projects/onit-process-builder-frontend.webp",
+  "/Projects/onit-process-builder-action-block.webp",
+  "/Projects/onit-process-builder-history.webp",
+  "/Projects/turtle.webp",
+  "/Projects/turtle-conversations.webp",
+  "/Projects/turtle-reveal.webp",
+  "/Projects/turtle-guess-games.webp",
+  "/Projects/turtle-onboarding.webp",
+  "/Projects/turtle-profiles.webp",
+  "/Projects/turtle-schools.webp",
+  "/Projects/turtle-product-hunt.webp",
+  "/Projects/turtle-business-insider.webp",
+])
+// Product screenshots carry small UI text and run 800-900px wide in the
+// gallery, so a 2x screen needs ~1800 real pixels. These keep their full
+// capture resolution and add the larger steps; everything else stops at 960.
+const hiDpiVariantWidths = [1280, 1600, 1920, 2400]
+const hiDpiPreviewSources = new Set([
+  "/Projects/dealership-lead-hub.webp",
+  "/Projects/dealership-hub-hub-light.webp",
+  "/Projects/dealership-hub-hub-answer.webp",
+  "/Projects/dealership-hub-workshop-light.webp",
+  "/Projects/dealership-hub-workshop-dark.webp",
+  "/Projects/dealership-hub-customers-light.webp",
+  "/Projects/dealership-hub-customer-profile.webp",
+  "/Projects/dealership-hub-team-light.webp",
+  "/Projects/dealership-hub-leads-filters.webp",
+  "/Projects/dealership-hub-leads-confirm.webp",
+  "/Projects/dealership-hub-design-system-light.webp",
 ])
 const hasPreviewVariants = (source: string) =>
   /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)
@@ -88,7 +148,8 @@ export function buildPreviewSrcSet(source: string, intrinsicWidth?: number) {
   const stem = source.slice(0, -extension.length)
   // Skip variants at or above the source width (popparazi is only 630px wide,
   // so a -960w sibling would be an upscale that doesn't exist).
-  const candidates = previewVariantWidths
+  const widths = hiDpiPreviewSources.has(source) ? [...previewVariantWidths, ...hiDpiVariantWidths] : previewVariantWidths
+  const candidates = widths
     .filter((width) => !intrinsicWidth || width < intrinsicWidth)
     .map((width) => `${stem}-${width}w${extension} ${width}w`)
   if (intrinsicWidth) candidates.push(`${source} ${intrinsicWidth}w`)

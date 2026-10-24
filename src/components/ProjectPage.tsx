@@ -43,6 +43,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
         {[
           ["Role", card.role], ["Outcome", card.outcome],
           ["Product", card.product ?? card.title], ["Industry", card.industry ?? "Product Design"],
+          ...(card.year ? [["Year", card.year]] : []),
         ].map(([label, value]) => (
           <div className="preview-gallery-detail-row" key={label}><dt>{label}</dt><dd>{value}</dd></div>
         ))}

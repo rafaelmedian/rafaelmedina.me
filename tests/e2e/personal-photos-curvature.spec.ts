@@ -136,6 +136,10 @@ test("opening and resting photos keep the same rendered corner mask", async ({ p
   })
   await page.locator(".personal-photos-label").click()
   const wall = page.getByRole("region", { name: "Photo wall" })
+  // evaluateAll does not wait for a lazy-mounted dialog: without this gate
+  // it can advance zero flights, leaving the eventual clocks paused at zero.
+  await expect(wall).toBeVisible()
+  await expect(page.locator(".personal-photos-flight").first()).toBeAttached()
   await wall.locator("img").evaluateAll(images => Promise.all(images.map(image => image.decode())))
   await page.locator(".personal-photos-flight").evaluateAll(async flights => {
     const animations = flights.flatMap(flight => flight.getAnimations({ subtree: true }))

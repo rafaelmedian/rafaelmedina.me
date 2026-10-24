@@ -379,7 +379,7 @@ test("Enter goes in to the author and Escape comes back out a level at a time", 
 test("the team quotes, with no author to go in to, offer only the arrows", async ({ page }) => {
   await openHome(page)
   const card = teamCarousel(page)
-  await page.getByRole("link", { name: /Open Matcha Rewards preview/ }).focus()
+  await page.getByRole("link", { name: /Open Onit Process Builder preview/ }).focus()
   await page.keyboard.press("Tab")
   await expect(card).toBeFocused()
   await expect(card.locator(".mosaic-quote-keys")).toHaveText("←→BrowseSpaceOpen")
@@ -392,7 +392,7 @@ test("the team quotes, with no author to go in to, offer only the arrows", async
 test("Space opens the focused card, where the arrows page", async ({ page }) => {
   await openHome(page)
   const card = teamCarousel(page)
-  await page.getByRole("link", { name: /Open Matcha Rewards preview/ }).focus()
+  await page.getByRole("link", { name: /Open Onit Process Builder preview/ }).focus()
   await page.keyboard.press("Tab")
   await expect(card).toBeFocused()
   await page.keyboard.press("Space")
