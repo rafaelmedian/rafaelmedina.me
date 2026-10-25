@@ -62,6 +62,7 @@ const sources = [
   ["public/Projects/matcha-marketing-bnb-chain-alt.webp", 1200],
   ["public/Projects/matcha-marketing-bnb-chain-icon.webp", 1200],
   ["public/Projects/twilio-admiral.webp", 1920],
+  ["public/Projects/twilio-admiral-overview.webp", 1920],
   ["public/Projects/twilio-admiral-card-sort.webp", 1600],
   ["public/Projects/twilio-admiral-ownership.webp", 1600],
   ["public/Projects/twilio-admiral-hierarchy.webp", 1600],

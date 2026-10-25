@@ -65,6 +65,7 @@ const webpPreviewVariantSources = new Set([
   "/Projects/matcha-marketing-bnb-chain-alt.webp",
   "/Projects/matcha-marketing-bnb-chain-icon.webp",
   "/Projects/twilio-admiral.webp",
+  "/Projects/twilio-admiral-overview.webp",
   "/Projects/twilio-admiral-card-sort.webp",
   "/Projects/twilio-admiral-ownership.webp",
   "/Projects/twilio-admiral-hierarchy.webp",
