@@ -209,7 +209,7 @@ export const homeGroups: HomeGroup[] = [
     layout: "agency",
     columns: 2,
     items: [
-      { kind: "project", area: "twilio", cardId: "preview-twilio-admiral", share: 7 / 12, fit: "contain", compactWide: true },
+      { kind: "project", area: "twilio", cardId: "preview-twilio-admiral", share: 7 / 12, fit: "cover", compactWide: true },
       { kind: "project", area: "moodys", cardId: "preview-moodys-sprints", share: 5 / 12, fit: "contain" },
       { kind: "project", area: "turtle", cardId: "preview-turtle", share: 5 / 12, fit: "cover" },
       { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 7 / 12, fit: "cover", compactWide: true },
