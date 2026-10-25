@@ -769,9 +769,9 @@ const portfolioCardEntries: PortfolioCard[] = [
     role: "As a contract product designer I led the navigation research, the information architecture, and the team dashboards.",
     outcome:
       "Engineers land on their own team’s deployments and pipelines by default, and editing an access policy takes three steps instead of six.",
-    // The tile tilts a sheet of Admiral's screens; opening it shows the one
-    // overview flat and close up, the sidebar and Needs you running off the
-    // left and top so the team's performance against the company fills it.
+    // The tile tilts a sheet of Admiral's screens; opening it lifts out one
+    // panel, the team's performance against the company, large on the app's
+    // own background and running off the right edge.
     image: "/Projects/twilio-admiral-overview.webp",
     previewWidth: 1920,
     previewHeight: 1093,
