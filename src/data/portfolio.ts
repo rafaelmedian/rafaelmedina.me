@@ -779,22 +779,24 @@ const portfolioCardEntries: PortfolioCard[] = [
   },
   {
     id: "preview-moodys-sprints",
+    // The id and slug predate the retitle; they stay so likes and
+    // /work/moodys-design-sprints/ links keep working.
     slug: "moodys-design-sprints",
     year: "2021",
     category: "Case study",
-    title: "Moody’s design sprints",
+    title: "Moody’s Research Views",
     summary: "",
     detail:
-      "I designed and prototyped with Moody’s research and product teams through a five-day design sprint and four month-long sprints, working on the tools financial analysts and asset managers use to read credit research: issuer pages, ESG scores, and data-heavy key indicators. Every sprint ended with a prototype tested with users.",
-    role: "I designed and prototyped each sprint’s concept, building the prototype that users tested at the end of the week.",
+      "I designed Research Views through the Moody’s design sprints: the credit opinion as a product rather than a PDF. A rating change arrives by email and opens on the rating, the outlook, and what drove it. Analysts can highlight, comment, and save snippets, compare an issuer’s indicators with its peers, and run their own scorecard scenarios.",
+    role: "I designed and prototyped each sprint’s concept, building the prototype that users tested at the end of the week. I have since rebuilt it in code from the original Webflow prototypes and Figma iterations.",
     outcome: "The testing earned our team the brief to design the new Moodys.com.",
-    image: "/Projects/moodys-sprints.webp",
-    previewWidth: 1920,
-    previewHeight: 1200,
+    image: "/Projects/moodys-research-views.webp",
+    previewWidth: 2400,
+    previewHeight: 1500,
     ctaHref: "#",
-    product: "Moodys.com research tools",
+    product: "Moodys.com credit research",
     industry: "Financial Services",
-    previewAspectRatio: 1920 / 1200,
+    previewAspectRatio: 2400 / 1500,
   },
   {
     id: "preview-turtle",

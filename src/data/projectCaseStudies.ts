@@ -286,34 +286,48 @@ export const projectCaseStudies = {
       { source: "/Projects/twilio-admiral-icons.webp", label: "The Admiral icon set", width: 1600, height: 896 },
     ] },
   ]),
-  "moodys-design-sprints": study("Five sprints toward a new Moodys.com", [
-    "Moody’s internal teams took a long time to agree on change, and the research platform had grown without direction.",
-    "We used design sprints to get there faster: one five-day sprint, then four that ran a month each.",
+  "moodys-design-sprints": study("A credit opinion that reads like a product", [
+    "Moody’s credit opinions are long documents, and analysts and asset managers came to them for a few answers: the rating, the outlook, and why it changed.",
+    "Across a five-day design sprint and four month-long sprints, we tested a research view built around those answers. This is that prototype, rebuilt in code from the original Webflow prototypes and Figma iterations.",
   ], [
-    { heading: "Five days, one tested idea", paragraphs: [
-      "Each sprint started with agreed goals, questions, and assumptions. Workshops gathered everyone’s input before anything was decided.",
-      "Sketches came on Tuesday and decisions on Wednesday. I designed the prototype on Thursday, and four users tested it on Friday.",
+    { heading: "It starts in the inbox", paragraphs: [
+      "A rating action arrives as an email that already carries the headline, the exhibit, and the reasons, with one button into the full research.",
     ], media: [
-      { source: "/Projects/moodys-sprint-week.webp", label: "The sprint week", width: 1024, height: 576 },
-      { source: "/Projects/moodys-journey-map.webp", label: "Mapping how analysts find research", width: 1600, height: 927 },
+      { source: "/Projects/moodys-research-views-email.webp", label: "The rating action as an email", width: 2400, height: 2335 },
     ] },
-    { heading: "Research that reads at a glance", paragraphs: [
-      "Designed issuer pages for financial analysts and asset managers. They put credit ratings, outlooks, and ESG scores in one header, with commentary beside each score.",
+    { heading: "The answer first", paragraphs: [
+      "The header leads with the rating change, its history, the outlook, and the ESG score, beside a short analyst video or an audio brief.",
+      "Below it, the report opens on what drove the decision before the long-form summary.",
     ], mediaLayout: "stack", media: [
-      { source: "/Projects/moodys-esg.webp", label: "ESG performance for asset managers", width: 1600, height: 1000 },
-      { source: "/Projects/moodys-company-overview.webp", label: "A company overview with news, ownership, and key ratios", width: 1600, height: 1230 },
+      { source: "/Projects/moodys-research-views.webp", label: "The rating, outlook, and ESG score up front", width: 2400, height: 1500 },
+      { source: "/Projects/moodys-research-views-audio-brief.webp", label: "The header with an audio brief instead of video", width: 2400, height: 907 },
+      { source: "/Projects/moodys-research-views-takeaways.webp", label: "What drove the upgrade, ahead of the summary", width: 2400, height: 1500 },
     ] },
-    { heading: "Dense data, still readable", paragraphs: [
-      "Built key-indicator tables that turn into charts, with peer comparison and annotations, for people who work in spreadsheets all day.",
+    { heading: "Read it like your own copy", paragraphs: [
+      "Selecting text saves it or starts a comment, and colleagues’ notes sit beside the passage they are about. Whole sections can be bookmarked.",
+      "Everything saved collects in My snippets, alongside charts and scorecard scenarios, ready to download or share.",
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/moodys-research-views-selection.webp", label: "Saving a selection", width: 2400, height: 1500 },
+      { source: "/Projects/moodys-research-views-comment.webp", label: "An analyst’s note beside the highlight", width: 2400, height: 1500 },
+      { source: "/Projects/moodys-research-views-bookmark.webp", label: "Bookmarking a section", width: 2400, height: 1500 },
+      { source: "/Projects/moodys-research-views-snippets.webp", label: "Highlights, bookmarks, and snapshots in My snippets", width: 2400, height: 1500 },
+    ] },
+    { heading: "Room to read", paragraphs: [
+      "Focus mode drops the side rail and centres the text, for reading the opinion end to end.",
     ], media: [
-      { source: "/Projects/moodys-key-indicators.webp", label: "Key indicators, from table to chart", width: 1600, height: 783 },
+      { source: "/Projects/moodys-research-views-focus.webp", label: "Focus mode", width: 2400, height: 1500 },
     ] },
-    { heading: "Month by month", paragraphs: [
-      "Over the next four sprints we explored alternatives and iterated on what testing had shown, from a modular header to peer comparison.",
+    { heading: "Numbers you can work with", paragraphs: [
+      "Key indicators open from a table into a chart with forecasts, and peers can be added from suggestions in the same sector.",
+    ], media: [
+      { source: "/Projects/moodys-research-views-indicators.webp", label: "EBIT margin against two peers, with the forecast", width: 1800, height: 2310 },
+      { source: "/Projects/moodys-research-views-peers.webp", label: "Adding peers from the same sector", width: 1800, height: 2088 },
+    ] },
+    { heading: "Test the rating yourself", paragraphs: [
+      "The scorecard shows how each factor scores today. Changing a measure re-scores it and shows where the scorecard would land, as a scenario you can save.",
       "The testing went well enough that our team was asked to design the new Moodys.com.",
-    ], mediaLayout: "stack", media: [
-      { source: "/Projects/moodys-iterations.webp", label: "A modular header and an alternative", width: 1600, height: 981 },
-      { source: "/Projects/moodys-peer-comparison.webp", label: "Comparing an issuer’s ESG scores with its peers", width: 1600, height: 1032 },
+    ], media: [
+      { source: "/Projects/moodys-research-views-scenario.webp", label: "A custom scorecard scenario", width: 1800, height: 2284 },
     ] },
   ]),
   "onit-process-builder": study("Document logic lawyers can build themselves", [
