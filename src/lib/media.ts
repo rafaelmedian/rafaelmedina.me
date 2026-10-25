@@ -18,6 +18,10 @@ const previewVariantWidths = [96, 160, 240, 320, 480, 640, 800, 960]
 // scripts/generate-preview-variants.mjs when one of these sources changes.
 const webpPreviewVariantSources = new Set([
   "/Projects/protector.webp",
+  "/Projects/protector-booking-start.webp",
+  "/Projects/protector-dress-code.webp",
+  "/Projects/protector-convoy.webp",
+  "/Projects/protector-review.webp",
   "/Projects/popparazi_v1.webp",
   "/Projects/dealership-lead-hub.webp",
   "/Projects/dealership-hub-hub-light.webp",
@@ -109,6 +113,10 @@ const hiDpiPreviewSources = new Set([
   "/Projects/dealership-hub-leads-filters.webp",
   "/Projects/dealership-hub-leads-confirm.webp",
   "/Projects/dealership-hub-design-system-light.webp",
+  "/Projects/protector-booking-start.webp",
+  "/Projects/protector-dress-code.webp",
+  "/Projects/protector-convoy.webp",
+  "/Projects/protector-review.webp",
 ])
 const hasPreviewVariants = (source: string) =>
   /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)
