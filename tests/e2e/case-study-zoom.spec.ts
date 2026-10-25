@@ -9,7 +9,7 @@ test("a case-study image zooms and Escape puts it back without closing the galle
   const gallery = page.getByRole("dialog").first()
   await expect(gallery).toBeVisible()
 
-  const trigger = page.getByRole("button", { name: "Enlarge: ESG performance for asset managers" })
+  const trigger = page.getByRole("button", { name: "Enlarge: An analyst’s comment beside the passage it explains" })
   await trigger.scrollIntoViewIfNeeded()
   const card = page.locator(".preview-gallery-card").first()
   await expect.poll(() => card.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
@@ -86,8 +86,8 @@ test("every project carries its year ahead of the title", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/work/moodys-design-sprints/")
   const dialog = page.getByRole("dialog").first()
-  await expect(dialog.locator(".preview-gallery-heading")).toHaveText(/^2021\s*Moody’s design sprints$/)
+  await expect(dialog.locator(".preview-gallery-heading")).toHaveText(/^2021\s*Moody’s Research Views$/)
   // Beside the heading, not inside it, so the dialog is still named for the project.
-  await expect(dialog.locator(".preview-gallery-title")).toHaveText("Moody’s design sprints")
-  await expect(dialog).toHaveAccessibleName("Moody’s design sprints")
+  await expect(dialog.locator(".preview-gallery-title")).toHaveText("Moody’s Research Views")
+  await expect(dialog).toHaveAccessibleName("Moody’s Research Views")
 })

@@ -301,34 +301,42 @@ export const projectCaseStudies = {
       { source: "/Projects/twilio-admiral-icons.webp", label: "The Admiral icon set", width: 1600, height: 896 },
     ] },
   ]),
-  "moodys-design-sprints": study("Five sprints toward a new Moodys.com", [
-    "Moody’s internal teams took a long time to agree on change, and the research platform had grown without direction.",
-    "We used design sprints to get there faster: one five-day sprint, then four that ran a month each.",
+  "moodys-design-sprints": study("A credit opinion that reads like a product", [
+    "Moody’s published its credit opinions as long PDFs, and analysts read them the way they always had: top to bottom, then into a spreadsheet.",
+    "Over a five-day design sprint and four month-long ones, we turned one report into a page you can scan, compare, and keep. Every sprint ended with a prototype tested with users.",
   ], [
-    { heading: "Five days, one tested idea", paragraphs: [
-      "Each sprint started with agreed goals, questions, and assumptions. Workshops gathered everyone’s input before anything was decided.",
-      "Sketches came on Tuesday and decisions on Wednesday. I designed the prototype on Thursday, and four users tested it on Friday.",
+    { heading: "The rating before the reading", paragraphs: [
+      "The header answers what changed before anything else: the upgrade from Ba2 to Ba1, the outlook, the short-term rating, and the ESG score, with the rating’s history beside it.",
+      "The analyst’s brief sits next to it as a video, or as audio for the commute.",
     ], media: [
-      { source: "/Projects/moodys-sprint-week.webp", label: "The sprint week", width: 1024, height: 576 },
-      { source: "/Projects/moodys-journey-map.webp", label: "Mapping how analysts find research", width: 1600, height: 927 },
+      { source: "/Projects/moodys-research-audio-brief.webp", label: "The rating action, outlook, and ESG score, with the analyst’s brief as audio", width: 2880, height: 1332 },
     ] },
-    { heading: "Research that reads at a glance", paragraphs: [
-      "Designed issuer pages for financial analysts and asset managers. They put credit ratings, outlooks, and ESG scores in one header, with commentary beside each score.",
+    { heading: "Notes that stay with the text", paragraphs: [
+      "Selecting a passage offers to save it or comment on it. Analysts’ own comments sit in the margin beside the line they’re about.",
+      "Everything saved collects in My snippets, ready to download or share as a link.",
     ], mediaLayout: "stack", media: [
-      { source: "/Projects/moodys-esg.webp", label: "ESG performance for asset managers", width: 1600, height: 1000 },
-      { source: "/Projects/moodys-company-overview.webp", label: "A company overview with news, ownership, and key ratios", width: 1600, height: 1230 },
+      { source: "/Projects/moodys-research-selection.webp", label: "Saving a highlighted passage, with or without a comment", width: 2880, height: 1800 },
+      { source: "/Projects/moodys-research-comment.webp", label: "An analyst’s comment beside the passage it explains", width: 2880, height: 1800 },
+      { source: "/Projects/moodys-research-snippets.webp", label: "Highlights, bookmarks, and charts saved to My snippets", width: 2880, height: 1800 },
     ] },
-    { heading: "Dense data, still readable", paragraphs: [
-      "Built key-indicator tables that turn into charts, with peer comparison and annotations, for people who work in spreadsheets all day.",
+    { heading: "Indicators you can compare", paragraphs: [
+      "Built for people who work in spreadsheets all day: each key indicator opens from a row in the table into a chart, with the forecast years shaded.",
+      "Peers from the same sector join the chart from a search, and the view saves to your snippets with an annotation.",
     ], media: [
-      { source: "/Projects/moodys-key-indicators.webp", label: "Key indicators, from table to chart", width: 1600, height: 783 },
+      { source: "/Projects/moodys-research-indicators.webp", label: "EBIT margin, opened from the table into a chart", width: 1800, height: 2250 },
+      { source: "/Projects/moodys-research-peers.webp", label: "Adding Vale and Freeport as peers", width: 1800, height: 2250 },
     ] },
-    { heading: "Month by month", paragraphs: [
-      "Over the next four sprints we explored alternatives and iterated on what testing had shown, from a modular header to peer comparison.",
+    { heading: "What would change the rating", paragraphs: [
+      "The scorecard shows how each factor feeds the rating. Entering your own measures runs a scenario, and the indicated outcome moves with them.",
+    ], media: [
+      { source: "/Projects/moodys-research-scorecard.webp", label: "The mining scorecard behind the Ba1 rating", width: 1800, height: 2290 },
+      { source: "/Projects/moodys-research-scenario.webp", label: "A custom scenario pointing to Baa2", width: 1800, height: 2290 },
+    ] },
+    { heading: "Starting from the inbox", paragraphs: [
+      "Most readers arrive from an alert, so the email carries the rating action, the key exhibit, and the reasons for the upgrade, with one way into the full research.",
       "The testing went well enough that our team was asked to design the new Moodys.com.",
-    ], mediaLayout: "stack", media: [
-      { source: "/Projects/moodys-iterations.webp", label: "A modular header and an alternative", width: 1600, height: 981 },
-      { source: "/Projects/moodys-peer-comparison.webp", label: "Comparing an issuer’s ESG scores with its peers", width: 1600, height: 1032 },
+    ], media: [
+      { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2940 },
     ] },
   ]),
   "onit-process-builder": study("Document logic lawyers can build themselves", [
