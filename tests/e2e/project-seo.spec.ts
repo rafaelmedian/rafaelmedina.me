@@ -57,7 +57,8 @@ test("Matcha case studies ship their complete narrative without JavaScript", asy
 
   await page.goto("/work/protector-booking/")
   await expect(page.getByRole("heading", { level: 2, name: "Making a personal-security booking clear" })).toBeVisible()
-  await expect(page.locator(".project-case-study-section")).toHaveCount(3)
+  await expect(page.locator(".project-case-study-section")).toHaveCount(4)
+  await expect(page.locator(".project-case-study-media img")).toHaveCount(4)
   await context.close()
 })
 

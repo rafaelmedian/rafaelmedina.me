@@ -236,18 +236,33 @@ export const projectCaseStudies = {
     ] },
   ], { media: "wide" }),
   "protector-booking": study("Making a personal-security booking clear", [
-    "I was the sole product designer for Protector’s booking experience.",
-    "The flow brings the person, their attire, and transportation into one request.",
+    "I was the sole product designer for Protector’s booking experience on iPhone.",
+    "The flow brings the people, the protectors’ attire, and the convoy into one request.",
   ], [
-    { heading: "Start with the person", paragraphs: [
-      "Put protector selection first, then carried that choice into the rest of the booking.",
+    { heading: "Start with the people", paragraphs: [
+      "Booking starts with how many people need protection, whether someone is solo or in a group.",
+      "The app recommends how many protectors to assign from that count, and people can still change it.",
+    ], media: [
+      { source: "/Projects/protector-booking-start.webp", label: "The home screen, then the protectee and protector count", width: 2400, height: 2246 },
     ] },
     { heading: "The details matter", paragraphs: [
-      "Made attire a choice within the flow, alongside optional escorted transportation.",
-      "Kept these service details together instead of sending people into separate bookings.",
+      "Made attire a choice within the flow: Business Formal, Business Casual, or Tactical Casual.",
+      "Each option shows a protector wearing it, so people choose by sight instead of by description.",
+    ], media: [
+      { source: "/Projects/protector-dress-code.webp", label: "Three dress codes, each shown on a protector", width: 2400, height: 1510 },
+    ] },
+    { heading: "The car is part of the booking", paragraphs: [
+      "Escorted transportation sits in the same flow. Each car comes with a dedicated driver, and the app says how many the detail needs.",
+      "Pickup address, date, time, and duration are set on one screen instead of across separate bookings.",
+    ], media: [
+      { source: "/Projects/protector-convoy.webp", label: "Choosing the convoy and where it meets you", width: 2400, height: 1510 },
     ] },
     { heading: "Check the whole request", paragraphs: [
-      "Brought the selections together for confirmation before finishing the booking.",
+      "Brought every selection together for review, each with its own Edit link.",
+      "Booking is for members only, so the membership fee sits beside the booking total before anyone pays.",
+      "Confirmation repeats the pickup details, and the detail leader texts to verify them.",
+    ], media: [
+      { source: "/Projects/protector-review.webp", label: "Review, the membership step, and confirmation", width: 2400, height: 1510 },
     ] },
   ]),
   "twilio-admiral": study("Showing each team only what’s theirs", [
