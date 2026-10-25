@@ -829,9 +829,15 @@ const portfolioCardEntries: PortfolioCard[] = [
     role: "I led the product design, the research, and the prototypes.",
     outcome:
       "The design brought orders, shipments, promotions, and new products into one admin, with a style guide for the team to build it on.",
+    // The tile zooms in on the order itself: the page without the sidebar,
+    // running off the card's right and bottom edges. The gallery and the case
+    // study keep the whole screen.
     image: "/Projects/the-loyalist.webp",
     previewWidth: 2400,
     previewHeight: 2079,
+    homeImages: [
+      { source: "/Projects/the-loyalist-tile.webp", label: "The Loyalist order page", width: 1920, height: 1664 },
+    ],
     ctaHref: "#",
     product: "The Loyalist, merch store operations",
     industry: "E-commerce",

@@ -90,6 +90,7 @@ const sources = [
   ["public/Projects/turtle-product-hunt.webp", 1600],
   ["public/Projects/turtle-business-insider.webp", 1534],
   ["public/Projects/the-loyalist.webp", 2400, hiDpiVariantWidths],
+  ["public/Projects/the-loyalist-tile.webp", 1920, hiDpiVariantWidths],
   ["public/Projects/the-loyalist-spreadsheet.webp", 1600],
   ["public/Projects/the-loyalist-order-editing.webp", 2400, hiDpiVariantWidths],
   ["public/Projects/the-loyalist-split-shipment.webp", 2039, hiDpiVariantWidths],
