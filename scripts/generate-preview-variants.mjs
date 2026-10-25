@@ -67,6 +67,7 @@ const sources = [
   ["public/Projects/twilio-admiral-design-system.webp", 1600],
   ["public/Projects/twilio-admiral-icons.webp", 1600],
   ["public/Projects/moodys-research-views.webp", 2400, hiDpiVariantWidths],
+  ["public/Projects/moodys-research-views-tile.webp", 1920, hiDpiVariantWidths],
   ["public/Projects/moodys-research-views-email.webp", 2400, hiDpiVariantWidths],
   ["public/Projects/moodys-research-views-audio-brief.webp", 2400, hiDpiVariantWidths],
   ["public/Projects/moodys-research-views-takeaways.webp", 2400, hiDpiVariantWidths],

@@ -790,9 +790,14 @@ const portfolioCardEntries: PortfolioCard[] = [
       "I designed Research Views through the Moody’s design sprints: the credit opinion as a product rather than a PDF. A rating change arrives by email and opens on the rating, the outlook, and what drove it. Analysts can highlight, comment, and save snippets, compare an issuer’s indicators with its peers, and run their own scorecard scenarios.",
     role: "I designed and prototyped each sprint’s concept, building the prototype that users tested at the end of the week. I have since rebuilt it in code from the original Webflow prototypes and Figma iterations.",
     outcome: "The testing earned our team the brief to design the new Moodys.com.",
+    // The tile shows the page at full width from the top, cut off by the
+    // card's bottom edge; the gallery keeps the 1440x900 screen.
     image: "/Projects/moodys-research-views.webp",
     previewWidth: 2400,
     previewHeight: 1500,
+    homeImages: [
+      { source: "/Projects/moodys-research-views-tile.webp", label: "Moody’s Research Views credit opinion", width: 1920, height: 1600 },
+    ],
     ctaHref: "#",
     product: "Moodys.com credit research",
     industry: "Financial Services",

@@ -1398,6 +1398,26 @@
   max-height: none;
 }
 
+/* Moody's Research Views is framed like the Matcha homepage: the page at
+   full width with mat on three sides, rounded at the top, and cut off by the
+   card's bottom edge. The tile's crop is taller than the slot, so the bottom
+   edge always lands in the report rather than on a margin. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-moodys-sprints {
+  padding: 7% 7% 0;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-moodys-sprints .mosaic-row-card-media-clip {
+  place-items: start center;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-moodys-sprints .mosaic-row-media {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
   width: 100%;
   height: 100%;
