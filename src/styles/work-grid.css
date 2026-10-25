@@ -95,17 +95,19 @@
     "token rewards";
 }
 
-/* Two rows of two on a twelve-column track, wide and narrow swapping between
-   rows like the offset group's seams. Twilio and Moody's are flat UI exports,
-   so they sit in the grey mat like the dealership hub; Turtle and Onit are
-   mockups with their own backdrops, so they run full bleed. */
+/* Two rows on a twelve-column track: Twilio and Moody's at seven and five,
+   then thirds below, so no seam runs through both rows. Twilio, Moody's, and
+   The Loyalist are flat UI exports, so they sit in the grey mat like the
+   dealership hub; Turtle and Onit are mockups with their own backdrops, so
+   they run full bleed, and a third of the row keeps the phone and the editor
+   whole. */
 .mosaic-group-agency {
   height: clamp(520px, 56cqw, 840px);
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
   grid-template-areas:
     "twilio twilio twilio twilio twilio twilio twilio moodys moodys moodys moodys moodys"
-    "turtle turtle turtle turtle turtle onit onit onit onit onit onit onit";
+    "turtle turtle turtle turtle loyalist loyalist loyalist loyalist onit onit onit onit";
 }
 
 /* A band across the grid, like the personal-photo fan. A third of the row,
@@ -1398,6 +1400,25 @@
   max-height: none;
 }
 
+/* The Loyalist's tile zooms in on the order: a crop without the sidebar,
+   seated at the card's top-left inset and running off its right and bottom
+   edges, so the error banner and line items read at tile size. The page is
+   white on the pale mat, so the one corner left inside the card is rounded and
+   ringed to keep its edge. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-the-loyalist {
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-the-loyalist .mosaic-row-media {
+  width: 135%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  border-top-left-radius: var(--radius-sm);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+}
+
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
   width: 100%;
   height: 100%;
@@ -1546,6 +1567,7 @@
       calc(var(--compact-tile) * 1.25)
       var(--compact-tile)
       calc(var(--compact-tile) * 0.75)
+      calc(var(--compact-tile) * 1.5)
       var(--compact-tile)
       minmax(340px, auto)
       var(--compact-tile)
@@ -1565,6 +1587,7 @@
       "rewards rewards"
       "twilio twilio"
       "moodys turtle"
+      "loyalist loyalist"
       "onit onit"
       "quote2 quote2"
       "marketing marketing"

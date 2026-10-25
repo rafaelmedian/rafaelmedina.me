@@ -92,6 +92,15 @@ const webpPreviewVariantSources = new Set([
   "/Projects/turtle-schools.webp",
   "/Projects/turtle-product-hunt.webp",
   "/Projects/turtle-business-insider.webp",
+  "/Projects/the-loyalist.webp",
+  "/Projects/the-loyalist-tile.webp",
+  "/Projects/the-loyalist-spreadsheet.webp",
+  "/Projects/the-loyalist-order-editing.webp",
+  "/Projects/the-loyalist-split-shipment.webp",
+  "/Projects/the-loyalist-product-styles.webp",
+  "/Projects/the-loyalist-product-creator.webp",
+  "/Projects/the-loyalist-storefront.webp",
+  "/Projects/the-loyalist-styleguide.webp",
 ])
 // Product screenshots carry small UI text and run 800-900px wide in the
 // gallery, so a 2x screen needs ~1800 real pixels. These keep their full
@@ -109,6 +118,13 @@ const hiDpiPreviewSources = new Set([
   "/Projects/dealership-hub-leads-filters.webp",
   "/Projects/dealership-hub-leads-confirm.webp",
   "/Projects/dealership-hub-design-system-light.webp",
+  "/Projects/the-loyalist.webp",
+  "/Projects/the-loyalist-tile.webp",
+  "/Projects/the-loyalist-order-editing.webp",
+  "/Projects/the-loyalist-split-shipment.webp",
+  "/Projects/the-loyalist-product-styles.webp",
+  "/Projects/the-loyalist-product-creator.webp",
+  "/Projects/the-loyalist-styleguide.webp",
 ])
 const hasPreviewVariants = (source: string) =>
   /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)

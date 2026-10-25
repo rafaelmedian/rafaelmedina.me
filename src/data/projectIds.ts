@@ -23,6 +23,7 @@ export const projectIds = [
   "preview-twilio-admiral",
   "preview-moodys-sprints",
   "preview-turtle",
+  "preview-the-loyalist",
   "preview-onit-process-builder",
 ] as const
 
