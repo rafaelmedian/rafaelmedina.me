@@ -376,4 +376,41 @@ export const projectCaseStudies = {
       { source: "/Projects/turtle-business-insider.webp", label: "Business Insider’s coverage", width: 1534, height: 870 },
     ] },
   ]),
+  "the-loyalist": study("From a spreadsheet to an order page", [
+    "The Loyalist runs merch stores for clients like PLL, BuzzFeed, and Overtime, and has the products printed and shipped.",
+    "Its operations team ran every order through one shared spreadsheet. I had three weeks to design the admin that would replace it.",
+  ], [
+    { heading: "Where the orders lived", paragraphs: [
+      "Each order was a row: client, revenue, payment, production status, ship dates, and links to the artwork, with a printed order sheet per job.",
+      "Fixing a mistake meant finding the right row and the right cell.",
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/the-loyalist-spreadsheet.webp", label: "The shared order spreadsheet", width: 1600, height: 533 },
+      { source: "/Projects/the-loyalist-storefront.webp", label: "A Loyalist storefront, where the orders come from", width: 1600, height: 1683 },
+    ] },
+    { heading: "One page per order", paragraphs: [
+      "An order groups its items by shipment and print facility, with the totals, promotions, addresses, and customer beside them.",
+      "Problems surface at the top of the shipment they affect. Artwork with the wrong dimensions is flagged before it goes to print.",
+    ], media: [
+      { source: "/Projects/the-loyalist.webp", label: "An order with a print error flagged", width: 2400, height: 2079 },
+    ] },
+    { heading: "Fix it where you see it", paragraphs: [
+      "Items, promotions, and the shipping address open for editing in place, with warnings next to the field that needs attention.",
+      "Moving an item to another facility creates a new shipment in one step. Every change lands in the order’s activity, with who made it and what it was before.",
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/the-loyalist-order-editing.webp", label: "Editing an item, a promotion, and the address in place", width: 2400, height: 2610 },
+      { source: "/Projects/the-loyalist-split-shipment.webp", label: "Moving an item to a new shipment", width: 2039, height: 1101 },
+    ] },
+    { heading: "Building a store’s catalog", paragraphs: [
+      "The product creator starts from the client’s artwork and a product style: a tee, a tank top, a mug, a phone case.",
+      "Each style then gets its colors, sizes, pricing, and print placement, with a preview of the artwork on the product.",
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/the-loyalist-product-styles.webp", label: "Choosing a product style for the artwork", width: 2400, height: 2107 },
+      { source: "/Projects/the-loyalist-product-creator.webp", label: "Colors, sizes, pricing, and placement for each style", width: 2400, height: 4152 },
+    ] },
+    { heading: "A system to build it on", paragraphs: [
+      "A style guide of type, color, icons, and input states went with the screens, so the team could build the rest of the admin from the same parts.",
+    ], media: [
+      { source: "/Projects/the-loyalist-styleguide.webp", label: "The admin’s style guide", width: 2400, height: 844 },
+    ] },
+  ]),
 } satisfies Record<string, ProjectCaseStudy>

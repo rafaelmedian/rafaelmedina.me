@@ -202,17 +202,18 @@ export const homeGroups: HomeGroup[] = [
     ],
   },
   // The agency years, 2018-2021: the work behind the Twilio, Moody's, and Onit
-  // logos already in the résumé, plus Turtle. Mid-grid rather than closing,
-  // because the About takeover covers the last row. Wide and narrow slots
-  // swap between the rows, the way the offset group staggers its seams.
+  // logos already in the résumé, plus Turtle and The Loyalist. Mid-grid rather
+  // than closing, because the About takeover covers the last row. The second
+  // row splits in thirds so its seams never line up with the first row's.
   {
     layout: "agency",
-    columns: 2,
+    columns: 3,
     items: [
       { kind: "project", area: "twilio", cardId: "preview-twilio-admiral", share: 7 / 12, fit: "contain", compactWide: true },
       { kind: "project", area: "moodys", cardId: "preview-moodys-sprints", share: 5 / 12, fit: "contain" },
-      { kind: "project", area: "turtle", cardId: "preview-turtle", share: 5 / 12, fit: "cover" },
-      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 7 / 12, fit: "cover", compactWide: true },
+      { kind: "project", area: "turtle", cardId: "preview-turtle", share: 4 / 12, fit: "cover" },
+      { kind: "project", area: "loyalist", cardId: "preview-the-loyalist", share: 4 / 12, fit: "contain", compactWide: true },
+      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 4 / 12, fit: "cover", compactWide: true },
     ],
   },
   // The second quote card is a band of its own rather than a fourth tile in a
@@ -815,6 +816,26 @@ const portfolioCardEntries: PortfolioCard[] = [
     product: "Turtle, social app for students",
     industry: "Consumer Social",
     previewAspectRatio: 1920 / 1011,
+  },
+  {
+    id: "preview-the-loyalist",
+    slug: "the-loyalist",
+    year: "2020",
+    category: "Case study",
+    title: "The Loyalist",
+    summary: "",
+    detail:
+      "The Loyalist runs merch stores for sports leagues and media brands, and its team tracked every order in one shared spreadsheet. In three weeks I designed the admin to replace it: an order page that flags print problems before they ship, edits in place, and keeps a history of every change, plus a product creator for building a store’s catalog.",
+    role: "I led the product design, the research, and the prototypes.",
+    outcome:
+      "The design brought orders, shipments, promotions, and new products into one admin, with a style guide for the team to build it on.",
+    image: "/Projects/the-loyalist.webp",
+    previewWidth: 2400,
+    previewHeight: 2079,
+    ctaHref: "#",
+    product: "The Loyalist, merch store operations",
+    industry: "E-commerce",
+    previewAspectRatio: 2400 / 2079,
   },
   {
     id: "preview-onit-process-builder",
