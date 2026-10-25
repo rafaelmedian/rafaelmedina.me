@@ -74,7 +74,14 @@ function PreviewMediaSingle({ card, reducedMotion }: { card: PortfolioCard; redu
   const [attempt, setAttempt] = useState(0)
   const video = isVideoSource(card.image)
   const manualPlayback = lightweightMedia || reducedMotion
-  const thumbnailSrcSet = video ? undefined : buildPreviewSrcSet(card.image, card.previewWidth)
+  // A tile with its own single artwork (Twilio's tilted sheet) opens from that
+  // picture, so the flight leaves the grid showing what was clicked and the
+  // gallery's image fades in over it, instead of swapping on the first frame.
+  // A wall of several home images has no one picture to stand in for it.
+  const thumbnail = card.homeImages?.length === 1
+    ? { source: card.homeImages[0].source, width: card.homeImages[0].width }
+    : { source: card.image, width: card.previewWidth }
+  const thumbnailSrcSet = video ? undefined : buildPreviewSrcSet(thumbnail.source, thumbnail.width)
   // A video with a poster is already showing its artwork, so a "Loading
   // preview…" chip over it was a badge under a picture that had loaded.
   const pending = !loaded && !failed && (!video || (!manualPlayback && !card.previewPoster))
@@ -100,7 +107,7 @@ function PreviewMediaSingle({ card, reducedMotion }: { card: PortfolioCard; redu
     <>
       {thumbnailSrcSet && (
         <img
-          src={card.image}
+          src={thumbnail.source}
           srcSet={thumbnailSrcSet}
           sizes={previewSizes}
           alt=""
