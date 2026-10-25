@@ -102,6 +102,7 @@ const webpPreviewVariantSources = new Set([
 // capture resolution and add the larger steps; everything else stops at 960.
 const hiDpiVariantWidths = [1280, 1600, 1920, 2400]
 const hiDpiPreviewSources = new Set([
+  "/Projects/protector.webp",
   "/Projects/dealership-lead-hub.webp",
   "/Projects/dealership-hub-hub-light.webp",
   "/Projects/dealership-hub-hub-answer.webp",

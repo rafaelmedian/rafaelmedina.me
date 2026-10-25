@@ -396,8 +396,8 @@ const portfolioCardEntries: PortfolioCard[] = [
     outcome:
       "Each part of the service is selected and confirmed in one guided booking flow.",
     image: "/Projects/protector.webp",
-    previewWidth: 1200,
-    previewHeight: 1328,
+    previewWidth: 2400,
+    previewHeight: 2656,
     ctaHref: "https://protector.so",
     product: "Protector",
     industry: "Private Security",

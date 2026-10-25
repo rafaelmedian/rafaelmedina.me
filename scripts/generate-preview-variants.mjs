@@ -14,7 +14,7 @@ const hiDpiVariantWidths = [1280, 1600, 1920, 2400]
 
 // [source, intrinsic width, extra widths?] — widths at or above the intrinsic width are skipped.
 const sources = [
-  ["public/Projects/protector.webp", 1200],
+  ["public/Projects/protector.webp", 2400, hiDpiVariantWidths],
   ["public/Projects/protector-booking-start.webp", 2400, hiDpiVariantWidths],
   ["public/Projects/protector-dress-code.webp", 2400, hiDpiVariantWidths],
   ["public/Projects/protector-convoy.webp", 2400, hiDpiVariantWidths],
