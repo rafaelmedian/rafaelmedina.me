@@ -89,6 +89,14 @@ const sources = [
   ["public/Projects/turtle-schools.webp", 1600],
   ["public/Projects/turtle-product-hunt.webp", 1600],
   ["public/Projects/turtle-business-insider.webp", 1534],
+  ["public/Projects/the-loyalist.webp", 2400, hiDpiVariantWidths],
+  ["public/Projects/the-loyalist-spreadsheet.webp", 1600],
+  ["public/Projects/the-loyalist-order-editing.webp", 2400, hiDpiVariantWidths],
+  ["public/Projects/the-loyalist-split-shipment.webp", 2039, hiDpiVariantWidths],
+  ["public/Projects/the-loyalist-product-styles.webp", 2400, hiDpiVariantWidths],
+  ["public/Projects/the-loyalist-product-creator.webp", 2400, hiDpiVariantWidths],
+  ["public/Projects/the-loyalist-storefront.webp", 1600],
+  ["public/Projects/the-loyalist-styleguide.webp", 2400, hiDpiVariantWidths],
 ]
 
 function resize(input, output, width) {
