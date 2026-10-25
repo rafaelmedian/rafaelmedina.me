@@ -292,7 +292,7 @@ export const projectCaseStudies = {
     { heading: "One level down", paragraphs: [
       "The same structure carried the detailed tools: a deployment’s events and configuration sit under the team that owns it.",
     ], media: [
-      { source: "/Projects/twilio-admiral-deployment.webp", label: "A deployment inside the team’s view", width: 1600, height: 822 },
+      { source: "/Projects/twilio-admiral-deployment.webp", label: "A failed deployment, with its log and a rollback, inside the team’s view", width: 1600, height: 911 },
     ] },
     { heading: "A system to build it on", paragraphs: [
       "Worked with the team to bring a design system into Admiral, and drew an icon set for the platform’s own concepts.",
