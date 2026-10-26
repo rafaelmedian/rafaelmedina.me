@@ -1,6 +1,5 @@
 /* --------------------------------------------------------- writings folder --- */
-/* Folder artwork, shared archive/article typography, and the legacy .t-modal
-   primitive used by other readers. Notes lives inside the preview gallery;
+/* Folder artwork and shared archive/article typography. Notes lives inside the preview gallery;
    preview-gallery.css owns its frame, navigation, and page transitions. */
 
 .writings-tile {
@@ -533,34 +532,6 @@
   .writing-tool-heading a { width: fit-content; margin: 0.5rem 0 -0.25rem -0.5rem; }
   .writing-tool-command { align-items: stretch; flex-direction: column; padding: 0.75rem; }
   .writing-tool-command button { align-self: flex-end; }
-}
-
-.t-modal {
-  transform-origin: center;
-  transform: scale(var(--modal-scale));
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    transform var(--modal-open-dur) var(--modal-ease),
-    opacity   var(--modal-open-dur) var(--modal-ease);
-  will-change: transform, opacity;
-}
-.t-modal.is-open {
-  transform: scale(1);
-  opacity: 1;
-  pointer-events: auto;
-}
-.t-modal.is-closing {
-  transform: scale(var(--modal-scale-close));
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    transform var(--modal-close-dur) var(--modal-ease),
-    opacity   var(--modal-close-dur) var(--modal-ease);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .t-modal { transition: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
