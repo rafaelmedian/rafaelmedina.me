@@ -95,6 +95,8 @@ const webpPreviewVariantSources = new Set([
   "/Projects/twilio-admiral-home.webp",
   "/Projects/twilio-admiral-switch-flow.webp",
   "/Projects/twilio-admiral-access-flow.webp",
+  "/Projects/twilio-admiral-role.webp",
+  "/Projects/twilio-admiral-pipeline.webp",
   "/Projects/twilio-admiral-deployment.webp",
   "/Projects/twilio-admiral-design-system.webp",
   "/Projects/twilio-admiral-icons.webp",

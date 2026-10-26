@@ -407,8 +407,10 @@ export const projectCaseStudies = {
       { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1600, height: 552 },
     ] },
     { heading: "One level down", paragraphs: [
-      "The same structure carried the detailed tools: a deployment’s events and configuration sit under the team that owns it.",
-    ], media: [
+      "The same structure carried the detailed tools. A role keeps its plans, deployments, firewalls, and access in tabs, a pipeline shows each run stage by stage, and a deployment’s steps and configuration sit under the team that owns it.",
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/twilio-admiral-role.webp", label: "A role’s plans for each environment, with its open incident above the tabs", width: 1600, height: 1000 },
+      { source: "/Projects/twilio-admiral-pipeline.webp", label: "A pipeline run that failed in dev, with the step that broke", width: 1600, height: 1000 },
       { source: "/Projects/twilio-admiral-deployment.webp", label: "A failed deployment, with its log and a rollback, inside the team’s view", width: 1600, height: 1000 },
     ] },
     { heading: "A system to build it on", paragraphs: [

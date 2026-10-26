@@ -92,6 +92,8 @@ const sources = [
   ["public/Projects/twilio-admiral-home.webp", 1600],
   ["public/Projects/twilio-admiral-switch-flow.webp", 1600],
   ["public/Projects/twilio-admiral-access-flow.webp", 1600],
+  ["public/Projects/twilio-admiral-role.webp", 1600],
+  ["public/Projects/twilio-admiral-pipeline.webp", 1600],
   ["public/Projects/twilio-admiral-deployment.webp", 1600],
   ["public/Projects/twilio-admiral-design-system.webp", 1600],
   ["public/Projects/twilio-admiral-icons.webp", 1600],
