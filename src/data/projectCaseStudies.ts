@@ -248,8 +248,10 @@ export const projectCaseStudies = {
     ] },
     { heading: "Showing the product’s edge", paragraphs: [
       "Promos put the swap itself in the post, with the saving against other exchanges called out beneath it.",
+      "The dark version struck out the Ethereum fee too, so the order reads as free before the saving below it.",
     ], media: [
       { source: "/Projects/matcha-marketing-savings.webp", label: "Swap savings compared with Uniswap", width: 1200, height: 600 },
+      { source: "/Projects/matcha-marketing-savings-dark.webp", label: "A free Ethereum fee and the saving, in the dark theme", width: 1200, height: 600 },
     ] },
     { heading: "It’s a Match(a)", paragraphs: [
       "A lighter campaign built on the name: fill-in-the-blank token pairs and short verses about trading.",
@@ -543,13 +545,14 @@ export const projectCaseStudies = {
       { source: "/Projects/matcha-video-cross-chain-2023-poster.webp", video: "/Projects/matcha-video-cross-chain-2023.webm", label: "Matcha cross-chain swaps", width: 960, height: 540, post: { href: "https://x.com/matchaxyz/status/1732070138281918806", date: "2023-12-05" } },
     ] },
     { heading: "The new Matcha", paragraphs: [
-      "Introduced the redesign in May 2023, running the new product’s screens in its new green identity.",
+      "Introduced the redesign in Q2 2023, running the new product’s screens in its new green identity.",
       "One search across every chain, the best price, MEV protection, then the trade, ending on “Search. Trade. Done.”",
     ], media: [
       { source: "/Projects/matcha-video-relaunch-2023-poster.webp", video: "/Projects/matcha-video-relaunch-2023.webm", label: "The new Matcha", width: 960, height: 540, post: { href: "https://x.com/matchaxyz/status/1661401872811565056", date: "2023-05-24" } },
     ] },
     { heading: "Gasless trading", paragraphs: [
-      "The October 2021 film keeps gas off the coins with an umbrella, then shows the toggle in the trade form and a rate with no gas to pay.",
+      "Gasless trading lets people swap tokens without holding ETH to pay for gas, which was the most confusing part of trading on Ethereum.",
+      "I made the launch film with a 3D artist and a filmmaker: I shaped the story and designed the product screens, they built the 3D world and cut it together.",
     ], media: [
       { source: "/Projects/matcha-video-gasless-2021-poster.webp", video: "/Projects/matcha-video-gasless-2021.webm", label: "Matcha gasless trading", width: 960, height: 540, post: { href: "https://x.com/matchaxyz/status/1447592326424055816", date: "2021-10-11" } },
     ] },

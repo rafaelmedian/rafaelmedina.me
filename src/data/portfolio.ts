@@ -644,7 +644,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Matcha launch films",
     summary: "",
     detail:
-      "I worked on three of Matcha’s launch films: a teaser and launch film for cross-chain swaps in December 2023, the film that introduced the redesigned Matcha in May 2023, and gasless trading in October 2021. Each one shows the feature in the product’s own screens.",
+      "I worked on three of Matcha’s launch films: a teaser and launch film for cross-chain swaps in Q4 2023, the film that introduced the redesigned Matcha in Q2 2023, and gasless trading in Q4 2021. Each one shows the feature in the product’s own screens.",
     role: "I worked on the relaunch and cross-chain swaps, and on the films that announced them and gasless trading.",
     outcome:
       "The relaunch post reached 141K views and nearly 3,900 likes on X; the cross-chain teaser and launch post drew about 1,600 likes each.",
@@ -669,7 +669,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Matcha cross-chain swaps",
     summary: "",
     detail:
-      "I worked on the teaser and launch film for cross-chain swaps on Matcha, posted a week apart in late 2023. The teaser is pure motion; the launch film says goodbye to broken bridges and wrapping, then shows a swap from one chain to another in the new cross-chain tab.",
+      "I worked on the teaser and launch film for cross-chain swaps on Matcha, posted a week apart in Q4 2023. The teaser is pure motion; the launch film says goodbye to broken bridges and wrapping, then shows a swap from one chain to another in the new cross-chain tab.",
     role: "I worked on cross-chain swaps and on the teaser and launch film.",
     outcome:
       "The teaser and the launch post drew about 1,600 likes each on X.",
@@ -692,10 +692,10 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Matcha gasless trading",
     summary: "",
     detail:
-      "I worked on the launch film for gasless trading on Matcha in October 2021: an umbrella keeps gas off the coins, then the trade form shows the gasless toggle and the rate with no gas to pay.",
-    role: "I worked on the gasless trading launch film.",
+      "Gasless trading, launched on Matcha in Q4 2021, lets people swap tokens without holding ETH to pay for gas. Gas was the most confusing part of trading on Ethereum, so the film had one job: make it feel like it had gone away.",
+    role: "I made the film with a 3D artist and a filmmaker: I shaped the story and designed the product screens, they built the 3D world and cut it together.",
     outcome:
-      "Gasless trading launched with a film that explains the feature before showing it.",
+      "Gasless trading launched with a film that sells the idea first and the feature second.",
     image: "/Projects/matcha-video-gasless-2021.webm",
     previewWidth: 960,
     previewHeight: 540,

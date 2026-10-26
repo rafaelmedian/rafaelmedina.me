@@ -65,6 +65,7 @@ const webpPreviewVariantSources = new Set([
   "/Projects/matcha-marketing.webp",
   "/Projects/matcha-marketing-optimism.webp",
   "/Projects/matcha-marketing-savings.webp",
+  "/Projects/matcha-marketing-savings-dark.webp",
   "/Projects/matcha-marketing-arbitrum-feed.webp",
   "/Projects/matcha-marketing-50-billion-tweet.webp",
   "/Projects/matcha-marketing-50-billion.webp",
