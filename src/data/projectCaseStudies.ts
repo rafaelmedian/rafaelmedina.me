@@ -454,6 +454,14 @@ export const projectCaseStudies = {
     ], media: [
       { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2806 },
     ] },
+    { heading: "The same thinking, one level up", paragraphs: [
+      "The issuer pages took the report’s parts and laid them out as a grid: the rating and outlook up top, then news sentiment, risk signals, and key indicators an analyst can scan before opening any research.",
+      "We tried it two ways, as tabs and as a single page.",
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/moodys-content-grid-overview.webp", label: "An issuer’s overview: news sentiment, key indicators, and risk signals", width: 2880, height: 1800 },
+      { source: "/Projects/moodys-content-grid-geographic.webp", label: "Revenue by US segment on the Geographic Exposure tab", width: 2880, height: 1800 },
+      { source: "/Projects/moodys-content-grid-summary.webp", label: "The single-page version: rating history, takeaways, and key indicators", width: 2880, height: 1800 },
+    ] },
   ]),
   "onit-process-builder": study("Document logic lawyers can build themselves", [
     "I joined as development started, to close the gap between design and engineering.",
