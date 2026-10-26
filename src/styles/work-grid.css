@@ -67,7 +67,7 @@
    so it wants a wide, short box, while the slots above are cut to
    the shapes their own artwork needs. The Matcha launch films and marketing
    wall take the band's first two columns, so the photos sit beside work
-   rather than beside the résumé, which moved down by Moody's. The fan is a
+   rather than beside the résumé, which closes the grid. The fan is a
    fixed 27rem, so the quote's column still holds it whole. The band carries its own
    height and the group adds it on, so the projects keep exactly the free
    space -- and so the 3:2 split of it -- that they had before the band
@@ -87,17 +87,24 @@
     "relaunch marketing photos";
 }
 
-/* Two rows on a twelve-column track, wide and narrow swapping between rows so
-   the seams stagger. Twilio and Moody's are flat UI exports, so they sit in
-   the grey mat; Turtle and Onit are mockups with their own backdrops, so they
-   run full bleed. The résumé closes the first row, beside Moody's. */
-.mosaic-group-agency {
-  height: clamp(520px, 56cqw, 840px);
+/* Research Views takes the widest slot of the band under Dealership Hub, with
+   Twilio beside it. The band is taller than an agency row so the case study's
+   window reads at a glance on the grey mat. */
+.mosaic-group-featured {
+  height: clamp(380px, 33cqw, 500px);
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "twilio twilio twilio twilio twilio moodys moodys moodys moodys resume resume resume"
-    "turtle turtle turtle turtle turtle onit onit onit onit onit onit onit";
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "moodys moodys moodys moodys moodys moodys moodys twilio twilio twilio twilio twilio";
+}
+
+/* One row on a twelve-column track, its seams offset from the featured band
+   above. Turtle and Onit are mockups with their own backdrops, so they run
+   full bleed. The résumé closes the row. */
+.mosaic-group-agency {
+  height: clamp(256px, 27.5cqw, 412px);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "turtle turtle turtle turtle onit onit onit onit onit resume resume resume";
 }
 
 /* A band across the grid, like the personal-photo fan. A third of the row,
@@ -1550,15 +1557,15 @@
       minmax(340px, auto)
       calc(var(--compact-tile) * 1.6)
       calc(var(--compact-tile) * 1.25)
+      calc(var(--compact-tile) * 1.4)
+      var(--compact-tile)
       calc(var(--compact-tile) * 2)
       calc(var(--compact-tile) * 2)
       minmax(340px, auto)
       calc(var(--compact-tile) * 1.125)
       var(--compact-tile)
       minmax(260px, auto)
-      var(--compact-tile)
       calc(var(--compact-tile) * 1.25)
-      var(--compact-tile)
       var(--compact-tile);
     grid-template-areas:
       "wallet homepage"
@@ -1566,16 +1573,16 @@
       "quote2 quote2"
       "duo duo"
       "dealership dealership"
+      "moodys moodys"
+      "twilio twilio"
       "protector protector"
       "patrol patrol"
       "quote quote"
       "relaunch relaunch"
       "marketing marketing"
       "photos photos"
-      "twilio twilio"
-      "moodys resume"
       "turtle turtle"
-      "onit onit";
+      "onit resume";
     padding-inline: 1rem;
   }
 
@@ -1583,7 +1590,7 @@
     display: contents;
   }
 
-  /* The résumé shares a row with Moody's here, sized by its track rather
+  /* The résumé shares a row with Onit here, sized by its track rather
      than a tile ratio. */
   .mosaic-tile-resume {
     aspect-ratio: auto;

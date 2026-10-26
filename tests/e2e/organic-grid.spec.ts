@@ -41,23 +41,24 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(wallet.height).toBeCloseTo(wallet.width, 0)
       expect(homepage.x).toBeGreaterThan(wallet.x + wallet.width)
       expect(protector.width).toBeCloseTo(homepage.x + homepage.width - wallet.x, 0)
-      for (const tile of [quote, photos, quote2, duo, dealership, twilio, turtle, onit, relaunch, patrol, marketing]) {
+      for (const tile of [quote, photos, quote2, duo, dealership, moodys, twilio, turtle, relaunch, patrol, marketing]) {
         expect(tile.width).toBeCloseTo(protector.width, 0)
       }
       // The quote, Duo, and dealership band follows the notes, ahead of Protector.
       expect(quote2.y).toBeGreaterThan(writings.y + writings.height - 1)
       expect(duo.y).toBeGreaterThan(quote2.y + quote2.height - 1)
       expect(dealership.y).toBeGreaterThan(duo.y + duo.height - 1)
-      expect(protector.y).toBeGreaterThan(dealership.y + dealership.height - 1)
-      // Films, marketing, and photos follow the two phone recordings.
-      const sequence = [protector, patrol, quote, relaunch, marketing, photos, twilio, moodys, turtle, onit]
+      // Moody's and Twilio follow the dealership, ahead of Protector; films,
+      // marketing, and photos follow the two phone recordings.
+      const sequence = [dealership, moodys, twilio, protector, patrol, quote, relaunch, marketing, photos, turtle, onit]
       for (let index = 1; index < sequence.length; index++) {
         expect(sequence[index].y).toBeGreaterThan(sequence[index - 1].y + sequence[index - 1].height - 1)
       }
-      // The résumé shares Moody's row, with both tiles filling the grid.
-      expect(resume.y).toBeCloseTo(moodys.y, 0)
-      expect(resume.height).toBeCloseTo(moodys.height, 0)
-      expect(resume.x).toBeGreaterThan(moodys.x + moodys.width)
+      // The résumé shares Onit's row, with both tiles filling the grid.
+      expect(resume.y).toBeCloseTo(onit.y, 0)
+      expect(resume.height).toBeCloseTo(onit.height, 0)
+      expect(onit.x).toBeCloseTo(protector.x, 0)
+      expect(resume.x).toBeGreaterThan(onit.x + onit.width)
       expect(resume.x + resume.width).toBeCloseTo(protector.x + protector.width, 0)
     } else {
       // Protector and the quote share one height above the personal row.
@@ -87,21 +88,29 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(dealership.width).toBeGreaterThan(duo.width)
       expect(dealership.x + dealership.width).toBeCloseTo(photos.x + photos.width, 0)
       expect(quote2.y).toBeGreaterThan(homepage.y + homepage.height - 1)
-      expect(protector.y).toBeGreaterThan(quote2.y + quote2.height - 1)
-      // The agency group closes the grid, with the résumé in its first row.
-      expect(twilio.y).toBeGreaterThan(photos.y + photos.height - 1)
-      expect(twilio.x).toBeCloseTo(protector.x, 0)
-      expect(moodys.y).toBeCloseTo(twilio.y, 0)
-      expect(resume.y).toBeCloseTo(twilio.y, 0)
-      expect(resume.height).toBeCloseTo(twilio.height, 0)
-      expect(resume.x).toBeGreaterThan(moodys.x + moodys.width)
-      expect(resume.x + resume.width).toBeCloseTo(photos.x + photos.width, 0)
-      expect(turtle.y).toBeCloseTo(onit.y, 0)
-      expect(turtle.y).toBeGreaterThan(twilio.y + twilio.height - 1)
-      expect(twilio.width).toBeGreaterThan(moodys.width)
+      // Moody's leads the band under the dealership, the widest tile in it and
+      // taller than the band above, with Twilio beside it.
+      expect(moodys.y).toBeGreaterThan(quote2.y + quote2.height - 1)
+      expect(moodys.x).toBeCloseTo(protector.x, 0)
+      expect(twilio.y).toBeCloseTo(moodys.y, 0)
+      expect(twilio.height).toBeCloseTo(moodys.height, 0)
+      expect(twilio.x).toBeGreaterThan(moodys.x + moodys.width)
+      expect(twilio.x + twilio.width).toBeCloseTo(photos.x + photos.width, 0)
+      expect(moodys.width).toBeGreaterThan(twilio.width)
+      expect(moodys.width).toBeGreaterThan(dealership.width)
+      expect(moodys.height).toBeGreaterThan(dealership.height)
+      expect(protector.y).toBeGreaterThan(moodys.y + moodys.height - 1)
+      // The rest of the agency work closes the grid, the résumé ending the row.
+      expect(turtle.y).toBeGreaterThan(photos.y + photos.height - 1)
+      expect(turtle.x).toBeCloseTo(protector.x, 0)
+      for (const tile of [onit, resume]) {
+        expect(tile.y).toBeCloseTo(turtle.y, 0)
+        expect(tile.height).toBeCloseTo(turtle.height, 0)
+      }
+      expect(onit.x).toBeGreaterThan(turtle.x + turtle.width)
+      expect(resume.x).toBeGreaterThan(onit.x + onit.width)
       expect(onit.width).toBeGreaterThan(turtle.width)
-      expect(turtle.x).toBeCloseTo(twilio.x, 0)
-      expect(onit.x + onit.width).toBeCloseTo(resume.x + resume.width, 0)
+      expect(resume.x + resume.width).toBeCloseTo(photos.x + photos.width, 0)
     }
   })
 }

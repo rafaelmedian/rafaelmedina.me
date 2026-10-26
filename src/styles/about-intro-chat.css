@@ -105,6 +105,9 @@
 .about-intro-chat-notification-number,
 .about-intro-chat-notification-ghost {
   grid-area: 1 / 1;
+  /* Trim the line box to the digit's cap height so the grid centres the
+     glyph, not the font's taller ascent, which left it a pixel low. */
+  text-box: trim-both cap alphabetic;
 }
 
 .about-intro-chat-notification-number {

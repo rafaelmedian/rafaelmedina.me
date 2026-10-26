@@ -394,27 +394,30 @@ export const projectCaseStudies = {
     { heading: "A sliver of a huge list", paragraphs: [
       "Admiral held 2,351 roles across 246 teams, about ten per team. Each team only owned 0.4–4% of them.",
       "So the structure became contextual instead of flat, the way Slack only shows the channels you’ve joined.",
-    ], media: [
-      { source: "/Projects/twilio-admiral-ownership.webp", label: "The few roles one team owns among thousands", width: 1600, height: 724 },
-      { source: "/Projects/twilio-admiral-hierarchy.webp", label: "Flat hierarchy versus contextual hierarchy", width: 1600, height: 729 },
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/twilio-admiral-ownership.webp", label: "Infrastructure’s 12 roles among Admiral’s 2,351", width: 1600, height: 887 },
+      { source: "/Projects/twilio-admiral-hierarchy.webp", label: "Flat hierarchy versus contextual hierarchy", width: 1600, height: 709 },
     ] },
     { heading: "Start from your team", paragraphs: [
       "A Team › Roles switcher replaced the long list from top to bottom. By default you see your own team’s deployments, pipelines, and dashboards.",
       "Editing a team’s access policy went from six steps to three.",
     ], mediaLayout: "stack", media: [
-      { source: "/Projects/twilio-admiral-team-switcher.webp", label: "Switching team and role from the header", width: 1600, height: 693 },
-      { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1600, height: 612 },
+      { source: "/Projects/twilio-admiral-home.webp", label: "Infrastructure’s overview: what needs you, then the team against the company average", width: 1600, height: 1000 },
+      { source: "/Projects/twilio-admiral-switch-flow.webp", video: "/Projects/twilio-admiral-switch-flow.webm", label: "Switching from Security to Infrastructure, then narrowing to one role by typing", width: 1600, height: 1000 },
+      { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1600, height: 552 },
     ] },
     { heading: "One level down", paragraphs: [
-      "The same structure carried the detailed tools: a deployment’s events and configuration sit under the team that owns it.",
-    ], media: [
-      { source: "/Projects/twilio-admiral-deployment.webp", label: "A failed deployment, with its log and a rollback, inside the team’s view", width: 1600, height: 911 },
+      "The same structure carried the detailed tools. A role keeps its plans, deployments, firewalls, and access in tabs, a pipeline shows each run stage by stage, and a deployment’s steps and configuration sit under the team that owns it.",
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/twilio-admiral-role.webp", label: "A role’s plans for each environment, with its open incident above the tabs", width: 1600, height: 1000 },
+      { source: "/Projects/twilio-admiral-pipeline.webp", label: "A pipeline run that failed in dev, with the step that broke", width: 1600, height: 1000 },
+      { source: "/Projects/twilio-admiral-deployment.webp", label: "A failed deployment, with its log and a rollback, inside the team’s view", width: 1600, height: 1000 },
     ] },
     { heading: "A system to build it on", paragraphs: [
       "Worked with the team to bring a design system into Admiral, and drew an icon set for the platform’s own concepts.",
     ], media: [
       { source: "/Projects/twilio-admiral-design-system.webp", label: "Typography and color in the design system", width: 1600, height: 986 },
-      { source: "/Projects/twilio-admiral-icons.webp", label: "The Admiral icon set", width: 1600, height: 896 },
+      { source: "/Projects/twilio-admiral-icons.webp", label: "The Admiral icon set, with the options drawn for each concept, in light and dark", width: 1600, height: 995 },
     ] },
   ]),
   "moodys-design-sprints": study("A credit opinion that reads like a product", [
@@ -425,34 +428,39 @@ export const projectCaseStudies = {
       "The header answers what changed before anything else: the upgrade from Ba2 to Ba1, the outlook, the short-term rating, and the ESG score, with the rating’s history beside it.",
       "The analyst’s brief sits next to it as a video, or as audio for the commute.",
     ], media: [
-      { source: "/Projects/moodys-research-audio-brief.webp", label: "The rating action, outlook, and ESG score, with the analyst’s brief as audio", width: 2880, height: 1140 },
+      { source: "/Projects/moodys-research-audio-brief.webp", label: "The rating action, outlook, and ESG score, with the analyst’s brief as audio", width: 2880, height: 1254 },
     ] },
     { heading: "Notes that stay with the text", paragraphs: [
       "Selecting a passage offers to save it or comment on it. Analysts’ own comments sit in the margin beside the line they’re about.",
       "Everything saved collects in My snippets, ready to download or share as a link.",
     ], mediaLayout: "stack", media: [
-      { source: "/Projects/moodys-research-selection.webp", label: "Saving a highlighted passage, with or without a comment", width: 2880, height: 1800 },
+      { source: "/Projects/moodys-research-snippets-flow.webp", video: "/Projects/moodys-research-snippets-flow.webm", label: "Highlighting a passage and finding it in My snippets", width: 1600, height: 1000 },
       { source: "/Projects/moodys-research-comment.webp", label: "An analyst’s comment beside the passage it explains", width: 2880, height: 1800 },
-      { source: "/Projects/moodys-research-snippets.webp", label: "Highlights, bookmarks, and charts saved to My snippets", width: 2880, height: 1800 },
     ] },
     { heading: "Indicators you can compare", paragraphs: [
       "Built for people who work in spreadsheets all day: each key indicator opens from a row in the table into a chart, with the forecast years shaded.",
       "Peers from the same sector join the chart from a search, and the view saves to your snippets with an annotation.",
     ], media: [
-      { source: "/Projects/moodys-research-indicators.webp", label: "EBIT margin, opened from the table into a chart", width: 1800, height: 2310 },
-      { source: "/Projects/moodys-research-peers.webp", label: "Adding Vale and Freeport as peers", width: 1800, height: 2310 },
+      { source: "/Projects/moodys-research-indicators-flow.webp", video: "/Projects/moodys-research-indicators-flow.webm", label: "EBIT margin opened from the table into a chart, then compared against Teck", width: 1600, height: 1000 },
     ] },
     { heading: "What would change the rating", paragraphs: [
       "The scorecard shows how each factor feeds the rating. Entering your own measures runs a scenario, and the indicated outcome moves with them.",
     ], media: [
-      { source: "/Projects/moodys-research-scorecard.webp", label: "The mining scorecard behind the Ba1 rating", width: 1800, height: 2284 },
-      { source: "/Projects/moodys-research-scenario.webp", label: "A custom scenario pointing to Baa2", width: 1800, height: 2284 },
+      { source: "/Projects/moodys-research-scorecard-flow.webp", video: "/Projects/moodys-research-scorecard-flow.webm", label: "Dragging two leverage measures moves the indicated outcome from Baa3 to Baa2", width: 1600, height: 1000 },
+    ] },
+    { heading: "The same thinking, one level up", paragraphs: [
+      "The testing went well enough that our team was asked to design the new Moodys.com.",
+      "The issuer pages took the report’s parts and laid them out as a grid: the rating and outlook up top, then news sentiment, risk signals, and key indicators an analyst can scan before opening any research.",
+      "We tried it two ways, as tabs and as a single page.",
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/moodys-content-grid-overview.webp", label: "An issuer’s overview: news sentiment, key indicators, and risk signals", width: 2880, height: 1800 },
+      { source: "/Projects/moodys-content-grid-geographic.webp", label: "Revenue by US segment on the Geographic Exposure tab", width: 2880, height: 1800 },
+      { source: "/Projects/moodys-content-grid-summary.webp", label: "The single-page version: rating history, takeaways, and key indicators", width: 2880, height: 1800 },
     ] },
     { heading: "Starting from the inbox", paragraphs: [
       "Most readers arrive from an alert, so the email carries the rating action, the key exhibit, and the reasons for the upgrade, with one way into the full research.",
-      "The testing went well enough that our team was asked to design the new Moodys.com.",
     ], media: [
-      { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2802 },
+      { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2806 },
     ] },
   ]),
   "onit-process-builder": study("Document logic lawyers can build themselves", [
