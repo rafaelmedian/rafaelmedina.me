@@ -360,7 +360,7 @@ const EASINGS_ENTRIES = [
   {
     name: "Origin zoom",
     css: "spring, damping 0.86 open / 1 close",
-    duration: "480ms open, 360ms close",
+    duration: "360ms open and close",
     use: "The preview gallery and notes zooming out of their tile and back, as iOS opens a card (--pg-zoom-open-ms, --pg-zoom-close-ms).",
   },
   {

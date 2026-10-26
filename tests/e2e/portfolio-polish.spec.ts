@@ -3864,7 +3864,7 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
   await page.goto("/")
   await settleWorkCards(page)
   // A shared-token change must retime both CSS fades and the JS flight. The
-  // zoom out of the tile runs --duration-slow plus --duration-fast.
+  // zoom out of the tile runs on --duration-slow.
   await page.addStyleTag({ content: ":root { --duration-slow: .4s; }" })
 
   // Hold Web Animations at their first frame so the opening motion is still
@@ -3884,8 +3884,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
   const cardInner = page.locator(".preview-gallery-card-inner")
-  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([520])
-  await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.52s")
+  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([400])
+  await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.4s")
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 

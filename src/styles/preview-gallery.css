@@ -16,7 +16,7 @@
 @property --pg-zoom-open-ms {
   syntax: "<time>";
   inherits: true;
-  initial-value: 480ms;
+  initial-value: 360ms;
 }
 
 @property --pg-zoom-close-ms {
