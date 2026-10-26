@@ -19,7 +19,6 @@
   color: var(--muted);
   font-family: var(--font-ui);
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
   /* The folder's open and drop (below): a soft spring with a 2% settle. */
   --folder-spring: linear(0, 0.025, 0.09, 0.178, 0.277, 0.381, 0.481, 0.575, 0.66, 0.735, 0.799, 0.853, 0.897, 0.932, 0.959, 0.98, 0.995, 1.006, 1.013, 1.017, 1.019, 1.02, 1.019, 1.018, 1.016, 1.014, 1.012, 1.01, 1.008, 1.007, 1.005, 1.004, 1);
   --folder-move: calc(var(--duration-slow) * 1.5);

@@ -35,7 +35,6 @@
   cursor: pointer;
   overflow: hidden;
   isolation: isolate;
-  -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
   transition: box-shadow var(--duration-quick) var(--ease-standard), filter var(--duration-quick) var(--ease-standard), border-color var(--duration-quick) var(--ease-standard);
 }

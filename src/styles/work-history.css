@@ -127,7 +127,8 @@
   transition:
     background-color var(--duration-quick) var(--ease-standard),
     border-color var(--duration-quick) var(--ease-standard),
-    color var(--duration-quick) var(--ease-standard);
+    color var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard);
 }
 
 .mosaic-work-history-chip:hover,
@@ -136,6 +137,10 @@
   background: #e9e9e9;
   border-color: #e9e9e9;
   color: var(--ink);
+}
+
+.mosaic-work-history-chip:active {
+  transform: scale(0.96);
 }
 
 
