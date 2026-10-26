@@ -1427,8 +1427,7 @@ test("keeps the links inside focus-opened cards out of the tab order", async ({ 
     await expect(page.locator(".mosaic-profile-location-card")).toHaveAttribute("data-state", "open", { timeout: 500 })
   }).toPass()
   await page.keyboard.press("Tab")
-  // "Available for work" is text, so the next stop is the booking pill.
-  await expect(page.locator(".mosaic-booking-pill")).toBeFocused()
+  await expect(page.locator(".mosaic-profile-location .mosaic-last-updated")).toBeFocused()
 
   const lastChip = page.locator(".mosaic-work-history-chip").last()
   await lastChip.focus()
@@ -2231,13 +2230,29 @@ test("names the set availability month on the booking pill only", async ({ page 
 })
 
 // "Available for work" took the place "Last updated" had in the location line,
-// as plain text rather than another thing to press.
-test("says available for work in the location line", async ({ page }) => {
+// and kept its GitHub card: the contribution graph backs up the claim.
+test("previews the GitHub profile behind available for work", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
+  await settleAvatarIntro(page)
+
   const line = page.locator(".mosaic-profile-location .mosaic-profile-availability")
   await expect(line).toBeVisible()
   await expect(line).toHaveText("Available for work")
-  await expect(page.locator(".mosaic-last-updated")).toHaveCount(0)
+  await expect(page.locator(".mosaic-profile-location")).not.toContainText("Last updated")
+
+  const clause = page.locator(".mosaic-profile-location .mosaic-last-updated")
+  await expect(clause).toHaveAttribute("href", "https://github.com/rafaelmedian")
+  await expect(clause).toHaveAccessibleName("Available for work. View @rafaelmedian on GitHub")
+
+  await clause.hover()
+  const card = page.locator(".activity-card")
+  await expect(card).toBeVisible()
+  await expect(card.locator(".activity-card-names")).toContainText("@rafaelmedian")
+  const weekCount = await card.locator(".activity-card-week").count()
+  expect(weekCount).toBeGreaterThanOrEqual(26)
+  await expect(card.locator(".activity-card-day")).toHaveCount(weekCount * 7)
+  await expect(card.locator(".activity-card-footer")).toHaveText(/^[\d,]+ contributions in the last six months$/)
 })
 
 test("says available now once the set month arrives", async ({ page }) => {
@@ -3217,7 +3232,8 @@ test("retreats the complete project grid as one surface during takeover", async 
 
   await expect(stage).not.toHaveCSS("filter", "none")
   expect(retreat.opacity).toBeLessThan(0.95)
-  expect(retreat.transform).not.toBe("none")
+  // No scale: a live scroll-timeline transform starved the GPU tile budget.
+  expect(retreat.transform).toBe("none")
   await expect(card).toHaveCSS("opacity", "1")
   await expect(card).toHaveCSS("transform", "none")
 })
@@ -3859,12 +3875,39 @@ test("exposes the profile name as a heading rather than burying it in a control"
   await expect(page.locator(".mosaic-profile-meta")).not.toHaveAttribute("tabindex", "0")
 })
 
+// On a phone the page behind the zoom dims and blurs while the tile grows,
+// so the sheet has an edge against the page it rises out of; once it lands
+// the blur goes, since the sheet covers the page and would only re-filter it.
+test("blurs the page behind the mobile zoom only while it flies", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.classList.contains("preview-gallery-origin-wrap")) animation.playbackRate = 0
+      return animation
+    }
+  })
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+  const backdrop = page.locator(".preview-gallery-backdrop")
+  await expect(page.locator(".preview-gallery-shell")).toHaveAttribute("data-origin-zoom", "true")
+  await expect(backdrop).toHaveCSS("backdrop-filter", /blur\(12px\)/)
+
+  await page.locator(".preview-gallery-origin-wrap").evaluate((element) => {
+    element.getAnimations().forEach((animation) => { animation.playbackRate = 1; animation.finish() })
+  })
+  await expect(page.locator(".preview-gallery-shell")).not.toHaveAttribute("data-origin-zoom", "true")
+  await expect(backdrop).toHaveCSS("backdrop-filter", "none")
+})
+
 test("opens the preview gallery as one coordinated surface", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
   // A shared-token change must retime both CSS fades and the JS flight. The
-  // zoom out of the tile runs --duration-slow plus --duration-fast.
+  // zoom out of the tile runs on --duration-slow.
   await page.addStyleTag({ content: ":root { --duration-slow: .4s; }" })
 
   // Hold Web Animations at their first frame so the opening motion is still
@@ -3884,8 +3927,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
   const cardInner = page.locator(".preview-gallery-card-inner")
-  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([520])
-  await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.52s")
+  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([400])
+  await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.4s")
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
 
@@ -4065,8 +4108,68 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
   await expect(dialog).toBeHidden()
 })
 
+// A swipe is a page being turned, not a gesture read at the end: the card
+// rides the finger while it is down, a short drag springs back, and a drag
+// past the threshold carries on from where it was let go rather than jumping
+// back to centre to start the switch.
+test("drags the mobile gallery card with the finger and pages from the release", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const card = dialog.locator(".preview-gallery-card")
+  await page
+    .locator(".preview-gallery-origin-wrap")
+    .evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  const touch = (type: string, x: number) => dialog.locator(".preview-gallery-media-frame").evaluate((element, [type, x]) => {
+    const point = new Touch({ identifier: 1, target: element, clientX: Number(x), clientY: 300 })
+    element.dispatchEvent(new TouchEvent(String(type), { bubbles: true, changedTouches: [point] }))
+  }, [type, x])
+
+  // Short of the threshold: follows, then returns home on the same page.
+  await touch("touchstart", 300)
+  await touch("touchmove", 270)
+  expect(await card.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).e)).toBeCloseTo(-30, 0)
+  await touch("touchend", 270)
+  await expect(card).not.toHaveAttribute("style", /transform/)
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
+
+  // Past it: the leaving leg starts from the drag and keeps going left.
+  await touch("touchstart", 300)
+  await touch("touchmove", 250)
+  await touch("touchmove", 200)
+  expect(await card.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).e)).toBeCloseTo(-100, 0)
+  await card.evaluate((element) => {
+    const point = new Touch({ identifier: 1, target: element, clientX: 200, clientY: 300 })
+    element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [point] }))
+  })
+  await expect(card).toHaveClass(/preview-gallery-card-switch-out-next/)
+  const leaving = await card.evaluate((element) => {
+    const transition = element.getAnimations()
+      .filter((animation): animation is CSSTransition => animation instanceof CSSTransition && animation.transitionProperty === "transform")
+      .at(-1)
+    if (!transition) return { from: NaN, to: NaN }
+    // The far pose is a percentage of the card, so read both ends from the
+    // computed transform rather than the keyframes.
+    const offset = () => new DOMMatrixReadOnly(getComputedStyle(element).transform).e
+    transition.pause()
+    transition.currentTime = 0
+    const from = offset()
+    transition.currentTime = Number(transition.effect!.getTiming().duration) - 0.001
+    const to = offset()
+    transition.play()
+    return { from, to }
+  })
+  expect(leaving.from).toBeCloseTo(-100, 0)
+  expect(leaving.to).toBeLessThan(-mobileViewport.width + 1)
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
+})
+
 // The toolbar is the card's sibling rather than its first child, so the
-// between-previews switch -- 0.5rem of travel and a fade to nothing -- must not
+// between-previews switch -- a slide and a fade to nothing -- must not
 // reach it. Nested back inside the card, every press slid the control that was
 // pressed out from under the thumb and took the close with it.
 test("holds the compact toolbar still while the gallery pages", async ({ page }) => {
@@ -4733,7 +4836,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
       return seen
     }, navSelector)
 
-  // 0.5rem (8px) of travel each way; assert well inside it. The outgoing pose leaves
+  // 2rem (32px) of travel each way on desktop; assert well inside it. The outgoing pose leaves
   // in the arrow's direction, the incoming one arrives from the opposite edge
   // and settles at zero, and nothing moves on Y.
   const forward = await poses(".preview-gallery-rail .preview-gallery-nav-next")

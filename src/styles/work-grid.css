@@ -435,10 +435,6 @@
   cursor: grab;
   touch-action: pan-y pinch-zoom;
   user-select: none;
-  /* This button covers the whole card, so the global tap highlight painted the
-     entire quote grey on every tap and every swipe. The slide itself is the
-     feedback. */
-  -webkit-tap-highlight-color: transparent;
 }
 
 .mosaic-quote[data-dragging="true"] .mosaic-quote-next {
@@ -509,9 +505,6 @@
   corner-shape: round;
   background: transparent;
   cursor: pointer;
-  /* The tap target is several times the dot it draws; the dot filling in says
-     enough without a grey slab around it. */
-  -webkit-tap-highlight-color: transparent;
 }
 
 /* The ring goes round the dot it draws, not the 12x40 target around it: inset
@@ -573,7 +566,6 @@
 @keyframes mosaic-takeover-retreat {
   from {
     opacity: 1;
-    transform: scale(1);
     filter: blur(0px);
   }
 
@@ -587,7 +579,6 @@
 
   to {
     opacity: 0.78;
-    transform: scale(0.98);
     filter: blur(8px);
   }
 }
@@ -641,7 +632,6 @@
     z-index: 0;
     width: 100%;
     display: block;
-    transform-origin: center bottom;
   }
 
   .mosaic-takeover-stage .mosaic-rows {
@@ -903,13 +893,19 @@
   /* View Timelines keep scroll-linked motion off the main thread. The complete
      gallery retreats as one composited surface, preserving every card gap.
 
-     Opacity, transform and filter are the three properties Chrome can animate
-     on the compositor, so the blur re-runs a shader over the stage's existing
-     texture each frame rather than repainting the grid — the tiles are not
-     re-rastered at a new radius. It is still the most expensive thing in the
-     crossing: a full-viewport surface, and the videos inside it are only
-     paused once the sheet fully covers it. Keep the radius modest and do not
-     add a fourth animated property here. */
+     Opacity and filter both animate on the compositor, so the blur re-runs a
+     shader over the stage's existing texture each frame rather than
+     repainting the grid — the tiles are not re-rastered at a new radius. It
+     is still the most expensive thing in the crossing: a full-viewport
+     surface, and the videos inside it are only paused once the sheet fully
+     covers it. Keep the radius modest.
+
+     Do not add a transform. A scale(0.98) used to ride along, and a scroll
+     timeline keeps its animation live at every scroll position, so Chrome
+     rastered the whole 2700px stage at animation scale for the entire visit.
+     That starved the GPU tile budget: a fast scroll back up from About
+     painted the grid and header blank for up to a second. Under a 64MB
+     budget the scale alone accounted for ~6x the blank frames. */
   .mosaic-takeover-stage {
     animation-name: mosaic-takeover-retreat;
     animation-duration: 1ms;
@@ -1014,8 +1010,9 @@
    films run dark. A pale wash over them read as grey fog, so they take the
    black band like the dark tiles below. Token and Pro carry their own
    rgb(63 62 68) backdrop to all four. There is no pale surface for the band to wash toward on any of them,
-   and ink would land on artwork it cannot beat. */
-.mosaic-row-item-fit-cover .mosaic-row-card,
+   and ink would land on artwork it cannot beat. Admiral sits in a cover slot
+   but contains its export on the card's own grey, so it keeps the pale band. */
+.mosaic-row-item-fit-cover .mosaic-row-card:not(.mosaic-row-card-preview-twilio-admiral),
 .mosaic-row-card-preview-shot-21,
 .mosaic-row-card-preview-shot-23 {
   --card-caption-tint: 0 0 0;
@@ -1553,7 +1550,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows:
       var(--compact-tile)
-      calc(var(--compact-tile) * 0.75)
+      calc(var(--compact-tile) * 1.05)
       minmax(340px, auto)
       calc(var(--compact-tile) * 1.6)
       calc(var(--compact-tile) * 1.25)
@@ -1565,6 +1562,7 @@
       calc(var(--compact-tile) * 1.125)
       var(--compact-tile)
       minmax(260px, auto)
+      calc(var(--compact-tile) * 1.25)
       calc(var(--compact-tile) * 1.25)
       var(--compact-tile);
     grid-template-areas:
@@ -1582,7 +1580,8 @@
       "marketing marketing"
       "photos photos"
       "turtle turtle"
-      "onit resume";
+      "onit onit"
+      "resume resume";
     padding-inline: 1rem;
   }
 
@@ -1590,14 +1589,21 @@
     display: contents;
   }
 
-  /* The résumé shares a row with Onit here, sized by its track rather
-     than a tile ratio. */
+  /* The résumé closes the grid on a row of its own, sized by its track
+     rather than a tile ratio. */
   .mosaic-tile-resume {
     aspect-ratio: auto;
   }
 
   .mosaic-row-quote .mosaic-quote {
     --quote-inline-padding: 1rem;
+  }
+
+  /* One centred column: the portrait over the name and role, on the quote's
+     own axis rather than a row offset by the photo's width. */
+  .mosaic-quote-person {
+    flex-direction: column;
+    text-align: center;
   }
 
   .mosaic-row-card,
@@ -1627,6 +1633,14 @@
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub {
     padding-inline: 0;
     padding-bottom: 0;
+  }
+
+  /* The full-width slot is wider than the export, so contained it centres
+     and the panel's cut edge ends in mid-card. Anchored left and covering,
+     the panel runs off the card's right edge instead, trimming only grey. */
+  .mosaic-row-card-preview-twilio-admiral .mosaic-row-media {
+    object-fit: cover;
+    object-position: left center;
   }
 
   /* Square slots need more offset for the lower rows to cross the edge.

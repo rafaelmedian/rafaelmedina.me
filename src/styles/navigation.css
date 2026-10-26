@@ -273,7 +273,6 @@ body:has(.mosaic-mobile-toc[data-open="true"]) .portfolio-feedback-toolbar {
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
   transition:

@@ -248,7 +248,11 @@ body {
 
 :where(a, button, input, textarea, select, summary, label, [role="button"], [tabindex]:not([tabindex="-1"])) {
   touch-action: manipulation;
-  -webkit-tap-highlight-color: rgb(138 138 138 / 0.24);
+  /* No tap highlight. WebKit and Chrome paint it as a rectangle over the
+     element's box whatever its border-radius, so every round arrow and pill
+     flashed a grey square under the finger. Controls answer a press with
+     their own :active state, which keeps their shape. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 :where(a, button, input, textarea, select, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {

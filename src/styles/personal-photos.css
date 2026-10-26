@@ -31,7 +31,6 @@
   color: var(--muted);
   font-family: var(--font-ui);
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
 /* Closing the wall restores logical focus to its opener so keyboard order

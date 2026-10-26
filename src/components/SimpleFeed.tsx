@@ -19,6 +19,7 @@ import { WritingsFolder, type WritingsFolderHandle, type WritingsReaderStatus } 
 import { ContactActionRow } from "./ContactActionRow"
 import { ProfileEmailCopy } from "./ProfileEmailCopy"
 import { ProfileLocation } from "./ProfileLocation"
+import { GitHubActivityHint } from "./SiteLastUpdated"
 import { AboutIntroDock } from "./AboutIntroDock"
 import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
@@ -29,6 +30,7 @@ import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { aboutIntro } from "../data/aboutIntro"
+import { contributionCalendar } from "../data/githubActivity"
 import { useHoverCard } from "../lib/hoverCard"
 import { revealGalleryEntry } from "../lib/galleryEntry"
 import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
@@ -1075,9 +1077,12 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
             <ProfileLocation timeLabel={puntaCanaTimeLabel} />
             <span className="mosaic-profile-location-separator" aria-hidden="true">·</span>
             {/* What a visitor deciding whether to get in touch needs, where
-                "Last updated" used to be. Plain text: the booking pill below
-                is the thing to press. */}
-            <span className="mosaic-profile-availability">Available for work</span>
+                "Last updated" used to be. It keeps that clause's GitHub card:
+                the contribution graph is the evidence behind the claim, and
+                the booking pill below is still the thing to press. */}
+            <GitHubActivityHint label={`Available for work. View @${contributionCalendar.login} on GitHub`}>
+              <span className="mosaic-profile-availability">Available for work</span>
+            </GitHubActivityHint>
             {/* The corner is not rendered below 700px, so on a phone the address
                 comes back to the line it left. It is one control either way --
                 CSS decides which end of the page it appears at, so no visitor

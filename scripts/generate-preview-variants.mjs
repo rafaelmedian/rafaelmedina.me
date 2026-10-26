@@ -62,6 +62,7 @@ const sources = [
   ["public/Projects/matcha-marketing.webp", 1600],
   ["public/Projects/matcha-marketing-optimism.webp", 1200],
   ["public/Projects/matcha-marketing-savings.webp", 1200],
+  ["public/Projects/matcha-marketing-savings-dark.webp", 1200],
   ["public/Projects/matcha-marketing-arbitrum-feed.webp", 1200],
   ["public/Projects/matcha-marketing-50-billion-tweet.webp", 1200],
   ["public/Projects/matcha-marketing-50-billion.webp", 1200],

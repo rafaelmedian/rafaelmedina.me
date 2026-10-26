@@ -10,6 +10,8 @@ import { trackEvent } from "../lib/analytics"
 import { ignorePasswordManagers } from "../lib/passwordManagers"
 import { contactMailto, sendContact, type ContactMessage } from "../lib/sendContact"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
+import { siteLinks } from "../data/portfolio"
+import { CalendarThumbnail } from "./CalendarThumbnail"
 
 const greeting = ["Hey, what’s up?", "we should catch up properly", "where should i email you?"]
 // An empty first send still delivers the address; the bubble shows what arrives.
@@ -384,6 +386,23 @@ export default function AboutIntroChat({ active, id, modal = false, onClose, onM
       {greeting.slice(0, Math.min(shown, 3)).map((text, messageIndex) =>
         <ReactableMessage key={text} text={text} messageIndex={messageIndex}
           reactionId={visitorReaction[messageIndex]} onReaction={reactToMessage} />)}
+      {/* The booking conversation's rich link, so a time is one tap from the
+          hello as well as from the composer's calendar button. */}
+      {emailReady && <p className="about-intro-chat-bubble about-intro-chat-link-note about-intro-chat-new" data-followup>or just grab a time</p>}
+      {emailReady && <a className="about-intro-chat-bubble about-intro-chat-link-preview about-intro-chat-new" data-followup
+        href={siteLinks.booking} onClick={event => {
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+          const portrait = event.currentTarget.closest(".about-intro")?.querySelector<HTMLButtonElement>(".about-intro-portrait-trigger")
+          if (!portrait) return
+          event.preventDefault()
+          booking.openBooking(portrait, "about_intro_link", undefined, confirmed ? email.trim() : "")
+        }}>
+        <CalendarThumbnail />
+        <span className="booking-link-preview-caption">
+          <span className="booking-link-preview-title">30-min call with Rafael</span>
+          <span className="booking-link-preview-domain">cal.com</span>
+        </span>
+      </a>}
       {confirmed && <>
         <div ref={sentRef} className="about-intro-chat-sent about-intro-chat-new" data-reacted={reactionShown} data-puff={puffing}>
           <button type="button" className="about-intro-chat-outgoing" onClick={() => resetEmail(locked)}

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-// A case-study screenshot grows out of the card to fill the screen. The zoom
+// A case-study screenshot grows out of the card into a framed view. The zoom
 // owns Escape: it shrinks back into the card, the gallery stays open where the
 // reader left it, and focus returns to the picture they pressed.
 test("a case-study image zooms and Escape puts it back without closing the gallery", async ({ page }) => {
@@ -46,6 +46,42 @@ test("a press anywhere on the zoom closes it", async ({ page }) => {
   await zoom.click({ position: { x: 24, y: 24 } })
   await expect(page.locator("dialog.image-zoom")).toHaveCount(0)
   await expect(page.getByRole("dialog").first()).toBeVisible()
+})
+
+// The zoom is a framed picture over the blurred gallery, centred on the
+// screen rather than filling it.
+test("the zoom is a centred frame, not the whole screen", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/work/twilio-admiral/")
+  const trigger = page.getByRole("button", { name: "Enlarge: Editing an access policy, before and after" })
+  await trigger.scrollIntoViewIfNeeded()
+  await trigger.click()
+  const zoom = page.locator("dialog.image-zoom[open]")
+  await expect(zoom).toHaveAttribute("data-ready", "true")
+  await expect.poll(async () => {
+    const image = (await zoom.locator("img").first().boundingBox())!
+    return Math.round(image.x + image.width / 2)
+  }).toBe(720)
+  const image = (await zoom.locator("img").first().boundingBox())!
+  expect(image.width).toBeLessThan(1440 * 0.85)
+})
+
+test.describe("on a touch screen", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } })
+
+  // Panning a zoom wider than the screen did nothing a pinch does not do
+  // better, so a phone gets the picture alone.
+  test("case-study images are plain pictures, not zoom buttons", async ({ page }) => {
+    await page.goto("/work/twilio-admiral/")
+    await expect(page.getByRole("dialog").first()).toBeVisible()
+    const picture = page.getByRole("img", { name: "Editing an access policy, before and after" })
+    await picture.scrollIntoViewIfNeeded()
+    await expect(picture).toBeVisible()
+    await expect(page.getByRole("button", { name: /^Enlarge:/ })).toHaveCount(0)
+    await picture.tap()
+    await page.waitForTimeout(400)
+    await expect(page.locator("dialog.image-zoom")).toHaveCount(0)
+  })
 })
 
 // Prototype loops cost nothing until a reader opens the project and reaches

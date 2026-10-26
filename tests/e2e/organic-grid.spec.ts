@@ -41,7 +41,7 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(wallet.height).toBeCloseTo(wallet.width, 0)
       expect(homepage.x).toBeGreaterThan(wallet.x + wallet.width)
       expect(protector.width).toBeCloseTo(homepage.x + homepage.width - wallet.x, 0)
-      for (const tile of [quote, photos, quote2, duo, dealership, moodys, twilio, turtle, relaunch, patrol, marketing]) {
+      for (const tile of [quote, photos, quote2, duo, dealership, moodys, twilio, turtle, onit, resume, relaunch, patrol, marketing]) {
         expect(tile.width).toBeCloseTo(protector.width, 0)
       }
       // The quote, Duo, and dealership band follows the notes, ahead of Protector.
@@ -50,16 +50,10 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(dealership.y).toBeGreaterThan(duo.y + duo.height - 1)
       // Moody's and Twilio follow the dealership, ahead of Protector; films,
       // marketing, and photos follow the two phone recordings.
-      const sequence = [dealership, moodys, twilio, protector, patrol, quote, relaunch, marketing, photos, turtle, onit]
+      const sequence = [dealership, moodys, twilio, protector, patrol, quote, relaunch, marketing, photos, turtle, onit, resume]
       for (let index = 1; index < sequence.length; index++) {
         expect(sequence[index].y).toBeGreaterThan(sequence[index - 1].y + sequence[index - 1].height - 1)
       }
-      // The résumé shares Onit's row, with both tiles filling the grid.
-      expect(resume.y).toBeCloseTo(onit.y, 0)
-      expect(resume.height).toBeCloseTo(onit.height, 0)
-      expect(onit.x).toBeCloseTo(protector.x, 0)
-      expect(resume.x).toBeGreaterThan(onit.x + onit.width)
-      expect(resume.x + resume.width).toBeCloseTo(protector.x + protector.width, 0)
     } else {
       // Protector and the quote share one height above the personal row.
       expect(quote.y).toBeCloseTo(protector.y, 0)

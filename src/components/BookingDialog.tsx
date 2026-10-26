@@ -9,6 +9,7 @@ import { contactMailto, sendContact, type ContactMessage } from "../lib/sendCont
 import { useMessageDictation } from "../lib/useMessageDictation"
 import { BookingCalendar } from "./BookingCalendar"
 import { BookingContactPanel } from "./BookingContactPanel"
+import { CalendarThumbnail } from "./CalendarThumbnail"
 
 type Delivery = ContactMessage & { status: "sending" | "delivered" | "failed"; error?: string }
 
@@ -97,18 +98,39 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
     }
   }, [])
 
+  // The hero's face moves into the header rather than a second one fading in
+  // over it. The popup fades, so the face that travels is a copy outside it,
+  // and both ends stay hidden until it lands. Closing flies it back home.
+  const heroFaceRef = useRef<HTMLElement | null>(null)
   const portraitRef = useCallback((node: HTMLImageElement | null) => {
-    if (!node || !open || !portraitOrigin || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    const target = node.getBoundingClientRect()
-    const style = getComputedStyle(node)
-    const animation = node.animate([
-      { transform: `translate(${portraitOrigin.left - target.left}px, ${portraitOrigin.top - target.top}px) scale(${portraitOrigin.width / target.width}, ${portraitOrigin.height / target.height})` },
-      { transform: "translate(0, 0) scale(1)" },
-    ], {
-      duration: parseFloat(style.getPropertyValue("--duration-slow")),
-      easing: style.getPropertyValue("--ease-smooth").trim(),
-    })
-    return () => animation.cancel()
+    if (!node) return
+    if (!open) {
+      const hero = heroFaceRef.current
+      heroFaceRef.current = null
+      if (!hero) return
+      const home = hero.closest(".mosaic-avatar-button")?.getBoundingClientRect()
+      // A reopen mid-flight cancels this and claims the hero again before
+      // the rejection lands, so only a face nobody has claimed comes back.
+      const land = () => { if (!heroFaceRef.current) hero.style.visibility = "" }
+      if (!home || home.width === 0) return land()
+      node.style.visibility = "hidden"
+      flyPortrait(node, node.getBoundingClientRect(), home, "--duration-base").finished.then(land, land)
+      // No cleanup: the popup unmounts before the face is home.
+      return
+    }
+    if (!portraitOrigin || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const hero = document.querySelector<HTMLElement>(".mosaic-avatar-coin-inner")
+    if (!hero) return
+    const flight = flyPortrait(node, portraitOrigin, node.getBoundingClientRect(), "--duration-slow")
+    heroFaceRef.current = hero
+    hero.style.visibility = "hidden"
+    node.style.visibility = "hidden"
+    const arrive = () => { node.style.visibility = "" }
+    flight.finished.then(arrive, () => {})
+    return () => {
+      flight.cancel()
+      arrive()
+    }
   }, [open, portraitOrigin])
 
 
@@ -274,42 +296,34 @@ export function BookingDialog({ bookingUrl, calendarEntry, portraitOrigin, open,
   </Dialog.Root>
 }
 
-// The link preview's thumbnail: this month at a glance. It is drawn rather
-// than fetched, so it never shows a stale screenshot or waits on cal.com, and
-// it is only a hint -- the real slots are in the embed. Every week takes one
-// weekday off and the rest are nearly full or open, picked by a hash of the
-// date, so the month looks lived-in and stays the same across reloads.
-function thumbnailHash(seed: number) {
-  let hash = (seed + 0x9e3779b9) >>> 0
-  hash = Math.imul(hash ^ (hash >>> 15), 0x85ebca6b)
-  hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35)
-  return (hash ^ (hash >>> 16)) >>> 0
-}
+type Box = { left: number; top: number; width: number; height: number }
 
-function thumbnailDayState(year: number, month: number, day: number, weekday: number, week: number) {
-  if (thumbnailHash(year * 1000 + month * 10 + week) % 5 + 1 === weekday) return "off"
-  return thumbnailHash(year * 10000 + month * 100 + day) % 2 ? "busy" : "open"
-}
+let activeFlight: Animation | null = null
 
-function CalendarThumbnail() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth()
-  const lead = new Date(year, month, 1).getDay()
-  const days = new Date(year, month + 1, 0).getDate()
-  return <span className="booking-link-preview-thumbnail" aria-hidden="true">
-    <span className="booking-thumbnail-month">{today.toLocaleDateString("en-US", { month: "long" })}</span>
-    <span className="booking-thumbnail-grid">
-      {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => <span key={index} className="booking-thumbnail-weekday">{day}</span>)}
-      {Array.from({ length: lead }, (_, index) => <span key={`lead-${index}`} />)}
-      {Array.from({ length: days }, (_, index) => {
-        const day = index + 1
-        const weekday = (lead + index) % 7
-        const ahead = day > today.getDate() && weekday > 0 && weekday < 6
-        return <span key={day} className="booking-thumbnail-day"
-          data-state={ahead ? thumbnailDayState(year, month, day, weekday, Math.floor((lead + index) / 7)) : undefined}
-          data-today={day === today.getDate() || undefined}>{day}</span>
-      })}
-    </span>
-  </span>
+/** Flies a copy of `face` from one box to another above the dialog, then removes it. */
+function flyPortrait(face: HTMLImageElement, from: Box, to: Box, duration: string) {
+  activeFlight?.cancel()
+  const style = getComputedStyle(face)
+  const copy = document.createElement("img")
+  copy.src = face.currentSrc || face.src
+  copy.alt = ""
+  copy.decoding = "sync"
+  copy.className = "booking-portrait-flight"
+  copy.setAttribute("aria-hidden", "true")
+  Object.assign(copy.style, { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px` })
+  document.body.append(copy)
+  const flight = copy.animate([
+    { transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width}, ${from.height / to.height})` },
+    { transform: "translate(0, 0) scale(1)" },
+  ], {
+    duration: parseFloat(style.getPropertyValue(duration)),
+    easing: style.getPropertyValue("--ease-smooth").trim(),
+  })
+  activeFlight = flight
+  const remove = () => {
+    copy.remove()
+    if (activeFlight === flight) activeFlight = null
+  }
+  flight.finished.then(remove, remove)
+  return flight
 }

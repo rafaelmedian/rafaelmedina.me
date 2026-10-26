@@ -2,6 +2,7 @@ import { createContext, useContext } from "react"
 
 export const BookingContext = createContext<{
   open: boolean
+  // Omit calendarEmail for conversation; an empty string opens scheduling without a prefilled address.
   openBooking: (trigger: HTMLButtonElement, placement: string, bookingUrl?: string, calendarEmail?: string) => void
 } | null>(null)
 

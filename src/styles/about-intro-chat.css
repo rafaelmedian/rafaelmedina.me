@@ -131,8 +131,12 @@
   --intro-reply-height: 44px;
   /* One soft shade under every bubble and tapback, so the light fills hold
      their edge over the pale tiles the chat floats above. A filter rather than
-     a box-shadow: it follows the tails and stays out of the tapback holes. */
-  --intro-bubble-shade: drop-shadow(0 0.5px 1px rgb(0 0 0 / 0.22)) drop-shadow(0 3px 8px rgb(0 0 0 / 0.14));
+     a box-shadow: it follows the tails and stays out of the tapback holes. A
+     hairline holds the edge and a wide, faint lift does the floating; one
+     dense mid shadow read as a grey smudge around the calendar card. */
+  --intro-bubble-shade: drop-shadow(0 0 0.5px rgb(0 0 0 / 0.2)) drop-shadow(0 4px 12px rgb(0 0 0 / 0.08));
+  /* The booking conversation's accent, for the calendar card's open days. */
+  --booking-blue: #0071e3;
   position: absolute;
   left: calc(100% + 12px);
   bottom: var(--intro-chat-bottom);
@@ -723,9 +727,12 @@
   box-shadow: var(--shadow-ring), var(--shadow-control);
 }
 
-/* Focus lifts the field and rings it: the lift alone was too faint to find. */
+/* Pointer focus keeps a soft edge; keyboard focus uses the shared ring
+   around the composer so the field remains easy to find. */
 .about-intro-chat-composer:focus-within {
-  box-shadow: var(--shadow-ring), var(--shadow-control-hover);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.16),
+    var(--shadow-control-hover);
 }
 
 .about-intro-chat-composer:has(:is(input, textarea):focus-visible) {
@@ -1098,8 +1105,24 @@
 .about-intro-chat-message .about-intro-send { width: 48px; flex-basis: 48px; }
 .about-intro-chat-message .about-intro-send::before { inset: 4px; }
 
+/* The booking conversation's rich link (booking.css draws its thumbnail and
+   caption). Rounding the thumbnail clips it, so the tail stays drawn. */
+.about-intro-chat .about-intro-chat-link-preview {
+  display: flex;
+  flex-direction: column;
+  width: 15rem;
+  padding: 0;
+  text-decoration: none;
+  white-space: normal;
+  transition: --intro-bubble-fill var(--duration-quick) var(--ease-standard), opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
+}
+
+.about-intro-chat .about-intro-chat-link-preview:hover { --intro-bubble-fill: #d5d5da; }
+.about-intro-chat .about-intro-chat-link-preview:active { transform: scale(0.98); }
+
 /* Only the final bubble in a consecutive run carries the conversation tail. */
-.about-intro-chat-received:has(+ :is(.about-intro-chat-received, .about-intro-chat-typing)) .about-intro-chat-bubble::before,
+.about-intro-chat-received:has(+ :is(.about-intro-chat-received, .about-intro-chat-typing, .about-intro-chat-link-note)) .about-intro-chat-bubble::before,
+.about-intro-chat-link-note::before,
 .about-intro-chat-sent-message:has(+ .about-intro-chat-sent-message) .about-intro-chat-outgoing::before {
   content: none;
 }
