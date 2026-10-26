@@ -181,3 +181,62 @@ export const keyClickSounds: readonly SoundDefinition[] = [
   keyClick(265, 3000),
   keyClick(335, 2300),
 ]
+
+// The pointer coming to rest on a tile of the work grid: a soft tap, felt more
+// than heard. A reviewer asked for a cue on hover; it sits below the notes
+// list's key clicks (0.15) because a sweep across the grid crosses several
+// tiles, and it is a single muted body with no bright transient, so a run of
+// them reads as fingertips on a desk rather than a row of buttons.
+export const tileHoverSound: SoundDefinition = {
+  layers: [
+    {
+      source: { type: "noise", color: "pink" },
+      envelope: { attack: 0.001, decay: 0.01 },
+      filter: [
+        { type: "highpass", frequency: 700 },
+        { type: "lowpass", frequency: 2400 },
+      ],
+      gain: 0.035,
+    },
+    {
+      source: { type: "sine", frequency: { start: 620, end: 560 } },
+      envelope: { attack: 0.002, decay: 0.032 },
+      filter: { type: "lowpass", frequency: 1600 },
+      gain: 0.08,
+    },
+  ],
+}
+
+const TILE_HOVER_VOLUME = { volume: 0.1 }
+// A tile is far wider than a notes row, so a pointer crossing the grid moves
+// onto a new one every 100ms or more; this only stops a diagonal clip of two
+// corners from sounding twice.
+const TILE_HOVER_GAP_MS = 90
+const hoverTiles = ".mosaic-row-card, .writings-tile, .personal-photos-trigger"
+
+/**
+ * A tap for each grid tile the mouse moves onto. Mounted by the gallery, so it
+ * only starts once a project has been opened and its warmup has built the
+ * AudioContext: the context is never built from a hover, where its 166-750ms
+ * would land in the middle of the tile's own hover motion. Movement rather than
+ * entry, as the notes rows do it, so a page scrolled under a still pointer
+ * stays quiet; and only a mouse, since a touch already answers with the open.
+ */
+export function useTileHoverSounds() {
+  const play = useReadySound(tileHoverSound, TILE_HOVER_VOLUME)
+  useEffect(() => {
+    let hovered: Element | null = null
+    let last = -Infinity
+    const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse" || (event.movementX === 0 && event.movementY === 0)) return
+      const tile = event.target instanceof Element ? event.target.closest(hoverTiles) : null
+      if (tile === hovered) return
+      hovered = tile
+      if (!tile || event.timeStamp - last < TILE_HOVER_GAP_MS) return
+      last = event.timeStamp
+      play()
+    }
+    document.addEventListener("pointermove", onPointerMove, { passive: true })
+    return () => document.removeEventListener("pointermove", onPointerMove)
+  }, [play])
+}

@@ -20,7 +20,7 @@ import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
 import { WritingsArchive } from "./WritingsArchive"
 import type { WritingsReaderStatus } from "./WritingsFolder"
-import { backSound, closeSound, isAudioWarm, nextSound, openSound, useReadySound, useAudioWarmup } from "../lib/sounds"
+import { backSound, closeSound, isAudioWarm, nextSound, openSound, useReadySound, useAudioWarmup, useTileHoverSounds } from "../lib/sounds"
 import { formatPostDate } from "../lib/postDate"
 
 type PreviewGalleryDialogProps = {
@@ -426,6 +426,7 @@ export function PreviewGalleryDialog({
   }, [open, originWrapNode, runOriginAnimation])
 
   useAudioWarmup(originWrapNode, open)
+  useTileHoverSounds()
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean, details?: Pick<Dialog.Root.ChangeEventDetails, "reason">) => {
