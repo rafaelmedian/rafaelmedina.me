@@ -93,11 +93,6 @@
   z-index: var(--print-depth);
   flex: 0 0 var(--photo-print-width);
   margin-left: calc(var(--photo-print-width) * -0.5);
-  /* A photo print: a thin white border all round, a hair of rounding and a
-     soft lift — the frame every slide on the globe and the grid wears, so a
-     print grows into its slot without changing on the way. The border is a
-     share of the print's own width; a padding percentage resolves against
-     the same row --photo-print-width does. */
   --photo-frame: var(--photo-print-width);
   padding: calc(var(--photo-frame) * 0.035);
   border-radius: 4px;
@@ -229,11 +224,6 @@
     --photo-close-duration: var(--duration-slow);
   }
 }
-
-/* The globe floats over the work grid rather than covering it the way the
-   old sheet of prints did. A solid scrim separates the two without a live
-   full-screen backdrop filter, which dropped compositor frames during the
-   open and close flights. */
 .personal-photos-backdrop {
   position: fixed;
   inset: 0;
@@ -249,14 +239,7 @@
 
 .personal-photos-dialog {
   pointer-events: none;
-  /* A photo clicked or reached with Tab turns to the front of the globe
-     on a critically damped spring that has settled to 95% in this time,
-     and its growth, the globe's recede and its lean ride the same spring;
-     the arrow keys step it round on the same beat. */
-  --sphere-hover-duration: var(--duration-fast);
-  --sphere-focus-duration: var(--duration-base);
   --grid-focus-duration: var(--duration-slow);
-  --photo-layout-duration: var(--duration-quick);
   --photo-gutter: clamp(1.25rem, 4vw, 5rem);
   --photo-column-gap: 1.5rem;
   /* The grid's captions are read out, not shown, until a photo is held, so
@@ -264,10 +247,6 @@
   --photo-row-gap: var(--photo-column-gap);
   /* The held photo's caption sits this far under it, in either layout. */
   --stage-caption-gap: 0.75rem;
-  /* A scrolled grid glides back to its first row before the prints fly
-     home, so they leave from the slots they were dealt to. At the top the
-     close is immediate. */
-  --photo-rewind-duration: var(--duration-slow);
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog);
@@ -309,80 +288,8 @@
   opacity: 0;
   transition-duration: var(--photo-close-duration);
 }
-
-/* A frosted layout bar over the bottom of the stage, after
-   transitions.dev's sliding tabs — the site's tile grey made translucent
-   over a small, saturated blur, with a white highlight catching its top edge
-   and a glass-white thumb under the picked label. The thumb is sized and
-   placed from the picked segment's own box
-   (PersonalPhotosSheet writes --thumb-x and --thumb-w from its offsetLeft
-   and offsetWidth, and again when the group resizes), so each label hugs
-   its own words; it slides and resizes over --duration-base on
-   --ease-smooth, and the labels change colour on the same clock. The thumb
-   wears the control shadow as well as the ring, so the two translucent layers
-   remain distinct against either a bright photograph or the dark scrim. */
-.personal-photos-layout {
-  position: absolute;
-  bottom: max(1.25rem, env(safe-area-inset-bottom));
-  left: 50%;
-  z-index: 1;
-  display: inline-grid;
-  grid-auto-flow: column;
-  gap: 3px;
-  padding: 3px;
-  translate: -50% 0;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--mosaic-card-surface) 60%, transparent);
-  box-shadow: var(--glass-hairline), var(--shadow-overlay), var(--glass-rim);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  isolation: isolate;
-  pointer-events: auto;
-}
-.personal-photos-layout::before {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: 0;
-  z-index: 0;
-  width: var(--thumb-w, calc(50% - 3px));
-  height: calc(100% - 6px);
-  translate: var(--thumb-x, 3px) 0;
-  border-radius: inherit;
-  background: rgb(255 255 255 / 0.88);
-  box-shadow: var(--shadow-ring), var(--shadow-control), inset 0 1px 0 rgb(255 255 255 / 0.82);
-  transition: translate var(--duration-fast) var(--ease-smooth), width var(--duration-fast) var(--ease-smooth);
-}
-.personal-photos-layout button {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.5rem;
-  padding: 0 0.75rem;
-  border: 0;
-  border-radius: inherit;
-  background: none;
-  color: var(--muted);
-  font: inherit;
-  cursor: pointer;
-  transition: color var(--duration-fast) var(--ease-smooth);
-}
-.personal-photos-layout button[aria-pressed="true"] { color: var(--ink); }
-@media (hover: hover) {
-  .personal-photos-layout button:hover:not([aria-pressed="true"]) { color: var(--ink); }
-}
 /* The house ring, just inside the segment: it reads on the white thumb and
    on the grey bar alike. */
-.personal-photos-layout button:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
-}
 
 .personal-photos-wall-close {
   position: absolute;
@@ -420,10 +327,6 @@
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
-
-/* The stage: the whole screen takes the drag, so a turn can start anywhere,
-   and a click on its own margin — outside the globe — dismisses. Nothing
-   scrolls; the wheel and a swipe turn the globe instead. */
 .personal-photos-sheet {
   position: absolute;
   inset: 0;
@@ -433,7 +336,6 @@
   user-select: none;
   cursor: grab;
 }
-.personal-photos-sheet[data-sphere-dragging] { cursor: grabbing; }
 /* The modal is the browsing context; don't frame the entire stage. */
 .personal-photos-sheet:focus { outline: none; }
 
@@ -441,96 +343,7 @@
    keys — with nothing snapping or dragging; the margin around the masonry
    dismisses. Room below the last row for its caption, shadow, and the layout
    picker; the first row only needs the normal stage gutter. */
-.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"]) {
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-  padding: 1.25rem var(--photo-gutter) 6rem;
-  touch-action: auto;
-  cursor: auto;
-  scrollbar-width: none;
-  top: 10dvh;
-  right: 0.25rem;
-  left: 0.25rem;
-  padding-top: 4.5rem;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: var(--canvas);
-  box-shadow: var(--shadow-overlay);
-  translate: 0 var(--sheet-drag-y, 0);
-  transition: translate var(--duration-base) var(--ease-smooth);
-}
-.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"])::-webkit-scrollbar { display: none; }
-
-.personal-photos-grid-chrome {
-  position: absolute;
-  top: calc(10dvh + 0.5rem);
-  right: 0.75rem;
-  left: 0.75rem;
-  z-index: 2;
-  height: 2.5rem;
-  translate: 0 var(--sheet-drag-y, 0);
-  pointer-events: none;
-  transition: translate var(--duration-base) var(--ease-smooth);
-}
-.personal-photos-sheet-handle {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  display: grid;
-  place-items: center;
-  width: 3.5rem;
-  height: 2.5rem;
-  padding: 0;
-  translate: -50% 0;
-  border: 0;
-  border-radius: var(--radius-full);
-  background: transparent;
-  cursor: grab;
-  touch-action: none;
-  pointer-events: auto;
-}
-.personal-photos-sheet-handle span {
-  width: 2.25rem;
-  height: 0.25rem;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--muted) 48%, transparent);
-  transition: background-color var(--duration-fast) var(--ease-smooth);
-}
-.personal-photos-sheet-handle:hover span { background: var(--muted); }
-.personal-photos-sheet-handle:active { cursor: grabbing; }
-.personal-photos-sheet-handle:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
-}
-.personal-photos-grid-close {
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-full);
-  background: var(--glass-fill);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-  box-shadow: var(--shadow-glass), var(--glass-rim);
-  color: var(--ink);
-  cursor: pointer;
-  pointer-events: auto;
-  transition: background-color var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-smooth);
-}
-.personal-photos-grid-close:hover { background: var(--mosaic-card-surface); }
-.personal-photos-grid-close:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-.personal-photos-grid-close:active { transform: scale(0.96); }
-.personal-photos-dialog[data-sheet-dragging] .personal-photos-sheet,
-.personal-photos-dialog[data-sheet-dragging] .personal-photos-grid-chrome { transition: none; }
-.personal-photos-dialog[data-sheet-dragging] .personal-photos-sheet-handle { cursor: grabbing; }
+.personal-photos-sheet[data-layout="wall"]::-webkit-scrollbar { display: none; }
 
 /* Columns the component fills itself, rather than a CSS multi-column. Both
    lay out the same, but `columns` fills the first column top to bottom before
@@ -551,18 +364,8 @@
   flex-direction: column;
   gap: var(--photo-row-gap);
   min-width: 0;
-  /* The print's border is a share of its width, as on the globe. */
   container-type: inline-size;
 }
-
-/* The same print as the globe's, at a column's width. Photos stay still on
-   hover and use the pointer cursor; a click, Enter or Space holds one: it
-   glides to the centre of the stage and grows to fill
-   most of it (--hold-dx/--hold-dy/--hold-scale, measured by the component)
-   over the slower --grid-focus-duration, then returns on --duration-base,
-   with its caption under it. Each column is a container, and so a stacking
-   context of its own, so the held photo's column has to come forward as well
-   or the columns to its right paint over it. */
 .personal-photos-masonry .personal-photos-slide {
   --photo-frame: 100cqi;
   --photo-padding: calc(var(--photo-frame) * 0.035);
@@ -571,7 +374,7 @@
   width: 100%;
   cursor: pointer;
   transform-style: preserve-3d;
-  transition: transform var(--sphere-focus-duration) var(--ease-smooth), scale var(--duration-base) var(--ease-smooth);
+  transition: transform var(--duration-base) var(--ease-smooth), scale var(--duration-base) var(--ease-smooth);
 }
 .personal-photos-masonry .personal-photos-slide[data-held] {
   --photo-padding: calc(var(--photo-frame) * 0.035 / var(--hold-scale, 1));
@@ -584,22 +387,6 @@
   transform: translate(var(--hold-dx, 0px), var(--hold-dy, 0px)) scale(var(--hold-scale, 1)) perspective(1000px) rotateX(var(--grid-tilt-x, 0deg)) rotateY(var(--grid-tilt-y, 0deg));
   transition-duration: var(--grid-focus-duration), var(--duration-base);
 }
-.personal-photos-masonry .personal-photos-slide[data-held][data-grid-tilting] {
-  transition-duration: var(--duration-fast), var(--duration-base);
-}
-/* A quiet, fixed top-left reflection makes every grid print feel glazed. The
-   held print catches a brighter, smaller highlight which shifts opposite its
-   tilt, keeping the implied light source in one direction. This is a painted
-   overlay on one photo, not a filter over the image, so the bitmap stays crisp. */
-.personal-photos-masonry .personal-photos-slide::after {
-  background:
-    radial-gradient(circle at var(--grid-gloss-x, 32%) var(--grid-gloss-y, 24%), rgb(255 255 255 / 0.36), rgb(255 255 255 / 0.08) 24%, transparent 52%),
-    linear-gradient(135deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.035) 28%, transparent 52%);
-  mix-blend-mode: screen;
-  opacity: 0.18;
-  transition: opacity var(--duration-base) var(--ease-smooth);
-}
-.personal-photos-masonry .personal-photos-slide[data-held]::after { opacity: 0.48; }
 .personal-photos-column:has(> [data-held]) { z-index: 1; }
 /* A close asked for over a held photo, or inside its glide back, snaps the
    grid to rest so the flight measures the slides where they will stay. */
@@ -613,75 +400,6 @@
   outline: 2px solid var(--canvas);
   outline-offset: 4px;
 }
-/* The globe. `usePhotoSphere` places each slide from its point on a sphere
-   of --sphere-radius (a share of this box's width) and writes its position,
-   scale, stacking and shade every frame. The round corners are for the
-   pointer, not the eye: a press in the corners of this square is on the
-   stage's margin, and closes like any other. */
-.personal-photos-sphere {
-  --sphere-size: min(96vw, 92vh, 60rem);
-  --sphere-radius: 0.44;
-  /* A photo's width at the front of the globe; the share is set inline from
-     the tile count in PersonalPhotosSheet.tsx. */
-  --sphere-card: calc(var(--sphere-size) * var(--sphere-card-share, 0.2));
-  /* Centred by position rather than by a grid, so a phone's globe — wider
-     than the screen — overhangs both edges equally, not the right one alone. */
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-  width: var(--sphere-size);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  perspective: 1000px;
-}
-
-/* A print at the front of the globe is drawn at its own size; everything
-   further back is scaled down from there, never up, so a photo is never
-   blown up past the bitmap its layer was painted at. */
-.personal-photos-sphere .personal-photos-slide {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: var(--sphere-depth, 0);
-  width: var(--sphere-card);
-  --photo-frame: var(--sphere-card);
-  padding: calc(var(--photo-frame) * var(--sphere-frame-share, 0.035));
-  opacity: var(--sphere-fade, 1);
-  will-change: transform;
-  cursor: pointer;
-}
-/* Chrome rasterizes a permanently promoted slide at its small resting size
-   and scales that layer when the photo is held, which visibly softens it.
-   The selected print can repaint at full resolution while the other tiles
-   keep their transform hint for the turning globe. */
-.personal-photos-sphere .personal-photos-slide[data-sphere-held] { will-change: auto; }
-.personal-photos-sphere .personal-photos-slide[data-sphere-held]::after {
-  background:
-    radial-gradient(circle at var(--sphere-gloss-x, 32%) var(--sphere-gloss-y, 24%), rgb(255 255 255 / 0.36), rgb(255 255 255 / 0.08) 24%, transparent 52%),
-    linear-gradient(135deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.035) 28%, transparent 52%);
-  mix-blend-mode: screen;
-  opacity: calc(var(--sphere-zoom, 0) * 0.48);
-}
-.personal-photos-sphere .personal-photos-slide[data-sphere-hidden] { display: none; }
-/* Every visible photo can be clicked; only fully hidden prints let presses
-   through to the stage. */
-.personal-photos-sphere .personal-photos-slide[data-sphere-far] { pointer-events: none; }
-
-/* Keep the globe's circular hit area and pill controls round under the
-   site's shared continuous-corner policy. */
-.personal-photos-sphere,
-.personal-photos-layout,
-.personal-photos-layout::before,
-.personal-photos-layout button,
-.personal-photos-grid-close,
-.personal-photos-sheet-handle { corner-shape: round; }
-
-/* The held photo's name, just under it. usePhotoSphere places it from the
-   photo's drawn box every frame and fades it with the photo's own zoom, so
-   it arrives as the hold lands and leaves with the release; when the screen
-   ends below the photo it sits above instead. In the interface face, not the
-   handwriting: it is a label on the stage, not a note on a print. */
 .personal-photos-stage-caption {
   position: absolute;
   top: var(--stage-caption-y, 100%);
@@ -703,24 +421,6 @@
   opacity: var(--stage-caption-opacity, 0);
   pointer-events: none;
 }
-/* On the grid the caption's fade is a transition rather than a frame-by-
-   frame value: in, once the photo is most of the way to the centre; out,
-   at once. */
-.personal-photos-sheet:is([data-layout="grid"], [data-layout="wall"]) .personal-photos-stage-caption {
-  /* The component hands over the held photo's bottom edge; the gap is the
-     stylesheet's, as the globe's is. */
-  top: calc(var(--stage-caption-y, 100%) + var(--stage-caption-gap));
-  transition: opacity var(--duration-fast) var(--ease-standard);
-}
-.personal-photos-sheet[data-layout="grid"][data-held] .personal-photos-stage-caption {
-  transition: opacity var(--duration-base) var(--ease-smooth) calc(var(--grid-focus-duration) / 2);
-}
-
-/* A photo print, the fan's own at the slide's size: a thin white border all
-   round — 3.5% of the slide's width, from --photo-frame, which each layout
-   sets — a hair of rounding, and a soft lift. Picked over an Instax card,
-   the glass pebble and a glass edge, side by side on the fan and the globe.
-   A flight morphs one frame into the other, border and all. */
 .personal-photos-slide {
   margin: 0;
   padding: var(--photo-padding, calc(var(--photo-frame, 12rem) * 0.035));
@@ -732,19 +432,6 @@
      the slot's opacity, and the photos that never fly arrive and leave with
      the sheet's single fade: a per-photo fade or dim on top of that read as
      the pictures going transparent, with the page showing through. */
-}
-/* The far side of the globe falls into shadow rather than going see-through:
-   half-transparent photos stacked on one another read as mud. The shade
-   rides on the flights too, so a photo landing at the back of the globe is
-   already as dark as the slot it hands off to. */
-.personal-photos-slide::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: rgb(0 0 0);
-  opacity: var(--sphere-shade, 0);
-  pointer-events: none;
 }
 /* Each photo keeps its own shape; the width and height attributes set the
    ratio before the bitmap arrives, with the thumbnail showing through until it does. */
@@ -766,9 +453,6 @@
 }
 .personal-photo-level img {
   transform: rotate(-3deg) scale(1.09);
-}
-.personal-photos-sphere .personal-photos-slide img {
-  border-radius: max(1px, calc(var(--sphere-corner-radius, var(--radius-md)) - var(--photo-frame) * var(--sphere-frame-share, 0.035)));
 }
 /* A print carries no caption on its face; it stays for assistive tech,
    and the held photo's is written out under it instead. */
@@ -808,17 +492,7 @@
    over it, leaving and arriving alike: one tier down puts every borrower
    behind the pile and still well clear of the backdrop. */
 .personal-photos-flight[data-photo-trailing] { z-index: calc(var(--z-dialog) - 1); }
-
-/* On a phone each photo takes a larger share of the globe, to stay a photo
-   rather than a stamp. */
 @media (max-width: 699.98px) {
-  /* Wider than the screen: only the rim's smallest prints reach past its
-     edges, and a globe held to the width left half a tall screen empty. */
-  .personal-photos-sphere {
-    --sphere-size: min(136vw, 80vh);
-    --sphere-radius: 0.4;
-    --sphere-card: calc(var(--sphere-size) * var(--sphere-card-share, 0.2) * 1.3);
-  }
   /* Two columns of the grid, and a caption a step smaller to fit them. */
   .personal-photos-dialog {
     --photo-column-gap: 1rem;
@@ -832,11 +506,9 @@
   .personal-photos-backdrop,
   .personal-photos-dialog,
   .personal-photos-wall-close,
-  .personal-photos-grid-chrome,
   .personal-photos-sheet,
   .personal-photos-masonry .personal-photos-slide,
-  .personal-photos-stage-caption,
-  .personal-photos-layout::before { transition: none; }
+  .personal-photos-stage-caption { transition: none; }
 }
 
 /* Wall: a loose, edge-to-edge arrangement using the grid's selection and
@@ -864,26 +536,26 @@
     transparent calc(var(--wall-reveal) * 125vmax));
 }
 .personal-photos-sheet[data-layout="wall"] {
+  overscroll-behavior-y: contain;
+  padding: 0;
+  touch-action: none;
+  cursor: grab;
+  scrollbar-width: none;
+  padding-top: 4.5rem;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  translate: none;
+  transition: translate var(--duration-base) var(--ease-smooth);
   --wall-reveal: 0.8;
   --wall-release-duration: var(--duration-base);
   --wall-watch-shrink: 0;
   --wall-watch-power: 1.35;
-  /* Flat by default. The curved WebGL surface stays for the dev tuner. */
   --wall-bend: 0;
   --wall-rim: 0;
   --wall-gap: 3rem;
-  /* The backdrop owns the white canvas. A second surface here would cover
-     borrowed flights, which travel below the popup and above the backdrop. */
-  background: transparent;
   inset: 0;
-  border-radius: 0;
-  box-shadow: none;
-  translate: none;
-  padding: 0;
-  /* The camera owns panning; focusing caption controls must not scroll the stage. */
   overflow: clip;
-  touch-action: none;
-  cursor: grab;
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-masonry {
   position: absolute;
@@ -921,7 +593,6 @@
   width: 100%;
   transition: transform var(--wall-release-duration) var(--ease-standard), scale var(--wall-release-duration) var(--ease-standard);
 }
-.personal-photos-sheet[data-layout="wall"] .personal-photos-slide::after { display: none; }
 /* The print shadow, shared by the fan and the wall so a flight only ever
    grows or shrinks the same four layers: the white frame, a hairline edge
    that keeps it off the white canvas, a tight contact shadow and a short
@@ -944,10 +615,10 @@
   transition-duration: var(--grid-focus-duration), var(--duration-base);
 }
 .personal-photos-sheet[data-layout="wall"] .personal-photos-stage-caption {
+  top: calc(var(--stage-caption-y, 100%) + var(--stage-caption-gap));
+  transition: opacity var(--duration-fast) var(--ease-standard);
   visibility: var(--photo-label-visibility, hidden);
   font-size: var(--text-sm);
-  /* Position follows the drawn photo each frame, visible from selection. */
-  transition: opacity var(--duration-fast) var(--ease-standard);
   display: flex;
   align-items: center;
   gap: 0.25rem;

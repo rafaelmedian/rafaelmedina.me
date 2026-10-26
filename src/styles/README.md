@@ -21,7 +21,7 @@ and the global reduced-motion policy last.
 - `resume-tile.css`: folded-paper résumé tile artwork, reader modal, and responsive interaction.
 - `resume-content.css`: work history entries and margin drawings in the reader.
 - `likes.css`: the like pill shared by the notes reader and the project preview.
-- `personal-photos.css`: photo stack and carousel dialog.
+- `personal-photos.css`: photo stack, wall dialog, and photo details.
 - `preview-gallery.css`: shared gallery dialog, nested Notes pages, and card motion.
 - `booking.css`: the hint tooltip shared by the booking pill and the address,
   the booking dialog, and the Cal.com frame.

@@ -15,11 +15,11 @@ function isCurved(stage: HTMLElement) {
  * the same task that mounts it, and the flat wall never draws with them: the
  * photos sat frozen on the white canvas for that long before their flights
  * began. The dev tuner's curve change starts it. */
-export function PhotoWallSurface({ children, wall }: { children: ReactNode; wall: boolean }) {
+export function PhotoWallSurface({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   useLayoutEffect(() => {
-    if (!wall || !ref.current || !canvas.current) return
+    if (!ref.current || !canvas.current) return
     const surface = ref.current
     const stage = surface.parentElement!
     let stop: (() => void) | undefined
@@ -34,8 +34,7 @@ export function PhotoWallSurface({ children, wall }: { children: ReactNode; wall
       window.removeEventListener("photo-wall-curve-change", sync)
       stop?.()
     }
-  }, [wall])
-  if (!wall) return children
+  }, [])
   return <div ref={ref} className="personal-photos-wall-surface">
     {children}
     <canvas ref={canvas} className="personal-photos-wall-canvas" aria-hidden="true" />
