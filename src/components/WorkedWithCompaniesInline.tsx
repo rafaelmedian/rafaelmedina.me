@@ -314,7 +314,8 @@ export function WorkedWithCompaniesInline({ variant = "sentence" }: WorkedWithCo
               setTrigger={setTrigger}
             />
           ) : null}
-          <span className="mosaic-work-history-copy">previously worked with and at</span>
+          {/* The comma belongs to the chip before it, so it closes the line's gap. */}
+          <span className="mosaic-work-history-copy mosaic-work-history-copy-continues">, previously with</span>
         </div>
         <div className="mosaic-work-history-line" role="group" aria-label="Previous companies">
           {profileCompanies.previousCompanies.map((company) => (

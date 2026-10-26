@@ -92,6 +92,10 @@
   white-space: nowrap;
 }
 
+.mosaic-work-history-copy-continues {
+  margin-inline-start: -0.25rem;
+}
+
 .mosaic-work-history-chip {
   appearance: none;
   position: relative;

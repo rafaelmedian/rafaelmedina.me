@@ -1,6 +1,6 @@
 /* B: a quiet conversation anchored to the speaking portrait. */
 .about-intro[data-variant="b"] {
-  --intro-size: 64px;
+  --intro-size: 52px;
   --intro-chat-face-bottom: 0px;
 }
 

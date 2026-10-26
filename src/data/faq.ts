@@ -33,6 +33,6 @@ export const faq: FaqEntry[] = [
   {
     question: "How do we work day to day?",
     answer:
-      "A shared Slack or Telegram channel, and reviews when there is something worth reviewing instead of a standing meeting. I am on Atlantic time in Punta Cana, which covers the US East Coast almost exactly and most of the European afternoon.",
+      "A shared Slack or Telegram channel instead of a standing meeting. I am on Atlantic time in Punta Cana, which covers the US East Coast almost exactly and most of the European afternoon.",
   },
 ]

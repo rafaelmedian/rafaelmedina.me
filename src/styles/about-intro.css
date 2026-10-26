@@ -103,6 +103,17 @@
   border-radius: inherit;
   corner-shape: inherit;
   object-fit: cover;
+  /* Monochrome so the moving corner reads as a quiet presence, not a second
+     hero; colour comes in when the face is pointed at, focused, or talking.
+     The poster matches, or the swap to video shifts colour. */
+  filter: grayscale(1);
+  transition: filter var(--duration-base) var(--ease-standard);
+}
+
+.about-intro-media:hover :is(.about-intro-poster, .about-intro-teaser),
+.about-intro-media:has(.about-intro-portrait-trigger:focus-visible) :is(.about-intro-poster, .about-intro-teaser),
+.about-intro[data-chat-open="true"] :is(.about-intro-poster, .about-intro-teaser) {
+  filter: grayscale(0);
 }
 
 .about-intro-portrait-trigger {

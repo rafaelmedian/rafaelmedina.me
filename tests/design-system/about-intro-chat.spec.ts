@@ -59,7 +59,7 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
     return null
   })).toBeNull()
 
-  await intro.locator('.about-intro-portrait-trigger').click({ position: { x: 54, y: 10 } })
+  await intro.locator('.about-intro-portrait-trigger').click({ position: { x: 42, y: 10 } })
   await expect(intro).toHaveAttribute('data-chat-open', 'true')
   const chat = page.getByRole('dialog', { name: 'Chat with Rafa' })
   await expect(chat).toBeVisible()
@@ -84,7 +84,7 @@ test('uses the tucked numeric badge beside the TOC throughout the compact breakp
   await expect(chat).toHaveCount(0)
   await expect(backdrop).toBeHidden()
   await expect(page.locator('.mosaic-mobile-toc')).toBeVisible()
-  await expect(intro.locator('.about-intro-surface')).toHaveCSS('width', '64px')
+  await expect(intro.locator('.about-intro-surface')).toHaveCSS('width', '52px')
 })
 
 for (const width of [320, 1440]) {
