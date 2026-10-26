@@ -93,7 +93,10 @@
   justify-items: center;
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  /* `none` for the card's reason: a contained scroller still rubber-bands, and
+     a wheel over the gutter beside the card bounced the whole card -- arrows
+     and all -- up and back, though the shell had nothing to scroll. */
+  overscroll-behavior: none;
   padding:
     var(--preview-gallery-fixed-top)
     max(var(--preview-gallery-gutter), env(safe-area-inset-right))
@@ -1609,6 +1612,22 @@
      which is the same canvas once it has faded in. */
   .preview-gallery-shell[data-origin-zoom] {
     background: transparent;
+  }
+
+  /* While the zoom flies, the page behind it dims and blurs as the tile
+     grows, the way the floating layout's backdrop does. Over a flat canvas a
+     white sheet growing out of a white page had no edge to read, and a
+     reviewer asked for the background to blur as it opens. Only for the
+     flight: once it lands the shell's canvas covers everything, and a blur
+     left running there would re-filter the page under an opaque sheet. It
+     comes up on the shorter base step rather than the whole flight: faded in
+     over the zoom, the sharp page dominated the crossfade until the sheet had
+     nearly covered it. */
+  .preview-gallery-backdrop:has(+ .preview-gallery-shell[data-origin-zoom]) {
+    background: rgb(18 18 18 / 0.36);
+    -webkit-backdrop-filter: blur(12px) saturate(0.92);
+    backdrop-filter: blur(12px) saturate(0.92);
+    transition: opacity var(--pg-backdrop-in-ms, var(--duration-base)) ease-out;
   }
 
   .preview-gallery-origin-wrap,

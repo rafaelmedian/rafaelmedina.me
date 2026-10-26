@@ -3859,6 +3859,33 @@ test("exposes the profile name as a heading rather than burying it in a control"
   await expect(page.locator(".mosaic-profile-meta")).not.toHaveAttribute("tabindex", "0")
 })
 
+// On a phone the page behind the zoom dims and blurs while the tile grows,
+// so the sheet has an edge against the page it rises out of; once it lands
+// the blur goes, since the sheet covers the page and would only re-filter it.
+test("blurs the page behind the mobile zoom only while it flies", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.classList.contains("preview-gallery-origin-wrap")) animation.playbackRate = 0
+      return animation
+    }
+  })
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+  const backdrop = page.locator(".preview-gallery-backdrop")
+  await expect(page.locator(".preview-gallery-shell")).toHaveAttribute("data-origin-zoom", "true")
+  await expect(backdrop).toHaveCSS("backdrop-filter", /blur\(12px\)/)
+
+  await page.locator(".preview-gallery-origin-wrap").evaluate((element) => {
+    element.getAnimations().forEach((animation) => { animation.playbackRate = 1; animation.finish() })
+  })
+  await expect(page.locator(".preview-gallery-shell")).not.toHaveAttribute("data-origin-zoom", "true")
+  await expect(backdrop).toHaveCSS("backdrop-filter", "none")
+})
+
 test("opens the preview gallery as one coordinated surface", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 })
   await page.goto("/")
