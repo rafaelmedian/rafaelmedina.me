@@ -94,7 +94,7 @@ export const writings: Writing[] = [
   {
     ...writingFields("skills-i-reach-for"),
     paragraphs: [
-      "A few skills I keep close when working with coding agents. Each helps with a different part of the work, from the details of an interface to the way a change gets reviewed.",
+      "The skills I keep installed for work with coding agents. Most of them are about interface details. The last one is mine, and it's about getting a change through review.",
     ],
     links: [
       {
@@ -107,7 +107,7 @@ export const writings: Writing[] = [
         title: "Superpowers",
         favicon: "/writings/favicons/github.png",
         href: "https://github.com/obra/superpowers",
-        description: "Plan, build, test, and review with coding agents.",
+        description: "Makes the agent plan, test, and review before it calls something done.",
       },
       {
         title: "Make Interfaces Feel Better",
@@ -137,13 +137,13 @@ export const writings: Writing[] = [
         title: "Emil’s Design Engineering",
         favicon: "/writings/favicons/emil.png",
         href: "https://emilkowal.ski/skill",
-        description: "Practical guidance for thoughtful interfaces and motion.",
+        description: "Emil's notes on interfaces and motion, packaged for an agent.",
       },
       {
         title: "Review-ready PRs",
         favicon: "/favicon-32.png",
         href: "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
-        description: "Keep commits, reasoning, and verification ready for review.",
+        description: "Commits, PR description, and screenshots someone can actually review.",
       },
     ],
   },
@@ -154,27 +154,27 @@ export const writings: Writing[] = [
       sourceUrl: "https://github.com/rafaelmedian/skills/tree/main/skills/review-ready-prs",
     },
     paragraphs: [
-      "A pull request is often the last place where the work is still easy to understand. The branch has the decisions, the failed attempts, and the checks that finally passed. After it merges, most of that context disappears unless the commits and the pull request carry it forward.",
-      "I want the review to explain itself before someone opens the diff. A reviewer should be able to see what changed, why it changed, how the work was divided, and what proof belongs beside it. That makes the review faster now, but the larger benefit arrives months later when the same page becomes the history of the decision.",
-      "I turned those preferences into a small skill called `review-ready-prs`. It reads the repository's own instructions first, then helps an agent shape the commits, write the pull request, and put the evidence where the reviewer will actually find it.",
+      "A pull request is usually the last place the work still makes sense. The branch knows what I tried, what broke, and which check finally passed. Once it merges, most of that is gone, unless the commits and the PR description kept it.",
+      "I want someone to understand the change before they open the diff. What changed, why, and how do I know it works. That speeds up the review, sure. The bigger payoff comes months later, when that PR is the only record of why the code looks the way it does.",
+      "So I wrote it down as a skill, `review-ready-prs`. It reads the repo's own instructions first. Then it helps the agent split the commits, write the description, and put screenshots and test results where a reviewer will see them.",
     ],
     annotations: [
-      { at: 0, place: "right", text: "The diff says what. I still need the why." },
+      { at: 0, place: "right", text: "The diff never says why" },
     ],
     sections: [
       {
         heading: "Three ways to use it",
         paragraphs: [
-          "For a visual fix, try: `Use review-ready-prs to prepare this mobile toolbar fix for review. Capture the same viewport before and after, explain the alignment change, and report the checks that actually ran.` The result should let someone compare the UI and understand the reason for the change without running the branch.",
-          "For a refactor, try: `Use review-ready-prs to separate this data-loading refactor from the behavior change. Explain the old and new request paths, and keep each commit independently reviewable.` A small flow diagram is more useful here than a screenshot of an unchanged page.",
-          "For a branch that is already finished, try: `Use review-ready-prs to audit this branch and draft its PR description. Match the summary to the commits, identify missing evidence, and do not push or rewrite history.` This makes the skill useful as a final review pass as well as a guide while building.",
+          "For a visual fix, try: `Use review-ready-prs to prepare this mobile toolbar fix for review. Capture the same viewport before and after, explain the alignment change, and report the checks that actually ran.` You should be able to compare the two screenshots and get it without pulling the branch.",
+          "For a refactor, try: `Use review-ready-prs to separate this data-loading refactor from the behavior change. Explain the old and new request paths, and keep each commit independently reviewable.` Here a tiny flow diagram beats a screenshot of a page that looks the same.",
+          "For a branch that is already finished, try: `Use review-ready-prs to audit this branch and draft its PR description. Match the summary to the commits, identify missing evidence, and do not push or rewrite history.` I use this one at the end, as a last check before I ask anyone to look.",
         ],
       },
       {
         heading: "A small fix on GitHub",
         paragraphs: [
-          "The notes Back-button fix is a compact example of these conventions. Its description names the visible problem, separates the layout correction from the regression test, and reports both the targeted pass and the failures in the wider suite. That last detail lets the reviewer distinguish what was verified from what still needs attention.",
-          "These screenshots show real pull requests from this site. They illustrate the review format; they are not a claim that the skill generated those earlier descriptions.",
+          "The Back-button fix in the notes reader is a small one. The description says what looked wrong, keeps the layout fix and the regression test as separate changes, and reports the targeted test passing next to the failures in the full suite. I'd rather the reviewer see those failures than find them.",
+          "These are real PRs from this site. They show the format. The skill didn't write them; it came after.",
         ],
         image: {
           src: "/writings/review-ready-prs/github-small-fix.webp",
@@ -188,8 +188,8 @@ export const writings: Writing[] = [
       {
         heading: "A larger change on GitHub",
         paragraphs: [
-          "The photo-wall PR needs more room. Its opening describes the finished interaction, then the ordered list traces the changes that made it possible. A reviewer can follow framing, layout, gestures, and tests as separate decisions instead of unpacking one large implementation summary.",
-          "For a change like this, I would also ask the skill for a short recording of selecting, panning, and closing the wall. The commit list explains the work; a recording shows whether the interaction holds together.",
+          "The photo-wall PR is bigger. It opens with what the finished interaction does, then lists the changes in the order they landed: framing, layout, gestures, tests. You can review each one on its own instead of digging through one long summary.",
+          "Today I'd also ask for a short recording of opening, panning, and closing the wall. You can't tell from a commit list whether a gesture feels right.",
         ],
         image: {
           src: "/writings/review-ready-prs/github-feature.webp",
@@ -203,36 +203,36 @@ export const writings: Writing[] = [
       {
         heading: "The story starts in the commits",
         paragraphs: [
-          "A useful commit is small enough to name. Its title says what it does in the present tense, and its body records the thing that was missing or wrong. If a measurement, constraint, or failure made the change necessary, that belongs there too. `Fix styles` cannot carry any of that weight.",
-          "The order matters as much as the wording. A refactor that makes room for a feature should land before the feature. Generated output should be tied to the source change that produced it, or separated clearly when it deserves its own checkpoint. Each commit should leave the project in a state another person can inspect without mentally borrowing half of the next one.",
-          "That history gives the pull request its natural outline. Instead of inventing a summary after the work is done, the PR can walk through the same changes in the order they landed and explain each one in plain language.",
+          "If I can't name a commit in one line, it's probably two commits. The title says what it does. The body says what was wrong, and if a measurement or a failing test forced the change, that goes in too. `Fix styles` tells you nothing.",
+          "Order matters too. The refactor that makes room for a feature lands before the feature. Generated files go in with the change that generated them. And every commit should make sense on its own, without the reader needing half of the next one to follow it.",
+          "Get that right and the PR description mostly writes itself. It walks through the commits in order and explains each one.",
         ],
       },
       {
         heading: "Put the proof next to the explanation",
         paragraphs: [
-          "Visual changes need visual evidence. I want matched before-and-after screenshots for a static interface, and a short recording when timing, focus, scrolling, or another interaction is the point. The reviewer should not have to check out a branch just to learn whether the card moved or the transition still makes sense.",
-          "Changes without a visible surface still need a picture of the idea. A small ASCII map can show a request moving through a new boundary, a file becoming the source of generated output, or a data field reaching the component that renders it. It does not have to look formal. It has to use the names that a person reading the repository will recognize.",
-          "The evidence belongs in the pull request itself. A path on one person's computer is not part of the record, and a note that says screenshots are coming is not finished review material. When an agent cannot upload the media, the skill keeps the PR as a draft and leaves the prepared files ready for that last handoff.",
+          "If the change is visual, show it. Before and after screenshots at the same size, or a short recording when timing, focus, or scrolling is the point. Nobody should have to check out a branch to find out whether the card moved.",
+          "Changes you can't see still get a picture. A rough ASCII sketch of where a request goes now, or which file generates which, is enough. It doesn't need to be pretty. It needs to use the same names as the code.",
+          "And it goes in the PR, not on my laptop. “Screenshots coming” doesn't count. If the agent can't upload them, the skill leaves the PR as a draft with the files ready for me to drop in.",
         ],
       },
       {
         heading: "A checklist should still sound like a person",
         paragraphs: [
-          "Structure helps, but it can also flatten the writing. I do not want every pull request to begin with the same sentence about improving an experience. The description should use the nouns from the work, mention the actual tradeoff, and say exactly which checks ran. If a test failed, that is more useful than a polished claim that everything was verified.",
-          "The skill does not grant itself permission to rewrite history, push a branch, publish a pull request, or mark a draft ready. It works inside the authority the request already gave it. That boundary is part of making the output trustworthy: a careful description is not useful if it quietly performs a different operation behind it.",
-          "This is the first tool in a small public library. I expect the wording to change as I use it on real work. That is another reason to keep it as a skill rather than a paragraph I paste into every repository: the habit can improve in one place while each project keeps its own local rules.",
+          "A template can make every PR sound the same, and I don't want fifty descriptions that open with “This PR improves the experience of.” Use the actual names from the work. Say what the tradeoff was. List the checks that really ran, and if one failed, say so. That's worth more than a clean “all verified.”",
+          "It also won't rewrite history, push, open a PR, or mark a draft ready unless you asked for that. A nice description isn't worth much if the agent did something else while writing it.",
+          "It's the first thing in a small public library, and the wording will keep changing as I use it. That's why it's a skill and not a paragraph I paste into every repo. I fix it once, and each project still keeps its own rules.",
         ],
         annotations: [
-          { at: 2, place: "left", text: "The first user of the skill is this PR" },
+          { at: 2, place: "left", text: "Its first real test was this PR" },
         ],
       },
     ],
-    acknowledgements: "The skill grew from the commit and pull-request conventions used on this site. Its examples are generic so another repository can keep its own voice.",
+    acknowledgements: "The skill came out of how I write commits and PRs on this site. The examples are generic on purpose, so your repo can keep its own voice.",
   },
   {
     ...writingPreviews[0],
-    acknowledgements: "Expanded from my own draft. The file names are this site's: `PROJECT_STATUS.md` and `DESIGN_QA.md` are the two I actually keep.",
+    acknowledgements: "From my own draft. `PROJECT_STATUS.md` and `DESIGN_QA.md` are the two files I actually keep for this site.",
     // Source: supplied draft screenshot, 01.19.00; PROJECT_STATUS.md and DESIGN_QA.md.
     annotations: [
       { at: 0, place: "right", text: "This one began as a to-do list" },
@@ -262,25 +262,25 @@ export const writings: Writing[] = [
       {
         heading: "The explanation belongs near the work",
         paragraphs: [
-          "An agent can inspect a component and see how it's built. That doesn't mean it knows why the component works that way. Maybe the unusual spacing is deliberate. Maybe a screen is an experiment. Maybe something that looks unfinished is waiting on a decision, and polishing it would be wasted effort.",
-          "Those are the details I want to write down. A status file can explain what's settled and what is still open. A design QA file can describe what feels wrong in the actual interface. A note about the design system can give the next change some boundaries before another slightly different version of the same button appears.",
-          "The useful part is that I can read the same context. I don't want a separate set of instructions that only makes sense to an agent. If I come back to a project and the file helps me remember what I was thinking, it's already doing something valuable.",
+          "An agent can read a component and see how it's built. It can't see why. The odd spacing might be on purpose. The screen might be an experiment. The thing that looks unfinished might be waiting on a decision, and polishing it now is wasted work.",
+          "That's what I write down. The status file says what's settled and what's still open. The design QA file lists what feels off in the real interface. A few lines about the design system stop the next change from inventing a fourth version of the same button.",
+          "And I read these files too. I don't want instructions that only make sense to an agent. If I open a project after two weeks away and the file reminds me what I was thinking, it already earned its place.",
         ],
       },
       {
         heading: "A file can become another place to forget things",
         paragraphs: [
-          "Of course, adding a document doesn't make it true forever. A status file that describes last week's work can be more confusing than no status file at all. It sounds authoritative. It has a sensible name. Someone will probably believe it.",
-          "This is the part I want to be careful about as I keep adding files. Every document creates a small maintenance job. If two files describe the same decision, they can disagree. If every passing thought becomes a rule, the project gets harder to understand instead of easier.",
-          "I'd rather have a short explanation of the current decision than a long record that makes every abandoned direction look equally relevant. There can be room for history, but the next person reading should be able to tell which parts still apply.",
+          "A file doesn't stay true on its own, though. A status file describing last week is worse than none. It has a confident name and it sounds sure of itself, so someone will believe it. Usually the agent.",
+          "Every new file is a small chore. Two files describing the same decision will eventually disagree. And if every passing thought turns into a rule, the project gets harder to understand, not easier.",
+          "I'd rather keep a short note about what we decided than a long log where every dead end looks as important as the current plan. History is fine. It just has to be obvious which parts still apply.",
         ],
       },
       {
         heading: "Use the format that helps the next step",
         paragraphs: [
-          "I still see a reason for a visual canvas and a shared task tracker. A picture can explain a relationship that takes several paragraphs to describe. A team may need a place to assign work and see who is waiting on whom. A folder full of text doesn't automatically do either job well.",
-          "For the context I keep repeating, though, a small file is becoming a very comfortable place to start. I can change it while working, keep it close to the implementation, and give the next session something more useful than a blank slate.",
-          "The question I'm trying to ask before creating another one is simple: what will this help me or the agent understand next time? If I can answer that clearly, the file probably deserves to exist.",
+          "I haven't given up on canvases or task trackers. Sometimes one picture saves three paragraphs. A team needs somewhere to assign work and see who's blocked. A folder of text files is bad at both.",
+          "But for the context I keep repeating, a small file next to the code is where I start now. I can edit it mid-task, and the next session doesn't start from zero.",
+          "Before I add another one, I ask what it'll help me or the agent understand next time. If I can't answer that, I don't make the file.",
         ],
         annotations: [
           { at: 0, place: "left", text: "Kept Linear for the team parts anyway" },
@@ -290,7 +290,7 @@ export const writings: Writing[] = [
   },
   {
     ...writingPreviews[1],
-    acknowledgements: "Expanded from two posts of mine on X and a draft written alongside them. The Figma-to-code workflow described here is my own; nothing in it is a claim about how anyone else works.",
+    acknowledgements: "From two of my posts on X and a draft I wrote around the same time. It's my own Figma-to-code workflow. I'm not saying anyone else works this way.",
     // Sources: supplied draft screenshot, 01.18.48, and Rafael's public posts:
     // https://x.com/rafaelmedian/status/2020873645401276488
     // https://x.com/rafaelmedian/status/2020875883116937589
@@ -301,25 +301,25 @@ export const writings: Writing[] = [
       {
         heading: "Close is a difficult place to work from",
         paragraphs: [
-          "A rough first version is easy to appreciate. There was nothing, and now there is a page. A version that is almost right asks for a different kind of attention. You start seeing all the relationships that are slightly off: a panel that's too wide, a heading wrapping too early, a mobile layout that technically fits but reads in the wrong order.",
-          "These are normal design decisions. In a visual tool, I can often point at the thing and change it. In a conversation, I have to describe the thing, explain the desired result, and then check whether the change affected something else. The request may be short while the verification takes much longer.",
-          "That's what I meant when I compared vibe coding to bowling. Some throws land beautifully. Others miss in a way I didn't expect. When I know exactly what I want to adjust, I'd like a little less suspense.",
+          "A rough first version is easy to love. There was nothing, and now there's a page. Almost right is harder. Now you see everything that's slightly off: a panel that's too wide, a heading that wraps too early, a mobile layout that fits but reads in the wrong order.",
+          "None of that is unusual design work. In Figma I'd just grab the thing and move it. In a chat I have to describe it, describe what I want instead, and then check nothing else moved. Asking takes a sentence. Checking takes ten minutes.",
+          "That's why I said vibe coding feels like bowling. Some throws are perfect. Some miss in ways I couldn't have predicted. When I know exactly what I want to change, I don't want the suspense.",
         ],
       },
       {
         heading: "Getting connected is only the beginning",
         paragraphs: [
-          "In one of my drafts I called this 'MCP hell.' I'd been working through a v0-to-Claude Code workflow, and it felt like most of my time went into matching the layout and structure from Figma. Once that barrier was crossed, iteration opened up. Getting across it was the expensive part.",
-          "That experience makes me cautious about judging a workflow by whether two tools can talk to each other. Access to the design is useful. Understanding which relationships need to survive in the browser is another problem. A connection can carry information while leaving me with plenty of explaining to do.",
-          "What I want is the ability to make a precise correction and keep the surrounding decisions intact. Move this. Preserve that. Show me what changed at the smaller size. The more directly I can express those intentions, the more useful the speed becomes.",
+          "In one draft I called this 'MCP hell.' I was going from v0 to Claude Code, and most of my time went into getting the layout and structure to match Figma. After that, iterating was fast. Getting there was what cost me.",
+          "So I don't get too excited when two tools can finally talk to each other. Sure, the agent can read the design now. Knowing which parts of it have to survive in the browser is a different problem, and I'm still the one explaining that.",
+          "What I want is to fix one thing and leave the rest alone. Move this. Keep that. Show me what happened on mobile. The speed only helps if I can say that directly.",
         ],
       },
       {
         heading: "I want both speeds",
         paragraphs: [
-          "My preference in that post was to use Framer for structure and AI for things like shaders, animation, and exploring ideas. That was a response to the friction I was feeling. I wouldn't turn it into a permanent rule about which tool belongs in every designer's workflow.",
-          "The balance can change. A visual tool might make generation easier to steer. An agent might give me a better way to select and adjust a specific part of the page. Either would help with the same frustration.",
-          "I want the speed of asking for a whole possibility and the precision of adjusting one small detail. The exciting moment is when those two things happen in the same workflow, and I can spend more time deciding what feels right than explaining why the last attempt still doesn't.",
+          "In that post I said I'd use Framer for structure and AI for shaders, animation, and trying ideas. That was me being annoyed that week. It isn't a rule for anyone else's workflow.",
+          "It could flip. Visual tools might get better at steering generation. Agents might let me point at part of the page and change just that. Either one fixes my problem.",
+          "I want to ask for a whole page and then nudge one detail, in the same place. Then I could spend my time deciding what feels right, instead of explaining why the last try still doesn't.",
         ],
         annotations: [
           { at: 1, place: "left", text: "Less sure about this than I was in July" },
@@ -329,34 +329,34 @@ export const writings: Writing[] = [
   },
   {
     ...writingPreviews[2],
-    acknowledgements: "Expanded from a reply I drafted about tokens, time, and running costs. The accounting is mine, and it changes every time the tools do.",
+    acknowledgements: "From a reply I drafted about tokens, time, and running costs. The math is mine, and it changes every time the tools do.",
     // Source: supplied draft screenshot, 01.19.00; reply about tokens, time, and running costs.
     annotations: [
-      { at: 1, place: "right", text: "I always forget upkeep" },
+      { at: 1, place: "right", text: "I always forget the upkeep" },
     ],
     sections: [
       {
         heading: "The first working version has a very good sales pitch",
         paragraphs: [
-          "A small tool that does exactly what you asked is persuasive. It doesn't have the extra screens you never use. You can change the wording, remove a step, or arrange the information around your own habits. There is a real appeal in having software that fits without asking someone else to prioritize your request.",
-          "But the first version is also the point where you know the least about living with it. Consider a simple tool that pulls information from another service. Getting the information onto a page might be straightforward. What happens when the connection stops working, the data arrives late, or you need to understand a result you didn't expect?",
-          "Those questions don't make the project a bad idea. They belong in the decision. If I only compare the subscription price with the cost of generating the first version, I'm leaving out a lot of the work I may be agreeing to do.",
+          "A small tool that does exactly what you asked for is hard to argue with. No screens you never open. You can reword it, drop a step, lay it out the way you work. And you don't have to wait for someone else's roadmap.",
+          "But the first version is when you know the least about living with it. Say it pulls data from some other service. Getting that onto a page is easy. Then the API changes, or the data shows up late, or a number looks wrong and you have to figure out why.",
+          "That doesn't make it a bad idea. It just belongs in the math. If I only compare the subscription to what the first version cost me in tokens, I'm leaving out most of the work I'm signing up for.",
         ],
       },
       {
         heading: "Your attention belongs in the calculation",
         paragraphs: [
-          "Time is the cost that's easiest to wave away when building is fun. An evening spent exploring a tool can be worth it on its own. I don't need every experiment to justify itself as a saving. Learning something and enjoying the process are perfectly good reasons to make software.",
-          "I do want to distinguish that from replacing something I depend on. If a tool supports my everyday work, maintenance competes with that work. Even a quick fix requires me to notice the problem, remember how the project works, and check that the correction holds up.",
-          "Paying for a product can mean paying someone else to carry those concerns. Whether they do that well is another question, but it's part of what the price is supposed to cover. The comparison gets more useful when I include the responsibility on both sides.",
+          "Time is easy to ignore when building is fun. An evening messing with a tool can be worth it on its own. Not every experiment has to save money. Learning something and having fun are good enough reasons.",
+          "Replacing something I rely on is different. If it's part of my daily work, fixing it eats into that work. Even a quick fix means noticing it broke, remembering how I built it, and checking the fix holds.",
+          "When I pay for a product, part of what I'm paying for is that it's someone else's problem when it breaks. They don't always handle it well, but that's what the price is for. The comparison only works if I count that.",
         ],
       },
       {
         heading: "Make the decision small enough to revisit",
         paragraphs: [
-          "For a narrow personal need, I'd be more willing to build something small and see whether I actually use it. The scope gives me a way to learn without committing to recreate an entire product. If it turns out to need constant attention, that's useful information too.",
-          "I'd ask what happens if I stop maintaining it. Can I get my information out? Can I return to the previous tool? Does a broken version interrupt something important, or does it just mean an experiment has run its course? Those answers change how much uncertainty I'm comfortable taking on.",
-          "The incentive will keep shifting as the tools change. I want to stay open to that without treating every new capability as another thing I should now own. Sometimes building is the right use of an afternoon. Sometimes paying for the tool is what gives me the afternoon back.",
+          "For something small and just for me, I'll happily build it and see if I keep using it. I'm not rebuilding a whole product, just trying an idea. If it needs constant babysitting, now I know.",
+          "I ask what happens if I stop maintaining it. Can I get my data out? Can I go back to what I used before? If it breaks, does something important stop, or did an experiment just end? That decides how much risk I'm fine with.",
+          "The math will keep moving as the tools get better. I want to stay open to it without feeling like I have to own everything I could build now. Sometimes building it is a good afternoon. Sometimes paying is how I get the afternoon back.",
         ],
         annotations: [
           { at: 1, place: "left", text: "First question now: can I get my data out" },
@@ -366,12 +366,12 @@ export const writings: Writing[] = [
   },
   {
     ...writingFields("room-to-figure-it-out"),
-    acknowledgements: "Expanded from a draft about family, distance, and independence. It is written from my own experience and the conversations behind it, not as a description of anyone else's family.",
+    acknowledgements: "From a draft about family, distance, and independence. It comes from my own experience and conversations around it. It's not about anyone else's family.",
     // Source: supplied draft screenshot, 01.19.00; reflection on family and independence.
     paragraphs: [
-      "I've been thinking about when people get their first real opportunity to figure things out on their own. In a draft, I compared the expectation of leaving home for college or work in the US with the stronger expectation of staying close to family in parts of Latin America and the Caribbean.",
-      "That's a broad comparison, and there are plenty of lives it doesn't describe. Still, the question underneath it interests me: how much room do we give someone to practice independence while they still have support?",
-      "Moving out is one way to get that room. It isn't the only one, and an address doesn't tell you how much responsibility a person carries. What I keep coming back to is the experience of making a decision and being the person who has to deal with what follows.",
+      "I keep thinking about when people first get to figure things out on their own. In a draft I compared the US, where you're kind of expected to leave home for college or work, with parts of Latin America and the Caribbean, where staying close to family is the default.",
+      "That's a huge generalization and plenty of people don't fit it. But the question under it stuck with me. How much room does someone get to practice being on their own while they still have people to fall back on?",
+      "Moving out is one way to get that room. Not the only one, and where you live says little about how much you're responsible for. What I care about is making a call and then being the one who deals with what happens next.",
     ],
     annotations: [
       { at: 0, place: "right", text: "My cousins and I answered this differently" },
@@ -380,25 +380,25 @@ export const writings: Writing[] = [
       {
         heading: "Everyday decisions are practice",
         paragraphs: [
-          "A lot of independence is very ordinary. Organizing your time. Working out how to get somewhere. Making an appointment you would rather avoid. Deciding how to spend money when there isn't enough for every option. These aren't dramatic milestones, but they give you repeated chances to use your own judgment.",
-          "If someone else always steps in before a decision becomes uncomfortable, you can miss that practice. The help may be generous and well intentioned. It can still leave you less prepared for the moment when nobody is available to take over.",
-          "This is the tension I was trying to get at in the draft. A family can offer a lot of care while making it difficult for a young person to try something unfamiliar. The wish to protect someone can extend beyond protecting them from harm and into protecting them from ordinary uncertainty.",
+          "Most independence is boring. Planning your week. Figuring out how to get somewhere. Calling to make the appointment you've been putting off. Deciding what to spend on when the money doesn't cover everything. None of it is a milestone. It's just practice using your own judgment, over and over.",
+          "If someone always steps in before it gets uncomfortable, you miss that practice. The help comes from love. It still leaves you less ready for the day nobody's around to take over.",
+          "That's what I was trying to say in the draft. A family can care a lot and still make it hard to try something new. Protecting someone from harm slowly turns into protecting them from not knowing how things will go.",
         ],
       },
       {
         heading: "Leaving is not equally available to everyone",
         paragraphs: [
-          "I don't want to turn moving out at eighteen into a test of ambition or maturity. Being able to leave depends on what you can afford, where the opportunities are, and what responsibilities you have at home. Two people can make different choices for equally serious reasons.",
-          "There is also a lot to value in staying close. Shared meals, help when someone is ill, relationships that don't have to be scheduled weeks in advance. I wouldn't want a version of independence that treats all of that as something to outgrow.",
-          "The distinction I'd make is between having support available and needing permission for every meaningful choice. You can live with family and be trusted to run your own life. You can live far away and still feel that every decision requires approval. Distance alone doesn't answer the question.",
+          "I don't want moving out at eighteen to be a test of who's ambitious or grown up. Whether you can leave depends on money, where the jobs are, and who needs you at home. Two people can choose differently for equally good reasons.",
+          "And staying close has a lot going for it. Dinners together. Someone around when you're sick. Seeing people without booking them three weeks out. I don't want a kind of independence that treats all that as something to grow out of.",
+          "The difference I care about is between having support and needing permission. You can live with your parents and still run your own life. You can live an ocean away and still feel like every decision needs a sign-off. Distance doesn't settle it.",
         ],
       },
       {
         heading: "Support should leave some room",
         paragraphs: [
-          "The balance I'd like to see is room to make manageable mistakes while help is still within reach. Let someone plan the trip, handle the application, solve the scheduling problem, or choose a direction that isn't the family's first preference. Be available when they're stuck without automatically taking the decision away.",
-          "That asks for something from both sides. The person learning needs to take responsibility, including for the boring parts. The people helping need to tolerate a process they might have handled differently. Neither part sounds especially comfortable, which may be why the balance is hard to find.",
-          "I don't think there is one correct age to leave, or one correct distance to put between yourself and home. I do think there should be increasing room to act on your own judgment. Staying close to the people who care about you ought to leave space for becoming someone they don't have to guide through every next step.",
+          "What I'd want is room to make small mistakes while help is still close. Let them plan the trip, fill out the application, sort out the schedule, or pick something the family wouldn't have picked. Be there when they're stuck, without taking the decision away.",
+          "Both sides have to give something. The person learning has to own it, boring parts included. The people helping have to watch them do it differently than they would have. Neither is comfortable, which is probably why this is hard.",
+          "There's no right age to leave and no right distance from home. But the room to use your own judgment should keep growing. You should be able to stay close to your family and still become someone they don't have to walk through every step.",
         ],
         annotations: [
           { at: 0, place: "left", text: "Let them book the wrong flight once" },
@@ -408,12 +408,12 @@ export const writings: Writing[] = [
   },
   {
     ...writingFields("a-song-we-all-know"),
-    acknowledgements: "Expanded from a post of mine on X about the song of the summer. Thanks to everyone who has sent me a track since; it is still the better way to hear one.",
+    acknowledgements: "From a post of mine on X about the song of the summer. Thanks to everyone who's sent me a track since. Still the best way to find one.",
     // Source: https://x.com/rafaelmedian/status/1940027633594458581
     paragraphs: [
-      "I posted that it feels like there isn't a song of the summer anymore. Everyone gets their own tailored bubble of music. A song can seem unavoidable in one person's world and barely exist in someone else's.",
-      "I don't mean that popular songs have disappeared. I'm talking about the feeling of assuming we all know the same one. The song you can mention without playing a clip first. The opening few seconds that make a whole room react at once.",
-      "Personalized discovery gives us plenty to enjoy. The part I'm wondering about is what happens to the overlap. If each of us gets a better soundtrack for ourselves, do we lose a little of the soundtrack we had together?",
+      "I posted that it feels like there's no song of the summer anymore. Everyone's in their own music bubble. A song can be everywhere for you and basically not exist for the person next to you.",
+      "Hits still exist. I mean the feeling that we all know the same one. The song you can bring up without pulling out your phone to play it. The first few seconds that make a whole room go “oh!”",
+      "I like what the algorithm finds me. I just wonder about the overlap. If everyone gets a better soundtrack of their own, do we lose some of the one we shared?",
     ],
     annotations: [
       { at: 0, place: "right", text: "Asked three friends, got three summers" },
@@ -422,25 +422,25 @@ export const writings: Writing[] = [
       {
         heading: "A good recommendation can make your world feel complete",
         paragraphs: [
-          "There is something very convenient about being handed more of what you already like. You don't need to know the artist's name or spend an evening looking for a new album. Another song appears, it fits the mood, and you keep listening. As a product experience, that can feel almost effortless.",
-          "It also makes your own listening habits a strange guide to what everyone else is hearing. If a track keeps showing up for you, it's easy to assume it's showing up everywhere. Then you mention it to someone whose recommendations have been following a completely different path.",
-          "That gap is interesting to me. Two people can spend similar amounts of time in the same app and leave with very different impressions of what is happening in music. Sharing a platform doesn't necessarily mean sharing much of the experience inside it.",
+          "It's really convenient to be handed more of what you already like. You don't need the artist's name or a free evening to dig for an album. The next song shows up, it fits, you keep going. As a product, it's almost effortless.",
+          "It also makes your own feed a bad guide to what anyone else is hearing. A track keeps coming up for you, so you figure it's everywhere. Then you bring it up and the other person has never heard it.",
+          "Two people can spend the same hours in the same app and come away with totally different ideas of what's big right now. Same platform, barely any of the same music.",
         ],
       },
       {
         heading: "The shared song didn't have to be your favorite",
         paragraphs: [
-          "Part of a song of the summer was that you couldn't entirely choose it. It was playing somewhere, someone else put it on, and eventually you knew it. You might have loved it or been completely tired of it. Either way, it became a reference you could share.",
-          "I find that different from receiving a recommendation that perfectly matches my taste. The shared song has a social use beyond whether I would save it. It gives people something to recognize, sing along to, joke about, or associate with a particular stretch of time.",
-          "There are tradeoffs in that kind of common culture too. A small set of songs getting most of the attention leaves less room for everything else. I like being able to find music outside that narrow selection. I just don't think more individual choice makes the shared part irrelevant.",
+          "Part of a song of the summer was that you didn't pick it. It was playing at the store, someone put it on at a party, and at some point you just knew it. Maybe you loved it, maybe you were sick of it. Either way, everyone got the reference.",
+          "That's not the same as a recommendation that fits my taste perfectly. The shared song is useful even if I'd never save it. People sing along, make jokes about it, and years later it means that one summer.",
+          "That had downsides too. When a handful of songs get all the attention, everything else gets less. I'm glad I can find music outside that. I just don't think more choice makes the shared part pointless.",
         ],
       },
       {
         heading: "Leave a little room for someone else's taste",
         paragraphs: [
-          "Maybe what I'm missing is less about the size of a hit and more about how music reaches me. A song sent by a friend comes with that person attached. A playlist someone makes for a gathering has to negotiate several tastes at once. There is a reason to listen that isn't simply that the next track resembles the last one I enjoyed.",
-          "I'd like more of those openings in the products we use. A way to step into someone else's listening for a while. A shared queue where the occasional unexpected choice is part of the point. Something that makes the distance between our separate recommendations easier to cross.",
-          "I still want to discover music that feels like it was made for me. I also want the occasional song that belongs to a room full of people. Sometimes the best thing about a track is looking up when it starts and seeing that everyone else knows it too.",
+          "Maybe what I miss isn't big hits. It's how songs used to get to me. A song a friend sends comes with that friend. A playlist for a party has to work for a bunch of people at once. I'm listening for a reason other than “it sounds like the last one you liked.”",
+          "I'd like apps to make more room for that. Let me listen through someone else's ears for a while. A shared queue where the weird pick is the point. Anything that gets me out of my own bubble for a bit.",
+          "I still want music that feels made for me. I also want the odd song that belongs to a whole room. Sometimes the best part of a track is looking up when it starts and seeing everyone else knows it too.",
         ],
         annotations: [
           { at: 0, place: "left", text: "It arrives with the friend attached" },
@@ -450,11 +450,11 @@ export const writings: Writing[] = [
   },
   {
     ...writingFields("designing-matcha"),
-    acknowledgements: "Matcha was designed at the 0x Project, with its product, engineering, and research teams. The screens here are theirs as much as mine; the reading of them is my own.",
+    acknowledgements: "I designed Matcha at the 0x Project with its product, engineering, and research teams. The screens are theirs as much as mine. What I say about them here is just me.",
     cover: { src: "/Projects/shot-small-16-poster.webp", alt: "Matcha discovery homepage with token search and market overview", width: 640, height: 480 },
     paragraphs: [
-      "A swap can fit inside a small rectangle: two tokens, an amount, a button. Designing that rectangle is only part of designing a trading product. Someone still has to find the token, decide whether they want it, choose an account, understand the quote, and work out what happened after they signed.",
-      "My work on Matcha covered those surrounding parts as well as the trade itself. I worked on the homepage, token pages, wallets, the trade module, mobile, and the product's dark theme. Looking across them, the question I find most useful is fairly ordinary: what does someone have to remember when they move from here to the next screen?",
+      "A swap fits in a small box: two tokens, an amount, a button. That box is a small part of a trading product. People still have to find the token, decide they want it, pick a wallet, understand the quote, and figure out what happened after they signed.",
+      "I worked on all of that, not only the trade: the homepage, token pages, wallets, the trade module, mobile, and the dark theme. The question I kept asking was pretty basic. What does someone have to remember when they go from this screen to the next one?",
     ],
     annotations: [
       { at: 1, place: "right", text: "The swap box was never the hard part" },
@@ -463,35 +463,35 @@ export const writings: Writing[] = [
       {
         heading: "Different reasons to arrive",
         paragraphs: [
-          "On the homepage, search, market browsing, and wallet connection give people different ways in. A person with a token in mind shouldn't have to browse a showcase first. Someone who is just looking around needs more than an empty trade form. I led the page structure around those different starting points.",
-          "That creates a real layout problem. Giving every route equal emphasis makes the page compete with itself. Giving one route all the space makes the others hard to find. The hierarchy has to make a first move obvious while leaving the other doors visible.",
+          "The homepage has three ways in: search, browsing the market, and connecting a wallet. If you already know the token, you shouldn't have to scroll past a showcase. If you're just looking around, an empty trade form gives you nothing. I led the page structure around those starting points.",
+          "That's a real layout problem. Give all three the same weight and the page fights itself. Give one all the space and the others disappear. The first move has to be obvious, and the other two still have to be easy to find.",
         ],
         image: projectImage("preview-shot-16"),
       },
       {
         heading: "The space around the trade",
         paragraphs: [
-          "The token page puts market data, charts, trade controls, and order history together. That lets research lead into a trade without a trip to an unrelated page. It also means more things are asking for attention in the same view. A chart can use almost any amount of space you give it; the quote still needs to be readable beside it.",
-          "The wallet flow has a less visible kind of continuity. People can switch wallets while keeping their quote and inputs. The account and balance change, but the work of entering a trade doesn't need to disappear with them. Preserving that work matters just as much to the experience as arranging the panels.",
+          "The token page puts market data, the chart, the trade form, and order history on one screen, so you can go from research to trading without leaving. It also means a lot of things want your attention at once. A chart will take all the space you give it, and the quote still has to be readable next to it.",
+          "The wallet flow has a quieter detail. You can switch wallets and keep your quote and what you typed. The account and balance change, but the trade you were setting up stays. Nobody notices that until it's missing.",
         ],
         image: projectImage("preview-shot-21"),
       },
       {
         heading: "A system has to survive the awkward states",
         paragraphs: [
-          "The main screens are the easiest part of this work to show. A wallet that is still loading, a token check that hasn't returned, or a quote waiting for confirmation is harder to explain in a portfolio image. Those states still belong to the product, and I designed them alongside the more presentable ones.",
-          "The dark theme needed the same attention across surfaces, component states, and charts. On mobile, the information had to take a different order because it couldn't all sit side by side. Consistency meant keeping the meaning of a control or a status recognizable as its surroundings changed.",
+          "The main screens are the easy part to show off. A wallet still loading, a token check that hasn't come back, a quote waiting on confirmation, those don't make great portfolio shots. They're still the product, and I designed them along with the pretty ones.",
+          "Dark mode had to work everywhere: surfaces, every component state, the charts. On mobile everything had to be reordered, since nothing fits side by side. Keeping it consistent meant a button or a status had to mean the same thing wherever it ended up.",
         ],
         image: projectImage("preview-shot-22"),
       },
       {
         heading: "What the screens can tell you",
         paragraphs: [
-          "These images show the structure and the decisions I worked on. They don't tell me whether someone felt confident during a particular trade, or where they hesitated. I wouldn't want to turn a tidy screenshot into evidence for that.",
-          "What I can point to is the connection between the pieces: a token carried from discovery into research, a wallet change that preserves the form, and transaction details available before signing. That's the part of this work I want the portfolio to make visible. The individual screens make more sense when you can see what they allow someone to do next.",
+          "These images show the structure and the calls I made. They can't tell me if someone felt sure about a trade, or where they hesitated, and I'm not going to pretend a clean screenshot proves that.",
+          "What I can show is how the pieces connect. A token you found carries into its page. Switching wallets doesn't wipe the form. The transaction details are there before you sign. That's what I want people to notice. Each screen makes more sense once you see where it leads.",
         ],
         annotations: [
-          { at: 0, place: "left", text: "A tidy screenshot proves nothing here" },
+          { at: 0, place: "left", text: "Screenshots can't show hesitation" },
         ],
         image: projectImage("preview-shot-14"),
       },
@@ -499,50 +499,50 @@ export const writings: Writing[] = [
   },
   {
     ...writingFields("designing-for-active-traders"),
-    acknowledgements: "Matcha Pro was designed at the 0x Project, alongside the product and engineering teams who built and shipped it.",
+    acknowledgements: "I designed Matcha Pro at the 0x Project with the product and engineering teams who built and shipped it.",
     paragraphs: [
-      "There's a version of interface simplicity that photographs very well: one action, a few numbers, plenty of empty space. It's useful for a focused task. It becomes less convincing when the task involves repeatedly checking a chart, an order, a balance, and a live quote.",
-      "Matcha Pro brings live charts, token signals, transactions, and order management into a denser workspace. I led its product structure and interaction design. The density is the interesting part of that work, because adding information only helps if someone can keep finding what they came back for.",
+      "There's a kind of simple UI that looks great in a screenshot: one button, a few numbers, lots of white space. Fine for one focused task. Not so fine when you're checking a chart, an order, a balance, and a live quote over and over.",
+      "Matcha Pro puts live charts, token signals, transactions, and order management in one dense workspace. I led the product structure and interaction design. The hard part was the density. More information only helps if people can still find what they came back for.",
     ],
     annotations: [
-      { at: 0, place: "right", text: "Photographs better than it works" },
+      { at: 0, place: "right", text: "Great on Dribbble, though" },
     ],
     sections: [
       {
         heading: "Familiar places for changing information",
         paragraphs: [
-          "In a workspace used repeatedly, position does some of the work that labels do on a first visit. A person can learn where to look for an open order or a balance. If the layout keeps changing to accommodate whichever panel has the most content, that familiarity becomes less useful.",
-          "My preference here is for a stable arrangement with a clear hierarchy inside it. The numbers and activity can change while their places stay recognizable. Density becomes easier to read when related details stay together and each region has an identifiable purpose.",
+          "When you use a screen every day, where things are starts doing the job labels did on day one. You learn where your open orders live, where your balance is. If the layout shifts around whichever panel has the most in it, you lose that.",
+          "So I kept the layout fixed and put the hierarchy inside it. The numbers change; where they sit doesn't. Dense is fine when related things sit together and each area has one job.",
         ],
         annotations: [
-          { at: 0, place: "left", text: "By visit five you look, you don't read" },
+          { at: 0, place: "left", text: "By the fifth visit nobody reads labels" },
         ],
         image: projectImage("preview-shot-23"),
       },
       {
         heading: "Visible doesn't have to mean loud",
         paragraphs: [
-          "A chart, a transaction list, and an order control don't all need the same visual emphasis to remain available. Borders, labels, and spacing can give a panel a place without making it compete with every other panel. Making everything bold would defeat the reason for putting it together.",
-          "The main Matcha trade page has a related problem at a different density: it brings the quote, chart, balances, open orders, and history into one layout. In both cases, the work is deciding which relationships are useful to see at the same time.",
+          "A chart, a transaction list, and an order form don't all need to shout to be there. Borders, labels, and spacing give each panel its spot without fighting the others. Make everything bold and you've lost the point of putting it all on one screen.",
+          "The regular Matcha trade page has the same problem with less on it: quote, chart, balances, open orders, and history in one layout. Either way, the job is deciding what's worth seeing side by side.",
         ],
         image: projectImage("preview-shot-1"),
       },
       {
         heading: "A dedicated workspace is a choice",
         paragraphs: [
-          "Keeping advanced tools in Matcha Pro gives them a dedicated home alongside the standard swap experience. That separation has a cost: there are two contexts for the product to maintain and explain. I think it's worth acknowledging that whenever a more specialized interface is presented as an obvious improvement.",
-          "A denser screen earns its place when the surrounding information helps with the task in front of someone. The number of panels isn't evidence by itself. I'd judge the workspace by whether the person can return to the same question, find the relevant detail, and continue their work without hunting for it again.",
+          "Putting the advanced tools in Matcha Pro gives them their own place next to the normal swap. That has a cost. Now there are two products to maintain and explain, and people tend to skip that part when they call a pro mode an upgrade.",
+          "A denser screen is worth it when the extra stuff helps with what you're doing right now. More panels isn't the goal. The test is whether you can come back with the same question, find the answer, and keep going without hunting for it.",
         ],
       },
     ],
   },
   {
     ...writingFields("quote-to-confirmation"),
-    acknowledgements: "The trade module was designed at the 0x Project with its product and engineering teams. The token checks shown here use GoPlus data.",
+    acknowledgements: "I designed the trade module at the 0x Project with its product and engineering teams. The token checks use GoPlus data.",
     cover: { src: "/Projects/6842e949f7d5d856726cc384_shot-small-19.jpg", alt: "Matcha trade module showing the quote, review, and confirmation interface", width: 1600, height: 1200 },
     paragraphs: [
-      "The moment before signing a transaction deserves some space. Up to that point, a person has been editing a form. Now they're being asked to act on it. A large confirmation button is easy to design; a useful explanation of what that button commits them to takes more care.",
-      "I owned the quote, fee, route, and transaction states in Matcha's trade module. The work included amount entry and token selection, but the part I want to talk about here is the handoff from entering a trade to reviewing it.",
+      "The moment before you sign a transaction needs a little space. Until then you've been filling out a form. Now you're about to act on it. A big confirm button is easy. Explaining what that button commits you to is the actual work.",
+      "I owned the quote, fee, route, and transaction states in Matcha's trade module. I also did amount entry and token selection, but here I want to talk about the step from entering a trade to reviewing it.",
     ],
     annotations: [
       { at: 0, place: "right", text: "Up to here it is still just a form" },
@@ -551,8 +551,8 @@ export const writings: Writing[] = [
       {
         heading: "Give the numbers a clear meaning",
         paragraphs: [
-          "The amount entered, the amount expected back, and the network cost answer different questions. If they all look like equally weighted rows of numbers, a person has to work out the hierarchy for themselves. If the secondary details are made too quiet, the form looks simpler at the expense of being inspectable.",
-          "In the module, the cost, route, and received amount are available before signing. I want the review to be readable in two passes: first, enough to recognize the trade; then, enough detail to check it. That second pass needs to be possible without losing track of the token pair and amount that started the flow.",
+          "What you're paying, what you'll get back, and the network fee answer different questions. Show them as three identical rows and people have to sort out what matters themselves. Make the secondary stuff too faint and the form looks clean, but you can't really check it.",
+          "In the module, cost, route, and what you'll receive are all there before you sign. I wanted two passes. First glance: yes, that's my trade. Second look: the details to check it. And during that second look you shouldn't lose track of which tokens and how much.",
         ],
         annotations: [
           { at: 1, place: "left", text: "Recognize it first, check it second" },
@@ -562,16 +562,16 @@ export const writings: Writing[] = [
       {
         heading: "A warning needs room for uncertainty",
         paragraphs: [
-          "The GoPlus integration added token checks covering source code, tax, minting, and honeypot signals. I designed the loading, pending, warning, and result states. That distinction between states matters: a check that hasn't returned should never read like a reassuring result.",
-          "I think of these checks as additional information at the point of a decision. Their presentation shouldn't promise more certainty than the result provides. A row of completed checks can look very authoritative, especially next to a button, so the words and visual emphasis need to be as considered as the warning color.",
+          "The GoPlus integration added token checks for source code, tax, minting, and honeypots. I designed the loading, pending, warning, and result states. Those need to look different. A check that hasn't come back yet should never look like a pass.",
+          "The checks are extra information right when you're deciding. They shouldn't sound more certain than they are. A row of green checkmarks next to a button looks very official, so the wording and weight matter as much as the warning color.",
         ],
         image: projectImage("preview-shot-20"),
       },
       {
         heading: "Let the review earn its place",
         paragraphs: [
-          "An extra step is only useful if it helps someone notice something they might otherwise miss. Repeating the form with a new heading can become a habit of clicking through. Changing the arrangement too much creates a different problem: now the person has to learn how to read their own trade again.",
-          "The balance I care about is familiarity with a deliberate pause. Keep the transaction recognizable. Bring its consequences into view. Make it easy to go back if something looks wrong. The review has done its job when a person can explain what they're about to approve, even if they decide not to approve it.",
+          "An extra step is only worth it if it helps you catch something you'd have missed. If it's just the same form with a new title, people learn to click straight through. Rearrange it too much and now they have to relearn how to read their own trade.",
+          "So: keep it familiar, and add a real pause. The trade should still look like your trade. Show what will happen. Make going back easy if something's off. The review worked if you could explain what you're about to approve, even if you end up not approving it.",
         ],
       },
     ],

@@ -9,25 +9,25 @@ export const writingPreviews = [
   {
     ...writingFields("project-context-in-markdown"),
     paragraphs: [
-      "I've found myself creating more Markdown files lately. Things I would have put in Linear, or kept beside a design system in Figma, are ending up in files called `PROJECT_STATUS.md` and `DESIGN_QA.md`. It wasn't a big decision to change my workflow. I just kept needing somewhere to put information that both I and an agent could use.",
-      "A task needs a little history. A design decision needs a reason. A bug needs an explanation of what should have happened. When those details are scattered across tools, I become the person carrying them between places. The files started as a way to do less of that.",
-      "What interests me is how ordinary the solution is. A heading, a few sentences, a list of things that still need attention. Enough context to pick up the work without reconstructing the whole conversation first.",
+      "I'm writing a lot more Markdown files lately. Stuff I'd have put in Linear, or next to the design system in Figma, now lives in files called `PROJECT_STATUS.md` and `DESIGN_QA.md`. I never decided to change how I work. I just kept needing a place for things both I and an agent could read.",
+      "A task needs some history. A design decision needs a reason. A bug needs a note about what was supposed to happen. When that's spread across five tools, I end up copying it between them. The files started as a way to stop doing that.",
+      "It's a pretty boring fix. A heading, a few sentences, a list of what's still open. Enough to pick the work back up without rebuilding the whole conversation in my head.",
     ]
   },
   {
     ...writingFields("ai-design-needs-control"),
     paragraphs: [
-      "Claude-only web design is wild when you already have a Figma design in front of you. There is very little mystery about what you want. You can see the layout, the spacing, the way the pieces belong together. Getting the code to arrive at that same place can still take a surprising amount of back and forth.",
-      "I described it on X as three stretches: the first 60% flies, the next 30% takes ages of saying 'no, not like that,' and the final 10% feels like god mode. Those numbers describe the feeling, not a benchmark. The strange part is how quickly the experience swings from impressive to frustrating and back again.",
-      "Once the structure is right, changes can feel almost instant. Before that, even a small request can turn into another round of explaining the layout. That middle stretch is where I keep getting stuck.",
+      "Building a site with only Claude is wild when you already have the Figma file open. You know exactly what you want. The layout, the spacing, how it all fits together, it's right there. And getting the code to match it still takes a lot of back and forth.",
+      "On X I put it as three stretches: the first 60% flies, the next 30% is ages of saying 'no, not like that,' and the last 10% feels like god mode. I made those numbers up, they're a feeling. What gets me is how fast it swings from amazing to infuriating and back.",
+      "Once the structure is right, changes are almost instant. Before that, every small request turns into explaining the layout again. I always get stuck in the middle part.",
     ]
   },
   {
     ...writingFields("building-it-yourself-isnt-free"),
     paragraphs: [
-      "Whenever someone says you can just build a tool yourself now, I have two reactions. The first is excitement, because more of those ideas are becoming possible. The second is a small accounting question: what are we including in the cost?",
-      "In a draft reply, I listed tokens, time, and running costs. It was a fairly ordinary objection to a very exciting possibility. Being able to make the thing doesn't settle whether I want to be responsible for it.",
-      "I think the decision will keep moving. Something that is too expensive or frustrating to build today might become a reasonable afternoon project later. Something that looks cheap in a demo might become a surprisingly demanding part of your week.",
+      "Whenever someone says you can just build the tool yourself now, I have two reactions. First, excitement, because a lot more of those ideas are doable now. Second, a small accounting question: what are we counting as the cost?",
+      "In a reply I drafted, I listed tokens, time, and running costs. Pretty boring objection to a very exciting idea. Being able to make the thing doesn't mean I want to be on the hook for it.",
+      "The answer keeps moving. Something too expensive or annoying to build today could be an easy afternoon project next year. Something that looks cheap in a demo can quietly eat a chunk of your week.",
     ]
   }
 ] satisfies { id: WritingId; title: string; paragraphs: string[] }[]
