@@ -669,9 +669,13 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
     // fresh lazy component means the next click re-attempts the fetch instead
     // of replaying the cached rejection.
     setGalleryDialog(() => createPreviewGalleryComponent())
-    clearGalleryItem()
+    // A note still selects the Notes slide. Give up its nested entry first,
+    // just as an outside press does, so the failed boundary can unmount.
+    writingsFolderRef.current?.cancelPending()
+    if (writingId) clearWriting(() => clearGalleryItem())
+    else clearGalleryItem()
     setHasOpenedWorkPreview(false)
-  }, [clearGalleryItem])
+  }, [clearGalleryItem, clearWriting, writingId])
   const groupsRender = useMemo(() => {
     let previewIndex = 0
     return homeGroups.map(group => ({
