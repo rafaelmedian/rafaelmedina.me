@@ -403,7 +403,7 @@ export const projectCaseStudies = {
       "Editing a team’s access policy went from six steps to three.",
     ], mediaLayout: "stack", media: [
       { source: "/Projects/twilio-admiral-team-switcher.webp", label: "Switching team and role from the header", width: 1600, height: 693 },
-      { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1600, height: 612 },
+      { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1600, height: 552 },
     ] },
     { heading: "One level down", paragraphs: [
       "The same structure carried the detailed tools: a deployment’s events and configuration sit under the team that owns it.",
