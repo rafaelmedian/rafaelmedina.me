@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
 import type { PortfolioImage } from "../data/portfolio"
 import { useFinePointer } from "../lib/useFinePointer"
+import { X } from "./NavigationIcons"
 
 // Case-study screenshots are dense UI shown at half a reading column, so a
 // press grows the picture out of its place into a framed view over the
@@ -246,8 +247,8 @@ export function ZoomableImage({ item, srcSet, sizes }: {
           {/* showModal() focuses this, the dialog's only control. React's
               autoFocus would run first, while the dialog is still closed
               inside the scrolling card, and scroll the card to the top. */}
-          <button type="button" className="image-zoom-close" onClick={close}>
-            Close
+          <button type="button" className="preview-gallery-nav image-zoom-close" aria-label="Close" onClick={close}>
+            <X aria-hidden="true" className="preview-gallery-nav-icon" />
           </button>
         </dialog>
       ) : null}
