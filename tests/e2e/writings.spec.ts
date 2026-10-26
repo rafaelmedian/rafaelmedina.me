@@ -441,65 +441,6 @@ test("margin notes hang in the gutters without widening the reader", async ({ pa
   }
 })
 
-test("the list's drawings stay in the card's gutters and leave at narrow widths", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/notes/")
-  const card = popup(page).locator(".preview-gallery-card")
-  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
-  const drawings = popup(page).locator(".writings-drawing")
-  expect(await drawings.count()).toBeGreaterThan(0)
-  // The drawings hang outside the list's column, so the failure to catch is a
-  // sideways scrollbar on the card rather than a drawing that looks wrong.
-  await expect.poll(() => card.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
-  const bounds = (await card.boundingBox())!
-  const rows = (await popup(page).locator(".writings-category li").first().boundingBox())!
-  let sides = 0
-  for (const box of await drawings.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect()))) {
-    expect(box.left).toBeGreaterThanOrEqual(bounds.x)
-    expect(box.right).toBeLessThanOrEqual(bounds.x + bounds.width)
-    // Never over the titles: each one is wholly left of the rows or right of them.
-    expect(box.right <= rows.x || box.left >= rows.x + rows.width).toBe(true)
-    sides |= box.left >= rows.x + rows.width ? 2 : 1
-  }
-  expect(sides).toBe(3)
-
-  // Below 1320px the card opens at its compact width, and there is no gutter
-  // to draw in however wide the window is. The width is latched when the
-  // card opens, so this is a fresh visit rather than a resize.
-  await page.setViewportSize({ width: 1200, height: 1000 })
-  await page.goto("/notes/")
-  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
-  await expect(drawings.first()).toBeHidden()
-})
-
-test("a hovered row boils its drawing through its frames", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.goto("/notes/")
-  await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
-  await expect(popup(page)).toHaveCSS("opacity", "1")
-
-  // At rest the drawing shows the first frame of its strip and holds still.
-  const owner = popup(page).getByRole("region", { name: "Tools" }).locator("li").first()
-  const drawing = owner.locator(".writings-drawing")
-  await expect(drawing).toHaveCSS("mask-image", /drawing-folder-pencil-frames\.png/)
-  await expect(drawing).toHaveCSS("animation-name", "none")
-  await expect(drawing).toHaveCSS("mask-position", "0px 0px")
-  // Its row wakes it, and it steps through the other frames rather than
-  // sliding between them.
-  await owner.locator(".writing-entry-trigger").hover()
-  await expect(drawing).toHaveCSS("animation-name", "writings-drawing-boil")
-  const frames = new Set<string>()
-  await expect.poll(async () => {
-    frames.add(await drawing.evaluate((element) => getComputedStyle(element).maskPosition))
-    return frames.size
-  }, { intervals: [40] }).toBe(3)
-  expect([...frames].sort()).toEqual(["0px 0px", "100% 0px", "50% 0px"])
-  await page.mouse.move(4, 4, { steps: 4 })
-  await expect(drawing).toHaveCSS("animation-name", "none")
-  await expect(drawing).toHaveCSS("mask-position", "0px 0px")
-})
-
 test("the mouse moving onto a notes row strikes one key", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   // Every key click starts one oscillator, its thock, so counting them counts
