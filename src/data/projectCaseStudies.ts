@@ -394,8 +394,8 @@ export const projectCaseStudies = {
     { heading: "A sliver of a huge list", paragraphs: [
       "Admiral held 2,351 roles across 246 teams, about ten per team. Each team only owned 0.4–4% of them.",
       "So the structure became contextual instead of flat, the way Slack only shows the channels you’ve joined.",
-    ], media: [
-      { source: "/Projects/twilio-admiral-ownership.webp", label: "The few roles one team owns among thousands", width: 1600, height: 724 },
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/twilio-admiral-ownership.webp", label: "Infrastructure’s 12 roles among Admiral’s 2,351", width: 1600, height: 887 },
       { source: "/Projects/twilio-admiral-hierarchy.webp", label: "Flat hierarchy versus contextual hierarchy", width: 1600, height: 709 },
     ] },
     { heading: "Start from your team", paragraphs: [
