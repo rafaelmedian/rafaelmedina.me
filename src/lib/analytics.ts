@@ -82,21 +82,22 @@ function trackLinkClick(event: MouseEvent) {
   const href = anchor.getAttribute("href")
   if (!href) return
 
-  const absoluteUrl = anchor.href || href
-  const isMailtoLink = href.startsWith("mailto:")
+  const url = new URL(anchor.href)
+  const isMailtoLink = url.protocol === "mailto:"
+  if (!isMailtoLink && url.protocol !== "https:" && url.protocol !== "http:") return
   const isDownloadLink = anchor.hasAttribute("download")
   const isHashLink = href.startsWith("#")
-  const sameOrigin = absoluteUrl.startsWith(window.location.origin)
+  const sameOrigin = url.origin === window.location.origin
   const isOutboundLink = !sameOrigin && !isMailtoLink && !isHashLink
 
   if (!isMailtoLink && !isDownloadLink && !isOutboundLink) return
 
-  const linkText = anchor.textContent?.trim().replace(/\s+/g, " ").slice(0, 120) || undefined
-
+  // Contact fallbacks carry private messages and calendar links carry email
+  // addresses. Record destinations only: never query strings, fragments,
+  // credentials, mail recipients, or potentially user-authored link text.
   trackEvent("click", {
     link_type: isMailtoLink ? "mailto" : isDownloadLink ? "download" : "outbound",
-    link_url: absoluteUrl,
-    link_text: linkText,
+    link_url: isMailtoLink ? "mailto:" : `${url.origin}${url.pathname}`,
   })
 }
 

@@ -65,3 +65,35 @@ test("records the visitor reaction that lands on a chat message", async ({ page 
   )
   expect(reactionEvent).toEqual(["event", "about_intro_reaction", { message_index: 0, reaction: "love" }])
 })
+
+for (const destination of ["email", "calendar"] as const) {
+  test(`keeps private contact content out of ${destination} fallback analytics`, async ({ page }) => {
+    await page.route("https://www.googletagmanager.com/**", route => route.fulfill({ body: "" }))
+    await page.route("**/contact", route => route.fulfill({ status: 503, json: { error: "Please retry." } }))
+    await page.route("https://cal.com/**", route => route.abort())
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto(analyticsBaseUrl)
+    await page.locator(".mosaic-booking-pill").click()
+    const dialog = page.getByRole("dialog")
+    await dialog.getByRole("textbox", { name: "Your email", exact: true }).fill("private-visitor@example.com")
+    await dialog.getByRole("button", { name: "Continue with email" }).click()
+    if (destination === "email") {
+      await dialog.getByRole("textbox", { name: "Your message", exact: true }).fill("PRIVATE_MESSAGE_CONTENT")
+      await dialog.getByRole("button", { name: "Send message", exact: true }).click()
+    } else {
+      await dialog.getByRole("button", { name: "Book a time", exact: true }).click()
+    }
+    const fallback = dialog.getByRole("link", { name: destination === "email" ? "email it instead" : "Open it on cal.com" })
+    // Exercise the real link and document listener without launching a mail app or tab.
+    await fallback.evaluate(anchor => anchor.addEventListener("click", event => event.preventDefault()))
+    await fallback.click()
+    const click = await page.evaluate(() => window.dataLayer
+      ?.map(entry => Array.from(entry as ArrayLike<unknown>))
+      .filter(([command, event]) => command === "event" && event === "click").at(-1))
+    expect(click).toEqual(["event", "click", {
+      link_type: destination === "email" ? "mailto" : "outbound",
+      link_url: destination === "email" ? "mailto:" : "https://cal.com/rafaelmedian/30min",
+    }])
+    expect(JSON.stringify(click)).not.toMatch(/PRIVATE_MESSAGE_CONTENT|private-visitor|example\.com/)
+  })
+}
