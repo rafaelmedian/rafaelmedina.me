@@ -33,7 +33,7 @@ test("publishes five quotes including restored Simon and Jakub quotes with carou
     await expect(active(page)).not.toContainText("Sample quote")
   }
   await expect(carousel(page).locator(".mosaic-quote-arrow")).toHaveCount(0)
-  await expect(carousel(page).getByRole("button", { name: "Open all quotes" })).toBeAttached()
+  await expect(carousel(page).getByRole("button", { name: "Next quote" })).toBeAttached()
   await carousel(page).getByRole("button", { name: /Show quote from Phil Liao/ }).click()
   await expect(active(page)).toContainText("Phil Liao")
 })
@@ -49,30 +49,30 @@ test("carries the team quotes as a band between the project groups", async ({ pa
   await expect(slide).toContainText("You did a great job!")
   // Named on the card but never linked: these came from Slack, not from X.
   await expect(card.getByRole("button", { name: /on X$/ })).toHaveCount(0)
-  // A band across the grid, above the closing projects, shared with the
-  // marketing tile: the two halves run edge to edge across the row.
+  // A band across the grid, above Protector and the portraits, shared with the
+  // Pokédex experiment and Dealership Hub: it runs edge to edge across the row.
   const bounds = await page.evaluate(() => {
     const band = document.querySelector(".mosaic-tile-quote2")!.getBoundingClientRect()
-    const marketing = document.querySelector(".mosaic-tile-marketing")!.getBoundingClientRect()
-    const closing = document.querySelector(".mosaic-tile-relaunch")!.getBoundingClientRect()
-    const row = document.querySelector(".mosaic-group-closing")!.getBoundingClientRect()
+    const dealership = document.querySelector(".mosaic-tile-dealership")!.getBoundingClientRect()
+    const closing = document.querySelector(".mosaic-tile-protector")!.getBoundingClientRect()
+    const row = document.querySelector(".mosaic-group-portraits")!.getBoundingClientRect()
     return {
-      bandBottom: Math.max(band.bottom, marketing.bottom), closingTop: closing.top,
-      bandLeft: band.left, marketingRight: marketing.right, marketingTop: marketing.top, bandTop: band.top,
+      bandBottom: Math.max(band.bottom, dealership.bottom), closingTop: closing.top,
+      bandLeft: band.left, dealershipRight: dealership.right, dealershipTop: dealership.top, bandTop: band.top,
       rowLeft: row.left, rowRight: row.right, quoteWidth: band.width,
     }
   })
   expect(bounds.closingTop).toBeGreaterThanOrEqual(bounds.bandBottom - 1)
-  expect(bounds.marketingTop).toBeCloseTo(bounds.bandTop, 0)
+  expect(bounds.dealershipTop).toBeCloseTo(bounds.bandTop, 0)
   expect(bounds.bandLeft).toBeCloseTo(bounds.rowLeft, 0)
-  expect(bounds.marketingRight).toBeCloseTo(bounds.rowRight, 0)
+  expect(bounds.dealershipRight).toBeCloseTo(bounds.rowRight, 0)
   expect(bounds.quoteWidth).toBeGreaterThanOrEqual(340)
 })
 
 test("commits a drag well short of a card width, and lands it quickly", async ({ page }) => {
   await openHome(page)
   const card = carousel(page)
-  const surface = card.getByRole("button", { name: "Open all quotes" })
+  const surface = card.getByRole("button", { name: "Next quote" })
   // Barely past the slip of the hand that separates a swipe from a click, and a
   // world away from the quarter of a card this once asked for.
   await drag(surface, page, -8)
@@ -113,42 +113,29 @@ test("a focused dot rings the dot it draws, not its tall target", async ({ page 
   await expect(dot.locator("span")).toHaveCSS("outline-offset", "1px")
 })
 
-test("swiping backward wraps and tapping the card opens it, where each press pages", async ({ page }) => {
+test("swiping backward wraps and each tap pages forward in place", async ({ page }) => {
   await openHome(page)
-  const surface = carousel(page).getByRole("button", { name: "Open all quotes" })
+  const surface = carousel(page).getByRole("button", { name: "Next quote" })
   await drag(surface, page, 80)
   await expect(active(page)).toContainText("Jakub Antalik")
+  // A tap turns to the next quote, wrapping, and opens nothing.
   await surface.click({ position: { x: 30, y: 30 } })
-  const dialog = page.getByRole("dialog", { name: "Kind words from the timeline" })
-  await expect(dialog).toBeVisible()
-  // The same card, on the quote the tile was showing.
-  const opened = dialog.locator('.mosaic-quote-slide[data-active="true"]')
-  await expect(opened).toContainText("Jakub Antalik")
-  await dialog.getByRole("button", { name: "Advance quote" }).click({ position: { x: 30, y: 30 } })
-  await expect(opened).toContainText("Michael Wong")
-  // The side arrows page both ways, as the gallery's do.
-  await dialog.getByRole("button", { name: "Next quote" }).click()
-  await expect(opened).toContainText("BASED FLOYD VIII")
-  await dialog.getByRole("button", { name: "Previous quote" }).click()
-  await expect(opened).toContainText("Michael Wong")
-  await expect(dialog).toBeVisible()
-  // The tile followed, so the close lands on the quote being read.
-  await page.keyboard.press("Escape")
-  await expect(dialog).toBeHidden()
   await expect(active(page)).toContainText("Michael Wong")
-  await expect(carousel(page)).toBeFocused()
+  await surface.click({ position: { x: 30, y: 30 } })
+  await expect(active(page)).toContainText("BASED FLOYD VIII")
+  await expect(page.getByRole("dialog")).toHaveCount(0)
 })
 
 test("a slight swipe backward goes back rather than advancing with the tap", async ({ page }) => {
   await openHome(page)
-  const surface = carousel(page).getByRole("button", { name: "Open all quotes" })
+  const surface = carousel(page).getByRole("button", { name: "Next quote" })
   await drag(surface, page, 9)
   await expect(active(page)).toContainText("Jakub Antalik")
 })
 
 test("a horizontal drag advances exactly once and a returned drag snaps back", async ({ page }) => {
   await openHome(page)
-  const surface = carousel(page).getByRole("button", { name: "Open all quotes" })
+  const surface = carousel(page).getByRole("button", { name: "Next quote" })
   await drag(surface, page, -80)
   await expect(active(page)).toContainText("BASED FLOYD VIII")
   await page.waitForTimeout(450)
@@ -170,7 +157,7 @@ test("a horizontal drag advances exactly once and a returned drag snaps back", a
 
 test("an interrupted drag clears its gesture without selecting or clicking", async ({ page }) => {
   await openHome(page)
-  const surface = carousel(page).getByRole("button", { name: "Open all quotes" })
+  const surface = carousel(page).getByRole("button", { name: "Next quote" })
   const box = await surface.boundingBox()
   if (!box) throw new Error("Quote surface has no rendered bounds")
   const x = box.x + box.width / 2
@@ -187,7 +174,7 @@ test("an interrupted drag clears its gesture without selecting or clicking", asy
 test("catching an early slide transition follows the pointer without a jump", async ({ page }) => {
   await openHome(page)
   const card = carousel(page)
-  const surface = card.getByRole("button", { name: "Open all quotes" })
+  const surface = card.getByRole("button", { name: "Next quote" })
   await surface.scrollIntoViewIfNeeded()
   const box = await surface.boundingBox()
   if (!box) throw new Error("Quote surface has no rendered bounds")
@@ -224,7 +211,7 @@ test("catching an early slide transition follows the pointer without a jump", as
 test("a vertical touch scroll leaves the selected quote unchanged", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "CDP touch input is Chromium-specific")
   await openHome(page, 390)
-  const surface = carousel(page).getByRole("button", { name: "Open all quotes" })
+  const surface = carousel(page).getByRole("button", { name: "Next quote" })
   await surface.scrollIntoViewIfNeeded()
   const box = await surface.boundingBox()
   if (!box) throw new Error("Quote surface has no rendered bounds")
@@ -258,23 +245,21 @@ async function touchPath(page: Page, surface: Locator, path: [number, number][])
 test("a short swipe that begins with a vertical roll still changes the quote", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "CDP touch input is Chromium-specific")
   await openHome(page, 390)
-  const surface = carousel(page).getByRole("button", { name: "Open all quotes" })
+  const surface = carousel(page).getByRole("button", { name: "Next quote" })
   // The axis is chosen six pixels in, where the roll of the hand that opens a
   // real swipe still measures as tall as the sideways intent behind it.
   await touchPath(page, surface, [[-2, -5], [-6, -6], [-12, -6], [-20, -6]])
   await expect(active(page)).toContainText("BASED FLOYD VIII")
 })
 
-test("a press whose finger rolls opens the quotes, as a tap", async ({ page, browserName }) => {
+test("a press whose finger rolls pages, as a tap", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "CDP touch input is Chromium-specific")
   await openHome(page, 390)
-  const surface = carousel(page).getByRole("button", { name: "Open all quotes" })
+  const surface = carousel(page).getByRole("button", { name: "Next quote" })
   // Inside the tap radius and mostly vertical: the swipe never commits, so the
-  // click behind it opens the list exactly as a still finger would.
+  // click behind it pages exactly as a still finger would.
   await touchPath(page, surface, [[1, 4], [2, 7]])
-  const dialog = page.getByRole("dialog", { name: "Kind words from the timeline" })
-  await expect(dialog).toBeVisible()
-  await expect(dialog.locator('.mosaic-quote-slide[data-active="true"]')).toContainText("Michael Wong")
+  await expect(active(page)).toContainText("BASED FLOYD VIII")
 })
 
 test("the focused quote author opens the full X preview and Escape closes it", async ({ page }) => {
@@ -326,13 +311,13 @@ test("the quote card is one Tab stop that the arrows browse", async ({ page }) =
   await openHome(page)
   const card = carousel(page)
   const hint = card.locator(".mosaic-quote-keys")
-  await page.getByRole("link", { name: /Open Protector booking preview/ }).focus()
+  await page.getByRole("link", { name: /Open Patrol booking preview/ }).focus()
   await page.keyboard.press("Tab")
   await expect(card).toBeFocused()
   // The keys it answers to, in the dots' place, and in words for a screen reader.
   await expect(hint).toHaveCSS("opacity", "1")
-  await expect(hint).toHaveText("←→BrowseSpaceOpenEnterGo in")
-  await expect(card).toHaveAccessibleDescription(/arrow keys.*Space.*Enter/)
+  await expect(hint).toHaveText("←→BrowseEnterGo in")
+  await expect(card).toHaveAccessibleDescription(/arrow keys.*Enter/)
   await page.keyboard.press("ArrowRight")
   await expect(active(page)).toContainText("BASED FLOYD VIII")
   await page.keyboard.press("ArrowLeft")
@@ -340,7 +325,7 @@ test("the quote card is one Tab stop that the arrows browse", async ({ page }) =
   // The name, the preview, and the dots are not stops of their own: the next
   // Tab is the next tile, and Shift+Tab comes straight back to the card.
   await page.keyboard.press("Tab")
-  await expect(page.getByRole("link", { name: /Open Matcha limit orders preview/ })).toBeFocused()
+  await expect(page.getByRole("link", { name: /Open Matcha launch films/ })).toBeFocused()
   await page.keyboard.press("Shift+Tab")
   await expect(card).toBeFocused()
 })
@@ -350,7 +335,7 @@ test("Enter goes in to the author and Escape comes back out a level at a time", 
   const card = carousel(page)
   const author = active(page).getByRole("button", { name: "Michael Wong on X" })
   const preview = page.locator(".mosaic-quote-profile-popup .mosaic-x-card")
-  await page.getByRole("link", { name: /Open Protector booking preview/ }).focus()
+  await page.getByRole("link", { name: /Open Patrol booking preview/ }).focus()
   await page.keyboard.press("Tab")
   await page.keyboard.press("Enter")
   await expect(author).toBeFocused()
@@ -379,38 +364,20 @@ test("Enter goes in to the author and Escape comes back out a level at a time", 
 test("the team quotes, with no author to go in to, offer only the arrows", async ({ page }) => {
   await openHome(page)
   const card = teamCarousel(page)
-  await page.getByRole("link", { name: /Open Onit Process Builder preview/ }).focus()
-  await page.keyboard.press("Tab")
+  await page.getByRole("link", { name: /Open Pokédex experiment/ }).focus()
+  await page.keyboard.press("Shift+Tab")
   await expect(card).toBeFocused()
-  await expect(card.locator(".mosaic-quote-keys")).toHaveText("←→BrowseSpaceOpen")
+  await expect(card.locator(".mosaic-quote-keys")).toHaveText("←→Browse")
   await page.keyboard.press("Enter")
   await expect(card).toBeFocused()
   await page.keyboard.press("ArrowRight")
   await expect(card.locator('.mosaic-quote-slide[data-active="true"]')).toContainText("Cristina Pieretti")
 })
 
-test("Space opens the focused card, where the arrows page", async ({ page }) => {
-  await openHome(page)
-  const card = teamCarousel(page)
-  await page.getByRole("link", { name: /Open Onit Process Builder preview/ }).focus()
-  await page.keyboard.press("Tab")
-  await expect(card).toBeFocused()
-  await page.keyboard.press("Space")
-  const dialog = page.getByRole("dialog", { name: "Kind words from the teams" })
-  await expect(dialog).toBeVisible()
-  const opened = dialog.locator('.mosaic-quote-slide[data-active="true"]')
-  await expect(opened).toContainText("John Gilman")
-  await page.keyboard.press("ArrowRight")
-  await expect(opened).toContainText("Cristina Pieretti")
-  await page.keyboard.press("Escape")
-  await expect(dialog).toBeHidden()
-  await expect(card).toBeFocused()
-})
-
 test("a pointer never sees the key hint", async ({ page }) => {
   await openHome(page)
   const card = carousel(page)
-  await drag(card.getByRole("button", { name: "Open all quotes" }), page, -80)
+  await drag(card.getByRole("button", { name: "Next quote" }), page, -80)
   await expect(active(page)).toContainText("BASED FLOYD VIII")
   await expect(card.locator(".mosaic-quote-keys")).toHaveCSS("opacity", "0")
   await expect(card.locator(".mosaic-quote-dots")).toHaveCSS("opacity", "1")

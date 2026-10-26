@@ -174,7 +174,7 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
         </span>
         {/* The tile wears the reader's status too: a shared link opens a note
             with no list on screen to say what is happening. */}
-        <span className="writings-tile-label" role="status">{statusLabel ?? "Notes & tools"}</span>
+        <span className="writings-tile-label" role="status">{statusLabel ?? "Notes and tools"}</span>
       </a>
     </>
   )

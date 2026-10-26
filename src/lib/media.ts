@@ -22,10 +22,19 @@ const webpPreviewVariantSources = new Set([
   "/Projects/protector-dress-code.webp",
   "/Projects/protector-convoy.webp",
   "/Projects/protector-review.webp",
-  "/Projects/popparazi_v1.webp",
+  "/Projects/patrol-screens.webp",
+  "/Projects/patrol-neighborhood.webp",
+  "/Projects/patrol-service.webp",
+  "/Projects/matcha-wallet-menu-one.webp",
+  "/Projects/matcha-wallet-menu-two.webp",
+  "/Projects/matcha-wallet-trade-module.webp",
+  "/Projects/matcha-wallet-two-connected.webp",
+  "/Projects/matcha-wallet-order-flow.webp",
+  "/Projects/matcha-wallet-menu-board.webp",
   "/Projects/dealership-lead-hub.webp",
   "/Projects/dealership-hub-hub-light.webp",
   "/Projects/dealership-hub-hub-answer.webp",
+  "/Projects/dealership-hub-ask.webp",
   "/Projects/dealership-hub-old-lead-hub.webp",
   "/Projects/dealership-hub-leads-filters.webp",
   "/Projects/dealership-hub-leads-confirm.webp",
@@ -35,10 +44,24 @@ const webpPreviewVariantSources = new Set([
   "/Projects/dealership-hub-customers-light.webp",
   "/Projects/dealership-hub-customer-profile.webp",
   "/Projects/dealership-hub-team-light.webp",
-  "/Projects/shared-family-stories.webp",
+  "/Projects/matcha-homepage-light.webp",
+  "/Projects/matcha-homepage-dark.webp",
+  "/Projects/matcha-design-system-colors.webp",
+  "/Projects/matcha-design-system-buttons.webp",
+  "/Projects/matcha-design-system-type.webp",
+  "/Projects/matcha-design-system-scale.webp",
   "/Projects/matcha-rewards.webp",
   "/Projects/matcha-rewards-link-preview.webp",
   "/Projects/matcha-rewards-countdown.webp",
+  "/Projects/matcha-rewards-prelaunch.webp",
+  "/Projects/matcha-rewards-rules-faq.webp",
+  "/Projects/matcha-rewards-rules-prizes.webp",
+  "/Projects/matcha-rewards-live.webp",
+  "/Projects/matcha-rewards-mobile.webp",
+  "/Projects/matcha-rewards-week-results.webp",
+  "/Projects/matcha-rewards-share-image.webp",
+  "/Projects/matcha-rewards-ended.webp",
+  "/Projects/matcha-rewards-ended-connected.webp",
   "/Projects/matcha-marketing.webp",
   "/Projects/matcha-marketing-optimism.webp",
   "/Projects/matcha-marketing-savings.webp",
@@ -99,12 +122,14 @@ const webpPreviewVariantSources = new Set([
   "/Projects/turtle-schools.webp",
   "/Projects/turtle-product-hunt.webp",
   "/Projects/turtle-business-insider.webp",
+  "/Projects/pokemon-duo-playing.webp",
 ])
 // Product screenshots carry small UI text and run 800-900px wide in the
 // gallery, so a 2x screen needs ~1800 real pixels. These keep their full
 // capture resolution and add the larger steps; everything else stops at 960.
 const hiDpiVariantWidths = [1280, 1600, 1920, 2400]
 const hiDpiPreviewSources = new Set([
+  "/Projects/moodys-research-views.webp",
   "/Projects/moodys-research-audio-brief.webp",
   "/Projects/moodys-research-selection.webp",
   "/Projects/moodys-research-comment.webp",
@@ -130,6 +155,30 @@ const hiDpiPreviewSources = new Set([
   "/Projects/protector-dress-code.webp",
   "/Projects/protector-convoy.webp",
   "/Projects/protector-review.webp",
+  "/Projects/patrol-screens.webp",
+  "/Projects/patrol-neighborhood.webp",
+  "/Projects/patrol-service.webp",
+  "/Projects/matcha-wallet-menu-one.webp",
+  "/Projects/matcha-wallet-menu-two.webp",
+  "/Projects/matcha-wallet-trade-module.webp",
+  "/Projects/matcha-wallet-two-connected.webp",
+  "/Projects/matcha-wallet-order-flow.webp",
+  "/Projects/matcha-wallet-menu-board.webp",
+  "/Projects/matcha-homepage-light.webp",
+  "/Projects/matcha-homepage-dark.webp",
+  "/Projects/matcha-design-system-colors.webp",
+  "/Projects/matcha-design-system-buttons.webp",
+  "/Projects/matcha-design-system-type.webp",
+  "/Projects/matcha-design-system-scale.webp",
+  "/Projects/matcha-rewards-prelaunch.webp",
+  "/Projects/matcha-rewards-rules-faq.webp",
+  "/Projects/matcha-rewards-rules-prizes.webp",
+  "/Projects/matcha-rewards-live.webp",
+  "/Projects/matcha-rewards-mobile.webp",
+  "/Projects/matcha-rewards-week-results.webp",
+  "/Projects/matcha-rewards-share-image.webp",
+  "/Projects/matcha-rewards-ended.webp",
+  "/Projects/matcha-rewards-ended-connected.webp",
 ])
 const hasPreviewVariants = (source: string) =>
   /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)
@@ -167,8 +216,8 @@ export function buildPreviewSrcSet(source: string, intrinsicWidth?: number) {
 
   const extension = source.endsWith(".webp") ? ".webp" : ".jpg"
   const stem = source.slice(0, -extension.length)
-  // Skip variants at or above the source width (popparazi is only 630px wide,
-  // so a -960w sibling would be an upscale that doesn't exist).
+  // Skip variants at or above the source width (the rewards link preview is only
+  // 805px wide, so a -960w sibling would be an upscale that doesn't exist).
   const widths = hiDpiPreviewSources.has(source) ? [...previewVariantWidths, ...hiDpiVariantWidths] : previewVariantWidths
   const candidates = widths
     .filter((width) => !intrinsicWidth || width < intrinsicWidth)

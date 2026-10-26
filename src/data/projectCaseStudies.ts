@@ -4,7 +4,7 @@ import type { ProjectCaseStudy } from "./portfolio"
 // added to these sections later without changing the reading layout.
 const study = (
   title: string, introduction: string[], sections: ProjectCaseStudy["sections"],
-  options: Pick<ProjectCaseStudy, "media"> = {},
+  options: Partial<Pick<ProjectCaseStudy, "media" | "label">> = {},
 ): ProjectCaseStudy => ({
   label: "Case study", title, introduction, sections, ...options,
 })
@@ -12,18 +12,40 @@ const study = (
 export const projectCaseStudies = {
   "matcha-multiwallet-flow": study("Connecting wallets without losing the trade", [
     "Switching wallets shouldn't mean filling out the trade again.",
-    "I brought connected accounts and network details into one menu.",
+    "Matcha added Solana beside its Ethereum networks, so one person could need a wallet for each.",
+    "I brought both accounts into one menu in the header.",
   ], [
     { heading: "Which wallet am I using?", paragraphs: [
-      "Made the active account distinct from the other connected wallets.",
-      "Kept wallet and network details together so people could check before switching.",
+      "With one wallet, the header shows its address. A second turns it into Wallets, with both avatars stacked.",
+      "Each row carries the address, balance, and a chain badge, so people can tell the Solana account from the Ethereum one before switching.",
+    ], media: [
+      { source: "/Projects/matcha-wallet-menu-one.webp", label: "One Solana wallet, with room to connect another", width: 2000, height: 1500 },
+      { source: "/Projects/matcha-wallet-menu-two.webp", label: "Solana and Ethereum wallets in the same menu", width: 2000, height: 1500 },
+    ] },
+    { heading: "Every state of the menu", paragraphs: [
+      "The header pill covers one wallet and two, with a fallback avatar for wallets it doesn’t recognize.",
+      "Wallets are listed in the order they were connected. Hovering an address offers to copy it, and the exit icon disconnects that wallet alone.",
+      "I specified hover, pressed, and focus states for the menu’s actions in both themes.",
+    ], media: [
+      { source: "/Projects/matcha-wallet-menu-board.webp", label: "The wallet menu board: pills, menus, hover, and button states", width: 2880, height: 1326 },
+    ] },
+    { heading: "Connected doesn’t mean ready", paragraphs: [
+      "A Solana wallet can’t trade an Ethereum token, and the reverse is true too. The trade module names the wallet the token needs.",
+      "Limit orders and cross-chain swaps weren’t available on Solana, so the module says so and asks for a token from a supported network.",
+    ], media: [
+      { source: "/Projects/matcha-wallet-trade-module.webp", label: "The trade module board: asking for the right wallet, and what Solana can’t do yet", width: 2880, height: 1477 },
     ] },
     { heading: "Keep what’s already entered", paragraphs: [
       "Preserved the token pair, amount, and quote when changing wallets mid-trade.",
+      "Once the second wallet is in, the header switches to Wallets and the token is still selected underneath.",
+    ], media: [
+      { source: "/Projects/matcha-wallet-two-connected.webp", label: "Both wallets connected, back on the same Solana trade", width: 2880, height: 1546 },
     ] },
-    { heading: "Connected doesn’t mean ready", paragraphs: [
-      "The selected account still needs the right network and balance for the trade.",
-      "I covered loading, empty, and error states alongside adding and selecting a wallet.",
+    { heading: "Placing the order", paragraphs: [
+      "Review shows the quote counting down, with the network cost, the amount received, the route, slippage, and rate above Place order.",
+      "While the swap runs, a timer shows the time left. The result links to the transaction on Solscan, first while it confirms and then once it’s final.",
+    ], media: [
+      { source: "/Projects/matcha-wallet-order-flow.webp", label: "The order flow board, from quote to completed", width: 2880, height: 722 },
     ] },
   ]),
   "matcha-homepage": study("Helping people find their next token", [
@@ -39,7 +61,31 @@ export const projectCaseStudies = {
       "Research comes before the commitment to connect a wallet and trade.",
     ] },
     { heading: "Finding the next step", paragraphs: [
-      "I led the page structure and hierarchy, keeping search, research, and trading easy to find.",
+      "Kept search, research, and trading easy to find from anywhere on the page.",
+    ] },
+    { heading: "One page, both themes", paragraphs: [
+      "The homepage is built from Matcha’s design system, so light and dark are the same components on different tokens.",
+    ], media: [
+      { source: "/Projects/matcha-homepage-light.webp", label: "The homepage in the light theme", width: 1440, height: 2485 },
+      { source: "/Projects/matcha-homepage-dark.webp", label: "The homepage in the dark theme", width: 1440, height: 2485 },
+    ] },
+    { heading: "Tokens before components", paragraphs: [
+      "Gray, purple, and green primitives map to semantic tokens, each with a light and a dark value.",
+    ], media: [
+      { source: "/Projects/matcha-design-system-colors.webp", label: "Color primitives and their light and dark tokens", width: 2400, height: 1425 },
+    ] },
+    { heading: "Type and spacing", paragraphs: [
+      "Gilroy sets the headlines and Inter everything else.",
+      "Spacing steps up from a 4px unit, from 4px gaps to 32px container padding.",
+    ], media: [
+      { source: "/Projects/matcha-design-system-type.webp", label: "The type scale", width: 1428, height: 1700 },
+      { source: "/Projects/matcha-design-system-scale.webp", label: "The size and spacing scale", width: 1782, height: 1300 },
+    ] },
+    { heading: "Every state, specified", paragraphs: [
+      "Primary, secondary, tertiary, and link buttons each cover default, hover, pressed, focused, and disabled.",
+      "State changes fade in over 150 to 200ms, so the timing is part of the spec too.",
+    ], media: [
+      { source: "/Projects/matcha-design-system-buttons.webp", label: "Button variants and their states", width: 2400, height: 1170 },
     ] },
   ]),
   "matcha-dark-mode": study("The same Matcha, after dark", [
@@ -112,11 +158,55 @@ export const projectCaseStudies = {
     ] },
   ]),
   "matcha-rewards": study("A look for the weekly rewards", [
-    "I designed the campaign artwork for Matcha Rewards.",
+    "I designed Matcha Rewards: the campaign artwork and the rewards page itself, from the countdown to the final winners.",
   ], [
     { heading: "Built for more than launch day", paragraphs: [
       "Used the leaderboard, prizes, and points to give the headline a product story.",
       "Adapted that visual into weekly countdowns and link previews so the campaign stayed recognizable.",
+    ] },
+    { heading: "Before it starts", paragraphs: [
+      "Ahead of launch, the page counts down to the first week and tilts a sample leaderboard behind the headline, so people see what they’re playing for.",
+      "A banner above the nav points every Matcha page here.",
+    ], media: [
+      { source: "/Projects/matcha-rewards-prelaunch.webp", label: "The countdown before the first week", width: 2880, height: 2606 },
+    ] },
+    { heading: "Rules people actually read", paragraphs: [
+      "The competition rules open as short questions: what it is, the prizes, how points work, referrals, and restrictions.",
+      "The first visit shows the rules first; after that the page goes straight to the leaderboard.",
+    ], media: [
+      { source: "/Projects/matcha-rewards-rules-faq.webp", label: "Competition rules, opened on what Matcha Rewards is", width: 2880, height: 1678 },
+      { source: "/Projects/matcha-rewards-rules-prizes.webp", label: "Competition rules, opened on the prizes", width: 2880, height: 1448 },
+    ] },
+    { heading: "During the week", paragraphs: [
+      "With a wallet connected, the page opens on your weekly total and rank, then where the points came from: swaps, referrals, chain boosts, and a daily streak.",
+      "Below it, you against the friends you referred, then the full leaderboard with the top three in gold, silver, and bronze.",
+    ], media: [
+      { source: "/Projects/matcha-rewards-live.webp", label: "The full rewards page during week two, wallet connected", width: 2880, height: 7142 },
+    ] },
+    { heading: "On a phone", paragraphs: [
+      "The same page stacks into one column: the score first, the referral link next, and the leaderboard trimmed to rank, wallet, and prize.",
+    ], media: [
+      { source: "/Projects/matcha-rewards-mobile.webp", label: "The rewards page on mobile", width: 780, height: 5410 },
+    ] },
+    { heading: "When a week ends", paragraphs: [
+      "Each finished week leaves a card with your place and a share button for X and Farcaster.",
+    ], media: [
+      { source: "/Projects/matcha-rewards-week-results.webp", label: "Results cards for each finished week", width: 2880, height: 2286 },
+    ] },
+    { heading: "Something worth sharing", paragraphs: [
+      "Shared links unfold into the leaderboard image, in light and dark.",
+    ], media: [
+      { source: "/Projects/matcha-rewards-share-image.webp", label: "The shared leaderboard image, light and dark", width: 2880, height: 691 },
+    ] },
+    { heading: "After the last week", paragraphs: [
+      "Once the competition closes, the page thanks people for taking part and keeps a winners leaderboard for each week.",
+    ], media: [
+      { source: "/Projects/matcha-rewards-ended.webp", label: "The competition over, no wallet connected", width: 2880, height: 1406 },
+    ] },
+    { heading: "Where you finished", paragraphs: [
+      "Connected wallets see their own row pinned at the top of every week.",
+    ], media: [
+      { source: "/Projects/matcha-rewards-ended-connected.webp", label: "The competition over, with your row pinned on the winners leaderboard", width: 2880, height: 4276 },
     ] },
   ]),
   "matcha-marketing": study("Marketing Matcha in one voice", [
@@ -172,26 +262,18 @@ export const projectCaseStudies = {
   "dealership-lead-hub": study("From a lead table to a dealership hub", [
     "The old CRM did one thing: list customers and send them a campaign.",
     "Everything around that list — the workshop, the customer’s history, who on the team was falling behind — lived in other tools.",
-    "I designed and built Dealership Hub to replace it: one app for sales, service, customers, and staff, with the lead flow still at its centre.",
+    "I designed and built Dealership Hub to replace it: one app for sales, service, customers, and staff, with the lead flow still at its center.",
   ], [
     { heading: "Where it started", paragraphs: [
       "The lead hub was a dense table under a row of numbers nobody could act on: “Not the Owner”, “Another Workshop”.",
       "Every row looked the same, the send button was the loudest thing on the page, and nothing said who to call first.",
       "Its strongest idea, filtering customers and sending a batch to the dealer app, was worth keeping. The rest needed rethinking.",
-    ], media: [
-      { source: "/Projects/dealership-hub-old-lead-hub.webp", label: "The old lead hub this replaces", width: 1400, height: 1004 },
-    ] },
-    { heading: "Start with what needs doing", paragraphs: [
-      "The hub opens on the three things worth doing first, each with its reason: a customer waiting in the lounge, six leads never contacted.",
-      "Sales, workshop, issues, and team follow as one line each, and a shared to-do list stays alongside.",
-      "Picking one drafts the question for you — who should I call first? — ready to send or edit.",
-    ], media: [
-      { source: "/Projects/dealership-hub-hub-light.webp", label: "The hub, opening on the day’s first three things", width: 2880, height: 2064 },
     ] },
     { heading: "Ask instead of hunting", paragraphs: [
       "Every page has the same bar at the bottom for plain questions, like what’s running late.",
       "Answers come back as rows that open the job or the customer, not paragraphs to read, with the likely next questions underneath.",
     ], media: [
+      { source: "/Projects/dealership-hub-ask.webp", video: "/Projects/dealership-hub-ask.webm", label: "Asking who to call first, the agent’s eyes following the typing", width: 1600, height: 1000 },
       { source: "/Projects/dealership-hub-hub-answer.webp", label: "An answer listing the three late jobs", width: 2880, height: 2064 },
     ] },
     { heading: "Leads, kept and sharpened", paragraphs: [
@@ -209,12 +291,19 @@ export const projectCaseStudies = {
     ], media: [
       { source: "/Projects/dealership-hub-workshop-light.webp", label: "The workshop board, grouped by stage", width: 2880, height: 2064 },
     ] },
+    { heading: "Start with what needs doing", paragraphs: [
+      "The hub opens on the three things worth doing first, each with its reason: a customer waiting in the lounge, six leads never contacted.",
+      "Sales, workshop, issues, and team follow as one line each, and a shared to-do list stays alongside.",
+      "Picking one drafts the question for you — who should I call first? — ready to send or edit.",
+    ], media: [
+      { source: "/Projects/dealership-hub-hub-light.webp", label: "The hub, opening on the day’s first three things", width: 2880, height: 2064 },
+    ] },
     { heading: "One page per customer", paragraphs: [
       "The directory opens on who needs attention — follow-ups, an advisor on leave, an unbooked recall — before the list itself.",
       "A customer’s page holds their cars, bookings, staff notes, and the conversation side by side, so nobody asks them the same thing twice.",
     ], media: [
       { source: "/Projects/dealership-hub-customers-light.webp", label: "The customer directory", width: 2880, height: 2064 },
-      { source: "/Projects/dealership-hub-customer-profile.webp", label: "A customer profile with bookings and messages", width: 2880, height: 2064 },
+      { source: "/Projects/dealership-hub-customer-profile.webp", label: "A customer profile with the next booking open", width: 2880, height: 2064 },
     ] },
     { heading: "Who needs a hand", paragraphs: [
       "The team view tracks each advisor’s sales against target, open leads, and what’s overdue.",
@@ -236,8 +325,7 @@ export const projectCaseStudies = {
     ] },
   ], { media: "wide" }),
   "protector-booking": study("Making a personal-security booking clear", [
-    "I was the sole product designer for Protector’s booking experience on iPhone.",
-    "The flow brings the people, the protectors’ attire, and the convoy into one request.",
+    "The iPhone flow brings the people, the protectors’ attire, and the convoy into one request.",
   ], [
     { heading: "Start with the people", paragraphs: [
       "Booking starts with how many people need protection, whether someone is solo or in a group.",
@@ -265,9 +353,37 @@ export const projectCaseStudies = {
       { source: "/Projects/protector-review.webp", label: "Review, the membership step, and confirmation", width: 2400, height: 1510 },
     ] },
   ]),
+  "patrol-booking": study("A patrol car outside the house", [
+    "Booking takes an address and a time window, and the account comes last.",
+  ], [
+    { heading: "Where, then when", paragraphs: [
+      "The flow starts by asking whether someone lives in the Los Angeles area, then which neighborhood. Areas Patrol doesn’t cover yet get a waitlist.",
+      "The address is confirmed on a map, and the car appears parked outside it while people pick when it arrives and leaves.",
+      "The hourly rate and total sit above the button. Creating an account is the last step, not the first.",
+    ], media: [
+      { source: "/Projects/patrol-booking.webp", video: "/Projects/patrol-booking.webm", label: "Booking a patrol car in Brentwood, from the home screen to the phone number", width: 880, height: 1912 },
+    ] },
+    { heading: "Who’s parked outside", paragraphs: [
+      "Each officer’s profile shows their department, license number, and years of service before anyone books.",
+    ], media: [
+      { source: "/Projects/patrol-screens.webp", label: "Patrol’s App Store screens: the home screen, the booked car, and an officer’s profile", width: 2400, height: 934 },
+    ] },
+    { heading: "A patrol for the whole street", paragraphs: [
+      "Neighbors can also fund a patrol together. Each street shows what it has raised toward a monthly goal, and who has chipped in.",
+      "Contributions can be one-off or monthly. Every tier unlocks more coverage, from one patrol car up to drones and robotics.",
+      "Once a patrol is on, the map shows the car on its route and a notification says which officer is on shift and until when.",
+    ], media: [
+      { source: "/Projects/patrol-neighborhood.webp", label: "Crowdfunding a street’s patrol: the goal, neighbors’ contributions, unlock tiers, the live map, and the officer", width: 2400, height: 1142 },
+    ] },
+    { heading: "The service behind the app", paragraphs: [
+      "The cars are marked and parked where people can see them, and every one carries a medical kit.",
+      "The app is how a homeowner sees where the car is and messages the officer on duty.",
+    ], media: [
+      { source: "/Projects/patrol-service.webp", label: "Highly visible patrol cars, medical kits, and the app in hand", width: 2400, height: 1208 },
+    ] },
+  ]),
   "twilio-admiral": study("Showing each team only what’s theirs", [
-    "Admiral is the internal platform Twilio’s engineers use to deploy and run their services.",
-    "I joined to iterate on its pipelines feature. The research turned it into a redesign of how the whole platform is organized.",
+    "I joined to iterate on Admiral’s pipelines feature. The research turned it into a redesign of how the whole platform is organized.",
   ], [
     { heading: "Seven people, seven maps of Admiral", paragraphs: [
       "We interviewed seven Admiral users and had each one rank their top five workflows. Two groups emerged: daily work and administration.",
@@ -302,14 +418,14 @@ export const projectCaseStudies = {
     ] },
   ]),
   "moodys-design-sprints": study("A credit opinion that reads like a product", [
-    "Moody’s published its credit opinions as long PDFs, and analysts read them the way they always had: top to bottom, then into a spreadsheet.",
-    "Over a five-day design sprint and four month-long ones, we turned one report into a page you can scan, compare, and keep. Every sprint ended with a prototype tested with users.",
+    "Analysts read credit opinions the way they always had: top to bottom, then into a spreadsheet.",
+    "We took one report and turned it into a page you can scan, compare, and keep.",
   ], [
     { heading: "The rating before the reading", paragraphs: [
       "The header answers what changed before anything else: the upgrade from Ba2 to Ba1, the outlook, the short-term rating, and the ESG score, with the rating’s history beside it.",
       "The analyst’s brief sits next to it as a video, or as audio for the commute.",
     ], media: [
-      { source: "/Projects/moodys-research-audio-brief.webp", label: "The rating action, outlook, and ESG score, with the analyst’s brief as audio", width: 2880, height: 1332 },
+      { source: "/Projects/moodys-research-audio-brief.webp", label: "The rating action, outlook, and ESG score, with the analyst’s brief as audio", width: 2880, height: 1140 },
     ] },
     { heading: "Notes that stay with the text", paragraphs: [
       "Selecting a passage offers to save it or comment on it. Analysts’ own comments sit in the margin beside the line they’re about.",
@@ -323,24 +439,23 @@ export const projectCaseStudies = {
       "Built for people who work in spreadsheets all day: each key indicator opens from a row in the table into a chart, with the forecast years shaded.",
       "Peers from the same sector join the chart from a search, and the view saves to your snippets with an annotation.",
     ], media: [
-      { source: "/Projects/moodys-research-indicators.webp", label: "EBIT margin, opened from the table into a chart", width: 1800, height: 2250 },
-      { source: "/Projects/moodys-research-peers.webp", label: "Adding Vale and Freeport as peers", width: 1800, height: 2250 },
+      { source: "/Projects/moodys-research-indicators.webp", label: "EBIT margin, opened from the table into a chart", width: 1800, height: 2310 },
+      { source: "/Projects/moodys-research-peers.webp", label: "Adding Vale and Freeport as peers", width: 1800, height: 2310 },
     ] },
     { heading: "What would change the rating", paragraphs: [
       "The scorecard shows how each factor feeds the rating. Entering your own measures runs a scenario, and the indicated outcome moves with them.",
     ], media: [
-      { source: "/Projects/moodys-research-scorecard.webp", label: "The mining scorecard behind the Ba1 rating", width: 1800, height: 2290 },
-      { source: "/Projects/moodys-research-scenario.webp", label: "A custom scenario pointing to Baa2", width: 1800, height: 2290 },
+      { source: "/Projects/moodys-research-scorecard.webp", label: "The mining scorecard behind the Ba1 rating", width: 1800, height: 2284 },
+      { source: "/Projects/moodys-research-scenario.webp", label: "A custom scenario pointing to Baa2", width: 1800, height: 2284 },
     ] },
     { heading: "Starting from the inbox", paragraphs: [
       "Most readers arrive from an alert, so the email carries the rating action, the key exhibit, and the reasons for the upgrade, with one way into the full research.",
       "The testing went well enough that our team was asked to design the new Moodys.com.",
     ], media: [
-      { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2940 },
+      { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2802 },
     ] },
   ]),
   "onit-process-builder": study("Document logic lawyers can build themselves", [
-    "Process Builder lets legal teams decide what happens when a transaction or matter changes, without writing code.",
     "I joined as development started, to close the gap between design and engineering.",
   ], [
     { heading: "Blocks, not code", paragraphs: [
@@ -364,8 +479,8 @@ export const projectCaseStudies = {
     ] },
   ]),
   "turtle": study("Friends first, names later", [
-    "Turtle was a chat app that helped high school and college students start conversations with classmates without being judged.",
-    "A friend and I started it as sophomores. I was the founding designer and co-led the product.",
+    "Turtle let students start a conversation with a classmate without being judged for it.",
+    "A friend and I started it as sophomores, and I co-led the product.",
   ], [
     { heading: "Temporary anonymity", paragraphs: [
       "Conversations started anonymous. After a set number of days, both people were revealed.",
@@ -399,4 +514,36 @@ export const projectCaseStudies = {
       { source: "/Projects/turtle-business-insider.webp", label: "Business Insider’s coverage", width: 1534, height: 870 },
     ] },
   ]),
+  "pokemon-duo": study("A Pokédex with a fold down the middle", [
+    "The iPhone Duo folds in half, so I built a Pokédex that uses both screens.",
+    "The right screen shows the Pokémon. The left one holds the guesses, the hints, and Professor Oak.",
+  ], [
+    { heading: "Who’s that Pokémon?", paragraphs: [
+      "A silhouette sits on the right screen and four names wait on the left. Each wrong guess unlocks another hint.",
+      "Guess right and the Pokémon is registered in a 151-slot collection, with Professor Oak reacting to every guess.",
+    ], media: [
+      { source: "/Projects/pokemon-duo-playing.webp", video: "/Projects/pokemon-duo-playing.webm", label: "Guessing Poliwhirl, then Zapdos", width: 1440, height: 1146 },
+    ] },
+  ], { label: "Experiment" }),
+  "matcha-relaunch-film": study("Three launches, three films", [
+    "Each one shows the feature in the product’s own screens.",
+  ], [
+    { heading: "Cross-chain swaps", paragraphs: [
+      "A pure-motion teaser went out first, then the launch film a week later.",
+      "It says goodbye to broken bridges and wrapping, then swaps from one chain to another in the new cross-chain tab.",
+    ], media: [
+      { source: "/Projects/matcha-video-cross-chain-2023-poster.webp", video: "/Projects/matcha-video-cross-chain-2023.webm", label: "Matcha cross-chain swaps", width: 960, height: 540, post: { href: "https://x.com/matchaxyz/status/1732070138281918806", date: "2023-12-05" } },
+    ] },
+    { heading: "The new Matcha", paragraphs: [
+      "Introduced the redesign in May 2023, running the new product’s screens in its new green identity.",
+      "One search across every chain, the best price, MEV protection, then the trade, ending on “Search. Trade. Done.”",
+    ], media: [
+      { source: "/Projects/matcha-video-relaunch-2023-poster.webp", video: "/Projects/matcha-video-relaunch-2023.webm", label: "The new Matcha", width: 960, height: 540, post: { href: "https://x.com/matchaxyz/status/1661401872811565056", date: "2023-05-24" } },
+    ] },
+    { heading: "Gasless trading", paragraphs: [
+      "The October 2021 film keeps gas off the coins with an umbrella, then shows the toggle in the trade form and a rate with no gas to pay.",
+    ], media: [
+      { source: "/Projects/matcha-video-gasless-2021-poster.webp", video: "/Projects/matcha-video-gasless-2021.webm", label: "Matcha gasless trading", width: 960, height: 540, post: { href: "https://x.com/matchaxyz/status/1447592326424055816", date: "2021-10-11" } },
+    ] },
+  ], { label: "Video" }),
 } satisfies Record<string, ProjectCaseStudy>

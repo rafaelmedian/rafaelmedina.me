@@ -419,11 +419,6 @@ const quotesBySource: Record<QuoteSource, PortfolioQuote[]> = {
   team: teamQuotes,
 }
 
-const quoteTitles: Record<QuoteSource, string> = {
-  internet: "Kind words from the timeline",
-  team: "Kind words from the teams",
-}
-
 const sectionLinks: { label: string; href: string }[] = [
   { label: "About", href: "#about-panel" },
 ]
@@ -728,13 +723,12 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
   if (!mediaReleased && activeWorkPreviewIndex === null) setMediaReleased(true)
   const loadFeedMedia = mediaReleased || activeWorkPreviewIndex === null
   const selectedWorkPreviewIndex = activeWorkPreviewIndex ?? Math.min(lastWorkPreviewIndex, Math.max(galleryItems.length - 1, 0))
-  // The tile videos stay paused while a dialog covers them (the gallery or
-  // a card's quotes) and until its close has landed. Resumed the
+  // The tile videos stay paused while the gallery covers them and until its
+  // close has landed. Resumed the
   // moment the gallery let go, their decoding paced the whole page at 30fps
   // for the length of the shrink (and the notes folder's drop after it): 23
   // of 50 frames went long, against none with the videos held.
-  const [quotesOpen, setQuotesOpen] = useState(false)
-  const galleryOpen = activeWorkPreviewIndex !== null || quotesOpen
+  const galleryOpen = activeWorkPreviewIndex !== null
   const [holdTileVideos, setHoldTileVideos] = useState(galleryOpen)
   if (galleryOpen && !holdTileVideos) setHoldTileVideos(true)
   useEffect(() => {
@@ -1142,7 +1136,7 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                           )
                           if (item.kind === "quote") return (
                             <div key={item.area} className={`${itemClass} mosaic-row-quote`} style={itemStyle}>
-                              <QuoteCard quotes={quotesBySource[item.source]} title={quoteTitles[item.source]} onDialogOpenChange={setQuotesOpen} />
+                              <QuoteCard quotes={quotesBySource[item.source]} />
                             </div>
                           )
                           if (item.kind === "writings") return (

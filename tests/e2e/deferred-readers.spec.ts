@@ -138,7 +138,7 @@ for (const destination of ["project", "other reader"]) {
     if (destination === "project") {
       // Paging the gallery is a selection of its own.
       await page.keyboard.press("ArrowRight")
-      await expect(page).toHaveURL(/\/work\/matcha-gasless-film\/$/)
+      await expect(page).toHaveURL(/\/work\/pokemon-duo\/$/)
     } else {
       await page.keyboard.press("Escape")
       await expect(page.locator(".preview-gallery-popup")).toBeHidden()

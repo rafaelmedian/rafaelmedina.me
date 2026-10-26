@@ -55,95 +55,71 @@
   min-width: 0;
 }
 
-.mosaic-group-opening,
-.mosaic-group-closing {
+.mosaic-group-opening {
   height: clamp(260px, 28.075cqw, 420px);
   grid-template-rows: minmax(0, 1fr);
-}
-
-.mosaic-group-opening {
   grid-template-columns: minmax(0, 3fr) minmax(0, 6fr) minmax(0, 3fr);
   grid-template-areas: "wallet homepage writings";
 }
 
-/* The personal-photo fan is a third band under the quote and limit orders rather
-   than a fifth column beside them: it is five overlapping prints and a label,
-   so it wants a wide, short box, while the four project slots above are cut to
-   the shapes their own artwork needs. The band carries its own height and the
-   group adds it on, so the projects keep exactly the free space -- and so the
-   3:2 split of it -- that they had before the band existed. Its 260px floor is
-   the fan, its label, and the clearance the outer prints' corners lean into. */
+/* The personal-photo fan is a band under Protector, Patrol, and the quote
+   rather than a column beside them: it is five overlapping prints and a label,
+   so it wants a wide, short box, while the slots above are cut to
+   the shapes their own artwork needs. The Matcha launch films and marketing
+   wall take the band's first two columns, so the photos sit beside work
+   rather than beside the résumé, which moved down by Moody's. The fan is a
+   fixed 27rem, so the quote's column still holds it whole. The band carries its own
+   height and the group adds it on, so the projects keep exactly the free
+   space -- and so the 3:2 split of it -- that they had before the band
+   existed. Its 260px floor is the fan, its label, and the clearance the outer
+   prints' corners lean into. */
 .mosaic-group-portraits {
-  --portraits-projects: clamp(536px, 44.118cqw, 660px);
+  --portraits-projects: clamp(400px, 30.75cqw, 460px);
   --portraits-photos: clamp(260px, 21.39cqw, 320px);
   height: calc(var(--portraits-projects) + var(--row-gap) + var(--portraits-photos));
-  grid-template-columns: minmax(0, 3fr) minmax(0, 5fr) minmax(0, 4fr);
-  grid-template-rows: minmax(340px, 3fr) minmax(180px, 2fr) var(--portraits-photos);
+  /* Patrol is a phone recording, so it gets the narrow column between its
+     sister app and the quote; the quote keeps the 340px it needs. */
+  grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(340px, 4fr);
+  grid-template-rows: minmax(0, 3fr) minmax(0, 2fr) var(--portraits-photos);
   grid-template-areas:
-    "popparazi protector quote"
-    "resume protector limitorders"
-    "photos photos photos";
+    "protector patrol quote"
+    "protector patrol quote"
+    "relaunch marketing photos";
 }
 
-.mosaic-group-offset {
-  height: clamp(600px, 60.16cqw, 900px);
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  grid-template-rows: minmax(0, 40fr) minmax(0, 15fr) minmax(0, 45fr);
-  grid-template-areas:
-    "family dealership"
-    "family rewards"
-    "token rewards";
-}
-
-/* Two rows of two on a twelve-column track, wide and narrow swapping between
-   rows like the offset group's seams. Twilio and Moody's are flat UI exports,
-   so they sit in the grey mat like the dealership hub; Turtle and Onit are
-   mockups with their own backdrops, so they run full bleed. */
+/* Two rows on a twelve-column track, wide and narrow swapping between rows so
+   the seams stagger. Twilio and Moody's are flat UI exports, so they sit in
+   the grey mat; Turtle and Onit are mockups with their own backdrops, so they
+   run full bleed. The résumé closes the first row, beside Moody's. */
 .mosaic-group-agency {
   height: clamp(520px, 56cqw, 840px);
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
   grid-template-areas:
-    "twilio twilio twilio twilio twilio twilio twilio moodys moodys moodys moodys moodys"
+    "twilio twilio twilio twilio twilio moodys moodys moodys moodys resume resume resume"
     "turtle turtle turtle turtle turtle onit onit onit onit onit onit onit";
 }
 
 /* A band across the grid, like the personal-photo fan. A third of the row,
    centred, was tried first: at the width the card actually wants it leaves two
    empty columns, and a lone card floating in a row of nothing reads as a hole
-   in the grid rather than as a pull quote. It now shares the band with the
-   marketing tile, whose 2x2 sheet of 2:1 posts is about as wide and short
-   as half this band, so neither tile is the lone card that problem was about.
-   Half the band is still past the 340px the quote needs. It carries the photo
-   band's floor so the two match. */
+   in the grid rather than as a pull quote. It now shares the band with
+   Dealership Hub, whose dashboard crops from the top into a short, wide slot,
+   so neither tile is the lone card that problem was about.
+   The quote keeps its 340px floor. It carries the photo band's floor so the
+   two match. The Pokédex experiment sits between them, the grid's fifth tile:
+   the Duo opened flat is about 5:4, so two sevenths of the row at this height
+   holds it whole. */
 .mosaic-group-aside {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(340px, 2fr) minmax(0, 2fr) minmax(0, 3fr);
   grid-template-rows: minmax(clamp(260px, 21.39cqw, 320px), auto);
-  grid-template-areas: "quote2 marketing";
+  grid-template-areas: "quote2 duo dealership";
 }
 
-/* Gasless leads at seven twelfths, its height half of what the old two-row
-   band had, so each slot stays near the films' 16:9. The motion pieces run
-   full bleed like the other product tiles. */
-.mosaic-group-videos {
-  height: clamp(260px, 24.4cqw, 372px);
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr);
-  grid-template-areas:
-    "gasless gasless gasless gasless gasless gasless gasless crosschain crosschain crosschain crosschain crosschain";
-}
-
-/* Limit orders is a screen recording of the whole app, which full bleed blew
-   up into a zoomed crop, so it sits in the grey mat instead. */
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-limit-orders-film .mosaic-row-media {
-  border-radius: var(--radius-sm);
-}
-
-.mosaic-group-closing {
-  /* The relaunch film takes half the row, which at the row's height is
-     close to its 16:9; the two product tiles split the rest. */
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-areas: "relaunch trade pro";
+/* The quote sets the band's height. The dashboard is taller than the slot, so
+   its intrinsic size is kept out of the row or it would stretch the band. */
+.mosaic-group-aside .mosaic-tile-dealership {
+  contain: size;
 }
 
 .mosaic-tile-resume .resume-tile {
@@ -1026,15 +1002,13 @@
   corner-shape: inherit;
 }
 
-/* Full-bleed (cover) tiles -- the Matcha films and the Protector photograph --
+/* Full-bleed (cover) tiles -- the Matcha films --
    have no pale card surface showing at all: the artwork is the tile, and the
    films run dark. A pale wash over them read as grey fog, so they take the
-   black band like the dark tiles below. Family Stories seats its phones on the
-   bottom edge, and Token and Pro carry their own rgb(63 62 68) backdrop to all
-   four. There is no pale surface for the band to wash toward on any of them,
+   black band like the dark tiles below. Token and Pro carry their own
+   rgb(63 62 68) backdrop to all four. There is no pale surface for the band to wash toward on any of them,
    and ink would land on artwork it cannot beat. */
 .mosaic-row-item-fit-cover .mosaic-row-card,
-.mosaic-row-card-preview-family-stories,
 .mosaic-row-card-preview-shot-21,
 .mosaic-row-card-preview-shot-23 {
   --card-caption-tint: 0 0 0;
@@ -1333,18 +1307,11 @@
   will-change: auto;
 }
 
-/* Cropped tiles focus on the first row of phones, with the next row peeking in.
-   The gallery frames the same rows from further out (preview-gallery.css); the
-   flight matches the two whole pictures, so either crop can change alone. */
-.mosaic-row-card-preview-protector {
-  --preview-crop-scale: 1.38;
-  --preview-crop-position: 21% 14%;
-}
-
-.mosaic-row-card-preview-protector .mosaic-row-media {
-  object-position: var(--preview-crop-position);
-  transform: scale(var(--preview-crop-scale));
-  transform-origin: var(--preview-crop-position);
+/* The team-performance panel runs off the right of the Twilio export, and a
+   cover crop trims more of it. Contained, the whole width shows; the export's
+   grey is the card's, so the bands above and below read as the same mat. */
+.mosaic-row-card-preview-twilio-admiral .mosaic-row-media {
+  object-fit: contain;
 }
 
 .mosaic-row-item-fit-contain .mosaic-row-card {
@@ -1362,11 +1329,11 @@
   object-fit: contain;
 }
 
-/* These compositions already supply their own framing. Family Stories keeps
-   its devices on the bottom edge; Rewards supplies two independent banners;
-   Token, Pro, Trade, and Mobile extend their own backdrop across the card
-   below. */
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
+/* These compositions already supply their own framing. Rewards supplies two
+   independent banners; Token, Pro, Trade, and Mobile extend their own backdrop
+   across the card below. Research Views bakes an even margin and a softer
+   corner around its window. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-moodys-sprints,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-marketing,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-1,
@@ -1377,38 +1344,44 @@
   padding: 0;
 }
 
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-card-media-clip {
-  place-items: end center;
-}
-
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub {
   /* The dashboard is intentionally taller than its landscape slot. Keep the
      breathing room above, but let its lower rows continue into the card edge
-     instead of cutting them off against an inner grey strip. */
+     instead of cutting them off against an inner grey strip. No side padding
+     either: an inset clip carries its own rounded corners, and those cut the
+     window's dark rail into a curve where it leaves the card. Full width, the
+     clip's corners are the card's, and the window stays clear of them. */
+  padding-inline: 0;
   padding-bottom: 0;
 }
 
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21 .mosaic-row-card-media-clip,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-card-media-clip {
   place-items: start center;
 }
 
+/* Keep the screenshots wide, with room above and their lower rows clipped.
+   The offset leaves the UI side rails inside the thumbnail. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21 .mosaic-row-media,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-media {
   width: 112%;
+  margin-top: 12%;
   max-width: none;
   max-height: none;
 }
 
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center bottom;
+/* The dashboard sits higher so more of its rows show above the clip. Without
+   the card's side padding it needs less overscan: at 104% the export's own
+   transparent margin keeps the window about 4.5% of the card in from each side,
+   past where the card's bottom corners start to curve. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-media {
+  width: 104%;
+  margin-top: 6%;
 }
 
 /* These two 4:3 exports carry the same dark backdrop around their UI. Continue
    that backdrop across the card instead of framing the export in the generic
-   pale tile surface. The image remains contained, so neither the token
-   workspace nor Matcha Pro loses product chrome at a differently shaped slot.
+   pale tile surface. Token crops from the top; Matcha Pro remains contained.
 
    One flat colour, not a ramp: the exports themselves were repainted to hold
    rgb(63 62 68) all the way around their windows (they used to carry a vertical
@@ -1441,6 +1414,45 @@
   background: rgb(231 231 233);
 }
 
+/* The Protector and Patrol recordings are bare screens, so their tiles frame
+   them as phones: a black bezel (a border, so the
+   screen meets it without an anti-aliased seam) inside a graphite frame with
+   a lighter metal rim, each a shadow spread so it follows the radius, and a
+   soft drop below. The recording runs the full screen height, tab bar and
+   sheet bottoms included: a crop above them cut the labels off. The clip
+   carries the tile's only padding, which leaves room for the frame and
+   shadow it would otherwise cut. The radii are the same length on both axes
+   at the recordings' shared 480:1042. The gallery repeats this frame
+   (preview-gallery.css). */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-protector,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-patrol {
+  padding: 0;
+}
+
+.mosaic-row-card-preview-protector .mosaic-row-card-media-clip,
+.mosaic-row-card-preview-patrol .mosaic-row-card-media-clip {
+  padding: clamp(1rem, 1.6vw, 1.5rem);
+}
+
+.mosaic-row-card-preview-protector .mosaic-row-media,
+.mosaic-row-card-preview-patrol .mosaic-row-media {
+  --phone-bezel: clamp(3px, 0.35vw, 5px);
+  --phone-frame: clamp(4px, 0.42vw, 6px);
+  border: var(--phone-bezel) solid #000;
+  border-radius: 15% / 6.9%;
+  background: #000;
+  box-shadow:
+    0 0 0 var(--phone-frame) #333336,
+    0 0 0 calc(var(--phone-frame) + 1.5px) #5c5c61,
+    0 0 0 calc(var(--phone-frame) + 2.5px) rgb(0 0 0 / 0.18),
+    0 18px 36px -12px rgb(0 0 0 / 0.35);
+}
+
+/* The Duo recording is shot on pure white, so the card takes the same white
+   and the contained video's letterbox disappears into it. */
+.mosaic-row-card-preview-pokemon-duo {
+  background: #fff;
+}
 /* Rewards owns two complete campaign deliverables. Positioning them as two
    media boxes keeps every rounded end inside the tile; the previous flattened
    composite baked both banners into a single crop whose cut edges read as a
@@ -1535,41 +1547,35 @@
     grid-template-rows:
       var(--compact-tile)
       calc(var(--compact-tile) * 0.75)
-      calc(var(--compact-tile) * 0.75)
-      calc(var(--compact-tile) * 1.25)
-      auto
       minmax(340px, auto)
-      calc(var(--compact-tile) * 1.2)
+      calc(var(--compact-tile) * 1.6)
+      calc(var(--compact-tile) * 1.25)
+      calc(var(--compact-tile) * 2)
+      calc(var(--compact-tile) * 2)
+      minmax(340px, auto)
+      calc(var(--compact-tile) * 1.125)
+      var(--compact-tile)
       minmax(260px, auto)
       var(--compact-tile)
-      var(--compact-tile)
       calc(var(--compact-tile) * 1.25)
       var(--compact-tile)
-      calc(var(--compact-tile) * 0.75)
-      var(--compact-tile)
-      minmax(340px, auto)
-      var(--compact-tile)
-      calc(var(--compact-tile) * 1.125)
       var(--compact-tile);
     grid-template-areas:
       "wallet homepage"
       "writings writings"
-      "gasless crosschain"
-      "popparazi resume"
-      "protector protector"
-      "quote quote"
-      "limitorders limitorders"
-      "photos photos"
-      "family dealership"
-      "family token"
-      "rewards rewards"
-      "twilio twilio"
-      "moodys turtle"
-      "onit onit"
       "quote2 quote2"
-      "marketing marketing"
+      "duo duo"
+      "dealership dealership"
+      "protector protector"
+      "patrol patrol"
+      "quote quote"
       "relaunch relaunch"
-      "trade pro";
+      "marketing marketing"
+      "photos photos"
+      "twilio twilio"
+      "moodys resume"
+      "turtle turtle"
+      "onit onit";
     padding-inline: 1rem;
   }
 
@@ -1577,19 +1583,10 @@
     display: contents;
   }
 
-  .mosaic-tile-protector {
-    aspect-ratio: 1354 / 1025;
-  }
-
-  /* The films follow the opening row in the DOM, so the notes folder no
-     longer has Popparazi beside it: the folder takes the row on its own and
-     the phone pairs with the résumé, which drops its wide-tile ratio here. */
+  /* The résumé shares a row with Moody's here, sized by its track rather
+     than a tile ratio. */
   .mosaic-tile-resume {
     aspect-ratio: auto;
-  }
-
-  .mosaic-group-videos {
-    height: auto;
   }
 
   .mosaic-row-quote .mosaic-quote {
@@ -1606,7 +1603,7 @@
     padding: 0.375rem;
   }
 
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-moodys-sprints,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-marketing,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-1,
@@ -1617,18 +1614,18 @@
     padding: 0;
   }
 
-  /* Compact portrait slots have room above and below the dashboard. */
+  /* The compact padding above would otherwise put back the strip under the
+     dashboard and the inset that rounds its rail: keep it running into the
+     card's bottom and side edges, as on desktop. */
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub {
-    padding-bottom: 0.375rem;
+    padding-inline: 0;
+    padding-bottom: 0;
   }
 
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-card-media-clip {
-    place-items: center;
-  }
-
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-family-stories .mosaic-row-media {
-    transform: scale(1.3);
-    transform-origin: center bottom;
+  /* Square slots need more offset for the lower rows to cross the edge.
+     Dealership Hub runs full width here, so it keeps the desktop offset. */
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21 .mosaic-row-media {
+    margin-top: 18%;
   }
 
   .mosaic-row-card-preview-matcha-rewards .mosaic-row-media-pair .mosaic-row-media {
@@ -1691,15 +1688,5 @@
   .mosaic-row-card-title,
   .mosaic-row-card-scrim {
     display: none;
-  }
-
-  .mosaic-row-card-preview-protector .mosaic-row-media {
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    object-fit: cover;
-    object-position: var(--preview-crop-position);
-    transform: scale(var(--preview-crop-scale));
-    transform-origin: var(--preview-crop-position);
   }
 }

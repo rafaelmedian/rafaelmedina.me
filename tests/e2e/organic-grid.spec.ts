@@ -8,10 +8,10 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
-    await expect(tiles).toHaveCount(24)
-    // Nineteen projects and the résumé: its reader has a page of its own now, so
+    await expect(tiles).toHaveCount(17)
+    // Twelve projects and the résumé: its reader has a page of its own now, so
     // its tile is a link on the grid like theirs.
-    await expect(page.locator("a.mosaic-row-card")).toHaveCount(20)
+    await expect(page.locator("a.mosaic-row-card")).toHaveCount(13)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect()
       return { x, y, width, height }
@@ -27,56 +27,81 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
         expect(overlapX > 1 && overlapY > 1).toBe(false)
       }
     }
+    // Address tiles by their grid area rather than their position in the DOM.
+    const byArea = await tiles.evaluateAll(elements => Object.fromEntries(elements.map(element => {
+      const area = [...element.classList].find(name => name.startsWith("mosaic-tile-"))!.slice("mosaic-tile-".length)
+      const { x, y, width, height } = element.getBoundingClientRect()
+      return [area, { x, y, width, height }]
+    })))
+    const { wallet, homepage, writings, resume, protector, quote, photos, dealership,
+      quote2, duo, twilio, moodys, turtle, onit, relaunch, patrol, marketing } = byArea
     if (width < 900) {
-      // The opening projects must remain side by side even on phones, and the
-      // notes folder takes the next row alone, ahead of the films.
-      expect(boxes[0].y).toBeCloseTo(boxes[1].y, 0)
-      expect(boxes[0].height).toBeCloseTo(boxes[0].width, 0)
-      expect(boxes[1].x).toBeGreaterThan(boxes[0].x + boxes[0].width)
-      const protector = boxes[7]
-      const quote = boxes[8]
-      expect(protector.width).toBeCloseTo(boxes[1].x + boxes[1].width - boxes[0].x, 0)
-      expect(quote.width).toBeCloseTo(protector.width, 0)
-      // The personal-photo band, the team quotes, and the marketing tile span
-      // both compact columns.
-      expect(boxes[10].width).toBeCloseTo(protector.width, 0)
-      expect(boxes[19].width).toBeCloseTo(protector.width, 0)
-      expect(boxes[20].width).toBeCloseTo(protector.width, 0)
-      expect(boxes[20].y).toBeGreaterThan(boxes[19].y + boxes[19].height - 1)
-      // Twilio and Onit span both columns, with Moody's and Turtle paired
-      // between them.
-      expect(boxes[15].width).toBeCloseTo(protector.width, 0)
-      expect(boxes[18].width).toBeCloseTo(protector.width, 0)
-      expect(boxes[16].y).toBeCloseTo(boxes[17].y, 0)
-      expect(boxes[16].y).toBeGreaterThan(boxes[15].y + boxes[15].height - 1)
-      expect(boxes[18].y).toBeGreaterThan(boxes[16].y + boxes[16].height - 1)
+      // The opening projects share a row, with the notes folder below them.
+      expect(wallet.y).toBeCloseTo(homepage.y, 0)
+      expect(wallet.height).toBeCloseTo(wallet.width, 0)
+      expect(homepage.x).toBeGreaterThan(wallet.x + wallet.width)
+      expect(protector.width).toBeCloseTo(homepage.x + homepage.width - wallet.x, 0)
+      for (const tile of [quote, photos, quote2, duo, dealership, twilio, turtle, onit, relaunch, patrol, marketing]) {
+        expect(tile.width).toBeCloseTo(protector.width, 0)
+      }
+      // The quote, Duo, and dealership band follows the notes, ahead of Protector.
+      expect(quote2.y).toBeGreaterThan(writings.y + writings.height - 1)
+      expect(duo.y).toBeGreaterThan(quote2.y + quote2.height - 1)
+      expect(dealership.y).toBeGreaterThan(duo.y + duo.height - 1)
+      expect(protector.y).toBeGreaterThan(dealership.y + dealership.height - 1)
+      // Films, marketing, and photos follow the two phone recordings.
+      const sequence = [protector, patrol, quote, relaunch, marketing, photos, twilio, moodys, turtle, onit]
+      for (let index = 1; index < sequence.length; index++) {
+        expect(sequence[index].y).toBeGreaterThan(sequence[index - 1].y + sequence[index - 1].height - 1)
+      }
+      // The résumé shares Moody's row, with both tiles filling the grid.
+      expect(resume.y).toBeCloseTo(moodys.y, 0)
+      expect(resume.height).toBeCloseTo(moodys.height, 0)
+      expect(resume.x).toBeGreaterThan(moodys.x + moodys.width)
+      expect(resume.x + resume.width).toBeCloseTo(protector.x + protector.width, 0)
     } else {
-      // The personal-photo band spans the portraits group on its own line.
-      expect(boxes[10].x).toBeCloseTo(boxes[5].x, 0)
-      expect(boxes[10].x + boxes[10].width).toBeCloseTo(boxes[9].x + boxes[9].width, 0)
-      expect(boxes[10].y).toBeGreaterThan(boxes[9].y + boxes[9].height - 1)
-      // The team quotes and the marketing tile share a band of their own
-      // between the project groups, edge to edge across it.
-      expect(boxes[19].x).toBeCloseTo(boxes[10].x, 0)
-      expect(boxes[20].y).toBeCloseTo(boxes[19].y, 0)
-      expect(boxes[20].x + boxes[20].width).toBeCloseTo(boxes[10].x + boxes[10].width, 0)
-      expect(boxes[19].y).toBeGreaterThan(boxes[18].y + boxes[18].height - 1)
-      expect(boxes[21].y).toBeGreaterThan(boxes[19].y + boxes[19].height - 1)
-      // The agency group sits between the offset group and the aside band,
-      // two rows whose wide and narrow slots swap sides.
-      expect(boxes[15].y).toBeGreaterThan(boxes[14].y + boxes[14].height - 1)
-      expect(boxes[15].x).toBeCloseTo(boxes[10].x, 0)
-      expect(boxes[16].y).toBeCloseTo(boxes[15].y, 0)
-      expect(boxes[16].x + boxes[16].width).toBeCloseTo(boxes[10].x + boxes[10].width, 0)
-      expect(boxes[17].y).toBeCloseTo(boxes[18].y, 0)
-      expect(boxes[17].y).toBeGreaterThan(boxes[15].y + boxes[15].height - 1)
-      expect(boxes[15].width).toBeGreaterThan(boxes[16].width)
-      expect(boxes[18].width).toBeGreaterThan(boxes[17].width)
-      // The long middle cards bridge the smaller stack alongside them.
-      expect(boxes[7].height).toBeGreaterThan(boxes[8].height + 100)
-      expect(boxes[7].y + boxes[7].height).toBeCloseTo(boxes[9].y + boxes[9].height, 0)
-      expect(boxes[11].y + boxes[11].height).toBeGreaterThan(boxes[12].y + boxes[12].height + 30)
-      expect(boxes[13].y + boxes[13].height).toBeCloseTo(boxes[14].y + boxes[14].height, 0)
+      // Protector and the quote share one height above the personal row.
+      expect(quote.y).toBeCloseTo(protector.y, 0)
+      expect(quote.height).toBeCloseTo(protector.height, 0)
+      expect(patrol.y).toBeCloseTo(protector.y, 0)
+      expect(patrol.height).toBeCloseTo(protector.height, 0)
+      // Films, marketing, and photos share the band below the phones.
+      expect(relaunch.y).toBeCloseTo(photos.y, 0)
+      expect(marketing.y).toBeCloseTo(photos.y, 0)
+      expect(relaunch.height).toBeCloseTo(photos.height, 0)
+      expect(marketing.height).toBeCloseTo(photos.height, 0)
+      expect(relaunch.x).toBeCloseTo(protector.x, 0)
+      expect(marketing.x).toBeGreaterThan(relaunch.x + relaunch.width)
+      expect(photos.x).toBeGreaterThan(marketing.x + marketing.width)
+      expect(photos.x + photos.width).toBeCloseTo(quote.x + quote.width, 0)
+      expect(photos.y).toBeGreaterThan(protector.y + protector.height - 1)
+      // The quote, Duo, and dealership span a band between the opening row and
+      // Protector, the Duo the fifth tile and the dealership widest.
+      expect(quote2.x).toBeCloseTo(protector.x, 0)
+      for (const tile of [duo, dealership]) {
+        expect(tile.y).toBeCloseTo(quote2.y, 0)
+        expect(tile.height).toBeCloseTo(quote2.height, 0)
+      }
+      expect(duo.x).toBeGreaterThan(quote2.x + quote2.width)
+      expect(dealership.x).toBeGreaterThan(duo.x + duo.width)
+      expect(dealership.width).toBeGreaterThan(duo.width)
+      expect(dealership.x + dealership.width).toBeCloseTo(photos.x + photos.width, 0)
+      expect(quote2.y).toBeGreaterThan(homepage.y + homepage.height - 1)
+      expect(protector.y).toBeGreaterThan(quote2.y + quote2.height - 1)
+      // The agency group closes the grid, with the résumé in its first row.
+      expect(twilio.y).toBeGreaterThan(photos.y + photos.height - 1)
+      expect(twilio.x).toBeCloseTo(protector.x, 0)
+      expect(moodys.y).toBeCloseTo(twilio.y, 0)
+      expect(resume.y).toBeCloseTo(twilio.y, 0)
+      expect(resume.height).toBeCloseTo(twilio.height, 0)
+      expect(resume.x).toBeGreaterThan(moodys.x + moodys.width)
+      expect(resume.x + resume.width).toBeCloseTo(photos.x + photos.width, 0)
+      expect(turtle.y).toBeCloseTo(onit.y, 0)
+      expect(turtle.y).toBeGreaterThan(twilio.y + twilio.height - 1)
+      expect(twilio.width).toBeGreaterThan(moodys.width)
+      expect(onit.width).toBeGreaterThan(turtle.width)
+      expect(turtle.x).toBeCloseTo(twilio.x, 0)
+      expect(onit.x + onit.width).toBeCloseTo(resume.x + resume.width, 0)
     }
   })
 }
@@ -110,108 +135,13 @@ test("reserves the mosaic layout before scripts or media load", async ({ browser
   await page.route(/\.(webp|jpg|png|webm)(\?.*)?$/, route => route.abort())
   await page.goto("/")
   const cards = page.locator("a.mosaic-row-card")
-  await expect(cards).toHaveCount(20)
+  await expect(cards).toHaveCount(13)
   const first = await cards.nth(0).boundingBox()
   const second = await cards.nth(1).boundingBox()
   expect(first!.height).toBeGreaterThan(100)
   expect(first!.y).toBeCloseTo(second!.y, 0)
   expect(second!.x).toBeGreaterThan(first!.x + first!.width)
   await context.close()
-})
-
-test("loads enough pixels for Protector's tall crop at the desktop breakpoint", async ({ page }) => {
-  await page.setViewportSize({ width: 900, height: 900 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  const media = page.locator(".mosaic-row-card-preview-protector img")
-  await media.scrollIntoViewIfNeeded()
-  await expect(media).toHaveJSProperty("complete", true)
-  const { sourceWidth, paintedWidth } = await media.evaluate(async element => {
-    const image = element as HTMLImageElement
-    // An independent Image avoids sizes' density-corrected naturalWidth.
-    const source = new Image()
-    source.src = image.currentSrc
-    await source.decode()
-    const scale = new DOMMatrixReadOnly(getComputedStyle(image).transform).a
-    return {
-      sourceWidth: source.naturalWidth,
-      paintedWidth: Math.max(image.clientWidth, image.clientHeight * source.naturalWidth / source.naturalHeight) * scale,
-    }
-  })
-  expect(sourceWidth).toBeGreaterThanOrEqual(paintedWidth)
-})
-
-test("separates Rewards artwork and extends Matcha product backgrounds", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-
-  const rewardsCard = page.getByRole("link", { name: /Open Matcha Rewards/ })
-  const rewardsMedia = rewardsCard.locator("img")
-  await rewardsCard.scrollIntoViewIfNeeded()
-  await expect(rewardsMedia).toHaveCount(2)
-  await expect(rewardsMedia.nth(0)).toHaveAttribute("src", /matcha-rewards-link-preview\.webp$/)
-  await expect(rewardsMedia.nth(1)).toHaveAttribute("src", /matcha-rewards-countdown\.webp$/)
-
-  const rewardsBox = await rewardsCard.boundingBox()
-  expect(rewardsBox).not.toBeNull()
-  for (const media of await rewardsMedia.all()) {
-    const box = await media.boundingBox()
-    expect(box).not.toBeNull()
-    expect(box!.x).toBeGreaterThanOrEqual(rewardsBox!.x - 1)
-    expect(box!.y).toBeGreaterThanOrEqual(rewardsBox!.y - 1)
-    expect(box!.x + box!.width).toBeLessThanOrEqual(rewardsBox!.x + rewardsBox!.width + 1)
-    expect(box!.y + box!.height).toBeLessThanOrEqual(rewardsBox!.y + rewardsBox!.height + 1)
-  }
-
-  for (const name of [/Open Matcha token page/, /Open Matcha Pro/]) {
-    const card = page.getByRole("link", { name })
-    await expect(card).toHaveCSS("padding", "0px")
-    // One flat colour, matching the value the repainted exports hold around
-    // their windows -- a ramp of any kind would only meet the image at one row.
-    await expect(card).toHaveCSS("background-image", "none")
-    await expect(card).toHaveCSS("background-color", "rgb(63, 62, 68)")
-
-    const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), card.locator("img").boundingBox()])
-    expect(cardBox).not.toBeNull()
-    expect(mediaBox).not.toBeNull()
-    expect(mediaBox!.x).toBeGreaterThanOrEqual(cardBox!.x - 1)
-    expect(mediaBox!.y).toBeGreaterThanOrEqual(cardBox!.y - 1)
-    expect(mediaBox!.x + mediaBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1)
-    expect(mediaBox!.y + mediaBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height + 1)
-  }
-
-  // The trade tile is the same fix on the light side: its export sits on a
-  // flat rgb(231 231 233) that is five levels off the pale card surface, close
-  // enough to blend at a glance and wrong enough to draw a rectangle inside the
-  // card once seen.
-  for (const name of [/Open Matcha trade page/]) {
-    const card = page.getByRole("link", { name })
-    await card.scrollIntoViewIfNeeded()
-    await expect(card).toHaveCSS("padding", "0px")
-    await expect(card).toHaveCSS("background-image", "none")
-    await expect(card).toHaveCSS("background-color", "rgb(231, 231, 233)")
-
-    const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), card.locator("img").boundingBox()])
-    expect(cardBox).not.toBeNull()
-    expect(mediaBox).not.toBeNull()
-    // Contained, not cropped to fill: the closing slots are wider than 4:3, and
-    // covering them would cut the tab row off the trade module.
-    expect(mediaBox!.width).toBeGreaterThanOrEqual(cardBox!.width - 2)
-    expect(mediaBox!.height).toBeLessThanOrEqual(cardBox!.height + 1)
-  }
-
-  // Matcha Pro is wider than its slot, so it sits on the card's bottom edge and
-  // spends the leftover height above the image, where the flat card colour is
-  // the export's own backdrop rather than the dark workspace inside it.
-  const proCard = page.getByRole("link", { name: /Open Matcha Pro/ })
-  const [proCardBox, proMediaBox] = await Promise.all([
-    proCard.boundingBox(),
-    proCard.locator("img").boundingBox(),
-  ])
-  expect(proMediaBox!.y + proMediaBox!.height).toBeGreaterThan(
-    proCardBox!.y + proCardBox!.height - 2,
-  )
 })
 
 test("shows the dealership preview large and crops it at the card edge", async ({ page }) => {
@@ -231,10 +161,12 @@ test("shows the dealership preview large and crops it at the card edge", async (
   expect(mediaClipBox).not.toBeNull()
   expect(mediaBox).not.toBeNull()
   expect(mediaClipBox!.y + mediaClipBox!.height).toBeCloseTo(cardBox!.y + cardBox!.height - 1, 0)
-  expect(mediaBox!.y).toBeCloseTo(mediaClipBox!.y, 0)
-  expect(mediaBox!.width).toBeGreaterThan(mediaClipBox!.width * 1.1)
+  expect(mediaBox!.y).toBeGreaterThan(mediaClipBox!.y)
+  expect(mediaBox!.width / mediaClipBox!.width).toBeCloseTo(1.04, 2)
 
+  // Its slot in the aside band is wider and shorter than the export's 4:3, so
+  // the top of the dashboard shows and the lower rows run off the card's edge.
   const visibleShare = mediaClipBox!.height / mediaBox!.height
   expect(visibleShare).toBeGreaterThan(0.45)
-  expect(visibleShare).toBeLessThan(0.6)
+  expect(visibleShare).toBeLessThan(0.95)
 })

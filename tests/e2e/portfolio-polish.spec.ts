@@ -1029,13 +1029,15 @@ test("adds breathing room below the previous-work label on mobile", async ({ pag
   await page.goto("/")
 
   const gap = await page.locator(".mosaic-work-history").evaluate((workHistory) => {
+    // The label shares its line with the recent chip, which is the taller of
+    // the two, so the room is measured under whichever ends lower.
     const label = workHistory.querySelector(".mosaic-work-history-line:first-child .mosaic-work-history-copy:last-child")
+    const recent = workHistory.querySelector(".mosaic-work-history-line:first-child .mosaic-work-history-chip")
     const company = workHistory.querySelector(".mosaic-work-history-line:nth-child(2) .mosaic-work-history-chip:first-child")
-    if (!label || !company) return Number.POSITIVE_INFINITY
+    if (!label || !recent || !company) return Number.POSITIVE_INFINITY
 
-    const labelBox = label.getBoundingClientRect()
-    const companyBox = company.getBoundingClientRect()
-    return companyBox.top - labelBox.bottom
+    const firstLineBottom = Math.max(label.getBoundingClientRect().bottom, recent.getBoundingClientRect().bottom)
+    return company.getBoundingClientRect().top - firstLineBottom
   })
 
   expect(gap).toBeCloseTo(12, 0)
@@ -2478,7 +2480,7 @@ test("holds the location line still while a modal is open", async ({ page }) => 
   const lastUpdated = page.locator(".mosaic-profile-location .mosaic-profile-availability")
   const before = await lastUpdated.boundingBox()
 
-  await page.getByText("Notes & tools").first().click()
+  await page.getByText("Notes and tools").first().click()
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect(page.locator(".mosaic-profile-location-anchor")).toHaveAttribute("aria-hidden", "true")
 
@@ -2762,7 +2764,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
   const stage = page.locator(".mosaic-takeover-stage")
   const groups = stage.locator(".mosaic-group")
 
-  await expect(groups).toHaveCount(7)
+  await expect(groups).toHaveCount(5)
 
   const gaps = await groups.evaluateAll((elements) =>
     elements.slice(1).map((element, index) => {
@@ -2771,7 +2773,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
     }),
   )
 
-  expect(gaps).toEqual([16, 16, 16, 16, 16, 16])
+  expect(gaps).toEqual([16, 16, 16, 16])
 })
 
 test("leaves a generous white runway after the final project group before the about takeover", async ({ page }) => {
@@ -3435,8 +3437,8 @@ test("shows every project immediately on mobile", async ({ page }) => {
   await page.goto("/")
 
   const cards = page.locator("a.mosaic-row-card")
-  // The résumé tile is a link among the nineteen projects.
-  await expect(cards).toHaveCount(20)
+  // The résumé tile is a link among the twelve projects.
+  await expect(cards).toHaveCount(13)
   await expect(cards.first()).toBeVisible()
   await expect(cards.last()).toBeVisible()
   await expect(page.getByRole("button", { name: /View \d+ more projects/ })).toHaveCount(0)
@@ -3458,7 +3460,7 @@ test("loads each preview video only when it reaches the viewport", async ({ page
   await expect(offscreenVideo).toHaveAttribute("preload", "none")
 
   await offscreenVideo.scrollIntoViewIfNeeded()
-  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/matcha-video-gasless-2021.webm")
+  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/pokemon-duo.webm")
   await expect(offscreenVideo).toHaveAttribute("preload", "metadata")
 })
 
@@ -3478,7 +3480,7 @@ test("uses eight pixel mobile gutters and opens with two columns", async ({ page
 
   const [walletBox, homepageBox] = await Promise.all([
     page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).boundingBox(),
-    page.getByRole("link", { name: /Open Matcha homepage/ }).boundingBox(),
+    page.getByRole("link", { name: /Open Matcha preview/ }).boundingBox(),
   ])
   expect(walletBox).not.toBeNull()
   expect(homepageBox).not.toBeNull()
@@ -3502,20 +3504,23 @@ test("opens the resume reader from the folded tile and returns focus on close", 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
 
+  // The résumé sits with the agency work, beside Moody's; the photos stay up
+  // in the portraits group, beside the Matcha films.
   const protectorCard = page.getByRole("link", { name: /Open Protector/ })
-  const row = page.locator(".mosaic-group").filter({ has: protectorCard })
+  const portraits = page.locator(".mosaic-group").filter({ has: protectorCard })
+  const row = page.locator(".mosaic-group").filter({ has: page.locator(".mosaic-tile-moodys") })
   const resume = row.getByRole("link", { name: "Open résumé" })
 
-  await expect(row.locator(".mosaic-row-item")).toHaveCount(6)
-  await expect(row.getByRole("button", { name: "Personal life", exact: true })).toBeVisible()
+  await expect(portraits.getByRole("button", { name: "Personal life", exact: true })).toBeVisible()
+  await expect(portraits.locator(".mosaic-tile-resume")).toHaveCount(0)
   await expect(row.locator(".mosaic-tile-resume .resume-tile")).toHaveCount(1)
   // The reader has a page of its own, so the tile is the link to it rather than
   // a button: a modified click still opens the résumé in a new tab.
   await expect(resume).toHaveAttribute("href", "/resume/")
   await expect(resume.locator(".resume-tile-sheet")).toHaveCSS("background-color", "rgb(255, 255, 255)")
   await expect(resume.locator(".resume-tile-fold")).toHaveCount(1)
-  await expect(resume.locator(".resume-tile-copy")).toContainText("Stealth fintech")
-  await expect(resume.locator(".resume-tile-copy")).toContainText("2026 - Present")
+  await expect(resume.locator(".resume-tile-copy")).toContainText("Freelance")
+  await expect(resume.locator(".resume-tile-copy")).toContainText("2026 – Present")
 
   await resume.click()
   const dialog = page.getByRole("dialog", { name: "Résumé" })
@@ -3540,19 +3545,20 @@ test("pages between the resume reader and its neighbouring projects", async ({ p
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveAccessibleName("Résumé")
 
-  // Protector follows the résumé in the portraits group.
+  // Turtle, the first tile of the agency group's second row, follows the
+  // résumé.
   await page.keyboard.press("ArrowRight")
-  await expect(dialog).toHaveAccessibleName("Protector booking")
-  await expect(page).toHaveURL(/\/work\/protector-booking\/$/)
+  await expect(dialog).toHaveAccessibleName("Turtle")
+  await expect(page).toHaveURL(/\/work\/turtle\/$/)
 
   await page.keyboard.press("ArrowLeft")
   await expect(dialog).toHaveAccessibleName("Résumé")
   await expect(page).toHaveURL(/\/resume\/$/)
 
-  // And Popparazi sits above it on the other side.
+  // And Moody's, beside it in the same row, comes before it.
   await page.keyboard.press("ArrowLeft")
-  await expect(dialog).toHaveAccessibleName("Popparazi V1")
-  await expect(page).toHaveURL(/\/work\/popparazi-v1\/$/)
+  await expect(dialog).toHaveAccessibleName("Moody’s Research Views")
+  await expect(page).toHaveURL(/\/work\/moodys-design-sprints\/$/)
 })
 
 test("opens a shared resume link straight into the gallery", async ({ page }) => {
@@ -3577,7 +3583,7 @@ test("gives the resume slide the same width as a project slide", async ({ page }
   const resumeWidth = await card.evaluate((element: HTMLElement) => element.offsetWidth)
 
   await page.keyboard.press("ArrowRight")
-  await expect(dialog).toHaveAccessibleName("Protector booking")
+  await expect(dialog).toHaveAccessibleName("Turtle")
   await expect.poll(() => card.evaluate((element: HTMLElement) => element.offsetWidth)).toBe(resumeWidth)
 })
 
@@ -3608,11 +3614,11 @@ for (const key of ["ArrowDown", "PageDown", "End"]) {
     await expect(rail.locator(".preview-gallery-nav-next")).toHaveAttribute("aria-keyshortcuts", "ArrowRight")
 
     await page.keyboard.press("ArrowRight")
-    await expect(page).toHaveURL(/\/work\/protector-booking\/$/)
+    await expect(page).toHaveURL(/\/work\/turtle\/$/)
     // A preview has nothing to scroll, so both pairs page there.
     await expect(rail.locator(".preview-gallery-nav-prev")).toHaveAttribute("aria-keyshortcuts", "ArrowUp ArrowLeft")
     await page.keyboard.press("ArrowDown")
-    await expect(page.getByRole("dialog")).not.toHaveAccessibleName("Protector booking")
+    await expect(page.getByRole("dialog")).not.toHaveAccessibleName("Turtle")
   })
 }
 
@@ -3625,12 +3631,8 @@ for (const width of [1440, 390]) {
     const dialog = page.getByRole("dialog", { name: "Résumé" })
     const card = dialog.locator(".preview-gallery-card")
     const title = dialog.getByRole("heading", { name: "Résumé" })
-    const drawings = dialog.locator(".resume-margin-drawing")
     await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
     const titleTop = (await title.boundingBox())!.y
-
-    await expect(drawings).toHaveCount(4)
-    if (width === 1440) await expect(drawings.first()).toBeVisible()
 
     await card.evaluate((element) => element.scrollTo({ top: 500, behavior: "instant" }))
     await expect(dialog.locator(".preview-gallery-resume")).toHaveAttribute("data-scrolled", "true")
@@ -3651,28 +3653,6 @@ for (const width of [1440, 390]) {
     expect((await title.boundingBox())!.y).toBeCloseTo(titleTop, 0)
   })
 }
-
-test("keeps resume margin drawings clear of the reading column", async ({ page }) => {
-  await page.setViewportSize({ width: 2394, height: 1279 })
-  await page.goto("/resume/")
-
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
-  const clearances = await dialog.locator(".resume-margin-drawing").evaluateAll((drawings) => {
-    const content = document.querySelector(".resume-content")!.getBoundingClientRect()
-
-    return drawings.map((drawing) => {
-      const box = drawing.getBoundingClientRect()
-      const side = drawing.getAttribute("data-place")
-      return {
-        side,
-        gap: side === "left" ? content.left - box.right : box.left - content.right,
-      }
-    })
-  })
-
-  expect(clearances.filter(({ side }) => side === "left").every(({ gap }) => gap >= 40)).toBe(true)
-  expect(clearances.filter(({ side }) => side === "right").every(({ gap }) => gap >= 32)).toBe(true)
-})
 
 test("scrolls the compact resume from the stationary toolbar", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
@@ -3701,7 +3681,7 @@ test("scrolls the compact resume from the stationary toolbar", async ({ page }) 
   }
 
   await page.keyboard.press("Enter")
-  await expect(page).toHaveURL(/\/work\/protector-booking\/$/)
+  await expect(page).toHaveURL(/\/work\/turtle\/$/)
   await page.keyboard.press("ArrowLeft")
   await expect(page).toHaveURL(/\/resume\/$/)
 })
@@ -3719,8 +3699,8 @@ test("presents complete work history, education, and the resume PDF in the reade
   const jobs = workHistory.locator(":scope > li")
 
   await expect(jobs).toHaveCount(6)
-  await expect(workHistory.getByRole("heading", { name: "Co-founder at Stealth fintech" })).toBeVisible()
-  await expect(jobs.first()).toContainText("2026 - Present")
+  await expect(workHistory.getByRole("heading", { name: "Freelance Product Designer" })).toBeVisible()
+  await expect(jobs.first()).toContainText("2026 – Present")
   await expect(jobs.last()).toContainText("Incubeta (Google)")
   await expect(education.getByRole("listitem")).toHaveCount(2)
   await expect(education.getByRole("listitem").first()).toContainText("Computer Science")
@@ -3785,13 +3765,14 @@ test("keeps the desktop resume reader free of a close control", async ({ page })
   await expect(dialog.locator(".preview-gallery-rail")).toBeVisible()
 })
 
-// Protector owns the widest portrait slot. Its responsive source declaration
-// must follow the rendered card rather than a generic equal-column baseline.
-test("asks for a variant that matches Protector's wide slot", async ({ page }) => {
+// The dealership hub owns the widest slot in its band. Its responsive source
+// declaration must follow the rendered card rather than a generic
+// equal-column baseline.
+test("asks for a variant that matches the dealership hub's wide slot", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
 
-  const media = page.locator(".mosaic-row-card-preview-protector img")
+  const media = page.locator(".mosaic-row-card-preview-dealership-lead-hub img")
   const { itemWidth, declared, chosen } = await media.evaluate((element) => {
     const image = element as HTMLImageElement
     const declaredWide = /(\d+)px$/.exec(image.sizes)
@@ -3803,78 +3784,54 @@ test("asks for a variant that matches Protector's wide slot", async ({ page }) =
   })
 
   expect(declared).toBeGreaterThanOrEqual(itemWidth * 0.9)
-  expect(chosen).toMatch(/protector-800w\.webp$/)
+  expect(chosen).toMatch(/dealership-lead-hub-\d+w\.webp$/)
 })
 
-test("keeps the staggered projects in the offset group", async ({ page }) => {
+test("follows the Pokédex with the dealership hub in the aside band", async ({ page }) => {
   await page.goto("/")
 
-  const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
-  const group = page.locator(".mosaic-group").filter({ has: tokenCard })
+  const dealershipCard = page.getByRole("link", { name: /Open Dealership Hub/ })
+  const group = page.locator(".mosaic-group").filter({ has: dealershipCard })
   const cards = group.locator(".mosaic-row-card")
 
-  await expect(cards).toHaveCount(4)
-  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Shared family stories/)
+  await expect(cards).toHaveCount(2)
+  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Pokédex experiment/)
   await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Dealership Hub/)
-  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha token page/)
-  await expect(cards.nth(3)).toHaveAttribute("aria-label", /Open Matcha Rewards/)
+  for (const name of [/Open Matcha token page/, /Open Matcha Rewards/, /Open Matcha marketing/]) {
+    await expect(page.getByRole("link", { name })).toHaveCount(0)
+  }
 })
 
-test("uses narrower left and wider right columns in the offset group", async ({ page }) => {
+test("gives the dealership hub the widest slot in the aside band", async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1239 })
   await page.goto("/")
 
-  const tokenCard = page.getByRole("link", { name: /Open Matcha token page/ })
-  const familyCard = page.getByRole("link", { name: /Open Shared family stories/ })
-  const rewardsCard = page.getByRole("link", { name: /Open Matcha Rewards/ })
+  const duoCard = page.getByRole("link", { name: /Open Pokédex experiment/ })
   const dealershipCard = page.getByRole("link", { name: /Open Dealership Hub/ })
-  const group = page.locator(".mosaic-group").filter({ has: tokenCard })
-  await expect(group.locator(".mosaic-row-item")).toHaveCount(4)
-
-  const [familyBox, tokenBox, dealershipBox, rewardsBox] = await Promise.all([
-    familyCard.boundingBox(),
-    tokenCard.boundingBox(),
-    dealershipCard.boundingBox(),
-    rewardsCard.boundingBox(),
-  ])
-  expect(familyBox).not.toBeNull()
-  expect(tokenBox).not.toBeNull()
+  const [duoBox, dealershipBox] = await Promise.all([duoCard.boundingBox(), dealershipCard.boundingBox()])
+  expect(duoBox).not.toBeNull()
   expect(dealershipBox).not.toBeNull()
-  expect(rewardsBox).not.toBeNull()
-  expect(familyBox!.width).toBeCloseTo(tokenBox!.width, 0)
-  expect(dealershipBox!.width).toBeCloseTo(rewardsBox!.width, 0)
-  expect(dealershipBox!.width).toBeGreaterThan(tokenBox!.width)
+  expect(dealershipBox!.width).toBeGreaterThan(duoBox!.width * 1.3)
+  expect(dealershipBox!.y).toBeCloseTo(duoBox!.y, 0)
+  // The quote sets the band's height; the dashboard must not stretch it.
+  expect(dealershipBox!.height).toBeCloseTo(duoBox!.height, 0)
 })
 
-test("closes with the relaunch film and two Matcha projects", async ({ page }) => {
+test("puts the Matcha launch films in the photo band, after Patrol", async ({ page }) => {
   await page.goto("/")
 
-  const tradeCard = page.getByRole("link", { name: /Open Matcha trade page/ })
-  const cards = page.locator(".mosaic-group").filter({ has: tradeCard }).locator(".mosaic-row-card")
+  const filmCard = page.getByRole("link", { name: /Open Matcha launch films/ })
+  const group = page.locator(".mosaic-group").filter({ has: filmCard })
 
-  await expect(cards).toHaveCount(3)
-  await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open The new Matcha/)
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Matcha trade page/)
-  await expect(cards.nth(2)).toHaveAttribute("aria-label", /Open Matcha Pro/)
-  await expect(page.getByRole("link", { name: /Open Matcha on mobile/ })).toHaveCount(0)
-  await expect(page.getByRole("link", { name: /Open Matcha security audit/ })).toHaveCount(0)
-  await expect(cards.nth(1).locator("img")).toHaveAttribute("src", /shot-small-1\.jpg$/)
-  await expect(cards.nth(2).locator("img")).toHaveAttribute("src", /shot-small-23\.jpg$/)
-})
-
-test("gives the relaunch film half the closing row and splits the rest evenly", async ({ page }) => {
-  await page.setViewportSize({ width: 2560, height: 1239 })
-  await page.goto("/")
-
-  const tradeCard = page.getByRole("link", { name: /Open Matcha trade page/ })
-  const cards = page.locator(".mosaic-group").filter({ has: tradeCard }).locator(".mosaic-row-card")
-  await expect(cards).toHaveCount(3)
-  const [film, trade, pro] = await cards.evaluateAll((elements) =>
-    elements.map((element) => element.getBoundingClientRect().width),
-  )
-
-  expect(trade).toBeCloseTo(pro, 0)
-  expect(film).toBeGreaterThan(trade * 1.8)
+  await expect(group.getByRole("button", { name: "Personal life", exact: true })).toHaveCount(1)
+  await expect(group.locator(".mosaic-tile-resume")).toHaveCount(0)
+  const labels = await page.locator(".mosaic-row-card").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label") ?? ""))
+  const filmIndex = labels.findIndex((label) => /Open Matcha launch films/.test(label))
+  expect(labels[filmIndex - 1]).toMatch(/Patrol/)
+  expect(filmIndex).toBeLessThan(labels.length - 1)
+  for (const name of [/Open Matcha Pro/, /Open Matcha trade page/, /Open Matcha on mobile/, /Open Matcha security audit/, /Open Matcha gasless/, /Open Matcha cross-chain/]) {
+    await expect(page.getByRole("link", { name })).toHaveCount(0)
+  }
 })
 
 test("moves directly from selected work to about without a repeated contact card", async ({ page }) => {
@@ -4100,7 +4057,7 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
     )
   })
   // The position label follows the swipe after its outgoing number settles.
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 21")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   await dialog.getByRole("button", { name: "Close preview" }).click()
   await expect(dialog).toBeHidden()
@@ -4164,7 +4121,7 @@ test("holds the compact toolbar still while the gallery pages", async ({ page })
       animations: 0,
     })
   }
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 21")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   // Paging on the left and close on the right; the position is announced
   // rather than drawn between them.
@@ -4234,7 +4191,7 @@ test("treats a mostly vertical touch gesture as scrolling rather than gallery pa
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
 
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 21")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 14")
   await context.close()
 })
 
@@ -4271,7 +4228,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     const staleEnd = new Touch({ identifier: 1, target: element, clientX: 160, clientY: 180 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [staleEnd] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 21")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("1 / 14")
 
   await card.evaluate((element) => {
     const start = new Touch({ identifier: 2, target: element, clientX: 280, clientY: 180 })
@@ -4281,7 +4238,7 @@ test("clears a cancelled gallery gesture before accepting the next horizontal sw
     )
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end] }))
   })
-  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 21")
+  await expect(page.locator(".preview-gallery-count")).toHaveText("2 / 14")
   await context.close()
 })
 
@@ -4315,7 +4272,7 @@ test("opens the gallery after an intent prefetch fails", async ({ page }) => {
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("link", { name: /Open Matcha token page preview/ })
+  const trigger = page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ })
   await trigger.hover()
   await failedPrefetch
   await page.unroute(galleryChunk)
@@ -4331,7 +4288,7 @@ test("keeps the site usable when the gallery chunk fails at click time", async (
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("link", { name: /Open Matcha token page preview/ })
+  const trigger = page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ })
   await trigger.click()
 
   await expect(page.getByRole("heading", { name: "Rafael Medina", exact: true })).toBeAttached()
@@ -4357,7 +4314,7 @@ test("acknowledges the first gallery tap while its chunk loads", async ({ page }
   await page.goto("/")
   await settleWorkCards(page)
 
-  const trigger = page.getByRole("link", { name: /Open Matcha token page preview/ })
+  const trigger = page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ })
   await trigger.click()
   const pending = page.locator(".preview-gallery-pending")
   await expect(pending).toBeVisible()
@@ -4382,7 +4339,7 @@ test("keeps the gallery pending state visible without motion", async ({ page }) 
   })
   await page.goto("/")
 
-  await page.getByRole("link", { name: /Open Matcha token page preview/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ }).click()
   const pending = page.locator(".preview-gallery-pending")
   await expect(pending).toBeVisible()
   await expect(pending).toHaveCSS("animation-name", "none")
@@ -4471,8 +4428,8 @@ test("gives the Chainlink work a fuller description", async ({ page }) => {
   // The two sentences are two bullets now, so the check is per point: joined
   // text would pass on a run-on paragraph that had lost the split.
   await expect(chainlinkEntry.locator(".mosaic-about-resume-description li")).toHaveText([
-    "Collaborated with Chainlink on internal product tools and its brand system as the company scaled.",
-    "The work made a complex oracle network read clearer and more consistent.",
+    "Designed internal product tools and the brand system for Chainlink as the company scaled.",
+    "Made a complex oracle network clearer and more consistent across product and brand.",
   ])
 })
 
@@ -4683,13 +4640,13 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   // One hop, not two: the stop after the homepage is the notes folder, which
   // closes this preview and opens the folder's own sheet.
   await next.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 21")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   // A taller or shorter preview must not move them.
   expect(await placement()).toEqual(initial)
 
   await previous.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 21")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
 
   // Nor may a slide with no artwork. The notes list is shorter than the
   // artwork, an open note grows the card to the viewport's foot, and the
@@ -4698,7 +4655,7 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
   const railNext = rail.locator(".preview-gallery-nav-next")
   await railNext.click()
   await railNext.click()
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 21")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("3 / 14")
   await expect(dialog).toHaveAttribute("data-preview-kind", "writings")
   await expect(dialog.locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
   expect(await placement()).toEqual(initial)
@@ -4710,8 +4667,9 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
 
   await page.keyboard.press("Escape")
   await expect(dialog).not.toHaveAttribute("data-reading-note")
-  // Two films and Popparazi sit between the notes and the résumé.
-  for (let step = 0; step < 4; step += 1) await railNext.click()
+  // The Pokédex, Dealership Hub, Protector, Patrol, the launch films, Matcha
+  // marketing, Twilio, and Moody's sit between the notes and the résumé.
+  for (let step = 0; step < 9; step += 1) await railNext.click()
   await expect(dialog).toHaveAttribute("data-preview-kind", "resume")
   expect(await placement()).toEqual(initial)
 })
@@ -4781,7 +4739,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(forward.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(forward.at(-1)!.from).toBeGreaterThan(4)
   expect(Math.max(...forward.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 21")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
 
   const back = await poses(".preview-gallery-rail .preview-gallery-nav-prev")
   expect(back.find((pose) => pose.phase.endsWith("out-prev"))?.to).toBeGreaterThan(4)
@@ -4789,7 +4747,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
   expect(back.at(-1)).toMatchObject({ phase: "idle", to: 0 })
   expect(back.at(-1)!.from).toBeLessThan(-4)
   expect(Math.max(...back.map((pose) => pose.y))).toBeLessThan(0.5)
-  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 21")
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
 })
 test("does not use dots to navigate between projects in the main feed", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
@@ -5242,7 +5200,7 @@ test("ramps the blur radius behind desktop project captions", async ({ page }) =
   await page.setViewportSize({ width: 2446, height: 1239 })
   await page.goto("/")
 
-  const card = page.getByRole("link", { name: /Open Matcha homepage preview 2 of/ })
+  const card = page.getByRole("link", { name: /Open Matcha preview 2 of/ })
   const scrim = card.locator(".mosaic-row-card-scrim")
   await card.hover()
 
@@ -5365,16 +5323,13 @@ test("keeps desktop project captions readable over the artwork underneath", asyn
   const paleGround = pale!.tint.map((channel) => channel * pale!.alpha)
   expect(contrast(paleGround, [20, 20, 20])).toBeGreaterThanOrEqual(4.5)
 
-  const dark = await captionGround(/Open Matcha token page preview/)
-  expect(dark).not.toBeNull()
-
-  const darkGround = dark!.tint.map((channel) => channel * dark!.alpha + 255 * (1 - dark!.alpha))
-  expect(contrast(darkGround, [255, 255, 255])).toBeGreaterThanOrEqual(4.5)
-
   // A full-bleed film has no pale surface to wash toward; a pale band there
   // read as grey fog over the dark footage.
-  const fullBleed = await captionGround(/Open Matcha cross-chain swaps/)
+  const fullBleed = await captionGround(/Open Matcha launch films/)
   expect(fullBleed).not.toBeNull()
+
+  const darkGround = fullBleed!.tint.map((channel) => channel * fullBleed!.alpha + 255 * (1 - fullBleed!.alpha))
+  expect(contrast(darkGround, [255, 255, 255])).toBeGreaterThanOrEqual(4.5)
   expect(fullBleed!.tint).toEqual([0, 0, 0])
   expect(fullBleed!.ink).toBe("rgb(255, 255, 255)")
 })
@@ -5383,8 +5338,8 @@ test("contains the featured Matcha previews inside their mobile cards", async ({
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  for (const title of ["Matcha multiwallet flow", "Matcha homepage"]) {
-    const card = page.getByRole("link", { name: new RegExp(`Open ${title}`) })
+  for (const title of ["Matcha multiwallet flow", "Matcha"]) {
+    const card = page.getByRole("link", { name: new RegExp(`Open ${title} preview`) })
     const media = card.locator(".mosaic-row-media")
     const [cardBox, mediaBox] = await Promise.all([card.boundingBox(), media.boundingBox()])
 
@@ -5398,55 +5353,32 @@ test("contains the featured Matcha previews inside their mobile cards", async ({
   }
 })
 
-test("clips the Protector artwork to its full-width card on mobile", async ({ page }) => {
+// Protector's recording sits in the phone Patrol's does, on a row of the same
+// height: an auto track let the contained video grow to twice Patrol's tile.
+test("frames the Protector recording as a phone like Patrol's on mobile", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
 
-  const protectorMedia = page.locator(".mosaic-row-card-preview-protector .mosaic-row-media")
   const protectorCard = page.getByRole("link", { name: /Open Protector booking preview/ })
-  const [cardBox, mediaBox] = await Promise.all([protectorCard.boundingBox(), protectorMedia.boundingBox()])
+  const patrolCard = page.getByRole("link", { name: /Open Patrol booking preview/ })
+  const protectorMedia = protectorCard.locator("video.mosaic-row-media")
+  const [cardBox, mediaBox, patrolBox] = await Promise.all([
+    protectorCard.boundingBox(),
+    protectorMedia.boundingBox(),
+    patrolCard.boundingBox(),
+  ])
 
-  await expect(protectorMedia).toHaveCSS("object-fit", "cover")
-  await expect(protectorCard.locator(".mosaic-row-card-media-clip")).toHaveCSS("overflow", "hidden")
+  await expect(protectorMedia).toHaveCSS("object-fit", "contain")
+  await expect(protectorMedia).toHaveCSS("border-top-color", "rgb(0, 0, 0)")
   expect(cardBox).not.toBeNull()
   expect(mediaBox).not.toBeNull()
   expect(cardBox!.x).toBe(8)
   expect(cardBox!.x + cardBox!.width).toBe(mobileViewport.width - 8)
-  expect(mediaBox!.x).toBeLessThanOrEqual(cardBox!.x)
-  expect(mediaBox!.y).toBeLessThanOrEqual(cardBox!.y)
-  expect(mediaBox!.x + mediaBox!.width).toBeGreaterThanOrEqual(cardBox!.x + cardBox!.width)
-  expect(mediaBox!.y + mediaBox!.height).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height)
-})
-
-test("frames the family stories preview whole, pinned to its bottom-left", async ({ page }) => {
-  await page.setViewportSize({ width: 1320, height: 1000 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
-  await page.getByRole("link", { name: /Open Shared family stories/ }).click()
-
-  const dialog = page.getByRole("dialog")
-  const media = dialog.locator(".preview-gallery-media:not(.preview-gallery-media-placeholder)")
-  const frame = dialog.locator(".preview-gallery-media-frame")
-  await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
-  // Capture both rectangles in one settled layout, including under reduced
-  // motion where the card still mounts with an initial entrance transform.
-  const [frameBox, mediaBox] = await frame.evaluate(element => [
-    element.getBoundingClientRect().toJSON(),
-    element.querySelector(".preview-gallery-media:not(.preview-gallery-media-placeholder)")!
-      .getBoundingClientRect().toJSON(),
-  ])
-
-  // The gallery frames it the way the tile does, so the open flight scales one
-  // composition: no zoom into a different crop that made the phones jump left
-  // as the card landed. Cover, pinned left and bottom, trims only the export's
-  // transparent margin on the right and top.
-  await expect(media).toHaveCSS("object-fit", "cover")
-  await expect(media).toHaveCSS("object-position", "0% 100%")
-  await expect(media).toHaveCSS("transform", "none")
-  expect(mediaBox.x).toBeCloseTo(frameBox.x, 0)
-  expect(mediaBox.y).toBeCloseTo(frameBox.y, 0)
-  expect(mediaBox.width).toBeCloseTo(frameBox.width, 0)
-  expect(mediaBox.height).toBeCloseTo(frameBox.height, 0)
+  expect(cardBox!.height).toBeCloseTo(patrolBox!.height, 0)
+  expect(mediaBox!.x).toBeGreaterThan(cardBox!.x)
+  expect(mediaBox!.y).toBeGreaterThan(cardBox!.y)
+  expect(mediaBox!.x + mediaBox!.width).toBeLessThan(cardBox!.x + cardBox!.width)
+  expect(mediaBox!.y + mediaBox!.height).toBeLessThan(cardBox!.y + cardBox!.height)
 })
 
 test("describes the stakes and choices in a Protector booking", async ({ page }) => {
@@ -5455,7 +5387,7 @@ test("describes the stakes and choices in a Protector booking", async ({ page })
   await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
 
   await expect(page.getByRole("dialog")).toContainText(
-    "Protector lets people book short-term personal security. As the sole product designer for the booking experience, I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
+    "Protector lets people book short-term personal security. As the sole product designer for its booking experience on iPhone, I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation.",
   )
 })
 
@@ -5572,9 +5504,10 @@ test("hides the motion toggle when reduced motion already pauses previews", asyn
 })
 
 test("keeps Matcha authors below the summary with signatures disabled", async ({ page }) => {
+  // The multiwallet flow is solo work, so the homepage carries the credit row.
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+  await page.locator('a[href="/work/matcha-homepage/"]').first().click()
 
   const dialog = page.getByRole("dialog")
   const description = dialog.locator(".preview-gallery-description")
@@ -5582,8 +5515,8 @@ test("keeps Matcha authors below the summary with signatures disabled", async ({
   const signatures = dialog.locator(".project-case-study-signatures")
   await expect(team.getByRole("link")).toHaveText(["Simon Rico", "Rafael Medina"])
   await expect(signatures).toHaveCount(0)
-  await expect(description).toContainText("I mapped and designed")
-  await expect(description).toContainText("without losing their quote or inputs")
+  await expect(description).toContainText("I redesigned Matcha’s homepage")
+  await expect(description).toContainText("connect a wallet, and start trading")
   await expect(dialog.locator("dl")).toHaveCount(0)
   const teamBox = await team.boundingBox()
   const descriptionBox = await description.boundingBox()
@@ -5608,11 +5541,9 @@ test("keeps Matcha authors below the summary with signatures disabled", async ({
       await expect(description).toHaveCount(0)
     } else {
       await expect(description).not.toBeEmpty()
-      await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined|worked on)|sole product designer/)
+      await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined|worked on|built)|sole product designer/)
       await expect(dialog.locator("dl")).toHaveCount(0)
-      if (await dialog.locator(".preview-gallery-title").innerText() === "Shared family stories") {
-        await expect(team).toHaveCount(0)
-      } else if (await dialog.locator(".project-case-study").count() && await team.count()) {
+      if (await dialog.locator(".project-case-study").count() && await team.count()) {
         await expect(team.getByRole("link").last()).toHaveText("Rafael Medina")
         await expect(signatures).toHaveCount(0)
       }
@@ -5636,38 +5567,35 @@ test("marks the step that wraps the gallery back to the start", async ({ page })
   await expect(dialog.locator(".preview-gallery-rail-count")).toHaveCount(0)
   await expect(railCount).toHaveClass(/\bsr-only\b/)
   await expect(railCount).toHaveAttribute("aria-live", "polite")
-  await expect(railCount).toHaveText("1 / 21")
+  await expect(railCount).toHaveText("1 / 14")
 
   await dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true }).click()
   await expect(railCount).toHaveText("Jumped to the end")
-  await expect(railCount).toHaveText("21 / 21", { timeout: 4000 })
+  await expect(railCount).toHaveText("14 / 14", { timeout: 4000 })
 
   await dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true }).click()
   await expect(railCount).toHaveText("Back to the start")
-  await expect(railCount).toHaveText("1 / 21", { timeout: 4000 })
+  await expect(railCount).toHaveText("1 / 14", { timeout: 4000 })
 })
 
 test("updates Matcha authors when paging from solo work", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("link", { name: /Open Matcha token page/ }).click()
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow preview 1 of/ }).click()
 
   const dialog = page.getByRole("dialog")
   const counter = dialog.locator(".preview-gallery-count")
   const team = dialog.getByRole("list", { name: "Collaborators" })
   const next = dialog.getByRole("button", { name: "Next preview" }).filter({ visible: true })
-  const previous = dialog.getByRole("button", { name: "Previous preview" }).filter({ visible: true })
 
-  await expect(counter).toHaveText("12 / 21")
-  await previous.click()
-  await expect(counter).toHaveText("11 / 21")
+  await expect(counter).toHaveText("1 / 14")
   // Solo work has no credit row at all.
   await expect(team).toHaveCount(0)
 
   await next.click()
-  await expect(counter).toHaveText("12 / 21")
-  await expect(team.getByRole("link")).toHaveText(["Jakub Antalik", "Rafael Medina"])
+  await expect(counter).toHaveText("2 / 14")
+  await expect(team.getByRole("link")).toHaveText(["Simon Rico", "Rafael Medina"])
   await expect(dialog.locator(".project-case-study-signatures")).toHaveCount(0)
 })
 
@@ -5675,7 +5603,7 @@ test("shows a bottom fade while a laptop preview has more content to scroll", as
   await page.setViewportSize({ width: 1440, height: 600 })
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("link", { name: /Open Matcha homepage/ }).click()
+  await page.getByRole("link", { name: /Open Matcha preview/ }).click()
 
   const card = page.getByRole("dialog").locator(".preview-gallery-card")
   const cue = page.locator(".preview-gallery-scroll-cue")
@@ -5750,14 +5678,14 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   const text = content.items.map((item) => ("str" in item ? item.str + (item.hasEOL ? "\n" : "") : "")).join("")
   expect(text.length).toBeGreaterThan(500)
 
-  expect(text).toContain("Stealth fintech")
-  expect(text).toContain("Co-founder")
+  expect(text).toContain("Freelance")
+  expect(text).toContain("Product Designer")
   // The sheet sets a range over two lines, the dash closing the first.
   expect(text).toMatch(/2026 –\s*Present/)
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)
   // Each entry's copy precedes its dates in the text layer, and the bullets
   // stay with their entry rather than being painted in a later pass.
-  expect(text).toMatch(/Stealth fintech[\s\S]*Building a mobile wallet[\s\S]*2026 –[\s\S]*0x Project/)
+  expect(text).toMatch(/Freelance[\s\S]*End-to-end product design[\s\S]*2026 –[\s\S]*0x Project/)
   // The old Figma export advertised an address the site had already moved off,
   // so the PDF must carry the site's current one and no other: naming the stale
   // address would only catch the drift that already happened.
@@ -5765,27 +5693,20 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   expect(addresses).toEqual([contactEmail])
 })
 
-// Notes and the résumé offer their public link to copy. Project dialogs don't:
-// the title stands alone there. The clipboard is stubbed: a parallel run's
-// page is rarely frontmost, and writeText rejects off-front.
-test("offers the résumé its public link to copy, and projects none", async ({ page }) => {
-  await page.addInitScript(() => {
-    const copied: string[] = []
-    Object.assign(window, { copiedLinks: copied })
-    Object.defineProperty(navigator, "clipboard", { value: { writeText: async (text: string) => { copied.push(text) } } })
-  })
+// Only notes offer their public link to copy. Project dialogs and the résumé
+// don't: the title stands alone there, and the résumé's one action is its PDF.
+test("offers no link to copy on the résumé or a project", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await settleWorkCards(page)
-  await page.getByRole("link", { name: /Open Matcha homepage preview/ }).click()
+  await page.getByRole("link", { name: /Open Matcha preview/ }).click()
 
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByRole("heading", { name: "Matcha homepage" })).toBeVisible()
+  await expect(dialog.getByRole("heading", { name: "Matcha", exact: true })).toBeVisible()
   await expect(dialog.getByRole("link", { name: "Copy a link to this project" })).toHaveCount(0)
 
   await page.goto("/resume/")
-  const resumeLink = page.getByRole("dialog", { name: "Résumé" }).getByRole("link", { name: "Copy a link to this résumé" })
-  await expect(resumeLink).toHaveAttribute("href", "https://rafaelmedina.me/resume/")
-  await resumeLink.click()
-  expect(await page.evaluate(() => (window as unknown as { copiedLinks: string[] }).copiedLinks)).toEqual(["https://rafaelmedina.me/resume/"])
+  const resume = page.getByRole("dialog", { name: "Résumé" })
+  await expect(resume.getByRole("link", { name: "View PDF" })).toBeVisible()
+  await expect(resume.getByRole("link", { name: /Copy a link/ })).toHaveCount(0)
 })

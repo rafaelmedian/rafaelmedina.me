@@ -134,7 +134,7 @@ export type HomeTile = HomeTilePlacement & (
 )
 
 export type HomeGroup = {
-  layout: "opening" | "videos" | "portraits" | "aside" | "offset" | "agency" | "closing"
+  layout: "opening" | "portraits" | "aside" | "agency"
   columns: 2 | 3
   items: HomeTile[]
 }
@@ -152,98 +152,79 @@ export const homeGroups: HomeGroup[] = [
       { kind: "writings", area: "writings", share: 3 / 12 },
     ],
   },
-  // Two of Matcha's launch films, high on the page where they read as work
-  // rather than as a footnote. The motion pieces run full bleed. The other two
-  // films are spread further down: limit orders in the portraits group and the
-  // relaunch in the closing row.
-  {
-    layout: "videos",
-    columns: 2,
-    items: [
-      { kind: "project", area: "gasless", cardId: "preview-matcha-gasless-film", share: 7 / 12, fit: "cover" },
-      { kind: "project", area: "crosschain", cardId: "preview-matcha-cross-chain-film", share: 5 / 12, fit: "cover" },
-    ],
-  },
-  {
-    layout: "portraits",
-    columns: 3,
-    items: [
-      { kind: "project", area: "popparazi", cardId: "preview-popparazi-v1", share: 3 / 12, fit: "contain", mediaMaxHeight: "84%" },
-      { kind: "resume", area: "resume", share: 3 / 12, compactWide: true },
-      { kind: "project", area: "protector", cardId: "preview-protector", share: 5 / 12, fit: "cover", compactWide: true },
-      { kind: "quote", area: "quote", source: "internet", share: 4 / 12, compactWide: true },
-      // A screen recording of the whole app, so it sits in the grey mat where
-      // it reads as the app rather than as a zoomed crop of it.
-      { kind: "project", area: "limitorders", cardId: "preview-matcha-limit-orders-film", share: 4 / 12, fit: "contain", compactWide: true },
-      // The photos used to sit inside About, below the hobbies. They read
-      // better as a tile in the grid, and this group is where there was room
-      // for one: a third band under the quote and Security, so the personal
-      // half of the page -- the résumé, the quote, the photos -- stays together
-      // and the four project slots above keep the shapes their artwork was cut
-      // for. The band is the group's full width because the fan is a fixed
-      // 27rem centred in whatever tile it gets, so extra width becomes margin
-      // rather than a banner of prints.
-      //
-      // Not a group of its own at the end of the grid, which is where they
-      // landed first: the takeover pins the last screenful while About slides
-      // up over it, so a trailing band is behind the About sheet from roughly
-      // halfway down the page and never reads on its own.
-      { kind: "photos", area: "photos", share: 1, compactWide: true },
-    ],
-  },
-  {
-    layout: "offset",
-    columns: 2,
-    items: [
-      { kind: "project", area: "family", cardId: "preview-family-stories", share: 5 / 12, fit: "contain" },
-      { kind: "project", area: "dealership", cardId: "preview-dealership-lead-hub", share: 7 / 12, fit: "contain" },
-      { kind: "project", area: "token", cardId: "preview-shot-21", share: 5 / 12, fit: "contain" },
-      { kind: "project", area: "rewards", cardId: "preview-matcha-rewards", share: 7 / 12, fit: "contain" },
-    ],
-  },
-  // The agency years, 2018-2021: the work behind the Twilio, Moody's, and Onit
-  // logos already in the résumé, plus Turtle. Mid-grid rather than closing,
-  // because the About takeover covers the last row. Wide and narrow slots
-  // swap between the rows, the way the offset group staggers its seams.
-  {
-    layout: "agency",
-    columns: 2,
-    items: [
-      { kind: "project", area: "twilio", cardId: "preview-twilio-admiral", share: 7 / 12, fit: "cover", compactWide: true },
-      { kind: "project", area: "moodys", cardId: "preview-moodys-sprints", share: 5 / 12, fit: "contain" },
-      { kind: "project", area: "turtle", cardId: "preview-turtle", share: 5 / 12, fit: "cover" },
-      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 7 / 12, fit: "cover", compactWide: true },
-    ],
-  },
   // The second quote card is a band of its own rather than a fourth tile in a
   // project row: no row has a column to spare without re-cutting the artwork
   // that was composed for it, and the card needs its full 340px to hold a
   // quote, a face, and the dots. The grid already speaks this way -- the
   // personal-photo fan is a band inside the portraits group.
   //
-  // Between the offset and closing groups, not after them. The takeover pins
-  // the last screenful while About slides up over it, so the closing row of
-  // projects is already half-covered by the sheet -- a quote parked there would
-  // never be read.
+  // Straight under the opening row, so the Pokédex experiment in the middle of
+  // the band is the grid's fifth tile and Dealership Hub, the most recent
+  // product work, follows it.
+  // Never at the end: the takeover pins the last screenful while About slides
+  // up over it, so a band parked there would never be read.
   {
     layout: "aside",
-    columns: 2,
+    columns: 3,
     items: [
-      { kind: "quote", area: "quote2", source: "team", share: 1 / 2, compactWide: true },
-      // The marketing tile is a 2x2 sheet of 2:1 posts, so a short, wide half
-      // of this band is the one slot on the grid already the artwork's shape.
+      { kind: "quote", area: "quote2", source: "team", share: 2 / 7, compactWide: true },
+      // The Duo recording is the device on white, so its card is painted white.
+      { kind: "project", area: "duo", cardId: "preview-pokemon-duo", share: 2 / 7, fit: "contain", compactWide: true },
+      // The dashboard is wider than this short slot wants, so it crops from
+      // the top and runs its lower rows into the card edge, as it always has.
       // Partnered, the quote is no longer the lone card floating in an empty
       // row that kept it full width.
-      { kind: "project", area: "marketing", cardId: "preview-matcha-marketing", share: 1 / 2, fit: "contain", compactWide: true },
+      { kind: "project", area: "dealership", cardId: "preview-dealership-lead-hub", share: 3 / 7, fit: "contain", compactWide: true },
     ],
   },
   {
-    layout: "closing",
+    layout: "portraits",
     columns: 3,
     items: [
-      { kind: "project", area: "relaunch", cardId: "preview-matcha-relaunch-film", share: 1 / 2, fit: "cover", compactWide: true },
-      { kind: "project", area: "trade", cardId: "preview-shot-1", share: 1 / 4, fit: "contain" },
-      { kind: "project", area: "pro", cardId: "preview-shot-23", share: 1 / 4, fit: "contain" },
+      // Both sister apps show a phone recording -- Protector picking a dress
+      // code, Patrol booking a car -- framed as a phone on the grey mat.
+      { kind: "project", area: "protector", cardId: "preview-protector", share: 4 / 11, fit: "contain", compactWide: true },
+      { kind: "project", area: "patrol", cardId: "preview-patrol", share: 3 / 11, fit: "contain" },
+      { kind: "quote", area: "quote", source: "internet", share: 4 / 11, compactWide: true },
+      // Matcha's launch films lead the band under the projects, beside the
+      // photos, so personal life sits next to work rather than next to the
+      // résumé. The tile plays the relaunch film.
+      { kind: "project", area: "relaunch", cardId: "preview-matcha-relaunch-film", share: 4 / 11, fit: "cover", compactWide: true },
+      // The marketing posts hang as a tilted wall sized from the tile's width,
+      // so the band's short slot under Patrol holds it at any ratio.
+      { kind: "project", area: "marketing", cardId: "preview-matcha-marketing", share: 3 / 11, fit: "contain", compactWide: true },
+      // The photos used to sit inside About, below the hobbies. They read
+      // better as a tile in the grid, and this group is where there was room
+      // for one: a band under Protector, Patrol, and the quote, beside the
+      // launch films and the marketing wall, so the slots above keep the
+      // shapes their artwork was cut for.
+      // The fan is a fixed 27rem centred in whatever tile it gets, so extra
+      // width becomes margin rather than a banner of prints.
+      //
+      // Not a group of its own at the end of the grid, which is where they
+      // landed first: the takeover pins the last screenful while About slides
+      // up over it, so a trailing band is behind the About sheet from roughly
+      // halfway down the page and never reads on its own.
+      { kind: "photos", area: "photos", share: 4 / 11, compactWide: true },
+    ],
+  },
+  // The agency years, 2018-2021: the work behind the Twilio, Moody's, and Onit
+  // logos already in the résumé, plus Turtle. They close the grid: the About
+  // takeover slides over the last screenful, but the films that used to sit
+  // under them read better high on the page. Wide and narrow slots swap
+  // between the rows so the seams stagger. The résumé ends the first row,
+  // beside Moody's: the career tile next to the companies it lists.
+  {
+    layout: "agency",
+    columns: 2,
+    items: [
+      { kind: "project", area: "twilio", cardId: "preview-twilio-admiral", share: 5 / 12, fit: "cover", compactWide: true },
+      { kind: "project", area: "moodys", cardId: "preview-moodys-sprints", share: 4 / 12, fit: "contain" },
+      // Its paper is sized from the slot's height, so the narrow column still
+      // holds it whole.
+      { kind: "resume", area: "resume", share: 3 / 12 },
+      { kind: "project", area: "turtle", cardId: "preview-turtle", share: 5 / 12, fit: "cover" },
+      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 7 / 12, fit: "cover", compactWide: true },
     ],
   },
 ]
@@ -331,7 +312,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Matcha multiwallet flow",
     summary: "",
     detail:
-      "I mapped and designed Matcha’s multiwallet flow, bringing connected wallets and network details into one menu for the decentralized trading platform. I covered wallet selection, adding a wallet, and loading, empty, and error states, so people can switch wallets during a trade without losing their quote or inputs.",
+      "I mapped and designed Matcha’s multiwallet flow, bringing connected wallets and network details into one menu. I covered wallet selection, adding a wallet, and loading, empty, and error states, so people can switch wallets during a trade without losing their quote or inputs.",
     role: "I mapped the full flow and designed the wallet menu and its edge cases.",
     outcome:
       "People can change wallets during a trade and keep their current quote and inputs.",
@@ -342,7 +323,6 @@ const portfolioCardEntries: PortfolioCard[] = [
     previewPosterWidth: 640,
     previewPosterHeight: 480,
     ...matchaMeta,
-    team: [collaborators.simon],
     previewAspectRatio: 0.74,
   },
   {
@@ -368,10 +348,10 @@ const portfolioCardEntries: PortfolioCard[] = [
     slug: "matcha-homepage",
     year: "2023",
     category: "Case study",
-    title: "Matcha homepage",
+    title: "Matcha",
     summary: "",
     detail:
-      "I redesigned the homepage for Matcha, the decentralized trading platform by 0x, around the ways people begin a visit. I led the page structure and content hierarchy, giving new and returning users direct paths to search for a token, browse the market, connect a wallet, and start trading.",
+      "I redesigned Matcha’s homepage around the ways people begin a visit. I led the page structure and content hierarchy, giving new and returning users direct paths to search for a token, browse the market, connect a wallet, and start trading.",
     role: "I led the page structure, content hierarchy, and paths into discovery and trading.",
     outcome:
       "New and returning users have direct routes into the part of Matcha they need.",
@@ -391,41 +371,44 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Protector booking",
     summary: "",
     detail:
-      "Protector lets people book short-term personal security. As the sole product designer for the booking experience, I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation. Each part of the service can be selected and confirmed in one guided flow.",
+      "Protector lets people book short-term personal security. As the sole product designer for its booking experience on iPhone, I designed the steps for choosing a protector, selecting how they should be dressed, and adding escorted transportation. Each part of the service can be selected and confirmed in one guided flow.",
     role: "I was the sole product designer for the booking experience.",
     outcome:
       "Each part of the service is selected and confirmed in one guided booking flow.",
-    image: "/Projects/protector.webp",
-    previewWidth: 2400,
-    previewHeight: 2656,
+    image: "/Projects/protector-dress-code.webm",
+    previewWidth: 480,
+    previewHeight: 1042,
+    previewPoster: "/Projects/protector-dress-code-poster.webp",
+    previewPosterWidth: 480,
+    previewPosterHeight: 1042,
     ctaHref: "https://protector.so",
     product: "Protector",
     industry: "Private Security",
     team: [collaborators.nick],
-    previewAspectRatio: 1354 / 1025,
-    previewCropped: true,
+    previewAspectRatio: 480 / 1042,
   },
   {
-    id: "preview-popparazi-v1",
-    slug: "popparazi-v1",
-    year: "2019",
-    category: "Preview",
-    title: "Popparazi V1",
+    id: "preview-patrol",
+    slug: "patrol-booking",
+    year: "2025",
+    category: "Case study",
+    title: "Patrol booking",
     summary: "",
     detail:
-      "I designed an early discovery feed for Popparazi, a social photo app. The work brought together friend suggestions, featured photos, and recommendation patterns, while exploring content density and the visual style for V1. It established the structure and interactions for the team’s early product iterations.",
-    role: "I designed the V1 feed and recommendation patterns.",
+      "Patrol is Protector’s sister app: it books an off-duty or recently retired police officer to park a marked patrol car outside someone’s home. The booking asks where, confirms the address on a map, and sets when the car arrives and leaves, with the price on the same screen. I designed the booking flow and the App Store screens.",
+    role: "I designed the booking flow and the App Store screens.",
     outcome:
-      "The work established the structure and interaction style used for the team's early product iterations.",
-    image: "/Projects/popparazi_v1.webp",
-    previewWidth: 630,
-    previewHeight: 1314,
-    ctaHref: "#",
-    product: "Popparazi",
-    industry: "Consumer Social",
-    team: [collaborators.nick],
-    previewAspectRatio: 0.46,
-    previewMediaPadding: "clamp(0.7rem, 1.6vw, 1.4rem)",
+      "A home patrol is booked from an address and a time window, with the account created last.",
+    image: "/Projects/patrol.webm",
+    previewWidth: 480,
+    previewHeight: 1042,
+    previewPoster: "/Projects/patrol-poster.webp",
+    previewPosterWidth: 480,
+    previewPosterHeight: 1042,
+    ctaHref: "https://protector.so",
+    product: "Patrol",
+    industry: "Private Security",
+    previewAspectRatio: 480 / 1042,
   },
   {
     id: "preview-shot-21",
@@ -545,7 +528,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Dealership Hub",
     summary: "",
     detail:
-      "I designed and built Dealership Hub, the app that replaces the dealership's older CRM. The old tool was a single lead table; the Hub brings sales, the workshop floor, customer records, and the team into one place, opens on the few things worth doing first, and answers plain questions with rows that link straight to the job or the customer.",
+      "I designed and built Dealership Hub, the app that replaces a car dealership’s older CRM. The old tool was a single lead table; the Hub brings sales, the workshop floor, customer records, and the team into one place, opens on the few things worth doing first, and answers plain questions with rows that link straight to the job or the customer.",
     role: "I designed the app end to end and built it as a working Next.js prototype: the hub, the leads flow, the workshop board, customer profiles, team views, and the design system under them.",
     outcome:
       "One app in place of the old single-table CRM: staff can start from what needs doing and follow a customer from a sales lead to a car on the lift.",
@@ -556,26 +539,6 @@ const portfolioCardEntries: PortfolioCard[] = [
     product: "Dealership CRM",
     industry: "Automotive Retail",
     previewAspectRatio: 4 / 3,
-  },
-  {
-    id: "preview-family-stories",
-    slug: "shared-family-stories",
-    year: "2019",
-    category: "Preview",
-    title: "Shared family stories",
-    summary: "",
-    detail:
-      "I designed the story feed, moment detail view, and commenting patterns for a private family memory app. Stories group photos and clips by period, with dates, comments, and likes attached to each moment, so families can browse their memories and keep the conversation with the story it belongs to.",
-    role: "I designed the story feed, the moment detail view, and the commenting patterns.",
-    outcome:
-      "Families can browse their memories by period and keep each conversation attached to the moment it belongs to.",
-    image: "/Projects/shared-family-stories.webp",
-    previewWidth: 1600,
-    previewHeight: 1214,
-    ctaHref: "#",
-    product: "Family memory app",
-    industry: "Consumer Social",
-    previewAspectRatio: 1600 / 1214,
   },
   {
     id: "preview-matcha-rewards",
@@ -623,7 +586,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Matcha marketing materials",
     summary: "",
     detail:
-      "I designed marketing materials for Matcha, the decentralized trading platform by 0x: network and feature launches, trading milestones, product promos, and the It’s a Match(a) campaign. The posts and blog covers share one visual language, a headline figure beside the network’s mark and Matcha’s cup, with a color for each chain, so every announcement reads as Matcha.",
+      "I designed Matcha’s marketing materials: network and feature launches, trading milestones, product promos, and the It’s a Match(a) campaign. The posts and blog covers share one visual language, a headline figure beside the network’s mark and Matcha’s cup, with a color for each chain, so every announcement reads as Matcha.",
     role: "I designed the social posts, blog covers, and campaign artwork, and the system their variants follow.",
     outcome:
       "Launches, milestones, and campaigns went out as one recognizable series across X and the blog.",
@@ -668,24 +631,26 @@ const portfolioCardEntries: PortfolioCard[] = [
   {
     id: "preview-matcha-relaunch-film",
     slug: "matcha-relaunch-film",
-    year: "2023",
+    year: "2021–2023",
     category: "Video",
-    title: "The new Matcha",
+    title: "Matcha launch films",
     summary: "",
     detail:
-      "I worked on the film that introduced the redesigned Matcha in May 2023. It runs the new product’s own screens in its new green identity: one search across every chain, the best price, MEV protection, then the trade, ending on “Search. Trade. Done.”",
-    role: "I worked on the relaunch and on the film that announced it.",
+      "I worked on three of Matcha’s launch films: a teaser and launch film for cross-chain swaps in December 2023, the film that introduced the redesigned Matcha in May 2023, and gasless trading in October 2021. Each one shows the feature in the product’s own screens.",
+    role: "I worked on the relaunch and cross-chain swaps, and on the films that announced them and gasless trading.",
     outcome:
-      "The launch post reached 141K views and nearly 3,900 likes on X.",
-    image: "/Projects/matcha-video-relaunch-2023.webm",
+      "The relaunch post reached 141K views and nearly 3,900 likes on X; the cross-chain teaser and launch post drew about 1,600 likes each.",
+    // The tile plays the cross-chain film; the project view carries all three,
+    // each with the post it went out in. The cross-chain and gasless cards
+    // keep their own pages for old links but are no longer on the grid.
+    image: "/Projects/matcha-video-cross-chain-2023.webm",
     previewWidth: 960,
     previewHeight: 540,
-    previewPoster: "/Projects/matcha-video-relaunch-2023-poster.webp",
+    previewPoster: "/Projects/matcha-video-cross-chain-2023-poster.webp",
     previewPosterWidth: 640,
     previewPosterHeight: 360,
     ...matchaMeta,
-    ctaHref: "https://x.com/matchaxyz/status/1661401872811565056",
-    post: { site: "X", href: "https://x.com/matchaxyz/status/1661401872811565056", date: "2023-05-24" },
+    ctaHref: "https://x.com/matchaxyz/status/1732070138281918806",
     previewAspectRatio: 16 / 9,
   },
   {
@@ -719,10 +684,10 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Matcha gasless trading",
     summary: "",
     detail:
-      "I worked on the launch film for Gasless Trading on Matcha in October 2021: an umbrella keeps gas off the coins, then the trade form shows the gasless toggle and the rate with no gas to pay.",
-    role: "I worked on the Gasless Trading launch film.",
+      "I worked on the launch film for gasless trading on Matcha in October 2021: an umbrella keeps gas off the coins, then the trade form shows the gasless toggle and the rate with no gas to pay.",
+    role: "I worked on the gasless trading launch film.",
     outcome:
-      "Gasless Trading launched with a film that explains the feature before showing it.",
+      "Gasless trading launched with a film that explains the feature before showing it.",
     image: "/Projects/matcha-video-gasless-2021.webm",
     previewWidth: 960,
     previewHeight: 540,
@@ -732,29 +697,6 @@ const portfolioCardEntries: PortfolioCard[] = [
     ...matchaMeta,
     ctaHref: "https://x.com/matchaxyz/status/1447592326424055816",
     post: { site: "X", href: "https://x.com/matchaxyz/status/1447592326424055816", date: "2021-10-11" },
-    previewAspectRatio: 16 / 9,
-  },
-  {
-    id: "preview-matcha-limit-orders-film",
-    slug: "matcha-limit-orders-film",
-    year: "2022",
-    category: "Video",
-    title: "Matcha limit orders",
-    summary: "",
-    detail:
-      "I worked on this short walkthrough of limit orders on Matcha from November 2022: set a price and an expiry, sign once, and the order waits in Open Orders.",
-    role: "I worked on limit orders and on this walkthrough.",
-    outcome:
-      "The walkthrough shows the full flow, from setting a price to the open order, in twelve seconds.",
-    image: "/Projects/matcha-video-limit-orders-2022.webm",
-    previewWidth: 960,
-    previewHeight: 540,
-    previewPoster: "/Projects/matcha-video-limit-orders-2022-poster.webp",
-    previewPosterWidth: 640,
-    previewPosterHeight: 360,
-    ...matchaMeta,
-    ctaHref: "https://x.com/matchaxyz/status/1597349650104610816",
-    post: { site: "X", href: "https://x.com/matchaxyz/status/1597349650104610816", date: "2022-11-28" },
     previewAspectRatio: 16 / 9,
   },
   {
@@ -769,15 +711,13 @@ const portfolioCardEntries: PortfolioCard[] = [
     role: "As a contract product designer I led the navigation research, the information architecture, and the team dashboards.",
     outcome:
       "Engineers land on their own team’s deployments and pipelines by default, and editing an access policy takes three steps instead of six.",
-    // The tile tilts a sheet of Admiral's screens; opening it lifts out one
-    // panel, the team's performance against the company, large on the app's
-    // own background and running off the right edge.
+    // The tile and the project view both show one panel, the team's
+    // performance against the company, on the grey of the other cards and
+    // running off the right edge. It sits at 1.71x, zoomed out from 1.9x so
+    // the panel doesn't crowd the tile.
     image: "/Projects/twilio-admiral-overview.webp",
     previewWidth: 1920,
     previewHeight: 1093,
-    homeImages: [
-      { source: "/Projects/twilio-admiral.webp", label: "Admiral’s screens laid out on a tilted sheet", width: 1920, height: 1093 },
-    ],
     ctaHref: "#",
     product: "Twilio Admiral, internal developer platform",
     industry: "Developer Tools",
@@ -795,12 +735,12 @@ const portfolioCardEntries: PortfolioCard[] = [
     role: "I designed and prototyped each sprint’s concept, building the prototype that users tested at the end of the week.",
     outcome: "The testing earned our team the brief to design the new Moodys.com.",
     image: "/Projects/moodys-research-views.webp",
-    previewWidth: 1920,
-    previewHeight: 1200,
+    previewWidth: 3200,
+    previewHeight: 2120,
     ctaHref: "#",
     product: "Moody’s Research Views, credit research",
     industry: "Financial Services",
-    previewAspectRatio: 1920 / 1200,
+    previewAspectRatio: 3200 / 2120,
   },
   {
     id: "preview-turtle",
@@ -841,6 +781,29 @@ const portfolioCardEntries: PortfolioCard[] = [
     product: "Onit, legal workflow automation",
     industry: "Legal Tech",
     previewAspectRatio: 1920 / 1200,
+  },
+  {
+    id: "preview-pokemon-duo",
+    slug: "pokemon-duo",
+    year: "2026",
+    category: "Experiment",
+    title: "Pokédex experiment for iPhone Duo",
+    summary: "",
+    detail:
+      "I built a Pokédex that uses both halves of the iPhone Duo. Closed, it is the red cover with the lens; opened, the left screen holds the guesses and the right asks “Who’s that Pokémon?” over a silhouette. Point the lens at a plushie to scan one in.",
+    role: "I designed and built the experiment.",
+    outcome:
+      "A working prototype where the fold does the work: clues on one screen, the Pokémon on the other.",
+    image: "/Projects/pokemon-duo.webm",
+    previewWidth: 960,
+    previewHeight: 764,
+    previewPoster: "/Projects/pokemon-duo-poster.webp",
+    previewPosterWidth: 640,
+    previewPosterHeight: 508,
+    ctaHref: "#",
+    product: "Pokédex for iPhone Duo",
+    industry: "Personal experiment",
+    previewAspectRatio: 960 / 764,
   },
 ]
 
