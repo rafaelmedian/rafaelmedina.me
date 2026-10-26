@@ -425,7 +425,7 @@ export const projectCaseStudies = {
       "The header answers what changed before anything else: the upgrade from Ba2 to Ba1, the outlook, the short-term rating, and the ESG score, with the rating’s history beside it.",
       "The analyst’s brief sits next to it as a video, or as audio for the commute.",
     ], media: [
-      { source: "/Projects/moodys-research-audio-brief.webp", label: "The rating action, outlook, and ESG score, with the analyst’s brief as audio", width: 2880, height: 1140 },
+      { source: "/Projects/moodys-research-audio-brief.webp", label: "The rating action, outlook, and ESG score, with the analyst’s brief as audio", width: 2880, height: 1254 },
     ] },
     { heading: "Notes that stay with the text", paragraphs: [
       "Selecting a passage offers to save it or comment on it. Analysts’ own comments sit in the margin beside the line they’re about.",
@@ -452,7 +452,7 @@ export const projectCaseStudies = {
       "Most readers arrive from an alert, so the email carries the rating action, the key exhibit, and the reasons for the upgrade, with one way into the full research.",
       "The testing went well enough that our team was asked to design the new Moodys.com.",
     ], media: [
-      { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2802 },
+      { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2806 },
     ] },
   ]),
   "onit-process-builder": study("Document logic lawyers can build themselves", [
