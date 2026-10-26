@@ -55,14 +55,22 @@ test("the pill sits on the line where the artwork meets the prose", async ({ pag
   const like = page.getByRole("button", likeButton)
   await expect(like).toBeEnabled()
 
-  const pill = (await like.boundingBox())!
-  const artwork = (await page.locator(".preview-gallery-media-frame").boundingBox())!
-  const seam = artwork.y + artwork.height
-  // Centred on the seam: half over the shot, half over the white below it.
-  expect(Math.abs(pill.y + pill.height / 2 - seam)).toBeLessThan(2)
-  // And it takes no room out of the flow, so the prose starts where it did.
-  const title = (await page.locator(".preview-gallery-title").boundingBox())!
-  expect(title.y).toBeGreaterThan(seam)
+  // Direct entry can finish positioning the card between two protocol calls,
+  // even with reduced motion. Measure all three boxes in the same frame and
+  // wait for the layout invariant, not merely the likes request, to settle.
+  await expect(async () => {
+    const { seamError, proseGap } = await like.evaluate(button => {
+      const pill = button.getBoundingClientRect()
+      const artwork = document.querySelector(".preview-gallery-media-frame")!.getBoundingClientRect()
+      const title = document.querySelector(".preview-gallery-title")!.getBoundingClientRect()
+      const seam = artwork.bottom
+      return { seamError: Math.abs(pill.y + pill.height / 2 - seam), proseGap: title.y - seam }
+    })
+    // Centred on the seam: half over the shot, half over the white below it.
+    expect(seamError).toBeLessThan(2)
+    // The pill takes no room out of the flow; prose starts below the artwork.
+    expect(proseGap).toBeGreaterThan(0)
+  }).toPass({ timeout: 5000 })
 })
 
 test("the résumé slide carries no like pill", async ({ page }) => {

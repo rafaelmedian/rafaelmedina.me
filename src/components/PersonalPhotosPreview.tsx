@@ -4,9 +4,8 @@ import { personalPhotoItems as photos } from "../data/personalPhotos"
 import { usePhotoFanDeal } from "../lib/usePhotoFanDeal"
 import { usePhotoStackTilt } from "../lib/usePhotoStackTilt"
 
-/** Opens the globe from the tile. With a photo id, the globe opens holding
-    that photo at its centre; without one it opens as it lies. */
-export type OpenPhoto = (opener: HTMLElement, photoId?: string) => void
+/** Opens the photo wall from the tile, with every photo at rest. */
+export type OpenPhoto = (opener: HTMLElement) => void
 export type PreviewPhoto = { photo: typeof photos[number]; src: string }
 const initialPreview = photos.slice(0, 5).map((photo) => ({ photo, src: `/images/personal/${photo.name}-thumb.webp` }))
 
@@ -94,20 +93,12 @@ export function PersonalPhotosPreview({ onOpen, onIntent, status, className = ""
   const middle = (preview.length - 1) / 2
   return (
     <div ref={previewRef} className={`personal-photos ${className}`}>
-      {/* One button, one stop for Tab: a click or a tap on a print opens the
-          globe holding that photo, read from whatever print was on top under
-          the pointer, with the pile keeping its original stacking order. A
-          click beside the prints, or Enter, opens the globe as it lies — the
-          globe itself lets the keyboard bring any photo to the front. The
-          prints are always the first photos, and the close always brings
-          those same photos back, so no visit reshuffles the stack. */}
+      {/* One button and one Tab stop open the wall; closing restores this fan. */}
       <button type="button" className="personal-photos-trigger" aria-haspopup="dialog" aria-busy={status === "loading" || undefined} onPointerEnter={warmPhotos} onFocus={warmPhotos} onBlur={event => event.currentTarget.removeAttribute("data-photo-focus-return")} onClick={(event) => {
-        // A keyboard activation is a click with no pointer behind it.
-        const print = event.detail ? (event.target as Element).closest<HTMLElement>(".personal-photos-print") : null
         warmPhotos()
         resetStackTilt()
         finishDeal()
-        onOpen(event.currentTarget, print?.dataset.photoId)
+        onOpen(event.currentTarget)
       }}>
         <span className="personal-photos-stack" aria-hidden="true" style={{ "--photo-preview-count": preview.length } as CSSProperties}>
           <span className="personal-photos-stack-tilt">

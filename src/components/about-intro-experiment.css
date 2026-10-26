@@ -1,0 +1,271 @@
+/* A/C reply prototypes, loaded only through the development comparison. */
+
+.about-intro-actions {
+  position: absolute;
+  bottom: calc((var(--intro-size) - 52px) / 2);
+  left: calc(100% + 12px);
+  width: 100px;
+  height: 52px;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(-8px) scale(0.97);
+  transform-origin: left center;
+  transition: width var(--duration-quick) var(--ease-smooth), height var(--duration-quick) var(--ease-smooth), border-radius var(--duration-quick) var(--ease-smooth), opacity var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-smooth), visibility var(--duration-quick);
+}
+
+.about-intro-action-buttons {
+  display: flex;
+  gap: 4px;
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-base) var(--ease-smooth), filter var(--duration-quick) var(--ease-standard);
+}
+
+.about-intro-action-buttons[aria-hidden="true"] {
+  opacity: 0;
+  transform: translateX(-8px) scale(0.97);
+  filter: blur(var(--blur-swap));
+  pointer-events: none;
+}
+
+.about-intro-actions[data-labeled="true"] {
+  width: 184px;
+  transition-duration: var(--duration-slow);
+}
+
+.about-intro-actions[data-returned="true"] {
+  transition-duration: var(--duration-quick);
+}
+
+.about-intro-actions[data-reply="email"],
+.about-intro-actions[data-reply="text"] {
+  width: 320px;
+  background: var(--body-bg);
+  box-shadow: var(--shadow-ring);
+  transition-duration: var(--duration-slow);
+}
+
+.about-intro-actions[data-reply="text"] {
+  height: 172px;
+  border-radius: var(--radius-lg);
+}
+
+.about-intro-reply-action {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  transition: width var(--duration-quick) var(--ease-smooth), transform var(--duration-fast) var(--ease-standard);
+}
+
+.about-intro[data-actions-open="true"] .about-intro-actions,
+.about-intro[data-reply-open="true"] .about-intro-actions {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+}
+
+.about-intro-reply-action svg {
+  flex: 0 0 24px;
+}
+
+.about-intro-reply-action[data-expanded="true"] {
+  width: 128px;
+  transition-duration: var(--duration-slow);
+}
+
+.about-intro-action-label {
+  margin-left: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-quick) var(--ease-smooth);
+}
+
+.about-intro-reply-action[data-expanded="true"] .about-intro-action-label {
+  opacity: 1;
+  transform: none;
+  transition-delay: 80ms;
+}
+
+.about-intro-actions[aria-hidden="true"] {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.about-intro-reply-action:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 899.98px) {
+
+  .about-intro-actions {
+    top: -44px;
+    bottom: auto;
+    right: -16px;
+    left: auto;
+  }
+
+  .about-intro[data-reply-layout="true"] .about-intro-actions {
+    top: auto;
+    bottom: calc((var(--intro-size) - 52px) / 2);
+    right: auto;
+    left: calc(100% + 12px);
+  }
+
+  .about-intro[data-reply-open="true"] .about-intro-actions {
+    width: min(320px, calc(100vw - 100px));
+  }
+  .about-intro-dock[data-intro-visible="true"] .about-intro:not([data-variant="b"])[data-reply-layout="true"] {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-intro-actions,
+  .about-intro-reply-action {
+    transition: none;
+  }
+
+  .about-intro-reply-action:active {
+    transform: none;
+  }
+}
+.about-intro-reply {
+  position: absolute;
+  inset: 0;
+  padding: 4px;
+  overflow: hidden;
+  border-radius: inherit;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  opacity: 0;
+  transform: translateX(8px) scale(0.97);
+  filter: blur(var(--blur-swap));
+  pointer-events: none;
+  transition: opacity var(--duration-quick) var(--ease-standard), transform var(--duration-base) var(--ease-smooth), filter var(--duration-quick) var(--ease-standard);
+}
+
+.about-intro-reply[data-active="true"] {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+  pointer-events: auto;
+  transition-delay: 80ms;
+}
+
+@starting-style {
+  .about-intro-reply[data-active="true"] {
+    opacity: 0;
+    transform: translateX(8px) scale(0.97);
+    filter: blur(var(--blur-swap));
+  }
+}
+
+.about-intro-email-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.about-intro-email-row input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-md);
+}
+
+.about-intro-email-row input:focus-visible {
+  outline: none;
+}
+
+.about-intro-actions:has(.about-intro-email-row input:focus-visible) {
+  box-shadow: 0 0 0 1px var(--focus-ring-soft);
+}
+
+.about-intro-email-row input::placeholder {
+  color: var(--muted-soft);
+  opacity: 1;
+}
+
+.about-intro-reply textarea {
+  display: block;
+  width: 100%;
+  height: 116px;
+  max-height: 116px;
+  margin-bottom: 4px;
+  padding: 12px;
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-md);
+  resize: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-intro-action-buttons,
+  .about-intro-reply,
+  .about-intro-actions,
+  .about-intro-action-label {
+    transition: none;
+    transform: none;
+  }
+}
+.about-intro-choices {
+  display: flex;
+  gap: 4px;
+}
+
+.about-intro[data-variant="c"] .about-intro-actions[data-reply="none"] {
+  width: 184px;
+  height: 100px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.about-intro[data-variant="c"] .about-intro-choices {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-intro[data-variant="c"] .about-intro-reply-action {
+  width: 184px;
+  padding-inline: 16px;
+  background: var(--canvas);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+}
+
+.about-intro[data-variant="c"] .about-intro-action-label {
+  opacity: 1;
+  transform: none;
+}
+
+.about-intro[data-variant="c"] .about-intro-actions:not([aria-hidden="true"]) {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+}

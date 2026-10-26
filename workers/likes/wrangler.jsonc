@@ -3,9 +3,10 @@
   "name": "rafaelmedina-note-likes",
   "main": "index.ts",
   "compatibility_date": "2026-09-07",
+  // The retired /chat API serves its static fallback; inference is disabled.
   "vars": {
-    "CHAT_DAILY_LIMIT": "25",
-    "CHAT_MONTHLY_LIMIT": "300",
+    "CHAT_DAILY_LIMIT": "0",
+    "CHAT_MONTHLY_LIMIT": "0",
     "ALLOWED_ORIGINS": "https://rafaelmedina.me,https://www.rafaelmedina.me,http://localhost:5173,http://127.0.0.1:5173,http://127.0.0.1:4174,http://127.0.0.1:4175"
   },
   "ai": {

@@ -70,13 +70,15 @@ The local database persists under `.wrangler/` and is gitignored. Shared-like
 tests use the actual local D1 database, including independent browser sessions,
 batched increments, the per-visitor cap, and failed saves.
 
-The same Worker serves `POST /chat`. The avatar asks for an email before the
-first question, keeps the conversation in that browser, and sends only the
-email and latest ten messages to the Worker. D1 stores the email against the
-anonymous visitor ID for a 12-question daily cap; it does not store chat
-messages. Workers AI answers from a prompt assembled from `src/data/cv.ts`,
-`src/data/services.ts`, and `src/data/faq.ts`, plus a short selected-work
-summary in `src/data/profileChatContext.ts`.
+The About and booking conversations send email through the separate
+[contact Worker](../workers/contact/README.md). They do not call the likes
+Worker's legacy `POST /chat` endpoint. Its daily and monthly inference
+limits are zero in the committed configuration; after deployment it returns
+a predefined professional summary and contact link without calling AI.
+
+Historical migrations remain intact. The obsolete `profile_chat_visitors`
+table is not read or written by current code; any existing remote data needs
+an explicit retention decision before a forward migration removes it.
 
 Notes and projects are separate collections — `/notes/<id>/likes` and
 `/projects/<id>/likes`, counted in `note_likes` and `project_likes`. The path
@@ -115,14 +117,12 @@ deployment and leaves the previously published site in place. The step is gated 
 `VITE_LIKES_API_URL` being set; with the variable set but the secrets missing it
 fails loudly rather than silently skipping.
 
-Use **Cloudflare Workers Free**. As checked on 2026-09-11 it includes 200,000
-Worker requests/day, while Workers AI includes 10,000 free Neurons/day. D1 has
-its own included row and storage limits. These are account-wide limits, not a
-per-visitor allowance; the chat's 12-question cap protects the shared AI pool.
-Exhausting a daily Free-plan quota returns errors until reset rather than billing
-overage. See
-[Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
-and [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
+Check the account's current limits before changing the deployment plan:
+[Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/),
+[D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), and
+[Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
+The disabled legacy AI endpoint does not consume inference quota. The
+contact Worker has its own delivery configuration and deployment procedure.
 
 ### Redoing the setup from scratch
 

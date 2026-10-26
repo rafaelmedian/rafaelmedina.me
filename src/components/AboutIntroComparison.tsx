@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import AboutIntro from "./AboutIntro"
+import AboutIntroExperiment from "./AboutIntroExperiment"
 import { aboutIntroPreview } from "../data/aboutIntroPreview"
 import type { IntroOption } from "../data/aboutIntro"
 import "./about-intro-comparison.css"
@@ -21,8 +22,10 @@ function ComparisonPreview({ variant }: { variant: IntroOption }) {
     return () => observer.disconnect()
   }, [])
   return <div ref={stageRef} className="intro-comparison-stage">
-    <AboutIntro media={aboutIntroPreview} portrait={aboutIntroPreview.assets.poster}
-      variant={variant} visible={visible} />
+    {variant === "b"
+      ? <AboutIntro media={aboutIntroPreview} portrait={aboutIntroPreview.assets.poster} visible={visible} />
+      : <AboutIntroExperiment media={aboutIntroPreview} portrait={aboutIntroPreview.assets.poster}
+          variant={variant} visible={visible} />}
   </div>
 }
 

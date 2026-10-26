@@ -7,6 +7,7 @@ import { MobileTableOfContents } from "./MobileTableOfContents"
 import type { IntroOption } from "../data/aboutIntro"
 
 const AboutIntro = lazy(() => import("./AboutIntro"))
+const AboutIntroExperiment = import.meta.env.DEV ? lazy(() => import("./AboutIntroExperiment")) : null
 
 // An optional introduction chunk must never take the rest of the page down
 // when an old tab meets a new deployment or the visitor loses connectivity.
@@ -128,9 +129,11 @@ export const AboutIntroDock = memo(function AboutIntroDock(props: {
       {approached && (
         <IntroBoundary>
           <Suspense fallback={null}>
-            <AboutIntro key={option} variant={option} media={media ?? undefined}
-              portrait={siteProfile.photo} mobileMessages
-              repliesAvailable={!tocOpen && !obscured} visible={visible} />
+            {option !== "b" && AboutIntroExperiment
+              ? <AboutIntroExperiment key={option} variant={option} media={media ?? undefined}
+                  portrait={siteProfile.photo} repliesAvailable={!tocOpen && !obscured} visible={visible} />
+              : <AboutIntro media={media ?? undefined} portrait={siteProfile.photo} mobileMessages
+                  repliesAvailable={!tocOpen && !obscured} visible={visible} />}
           </Suspense>
         </IntroBoundary>
       )}

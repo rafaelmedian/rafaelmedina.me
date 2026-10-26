@@ -2,6 +2,25 @@
 
 /* Individual bubbles stay unboxed above a full-screen white backdrop. */
 
+/* A chunk failure keeps the page usable and offers retry or direct booking. */
+.booking-load-status {
+  position: fixed;
+  z-index: var(--z-dialog);
+  inset-inline: 1.25rem;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  width: fit-content;
+  max-width: calc(100% - 2.5rem);
+  margin-inline: auto;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-ring), var(--shadow-overlay);
+  font-size: var(--text-sm);
+}
+
+.booking-load-status p { margin-bottom: 0.5rem; }
+
 .booking-backdrop {
   position: fixed;
   inset: 0;

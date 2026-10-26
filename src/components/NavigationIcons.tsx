@@ -28,9 +28,6 @@ export function ChevronUp(props: IconProps) {
   return <NavigationIcon {...props}><path d="m5 15 7-7 7 7" /></NavigationIcon>
 }
 
-export function ArrowUpRight(props: IconProps) {
-  return <NavigationIcon {...props}><path d="M6 18 18 6M6 6h12v12" /></NavigationIcon>
-}
 
 export function ArrowUp(props: IconProps) {
   return <NavigationIcon {...props}><path d="M12 20V4m-7 7 7-7 7 7" /></NavigationIcon>
@@ -38,12 +35,4 @@ export function ArrowUp(props: IconProps) {
 
 export function ExternalLink(props: IconProps) {
   return <NavigationIcon {...props}><path d="M14 4h6v6m-9 3 9-9M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" /></NavigationIcon>
-}
-
-export function BookOpen(props: IconProps) {
-  return <NavigationIcon {...props}><path d="M12 5v15M12 5C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Z" /></NavigationIcon>
-}
-
-export function Info(props: IconProps) {
-  return <NavigationIcon {...props}><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7h.01" /></NavigationIcon>
 }

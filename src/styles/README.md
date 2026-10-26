@@ -1,7 +1,7 @@
 # Stylesheets
 
 `../index.css` imports the site's styles in a deliberate order. Vite combines
-these imports; component styles are not loaded on demand. Keep Tailwind first
+these production imports; their component styles are not loaded on demand. Keep Tailwind first
 and the global reduced-motion policy last.
 
 - `base.css`: fonts, shared tokens, element defaults, and keyboard focus.
@@ -13,15 +13,17 @@ and the global reduced-motion policy last.
 - `navigation.css`: corner links, takeover close button, and mobile contents.
 - `local-time.css`: local time, map, and résumé preview.
 - `about.css`: About content and résumé layout.
-- `about-intro.css`: the corner portrait and its looping teaser, plain reply actions, minimal email and text replies, and shared mobile TOC dock.
+- `about-intro.css`: the corner portrait and its looping teaser, shared send button, and mobile TOC dock.
+- `../components/about-intro-experiment.css`: A/C reply prototypes, loaded only
+  by the development comparison and its optional dock variant.
 - `about-intro-chat.css`: B’s staggered greeting, scrollable conversation, and email-first composer.
 - `work-history.css`: work-history popovers and inline company links.
 - `contact.css`: contact pills, the booking pill, and social hover cards.
 - `work-grid.css`: project rows, captions, media, and About takeover choreography.
 - `resume-tile.css`: folded-paper résumé tile artwork, reader modal, and responsive interaction.
-- `resume-content.css`: work history entries and margin drawings in the reader.
+- `resume-content.css`: work history and education entries in the reader.
 - `likes.css`: the like pill shared by the notes reader and the project preview.
-- `personal-photos.css`: photo stack and carousel dialog.
+- `personal-photos.css`: photo stack, wall dialog, and photo details.
 - `preview-gallery.css`: shared gallery dialog, nested Notes pages, and card motion.
 - `booking.css`: the hint tooltip shared by the booking pill and the address,
   the booking dialog, and the Cal.com frame.

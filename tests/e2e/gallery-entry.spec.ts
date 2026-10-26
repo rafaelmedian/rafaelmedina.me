@@ -66,3 +66,21 @@ test("shows the feed when the gallery's chunk fails, without waiting out the fal
   await expect(page.locator(".writings-tile")).toBeVisible()
   await expect(page.locator(".preview-gallery-popup")).toHaveCount(0)
 })
+
+for (const path of ["/notes/designing-matcha/", "/?writing=designing-matcha"]) {
+  test(`${path} releases a failed gallery and lets the next click retry`, async ({ page }) => {
+    let fail = true
+    await page.route("**/PreviewGalleryDialog-*.js*", route => fail ? route.abort() : route.continue())
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto(path)
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator("html")).not.toHaveAttribute("data-gallery-entry", "pending")
+    fail = false
+    await page.getByRole("link", { name: "Open writings folder", exact: true }).click()
+    await expect(page.locator(".preview-gallery-popup")).toBeVisible()
+    await page.keyboard.press("Escape")
+    await expect(page.locator(".preview-gallery-popup")).toBeHidden()
+    await page.locator(".mosaic-row-card").first().click()
+    await expect(page.getByRole("dialog")).toBeVisible()
+  })
+}
