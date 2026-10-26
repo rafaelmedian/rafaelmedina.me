@@ -402,7 +402,8 @@ export const projectCaseStudies = {
       "A Team › Roles switcher replaced the long list from top to bottom. By default you see your own team’s deployments, pipelines, and dashboards.",
       "Editing a team’s access policy went from six steps to three.",
     ], mediaLayout: "stack", media: [
-      { source: "/Projects/twilio-admiral-team-switcher.webp", label: "Switching team and role from the header", width: 1600, height: 571 },
+      { source: "/Projects/twilio-admiral-home.webp", label: "Infrastructure’s overview: what needs you, then the team against the company average", width: 1600, height: 1000 },
+      { source: "/Projects/twilio-admiral-switch-flow.webp", video: "/Projects/twilio-admiral-switch-flow.webm", label: "Switching from Security to Infrastructure, then narrowing to one role by typing", width: 1600, height: 1000 },
       { source: "/Projects/twilio-admiral-access-flow.webp", label: "Editing an access policy, before and after", width: 1600, height: 552 },
     ] },
     { heading: "One level down", paragraphs: [
