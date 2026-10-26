@@ -1581,8 +1581,8 @@
       "relaunch relaunch"
       "marketing marketing"
       "photos photos"
-      "turtle resume"
-      "onit onit";
+      "turtle turtle"
+      "onit resume";
     padding-inline: 1rem;
   }
 
@@ -1590,7 +1590,7 @@
     display: contents;
   }
 
-  /* The résumé shares a row with Turtle here, sized by its track rather
+  /* The résumé shares a row with Onit here, sized by its track rather
      than a tile ratio. */
   .mosaic-tile-resume {
     aspect-ratio: auto;

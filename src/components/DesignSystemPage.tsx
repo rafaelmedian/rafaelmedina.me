@@ -1372,8 +1372,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <strong>Max width 1560px.</strong> An 8px gutter below 700px; above it the grid owns its inset,{" "}
                   <code>clamp(16px, 3vw, 32px)</code> from 900px.
                 </li>
-                <li data-ds-terms={terms("mosaic grid named groups opening aside portraits agency cqw compact two columns display contents")}>
-                  <strong>The mosaic is four named groups.</strong> Opening, Aside, Portraits, and Agency, each sized
+                <li data-ds-terms={terms("mosaic grid named groups opening aside featured portraits agency cqw compact two columns display contents")}>
+                  <strong>The mosaic is five named groups.</strong> Opening, Aside, Featured, Portraits, and Agency, each sized
                   against the mosaic&rsquo;s inline-size container from 900px up. Below that the group wrappers become{" "}
                   <code>display: contents</code> and the tiles form one two-column grid in the same DOM order.{" "}
                   <code>src/data/portfolio.ts</code> owns the order; <code>work-grid.css</code> owns both layouts.
