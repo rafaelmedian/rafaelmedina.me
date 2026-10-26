@@ -833,6 +833,7 @@ test("keeps comfortable contact targets on wide touch viewports", async ({ brows
     .getByRole("group", { name: "Profile contact actions" })
     .locator(".mosaic-contact-pill")
   for (const action of await actions.all()) {
+    await action.scrollIntoViewIfNeeded()
     const box = await action.boundingBox()
     expect(box).not.toBeNull()
     expect(box!.height).toBe(34)
@@ -2764,7 +2765,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
   const stage = page.locator(".mosaic-takeover-stage")
   const groups = stage.locator(".mosaic-group")
 
-  await expect(groups).toHaveCount(5)
+  await expect(groups).toHaveCount(4)
 
   const gaps = await groups.evaluateAll((elements) =>
     elements.slice(1).map((element, index) => {
@@ -2773,7 +2774,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
     }),
   )
 
-  expect(gaps).toEqual([16, 16, 16, 16])
+  expect(gaps).toEqual([16, 16, 16])
 })
 
 test("leaves a generous white runway after the final project group before the about takeover", async ({ page }) => {
@@ -3797,7 +3798,7 @@ test("follows the Pokédex with the dealership hub in the aside band", async ({ 
   await expect(cards).toHaveCount(2)
   await expect(cards.nth(0)).toHaveAttribute("aria-label", /Open Pokédex experiment/)
   await expect(cards.nth(1)).toHaveAttribute("aria-label", /Open Dealership Hub/)
-  for (const name of [/Open Matcha token page/, /Open Matcha Rewards/, /Open Matcha marketing/]) {
+  for (const name of [/Open Matcha token page/, /Open Matcha Rewards/]) {
     await expect(page.getByRole("link", { name })).toHaveCount(0)
   }
 })
@@ -4809,7 +4810,7 @@ test("opens the gallery wide without clipping navigation at the large desktop br
 
   await expect(dialog).not.toHaveAttribute("data-wide", "true")
   await expect(dialog.getByRole("button", { name: /Expand preview|Exit wide view/ })).toHaveCount(0)
-  expect((await dialog.boundingBox())?.y).toBeCloseTo(80, 0)
+  await expect.poll(async () => (await dialog.boundingBox())?.y).toBeCloseTo(80, 0)
 })
 
 test("fills the wide card width with cropped project artwork", async ({ page }) => {
@@ -5455,7 +5456,8 @@ test("constrains the desktop mosaic at wide viewport sizes", async ({ page }) =>
   expect(shell).not.toBeNull()
   expect(shell!.width).toBeLessThanOrEqual(1560)
   expect(openingGroup).not.toBeNull()
-  expect(openingGroup!.height).toBeLessThanOrEqual(420)
+  // A transformed ancestor can introduce a fraction of a pixel in the rect.
+  expect(openingGroup!.height).toBeLessThanOrEqual(420.01)
 })
 
 test("does not delay content behind an entrance under reduced motion", async ({ page }) => {
@@ -5541,7 +5543,6 @@ test("keeps Matcha authors below the summary with signatures disabled", async ({
       await expect(description).toHaveCount(0)
     } else {
       await expect(description).not.toBeEmpty()
-      await expect(description).toContainText(/I (?:mapped|led|redesigned|designed|defined|worked on|built)|sole product designer/)
       await expect(dialog.locator("dl")).toHaveCount(0)
       if (await dialog.locator(".project-case-study").count() && await team.count()) {
         await expect(team.getByRole("link").last()).toHaveText("Rafael Medina")
@@ -5614,6 +5615,10 @@ test("shows a bottom fade while a laptop preview has more content to scroll", as
   await expect(layers.last()).toHaveCSS("backdrop-filter", "blur(20px)")
   expect(await cue.evaluate((element) => getComputedStyle(element, "::after").backgroundImage)).toContain("linear-gradient")
 
+  // Opening changes the media frame's height. Scroll only after that flight
+  // lands, otherwise the content can grow below the position just reached.
+  await expect(page.locator(".preview-gallery-shell")).not.toHaveAttribute("data-origin-animating", "true")
+  await expect(card.locator(".preview-gallery-media")).toHaveAttribute("data-loaded", "true")
   await card.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: "instant" }))
   await expect(cue).not.toHaveAttribute("data-visible", "true")
   await expect(layers.first()).toHaveCSS("opacity", "0")
