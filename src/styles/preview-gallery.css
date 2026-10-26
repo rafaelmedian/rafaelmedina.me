@@ -274,7 +274,7 @@
   opacity: 1;
   /* Matches the axis of the switch poses below so the transition interpolates
      one transform list rather than falling back to matrix interpolation. */
-  transform: translateX(0) scale(1);
+  transform: translateX(0);
   /* This transition belongs to the between-previews switch below, which is
      stepped by a JS timer — hence the shared duration. The shadow's is for
      the end of the zoom open, which holds it back until the clip lets go. */
@@ -310,7 +310,7 @@
   pointer-events: none;
   /* Match the card's bounds and motion so the wash cannot linger on the
      backdrop when the surface pages away. The child owns the scroll fade. */
-  transform: translateX(0) scale(1);
+  transform: translateX(0);
   transition:
     opacity var(--pg-switch-ms, var(--duration-base)) ease-out,
     transform var(--pg-switch-ms, var(--duration-base)) var(--ease-standard);
@@ -359,17 +359,23 @@
    leaves that way and the incoming one arrives from the opposite edge, so the
    set reads as a strip travelling past rather than two unrelated fades.
    Leaving towards the next preview and arriving from the previous one share a
-   pose, as do their mirrors. */
+   pose, as do their mirrors.
+
+   A slide and nothing else. The cards used to shrink to 0.985 on a half-rem
+   nudge, which on a phone read as the page blurring and pulsing in place
+   rather than turning; a reviewer asked for it to swipe like a page. The
+   full-screen layout travels the whole width (below), so a card released
+   mid-drag keeps going the way the finger sent it. */
 .preview-gallery-card-switch-out-next,
 .preview-gallery-card-switch-in-prev {
   opacity: 0;
-  transform: translateX(-0.5rem) scale(var(--pg-switch-scale, 0.985));
+  transform: translateX(calc(-1 * var(--pg-switch-distance, 2rem)));
 }
 
 .preview-gallery-card-switch-out-prev,
 .preview-gallery-card-switch-in-next {
   opacity: 0;
-  transform: translateX(0.5rem) scale(var(--pg-switch-scale, 0.985));
+  transform: translateX(var(--pg-switch-distance, 2rem));
 }
 
 /* The leaving leg runs on its own, shorter clock (--pg-switch-out-ms, which
@@ -1631,6 +1637,8 @@
   }
 
   .preview-gallery-card {
+    --pg-switch-distance: 100%;
+
     height: auto;
     max-height: none;
     flex: 1;
@@ -1868,9 +1876,6 @@
   scrollbar-width: none;
 }
 .notes-gallery-page {
-  /* Scaling a long article around its centre produces a visible vertical dip.
-     Notes only translate sideways; work cards retain their subtle scale. */
-  --pg-switch-scale: 1;
   position: relative;
   transition:
     opacity var(--pg-switch-ms) ease-out,

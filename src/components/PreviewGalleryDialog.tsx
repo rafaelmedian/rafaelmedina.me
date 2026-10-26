@@ -77,6 +77,25 @@ function startsInHorizontalScroller(target: Element, boundary: Element) {
   return false
 }
 
+// The element a swipe turns: a note's page inside the card while one is being
+// read, the card itself otherwise. It follows the finger until release, then
+// hands back to the switch poses, which carry it on from wherever it was.
+function swipePage(card: HTMLElement, readingNote: boolean) {
+  return readingNote ? card.querySelector<HTMLElement>(".notes-gallery-page") : card
+}
+
+function dragPage(page: HTMLElement, deltaX: number) {
+  page.style.transition = "none"
+  page.style.transform = `translateX(${deltaX.toFixed(1)}px)`
+  page.style.opacity = String(1 - Math.min(Math.abs(deltaX) / page.clientWidth, 1) * 0.5)
+}
+
+function releasePage(page: HTMLElement | null) {
+  page?.style.removeProperty("transition")
+  page?.style.removeProperty("transform")
+  page?.style.removeProperty("opacity")
+}
+
 function wrapIndex(index: number, length: number) {
   if (length === 0) return 0
   return (index % length + length) % length
@@ -119,7 +138,7 @@ export function PreviewGalleryDialog({
   onBackFromWriting,
   onRetryWriting,
 }: PreviewGalleryDialogProps) {
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const touchStartRef = useRef<{ x: number; y: number; axis: "x" | "y" | null; page: HTMLElement | null } | null>(null)
   // This dialog is lazily mounted, so its first open is always the mount: `open`
   // is already true here and an unconditional `useRef(open)` would swallow the
   // latch every visitor hears first. Seeding it from the gesture flag instead
@@ -706,23 +725,45 @@ export function PreviewGalleryDialog({
                     return
                   }
                   const touch = event.changedTouches[0]
-                  touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null
+                  touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY, axis: null, page: null } : null
+                }}
+                onTouchMove={(event) => {
+                  const touchStart = touchStartRef.current
+                  const touch = event.changedTouches[0]
+                  if (!touchStart || !touch || prefersReducedMotion || switchPhase !== "idle" || notesPage.phase !== "idle" || items.length <= 1) return
+                  const deltaX = touch.clientX - touchStart.x
+                  const deltaY = touch.clientY - touchStart.y
+                  // Decide the axis once, a few pixels in, so a scroll that
+                  // wanders sideways never drags the page and a swipe that
+                  // dips never hands over to the scroller.
+                  if (!touchStart.axis) {
+                    if (Math.hypot(deltaX, deltaY) < 10) return
+                    touchStart.axis = Math.abs(deltaX) > Math.abs(deltaY) ? "x" : "y"
+                    if (touchStart.axis === "x") touchStart.page = swipePage(event.currentTarget, Boolean(writingId))
+                  }
+                  if (touchStart.axis === "x" && touchStart.page) dragPage(touchStart.page, deltaX)
                 }}
                 onTouchEnd={(event) => {
                   const touchStart = touchStartRef.current
                   touchStartRef.current = null
                   if (!touchStart) return
+                  // Back under the stylesheet in the same frame the switch
+                  // pose lands, so the card transitions on from the drag
+                  // rather than jumping back to centre first. Short of the
+                  // threshold, the resting pose springs it home.
+                  releasePage(touchStart.page)
 
                   const touchEnd = event.changedTouches[0]
                   const deltaX = (touchEnd?.clientX ?? touchStart.x) - touchStart.x
                   const deltaY = (touchEnd?.clientY ?? touchStart.y) - touchStart.y
                   const threshold = 56
 
-                  if (Math.abs(deltaX) >= threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
+                  if (touchStart.axis !== "y" && Math.abs(deltaX) >= threshold && Math.abs(deltaX) > Math.abs(deltaY)) {
                     moveBy(deltaX > 0 ? -1 : 1)
                   }
                 }}
                 onTouchCancel={() => {
+                  releasePage(touchStartRef.current?.page ?? null)
                   touchStartRef.current = null
                 }}
               >

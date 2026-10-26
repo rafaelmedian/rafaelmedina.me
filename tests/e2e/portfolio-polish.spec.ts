@@ -4065,8 +4065,68 @@ test("keeps gallery controls inside the mobile viewport and exposes a close butt
   await expect(dialog).toBeHidden()
 })
 
+// A swipe is a page being turned, not a gesture read at the end: the card
+// rides the finger while it is down, a short drag springs back, and a drag
+// past the threshold carries on from where it was let go rather than jumping
+// back to centre to start the switch.
+test("drags the mobile gallery card with the finger and pages from the release", async ({ page }) => {
+  await page.setViewportSize(mobileViewport)
+  await page.goto("/")
+  await settleWorkCards(page)
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
+
+  const dialog = page.getByRole("dialog")
+  const card = dialog.locator(".preview-gallery-card")
+  await page
+    .locator(".preview-gallery-origin-wrap")
+    .evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
+
+  const touch = (type: string, x: number) => dialog.locator(".preview-gallery-media-frame").evaluate((element, [type, x]) => {
+    const point = new Touch({ identifier: 1, target: element, clientX: Number(x), clientY: 300 })
+    element.dispatchEvent(new TouchEvent(String(type), { bubbles: true, changedTouches: [point] }))
+  }, [type, x])
+
+  // Short of the threshold: follows, then returns home on the same page.
+  await touch("touchstart", 300)
+  await touch("touchmove", 270)
+  expect(await card.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).e)).toBeCloseTo(-30, 0)
+  await touch("touchend", 270)
+  await expect(card).not.toHaveAttribute("style", /transform/)
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("1 / 14")
+
+  // Past it: the leaving leg starts from the drag and keeps going left.
+  await touch("touchstart", 300)
+  await touch("touchmove", 250)
+  await touch("touchmove", 200)
+  expect(await card.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).e)).toBeCloseTo(-100, 0)
+  await card.evaluate((element) => {
+    const point = new Touch({ identifier: 1, target: element, clientX: 200, clientY: 300 })
+    element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [point] }))
+  })
+  await expect(card).toHaveClass(/preview-gallery-card-switch-out-next/)
+  const leaving = await card.evaluate((element) => {
+    const transition = element.getAnimations()
+      .filter((animation): animation is CSSTransition => animation instanceof CSSTransition && animation.transitionProperty === "transform")
+      .at(-1)
+    if (!transition) return { from: NaN, to: NaN }
+    // The far pose is a percentage of the card, so read both ends from the
+    // computed transform rather than the keyframes.
+    const offset = () => new DOMMatrixReadOnly(getComputedStyle(element).transform).e
+    transition.pause()
+    transition.currentTime = 0
+    const from = offset()
+    transition.currentTime = Number(transition.effect!.getTiming().duration) - 0.001
+    const to = offset()
+    transition.play()
+    return { from, to }
+  })
+  expect(leaving.from).toBeCloseTo(-100, 0)
+  expect(leaving.to).toBeLessThan(-mobileViewport.width + 1)
+  await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 14")
+})
+
 // The toolbar is the card's sibling rather than its first child, so the
-// between-previews switch -- 0.5rem of travel and a fade to nothing -- must not
+// between-previews switch -- a slide and a fade to nothing -- must not
 // reach it. Nested back inside the card, every press slid the control that was
 // pressed out from under the thumb and took the close with it.
 test("holds the compact toolbar still while the gallery pages", async ({ page }) => {
@@ -4733,7 +4793,7 @@ test("pages previews along the axis its arrows point down", async ({ page }) => 
       return seen
     }, navSelector)
 
-  // 0.5rem (8px) of travel each way; assert well inside it. The outgoing pose leaves
+  // 2rem (32px) of travel each way on desktop; assert well inside it. The outgoing pose leaves
   // in the arrow's direction, the incoming one arrives from the opposite edge
   // and settles at zero, and nothing moves on Y.
   const forward = await poses(".preview-gallery-rail .preview-gallery-nav-next")
