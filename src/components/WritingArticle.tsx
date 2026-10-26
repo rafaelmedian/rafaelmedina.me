@@ -22,14 +22,6 @@ function inlineProse(text: string) {
   return text.split(/`([^`]+)`/).map((part, index) => (index % 2 ? <code className="writing-code" key={index}>{part}</code> : part))
 }
 
-// The reader's pencil marks are pictures, not paths. A bezier written by hand
-// draws one clean stroke of even weight, which is the one thing a pencil never
-// does; these are rendered with Rough.js in scripts/build-writing-marks.mjs,
-// which retraces every line with randomised bowing, and shipped as PNGs from
-// public/writings/marks. They are black on transparent and used as masks, so
-// they still take their colour from the text they sit beside.
-const MARK_VARIANTS = ["a", "b", "c"]
-
 // How far a note drops into its paragraph, which rail it sits on, and how far
 // it leans. Notes that shared one offset drew a second column down each edge;
 // spread over these they read as written into the gutter at different moments.
@@ -38,29 +30,18 @@ const MARK_VARIANTS = ["a", "b", "c"]
 const NOTE_LIFTS = ["0em", "0.5em", "1.1em", "1.7em", "2.3em", "2.9em"]
 const NOTE_GAPS = ["0.45rem", "0.6rem", "0.75rem", "0.9rem", "1.05rem"]
 const NOTE_TILTS = ["-2.4deg", "-1.6deg", "-0.9deg", "0.9deg", "1.6deg", "2.4deg"]
-// A bracket is drawn at the height of the note it holds, so the mask is never
-// stretched by more than the line the estimate missed by. About twenty
-// characters fit a 122px gutter line at --text-xs, which is the gutter from
-// 1320px up; below that the gutter narrows and a long note runs a line past
-// this, which is the miss the mask is sized to absorb.
-const NOTE_CHARS_PER_LINE = 20
-
-// A gutter note: a drawn bracket holding the passage, and the handwriting
-// beside it. It is absolutely positioned next to its paragraph once the modal
-// is wide enough to have gutters, so it lives inside the paragraph and reads
-// after it rather than interrupting the sentence.
+// A gutter note: handwriting beside the passage it remarks on, with no mark
+// drawn between them. It is absolutely positioned next to its paragraph once
+// the modal is wide enough to have gutters, so it lives inside the paragraph
+// and reads after it rather than interrupting the sentence.
 function MarginNote({ annotation }: { annotation: WritingAnnotation }) {
   const hash = noteHash(annotation.text)
-  const lines = Math.min(4, Math.max(1, Math.ceil(annotation.text.length / NOTE_CHARS_PER_LINE)))
-  const mark = `bracket-${lines}-${pickFrom(MARK_VARIANTS, hash, 0)}`
   return (
     <span className="writing-margin-note" data-place={annotation.place ?? "right"} style={{
-      "--writing-mark": `url("/writings/marks/${mark}.png")`,
       "--writing-note-lift": pickFrom(NOTE_LIFTS, hash, 1),
       "--writing-note-gap": pickFrom(NOTE_GAPS, hash, 2),
       "--writing-note-tilt": pickFrom(NOTE_TILTS, hash, 3),
     } as CSSProperties}>
-      <span className="writing-margin-note-bracket" aria-hidden="true" />
       <span className="writing-margin-note-label">{annotation.text}</span>
     </span>
   )
@@ -158,15 +139,21 @@ function ToolInstallCard({ tool }: { tool: WritingTool }) {
   const resetRef = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(resetRef.current), [])
   const command = `npx skills add ${tool.package}`
+  const name = tool.package.split("@").at(-1)
 
   return (
-    <section className="writing-tool" aria-label={`Install ${tool.package.split("@").at(-1)}`}>
+    <section className="writing-tool" aria-label={`Install ${name}`}>
       <div className="writing-tool-heading">
-        <a href={tool.sourceUrl} target="_blank" rel="noreferrer">
-          View source <ArrowUpRight size={14} aria-hidden="true" />
+        <div className="writing-tool-title">
+          <span className="writing-tool-name">{name}</span>
+          <span className="writing-tool-kind">Agent skill</span>
+        </div>
+        <a href={tool.sourceUrl} target="_blank" rel="noreferrer" aria-label="View source">
+          Source <ArrowUpRight size={14} aria-hidden="true" />
         </a>
       </div>
       <div className="writing-tool-command">
+        <span className="writing-tool-prompt" aria-hidden="true">$</span>
         <code>{command}</code>
         <button type="button" onClick={() => {
           void navigator.clipboard?.writeText(command).then(() => {
