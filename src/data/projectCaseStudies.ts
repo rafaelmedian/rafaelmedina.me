@@ -383,7 +383,7 @@ export const projectCaseStudies = {
     ] },
   ]),
   "twilio-admiral": study("Showing each team only what’s theirs", [
-    "I joined to iterate on Admiral’s pipelines feature. The research turned it into a redesign of how the whole platform is organized.",
+    "I joined for a couple of months to iterate on Admiral’s pipelines feature. The research turned it into a redesign of how the whole platform is organized.",
   ], [
     { heading: "Seven people, seven maps of Admiral", paragraphs: [
       "We interviewed seven Admiral users and had each one rank their top five workflows. Two groups emerged: daily work and administration.",
@@ -464,7 +464,7 @@ export const projectCaseStudies = {
     ] },
   ]),
   "onit-process-builder": study("Document logic lawyers can build themselves", [
-    "I joined as development started, to close the gap between design and engineering.",
+    "I joined for a couple of weeks as development started, to close the gap between design and engineering.",
   ], [
     { heading: "Blocks, not code", paragraphs: [
       "Each rule is a stack of events, conditions, and actions. An if/else branch reads top to bottom, the way the people writing it would say it.",
@@ -488,7 +488,7 @@ export const projectCaseStudies = {
   ]),
   "turtle": study("Friends first, names later", [
     "Turtle let students start a conversation with a classmate without being judged for it.",
-    "A friend and I started it as sophomores, and I co-led the product.",
+    "A friend and I founded it as sophomores, and I co-led the product.",
   ], [
     { heading: "Temporary anonymity", paragraphs: [
       "Conversations started anonymous. After a set number of days, both people were revealed.",

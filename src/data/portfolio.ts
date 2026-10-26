@@ -715,7 +715,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Twilio Admiral",
     summary: "",
     detail:
-      "I redesigned the navigation of Admiral, the internal platform Twilio’s engineers use to deploy and run their services. Interviews showed each team only cares about a small slice of 2,351 roles, so I rebuilt the structure around your own team: contextual dashboards, a Team › Roles switcher, and shorter paths to everyday tasks.",
+      "Over a couple of months I redesigned the navigation of Admiral, the internal platform Twilio’s engineers use to deploy and run their services. Interviews showed each team only cares about a small slice of 2,351 roles, so I rebuilt the structure around your own team: contextual dashboards, a Team › Roles switcher, and shorter paths to everyday tasks.",
     role: "As a contract product designer I led the navigation research, the information architecture, and the team dashboards.",
     outcome:
       "Engineers land on their own team’s deployments and pipelines by default, and editing an access policy takes three steps instead of six.",
@@ -739,8 +739,8 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Moody’s Research Views",
     summary: "",
     detail:
-      "Research Views turned Moody’s credit opinions from long PDFs into pages analysts can work in: the rating action and its drivers up top, key indicators that chart against peers, a scorecard to test scenarios, and highlights that save to your snippets. We shaped it over a five-day design sprint and four month-long ones, testing a prototype with users at the end of each.",
-    role: "I designed and prototyped each sprint’s concept, building the prototype that users tested at the end of the week.",
+      "Research Views turned Moody’s credit opinions from long PDFs into pages analysts can work in: the rating action and its drivers up top, key indicators that chart against peers, a scorecard to test scenarios, and highlights that save to your snippets. We shaped it in a one-week design sprint, testing a prototype with users at the end of the week.",
+    role: "I designed the sprint’s concept and built the prototype that users tested at the end of the week.",
     outcome: "The testing earned our team the brief to design the new Moodys.com.",
     image: "/Projects/moodys-research-views.webp",
     previewWidth: 3200,
@@ -758,8 +758,8 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Turtle",
     summary: "",
     detail:
-      "Turtle was a chat app for high school and college students to meet their classmates. Conversations started anonymous and revealed both people after a few days, with hints and guess games in between. As its founding designer I designed everything from onboarding and profiles to the school networks that drove signups.",
-    role: "As founding designer and design co-lead I owned the product’s design and direction, and the growth experiments around its launch.",
+      "Turtle was a chat app for high school and college students to meet their classmates. Conversations started anonymous and revealed both people after a few days, with hints and guess games in between. As its co-founder I designed everything from onboarding and profiles to the school networks that drove signups.",
+    role: "As co-founder I owned the product’s design and direction, and the growth experiments around its launch.",
     outcome:
       "10,000 people signed up in the first week. Turtle was #4 Product of the Day on Product Hunt and was covered by Business Insider.",
     image: "/Projects/turtle.webp",
@@ -778,7 +778,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     title: "Onit Process Builder",
     summary: "",
     detail:
-      "Process Builder lets legal teams automate what happens when a transaction or matter changes, using if/else blocks instead of code. I designed its visual language and front end from the start of development, and built the design system in Figma and React that the product shipped on.",
+      "Process Builder lets legal teams automate what happens when a transaction or matter changes, using if/else blocks instead of code. In a couple of weeks at the start of development I designed its visual language and front end, and built the design system in Figma and React that the product shipped on.",
     role: "I owned the visual design, the design system in Figma and in code, and front-end work in React and TypeScript.",
     outcome:
       "Design and development worked from one documented system, which made building the product faster and simpler.",
