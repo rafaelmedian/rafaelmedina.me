@@ -27,7 +27,7 @@ test.beforeEach(async ({ page }) => {
     }
   })
   await page.goto("/")
-  await page.getByRole("link", { name: /Open Shared family stories preview/ }).click()
+  await page.getByRole("link", { name: /Open Dealership Hub preview/ }).click()
   await expect(page.locator(".preview-gallery-shell")).toHaveAttribute("data-origin-animating", "true")
 })
 
@@ -51,6 +51,6 @@ test("closing a cold gallery cancels audio warmup without building a context", a
   await expect(page.getByRole("dialog")).toHaveCount(0)
   await page.waitForTimeout(250)
   expect(await page.evaluate(audioBuilds)).toEqual([])
-  await page.getByRole("link", { name: /Open Shared family stories preview/ }).click()
+  await page.getByRole("link", { name: /Open Dealership Hub preview/ }).click()
   await expect.poll(() => page.evaluate(audioBuilds)).toEqual([false])
 })

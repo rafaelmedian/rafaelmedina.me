@@ -123,8 +123,7 @@ export const AboutPanel = memo(function AboutPanel({ links, localTimeLabel }: Ab
               </h2>
               <p>
                 I design the complicated parts of products people prefer not to think about. I figure out
-                what to build, test it with real people, and prototype in code because working interactions
-                answer questions faster than static mockups.
+                what to build, test it with real people, and prototype it in code.
               </p>
               <p>
                 When I&rsquo;m not working, I&rsquo;m probably kickboxing, swimming, riding a bike, or being humbled
@@ -210,8 +209,8 @@ export const AboutPanel = memo(function AboutPanel({ links, localTimeLabel }: Ab
               </h2>
               <p data-about-fade="">
                 Most engagements run the same five beats. What changes is how long each one takes: a
-                two-week audit compresses them into ten days, a year of product work loops through
-                them a dozen times.
+                two-week audit runs through them once, a year of product work loops through them a
+                dozen times.
               </p>
 
               <ol className="mosaic-about-resume mosaic-about-process-list">

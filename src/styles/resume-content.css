@@ -8,15 +8,7 @@
   margin-bottom: 0;
 }
 
-/* The reader is wide enough to give its résumé a real page margin while the
-   work itself keeps the site's 34rem reading measure. That spare room is also
-   where the same pencil objects used by Notes can sit without narrowing copy. */
-.preview-gallery-resume,
-.standalone-resume-body {
-  container-type: inline-size;
-  container-name: resume;
-}
-
+/* The work keeps the site's 34rem reading measure, centred in the reader. */
 .resume-content {
   width: min(100%, 34rem);
   margin-inline: auto;
@@ -34,6 +26,13 @@
 .preview-gallery-resume-body .mosaic-about-resume-heading,
 .standalone-resume-body .mosaic-about-resume-heading {
   font-weight: 600;
+}
+
+/* Experience and Education are two labelled sections with one rhythm: a
+   muted label, then entries 3rem apart, the second section set off by a rule. */
+.resume-section {
+  display: grid;
+  gap: 1.5rem;
 }
 
 .resume-experience-list {
@@ -55,9 +54,13 @@
 }
 
 .resume-content > .mosaic-about-resume-education {
-  margin-top: 0;
-  padding-top: 4rem;
+  margin-top: 1.5rem;
+  padding-top: 3rem;
   border-top: 1px solid rgb(0 0 0 / 0.08);
+}
+
+.resume-content .mosaic-about-education-list {
+  gap: 2.5rem;
 }
 
 .resume-experience-details { min-width: 0; }
@@ -117,65 +120,14 @@
   gap: 0.6rem;
 }
 
-/* Quiet objects punctuate the long sheet, each drawn from the role beside it.
-   They are pencil strips from the same generator as Notes' drawings, so
-   hovering or tabbing into the role makes the line retrace itself instead of
-   moving the object around. */
-.resume-margin-drawing {
-  display: none;
-}
-
-@container resume (min-width: 48rem) {
-  @supports (mask-image: url("/writings/marks/drawing-sheet-frames.png")) or (-webkit-mask-image: url("/writings/marks/drawing-sheet-frames.png")) {
-    .resume-margin-drawing {
-      --resume-drawing-gutter: calc((100cqi - 34rem) / 2);
-      --resume-drawing-inset: 2.5rem;
-      --resume-drawing-slack: max(0rem, var(--resume-drawing-gutter) - var(--resume-drawing-size) - var(--resume-drawing-inset));
-      --resume-drawing-rail: calc(var(--resume-drawing-inset) + var(--resume-drawing-pull) * var(--resume-drawing-slack));
-      position: absolute;
-      top: var(--resume-drawing-drop);
-      display: block;
-      width: min(var(--resume-drawing-size), calc(var(--resume-drawing-gutter) - var(--resume-drawing-inset)));
-      aspect-ratio: 1;
-      background-color: var(--muted);
-      opacity: 0.6;
-      rotate: var(--resume-drawing-tilt);
-      -webkit-mask: var(--resume-drawing-mark) 0 0 / 300% 100% no-repeat;
-      mask: var(--resume-drawing-mark) 0 0 / 300% 100% no-repeat;
-    }
-
-    .resume-margin-drawing[data-place="left"] {
-      right: calc(100% + var(--resume-drawing-rail));
-    }
-
-    .resume-margin-drawing[data-place="right"] {
-      left: calc(100% + var(--resume-drawing-rail));
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      .resume-experience:hover > .resume-margin-drawing,
-      .resume-experience:focus-within > .resume-margin-drawing {
-        animation: resume-drawing-boil 375ms steps(1, end) infinite;
-      }
-    }
-  }
-}
-
-@keyframes resume-drawing-boil {
-  0% { -webkit-mask-position: 50% 0; mask-position: 50% 0; }
-  33.333% { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
-  66.667%, 100% { -webkit-mask-position: 0 0; mask-position: 0 0; }
-}
-
+/* Narrow screens stack the dates under the company; they belong to it, so
+   they sit tight against it rather than a full line away. */
 @media (max-width: 479.98px) {
+  .resume-experience-heading {
+    row-gap: 0;
+  }
+
   .resume-experience-identity {
     width: 100%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .resume-experience:hover > .resume-margin-drawing,
-  .resume-experience:focus-within > .resume-margin-drawing {
-    animation: none;
   }
 }

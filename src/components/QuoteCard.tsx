@@ -1,14 +1,9 @@
-import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react"
 import { Popover } from "@base-ui/react/popover"
 import { KeyboardHint } from "./KeyboardHint"
 import { XProfileHoverCard } from "./XProfileHoverCard"
 import type { PortfolioQuote } from "../data/quotes"
 import { RICH_CARD_OPEN_DELAY_MS } from "../lib/hoverIntent"
-import { createModuleLoader, useDeferredModule } from "../lib/deferredModule"
-
-// The opened card is a chunk of its own: it brings Base UI's dialog, which the
-// main bundle otherwise does without. Intent on the tile warms it.
-const loadQuotesDialog = createModuleLoader(() => import("./QuotesDialog"), "QuotesDialog")
 
 // The distance that tells a swipe apart from a click that wandered. It is the
 // only gate the gesture has: past it the drag takes an axis, and a horizontal
@@ -24,7 +19,7 @@ const SWIPE_DISTANCE = 6
 const VERTICAL_INTENT = 1.5
 
 // How far a press may wander and still be a tap. Under it the card was pressed,
-// not swiped, and the click opens the quotes as it would from a still finger.
+// not swiped, and the click turns to the next quote as from a still finger.
 const TAP_DISTANCE = 10
 
 function QuoteCredit({
@@ -140,56 +135,18 @@ function QuoteCredit({
   )
 }
 
-/** The opened card's paging, for the dialog's side arrows. */
-export type QuoteCardHandle = { move: (travel: number) => void }
-
-export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false, initialIndex = 0, onActiveChange, ref }: {
-  quotes: PortfolioQuote[]
-  /** The heading of the dialog the card opens into. */
-  title: string
-  onDialogOpenChange?: (open: boolean) => void
-  /** The card inside its dialog: a press pages to the next quote there. */
-  expanded?: boolean
-  initialIndex?: number
-  onActiveChange?: (index: number) => void
-  ref?: Ref<QuoteCardHandle>
-}) {
-  // A press on the tile opens the card in a dialog of its own, where the same
-  // card, larger, pages through the quotes on every press. The tile itself
-  // pages by swipe, dots and arrows.
-  const [listOpen, setListOpen] = useState(false)
-  const { module: dialogModule, load: loadDialog, warm: warmDialog } = useDeferredModule(loadQuotesDialog)
-  const QuotesDialog = dialogModule?.QuotesDialog
-  // A press before the chunk is here opens the card when it lands.
-  const [openWhenLoaded, setOpenWhenLoaded] = useState(false)
-  const setList = (open: boolean) => {
-    if (open && !QuotesDialog) {
-      setOpenWhenLoaded(true)
-      void loadDialog()
-      return
-    }
-    setListOpen(open)
-    onDialogOpenChange?.(open)
-  }
-  if (openWhenLoaded && QuotesDialog) {
-    setOpenWhenLoaded(false)
-    setListOpen(true)
-  }
-  useEffect(() => {
-    if (listOpen) onDialogOpenChange?.(true)
-  }, [listOpen, onDialogOpenChange])
+export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
+  // A press on the card turns to the next quote, in place. Swipes, dots and the
+  // arrow keys page it too.
   // `settle` is how the change was asked for, not how far it travels: a pointer
   // gesture lands on the next quote quickly, a dot chosen across the card keeps
   // the longer, more deliberate move.
   const [{ activeIndex, previousIndex, direction, settle }, setSelection] = useState({
-    activeIndex: initialIndex,
-    previousIndex: initialIndex,
+    activeIndex: 0,
+    previousIndex: 0,
     direction: 1,
     settle: "slow" as "quick" | "slow",
   })
-  const followDialog = useCallback((index: number) => {
-    setSelection(selection => selection.activeIndex === index ? selection : { activeIndex: index, previousIndex: index, direction: 1, settle: "quick" })
-  }, [])
   const slidesRef = useRef<HTMLDivElement>(null)
   const preparedSlide = useRef<HTMLElement | null>(null)
   const [dragOffset, setDragOffset] = useState(0)
@@ -238,8 +195,6 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
     }
   }, [inside])
 
-  useEffect(() => { onActiveChange?.(activeIndex) }, [activeIndex, onActiveChange])
-
   useLayoutEffect(() => {
     const slide = preparedSlide.current
     if (!slide) return
@@ -283,8 +238,6 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
 
   const moveQuote = (travel: number, settleAs: "quick" | "slow" = "slow") =>
     selectQuote((activeIndex + travel + quotes.length) % quotes.length, travel, settleAs)
-  useImperativeHandle(ref, () => ({ move: (travel: number) => moveQuote(travel, "quick") }))
-  const expandedRef = useRef<QuoteCardHandle>(null)
 
   if (!activeQuote) return null
 
@@ -372,12 +325,6 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
       return
     }
 
-    if (event.key === " " && target === card && !expanded) {
-      event.preventDefault()
-      setList(true)
-      return
-    }
-
     if (event.key === "Enter" && target === card) {
       const author = card.querySelector<HTMLElement>('.mosaic-quote-slide[data-active="true"] .mosaic-quote-profile-link')
       if (!author) return
@@ -413,7 +360,6 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
       data-inside={inside}
       style={{ "--quote-drag-x": `${dragOffset}px` } as CSSProperties}
       onKeyDown={handleKeyDown}
-      onPointerEnter={expanded ? undefined : warmDialog}
       onFocus={(event) => {
         // Shift+Tab back from the name lands here, and so does Escape.
         if (event.target === event.currentTarget) setInside(false)
@@ -425,7 +371,7 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
       <button
         type="button"
         className="mosaic-quote-next"
-        aria-label={expanded ? "Advance quote" : "Open all quotes"}
+        aria-label="Next quote"
         tabIndex={-1}
         onPointerDown={startDrag}
         onPointerMove={moveDrag}
@@ -434,10 +380,9 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
         onLostPointerCapture={(event) => finishDrag(event, true)}
         onClick={(event) => {
           // Pointer release also fires click. Only a tap (or keyboard activation)
-          // opens the list; completed and cancelled drags have already been handled.
+          // pages; completed and cancelled drags have already been handled.
           if (event.detail !== 0 && suppressClick.current) return
-          if (expanded) moveQuote(1, "quick")
-          else setList(true)
+          moveQuote(1, "quick")
         }}
       />
       <div ref={slidesRef} className="mosaic-quote-slides">
@@ -499,32 +444,17 @@ export function QuoteCard({ quotes, title, onDialogOpenChange, expanded = false,
         className="mosaic-quote-keys"
         items={inside
           ? [{ keys: ["Enter"], label: "Profile" }, { keys: ["Esc"], label: "Back" }]
-          : [{ keys: ["←", "→"], label: "Browse" }, ...(expanded ? [] : [{ keys: ["Space"], label: "Open" }]), ...(canGoIn ? [{ keys: ["Enter"], label: "Go in" }] : [])]}
+          : [{ keys: ["←", "→"], label: "Browse" }, ...(canGoIn ? [{ keys: ["Enter"], label: "Go in" }] : [])]}
       />
       <span id={keysId} className="sr-only">
-        Use the left and right arrow keys to change the quote{expanded ? "." : ", and Space to open the quotes."}
-        {canGoIn ? " Press Enter to go in to the author's profile." : ""}
+        Use the left and right arrow keys to change the quote.
+        {canGoIn ? " Press Enter to go into the author's profile." : ""}
       </span>
       <span id={authorKeysId} className="sr-only">
-        Press Enter to go in to the profile card, or Escape to go back to the quotes.
+        Press Enter to go into the profile card, or Escape to go back to the quotes.
       </span>
-      {expanded || !QuotesDialog ? null : (
-        <QuotesDialog open={listOpen} onOpenChange={setList} title={title} originRef={cardRef}
-          onMove={(travel) => expandedRef.current?.move(travel)}>
-          <QuoteCard
-            ref={expandedRef}
-            quotes={quotes}
-            title={title}
-            expanded
-            initialIndex={activeIndex}
-            // The tile follows along under the dialog, so the close lands on
-            // the quote the visitor was reading.
-            onActiveChange={followDialog}
-          />
-        </QuotesDialog>
-      )}
       <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {activeIndex + 1} of {quotes.length}. {activeQuote.attribution}. {activeQuote.caption}: {activeQuote.text} {activeQuote.emphasis}.
+        {activeIndex + 1} of {quotes.length}. {activeQuote.attribution}. {activeQuote.caption}: {[activeQuote.text, activeQuote.emphasis].filter(Boolean).join(" ").replace(/[^.!?…]$/, "$&.")}
       </p>
     </div>
   )

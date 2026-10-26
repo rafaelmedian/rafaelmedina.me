@@ -49,19 +49,17 @@ export const AboutIntroDock = memo(function AboutIntroDock(props: {
     const about = document.getElementById("about-panel")
     if (!about) return
     const resume = document.querySelector(".mosaic-tile-resume")
-    let resumeReached = false
     let frame = 0
     const sync = () => {
       frame = 0
       const bounds = about.getBoundingClientRect()
       const cv = resume?.getBoundingClientRect()
       // Keep initial visits media-free, even when a tall viewport includes CV.
-      // Once half the tile is seen after scrolling, retain the intro through
-      // the grid-to-About handoff. Scrolling back to the hero hides it again.
+      // Half the tile seen after scrolling only loads the intro, so it is
+      // ready when About arrives; it shows over About alone, never the grid.
       const visibleHeight = cv ? Math.max(0, Math.min(cv.bottom, window.innerHeight) - Math.max(cv.top, 0)) : 0
-      if (window.scrollY > 96 && cv && visibleHeight >= cv.height * 0.5) resumeReached = true
-      const nowActive = bounds.bottom > 0 && (bounds.top <= window.innerHeight * 0.31 || (resumeReached && window.scrollY > 96))
-      if (resumeReached) setApproached(true)
+      if (window.scrollY > 96 && cv && visibleHeight >= cv.height * 0.5) setApproached(true)
+      const nowActive = bounds.bottom > 0 && bounds.top <= window.innerHeight * 0.31
       // Geometry fallback also covers restored scroll positions and browsers
       // without IntersectionObserver; no media URL exists above this boundary.
       if (bounds.top <= window.innerHeight + 200 && bounds.bottom >= -200) setApproached(true)

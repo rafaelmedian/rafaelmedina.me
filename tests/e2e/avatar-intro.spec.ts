@@ -96,12 +96,20 @@ test("releases prerendered content if the application bundle never arrives", asy
 
 for (const interrupt of ["keyboard", "resize", "reduced motion"] as const) {
   test(`ends a pending intro on ${interrupt} without replaying it`, async ({ page }) => {
-    await page.goto("/")
+    // Keep the portrait pending instead of racing its download and animation.
+    let releasePortrait!: () => void
+    const portraitReady = new Promise<void>(resolve => { releasePortrait = resolve })
+    await page.route("**/profile-photo*.webp", async route => {
+      await portraitReady
+      await route.continue()
+    })
+    await page.goto("/", { waitUntil: "domcontentloaded" })
     await expect(page.locator("#work")).toBeHidden()
     if (interrupt === "keyboard") await page.keyboard.press("Tab")
     if (interrupt === "resize") await page.setViewportSize({ width: 390, height: 844 })
     if (interrupt === "reduced motion") await page.emulateMedia({ reducedMotion: "reduce" })
     await expect(page.locator("#work")).toBeVisible()
+    releasePortrait()
     await page.waitForLoadState("load")
     await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro", "pending")
     if (interrupt === "keyboard") await expect(page.locator(".skip-link")).toBeFocused()

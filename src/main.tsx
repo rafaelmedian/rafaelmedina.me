@@ -5,9 +5,11 @@ import App from './App.tsx'
 import { loadWritingPage } from './lib/writingPageSlot.ts'
 import { writingAtPath } from './lib/projectMetadata.ts'
 import { startAnalytics } from './lib/analytics.ts'
+import { startClarity } from './lib/clarity.ts'
 import { loadPreviewGallery } from './lib/previewGalleryModule.ts'
 
 startAnalytics()
+startClarity()
 
 const root = document.getElementById('root')!
 const app = (

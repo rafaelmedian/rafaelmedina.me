@@ -579,21 +579,47 @@
   bottom: 3%;
 }
 
-/* Family Stories is a transparent export of two tilted devices that seat on
-   the bottom edge. The gallery frames it the way the tile does -- the whole
-   picture, pinned to the bottom -- so the open flight scales one composition
-   instead of zooming into a different crop mid-flight. It used to zoom 1.14
-   from the bottom right, which made the phones jump left and grow as the card
-   landed.
+/* Protector and Patrol open as their tiles show them (work-grid.css, keep the
+   two in step): the bare recording held in the same phone, on the tile's own
+   surface. The
+   padding is the room the frame's rim and drop shadow need, taken out of the
+   media cap so the frame stays the height every other video gets. The tile's
+   frozen frame has no phone around it, so it stays out of the way and the
+   poster covers the gap instead. */
+.preview-gallery-popup[data-preview-id="preview-protector"] .preview-gallery-media-frame,
+.preview-gallery-popup[data-preview-id="preview-patrol"] .preview-gallery-media-frame {
+  --phone-room: clamp(1.5rem, 4vh, 2.5rem);
+  display: grid;
+  place-items: center;
+  padding: var(--phone-room);
+  background: var(--mosaic-card-surface);
+}
 
-   Cover rather than contain: the 4:3 frame is a hair wider than the export,
-   and contain left a ~5px sliver of grey between the frame and the back
-   phone's left edge. Pinned left, the few pixels cover trims come off the
-   transparent margin on the right and the top, never the phone the tile runs
-   off the left edge. */
-.preview-gallery-popup[data-preview-id="preview-family-stories"] .preview-gallery-media {
-  object-fit: cover;
-  object-position: left bottom;
+.preview-gallery-popup[data-preview-id="preview-protector"] .preview-gallery-media,
+.preview-gallery-popup[data-preview-id="preview-patrol"] .preview-gallery-media {
+  --phone-bezel: clamp(3px, 0.35vw, 5px);
+  --phone-frame: clamp(4px, 0.42vw, 6px);
+  /* A set height and the recording's ratio, not its intrinsic size: the open
+     measures this box before the video's metadata arrives, and an auto width
+     left it a 10px square that the flight scaled the card 37x to land on. */
+  width: auto;
+  height: calc(var(--preview-gallery-media-cap) - 2 * var(--phone-room));
+  max-width: 100%;
+  max-height: none;
+  aspect-ratio: 480 / 1042;
+  border: var(--phone-bezel) solid #000;
+  border-radius: 15% / 6.9%;
+  background: #000;
+  box-shadow:
+    0 0 0 var(--phone-frame) #333336,
+    0 0 0 calc(var(--phone-frame) + 1.5px) #5c5c61,
+    0 0 0 calc(var(--phone-frame) + 2.5px) rgb(0 0 0 / 0.18),
+    0 18px 36px -12px rgb(0 0 0 / 0.35);
+}
+
+.preview-gallery-popup[data-preview-id="preview-protector"] .preview-gallery-media-hold,
+.preview-gallery-popup[data-preview-id="preview-patrol"] .preview-gallery-media-hold {
+  display: none;
 }
 
 /* The frame, not the image, carries the crop's shape, so it stays put while
@@ -857,6 +883,14 @@
   width: auto;
   max-width: 100%;
   max-height: min(78vh, 40rem);
+  margin-inline: auto;
+}
+
+/* Shrink the trigger to the capped still, so a loop laid over it covers the
+   picture instead of the whole column. */
+.project-case-study-media figure[data-orientation="portrait"] .zoomable-image {
+  width: fit-content;
+  max-width: 100%;
   margin-inline: auto;
 }
 
@@ -1203,8 +1237,8 @@
   line-height: 1.5;
 }
 
-/* The PDF link and this page's address, side by side at the heading's end,
-   in the same link style: the PDF is the document, the other the link to send. */
+/* The PDF link sits at the heading's end, where it stays in reach while the
+   sheet scrolls. */
 .preview-gallery-resume-actions {
   flex: none;
   font-size: var(--text-sm);
@@ -1216,7 +1250,7 @@
 
 .preview-gallery-resume-body {
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .preview-gallery-controls {
@@ -1889,48 +1923,4 @@
   .notes-gallery-fade::after {
     transition: none;
   }
-}
-
-/* ------------------------------------------------------- the quote card --- */
-
-/* A quote tile, opened (QuotesDialog): the same card at reading size, in this
-   frame -- backdrop, card, compact close -- grown whole out of the tile the
-   way the paper slides are. The gallery card is only the surface here; the
-   quote card inside fills it edge to edge and pages on every press. The type
-   is the tile's: the scale stops at --text-lg, so the card gets the room. */
-.preview-gallery-shell[data-kind="quotes"] {
-  --preview-gallery-width: min(32rem, 100%);
-  /* One short card: it sits in the middle of the window, not under the
-     gallery's top inset, which is there for slides taller than the screen. */
-  align-items: center;
-}
-
-/* The arrows ride the card's middle, where the quote is. */
-.preview-gallery-popup[data-preview-kind="quotes"] .preview-gallery-rail {
-  --preview-gallery-rail-anchor: 50%;
-}
-
-.quotes-gallery-card {
-  padding: 0;
-}
-
-.quotes-gallery-card .mosaic-quote {
-  --quote-inline-padding: clamp(2rem, 6vw, 4rem);
-  min-height: min(24rem, var(--preview-gallery-room));
-  padding-block: 3.5rem;
-  border: 0;
-  border-radius: inherit;
-}
-
-/* The tile reserves 12rem and sets a short quote on its floor, so credits line
-   up across quotes in a card that cannot grow. Here every quote, with its
-   credit, sits in the middle of the card, the dots in its foot padding: the
-   slides take the longest quote's height, and each centres its own. */
-.quotes-gallery-card .mosaic-quote-slides {
-  min-height: 0;
-}
-
-.quotes-gallery-card .mosaic-quote-slide {
-  grid-template-rows: auto auto;
-  align-content: center;
 }

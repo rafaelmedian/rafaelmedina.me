@@ -76,11 +76,10 @@ for (const width of [390, 1440]) {
       const page = await browser.newPage({ viewport: { width, height: 1000 }, deviceScaleFactor, reducedMotion: "reduce" })
       await page.goto("/")
       // Intended artwork widths: smaller downloads must not shrink the layout.
-      // Dealership renders at 112% of its clip width for the deliberate crop.
-      // Family Stories scales to 130% in the compact tile.
+      // Dealership renders at 104% of its clip width for the deliberate crop.
       const fixtures = width === 390
-        ? [["Popparazi V1", 84], ["Shared family stories", 235], ["Dealership Hub", 189]] as const
-        : [["Popparazi V1", 130], ["Shared family stories", 565], ["Dealership Hub", 854]] as const
+        ? [["Dealership Hub", 387]] as const
+        : [["Dealership Hub", 597]] as const
       for (const [name, originalWidth] of fixtures) {
         const image = page.getByAltText(name, { exact: true }).and(page.locator("img.mosaic-row-media"))
         await image.scrollIntoViewIfNeeded()

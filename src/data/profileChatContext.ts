@@ -33,7 +33,7 @@ ${serviceList}
 Common questions:
 ${commonQuestions}
 
-Selected work on the site includes a redesign of Matcha.xyz, Matcha's multi-wallet flow, token pages, mobile trading, rewards and referral flows, a family-story product, a dealership lead hub, and a privacy/security product. Rafael's role covers research, product strategy, UX, visual design, prototyping, design systems, front-end implementation, and close collaboration with engineers.
+Selected work on the site includes a redesign of Matcha.xyz, Matcha's multi-wallet flow, token pages, mobile trading, rewards and referral flows, a dealership lead hub, and a privacy/security product. Rafael's role covers research, product strategy, UX, visual design, prototyping, design systems, front-end implementation, and close collaboration with engineers.
 `.trim()
 
 

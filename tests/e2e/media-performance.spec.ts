@@ -4,19 +4,20 @@ test("rests feed videos while a project preview covers them and resumes on close
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.goto("/")
-  // The opening row's two loops and the first row of films.
+  // The opening row's two loops and the Pokédex under them; the films follow
+  // below the fold.
   const feedVideos = page.locator("video.mosaic-row-media")
   const playingCount = () => feedVideos.evaluateAll(videos =>
     videos.filter(video => !(video as HTMLVideoElement).paused).length,
   )
-  await expect.poll(playingCount).toBe(4)
+  await expect.poll(playingCount).toBe(3)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect.poll(playingCount).toBe(0)
   await expect.poll(() => page.getByRole("dialog").locator("video").evaluate(video => video.paused)).toBe(false)
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()
-  await expect.poll(playingCount).toBe(4)
+  await expect.poll(playingCount).toBe(3)
 })
 
 test("reduced-motion visitors keep posters without requesting feed video data", async ({ page }) => {
@@ -80,12 +81,12 @@ test("uses posters on 3g and responds when the connection changes", async ({ pag
 test("keeps a thumbnail visible during a slow preview and offers retry after failure", async ({ page }) => {
   let release: () => void = () => {}
   const held = new Promise<void>(resolve => { release = resolve })
-  await page.route("**/Projects/protector.webp", async route => {
+  await page.route("**/Projects/dealership-lead-hub.webp", async route => {
     await held
     await route.abort("failed")
   })
   await page.goto("/")
-  await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
+  await page.getByRole("link", { name: /Open Dealership Hub preview/ }).click()
   const dialog = page.getByRole("dialog")
   // The like pill keeps a live region of its own in here, so the media's status
   // is named by its element rather than by being the dialog's only one.
@@ -96,7 +97,7 @@ test("keeps a thumbnail visible during a slow preview and offers retry after fai
   await expect.poll(() => thumbnail.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
   release()
   await expect(dialog.getByRole("button", { name: "Retry preview" })).toBeVisible()
-  await page.unroute("**/Projects/protector.webp")
+  await page.unroute("**/Projects/dealership-lead-hub.webp")
   await dialog.getByRole("button", { name: "Retry preview" }).click()
   await expect(dialog.locator(".preview-gallery-media[data-loaded='true']")).toBeVisible()
   await expect(mediaStatus).toHaveCount(0)

@@ -33,6 +33,20 @@ GitHub Pages hosts the site. GitHub Actions runs lint, build, Worker type-checks
 and Playwright tests. Merging to `main` deploys it. Built output is never edited
 or committed.
 
+## Session replays and heatmaps
+
+Microsoft Clarity is optional and runs independently of Google Analytics.
+Create a project for `https://rafaelmedina.me` in [Clarity](https://clarity.microsoft.com/),
+then copy its project ID from Settings → Setup → Get tracking code.
+Add it as the GitHub Actions repository variable `VITE_CLARITY_PROJECT_ID`
+(Settings → Secrets and variables → Actions → Variables), then deploy.
+Vite embeds the ID at build time; an empty value disables Clarity.
+For local verification, set the same variable in `.env.local` and restart Vite.
+
+After deployment, visit the site and check Clarity's Recordings and Heatmaps.
+Keep sensitive content masked in Clarity's settings. Content inside third-party
+iframes, such as the booking embed, is not captured.
+
 ## 🧠 Details worth a closer look
 
 - **The pencil has a build script.** Rough.js draws the writing marks.

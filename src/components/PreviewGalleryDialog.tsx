@@ -4,7 +4,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { collaborators, siteLinks, type Collaborator, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
-import { resumePath, siteOrigin } from "../lib/projectMetadata"
 import { cssTimeToMilliseconds } from "../lib/cssTime"
 import { trackEvent } from "../lib/analytics"
 import { revealGalleryEntry } from "../lib/galleryEntry"
@@ -16,7 +15,6 @@ import { groupWritingsByCategory } from "../lib/writings"
 import { useGalleryPage, type GalleryPageDirection } from "../lib/useGalleryPage"
 import type { WritingsReaderProps } from "./WritingsReader"
 import { LikeButton } from "./LikeButton"
-import { CopyPageLink } from "./CopyPageLink"
 import { PreviewMedia } from "./PreviewMedia"
 import { ProjectCaseStudy } from "./ProjectCaseStudy"
 import { ResumeContent } from "./ResumeContent"
@@ -864,7 +862,6 @@ export function PreviewGalleryDialog({
                                 View PDF
                               </a>
                             </p>
-                            <CopyPageLink variant="text" className="mosaic-about-link" href={`${siteOrigin}${resumePath}`} subject="résumé" />
                           </div>
                         </div>
                       </header>

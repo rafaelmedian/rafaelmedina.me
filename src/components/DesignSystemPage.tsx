@@ -1192,16 +1192,16 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               </div>
             </div>
 
-            <div className="ds-block" data-ds-terms={terms("quote slider carousel attribution portrait keyboard hint swipe drag dialog modal --radius-lg --text-lg --text-md")}>
+            <div className="ds-block" data-ds-terms={terms("quote slider carousel attribution portrait keyboard hint swipe drag --radius-lg --text-lg --text-md")}>
               <p className="ds-subhead">Quote slider</p>
               <p className="ds-caption">
                 A white card on <code>--radius-lg</code>. Quotes up to 80 characters use <code>--text-lg</code>,
                 longer ones <code>--text-md</code>. The card is one Tab stop: arrows page, Enter goes in, Escape comes
                 out, and a <code>KeyboardHint</code> shows the keys. Drag to page; slides travel over{" "}
-                <code>--duration-slow</code> on <code>--ease-smooth</code>. A tap (or Space) opens the same card in
-                the preview gallery's frame, grown whole out of the tile, where a tap or the side arrows page.
+                <code>--duration-slow</code> on <code>--ease-smooth</code>. A tap advances to the next quote
+                in place; the card does not open a separate dialog.
               </p>
-              <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} title="Kind words from the timeline" />
+              <QuoteCard quotes={[...portfolioQuotes, ...sampleQuotes]} />
             </div>
 
             <div className="ds-block" data-ds-terms={terms("resume résumé folded paper tile curl gallery slide cv pdf")}>
@@ -1372,8 +1372,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   <strong>Max width 1560px.</strong> An 8px gutter below 700px; above it the grid owns its inset,{" "}
                   <code>clamp(16px, 3vw, 32px)</code> from 900px.
                 </li>
-                <li data-ds-terms={terms("mosaic grid named groups opening portraits offset closing cqw compact two columns display contents")}>
-                  <strong>The mosaic is four named groups.</strong> Opening, Portraits, Offset, and Closing, each sized
+                <li data-ds-terms={terms("mosaic grid named groups opening aside portraits agency cqw compact two columns display contents")}>
+                  <strong>The mosaic is four named groups.</strong> Opening, Aside, Portraits, and Agency, each sized
                   against the mosaic&rsquo;s inline-size container from 900px up. Below that the group wrappers become{" "}
                   <code>display: contents</code> and the tiles form one two-column grid in the same DOM order.{" "}
                   <code>src/data/portfolio.ts</code> owns the order; <code>work-grid.css</code> owns both layouts.

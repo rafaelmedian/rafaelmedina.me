@@ -49,11 +49,11 @@ const links = [
 
 const work = [
   {
-    company: "Stealth fintech",
+    company: "Freelance",
     place: "Remote",
     dates: "2026 - Present",
-    role: "Co-founder",
-    bullets: ["Building a mobile wallet for colmados, the corner stores of the Dominican Republic."],
+    role: "Product Designer",
+    bullets: ["End-to-end product design for startups, from the first user interview to the shipped screen."],
   },
   {
     company: "0x Project",

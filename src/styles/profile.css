@@ -891,9 +891,20 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 
 }
 
+/* The address always takes a line of its own here. Left to wrap, it dropped
+   alone at 390px and stranded its separator at the end of the line above. */
 @media (max-width: 699.98px) {
   .mosaic-profile-location-email {
     display: contents;
+  }
+
+  .mosaic-profile-location-email::before {
+    content: "";
+    flex-basis: 100%;
+  }
+
+  .mosaic-profile-location-email > .mosaic-profile-location-separator {
+    display: none;
   }
 }
 
