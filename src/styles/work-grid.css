@@ -89,8 +89,7 @@
 
 /* Research Views takes the widest slot of the band under Dealership Hub, with
    Twilio beside it. The band is taller than an agency row so the case study's
-   window reads at a glance; its cover is the window on black, and the card is
-   painted the same black below, so the extra width is margin, not a letterbox. */
+   window reads at a glance on the grey mat. */
 .mosaic-group-featured {
   height: clamp(380px, 33cqw, 500px);
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -1460,16 +1459,6 @@
    and the contained video's letterbox disappears into it. */
 .mosaic-row-card-preview-pokemon-duo {
   background: #fff;
-}
-
-/* Research Views is its window on black, so the card is black too, and the
-   caption reads in white like the full-bleed tiles. */
-.mosaic-row-card-preview-moodys-sprints {
-  --card-caption-tint: 0 0 0;
-  --card-caption-weight: 1;
-  --card-caption-ink: white;
-  --card-caption-ink-halo: 0 1px 8px rgb(0 0 0 / 0.28);
-  background: #000;
 }
 /* Rewards owns two complete campaign deliverables. Positioning them as two
    media boxes keeps every rounded end inside the tile; the previous flattened
