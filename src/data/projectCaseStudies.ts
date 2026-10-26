@@ -414,7 +414,7 @@ export const projectCaseStudies = {
       "Worked with the team to bring a design system into Admiral, and drew an icon set for the platform’s own concepts.",
     ], media: [
       { source: "/Projects/twilio-admiral-design-system.webp", label: "Typography and color in the design system", width: 1600, height: 986 },
-      { source: "/Projects/twilio-admiral-icons.webp", label: "The Admiral icon set", width: 1600, height: 896 },
+      { source: "/Projects/twilio-admiral-icons.webp", label: "The Admiral icon set, with the options drawn for each concept, in light and dark", width: 1600, height: 995 },
     ] },
   ]),
   "moodys-design-sprints": study("A credit opinion that reads like a product", [
