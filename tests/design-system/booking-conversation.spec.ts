@@ -218,25 +218,33 @@ test('moves the homepage portrait into the header and aligns composer controls',
     const animate = Element.prototype.animate
     Element.prototype.animate = function (...args: Parameters<Element['animate']>) {
       const animation = animate.apply(this, args)
-      if (this.matches('.booking-identity img')) animation.pause()
+      if (this.matches('.booking-portrait-flight')) animation.pause()
       return animation
     }
   })
   await page.goto('/?tune=off')
   const portrait = page.locator('.mosaic-avatar-button')
+  const heroFace = portrait.locator('.mosaic-avatar-coin-inner')
   await portrait.click()
   const dialog = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
   const image = dialog.locator('.booking-identity img')
-  await expect(image).toBeVisible()
+  // One face travels: the copy in flight, with the hero and header ends hidden.
+  const flight = page.locator('.booking-portrait-flight')
+  await expect(flight).toBeVisible()
+  await expect(heroFace).toHaveCSS('visibility', 'hidden')
+  await expect(image).toHaveCSS('visibility', 'hidden')
   const source = await portrait.boundingBox()
-  const initial = await image.boundingBox()
+  const initial = await flight.boundingBox()
   expect(initial!.x).toBeCloseTo(source!.x, 0)
   expect(initial!.y).toBeCloseTo(source!.y, 0)
   expect(initial!.width).toBeCloseTo(source!.width, 0)
-  await image.evaluate(node => node.getAnimations().forEach(animation => animation.finish()))
+  await flight.evaluate(node => node.getAnimations().forEach(animation => animation.finish()))
+  await expect(flight).toHaveCount(0)
+  await expect(image).toHaveCSS('visibility', 'visible')
   await expect(image).toHaveCSS('width', '52px')
   const destination = await image.boundingBox()
   expect(destination!.y).toBe(20)
+  await expect(heroFace).toHaveCSS('visibility', 'hidden')
   await dialog.getByRole('textbox', { name: 'Your email' }).fill('visitor@example.com')
   await dialog.getByRole('button', { name: 'Continue with email' }).click()
   await expect.poll(async () => {
@@ -435,6 +443,7 @@ test('keeps the composer findable: a visible focus ring, a full-contrast microph
   await expect(field).toBeFocused()
   await expect(chat.locator('.booking-composer')).toHaveCSS('outline-style', 'solid')
   await expect(chat.locator('.booking-composer')).toHaveCSS('outline-width', '2px')
+  await expect(chat.locator('.booking-composer')).toHaveCSS('outline-color', 'rgb(45, 45, 45)')
   // Dimmed only when it cannot be used; at rest it carries --muted-soft's 4.6:1.
   await expect(chat.getByRole('button', { name: 'Dictate message', pressed: false })).toHaveCSS('opacity', '1')
 

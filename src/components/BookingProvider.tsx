@@ -26,7 +26,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       ? { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height } : null)
     beginDialogIntent("booking")
     returnFocus.current = trigger
-    setCalendarEntry(calendarEmail ? { email: calendarEmail } : null)
+    setCalendarEntry(calendarEmail !== undefined ? { email: calendarEmail } : null)
     setBookingUrl(url)
     setOpen(true)
     if (!BookingDialog) void load()

@@ -441,6 +441,19 @@
   box-shadow: var(--shadow-ring);
 }
 
+/* The face in transit between the hero and the header (BookingDialog's
+   flyPortrait). It sits above the dialog so the popup's fade never dims it. */
+.booking-portrait-flight {
+  position: fixed;
+  z-index: calc(var(--z-dialog) + 1);
+  transform-origin: top left;
+  object-fit: cover;
+  corner-shape: round;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-ring);
+  pointer-events: none;
+}
+
 .booking-name-tag {
   display: flex;
   align-items: center;
@@ -488,9 +501,11 @@
   backdrop-filter: var(--glass-filter);
 }
 
+/* Level with the back button and the portrait from the first frame: 1.5rem
+   down, its bottom edge overlapped the calendar's header once it opened. */
 .booking-close {
   position: fixed;
-  top: calc(max(0.75rem, env(safe-area-inset-top)) + 1.5rem);
+  top: max(1.25rem, env(safe-area-inset-top));
   right: calc(max(0.75rem, env(safe-area-inset-right)) + 1.5rem);
 }
 
@@ -666,10 +681,14 @@ body:has(.booking-contact-panel) .booking-close {
 
 .booking-composer :is(input, textarea)::placeholder { color: var(--muted-soft); }
 .booking-composer :is(input, textarea):focus-visible { outline: none; }
-.booking-composer:focus-within { box-shadow: var(--shadow-ring), var(--shadow-control-hover); }
-/* The lift alone (8% to 12% shadow) was too faint to find the field by. The
-   ring sits on the composer, not the field inside it, so it follows the
-   rounded edge. */
+/* Pointer focus keeps a soft edge; keyboard focus uses the shared ring
+   around the composer so the field remains easy to find. */
+.booking-composer:focus-within {
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.16),
+    var(--shadow-control-hover);
+}
+
 .booking-composer:has(:is(input, textarea):focus-visible) {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
@@ -910,13 +929,13 @@ body:has(.booking-contact-panel) .booking-close {
 
 .booking-contact-back {
   position: absolute;
-  top: 1.5rem;
+  top: 0.5rem;
   left: 1.5rem;
 }
 
 .booking-contact-close {
   position: absolute;
-  top: 1.5rem;
+  top: 0.5rem;
   right: 1.5rem;
   corner-shape: round;
 }

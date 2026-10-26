@@ -1461,7 +1461,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
               <li data-ds-terms={terms("focus ring 2px solid var(--focus-ring) #2d2d2d offset :where() 1.4.11 3:1")}>
                 <strong>Focus is always visible, and it is always one ring:</strong>{" "}
                 <code>2px solid var(--focus-ring)</code> at a 2px offset, from one <code>:where()</code> base rule.
-                Work tiles use <code>--focus-ring-soft</code>. Nothing adds a second ring or a halo.
+                Work tiles use <code>--focus-ring-soft</code>. Conversation fields place the ring on their
+                composer instead of the input. Nothing adds a second ring or a halo.
               </li>
               <li data-ds-terms={terms("tabindex -1 landing container hash skip link outline none")}>
                 <strong>Landing containers take focus without a ring.</strong> Sections that receive focus from a
