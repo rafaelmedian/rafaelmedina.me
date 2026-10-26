@@ -1427,8 +1427,7 @@ test("keeps the links inside focus-opened cards out of the tab order", async ({ 
     await expect(page.locator(".mosaic-profile-location-card")).toHaveAttribute("data-state", "open", { timeout: 500 })
   }).toPass()
   await page.keyboard.press("Tab")
-  // "Available for work" is text, so the next stop is the booking pill.
-  await expect(page.locator(".mosaic-booking-pill")).toBeFocused()
+  await expect(page.locator(".mosaic-profile-location .mosaic-last-updated")).toBeFocused()
 
   const lastChip = page.locator(".mosaic-work-history-chip").last()
   await lastChip.focus()
@@ -2231,13 +2230,29 @@ test("names the set availability month on the booking pill only", async ({ page 
 })
 
 // "Available for work" took the place "Last updated" had in the location line,
-// as plain text rather than another thing to press.
-test("says available for work in the location line", async ({ page }) => {
+// and kept its GitHub card: the contribution graph backs up the claim.
+test("previews the GitHub profile behind available for work", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
+  await settleAvatarIntro(page)
+
   const line = page.locator(".mosaic-profile-location .mosaic-profile-availability")
   await expect(line).toBeVisible()
   await expect(line).toHaveText("Available for work")
-  await expect(page.locator(".mosaic-last-updated")).toHaveCount(0)
+  await expect(page.locator(".mosaic-profile-location")).not.toContainText("Last updated")
+
+  const clause = page.locator(".mosaic-profile-location .mosaic-last-updated")
+  await expect(clause).toHaveAttribute("href", "https://github.com/rafaelmedian")
+  await expect(clause).toHaveAccessibleName("Available for work. View @rafaelmedian on GitHub")
+
+  await clause.hover()
+  const card = page.locator(".activity-card")
+  await expect(card).toBeVisible()
+  await expect(card.locator(".activity-card-names")).toContainText("@rafaelmedian")
+  const weekCount = await card.locator(".activity-card-week").count()
+  expect(weekCount).toBeGreaterThanOrEqual(26)
+  await expect(card.locator(".activity-card-day")).toHaveCount(weekCount * 7)
+  await expect(card.locator(".activity-card-footer")).toHaveText(/^[\d,]+ contributions in the last six months$/)
 })
 
 test("says available now once the set month arrives", async ({ page }) => {
@@ -3217,7 +3232,8 @@ test("retreats the complete project grid as one surface during takeover", async 
 
   await expect(stage).not.toHaveCSS("filter", "none")
   expect(retreat.opacity).toBeLessThan(0.95)
-  expect(retreat.transform).not.toBe("none")
+  // No scale: a live scroll-timeline transform starved the GPU tile budget.
+  expect(retreat.transform).toBe("none")
   await expect(card).toHaveCSS("opacity", "1")
   await expect(card).toHaveCSS("transform", "none")
 })

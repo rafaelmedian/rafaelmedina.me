@@ -229,7 +229,7 @@ export const homeGroups: HomeGroup[] = [
     columns: 3,
     items: [
       { kind: "project", area: "turtle", cardId: "preview-turtle", share: 4 / 12, fit: "cover", compactWide: true },
-      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 5 / 12, fit: "cover" },
+      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 5 / 12, fit: "cover", compactWide: true },
       // Its paper is sized from the slot's height, so the narrow column still
       // holds it whole.
       { kind: "resume", area: "resume", share: 3 / 12 },

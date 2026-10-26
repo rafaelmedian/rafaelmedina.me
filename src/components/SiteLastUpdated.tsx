@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Tooltip } from "@base-ui/react/tooltip"
 
 import { contributionCalendar } from "../data/githubActivity"
@@ -45,14 +46,27 @@ const asUtcDate = (day: string) => new Date(`${day}T00:00:00Z`)
 
 export function SiteLastUpdated() {
   const { lastUpdated } = siteActivity
-  const { weeks, total } = contributionCalendar
 
   // No git history to read means no honest date to print, so the clause simply
   // is not there rather than showing a placeholder.
   if (!lastUpdated) return null
 
   const updatedDate = asUtcDate(lastUpdated)
-  const label = monthFormatter.format(updatedDate)
+
+  return (
+    <GitHubActivityHint label={`Last updated ${fullFormatter.format(updatedDate)}. View @${HANDLE} on GitHub`}>
+      Last updated <time dateTime={lastUpdated}>{monthFormatter.format(updatedDate)}</time>
+    </GitHubActivityHint>
+  )
+}
+
+/**
+ * Any clause that previews the GitHub profile it links to: the hero's
+ * "Available for work" wears it, and so did "Last updated" before it. The
+ * proof of the availability is the graph of what has been shipped lately.
+ */
+export function GitHubActivityHint({ children, label }: { children: ReactNode; label: string }) {
+  const { weeks, total } = contributionCalendar
   const hasCalendar = weeks.length > 0
   // GitHub's own word, and the honest one: the graph counts pushes, pull
   // requests, reviews, and issues across every repository, not commits here.
@@ -60,11 +74,7 @@ export function SiteLastUpdated() {
 
   // One span, not two flex children: the trigger is an inline-flex box so the
   // card can centre inside it, and flex would eat the space before the date.
-  const trigger = (
-    <span className="mosaic-last-updated-label">
-      Last updated <time dateTime={lastUpdated}>{label}</time>
-    </span>
-  )
+  const trigger = <span className="mosaic-last-updated-label">{children}</span>
 
   // The calendar is a committed artefact; an empty one means the generator has
   // not run yet, and a card with no graph in it is not worth opening.
@@ -83,7 +93,7 @@ export function SiteLastUpdated() {
             href={PROFILE_URL}
             target="_blank"
             rel="noreferrer"
-            aria-label={`Last updated ${fullFormatter.format(updatedDate)}. View @${HANDLE} on GitHub`}
+            aria-label={label}
           />
         }
       >
