@@ -396,7 +396,7 @@ export const projectCaseStudies = {
       "So the structure became contextual instead of flat, the way Slack only shows the channels you’ve joined.",
     ], media: [
       { source: "/Projects/twilio-admiral-ownership.webp", label: "The few roles one team owns among thousands", width: 1600, height: 724 },
-      { source: "/Projects/twilio-admiral-hierarchy.webp", label: "Flat hierarchy versus contextual hierarchy", width: 1600, height: 729 },
+      { source: "/Projects/twilio-admiral-hierarchy.webp", label: "Flat hierarchy versus contextual hierarchy", width: 1600, height: 709 },
     ] },
     { heading: "Start from your team", paragraphs: [
       "A Team › Roles switcher replaced the long list from top to bottom. By default you see your own team’s deployments, pipelines, and dashboards.",
