@@ -104,7 +104,6 @@ const sources = [
   ["public/Projects/moodys-research-snippets-flow.webp", 1600],
   ["public/Projects/moodys-research-indicators-flow.webp", 1600],
   ["public/Projects/moodys-research-scorecard-flow.webp", 1600],
-  ["public/Projects/moodys-research-email-flow.webp", 1600],
   ["public/Projects/onit-process-builder.webp", 1920],
   ["public/Projects/onit-process-builder-workflow.webp", 1600],
   ["public/Projects/onit-process-builder-design-system.webp", 1600],

@@ -104,7 +104,6 @@ const webpPreviewVariantSources = new Set([
   "/Projects/moodys-research-snippets-flow.webp",
   "/Projects/moodys-research-indicators-flow.webp",
   "/Projects/moodys-research-scorecard-flow.webp",
-  "/Projects/moodys-research-email-flow.webp",
   "/Projects/moodys-content-grid-overview.webp",
   "/Projects/moodys-content-grid-geographic.webp",
   "/Projects/moodys-content-grid-summary.webp",
