@@ -431,27 +431,25 @@ export const projectCaseStudies = {
       "Selecting a passage offers to save it or comment on it. Analysts’ own comments sit in the margin beside the line they’re about.",
       "Everything saved collects in My snippets, ready to download or share as a link.",
     ], mediaLayout: "stack", media: [
-      { source: "/Projects/moodys-research-selection.webp", label: "Saving a highlighted passage, with or without a comment", width: 2880, height: 1800 },
+      { source: "/Projects/moodys-research-snippets-flow.webp", video: "/Projects/moodys-research-snippets-flow.webm", label: "Highlighting a passage and finding it in My snippets", width: 1600, height: 1000 },
       { source: "/Projects/moodys-research-comment.webp", label: "An analyst’s comment beside the passage it explains", width: 2880, height: 1800 },
-      { source: "/Projects/moodys-research-snippets.webp", label: "Highlights, bookmarks, and charts saved to My snippets", width: 2880, height: 1800 },
     ] },
     { heading: "Indicators you can compare", paragraphs: [
       "Built for people who work in spreadsheets all day: each key indicator opens from a row in the table into a chart, with the forecast years shaded.",
       "Peers from the same sector join the chart from a search, and the view saves to your snippets with an annotation.",
     ], media: [
-      { source: "/Projects/moodys-research-indicators.webp", label: "EBIT margin, opened from the table into a chart", width: 1800, height: 2310 },
-      { source: "/Projects/moodys-research-peers.webp", label: "Adding Vale and Freeport as peers", width: 1800, height: 2310 },
+      { source: "/Projects/moodys-research-indicators-flow.webp", video: "/Projects/moodys-research-indicators-flow.webm", label: "EBIT margin opened from the table into a chart, then compared against Teck", width: 1600, height: 1000 },
     ] },
     { heading: "What would change the rating", paragraphs: [
       "The scorecard shows how each factor feeds the rating. Entering your own measures runs a scenario, and the indicated outcome moves with them.",
     ], media: [
-      { source: "/Projects/moodys-research-scorecard.webp", label: "The mining scorecard behind the Ba1 rating", width: 1800, height: 2284 },
-      { source: "/Projects/moodys-research-scenario.webp", label: "A custom scenario pointing to Baa2", width: 1800, height: 2284 },
+      { source: "/Projects/moodys-research-scorecard-flow.webp", video: "/Projects/moodys-research-scorecard-flow.webm", label: "Dragging two leverage measures moves the indicated outcome from Baa3 to Baa2", width: 1600, height: 1000 },
     ] },
     { heading: "Starting from the inbox", paragraphs: [
       "Most readers arrive from an alert, so the email carries the rating action, the key exhibit, and the reasons for the upgrade, with one way into the full research.",
       "The testing went well enough that our team was asked to design the new Moodys.com.",
-    ], media: [
+    ], mediaLayout: "stack", media: [
+      { source: "/Projects/moodys-research-email-flow.webp", video: "/Projects/moodys-research-email-flow.webm", label: "From the alert into the report", width: 1600, height: 1000 },
       { source: "/Projects/moodys-research-email.webp", label: "The rating alert that leads into the report", width: 2880, height: 2806 },
     ] },
     { heading: "The same thinking, one level up", paragraphs: [
