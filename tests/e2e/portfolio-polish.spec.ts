@@ -2765,7 +2765,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
   const stage = page.locator(".mosaic-takeover-stage")
   const groups = stage.locator(".mosaic-group")
 
-  await expect(groups).toHaveCount(4)
+  await expect(groups).toHaveCount(5)
 
   const gaps = await groups.evaluateAll((elements) =>
     elements.slice(1).map((element, index) => {
@@ -2774,7 +2774,7 @@ test("keeps every project group together inside the takeover stage", async ({ pa
     }),
   )
 
-  expect(gaps).toEqual([16, 16, 16])
+  expect(gaps).toEqual([16, 16, 16, 16])
 })
 
 test("leaves a generous white runway after the final project group before the about takeover", async ({ page }) => {
@@ -3505,11 +3505,11 @@ test("opens the resume reader from the folded tile and returns focus on close", 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
 
-  // The résumé sits with the agency work, beside Moody's; the photos stay up
-  // in the portraits group, beside the Matcha films.
+  // The résumé closes the agency row, beside Onit; the photos stay up in the
+  // portraits group, beside the Matcha films.
   const protectorCard = page.getByRole("link", { name: /Open Protector/ })
   const portraits = page.locator(".mosaic-group").filter({ has: protectorCard })
-  const row = page.locator(".mosaic-group").filter({ has: page.locator(".mosaic-tile-moodys") })
+  const row = page.locator(".mosaic-group").filter({ has: page.locator(".mosaic-tile-onit") })
   const resume = row.getByRole("link", { name: "Open résumé" })
 
   await expect(portraits.getByRole("button", { name: "Personal life", exact: true })).toBeVisible()
@@ -3537,6 +3537,7 @@ test("opens the resume reader from the folded tile and returns focus on close", 
 // The CV sheet is a tile on the grid, so the reader it opens is a slide of the
 // same gallery the projects open in: arrowing off the résumé lands on the tile
 // beside it, and arrowing back returns to the résumé rather than to the grid.
+// It is the grid's last tile, so the gallery's last slide: onward wraps round.
 test("pages between the resume reader and its neighbouring projects", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.emulateMedia({ reducedMotion: "reduce" })
@@ -3546,20 +3547,19 @@ test("pages between the resume reader and its neighbouring projects", async ({ p
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveAccessibleName("Résumé")
 
-  // Turtle, the first tile of the agency group's second row, follows the
-  // résumé.
-  await page.keyboard.press("ArrowRight")
-  await expect(dialog).toHaveAccessibleName("Turtle")
-  await expect(page).toHaveURL(/\/work\/turtle\/$/)
-
+  // Onit, beside it in the same row, comes before it.
   await page.keyboard.press("ArrowLeft")
+  await expect(dialog).toHaveAccessibleName("Onit Process Builder")
+  await expect(page).toHaveURL(/\/work\/onit-process-builder\/$/)
+
+  await page.keyboard.press("ArrowRight")
   await expect(dialog).toHaveAccessibleName("Résumé")
   await expect(page).toHaveURL(/\/resume\/$/)
 
-  // And Moody's, beside it in the same row, comes before it.
-  await page.keyboard.press("ArrowLeft")
-  await expect(dialog).toHaveAccessibleName("Moody’s Research Views")
-  await expect(page).toHaveURL(/\/work\/moodys-design-sprints\/$/)
+  // And onward from the last slide is back to the first project.
+  await page.keyboard.press("ArrowRight")
+  await expect(dialog).toHaveAccessibleName("Matcha multiwallet flow")
+  await expect(page).toHaveURL(/\/work\/matcha-multiwallet-flow\/$/)
 })
 
 test("opens a shared resume link straight into the gallery", async ({ page }) => {
@@ -3583,8 +3583,8 @@ test("gives the resume slide the same width as a project slide", async ({ page }
   const card = dialog.locator(".preview-gallery-card")
   const resumeWidth = await card.evaluate((element: HTMLElement) => element.offsetWidth)
 
-  await page.keyboard.press("ArrowRight")
-  await expect(dialog).toHaveAccessibleName("Turtle")
+  await page.keyboard.press("ArrowLeft")
+  await expect(dialog).toHaveAccessibleName("Onit Process Builder")
   await expect.poll(() => card.evaluate((element: HTMLElement) => element.offsetWidth)).toBe(resumeWidth)
 })
 
@@ -3614,12 +3614,12 @@ for (const key of ["ArrowDown", "PageDown", "End"]) {
     await expect(rail.locator(".preview-gallery-nav-prev")).toHaveAttribute("aria-keyshortcuts", "ArrowLeft")
     await expect(rail.locator(".preview-gallery-nav-next")).toHaveAttribute("aria-keyshortcuts", "ArrowRight")
 
-    await page.keyboard.press("ArrowRight")
-    await expect(page).toHaveURL(/\/work\/turtle\/$/)
+    await page.keyboard.press("ArrowLeft")
+    await expect(page).toHaveURL(/\/work\/onit-process-builder\/$/)
     // A preview has nothing to scroll, so both pairs page there.
     await expect(rail.locator(".preview-gallery-nav-prev")).toHaveAttribute("aria-keyshortcuts", "ArrowUp ArrowLeft")
     await page.keyboard.press("ArrowDown")
-    await expect(page.getByRole("dialog")).not.toHaveAccessibleName("Turtle")
+    await expect(page.getByRole("dialog")).not.toHaveAccessibleName("Onit Process Builder")
   })
 }
 
@@ -3681,8 +3681,9 @@ test("scrolls the compact resume from the stationary toolbar", async ({ page }) 
     await expect(page).toHaveURL(/\/resume\/$/)
   }
 
+  // The résumé is the last slide, so Next wraps round to the first project.
   await page.keyboard.press("Enter")
-  await expect(page).toHaveURL(/\/work\/turtle\/$/)
+  await expect(page).toHaveURL(/\/work\/matcha-multiwallet-flow\/$/)
   await page.keyboard.press("ArrowLeft")
   await expect(page).toHaveURL(/\/resume\/$/)
 })
@@ -4668,9 +4669,10 @@ test("levels desktop gallery navigation with the middle of the artwork", async (
 
   await page.keyboard.press("Escape")
   await expect(dialog).not.toHaveAttribute("data-reading-note")
-  // The Pokédex, Dealership Hub, Protector, Patrol, the launch films, Matcha
-  // marketing, Twilio, and Moody's sit between the notes and the résumé.
-  for (let step = 0; step < 9; step += 1) await railNext.click()
+  // The Pokédex, Dealership Hub, Moody's, Twilio, Protector, Patrol, the
+  // launch films, Matcha marketing, Turtle, and Onit sit between the notes and
+  // the résumé.
+  for (let step = 0; step < 11; step += 1) await railNext.click()
   await expect(dialog).toHaveAttribute("data-preview-kind", "resume")
   expect(await placement()).toEqual(initial)
 })

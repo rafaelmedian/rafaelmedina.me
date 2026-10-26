@@ -134,7 +134,7 @@ export type HomeTile = HomeTilePlacement & (
 )
 
 export type HomeGroup = {
-  layout: "opening" | "portraits" | "aside" | "agency"
+  layout: "opening" | "aside" | "featured" | "portraits" | "agency"
   columns: 2 | 3
   items: HomeTile[]
 }
@@ -177,6 +177,18 @@ export const homeGroups: HomeGroup[] = [
       { kind: "project", area: "dealership", cardId: "preview-dealership-lead-hub", share: 3 / 7, fit: "contain", compactWide: true },
     ],
   },
+  // Research Views is the deepest case study on the site, so it gets the
+  // widest slot high on the page rather than a middle column in the closing
+  // band. Twilio, the other agency product, keeps it company; the rest of the
+  // agency years still close the grid.
+  {
+    layout: "featured",
+    columns: 2,
+    items: [
+      { kind: "project", area: "moodys", cardId: "preview-moodys-sprints", share: 7 / 12, fit: "contain", compactWide: true },
+      { kind: "project", area: "twilio", cardId: "preview-twilio-admiral", share: 5 / 12, fit: "cover", compactWide: true },
+    ],
+  },
   {
     layout: "portraits",
     columns: 3,
@@ -208,23 +220,19 @@ export const homeGroups: HomeGroup[] = [
       { kind: "photos", area: "photos", share: 4 / 11, compactWide: true },
     ],
   },
-  // The agency years, 2018-2021: the work behind the Twilio, Moody's, and Onit
-  // logos already in the résumé, plus Turtle. They close the grid: the About
-  // takeover slides over the last screenful, but the films that used to sit
-  // under them read better high on the page. Wide and narrow slots swap
-  // between the rows so the seams stagger. The résumé ends the first row,
-  // beside Moody's: the career tile next to the companies it lists.
+  // The rest of the agency years, 2018-2021: Turtle and Onit, with the résumé
+  // closing the row, the career tile beside the companies it lists. They close
+  // the grid: the About takeover slides over the last screenful, but the films
+  // that used to sit under them read better high on the page.
   {
     layout: "agency",
-    columns: 2,
+    columns: 3,
     items: [
-      { kind: "project", area: "twilio", cardId: "preview-twilio-admiral", share: 5 / 12, fit: "cover", compactWide: true },
-      { kind: "project", area: "moodys", cardId: "preview-moodys-sprints", share: 4 / 12, fit: "contain" },
+      { kind: "project", area: "turtle", cardId: "preview-turtle", share: 4 / 12, fit: "cover" },
+      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 5 / 12, fit: "cover", compactWide: true },
       // Its paper is sized from the slot's height, so the narrow column still
       // holds it whole.
       { kind: "resume", area: "resume", share: 3 / 12 },
-      { kind: "project", area: "turtle", cardId: "preview-turtle", share: 5 / 12, fit: "cover" },
-      { kind: "project", area: "onit", cardId: "preview-onit-process-builder", share: 7 / 12, fit: "cover", compactWide: true },
     ],
   },
 ]
