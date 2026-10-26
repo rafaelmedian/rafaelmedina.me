@@ -377,40 +377,65 @@
 
 /* An installable tool stays inside the article's measure but reads as an
    object the reader can act on. It borrows the code sample's surface and the
-   reader actions' control chrome, so the note gains no new visual tier. */
+   reader actions' control chrome, so the note gains no new visual tier. The
+   surface is a frame rather than a card: it names the tool along its top
+   edge and holds the command in a white well inset by the same 6px all round,
+   so the well's corners run parallel to the frame's. */
 .writing-tool {
   margin: 2rem 0;
-  padding: 1.25rem;
+  padding: 0.375rem;
   border-radius: var(--radius-md);
   background: var(--mosaic-card-surface);
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05);
 }
-.writing-tool-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.writing-tool-heading a {
-  flex-shrink: 0;
-  min-height: 40px;
-  margin: -0.625rem -0.5rem 0 0;
-  padding: 0.625rem 0.5rem;
-  text-decoration: none;
+.writing-tool-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0.25rem 0.25rem 0.875rem;
 }
+.writing-tool-title { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
+.writing-tool-name { overflow: hidden; color: var(--ink); font-size: var(--text-sm); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.writing-tool-kind { flex-shrink: 0; color: var(--muted); font-size: var(--text-xs); }
+.writing-tool-heading a {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.125rem;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 0.625rem;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-decoration: none;
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+.writing-tool-heading a:hover { color: var(--ink); }
 .writing-tool-command {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
-  border-radius: var(--radius-sm);
+  gap: 0.625rem;
+  padding: 0.375rem 0.375rem 0.375rem 0.875rem;
+  border-radius: calc(var(--radius-md) - 0.375rem);
   background: var(--canvas);
   box-shadow: var(--shadow-ring);
 }
+.writing-tool-prompt,
 .writing-tool-command code {
-  min-width: 0;
-  overflow-x: auto;
-  color: #3d3d3d;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   font-size: var(--text-xs);
   line-height: 1.5;
+}
+.writing-tool-prompt { flex-shrink: 0; color: var(--muted-soft); user-select: none; }
+.writing-tool-command code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  color: #3d3d3d;
   white-space: nowrap;
+  scrollbar-width: none;
 }
 .writing-tool-command button {
   display: inline-flex;
@@ -418,10 +443,10 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  min-width: 66px;
+  min-width: 76px;
   min-height: 40px;
-  padding: 0.5rem 0.625rem;
-  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  border-radius: calc(var(--radius-md) - 0.75rem);
   background: var(--mosaic-card-surface);
   color: var(--ink);
   font-family: var(--font-ui);
@@ -433,14 +458,13 @@
 .writing-tool-command button:hover { background: #dedee0; box-shadow: var(--shadow-control); }
 .writing-tool-command button:active { scale: 0.96; }
 /* Marginalia. The narrow layout is the base: a note folds into the column under
-   its paragraph, keeping the bracket as a left-hand mark. It only moves out to a
-   gutter once the Notes container is at least 48rem wide. */
+   its paragraph. It only moves out to a gutter once the Notes container is at
+   least 48rem wide. The handwriting stands on its own, with no mark drawn
+   between it and the passage. */
 .writing-reader-prose p { position: relative; }
 .writing-margin-note {
   position: relative;
   display: block;
-  /* 16px of bracket and 8px of air. */
-  padding-inline-start: 1.5rem;
   margin-top: 0.75rem;
   color: var(--muted);
   font-family: "Handlee", "Bradley Hand", "Segoe Print", cursive;
@@ -451,34 +475,6 @@
   line-height: 1.35;
   letter-spacing: 0;
   text-wrap: balance;
-}
-/* The bracket holds the passage, so it is drawn to the height of the note. It
-   is a PNG of a Rough.js stroke used as a mask rather than a shape: the file
-   carries the wobble and the doubled edge, and background-color takes its ink
-   from the handwriting. A mark is generated per line count, so scaling it to
-   the note it landed beside never stretches it by more than one line.
-
-   It reads two steps back from the phrase it holds -- the mark is a rule, not a
-   word, and at the handwriting's own ink it carried as much weight as the note.
-   It takes the softest grey in the set and then a little transparency on top of
-   that, so it sits on the page the way a pencil line pressed lightly does. The
-   alpha is 0.7 rather than half: the Rough.js stroke is already thin and broken,
-   and washing much more over it thins it again until it drops out at 2x. */
-.writing-margin-note-bracket {
-  position: absolute;
-  top: 0;
-  inset-inline-start: 0;
-  width: 16px;
-  height: 100%;
-  opacity: 0.7;
-  -webkit-mask: var(--writing-mark) center / 100% 100% no-repeat;
-  mask: var(--writing-mark) center / 100% 100% no-repeat;
-}
-/* The ink goes on only where the mask can cut it out. Without the guard, a
-   browser that ignores mask-image paints the whole box, and every note grows a
-   solid grey bar down its edge instead of a pencil stroke. */
-@supports (mask-image: url("/writings/marks/bracket-1-a.png")) or (-webkit-mask-image: url("/writings/marks/bracket-1-a.png")) {
-  .writing-margin-note-bracket { background-color: var(--muted-soft); }
 }
 @container writings (min-width: 48rem) {
   .writings-dialog .writing-margin-note {
@@ -493,7 +489,6 @@
   }
   .writings-dialog .writing-margin-note[data-place="left"] {
     right: calc(100% + var(--writing-note-gap));
-    padding-inline: 0 1.5rem;
     text-align: right;
     rotate: var(--writing-note-tilt, -1.25deg);
   }
@@ -501,9 +496,6 @@
     left: calc(100% + var(--writing-note-gap));
     rotate: var(--writing-note-tilt, 1.25deg);
   }
-  /* The bracket moves to the note's inner edge and turns, so it always closes
-     around the column it holds rather than around the handwriting. */
-  .writings-dialog .writing-margin-note[data-place="left"] .writing-margin-note-bracket { inset-inline: auto 0; scale: -1 1; }
 }
 /* Sources and thanks, at the size of a caption because they are one. */
 .writing-acknowledgements { margin-top: 3rem; }
@@ -512,8 +504,6 @@
 
 .writings-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 5rem 1rem; text-align: center; color: var(--muted); }
 @media (max-width: 699.98px) {
-  .writing-margin-note-bracket { display: none; }
-  .writing-margin-note { padding-inline-start: 0; }
   /* A phone is narrower than the sample's longest line, and a sideways scroll
      inside a vertical read is a poor way to hide a third of a file: the lines
      wrap here instead. A status file is prose in a list, not code whose
@@ -528,10 +518,17 @@
   .preview-gallery-notes .writings-archive { padding-inline: 0; }
   .writings-archive { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
   .writings-category + .writings-category { margin-top: 2rem; }
-  .writing-tool-heading { display: block; }
-  .writing-tool-heading a { width: fit-content; margin: 0.5rem 0 -0.25rem -0.5rem; }
-  .writing-tool-command { align-items: stretch; flex-direction: column; padding: 0.75rem; }
-  .writing-tool-command button { align-self: flex-end; }
+  /* The command keeps its one line and scrolls under the prompt; the button
+     drops to an icon so the well leaves the command most of the width. */
+  .writing-tool-kind { display: none; }
+  .writing-tool-command button { min-width: 40px; padding-inline: 0; }
+  .writing-tool-command button > span[aria-hidden] { display: none; }
+  /* The fade says there is more; the end padding lets the last characters
+     scroll clear of it. */
+  .writing-tool-command code {
+    padding-inline-end: 1.5rem;
+    mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
