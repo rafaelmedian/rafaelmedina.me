@@ -100,14 +100,19 @@ asset generation, and likes deployment. [AGENTS.md](AGENTS.md) holds the repo’
 working conventions.
 
 
-## AI chat budget
+## Retired AI chat endpoint
 
-The optional `/chat` endpoint has a shared D1 budget: at most 25 model
-attempts per UTC day and 300 per UTC month, across every visitor and Worker
-instance. Change `CHAT_DAILY_LIMIT` and `CHAT_MONTHLY_LIMIT` in
-`workers/likes/wrangler.jsonc`; zero, missing, or invalid limits disable
-inference. Deploy with the existing migration-then-Worker workflow so
-`0005_chat_budget.sql` exists before the new handler runs.
+The site no longer calls `/chat`; both conversations use the separate
+contact Worker. `CHAT_DAILY_LIMIT` and `CHAT_MONTHLY_LIMIT` are zero in
+`workers/likes/wrangler.jsonc`, so the next deployment disables inference
+and retains the predefined answer for compatibility. The bindings and
+budgeted handler remain available for an explicit decision to restore an
+external consumer; enabling both limits must be intentional. Zero, missing,
+or invalid limits disable inference before any limiter, D1, or AI call.
+
+If re-enabled, the shared D1 budget caps model attempts across every visitor
+and Worker instance. Deploy with the migration-then-Worker workflow so
+`0005_chat_budget.sql` exists before the handler runs.
 
 A reservation is atomic and happens before inference. Failed calls keep their
 reservation because the provider may already have done billable work. A
