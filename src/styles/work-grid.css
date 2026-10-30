@@ -964,6 +964,10 @@
      at 10-25ms. With no video on screen it is only a short hover intent. It is
      the 60ms the page-entrance stagger already uses. */
   --card-caption-delay: 60ms;
+  /* Both darker than --mosaic-card-surface: a sheen lighter than the card it
+     crosses reads as a white streak. */
+  --card-skeleton-base: #d8d8dc;
+  --card-skeleton-sheen: #e4e4e7;
 
   appearance: none;
   position: relative;
@@ -1233,57 +1237,69 @@
   outline-offset: 3px;
 }
 
-/* Skeleton. Until a tile's artwork decodes the card is a flat --mosaic-card-surface
-   rectangle, which on a slow connection reads as a layout bug rather than as
-   work in progress. This is the same surface with a soft sheen across it,
-   breathing, so an empty tile says "loading" without a spinner.
+/* Skeleton. Until a tile's artwork decodes the card shows the outline of what
+   that artwork draws (scripts/build-tile-skeletons.mjs), never the file's own box
+   with its transparent margins, with a sheen sweeping across it, so an empty tile
+   says "loading" without a spinner. On a slow connection this is the state
+   the grid enters in: the hero's intro no longer waits for the bundle.
 
-   It fades on --duration-slow with --ease-smooth to match the media reveal it
-   sits under, so the two cross rather than one snapping away mid-fade. The
-   breathe rides `filter` instead of `opacity` for exactly that reason: the fade
-   owns `opacity`, and an animation on the same property would override it and
-   leave the skeleton to disappear in one frame the moment `data-pending` flips.
-   Both are composited, and the gradient rasterises once -- an animated
-   background-position would repaint every tile every frame during the one
-   moment the browser is already busy decoding eleven images. */
-.mosaic-row-card::before {
-  --card-skeleton-base: #e4e4e6;
-  --card-skeleton-sheen: #f3f3f5;
-
-  content: "";
-  position: absolute;
-  inset: 0;
+   The placeholder fades on --duration-slow with --ease-smooth to match the media
+   reveal above it, so the two cross rather than one snapping away mid-fade. The
+   sweep's transform is on an SVG child, which Chromium will not composite
+   (compositeFailed 1024, inside a foreignObject too), so it runs on the main
+   thread and pauses when hydration does. That only pauses a low-contrast sheen:
+   the group's reveal around it stays composited. steps(42) holds it to 30fps,
+   which took its cost from about 100ms to 30ms of main thread per second during
+   the moment the page is trying to start. */
+.mosaic-row-media-skeleton {
+  position: relative;
   z-index: 0;
-  border-radius: inherit;
-  corner-shape: inherit;
-  background: linear-gradient(
-    105deg,
-    var(--card-skeleton-base) 0%,
-    var(--card-skeleton-sheen) 42%,
-    var(--card-skeleton-base) 100%
-  );
+  grid-area: 1 / 1;
+  display: block;
+  width: 100%;
+  height: 100%;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--duration-slow) var(--ease-smooth);
 }
 
-/* `alternate` plays --ease-standard forwards then backwards, so the breathe
-   eases out of each end instead of turning around on a straight line. 800ms
-   each way: slow enough not to read as a flicker behind a tile that decodes
-   quickly. */
-.mosaic-row-card:has(.mosaic-row-media[data-pending="true"])::before {
-  opacity: 1;
-  animation: mosaic-card-skeleton 800ms var(--ease-standard) infinite alternate;
+.mosaic-row-media-skeleton-base {
+  fill: var(--card-skeleton-base);
 }
 
-@keyframes mosaic-card-skeleton {
-  from {
-    filter: opacity(1);
-  }
+.mosaic-row-media-skeleton stop {
+  stop-color: var(--card-skeleton-sheen);
+}
 
+.mosaic-row-media-skeleton-sweep {
+  transform: translateX(-100%);
+  transform-box: fill-box;
+}
+
+.mosaic-row-media-skeleton:has(+ .mosaic-row-media[data-pending="true"]) {
+  opacity: 1;
+}
+
+.mosaic-row-media-skeleton:has(+ .mosaic-row-media[data-pending="true"]) .mosaic-row-media-skeleton-sweep {
+  animation: mosaic-media-shimmer 1400ms steps(42) infinite;
+}
+
+@keyframes mosaic-media-shimmer {
   to {
-    filter: opacity(0.5);
+    transform: translateX(100%);
   }
+}
+
+/* The banner compositions have no single box to hold: their images are many and
+   arranged as one unit, so the sheen crosses the whole artwork area instead. */
+.mosaic-row-card-media-clip:has(.mosaic-row-media-pair .mosaic-row-media[data-pending="true"])::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--card-skeleton-sheen), transparent);
+  pointer-events: none;
+  animation: mosaic-media-shimmer 1400ms steps(42) infinite;
+  transform: translateX(-100%);
 }
 
 .mosaic-row-media {
@@ -1296,9 +1312,14 @@
   display: block;
   object-fit: cover;
   opacity: 0;
-  filter: blur(var(--blur-reveal));
-  transition: opacity var(--duration-slow) var(--ease-smooth), filter var(--duration-slow) var(--ease-smooth);
-  will-change: opacity, filter;
+  transition: opacity var(--duration-slow) var(--ease-smooth);
+  will-change: opacity;
+}
+
+/* Only over its own skeleton: the marketing wall's posts are items of a grid too,
+   and each needs a cell of its own. */
+.mosaic-row-media-skeleton + .mosaic-row-media {
+  grid-area: 1 / 1;
 }
 
 /* Once the blur-up settles the hint would only pin ~10 tile textures in GPU
@@ -1307,7 +1328,6 @@
    slides over this grid). Release it. */
 .mosaic-row-media[data-loaded="true"] {
   opacity: 1;
-  filter: none;
   will-change: auto;
 }
 
@@ -1325,7 +1345,7 @@
   place-items: center;
 }
 
-.mosaic-row-item-fit-contain .mosaic-row-media {
+.mosaic-row-item-fit-contain :is(.mosaic-row-media, .mosaic-row-media-skeleton) {
   width: auto;
   max-width: 100%;
   height: auto;
@@ -1366,8 +1386,8 @@
 
 /* Keep the screenshots wide, with room above and their lower rows clipped.
    The offset leaves the UI side rails inside the thumbnail. */
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21 .mosaic-row-media,
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-media {
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21 :is(.mosaic-row-media, .mosaic-row-media-skeleton),
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub :is(.mosaic-row-media, .mosaic-row-media-skeleton) {
   width: 112%;
   margin-top: 12%;
   max-width: none;
@@ -1378,7 +1398,7 @@
    the card's side padding it needs less overscan: at 104% the export's own
    transparent margin keeps the window about 4.5% of the card in from each side,
    past where the card's bottom corners start to curve. */
-.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-media {
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub :is(.mosaic-row-media, .mosaic-row-media-skeleton) {
   width: 104%;
   margin-top: 6%;
 }
@@ -1393,6 +1413,9 @@
    card meets the same value the image already has there. */
 .mosaic-row-card-preview-shot-21,
 .mosaic-row-card-preview-shot-23 {
+  --card-skeleton-base: rgb(78 77 83);
+  --card-skeleton-sheen: rgb(96 95 101);
+
   background: rgb(63 62 68);
 }
 
@@ -1438,12 +1461,17 @@
   padding: clamp(1rem, 1.6vw, 1.5rem);
 }
 
+.mosaic-row-card-preview-protector :is(.mosaic-row-media, .mosaic-row-media-skeleton),
+.mosaic-row-card-preview-patrol :is(.mosaic-row-media, .mosaic-row-media-skeleton) {
+  --phone-bezel: clamp(3px, 0.35vw, 5px);
+  border: var(--phone-bezel) solid transparent;
+  border-radius: 15% / 6.9%;
+}
+
 .mosaic-row-card-preview-protector .mosaic-row-media,
 .mosaic-row-card-preview-patrol .mosaic-row-media {
-  --phone-bezel: clamp(3px, 0.35vw, 5px);
   --phone-frame: clamp(4px, 0.42vw, 6px);
-  border: var(--phone-bezel) solid #000;
-  border-radius: 15% / 6.9%;
+  border-color: #000;
   background: #000;
   box-shadow:
     0 0 0 var(--phone-frame) #333336,
@@ -1645,7 +1673,7 @@
 
   /* Square slots need more offset for the lower rows to cross the edge.
      Dealership Hub runs full width here, so it keeps the desktop offset. */
-  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21 .mosaic-row-media {
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21 :is(.mosaic-row-media, .mosaic-row-media-skeleton) {
     margin-top: 18%;
   }
 
@@ -1684,7 +1712,6 @@
 
   .mosaic-row-media {
     opacity: 1;
-    filter: none;
     transition: none;
   }
 

@@ -5,6 +5,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -25,6 +26,7 @@ import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
 import { ResumeTile } from "./ResumeTile"
 import { portfolioQuotes, teamQuotes, type PortfolioQuote } from "../data/quotes"
+import { tileSkeletons } from "../data/tileSkeletons"
 import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type QuoteSource, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
@@ -322,7 +324,7 @@ function RowVideoMedia({
       preload={loadNow && !prefersReducedMotion ? "metadata" : "none"}
       aria-label={label}
       className="mosaic-row-media"
-      data-loaded={poster || loaded ? "true" : "false"}
+      data-loaded={(poster ? posterReady : loaded) ? "true" : "false"}
       data-pending={(poster ? posterReady : loaded) ? "false" : "true"}
       onLoadedData={() => setLoaded(true)}
     />
@@ -337,6 +339,44 @@ type RowImageMediaProps = {
   eager: boolean
   sizes: string
   loadMedia: boolean
+}
+
+// A tile's placeholder: the outline of what its artwork draws in its first frame,
+// in the box that artwork will fill. An image can't host a pseudo-element and
+// fades as a unit, so this is its sibling; an SVG because the width and height
+// give it the same intrinsic ratio, and so the same box under the same sizing
+// rules. A shape that fills its frame stretches to a cover slot; any other keeps
+// its proportions, as contained artwork does.
+function RowMediaSkeleton({ cardId }: { cardId: PortfolioCard["id"] }) {
+  const id = useId()
+  const shape = tileSkeletons[cardId]
+  if (!shape) return null
+
+  return (
+    <svg
+      className="mosaic-row-media-skeleton"
+      width={shape.width}
+      height={shape.height}
+      viewBox={`0 0 ${shape.width} ${shape.height}`}
+      preserveAspectRatio={shape.fullFrame ? "none" : "xMidYMid meet"}
+      aria-hidden="true"
+    >
+      <defs>
+        <clipPath id={`${id}-shape`}>
+          <path d={shape.d} />
+        </clipPath>
+        <linearGradient id={`${id}-sheen`}>
+          <stop offset="0" stopOpacity="0" />
+          <stop offset="0.5" />
+          <stop offset="1" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <g clipPath={`url(#${id}-shape)`}>
+        <rect className="mosaic-row-media-skeleton-base" width={shape.width} height={shape.height} />
+        <rect className="mosaic-row-media-skeleton-sweep" width={shape.width} height={shape.height} fill={`url(#${id}-sheen)`} />
+      </g>
+    </svg>
+  )
 }
 
 // Owns its own loaded flag on purpose. Hoisting it into SimpleFeed meant every
@@ -1203,12 +1243,17 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                                 ))}
                               </span>
                             </span>
-                          ) : renderRowMedia(
-                            item.card,
-                            item.card.image,
-                            item.card.title,
-                            groupIndex === 0,
-                            mediaSizes,
+                          ) : (
+                            <>
+                              <RowMediaSkeleton cardId={item.card.id} />
+                              {renderRowMedia(
+                                item.card,
+                                item.card.image,
+                                item.card.title,
+                                groupIndex === 0,
+                                mediaSizes,
+                              )}
+                            </>
                           )
                           return (
                             <div key={item.area} className={`${itemClass} mosaic-row-item-fit-${item.fit}`} style={itemStyle}>

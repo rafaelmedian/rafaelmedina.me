@@ -46,6 +46,9 @@ if (document.documentElement.dataset.galleryEntry) {
   waits.push(loadPreviewGallery())
   if (note) void import("./components/WritingsReader.tsx").catch(() => undefined)
 }
+// The first-load intro holds the grid out of layout until the full stylesheet is
+// in. Hydrating before that would have it measure a grid with no size.
+if (window.pageStylesReady) waits.push(window.pageStylesReady)
 // Everywhere else this is a straight hydrate.
 if (waits.length) void Promise.allSettled(waits).then(() => {
   // A failed prerequisite must not hydrate a homepage over useful project

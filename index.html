@@ -12,12 +12,100 @@
         && !matchMedia("(prefers-reduced-motion: reduce)").matches
         && performance.getEntriesByType("navigation")[0]?.type !== "back_forward") {
         document.documentElement.dataset.avatarIntro = "pending";
-        // A missing bundle or stalled portrait must never strand the reader.
+        // A stalled portrait must never strand the reader. Only a pending intro:
+        // one that started late still gets to finish its reveal.
         setTimeout(() => {
-          if (document.documentElement.dataset.avatarIntro) {
+          if (document.documentElement.dataset.avatarIntro === "pending") {
             delete document.documentElement.dataset.avatarIntro;
           }
         }, 4000);
+      }
+      // scripts/hero-first.mjs calls this on the home page, whose hero carries its
+      // own CSS. A visit with the intro gets the full stylesheet without blocking,
+      // so the hero never waits for it. Any other visit opens on content that
+      // needs it, and keeps an ordinary blocking stylesheet.
+      window.loadPageStyles = (href) => {
+        const root = document.documentElement;
+        if (!root.dataset.avatarIntro) {
+          document.write("<link rel=stylesheet crossorigin href=" + JSON.stringify(href) + ">");
+          addEventListener("DOMContentLoaded", restorePosters);
+          return;
+        }
+        root.dataset.pageStyles = "pending";
+        window.pageStylesReady = new Promise((resolve) => {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.crossOrigin = "";
+          link.href = href;
+          link.onload = link.onerror = resolve;
+          document.head.append(link);
+        }).then(() => {
+          delete root.dataset.pageStyles;
+          if (document.readyState === "loading") addEventListener("DOMContentLoaded", restorePosters);
+          else restorePosters();
+        });
+      };
+      function restorePosters() {
+        for (const video of document.querySelectorAll("video[data-poster]")) video.poster = video.dataset.poster;
+      }
+      // Runs from here, not the bundle, so it needs nothing but the HTML. Without
+      // prerendered markup (the dev server) there is no portrait until
+      // useAvatarIntro mounts and starts it.
+      window.startAvatarIntro = () => {
+        const root = document.documentElement;
+        const portrait = document.querySelector(".mosaic-avatar-face-front .mosaic-avatar-portrait");
+        if (window.avatarIntroStarted || root.dataset.avatarIntro !== "pending" || !portrait) return;
+        window.avatarIntroStarted = true;
+
+        const motion = matchMedia("(prefers-reduced-motion: reduce)");
+        const style = getComputedStyle(portrait);
+        const milliseconds = (name) => {
+          const value = style.getPropertyValue(name);
+          return parseFloat(value) * (/ms\s*$/.test(value) ? 1 : 1000) || 0;
+        };
+        // The same properties the stylesheet's delays use, so a beat cannot end
+        // before what it holds has landed.
+        const revealDuration = milliseconds("--duration-slow");
+        const tilesDelay = milliseconds("--avatar-intro-tiles-delay");
+        let timer;
+        const end = () => {
+          clearTimeout(timer);
+          delete root.dataset.avatarIntro;
+        };
+        // Changes of intent or geometry end the intro immediately. Never fight a
+        // scroll, keyboard navigation, a resized viewport, or a motion preference.
+        for (const type of ["resize", "scroll", "keydown", "pointerdown", "pagehide"]) {
+          addEventListener(type, end, { passive: true });
+        }
+        motion.addEventListener("change", end);
+
+        const wait = (duration) => new Promise((resolve) => { timer = setTimeout(resolve, duration); });
+        const still = (phase) => root.dataset.avatarIntro === phase;
+        // The face, then the top section, then the tiles: those wait for their
+        // stylesheet however long it takes, and arrive as skeletons if their
+        // artwork has not.
+        portrait.decode().then(async () => {
+          if (!still("pending")) return;
+          root.dataset.avatarIntro = "portrait";
+          await wait(revealDuration);
+          if (!still("portrait")) return;
+          root.dataset.avatarIntro = "revealing";
+          await Promise.all([wait(tilesDelay), window.pageStylesReady]);
+          if (!still("revealing")) return;
+          root.dataset.avatarIntro = "tiles";
+          await wait(revealDuration);
+          if (still("tiles")) end();
+        }).catch(end);
+      };
+      if (document.documentElement.dataset.avatarIntro) {
+        // The hero is whole once the parser reaches the grid after it.
+        const parsing = new MutationObserver(() => {
+          if (document.getElementById("work")) {
+            parsing.disconnect();
+            window.startAvatarIntro();
+          }
+        });
+        parsing.observe(document, { childList: true, subtree: true });
       }
       // A project, the résumé, the notes, or a note: the prerendered article is
       // for crawlers and a visit without JavaScript. Hold it back so a shared
@@ -118,6 +206,14 @@
       name="format-detection"
       content="telephone=no, date=no, email=no, address=no"
     />
+    <!-- Tile media fades in from React; without it nothing would ever clear it.
+         The bundled stylesheet is injected after this, so these have to outrank it. -->
+    <noscript>
+      <style>
+        .mosaic-row-media { opacity: 1 !important; }
+        .mosaic-row-media-skeleton { display: none !important; }
+      </style>
+    </noscript>
   </head>
   <body>
     <div id="root"></div>
