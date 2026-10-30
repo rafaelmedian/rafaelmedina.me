@@ -56,9 +56,9 @@
     <!-- gtag.js is injected at runtime by src/lib/analytics.ts, so the connection
          can't be discovered from the markup. -->
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
-    <!-- Handlee is only referenced from the @font-face in src/index.css, which the
-         browser can't see until the stylesheet parses. -->
-    <link rel="preload" as="font" type="font/woff2" href="/fonts/Handlee-Regular.woff2" crossorigin />
+    <!-- Handlee is only referenced from the @font-face in src/styles/fonts.css, which
+         the browser can't see until the stylesheet parses. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/Handlee-core.woff2" crossorigin />
     <!-- The first mosaic row paints three tiles; all are LCP candidates. -->
     <link rel="preload" as="image" href="/Projects/shot-small-9-poster.webp" type="image/webp" fetchpriority="high" />
     <link rel="preload" as="image" href="/Projects/shot-small-16-poster.webp" type="image/webp" fetchpriority="high" />

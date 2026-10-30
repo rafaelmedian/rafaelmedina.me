@@ -1,6 +1,7 @@
 /* Keep the reset first and the global reduced-motion policy last.
    Component styles include their own responsive and interaction overrides. */
 @import "./styles/tailwind.css";
+@import "./styles/fonts.css";
 @import "./styles/base.css";
 @import "./styles/inline-swap.css";
 @import "./styles/page-edge.css";
