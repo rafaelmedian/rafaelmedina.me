@@ -22,7 +22,8 @@
     "contact:dev": "wrangler dev --config workers/contact/wrangler.jsonc --port 8788",
     "contact:deploy": "wrangler deploy --config workers/contact/wrangler.jsonc",
     "contact:check": "tsc -p workers/contact/tsconfig.json",
-    "contact:test": "node --experimental-strip-types --test workers/contact/index.test.ts"
+    "contact:test": "node --experimental-strip-types --test workers/contact/index.test.ts",
+    "test:performance": "VITE_CLARITY_PROJECT_ID= VITE_GA_MEASUREMENT_ID= npm run build && playwright test --config playwright.performance.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

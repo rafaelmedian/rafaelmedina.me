@@ -129,3 +129,25 @@ current contact/email chat is independent and continues to deliver messages.
 
 Run `npm run likes:test` for the budget, rollover, and fallback tests. Browser
 tests disable paid inference and use only local D1.
+
+### Performance checks
+
+`npm run test:performance` builds with analytics disabled and runs cold-cache
+Chromium checks in a single worker, observing through seven seconds after load
+and conservatively counting partial/cancelled transfers too. Desktop (1440×1000,
+1×) allows 1.2MB total and 300KB of tile video; mobile (390×844, 2×) allows 900KB and 200KB. A separate
+three-run mobile check uses 1.6Mbps, 150ms latency and 4× CPU slowdown, with a
+3.5s median LCP ceiling. Layout shift must remain below 0.1. These are lab
+regression ceilings, not real-user Web Vitals or a promise for every device.
+Run it without other browser suites competing for CPU. JSON results and resource
+breakdowns land in `test-results-performance/`; CI runs it after design checks
+and uploads the results even when all budgets pass.
+
+The ordinary e2e suite also guards covered-media requests, video visibility dwell,
+photo warm-up and progressive loading, and the initial JS/CSS graph. Increase a
+budget only after reviewing the resource breakdown and recording the reason.
+
+Generate grid-only teasers with `node scripts/build-feed-videos.mjs`; gallery
+videos retain their original length and resolution. Generate the folder and logo
+WebPs with `node scripts/optimize-ui-artwork.mjs`, which reads the original PNGs.
+Commit the generated assets with their source-script change.

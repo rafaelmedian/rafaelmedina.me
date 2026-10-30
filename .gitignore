@@ -13,6 +13,7 @@ dist-ssr
 .ssr
 test-results
 test-results-design-system
+test-results-performance
 playwright-report
 .context
 *.local
