@@ -14,11 +14,11 @@ for (const surface of ['about', 'booking'] as const) {
       name: surface === 'about' ? 'Chat with Rafa' : 'Chat with Rafael Medina', exact: true,
     })
     const incoming = chat.locator(surface === 'about'
-      ? '.about-intro-chat-received .about-intro-chat-bubble'
+      ? '.about-intro-chat-history > :is(.about-intro-chat-received, .about-intro-chat-link-note, .about-intro-chat-link-preview)'
       : '.booking-history > .booking-bubble')
-    await expect(incoming).toHaveCount(surface === 'about' ? 3 : 5)
-    await expect.poll(() => incoming.evaluateAll(nodes => nodes.map(node => getComputedStyle(node, '::before').content)))
-      .toEqual(surface === 'about' ? ['none', 'none', '""'] : ['none', 'none', 'none', 'none', '""'])
+    await expect(incoming).toHaveCount(5)
+    await expect.poll(() => incoming.evaluateAll(nodes => nodes.map(node => getComputedStyle(node.querySelector('.about-intro-chat-bubble') ?? node, '::before').content)))
+      .toEqual(['none', 'none', 'none', 'none', '""'])
     expect(await chat.getByRole('button', { name: 'Continue with email' }).evaluate(node => {
       const style = getComputedStyle(node, '::before')
       return [style.width, style.height, style.top, style.bottom, style.right]
