@@ -24,10 +24,18 @@ function retryStylesheet(url: string) {
 export function createModuleLoader<T>(importModule: () => Promise<T>, chunkName: string) {
   let pending: Promise<T> | null = null
   let failedUrl: string | null = null
-  let failedStyle: string | null = null
+  const failedStyles = new Set<string>()
   let attempt = 0
   return () => {
     if (pending) return pending
+    // All stylesheet errors fire before Vite settles its preload batch. Keep
+    // every failed link, not just the first error that its import rejects with.
+    const styleErrors = new Set<string>()
+    const recordStyleError = (event: Event) => {
+      const link = event.target
+      if (link instanceof HTMLLinkElement && link.rel === "stylesheet") styleErrors.add(link.href)
+    }
+    document.addEventListener("error", recordStyleError, true)
     let request: Promise<T>
     if (failedUrl) {
       const retryUrl = new URL(failedUrl)
@@ -36,16 +44,17 @@ export function createModuleLoader<T>(importModule: () => Promise<T>, chunkName:
     } else {
       request = importModule()
     }
-    const withStyles = failedStyle
-      ? Promise.all([request, retryStylesheet(failedStyle)]).then(([module]) => { failedStyle = null; return module })
-      : request
+    const withStyles = Promise.all([request, ...[...failedStyles].map(retryStylesheet)])
+      .then(([module]) => { failedStyles.clear(); return module as T })
     pending = withStyles.catch((error: unknown) => {
       pending = null
       const entry = performance.getEntriesByType("resource").reverse().find(entry => entry.name.includes(chunkName) && /\.js(?:\?|$)/.test(entry.name))
       if (entry) failedUrl = entry.name
-      failedStyle = error instanceof Error ? /Unable to preload CSS for (.+)/.exec(error.message)?.[1] ?? null : null
+      const failedStyle = error instanceof Error ? /Unable to preload CSS for (.+)/.exec(error.message)?.[1] : undefined
+      if (failedStyle) failedStyles.add(failedStyle)
+      styleErrors.forEach(url => failedStyles.add(url))
       throw error
-    })
+    }).finally(() => document.removeEventListener("error", recordStyleError, true))
     return pending
   }
 }
