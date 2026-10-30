@@ -180,7 +180,7 @@ def build_file(spec, unicodes, out_path):
     # 0 is the copyright notice the OFL requires in each copy. The license
     # itself ships beside the fonts as public/fonts/*-OFL.txt.
     options.name_IDs = [0, 1, 2, 3, 4, 5, 6]
-    options.drop_tables += ["STAT", "DSIG", "meta"]
+    options.drop_tables += ["DSIG", "meta"]
     options.recalc_timestamp = False
     subsetter = subset.Subsetter(options)
     subsetter.populate(unicodes=sorted(unicodes))
@@ -198,6 +198,11 @@ def build_file(spec, unicodes, out_path):
         font = instancer.instantiateVariableFont(
             font, spec["limits"], overlap=instancer.OverlapMode.KEEP_AND_DONT_SET_FLAGS
         )
+
+    # Variable fonts need STAT: without it CoreText ignores wght and draws every
+    # weight as regular over the bold's advances. A pinned font has no use for it.
+    if "fvar" not in font and "STAT" in font:
+        del font["STAT"]
 
     if "rename" in spec:
         rename(font, spec["rename"])
@@ -244,9 +249,11 @@ def check_output(spec, font, unicodes, source_metrics):
         sys.exit(f"{spec['file']}: cmap does not match the unicode-range")
     if metrics(font) != source_metrics:
         sys.exit(f"{spec['file']}: vertical metrics moved, which moves every baseline")
-    leftovers = {"fpgm", "prep", "cvt ", "cvar", "hdmx", "VDMX", "LTSH", "STAT"} & set(font.keys())
+    leftovers = {"fpgm", "prep", "cvt ", "cvar", "hdmx", "VDMX", "LTSH"} & set(font.keys())
     if leftovers:
         sys.exit(f"{spec['file']}: hinting or unused tables survived: {sorted(leftovers)}")
+    if "fvar" in font and "STAT" not in font:
+        sys.exit(f"{spec['file']}: variable font without STAT renders one weight in CoreText")
     if "rename" in spec:
         reserved = spec["family"].lower()
         for record in font["name"].names:

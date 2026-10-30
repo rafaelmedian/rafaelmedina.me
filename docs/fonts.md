@@ -37,6 +37,9 @@ Each of these moved pixels when it was tried the other way:
 
 - **Inter's `opsz` stays 14-32.** The site stops at 20.4px, but narrowing the
   axis re-scales every delta and the rounding moves text by up to 0.06px.
+- **Inter keeps `STAT`.** Without it WebKit, through CoreText, ignores `wght` and
+  draws every weight as regular on top of the bold's advances. Chromium does not
+  show this, so test both.
 - **`head`'s bounding box stays the source's.** Recomputing it for the subset
   changes how CoreText rasterises Handlee and La Belle Aurore.
 - **Handlee keeps its glyph names.** Without them CoreText draws text under 24px
@@ -59,4 +62,4 @@ both builds. Pixel-diff the old and new builds on the same content, with `video`
 `canvas`, and maps hidden and the clock fixed. The site has no italics or CJK and
 no project sets `showSignatures`, so a page with those cases has to be written for
 the comparison. Compare the text rectangles too. A rect moving 0.06px is easier to
-see there than in the pixels.
+see there than in the pixels. Run it in Chromium and WebKit.
