@@ -319,6 +319,11 @@ test("every custom property defined in the stylesheets is referenced", () => {
     const tokens = file.endsWith(".css") || file.endsWith(".html")
       ? findCssCustomPropertyReferences(text)
       : findScriptCustomPropertyReferences(text, file)
+    if (file.endsWith(".html")) {
+      for (const [, script] of text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+        for (const token of findScriptCustomPropertyReferences(script, "inline.js")) tokens.add(token)
+      }
+    }
     for (const token of tokens) references.add(token)
   }
 

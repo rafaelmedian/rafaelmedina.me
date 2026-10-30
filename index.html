@@ -59,14 +59,13 @@
 
         const motion = matchMedia("(prefers-reduced-motion: reduce)");
         const style = getComputedStyle(portrait);
-        const milliseconds = (name) => {
-          const value = style.getPropertyValue(name);
+        const milliseconds = (value) => {
           return parseFloat(value) * (/ms\s*$/.test(value) ? 1 : 1000) || 0;
         };
         // The same properties the stylesheet's delays use, so a beat cannot end
         // before what it holds has landed.
-        const revealDuration = milliseconds("--duration-slow");
-        const tilesDelay = milliseconds("--avatar-intro-tiles-delay");
+        const revealDuration = milliseconds(style.getPropertyValue("--duration-slow"));
+        const tilesDelay = milliseconds(style.getPropertyValue("--avatar-intro-tiles-delay"));
         let timer;
         const end = () => {
           clearTimeout(timer);
