@@ -3540,7 +3540,7 @@ test("opens the resume reader from the folded tile and returns focus on close", 
   await expect(resume.locator(".resume-tile-copy")).toContainText("2026 – Present")
 
   await resume.click()
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Resume" })
   await expect(dialog).toBeVisible()
   await expect(page).toHaveURL(/\/resume\/$/)
   await expect(page).toHaveTitle("Résumé — Rafael Medina")
@@ -3561,7 +3561,7 @@ test("pages between the resume reader and its neighbouring projects", async ({ p
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const dialog = page.getByRole("dialog")
-  await expect(dialog).toHaveAccessibleName("Résumé")
+  await expect(dialog).toHaveAccessibleName("Resume")
 
   // Onit, beside it in the same row, comes before it.
   await page.keyboard.press("ArrowLeft")
@@ -3569,7 +3569,7 @@ test("pages between the resume reader and its neighbouring projects", async ({ p
   await expect(page).toHaveURL(/\/work\/onit-process-builder\/$/)
 
   await page.keyboard.press("ArrowRight")
-  await expect(dialog).toHaveAccessibleName("Résumé")
+  await expect(dialog).toHaveAccessibleName("Resume")
   await expect(page).toHaveURL(/\/resume\/$/)
 
   // And onward from the last slide is back to the first project.
@@ -3582,7 +3582,7 @@ test("opens a shared resume link straight into the gallery", async ({ page }) =>
   await page.goto("/resume/")
 
   const dialog = page.getByRole("dialog")
-  await expect(dialog).toHaveAccessibleName("Résumé")
+  await expect(dialog).toHaveAccessibleName("Resume")
   await expect(dialog.getByRole("list", { name: "Work history" })).toBeVisible()
 })
 
@@ -3645,9 +3645,9 @@ for (const width of [1440, 390]) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/resume/")
 
-    const dialog = page.getByRole("dialog", { name: "Résumé" })
+    const dialog = page.getByRole("dialog", { name: "Resume" })
     const card = dialog.locator(".preview-gallery-card")
-    const title = dialog.getByRole("heading", { name: "Résumé" })
+    const title = dialog.getByRole("heading", { name: "Resume" })
     await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
     const titleTop = (await title.boundingBox())!.y
 
@@ -3708,7 +3708,7 @@ test("presents complete work history, education, and the resume PDF in the reade
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Resume" })
   const workHistory = dialog.getByRole("list", { name: "Work history" })
   const education = dialog.getByRole("list", { name: "Education" })
 
@@ -3741,7 +3741,7 @@ test("gives the mobile resume reader its own close control", async ({ page }) =>
   const trigger = page.getByRole("link", { name: "Open résumé" })
   await trigger.click()
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Resume" })
   const close = dialog.getByRole("button", { name: "Close résumé" })
   await expect(close).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Next preview" })).toBeVisible()
@@ -3755,7 +3755,7 @@ test("gives the mobile resume reader its own close control", async ({ page }) =>
   }).toBeGreaterThanOrEqual(44)
   const [closeBox, titleBox] = await Promise.all([
     close.boundingBox(),
-    dialog.getByRole("heading", { name: "Résumé" }).boundingBox(),
+    dialog.getByRole("heading", { name: "Resume" }).boundingBox(),
   ])
   // It rides the toolbar above the heading rather than overlapping it.
   expect(closeBox!.y + closeBox!.height).toBeLessThanOrEqual(titleBox!.y)
@@ -3775,7 +3775,7 @@ test("keeps the desktop resume reader free of a close control", async ({ page })
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Resume" })
   await expect(dialog).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Close résumé" })).toBeHidden()
   await expect(dialog.locator(".preview-gallery-toolbar")).toHaveCSS("display", "none")
@@ -4526,7 +4526,7 @@ test("gives the Chainlink work a fuller description", async ({ page }) => {
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const chainlinkEntry = page
-    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("dialog", { name: "Resume" })
     .locator(".resume-experience")
     .filter({ has: page.getByRole("heading", { name: "Product Designer & Frontend Developer at TM (Chainlink, Twilio, and Onit)" }) })
 
@@ -4570,7 +4570,7 @@ test("keeps work-history company links free of logo tooltips", async ({ page }) 
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Resume" })
   const companyLink = dialog
     .locator("a.mosaic-company-inline-link")
     .filter({ hasText: "Moody's" })
@@ -4588,7 +4588,7 @@ test("keeps work-history company links free of logo tooltips", async ({ page }) 
 test("links each work-history company name to its primary website", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
-  const workHistory = page.getByRole("dialog", { name: "Résumé" })
+  const workHistory = page.getByRole("dialog", { name: "Resume" })
 
   const projects = [
     { company: "0x Project", href: "https://0x.org/" },
@@ -4612,7 +4612,7 @@ test("shows work-history company links without underlines", async ({ page }) => 
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const companyLink = page
-    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("dialog", { name: "Resume" })
     .getByRole("link", { name: "0x Project", exact: true })
 
   await expect(companyLink).toHaveCSS("text-decoration-line", "none")
@@ -4625,7 +4625,7 @@ test("aligns work locations with their roles", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Resume" })
   await expect(dialog).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
   const jobs = dialog
     .getByRole("list", { name: "Work history" })
@@ -4653,7 +4653,7 @@ test("uses one hairline between work history and education", async ({ page }) =>
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Resume" })
   const jobs = dialog
     .getByRole("list", { name: "Work history" })
     .locator(":scope > li")
@@ -4670,7 +4670,7 @@ test("opens a work-history company website from its name", async ({ page }) => {
   await page.getByRole("link", { name: "Open résumé" }).click()
 
   const companyLink = page
-    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("dialog", { name: "Resume" })
     .getByRole("link", { name: "0x Project", exact: true })
 
   const popupPromise = page.waitForEvent("popup")
@@ -4684,7 +4684,7 @@ test("keeps each role and employer as the accessible work-history heading", asyn
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Résumé" })
+  const dialog = page.getByRole("dialog", { name: "Resume" })
   await expect(dialog.getByRole("heading", { name: "Senior Product Designer at 0x Project" })).toBeVisible()
   await expect(dialog.getByRole("link", { name: "0x Project", exact: true })).toBeVisible()
 })
@@ -5816,7 +5816,7 @@ test("offers no link to copy on the résumé or a project", async ({ page }) => 
   await expect(dialog.getByRole("link", { name: "Copy a link to this project" })).toHaveCount(0)
 
   await page.goto("/resume/")
-  const resume = page.getByRole("dialog", { name: "Résumé" })
+  const resume = page.getByRole("dialog", { name: "Resume" })
   await expect(resume.getByRole("link", { name: "View PDF" })).toBeVisible()
   await expect(resume.getByRole("link", { name: /Copy a link/ })).toHaveCount(0)
 })
