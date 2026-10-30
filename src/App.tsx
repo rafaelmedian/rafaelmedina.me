@@ -6,7 +6,8 @@ import { SimpleFeed } from "./components/SimpleFeed"
 import { homeGroups, portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
 import { revealGalleryEntry } from "./lib/galleryEntry"
 import { isNotesPath, isResumePath, projectAtPath, writingAtPath } from "./lib/projectMetadata"
-import { ProjectPage } from "./components/ProjectPage"
+import { DeferredProjectPage } from "./components/DeferredProjectPage"
+import { getProjectPage } from "./lib/projectPageSlot"
 import { ResumePage } from "./components/ResumePage"
 import { NotesPage } from "./components/NotesPage"
 import { DeferredWritingPage } from "./components/DeferredWritingPage"
@@ -100,7 +101,7 @@ function App({ pathname }: { pathname?: string }) {
         ) : (
           <>
             <main id="main-content" tabIndex={-1} className="relative z-dock">
-              {standaloneProject ? <ProjectPage card={standaloneProject} /> : standaloneResume ? <ResumePage /> : standaloneNotes ? <NotesPage /> : standaloneWriting && getWritingPage() ? (
+              {standaloneProject && getProjectPage() ? <DeferredProjectPage card={standaloneProject} /> : standaloneResume ? <ResumePage /> : standaloneNotes ? <NotesPage /> : standaloneWriting && getWritingPage() ? (
                 <DeferredWritingPage writing={standaloneWriting} />
               ) : (
                 <>

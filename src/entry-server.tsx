@@ -1,6 +1,7 @@
 import { renderToString } from "react-dom/server"
 
 import App from "./App"
+import { loadProjectPage } from "./lib/projectPageSlot"
 import { loadWritingPage } from "./lib/writingPageSlot"
 import { portfolioCards } from "./data/portfolio"
 import { writingSummaries } from "./data/writingIndex"
@@ -12,7 +13,7 @@ import { notesPath, pageMetadata, projectPath, resumeItemId, resumePath, writing
  * rather than a top-level await: the chunk imports back into this module for
  * the page metadata, and awaiting it here would deadlock the cycle.
  */
-export const ready = loadWritingPage()
+export const ready = Promise.all([loadWritingPage(), loadProjectPage()])
 
 export const pages = [
   { pathname: "/", metadata: pageMetadata() },

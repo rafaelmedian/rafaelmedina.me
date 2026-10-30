@@ -3,11 +3,13 @@ import { collaborators, type PortfolioCard } from "../data/portfolio"
 import { isVideoSource } from "../lib/media"
 import { emailHref } from "../lib/mailto"
 import { updatePageMetadata } from "../lib/projectMetadata"
+import { projectCaseStudies } from "../data/projectCaseStudies"
 import { ProjectCaseStudy } from "./ProjectCaseStudy"
 
 /** Direct project visits have useful HTML even without hydration or a modal. */
 export function ProjectPage({ card }: { card: PortfolioCard }) {
   useEffect(() => updatePageMetadata(card), [card])
+  const caseStudy = projectCaseStudies[card.slug as keyof typeof projectCaseStudies]
   // Solo work carries no credit row, as in the gallery.
   const team = card.team?.length ? [collaborators.rafael, ...card.team] : []
 
@@ -23,7 +25,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
           <h1 className="standalone-title">{card.title}</h1>
         </div>
         <p className="standalone-description">{card.detail}</p>
-        {card.caseStudy && team.length > 0 ? <ul className="preview-gallery-people" aria-label="Collaborators">
+        {caseStudy && team.length > 0 ? <ul className="preview-gallery-people" aria-label="Collaborators">
           {team.map((person) => <li key={person.href}><a className="preview-gallery-person" href={person.href}>
             {person.photo ? <img className="preview-gallery-person-avatar" src={person.photo} alt="" width={22} height={22} /> : null}
             <span>{person.name}</span>
@@ -47,7 +49,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
         ].map(([label, value]) => (
           <div className="preview-gallery-detail-row" key={label}><dt>{label}</dt><dd>{value}</dd></div>
         ))}
-        {!card.caseStudy ? (
+        {!caseStudy ? (
           <div className="preview-gallery-detail-row">
             <dt>Team</dt>
             <dd>{team.map((person, index) => (
@@ -59,7 +61,7 @@ export function ProjectPage({ card }: { card: PortfolioCard }) {
           <div className="preview-gallery-detail-row"><dt>Link</dt><dd><a href={card.ctaHref}>{new URL(card.ctaHref).hostname}</a></dd></div>
         ) : null}
       </dl>
-      <ProjectCaseStudy card={card} />
+      <ProjectCaseStudy card={{ ...card, caseStudy }} />
     </article>
   )
 }

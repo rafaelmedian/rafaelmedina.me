@@ -1,6 +1,5 @@
 import profilePhoto from "../assets/profile-photo.webp"
 import type { ProjectId } from "./projectIds"
-import { projectCaseStudies } from "./projectCaseStudies"
 
 export type PortfolioCard = {
   /** Registered in `projectIds`, so the likes API knows every project by name. */
@@ -824,7 +823,6 @@ const portfolioCardEntries: PortfolioCard[] = [
   },
 ]
 
-export const portfolioCards: PortfolioCard[] = portfolioCardEntries.map((card) => ({
-  ...card,
-  caseStudy: projectCaseStudies[card.slug as keyof typeof projectCaseStudies],
-}))
+// The feed needs summaries and media only. Full narratives belong to the
+// deferred gallery and standalone project page.
+export const portfolioCards: PortfolioCard[] = portfolioCardEntries

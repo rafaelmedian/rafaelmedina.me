@@ -30,3 +30,19 @@ test('a blocked calendar still offers a direct booking link', async ({ page }) =
   await expect(fallback).toHaveAttribute('href', 'https://cal.com/rafaelmedian/30min?email=visitor%40example.com')
   await expect(fallback).toHaveAttribute('target', '_blank')
 })
+
+test('a failed booking stylesheet retries before presenting the dialog', async ({ page }) => {
+  let fail = true
+  await page.route('**/BookingDialog-*.css*', route => fail ? route.abort() : route.continue())
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  await page.locator('.mosaic-booking-pill').click()
+  await expect(page.getByRole('button', { name: 'Try opening the conversation again' })).toBeVisible()
+  expect(await page.getByRole('dialog').count()).toBe(0)
+  fail = false
+  await page.getByRole('button', { name: 'Try opening the conversation again' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Chat with Rafael Medina' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toHaveCSS('position', 'relative')
+  await expect(page.locator('.booking-shell')).toHaveCSS('position', 'fixed')
+})

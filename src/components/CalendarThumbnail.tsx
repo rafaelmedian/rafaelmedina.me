@@ -1,3 +1,4 @@
+import "../styles/calendar-thumbnail.css"
 // The link preview's thumbnail: this month at a glance. It is drawn rather
 // than fetched, so it never shows a stale screenshot or waits on cal.com, and
 // it is only a hint -- the real slots are in the embed. Every week takes one

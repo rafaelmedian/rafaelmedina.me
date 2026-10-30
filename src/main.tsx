@@ -3,7 +3,8 @@ import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { loadWritingPage } from './lib/writingPageSlot.ts'
-import { writingAtPath } from './lib/projectMetadata.ts'
+import { loadProjectPage } from './lib/projectPageSlot.ts'
+import { projectAtPath, writingAtPath } from './lib/projectMetadata.ts'
 import { startAnalytics } from './lib/analytics.ts'
 import { startClarity } from './lib/clarity.ts'
 import { loadPreviewGallery } from './lib/previewGalleryModule.ts'
@@ -25,6 +26,7 @@ function start() {
 
 const waits: Promise<unknown>[] = []
 const note = writingAtPath(window.location.pathname)
+if (root.hasChildNodes() && projectAtPath(window.location.pathname)) waits.push(loadProjectPage())
 // A note's article is not in this bundle, and `/notes/<id>/` is prerendered
 // with it. Fetch the module before hydrating so App's first client render can
 // produce the same markup that is already in the document; hydrating without

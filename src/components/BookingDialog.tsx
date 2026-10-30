@@ -1,3 +1,4 @@
+import "../styles/booking.css"
 import { Menu } from "@base-ui/react/menu"
 import { Dialog } from "@base-ui/react/dialog"
 import { PanelRightClose, ArrowUp, Calendar, Mic, Square, X } from "lucide-react"

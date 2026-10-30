@@ -71,7 +71,7 @@ test("desktop tile loops fit a 600KB budget while projects retain full videos", 
   await expect(page.getByRole('dialog').locator('video').first()).toHaveAttribute('src', '/Projects/shot-small-9.webm')
 })
 
-test("the mobile wall progressively loads nearby photos and sharpens a selection", async ({ page }) => {
+test("the mobile wall progressively loads nearby photos while panning", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   const photos = new Set<string>()
@@ -87,4 +87,19 @@ test("the mobile wall progressively loads nearby photos and sharpens a selection
   await wall.focus()
   for (let index = 0; index < 15; index++) await page.keyboard.press('Shift+ArrowDown')
   await expect.poll(() => photos.size).toBeGreaterThan(before)
+})
+
+test("the homepage keeps dialog CSS and case-study prose off its initial graph", async ({ page }) => {
+  await page.goto('/#audit')
+  const sizes = await page.evaluate(() => {
+    const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
+    return {
+      js: resources.filter(entry => new URL(entry.name).origin === location.origin && /\.js$/.test(entry.name)).reduce((total, entry) => total + entry.decodedBodySize, 0),
+      css: resources.filter(entry => /\.css$/.test(entry.name)).reduce((total, entry) => total + entry.decodedBodySize, 0),
+    }
+  })
+  expect(sizes.js).toBeLessThan(535_000)
+  expect(sizes.css).toBeLessThan(210_000)
+  await page.getByRole('link', { name: /Open Matcha multiwallet flow/ }).click()
+  await expect(page.getByRole('dialog').locator('.project-case-study')).toBeVisible()
 })

@@ -1,3 +1,4 @@
+import { projectCaseStudies } from "../data/projectCaseStudies"
 import { Dialog } from "@base-ui/react/dialog"
 import { ChevronRight, ChevronLeft, X } from "./NavigationIcons"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
@@ -178,7 +179,10 @@ export function PreviewGalleryDialog({
   const [showScrollCue, setShowScrollCue] = useState(false)
   const safeIndex = useMemo(() => wrapIndex(selectedIndex, items.length), [items.length, selectedIndex])
   const activeItem = items[safeIndex]
-  const activeCard = activeItem?.kind === "project" ? activeItem.card : undefined
+  const activeCard = useMemo(() => activeItem?.kind === "project" ? {
+    ...activeItem.card,
+    caseStudy: projectCaseStudies[activeItem.card.slug as keyof typeof projectCaseStudies],
+  } : undefined, [activeItem])
   const isResumeSlide = activeItem?.kind === "resume"
   // The résumé and the notes list are both pages of prose in a card taller
   // than the window, so both give the vertical arrows back to scrolling and
