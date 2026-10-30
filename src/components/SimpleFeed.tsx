@@ -38,6 +38,7 @@ import { revealGalleryEntry } from "../lib/galleryEntry"
 import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
+import { pauseExpandedMediaWarming, startExpandedMediaWarming, warmExpandedMedia } from "../lib/warmExpandedMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
@@ -829,6 +830,27 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
     if (galleryItemId === writingsItemId) writingsFolderRef.current?.preload()
   }, [galleryItemId])
 
+  // Warm the full file behind each tile the visitor has actually seen, so
+  // scrolling past the grid is what spends data, not arriving at the page.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        observer.unobserve(entry.target)
+        const source = (entry.target as HTMLElement).dataset.warmSource
+        if (source) warmExpandedMedia(source)
+      }
+    })
+    document.querySelectorAll("[data-warm-source]").forEach((tile) => observer.observe(tile))
+    startExpandedMediaWarming()
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    pauseExpandedMediaWarming(activeWorkPreviewIndex !== null)
+  }, [activeWorkPreviewIndex])
+
   // The gallery grows out of (and shrinks back into) the card it represents, so
   // it needs that card at open and close time.
   const getPreviewOrigin = useCallback(
@@ -1223,6 +1245,11 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                             </div>
                           )
                           const itemKey = item.card.id
+                          // The gallery plays this file and shows these compositions from the
+                          // tile's own images, and reduced motion only fetches a video on request.
+                          const warmSource = item.card.galleryUsesHomeImages || (prefersReducedMotion && isVideoSource(item.card.image))
+                            ? undefined
+                            : item.card.image
                           const mediaSizes = previewSizesForShare(
                             item.share,
                             group.columns,
@@ -1265,9 +1292,16 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                                   else nodes.delete(item.previewIndex)
                                 }}
                                 className={`mosaic-row-card mosaic-row-card-${item.card.id}`}
-                                onPointerEnter={prefetchPreviewGallery}
+                                data-warm-source={warmSource}
+                                onPointerEnter={() => {
+                                  prefetchPreviewGallery()
+                                  if (warmSource) warmExpandedMedia(warmSource, true)
+                                }}
                                 onPointerDown={prefetchPreviewGallery}
-                                onFocus={prefetchPreviewGallery}
+                                onFocus={() => {
+                                  prefetchPreviewGallery()
+                                  if (warmSource) warmExpandedMedia(warmSource, true)
+                                }}
                                 onClick={(event) => {
                                   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
                                   event.preventDefault()

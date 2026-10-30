@@ -117,3 +117,56 @@ test('the portrait conversation loads shared composer controls without opening b
   await expect(chat.getByRole('button', { name: 'Dictate message' })).toHaveCSS('width', '44px')
   await expect(chat.getByRole('button', { name: 'Book a time', exact: true })).not.toHaveCSS('box-shadow', 'none')
 })
+
+test("the full file behind a tile waits for intent, then for the visitor to stay", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const fullFiles: string[] = []
+  page.on("request", request => {
+    const name = new URL(request.url()).pathname
+    if (["/Projects/shot-small-9.webm", "/Projects/shot-small-16.webm", "/Projects/pokemon-duo.webm", "/Projects/onit-process-builder.webp"].includes(name)) fullFiles.push(name)
+  })
+  await page.goto("/")
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
+  await page.waitForTimeout(1000)
+  expect(fullFiles).toEqual([])
+
+  await page.getByRole("link", { name: /Open Matcha preview/ }).hover()
+  await expect.poll(() => fullFiles).toEqual(["/Projects/shot-small-16.webm"])
+
+  // After the delay, only the tiles that have been on screen follow.
+  await expect.poll(() => fullFiles.length, { timeout: 12_000 }).toBe(3)
+  expect(fullFiles).not.toContain("/Projects/onit-process-builder.webp")
+})
+
+test("a slow connection never warms the full files", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "connection", { configurable: true,
+      value: Object.assign(new EventTarget(), { effectiveType: "3g", saveData: false }) })
+  })
+  const fullFiles: string[] = []
+  page.on("request", request => {
+    if (/\/Projects\/shot-small-(9|16)\.webm$/.test(request.url())) fullFiles.push(request.url())
+  })
+  await page.goto("/")
+  await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
+  await page.getByRole("link", { name: /Open Matcha preview/ }).hover()
+  await page.waitForTimeout(500)
+  expect(fullFiles).toEqual([])
+})
+
+for (const intent of ["hover", "focus"] as const) {
+  test(`the first queued tile warms immediately on ${intent}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const fullFiles: string[] = []
+    page.on("request", request => {
+      if (request.url().endsWith("/Projects/shot-small-9.webm")) fullFiles.push(request.url())
+    })
+    await page.goto("/")
+    await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
+    expect(fullFiles).toEqual([])
+    const tile = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
+    await tile[intent]()
+    await expect.poll(() => fullFiles.length, { timeout: 1500 }).toBe(1)
+  })
+}
