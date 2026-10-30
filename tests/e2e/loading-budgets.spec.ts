@@ -109,6 +109,8 @@ test('the portrait conversation loads shared composer controls without opening b
   await page.goto('/#about-panel')
   await page.locator('.about-intro-portrait-trigger').click()
   const chat = page.getByRole('region', { name: 'Chat with Rafa', exact: true })
+  await expect(chat.locator('.booking-link-preview-caption')).toHaveCSS('display', 'flex')
+  await expect(chat.locator('.booking-link-preview-title')).toHaveCSS('font-weight', '600')
   await chat.getByRole('textbox', { name: 'Your email', exact: true }).fill('visitor@example.com')
   await chat.getByRole('button', { name: 'Continue with email' }).click()
   await expect(chat.getByRole('button', { name: 'Dictate message' })).toHaveCSS('display', 'grid')

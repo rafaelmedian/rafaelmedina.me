@@ -63,3 +63,17 @@
   color: var(--canvas);
   font-weight: 600;
 }
+
+.booking-link-preview-caption {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.75rem;
+  line-height: 1.4;
+}
+
+.booking-link-preview-title { font-weight: 600; }
+
+.booking-link-preview-domain {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}

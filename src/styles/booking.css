@@ -1020,21 +1020,6 @@ body:has(.booking-contact-panel) .booking-close {
 .booking-link-preview:hover { filter: brightness(0.97); }
 .booking-link-preview:active { filter: brightness(0.94); }
 
-/* Nearly full: still bookable, but only a slot or two left. */
-
-.booking-link-preview-caption {
-  display: flex;
-  flex-direction: column;
-  padding: 0.5rem 0.75rem;
-  line-height: 1.4;
-}
-
-.booking-link-preview-title { font-weight: 600; }
-
-.booking-link-preview-domain {
-  color: var(--muted);
-  font-size: var(--text-xs);
-}
 
 /* A small face beside the last bubble of each of Rafa's runs, as in a group
    chat, so the incoming side reads as him without looking up at the header. */
