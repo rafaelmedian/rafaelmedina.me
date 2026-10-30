@@ -17,7 +17,9 @@ Same inputs give byte-identical files. Rerun it when:
 - the site's text gains a non-ASCII character (`--check` lists any missing from
   Inter's core; the handwriting faces are not scanned, so check those by eye);
 - a `font-weight` on Inter leaves 400-900, or Caveat is drawn at anything but 500;
-- a new OpenType feature is switched on (the `features` lists in the script).
+- a new OpenType feature is switched on (the `features` lists in the script);
+- `hyphens: auto` is turned on: browsers draw its hyphen from U+2010, which no
+  file carries because nothing uses it today.
 
 ## What each file holds
 
@@ -50,6 +52,10 @@ Each of these moved pixels when it was tried the other way:
   of the character before them, so "α6700" is kerned as Greek.
 - **`zero` stays out of Inter.** `slashed-zero` in `work-history.css` does nothing
   under Inter today; including it would change the numbers (156 bytes).
+
+Inter used to build ō from o + U+0304. It now has the real glyph, 1.7KB cheaper
+than carrying the mark, and "Sensō-ji" is pixel-identical. A future "Tō" would
+gain the T-o kerning the old file skipped.
 
 Handlee is a Reserved Font Name under the OFL, so the file calls itself "RM Hand".
 "Handlee" in CSS is only this site's alias for the file.
