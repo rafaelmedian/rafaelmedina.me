@@ -1105,7 +1105,7 @@
 .about-intro-chat-message .about-intro-send { width: 48px; flex-basis: 48px; }
 .about-intro-chat-message .about-intro-send::before { inset: 4px; }
 
-/* The booking conversation's rich link (booking.css draws its thumbnail and
+/* The booking conversation's rich link (calendar-thumbnail.css draws its thumbnail and
    caption). Rounding the thumbnail clips it, so the tail stays drawn. */
 .about-intro-chat .about-intro-chat-link-preview {
   display: flex;
@@ -1132,7 +1132,7 @@
 }
 
 /* Windows High Contrast drops box-shadows, and the composer's edge is drawn
-   with nothing else. The shared buttons are covered in booking.css. */
+   with nothing else. The shared buttons are covered in conversation-controls.css. */
 @media (forced-colors: active) {
   .about-intro-chat-composer { outline: 1px solid CanvasText; }
   .about-intro-chat-composer:has(:is(input, textarea):focus-visible) { outline: 2px solid Highlight; }

@@ -103,3 +103,15 @@ test("the homepage keeps dialog CSS and case-study prose off its initial graph",
   await page.getByRole('link', { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole('dialog').locator('.project-case-study')).toBeVisible()
 })
+
+test('the portrait conversation loads shared composer controls without opening booking', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/#about-panel')
+  await page.locator('.about-intro-portrait-trigger').click()
+  const chat = page.getByRole('region', { name: 'Chat with Rafa', exact: true })
+  await chat.getByRole('textbox', { name: 'Your email', exact: true }).fill('visitor@example.com')
+  await chat.getByRole('button', { name: 'Continue with email' }).click()
+  await expect(chat.getByRole('button', { name: 'Dictate message' })).toHaveCSS('display', 'grid')
+  await expect(chat.getByRole('button', { name: 'Dictate message' })).toHaveCSS('width', '44px')
+  await expect(chat.getByRole('button', { name: 'Book a time', exact: true })).not.toHaveCSS('box-shadow', 'none')
+})

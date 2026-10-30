@@ -18,6 +18,7 @@ policy last in this entry. Its important duration clamps also govern deferred CS
 - `about-intro.css`: the corner portrait and its looping teaser, shared send button, and mobile TOC dock.
 - `../components/about-intro-experiment.css`: A/C reply prototypes, loaded only
   by the development comparison and its optional dock variant.
+- `conversation-controls.css` (deferred): microphone and calendar controls shared by both conversations.
 - `about-intro-chat.css` (deferred): B’s staggered greeting, scrollable conversation, and email-first composer.
 - `work-history.css`: work-history popovers and inline company links.
 - `contact.css`: contact pills, the booking pill, and social hover cards.

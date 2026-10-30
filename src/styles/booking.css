@@ -666,26 +666,6 @@ body:has(.booking-contact-panel) .booking-close {
   outline-offset: 2px;
 }
 
-.booking-microphone {
-  border: 0;
-  border-radius: var(--radius-full);
-  background: transparent;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  color: var(--muted-soft);
-}
-
-/* --muted-soft alone is 4.6:1; the old 0.6 opacity at rest took the icon to
-   about 2.3:1, under the 3:1 a control's graphic needs. Only a microphone that
-   cannot be used is dimmed. */
-.booking-microphone:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
 
 .booking-send {
   corner-shape: round;
@@ -748,22 +728,6 @@ body:has(.booking-contact-panel) .booking-close {
 }
 
 .booking-compose-row > form { flex: 1; min-width: 0; }
-
-.booking-time-button {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 0;
-  border: 0;
-  corner-shape: round;
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-ring), var(--shadow-control);
-  background: var(--canvas);
-  color: var(--ink);
-  cursor: pointer;
-}
 
 .booking-email-trigger { border: 0; cursor: pointer; text-align: left; }
 .booking-email-menu-positioner { z-index: var(--z-dialog); }
@@ -969,8 +933,6 @@ body:has(.booking-contact-panel) .booking-close {
   .booking-contact-panel[data-starting-style],
   .booking-contact-panel[data-ending-style] { transform: none; }
 }
-
-.booking-microphone[aria-pressed="true"] { color: var(--booking-blue); opacity: 1; }
 .booking-dictation-status {
   margin: 0.5rem 0.75rem 0;
   color: var(--muted);
@@ -1030,10 +992,7 @@ body:has(.booking-contact-panel) .booking-close {
   .booking-popup[data-calendar="true"] .booking-compose-area { translate: calc(-50% - 25vw) 0; }
 }
 
-.booking-time-button svg { color: var(--muted-soft); opacity: 0.6; }
-
-.booking-send svg,
-.booking-microphone svg { width: 20px; height: 20px; }
+.booking-send svg { width: 20px; height: 20px; }
 
 @media (max-width: 899.98px) {
   .booking-composer :is(input, textarea) { font-size: var(--text-md); }
@@ -1103,8 +1062,7 @@ body:has(.booking-contact-panel) .booking-close {
 /* Windows High Contrast drops box-shadows, and the composers' edges and the
    glass buttons are drawn with nothing else. */
 @media (forced-colors: active) {
-  .booking-composer,
-  .booking-time-button {
+  .booking-composer {
     outline: 1px solid CanvasText;
   }
 

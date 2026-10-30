@@ -49,7 +49,7 @@ test('a failed booking stylesheet retries before presenting the dialog', async (
 
 test('retry repairs every failed conversation stylesheet', async ({ page }) => {
   let fail = true
-  await page.route(/\/(BookingDialog|CalendarThumbnail)-[^/]+\.css$/, route => fail ? route.abort() : route.continue())
+  await page.route(/\/(BookingDialog|CalendarThumbnail|conversation-controls)-[^/]+\.css$/, route => fail ? route.abort() : route.continue())
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await page.locator('.mosaic-booking-pill').click()

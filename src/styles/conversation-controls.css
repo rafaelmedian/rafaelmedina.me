@@ -1,0 +1,48 @@
+/* Shared by the portrait and booking composers; loaded with either deferred conversation. */
+
+.booking-microphone {
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  color: var(--muted-soft);
+}
+/* --muted-soft alone is 4.6:1; the old 0.6 opacity at rest took the icon to
+   about 2.3:1, under the 3:1 a control's graphic needs. Only a microphone that
+   cannot be used is dimmed. */
+.booking-microphone:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.booking-time-button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0;
+  border: 0;
+  corner-shape: round;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-ring), var(--shadow-control);
+  background: var(--canvas);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.booking-microphone[aria-pressed="true"] { color: var(--booking-blue); opacity: 1; }
+
+.booking-time-button svg { color: var(--muted-soft); opacity: 0.6; }
+
+.booking-microphone svg { width: 20px; height: 20px; }
+@media (forced-colors: active) {
+  .booking-time-button {
+    outline: 1px solid CanvasText;
+  }
+}
