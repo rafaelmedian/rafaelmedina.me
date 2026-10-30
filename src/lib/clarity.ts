@@ -11,9 +11,12 @@ declare global {
 
 const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID?.trim()
 
+let scheduled = false
+
 export function startClarity() {
   if (!CLARITY_PROJECT_ID || typeof window === "undefined" || typeof document === "undefined") return
-  if (document.querySelector("script[data-clarity]")) return
+  if (scheduled || document.querySelector("script[data-clarity]")) return
+  scheduled = true
 
   // Preserve Clarity's standard queue until its asynchronous tracker arrives.
   window.clarity ??= function () {
@@ -23,9 +26,19 @@ export function startClarity() {
     client.q.push(arguments)
   }
 
-  const script = document.createElement("script")
-  script.async = true
-  script.src = `https://www.clarity.ms/tag/${encodeURIComponent(CLARITY_PROJECT_ID)}`
-  script.dataset.clarity = CLARITY_PROJECT_ID
-  document.head.appendChild(script)
+  // Keep the standard queue available immediately, but let critical content
+  // finish before the recorder downloads and starts observing the document.
+  const inject = () => {
+    const script = document.createElement("script")
+    script.async = true
+    script.src = `https://www.clarity.ms/tag/${encodeURIComponent(CLARITY_PROJECT_ID)}`
+    script.dataset.clarity = CLARITY_PROJECT_ID
+    document.head.appendChild(script)
+  }
+  const schedule = () => {
+    if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(inject, { timeout: 4000 })
+    else window.setTimeout(inject, 1500)
+  }
+  if (document.readyState === "complete") schedule()
+  else window.addEventListener("load", schedule, { once: true })
 }
