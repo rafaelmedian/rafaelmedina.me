@@ -363,6 +363,9 @@ export function usePhotoOriginTransition(
           // decoded it for paint. Keep the warmed thumbnail behind the copy
           // so handing off from the focused fan never exposes a blank mat.
         }
+        // A borrowed flight can precede the near-viewport image observer.
+        // Its own small placeholder must still be visible in the DOM fallback.
+        if (!image.getAttribute("src") && slideImage.dataset.placeholder) image.src = slideImage.dataset.placeholder
         image.decoding = "sync"
         document.body.appendChild(clone)
       }
@@ -432,7 +435,7 @@ export function usePhotoOriginTransition(
         // The fan may retain a larger image from a previous visit. Keep
         // reopening on thumbnails too, rather than uploading those originals.
         const placeholder = new Image()
-        placeholder.src = slideImage.style.backgroundImage.slice(5, -2)
+        placeholder.src = slideImage.dataset.placeholder ?? slideImage.style.backgroundImage.slice(5, -2)
         flight.gpu = {
           clone, image: slideImage, placeholder, clock: animations[0],
           waitingForPaint: animations[0].playState === "running",

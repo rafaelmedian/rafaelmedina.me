@@ -7,6 +7,7 @@ import { Dialog } from "@base-ui/react/dialog"
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { measurePhotoOrigins, usePhotoOriginTransition } from "../lib/usePhotoOriginTransition"
+import { usePhotoWallMedia } from "../lib/usePhotoWallMedia"
 import { usePhotoWall } from "../lib/usePhotoWall"
 import { usePhotoWallCaption } from "../lib/usePhotoWallCaption"
 import { personalPhotoItems as photos } from "../data/personalPhotos"
@@ -47,8 +48,9 @@ function wallSlotReader(sheet: HTMLElement, scale: number) {
   }
 }
 
-function PhotoColumns({ panel = "0,0", gridColumns, held, previewCount, toggleHold, onSlideKeyDown }: {
+function PhotoColumns({ panel = "0,0", loadedPhotos, gridColumns, held, previewCount, toggleHold, onSlideKeyDown }: {
   panel?: string
+  loadedPhotos: ReadonlySet<string>
   gridColumns: { photo: typeof photos[number]; index: number }[][]
   held: HeldPhoto | null
   previewCount: number
@@ -61,6 +63,7 @@ function PhotoColumns({ panel = "0,0", gridColumns, held, previewCount, toggleHo
       {column.map(({ photo, index }) => {
         const instance = copy ? `${panel}:${photo.id}` : photo.id
         const selected = held?.instance === instance
+        const load = selected || loadedPhotos.has(photo.id)
         return (
           <figure
             className="personal-photos-slide"
@@ -85,19 +88,20 @@ function PhotoColumns({ panel = "0,0", gridColumns, held, previewCount, toggleHo
           >
             <span className={photo.id === "golden-gate-waves" ? "personal-photo-level" : undefined}>
             <img
-              src={`/images/personal/${photo.name}.webp`}
-              srcSet={`/images/personal/${photo.name}-400w.webp 400w, /images/personal/${photo.name}-800w.webp 800w, /images/personal/${photo.name}.webp ${photo.width}w`}
+              src={load ? `/images/personal/${photo.name}.webp` : undefined}
+              srcSet={load ? `/images/personal/${photo.name}-400w.webp 400w, /images/personal/${photo.name}-800w.webp 800w, /images/personal/${photo.name}.webp ${photo.width}w` : undefined}
               // Held, the photo is drawn far larger than its
               // column: say so, and the browser fetches the
               // larger candidate for it.
               sizes={selected ? `${Math.round(held.width)}px` : wallPhotoSizes}
+              data-placeholder={`/images/personal/${photo.name}-thumb.webp`}
               loading="eager"
               alt={copy ? "" : photo.alt}
               width={photo.width}
               height={photo.height}
               decoding="async"
               draggable={false}
-              style={{ aspectRatio: `${photo.width} / ${photo.height}`, backgroundImage: `url(/images/personal/${photo.name}-thumb.webp)` }}
+              style={{ aspectRatio: `${photo.width} / ${photo.height}`, backgroundImage: load ? `url(/images/personal/${photo.name}-thumb.webp)` : undefined }}
             />
             </span>
             <figcaption>{photo.caption}</figcaption>
@@ -198,6 +202,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
     return true
   }, [])
   const wall = usePhotoWall(sheetNode, open, releaseHeld)
+  const loadedPhotos = usePhotoWallMedia(sheetNode, open)
   usePhotoWallCaption(sheetNode, held?.instance, held?.caption, reducedMotion)
   usePhotoOriginTransition(sheetNode, open, opener, origins, reducedMotion, finishPhotoClose)
 
@@ -383,7 +388,7 @@ export function PersonalPhotosSheet({ ref, onPreviewImagesChange }: { ref?: Ref<
               <div className="personal-photos-masonry" style={held?.wallFocus ? { "--wall-focus-x": `${held.wallFocus.x}px`, "--wall-focus-y": `${held.wallFocus.y}px` } as CSSProperties : undefined}>
                 {wallPanels.map(({ x, y }) => (
                   <div className="personal-photos-wall-panel" data-wall-x={x} data-wall-y={y} aria-hidden={x !== 0 || y !== 0 ? true : undefined} key={`${x},${y}`}>
-                    <PhotoColumns panel={`${x},${y}`} gridColumns={gridColumns} held={held} previewCount={previewCount} toggleHold={toggleHold} onSlideKeyDown={onSlideKeyDown} />
+                    <PhotoColumns loadedPhotos={loadedPhotos} panel={`${x},${y}`} gridColumns={gridColumns} held={held} previewCount={previewCount} toggleHold={toggleHold} onSlideKeyDown={onSlideKeyDown} />
                   </div>
                 ))}
               </div>

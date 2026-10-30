@@ -75,7 +75,7 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
   const textures = new Map<string, { texture: WebGLTexture; width: number; height: number }>()
   const thumbnails = new Map<string, HTMLImageElement>()
   const thumbnail = (img: HTMLImageElement) => {
-    const src = new URL(img.style.backgroundImage.slice(5, -2), document.baseURI).href
+    const src = new URL(img.dataset.placeholder ?? img.style.backgroundImage.slice(5, -2), document.baseURI).href
     let preview = thumbnails.get(src)
     if (!preview) {
       preview = new Image()
@@ -263,7 +263,6 @@ export function renderPhotoWall(canvas: HTMLCanvasElement, stage: HTMLElement, s
     surface.removeAttribute("data-warp-ready")
   }
   canvas.addEventListener("webglcontextlost",lost)
-  slides.forEach(slide => thumbnail(slide.querySelector("img")!))
   request()
   return () => {
     disposed=true; cancelAnimationFrame(frame); observer.disconnect(); mutations.disconnect()

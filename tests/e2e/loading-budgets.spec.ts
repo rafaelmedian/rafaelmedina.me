@@ -70,3 +70,21 @@ test("desktop tile loops fit a 600KB budget while projects retain full videos", 
   await page.getByRole('link', { name: /Open Matcha multiwallet flow/ }).click()
   await expect(page.getByRole('dialog').locator('video').first()).toHaveAttribute('src', '/Projects/shot-small-9.webm')
 })
+
+test("the mobile wall progressively loads nearby photos and sharpens a selection", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const photos = new Set<string>()
+  page.on('request', request => { if (/\/images\/personal\/.*-400w\.webp$/.test(request.url())) photos.add(request.url()) })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Personal life', exact: true }).click()
+  const wall = page.getByRole('region', { name: 'Photo wall' })
+  await expect(wall).toBeVisible()
+  await page.waitForTimeout(500)
+  expect(photos.size).toBeGreaterThan(0)
+  expect(photos.size).toBeLessThan(47)
+  const before = photos.size
+  await wall.focus()
+  for (let index = 0; index < 15; index++) await page.keyboard.press('Shift+ArrowDown')
+  await expect.poll(() => photos.size).toBeGreaterThan(before)
+})
