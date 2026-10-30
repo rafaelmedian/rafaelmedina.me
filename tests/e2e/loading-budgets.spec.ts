@@ -58,3 +58,15 @@ test("a brief return to fast connectivity does not start tile video downloads", 
   })
   await expect.poll(() => videos.length).toBeGreaterThan(0)
 })
+
+test("desktop tile loops fit a 600KB budget while projects retain full videos", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto("/#audit")
+  await expect.poll(() => page.locator('video.mosaic-row-media').evaluateAll(videos => videos.filter(video => !(video as HTMLVideoElement).paused).length)).toBe(3)
+  const sources = await page.locator('video.mosaic-row-media').evaluateAll(videos => videos.map(video => (video as HTMLVideoElement).currentSrc).filter(Boolean))
+  let bytes = 0
+  for (const source of sources) bytes += (await (await page.request.get(source)).body()).length
+  expect(bytes).toBeLessThan(600_000)
+  await page.getByRole('link', { name: /Open Matcha multiwallet flow/ }).click()
+  await expect(page.getByRole('dialog').locator('video').first()).toHaveAttribute('src', '/Projects/shot-small-9.webm')
+})

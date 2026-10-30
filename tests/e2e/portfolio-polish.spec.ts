@@ -3470,14 +3470,14 @@ test("loads each preview video only when it reaches the viewport", async ({ page
   const secondVisibleVideo = videos.nth(1)
   const offscreenVideo = videos.nth(2)
 
-  await expect(visibleVideo).toHaveAttribute("src", "/Projects/shot-small-9.webm")
+  await expect(visibleVideo).toHaveAttribute("src", "/Projects/shot-small-9-feed.webm")
   await expect(secondVisibleVideo).toHaveAttribute("src", "/Projects/shot-small-16.webm")
   expect(await offscreenVideo.evaluate((video) => video.getBoundingClientRect().top)).toBeGreaterThanOrEqual(780)
   await expect(offscreenVideo).not.toHaveAttribute("src", /\S+/)
   await expect(offscreenVideo).toHaveAttribute("preload", "none")
 
   await offscreenVideo.scrollIntoViewIfNeeded()
-  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/pokemon-duo.webm")
+  await expect(offscreenVideo).toHaveAttribute("src", "/Projects/pokemon-duo-feed.webm")
   await expect(offscreenVideo).toHaveAttribute("preload", "metadata")
 })
 

@@ -808,7 +808,7 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
     if (isVideoSource(source)) {
       return (
         <RowVideoMedia
-          source={source}
+          source={card.feedVideo ?? source}
           loadMedia={loadFeedMedia}
           poster={card.previewPoster}
           label={label}
