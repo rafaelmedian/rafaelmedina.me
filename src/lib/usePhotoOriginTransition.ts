@@ -366,6 +366,7 @@ export function usePhotoOriginTransition(
         // A borrowed flight can precede the near-viewport image observer.
         // Its own small placeholder must still be visible in the DOM fallback.
         if (!image.getAttribute("src") && slideImage.dataset.placeholder) image.src = slideImage.dataset.placeholder
+        if (slideImage.dataset.placeholder) image.style.backgroundImage = `url("${slideImage.dataset.placeholder}")`
         image.decoding = "sync"
         document.body.appendChild(clone)
       }

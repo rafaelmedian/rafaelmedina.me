@@ -140,7 +140,9 @@ test("opening and resting photos keep the same rendered corner mask", async ({ p
   // it can advance zero flights, leaving the eventual clocks paused at zero.
   await expect(wall).toBeVisible()
   await expect(page.locator(".personal-photos-flight").first()).toBeAttached()
-  await wall.locator("img").evaluateAll(images => Promise.all(images.map(image => image.decode())))
+  // Offscreen prints intentionally have no source until approached.
+  await expect.poll(() => wall.locator('[data-photo-id="office"] img').evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+  await wall.locator("img[src]").evaluateAll(images => Promise.all(images.map(image => image.decode())))
   await page.locator(".personal-photos-flight").evaluateAll(async flights => {
     const animations = flights.flatMap(flight => flight.getAnimations({ subtree: true }))
     await Promise.all(animations.map(animation => animation.ready))
