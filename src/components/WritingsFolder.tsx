@@ -26,6 +26,7 @@ export type WritingsReaderStatus = { status: string | null; pendingId: string | 
 
 
 type WritingsFolderProps = {
+  loadMedia?: boolean
   /** The tile was pressed: open the gallery on the notes slide. */
   onOpen: () => void
   /** The tile was hovered or focused: warm the gallery's chunk. */
@@ -48,7 +49,7 @@ type WritingsFolderProps = {
  * fetched, cancelled, and retried. A shared link to a note fetches it the same
  * way, without the list first.
  */
-export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChange, tileRef, originRef, open = false, ref }: WritingsFolderProps) {
+export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChange, tileRef, originRef, open = false, loadMedia = true, ref }: WritingsFolderProps) {
   const { module, status, load, warm } = useDeferredModule(loadReader)
   const Reader = module?.WritingsReader
   useEffect(() => { if (module) onReaderReady(module) }, [module, onReaderReady])
@@ -159,7 +160,7 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
           else liftThenOpen()
         }}>
         <span className="writings-folder" aria-hidden="true">
-          <img className="writings-folder-back" src="/writings/folder-back.png" alt="" width={237} height={200} loading="lazy" />
+          <img className="writings-folder-back" src={loadMedia ? "/writings/folder-back.webp" : undefined} alt="" width={237} height={200} loading="lazy" />
           {/* The middle paper is the one that opens: the list grows out of it
               while the flap drops and the papers either side fan away. */}
           {writingPreviews.map((writing, index) => (
@@ -170,7 +171,7 @@ export function WritingsFolder({ onOpen, onPrefetch, onReaderReady, onStatusChan
               </span>
             </span>
           ))}
-          <span className="writings-folder-front"><img src="/writings/folder-front.png" alt="" width={149} height={133} loading="lazy" /></span>
+          <span className="writings-folder-front"><img src={loadMedia ? "/writings/folder-front.webp" : undefined} alt="" width={149} height={133} loading="lazy" /></span>
         </span>
         {/* The tile wears the reader's status too: a shared link opens a note
             with no list on screen to say what is happening. */}

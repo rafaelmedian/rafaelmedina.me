@@ -9,7 +9,7 @@ import type { PersonalPhotosSheetHandle } from "./PersonalPhotosSheet"
 export { PersonalPhotosPreview } from "./PersonalPhotosPreview"
 const loadSheet = createModuleLoader(() => import("./PersonalPhotosSheet"), "PersonalPhotosSheet")
 
-export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto) => ReactNode }) {
+export function PersonalPhotos({ children, loadMedia = true }: { loadMedia?: boolean; children?: (openPhoto: OpenPhoto) => ReactNode }) {
   const { module, status, load, warm } = useDeferredModule(loadSheet)
   const Sheet = module?.PersonalPhotosSheet
   const sheetRef = useRef<PersonalPhotosSheetHandle>(null)
@@ -34,7 +34,7 @@ export function PersonalPhotos({ children }: { children?: (openPhoto: OpenPhoto)
 
   return (
     <>
-      {children ? children(openPhoto) : <PersonalPhotosPreview onOpen={openPhoto} onIntent={warm} status={status} items={preview} />}
+      {children ? children(openPhoto) : <PersonalPhotosPreview loadMedia={loadMedia} onOpen={openPhoto} onIntent={warm} status={status} items={preview} />}
       {Sheet ? <Sheet ref={sheetRef} onPreviewImagesChange={setPreviewImages} /> : null}
     </>
   )

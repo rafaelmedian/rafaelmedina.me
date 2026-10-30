@@ -258,13 +258,20 @@ function RowVideoMedia({
     const video = videoRef.current
     if (!video || !supportsIntersectionObserver || holdForLightweightMedia || pausePlayback) return
 
+    let dwell: number | undefined
     const loadObserver = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setShouldLoad(true)
-          loadObserver.disconnect()
+        window.clearTimeout(dwell)
+        // A scroll past a tile is not intent to watch it. Require a short,
+        // continuous stay; leaving or covering the feed cancels the download.
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.1) {
+          dwell = window.setTimeout(() => {
+            setShouldLoad(true)
+            loadObserver.disconnect()
+          }, 250)
         }
       },
+      { threshold: 0.1 },
     )
     const visibilityObserver = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
@@ -274,6 +281,7 @@ function RowVideoMedia({
     loadObserver.observe(video)
     visibilityObserver.observe(video)
     return () => {
+      window.clearTimeout(dwell)
       loadObserver.disconnect()
       visibilityObserver.disconnect()
     }
@@ -1151,6 +1159,7 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                           if (item.kind === "writings") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
                               <WritingsFolder
+                                loadMedia={loadFeedMedia}
                                 ref={writingsFolderRef}
                                 onOpen={openNotes}
                                 onPrefetch={prefetchPreviewGallery}
@@ -1170,7 +1179,7 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                           )
                           if (item.kind === "photos") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
-                              <PersonalPhotos />
+                              <PersonalPhotos loadMedia={loadFeedMedia} />
                             </div>
                           )
                           const itemKey = item.card.id

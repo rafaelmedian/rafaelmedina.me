@@ -58,7 +58,7 @@ export const cvExperience: CvExperience[] = [
     dates: "2021",
     role: "Product Designer (Contract)",
     href: "https://boldvoice.com/",
-    logoUrls: ["/logos/boldvoice.png"],
+    logoUrls: ["/logos/boldvoice.webp"],
     highlight:
       "Sole designer on an accent-training app with 50K+ users, shipping growth experiments alongside one engineer.",
   },
