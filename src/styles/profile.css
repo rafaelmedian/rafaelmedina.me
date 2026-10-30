@@ -77,6 +77,17 @@ html[data-avatar-intro="portrait"] #root .mosaic-avatar-coin-inner {
   }
 }
 
+/* Holds everything after the hero out of layout until the full stylesheet is in:
+   lazy artwork stays unrequested, so it can't compete with that stylesheet, and
+   the unstyled grid can't flash. See scripts/hero-first.mjs. */
+html[data-page-styles="pending"] :is(#work, #work ~ *, .mosaic-shell ~ *, main ~ *) {
+  display: none;
+}
+
+html[data-avatar-intro="revealing"] #work {
+  visibility: hidden;
+}
+
 html[data-avatar-intro="revealing"] :is(
   .mosaic-profile-meta,
   .mosaic-work-history,
@@ -84,26 +95,25 @@ html[data-avatar-intro="revealing"] :is(
   .mosaic-profile-contact,
   .mosaic-section-corner,
   .mosaic-social-corner,
-  .mosaic-mobile-toc,
-  .mosaic-group
-) {
+  .mosaic-mobile-toc
+),
+html[data-avatar-intro="tiles"] .mosaic-group {
   animation: avatar-intro-content var(--duration-slow) var(--ease-smooth) var(--avatar-intro-delay, 0ms) both;
 }
 
-/* Four steps at most, 240ms of total stagger: past ~300ms the last group reads
-   as late rather than sequenced (the About blocks cap theirs the same way).
-   Every work group shares the last step. useAvatarIntro reads
-   --entrance-stagger and --entrance-stagger-steps to time the end of the
-   reveal, so change them here and the timer follows. */
+/* Two beats: the top section staggers in, and the tiles follow once it has
+   landed and their stylesheet is in. The hold is the contact row's own 120ms plus
+   --duration-slow, written out because the script in index.html reads it and a
+   custom property holding a calc() reads back unresolved. A tile whose artwork
+   hasn't arrived rises as its skeleton. */
 html {
   --entrance-stagger: 60ms;
-  --entrance-stagger-steps: 4;
+  --avatar-intro-tiles-delay: 480ms;
 }
 
 html[data-avatar-intro="revealing"] :is(.mosaic-work-history, .mosaic-profile-location) { --avatar-intro-delay: var(--entrance-stagger); }
 html[data-avatar-intro="revealing"] .mosaic-profile-contact { --avatar-intro-delay: calc(var(--entrance-stagger) * 2); }
 html[data-avatar-intro="revealing"] :is(.mosaic-section-corner, .mosaic-social-corner, .mosaic-mobile-toc) { --avatar-intro-delay: calc(var(--entrance-stagger) * 3); }
-html[data-avatar-intro="revealing"] .mosaic-group { --avatar-intro-delay: calc(var(--entrance-stagger) * var(--entrance-stagger-steps)); }
 
 html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
   transform: none;
@@ -111,22 +121,24 @@ html[data-avatar-intro="revealing"] .mosaic-avatar-coin-inner {
 
 /* Compact groups have no box; their children carry the same group delay. */
 @media (max-width: 899.98px) {
-  html[data-avatar-intro="revealing"] .mosaic-group > .mosaic-row-item {
-    animation: avatar-intro-content var(--duration-slow) var(--ease-smooth) var(--avatar-intro-delay, 0ms) both;
+  html[data-avatar-intro="tiles"] .mosaic-group > .mosaic-row-item {
+    animation: avatar-intro-content var(--duration-slow) var(--ease-smooth) both;
   }
 }
 
+/* No blur here: Chromium will not composite an animated filter that moves
+   pixels, and the whole animation falls back to the main thread with it. This
+   one runs while the cold load is still evaluating analytics and lazy chunks,
+   and a 250ms main-thread block froze the page for all 250ms. */
 @keyframes avatar-intro-content {
   from {
     opacity: 0;
     transform: translateY(0.75rem);
-    filter: blur(var(--blur-reveal));
   }
 
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 

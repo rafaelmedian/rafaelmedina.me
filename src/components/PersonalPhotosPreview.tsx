@@ -68,26 +68,15 @@ function arcPlacement(index: number, middle: number, count: number): CSSProperti
   } as CSSProperties
 }
 
-export function PersonalPhotosPreview({ onOpen, onIntent, status, className = "", items }: { onOpen: OpenPhoto; onIntent?: () => void; status?: "loading" | "error" | "reload"; className?: string; items?: PreviewPhoto[] }) {
+export function PersonalPhotosPreview({ onOpen, onIntent, status, className = "", items, loadMedia = true }: { loadMedia?: boolean; onOpen: OpenPhoto; onIntent?: () => void; status?: "loading" | "error" | "reload"; className?: string; items?: PreviewPhoto[] }) {
   const previewRef = useRef<HTMLDivElement>(null)
   const resetStackTilt = usePhotoStackTilt(previewRef)
   const finishDeal = usePhotoFanDeal(previewRef)
   const count = usePreviewCount()
   const preview = items ?? initialPreview.slice(0, count)
-  const thumbnailsWarmed = useRef(false)
-  const warmPhotos = () => {
-    // The fan's images load natively. The remaining flight placeholders are
-    // only needed once a pointer, focus, or tap expresses opening intent.
-    if (!thumbnailsWarmed.current) {
-      thumbnailsWarmed.current = true
-      photos.forEach((photo) => {
-        const image = new Image()
-        image.src = `/images/personal/${photo.name}-thumb.webp`
-        void image.decode().catch(() => undefined)
-      })
-    }
-    onIntent?.()
-  }
+  // Intent warms the sheet's code only. Its visible prints request their
+  // placeholders on opening; a passing hover must not fetch all 47 photos.
+  const warmPhotos = () => onIntent?.()
   // The middle print of the fan, which the arc is measured from. With an even
   // count it falls between two prints and both lean the same amount.
   const middle = (preview.length - 1) / 2
@@ -104,7 +93,7 @@ export function PersonalPhotosPreview({ onOpen, onIntent, status, className = ""
           <span className="personal-photos-stack-tilt">
             {preview.map(({ photo, src }, index) => (
               <span className="personal-photos-print" data-photo-id={photo.id} key={photo.id} style={arcPlacement(index, middle, preview.length)}>
-                <img src={src} alt="" width={photo.width} height={photo.height} loading="lazy" decoding="async" />
+                <img src={loadMedia ? src : undefined} alt="" width={photo.width} height={photo.height} loading="lazy" decoding="async" />
               </span>
             ))}
           </span>

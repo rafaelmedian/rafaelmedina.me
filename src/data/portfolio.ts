@@ -1,6 +1,5 @@
 import profilePhoto from "../assets/profile-photo.webp"
 import type { ProjectId } from "./projectIds"
-import { projectCaseStudies } from "./projectCaseStudies"
 
 export type PortfolioCard = {
   /** Registered in `projectIds`, so the likes API knows every project by name. */
@@ -12,6 +11,8 @@ export type PortfolioCard = {
   summary: string
   detail: string
   image: string
+  /** Lightweight loop for the grid; the gallery retains the full video. */
+  feedVideo?: string
   previewWidth?: number
   previewHeight?: number
   previewPoster?: string
@@ -325,6 +326,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     outcome:
       "People can change wallets during a trade and keep their current quote and inputs.",
     image: "/Projects/shot-small-9.webm",
+    feedVideo: "/Projects/shot-small-9-feed.webm",
     previewWidth: 480,
     previewHeight: 360,
     previewPoster: "/Projects/shot-small-9-poster.webp",
@@ -364,6 +366,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     outcome:
       "New and returning users have direct routes into the part of Matcha they need.",
     image: "/Projects/shot-small-16.webm",
+    feedVideo: "/Projects/shot-small-16-feed.webm",
     previewWidth: 640,
     previewHeight: 480,
     previewPoster: "/Projects/shot-small-16-poster.webp",
@@ -384,6 +387,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     outcome:
       "Each part of the service is selected and confirmed in one guided booking flow.",
     image: "/Projects/protector-dress-code.webm",
+    feedVideo: "/Projects/protector-dress-code-feed.webm",
     previewWidth: 480,
     previewHeight: 1042,
     previewPoster: "/Projects/protector-dress-code-poster.webp",
@@ -408,6 +412,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     outcome:
       "A home patrol is booked from an address and a time window, with the account created last.",
     image: "/Projects/patrol.webm",
+    feedVideo: "/Projects/patrol-feed.webm",
     previewWidth: 480,
     previewHeight: 1042,
     previewPoster: "/Projects/patrol-poster.webp",
@@ -652,6 +657,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     // each with the post it went out in. The cross-chain and gasless cards
     // keep their own pages for old links but are no longer on the grid.
     image: "/Projects/matcha-video-cross-chain-2023.webm",
+    feedVideo: "/Projects/matcha-video-cross-chain-2023-feed.webm",
     previewWidth: 960,
     previewHeight: 540,
     previewPoster: "/Projects/matcha-video-cross-chain-2023-poster.webp",
@@ -674,6 +680,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     outcome:
       "The teaser and the launch post drew about 1,600 likes each on X.",
     image: "/Projects/matcha-video-cross-chain-2023.webm",
+    feedVideo: "/Projects/matcha-video-cross-chain-2023-feed.webm",
     previewWidth: 960,
     previewHeight: 540,
     previewPoster: "/Projects/matcha-video-cross-chain-2023-poster.webp",
@@ -803,6 +810,7 @@ const portfolioCardEntries: PortfolioCard[] = [
     outcome:
       "A working prototype where the fold does the work: clues on one screen, the Pokémon on the other.",
     image: "/Projects/pokemon-duo.webm",
+    feedVideo: "/Projects/pokemon-duo-feed.webm",
     previewWidth: 960,
     previewHeight: 764,
     previewPoster: "/Projects/pokemon-duo-poster.webp",
@@ -815,7 +823,6 @@ const portfolioCardEntries: PortfolioCard[] = [
   },
 ]
 
-export const portfolioCards: PortfolioCard[] = portfolioCardEntries.map((card) => ({
-  ...card,
-  caseStudy: projectCaseStudies[card.slug as keyof typeof projectCaseStudies],
-}))
+// The feed needs summaries and media only. Full narratives belong to the
+// deferred gallery and standalone project page.
+export const portfolioCards: PortfolioCard[] = portfolioCardEntries

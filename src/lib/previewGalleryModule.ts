@@ -12,7 +12,7 @@ function findGalleryModuleUrl() {
   const entries = performance.getEntriesByType("resource")
   for (let index = entries.length - 1; index >= 0; index -= 1) {
     const url = entries[index]?.name
-    if (url?.includes("PreviewGalleryDialog")) return url
+    if (url?.includes("PreviewGalleryDialog") && /\.js(?:\?|$)/.test(url)) return url
   }
   return null
 }

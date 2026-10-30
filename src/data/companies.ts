@@ -78,7 +78,7 @@ export const workedWithCompanies: WorkedWithCompany[] = [
     id: "boldvoice",
     name: "BoldVoice",
     compactName: "BoldVoice",
-    logoUrls: ["/logos/boldvoice.png"],
+    logoUrls: ["/logos/boldvoice.webp"],
     href: "https://boldvoice.com",
     relationship: "previous",
     role: "Product designer",

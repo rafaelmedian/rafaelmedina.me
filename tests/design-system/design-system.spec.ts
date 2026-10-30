@@ -212,7 +212,7 @@ test("documents the computed resume-title weight", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
   const resumeTitleWeight = await page
-    .getByRole("dialog", { name: "Résumé" })
+    .getByRole("dialog", { name: "Resume" })
     .locator(".mosaic-about-resume-title")
     .first()
     .evaluate((title) => getComputedStyle(title).fontWeight)
@@ -319,6 +319,11 @@ test("every custom property defined in the stylesheets is referenced", () => {
     const tokens = file.endsWith(".css") || file.endsWith(".html")
       ? findCssCustomPropertyReferences(text)
       : findScriptCustomPropertyReferences(text, file)
+    if (file.endsWith(".html")) {
+      for (const [, script] of text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+        for (const token of findScriptCustomPropertyReferences(script, "inline.js")) tokens.add(token)
+      }
+    }
     for (const token of tokens) references.add(token)
   }
 

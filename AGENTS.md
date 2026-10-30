@@ -223,6 +223,16 @@ not the optimized result. The pre-optimization source is recoverable with
 `git show 9e2be59:public/reactions/copy-email-success.webp > /tmp/copy-email-source.webp`.
 Its existing still remains the reduced-motion/data-saving alternative.
 
+## The home page's first paint
+
+The hero on `/` depends on nothing but the HTML, so it appears on any connection.
+`scripts/hero-first.mjs` runs during prerender: it extracts the rules that can
+reach the top of the page from the built stylesheet and inlines them with the
+portrait, makes the full stylesheet non-blocking, and holds tile media back until
+that stylesheet is in. Nothing is hand-copied, so hero CSS changes follow on their
+own. Keep what belongs to the hero above `#work` in the markup, and never add a
+preload or an eager image to the home page without asking what it delays.
+
 ## Generated artwork
 
 `public/writings/marks/` holds the notes reader's pencil marks: the bracket that
@@ -241,6 +251,12 @@ same artwork instead of churning the diff.
 
 The PNGs are black on transparent and are used as CSS masks, so the reader still
 colours them with `currentColor` and one asset serves any ink.
+
+`src/data/tileSkeletons.ts` holds the outline each home tile's loading skeleton
+takes, traced from the tile's first frame so a placeholder has the shape of the
+illustration rather than of its file, transparent margins included. Rerun
+`node scripts/build-tile-skeletons.mjs` and commit the result when a tile's
+artwork changes; check its `FULL_FRAME` and `ALWAYS_PANEL` lists when adding one.
 
 The archive and résumé no longer use decorative gutter drawings. Only the
 article brackets and underlines are generated; do not restore the retired

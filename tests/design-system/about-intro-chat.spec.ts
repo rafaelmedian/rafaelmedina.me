@@ -387,13 +387,13 @@ test('shows three typing dots before each greeting and pauses the sequence in a 
   await expect(typing).toHaveCount(0)
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
   await expect.poll(async () => {
-    const question = await chat.getByText('where should i email you?').boundingBox()
+    const calendar = await chat.locator('.about-intro-chat-link-preview').boundingBox()
     const field = await chat.locator('form').boundingBox()
-    return Math.abs(field!.y - question!.y - question!.height - 8)
+    return Math.abs(field!.y - calendar!.y - calendar!.height - 8)
   }).toBeLessThan(1)
   // The field is a clean pill until the visitor sends it; only the resulting
   // blue address bubble gains the conversation tail on the right.
-  expect(await chat.getByText('where should i email you?').evaluate(node => getComputedStyle(node, '::before').content)).toBe('""')
+  expect(await chat.locator('.about-intro-chat-link-preview').evaluate(node => getComputedStyle(node, '::before').content)).toBe('""')
   const form = chat.locator('form')
   expect(await form.evaluate(node => [getComputedStyle(node, '::before').content, getComputedStyle(node, '::after').content])).toEqual(['none', 'none'])
   const chatBox = await chat.boundingBox()
@@ -637,8 +637,16 @@ test('sizes the initial desktop conversation to the available viewport', async (
   const chat = page.getByRole('region', { name: 'Chat with Rafa' })
   await expect(chat.getByRole('textbox', { name: 'Your email' })).toBeVisible()
   const history = chat.locator('.about-intro-chat-history')
-  // The greeting fits here; the fallback height unnecessarily forces scrolling.
-  await expect.poll(() => history.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1)
+  // The calendar makes this taller than a short viewport. Use the measured
+  // space above the composer, keeping both controls and scrollback reachable.
+  await expect.poll(() => history.evaluate(node => node.clientHeight)).toBeGreaterThan(140)
+  await expect.poll(async () => {
+    const bounds = await chat.boundingBox()
+    return bounds!.y
+  }).toBeGreaterThanOrEqual(11)
+  const field = await chat.getByRole('textbox', { name: 'Your email' }).boundingBox()
+  expect(field!.y + field!.height).toBeLessThanOrEqual(400)
+  await expect(history).toHaveCSS('overflow-y', 'auto')
 })
 
 test('keeps a dismissed chat closed across the compact breakpoint', async ({ page }) => {

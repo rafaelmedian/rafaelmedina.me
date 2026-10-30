@@ -22,7 +22,14 @@ for (const projectId of ["", "test-project"]) {
     })
 
     try {
-      await page.goto(`http://127.0.0.1:${port}`)
+      let releaseFont!: () => void
+      const heldFont = new Promise<void>(resolve => { releaseFont = resolve })
+      await page.route("**/fonts/Handlee-core.woff2", async route => { await heldFont; await route.continue() })
+      await page.goto(`http://127.0.0.1:${port}`, { waitUntil: "domcontentloaded" })
+      await page.waitForTimeout(200)
+      // Recording must not compete with the initial document and fonts.
+      expect(requests).toEqual([])
+      releaseFont()
       const scripts = page.locator('script[src^="https://www.clarity.ms/tag/"]')
       if (projectId) {
         await expect(scripts).toHaveCount(1)

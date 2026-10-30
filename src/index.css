@@ -1,6 +1,7 @@
 /* Keep the reset first and the global reduced-motion policy last.
    Component styles include their own responsive and interaction overrides. */
 @import "./styles/tailwind.css";
+@import "./styles/fonts.css";
 @import "./styles/base.css";
 @import "./styles/inline-swap.css";
 @import "./styles/page-edge.css";
@@ -9,7 +10,6 @@
 @import "./styles/local-time.css";
 @import "./styles/about.css";
 @import "./styles/about-intro.css";
-@import "./styles/about-intro-chat.css";
 @import "./styles/work-history.css";
 @import "./styles/contact.css";
 @import "./styles/work-grid.css";
@@ -18,7 +18,7 @@
 @import "./styles/likes.css";
 @import "./styles/personal-photos.css";
 @import "./styles/preview-gallery.css";
-@import "./styles/booking.css";
+@import "./styles/booking-fallback.css";
 @import "./styles/writings.css";
 @import "./styles/standalone.css";
 @import "./styles/reduced-motion.css";

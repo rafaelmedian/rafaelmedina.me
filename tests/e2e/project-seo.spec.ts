@@ -244,3 +244,15 @@ test("the 404 stays readable and uses the shared site styles", async ({ page }) 
   await page.getByRole("link", { name: "Go home" }).click()
   await expect(page).toHaveURL(/\/$/)
 })
+
+test('a failed project page chunk leaves its prerendered article readable', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.route('**/ProjectPage-*.js*', route => route.abort())
+  await page.goto('/work/matcha-cross-chain-film/')
+  await expect(page.locator('.standalone-page')).toBeVisible()
+  await expect(page.locator('.standalone-page h1')).toContainText('Matcha')
+  expect(errors).toEqual([])
+  await page.getByRole('link', { name: 'All work', exact: true }).click()
+  await expect(page.locator('.mosaic-rows')).toBeVisible()
+})

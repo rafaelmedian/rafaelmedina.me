@@ -44,7 +44,7 @@ test("the idle wall sleeps and keyboard panning does not start a continuous loop
   await expect(wall).toHaveCount(0)
 })
 
-test("scrolling to the fan fetches only its previews until opening intent", async ({ page }) => {
+test("scrolling and focusing the fan fetch only its preview images", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 600 })
   const requested = new Set<string>()
   page.on("request", (request) => {
@@ -59,6 +59,7 @@ test("scrolling to the fan fetches only its previews until opening intent", asyn
   expect([...requested].sort()).toEqual(previewSources.sort())
 
   await trigger.focus()
-  await expect.poll(() => requested.size).toBeGreaterThan(previewSources.length)
+  await page.waitForTimeout(500)
+  expect([...requested].sort()).toEqual(previewSources.sort())
   await expect(page.getByRole("dialog", { name: "Personal photos" })).toHaveCount(0)
 })

@@ -30,7 +30,7 @@
     animation: none;
   }
 
-  html[data-avatar-intro="revealing"] :is(
+  html:is([data-avatar-intro="revealing"], [data-avatar-intro="tiles"]) :is(
     .mosaic-profile-meta,
     .mosaic-work-history,
     .mosaic-profile-location,

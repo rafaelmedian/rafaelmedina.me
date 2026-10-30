@@ -3,7 +3,9 @@ import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { loadWritingPage } from './lib/writingPageSlot.ts'
-import { writingAtPath } from './lib/projectMetadata.ts'
+import { revealGalleryEntry } from './lib/galleryEntry.ts'
+import { getProjectPage, loadProjectPage } from './lib/projectPageSlot.ts'
+import { projectAtPath, writingAtPath } from './lib/projectMetadata.ts'
 import { startAnalytics } from './lib/analytics.ts'
 import { startClarity } from './lib/clarity.ts'
 import { loadPreviewGallery } from './lib/previewGalleryModule.ts'
@@ -25,6 +27,8 @@ function start() {
 
 const waits: Promise<unknown>[] = []
 const note = writingAtPath(window.location.pathname)
+const project = projectAtPath(window.location.pathname)
+if (project) waits.push(loadProjectPage())
 // A note's article is not in this bundle, and `/notes/<id>/` is prerendered
 // with it. Fetch the module before hydrating so App's first client render can
 // produce the same markup that is already in the document; hydrating without
@@ -42,6 +46,17 @@ if (document.documentElement.dataset.galleryEntry) {
   waits.push(loadPreviewGallery())
   if (note) void import("./components/WritingsReader.tsx").catch(() => undefined)
 }
+// The first-load intro holds the grid out of layout until the full stylesheet is
+// in. Hydrating before that would have it measure a grid with no size.
+if (window.pageStylesReady) waits.push(window.pageStylesReady)
 // Everywhere else this is a straight hydrate.
-if (waits.length) void Promise.allSettled(waits).then(start)
+if (waits.length) void Promise.allSettled(waits).then(() => {
+  // A failed prerequisite must not hydrate a homepage over useful project
+  // HTML, especially for published projects with no grid/gallery item.
+  if (project && root.hasChildNodes() && !getProjectPage()) {
+    revealGalleryEntry()
+    return
+  }
+  start()
+})
 else start()

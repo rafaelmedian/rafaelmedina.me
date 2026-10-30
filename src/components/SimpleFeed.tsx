@@ -5,6 +5,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -25,6 +26,7 @@ import { PersonalPhotos } from "./PersonalPhotos"
 import { QuoteCard } from "./QuoteCard"
 import { ResumeTile } from "./ResumeTile"
 import { portfolioQuotes, teamQuotes, type PortfolioQuote } from "../data/quotes"
+import { tileSkeletons } from "../data/tileSkeletons"
 import { homeGroups, linkedinHoverMedia, xProfilePreview, type PortfolioCard, type QuoteSource, type SiteLinks } from "../data/portfolio"
 import { trackEvent } from "../lib/analytics"
 import { formatAvailability } from "../lib/availability"
@@ -36,6 +38,7 @@ import { revealGalleryEntry } from "../lib/galleryEntry"
 import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
 import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
+import { pauseExpandedMediaWarming, startExpandedMediaWarming, warmExpandedMedia } from "../lib/warmExpandedMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
 import { useWorkGridHeight } from "../lib/useWorkGridHeight"
 import { useAvatarIntro } from "../lib/useAvatarIntro"
@@ -258,13 +261,20 @@ function RowVideoMedia({
     const video = videoRef.current
     if (!video || !supportsIntersectionObserver || holdForLightweightMedia || pausePlayback) return
 
+    let dwell: number | undefined
     const loadObserver = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setShouldLoad(true)
-          loadObserver.disconnect()
+        window.clearTimeout(dwell)
+        // A scroll past a tile is not intent to watch it. Require a short,
+        // continuous stay; leaving or covering the feed cancels the download.
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.1) {
+          dwell = window.setTimeout(() => {
+            setShouldLoad(true)
+            loadObserver.disconnect()
+          }, 250)
         }
       },
+      { threshold: 0.1 },
     )
     const visibilityObserver = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
@@ -274,6 +284,7 @@ function RowVideoMedia({
     loadObserver.observe(video)
     visibilityObserver.observe(video)
     return () => {
+      window.clearTimeout(dwell)
       loadObserver.disconnect()
       visibilityObserver.disconnect()
     }
@@ -314,7 +325,7 @@ function RowVideoMedia({
       preload={loadNow && !prefersReducedMotion ? "metadata" : "none"}
       aria-label={label}
       className="mosaic-row-media"
-      data-loaded={poster || loaded ? "true" : "false"}
+      data-loaded={(poster ? posterReady : loaded) ? "true" : "false"}
       data-pending={(poster ? posterReady : loaded) ? "false" : "true"}
       onLoadedData={() => setLoaded(true)}
     />
@@ -329,6 +340,44 @@ type RowImageMediaProps = {
   eager: boolean
   sizes: string
   loadMedia: boolean
+}
+
+// A tile's placeholder: the outline of what its artwork draws in its first frame,
+// in the box that artwork will fill. An image can't host a pseudo-element and
+// fades as a unit, so this is its sibling; an SVG because the width and height
+// give it the same intrinsic ratio, and so the same box under the same sizing
+// rules. A shape that fills its frame stretches to a cover slot; any other keeps
+// its proportions, as contained artwork does.
+function RowMediaSkeleton({ cardId }: { cardId: PortfolioCard["id"] }) {
+  const id = useId()
+  const shape = tileSkeletons[cardId]
+  if (!shape) return null
+
+  return (
+    <svg
+      className="mosaic-row-media-skeleton"
+      width={shape.width}
+      height={shape.height}
+      viewBox={`0 0 ${shape.width} ${shape.height}`}
+      preserveAspectRatio={shape.fullFrame ? "none" : "xMidYMid meet"}
+      aria-hidden="true"
+    >
+      <defs>
+        <clipPath id={`${id}-shape`}>
+          <path d={shape.d} />
+        </clipPath>
+        <linearGradient id={`${id}-sheen`}>
+          <stop offset="0" stopOpacity="0" />
+          <stop offset="0.5" />
+          <stop offset="1" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <g clipPath={`url(#${id}-shape)`}>
+        <rect className="mosaic-row-media-skeleton-base" width={shape.width} height={shape.height} />
+        <rect className="mosaic-row-media-skeleton-sweep" width={shape.width} height={shape.height} fill={`url(#${id}-sheen)`} />
+      </g>
+    </svg>
+  )
 }
 
 // Owns its own loaded flag on purpose. Hoisting it into SimpleFeed meant every
@@ -781,6 +830,27 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
     if (galleryItemId === writingsItemId) writingsFolderRef.current?.preload()
   }, [galleryItemId])
 
+  // Warm the full file behind each tile the visitor has actually seen, so
+  // scrolling past the grid is what spends data, not arriving at the page.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        observer.unobserve(entry.target)
+        const source = (entry.target as HTMLElement).dataset.warmSource
+        if (source) warmExpandedMedia(source)
+      }
+    })
+    document.querySelectorAll("[data-warm-source]").forEach((tile) => observer.observe(tile))
+    startExpandedMediaWarming()
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    pauseExpandedMediaWarming(activeWorkPreviewIndex !== null)
+  }, [activeWorkPreviewIndex])
+
   // The gallery grows out of (and shrinks back into) the card it represents, so
   // it needs that card at open and close time.
   const getPreviewOrigin = useCallback(
@@ -800,7 +870,7 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
     if (isVideoSource(source)) {
       return (
         <RowVideoMedia
-          source={source}
+          source={card.feedVideo ?? source}
           loadMedia={loadFeedMedia}
           poster={card.previewPoster}
           label={label}
@@ -1151,6 +1221,7 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                           if (item.kind === "writings") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
                               <WritingsFolder
+                                loadMedia={loadFeedMedia}
                                 ref={writingsFolderRef}
                                 onOpen={openNotes}
                                 onPrefetch={prefetchPreviewGallery}
@@ -1170,10 +1241,15 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                           )
                           if (item.kind === "photos") return (
                             <div key={item.area} className={itemClass} style={itemStyle}>
-                              <PersonalPhotos />
+                              <PersonalPhotos loadMedia={loadFeedMedia} />
                             </div>
                           )
                           const itemKey = item.card.id
+                          // The gallery plays this file and shows these compositions from the
+                          // tile's own images, and reduced motion only fetches a video on request.
+                          const warmSource = item.card.galleryUsesHomeImages || (prefersReducedMotion && isVideoSource(item.card.image))
+                            ? undefined
+                            : item.card.image
                           const mediaSizes = previewSizesForShare(
                             item.share,
                             group.columns,
@@ -1194,12 +1270,17 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                                 ))}
                               </span>
                             </span>
-                          ) : renderRowMedia(
-                            item.card,
-                            item.card.image,
-                            item.card.title,
-                            groupIndex === 0,
-                            mediaSizes,
+                          ) : (
+                            <>
+                              <RowMediaSkeleton cardId={item.card.id} />
+                              {renderRowMedia(
+                                item.card,
+                                item.card.image,
+                                item.card.title,
+                                groupIndex === 0,
+                                mediaSizes,
+                              )}
+                            </>
                           )
                           return (
                             <div key={item.area} className={`${itemClass} mosaic-row-item-fit-${item.fit}`} style={itemStyle}>
@@ -1211,9 +1292,16 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                                   else nodes.delete(item.previewIndex)
                                 }}
                                 className={`mosaic-row-card mosaic-row-card-${item.card.id}`}
-                                onPointerEnter={prefetchPreviewGallery}
+                                data-warm-source={warmSource}
+                                onPointerEnter={() => {
+                                  prefetchPreviewGallery()
+                                  if (warmSource) warmExpandedMedia(warmSource, true)
+                                }}
                                 onPointerDown={prefetchPreviewGallery}
-                                onFocus={prefetchPreviewGallery}
+                                onFocus={() => {
+                                  prefetchPreviewGallery()
+                                  if (warmSource) warmExpandedMedia(warmSource, true)
+                                }}
                                 onClick={(event) => {
                                   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
                                   event.preventDefault()

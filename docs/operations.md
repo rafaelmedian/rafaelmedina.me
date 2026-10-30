@@ -45,6 +45,7 @@ node scripts/build-writing-marks.mjs          # public/writings/marks/ pencil ma
 node scripts/generate-preview-variants.mjs    # -480w/-960w webp siblings
 node scripts/generate-video-posters.mjs       # poster frames for preview videos
 node scripts/optimize-video-previews.mjs      # re-encoded preview videos
+python3 scripts/build-fonts.py                # public/fonts/ + src/styles/fonts.css, see docs/fonts.md
 ```
 
 Run the relevant one after editing its source, then commit the result. The résumé

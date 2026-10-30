@@ -1331,19 +1331,23 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 <strong>Loads and entrances share one blur; swaps take half of it.</strong>
                 <p>
                   Media and entering text resolve from <code>--blur-reveal</code> to zero over{" "}
-                  <code>--duration-slow</code> on <code>--ease-smooth</code>. Large dialogs use opacity and transform
-                  only. Empty work tiles show a breathing skeleton until their artwork decodes. Things that change
+                  <code>--duration-slow</code> on <code>--ease-smooth</code>. Large dialogs and work tiles use opacity
+                  and transform only. Until its artwork decodes, a work tile shows a shimmering placeholder in the
+                  outline of what that artwork draws. Things that change
                   in place (a label, a number, an icon, a chat bubble) use <code>--blur-swap</code>: at 13–14px the
                   reveal blur smears the glyphs.
                 </p>
               </div>
 
-              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load avatar stagger 60ms 12px groups")}>
+              <div className="ds-rule" id="page-entrances" data-ds-terms={terms("first load avatar stagger 60ms 480ms 12px groups tiles")}>
                 <strong>The avatar arrives first, then the page.</strong>
                 <p>
-                  On a fresh visit the portrait resolves in place, then the homepage rises 12px from the same blur in
-                  60ms steps, four at most, so the whole stagger stays under 300ms; every work group shares the last
-                  step. Any input ends the intro at once; reduced motion skips it.
+                  On a fresh visit the portrait resolves in place as soon as the HTML arrives, which carries it and the
+                  top section's CSS, then the top section fades up 12px in 60ms steps, and
+                  the work tiles follow once it has landed and the full stylesheet is in, as skeletons if their artwork
+                  hasn't arrived. The rise
+                  carries no blur: an animated blur leaves the compositor, and the cold load is busy on the main
+                  thread. Any input ends the intro at once; reduced motion skips it.
                 </p>
               </div>
 

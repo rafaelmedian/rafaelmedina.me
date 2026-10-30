@@ -125,11 +125,19 @@ jobs:
       - name: Run design-system tests
         run: npm run test:design-system
 
-      - if: failure()
+      # Run alone after the design checks: CPU/network timing budgets should
+      # not compete with another browser suite on this runner.
+      - name: Check cold-load performance budgets
+        run: npm run test:performance
+
+      - if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-traces-design-system
-          path: test-results-design-system/
+          name: playwright-checks-and-performance
+          if-no-files-found: ignore
+          path: |
+            test-results-design-system/
+            test-results-performance/
           retention-days: 7
 
   # Keep the repository's existing required `verify` check stable while the

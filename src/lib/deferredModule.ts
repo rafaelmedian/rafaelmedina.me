@@ -1,13 +1,41 @@
 import { useCallback, useRef, useState } from "react"
 
+/** Vite remembers a failed CSS preload. Repair the link explicitly before
+ * presenting a module retried under a fresh JavaScript URL. */
+function retryStylesheet(url: string) {
+  return new Promise<void>((resolve, reject) => {
+    const href = new URL(url, document.baseURI).href
+    for (const link of document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')) {
+      // Chromium can expose an empty sheet even after a failed request.
+      // This URL is known to have failed, so do not treat sheet as success.
+      if (link.href === href) link.remove()
+    }
+    const link = document.createElement("link")
+    link.rel = "stylesheet"
+    link.href = href
+    link.onload = () => resolve()
+    link.onerror = () => { link.remove(); reject(new Error(`Unable to preload CSS for ${href}`)) }
+    document.head.append(link)
+  })
+}
+
 /** Cache successful loads and warmups, but let a failed request be retried.
  * As with the gallery, a new module-map key is needed after an import fails. */
 export function createModuleLoader<T>(importModule: () => Promise<T>, chunkName: string) {
   let pending: Promise<T> | null = null
   let failedUrl: string | null = null
+  const failedStyles = new Set<string>()
   let attempt = 0
   return () => {
     if (pending) return pending
+    // All stylesheet errors fire before Vite settles its preload batch. Keep
+    // every failed link, not just the first error that its import rejects with.
+    const styleErrors = new Set<string>()
+    const recordStyleError = (event: Event) => {
+      const link = event.target
+      if (link instanceof HTMLLinkElement && link.rel === "stylesheet") styleErrors.add(link.href)
+    }
+    document.addEventListener("error", recordStyleError, true)
     let request: Promise<T>
     if (failedUrl) {
       const retryUrl = new URL(failedUrl)
@@ -16,12 +44,17 @@ export function createModuleLoader<T>(importModule: () => Promise<T>, chunkName:
     } else {
       request = importModule()
     }
-    pending = request.catch((error: unknown) => {
+    const withStyles = Promise.all([request, ...[...failedStyles].map(retryStylesheet)])
+      .then(([module]) => { failedStyles.clear(); return module as T })
+    pending = withStyles.catch((error: unknown) => {
       pending = null
-      const entry = performance.getEntriesByType("resource").reverse().find(entry => entry.name.includes(chunkName))
+      const entry = performance.getEntriesByType("resource").reverse().find(entry => entry.name.includes(chunkName) && /\.js(?:\?|$)/.test(entry.name))
       if (entry) failedUrl = entry.name
+      const failedStyle = error instanceof Error ? /Unable to preload CSS for (.+)/.exec(error.message)?.[1] : undefined
+      if (failedStyle) failedStyles.add(failedStyle)
+      styleErrors.forEach(url => failedStyles.add(url))
       throw error
-    })
+    }).finally(() => document.removeEventListener("error", recordStyleError, true))
     return pending
   }
 }

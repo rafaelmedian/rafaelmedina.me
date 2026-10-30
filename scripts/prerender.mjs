@@ -1,6 +1,7 @@
 import fs from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
+import { inlineHeroFirst } from "./hero-first.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const dist = path.join(root, "dist")
@@ -42,6 +43,8 @@ for (const { pathname, metadata } of pages) {
   html = html.replace('<div id="root"></div>', () =>
     `<div id="root">${render(pathname)}</div><script>globalThis.__PRERENDERED_AT__=${prerenderedAt}</script>`,
   )
+  // The only address with the first-load intro.
+  if (pathname === "/") html = await inlineHeroFirst(html, dist)
   const directory = path.join(dist, pathname)
   await fs.mkdir(directory, { recursive: true })
   await fs.writeFile(path.join(directory, "index.html"), html)

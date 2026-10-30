@@ -42,7 +42,7 @@ export function LinkedInHoverCard({ media, isOpen }: LinkedInHoverCardProps) {
         <video
           ref={videoRef}
           src={playClip ? media.src : undefined}
-          poster={media.poster}
+          poster={isOpen ? media.poster : undefined}
           width={media.width}
           height={media.height}
           muted
@@ -53,7 +53,7 @@ export function LinkedInHoverCard({ media, isOpen }: LinkedInHoverCardProps) {
         />
       ) : (
         <img
-          src={media.src}
+          src={isOpen ? media.src : undefined}
           alt=""
           width={media.width}
           height={media.height}
