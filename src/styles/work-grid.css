@@ -62,17 +62,13 @@
   grid-template-areas: "wallet homepage writings";
 }
 
-/* The personal-photo fan is a band under Protector, Patrol, and the quote
-   rather than a column beside them: it is five overlapping prints and a label,
-   so it wants a wide, short box, while the slots above are cut to
-   the shapes their own artwork needs. The Matcha launch films and marketing
-   wall take the band's first two columns, so the photos sit beside work
-   rather than beside the résumé, which closes the grid. The fan is a
-   fixed 27rem, so the quote's column still holds it whole. The band carries its own
+/* The Matcha launch films and marketing wall are a short band under Protector,
+   Patrol, and the quote, whose slots are cut to the shapes their own artwork
+   needs. The wall runs under the last two columns: it is sized from the tile's
+   width, so it takes the extra room at any ratio. The band carries its own
    height and the group adds it on, so the projects keep exactly the free
    space -- and so the 3:2 split of it -- that they had before the band
-   existed. Its 260px floor is the fan, its label, and the clearance the outer
-   prints' corners lean into. */
+   existed. */
 .mosaic-group-portraits {
   --portraits-projects: clamp(400px, 30.75cqw, 460px);
   --portraits-photos: clamp(260px, 21.39cqw, 320px);
@@ -84,7 +80,17 @@
   grid-template-areas:
     "protector patrol quote"
     "protector patrol quote"
-    "relaunch marketing photos";
+    "relaunch marketing marketing";
+}
+
+/* The band after the portraits, the photo fan beside the Iframe Widget. It
+   shares the featured band's height and mirrors its split, so 7/12 of the row
+   holds the dashboard's 16:9 artwork whole and the seams don't line up. */
+.mosaic-group-embed {
+  height: clamp(380px, 33cqw, 500px);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "photos photos photos photos photos iframe iframe iframe iframe iframe iframe iframe";
 }
 
 /* Research Views takes the widest slot of the band under Dealership Hub, with
@@ -1015,8 +1021,11 @@
    black band like the dark tiles below. Token and Pro carry their own
    rgb(63 62 68) backdrop to all four. There is no pale surface for the band to wash toward on any of them,
    and ink would land on artwork it cannot beat. Admiral sits in a cover slot
-   but contains its export on the card's own grey, so it keeps the pale band. */
+   but contains its export on the card's own grey, so it keeps the pale band.
+   The Iframe Widget is on that grey too, but its dark window runs off the bottom
+   of the tile, right where the band sits, so it takes the black one. */
 .mosaic-row-item-fit-cover .mosaic-row-card:not(.mosaic-row-card-preview-twilio-admiral),
+.mosaic-row-card-preview-matcha-iframe-widget,
 .mosaic-row-card-preview-shot-21,
 .mosaic-row-card-preview-shot-23 {
   --card-caption-tint: 0 0 0;
@@ -1356,8 +1365,10 @@
 /* These compositions already supply their own framing. Rewards supplies two
    independent banners; Token, Pro, Trade, and Mobile extend their own backdrop
    across the card below. Research Views bakes an even margin and a softer
-   corner around its window. */
+   corner around its window, and the Iframe Widget bakes the same around its
+   dashboard, which runs off the bottom of the tile. */
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-moodys-sprints,
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-iframe-widget,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-marketing,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-1,
@@ -1382,6 +1393,12 @@
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-21 .mosaic-row-card-media-clip,
 .mosaic-row-item-fit-contain .mosaic-row-card-preview-dealership-lead-hub .mosaic-row-card-media-clip {
   place-items: start center;
+}
+
+/* The widget's window runs off the bottom of its artwork, so the artwork sits on
+   the card's bottom edge at any slot ratio and the spare height goes above it. */
+.mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-iframe-widget .mosaic-row-card-media-clip {
+  place-items: end center;
 }
 
 /* Keep the screenshots wide, with room above and their lower rows clipped.
@@ -1590,6 +1607,7 @@
       calc(var(--compact-tile) * 1.125)
       var(--compact-tile)
       minmax(260px, auto)
+      calc(var(--compact-tile) * 1.125)
       calc(var(--compact-tile) * 1.25)
       calc(var(--compact-tile) * 1.25)
       var(--compact-tile);
@@ -1607,6 +1625,7 @@
       "relaunch relaunch"
       "marketing marketing"
       "photos photos"
+      "iframe iframe"
       "turtle turtle"
       "onit onit"
       "resume resume";
@@ -1645,6 +1664,7 @@
   }
 
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-moodys-sprints,
+  .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-iframe-widget,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-rewards,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-matcha-marketing,
   .mosaic-row-item-fit-contain .mosaic-row-card-preview-shot-1,
