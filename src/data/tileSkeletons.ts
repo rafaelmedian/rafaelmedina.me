@@ -13,6 +13,7 @@ export const tileSkeletons: Partial<Record<ProjectId, { width: number; height: n
   "preview-protector": { width: 480, height: 1042, fullFrame: true, d: "M0 0H480V1042H0Z" },
   "preview-patrol": { width: 480, height: 1042, fullFrame: true, d: "M0 0H480V1042H0Z" },
   "preview-matcha-relaunch-film": { width: 960, height: 540, fullFrame: true, d: "M0 0H960V540H0Z" },
+  "preview-matcha-iframe-widget": { width: 2880, height: 1620, d: "M144 154.1Q144 108 190.1 108L2689.9 108Q2736 108 2736 154.1L2736 1573.9Q2736 1620 2689.9 1620L190.1 1620Q144 1620 144 1573.9Z" },
   "preview-turtle": { width: 1920, height: 1011, fullFrame: true, d: "M0 0H1920V1011H0Z" },
   "preview-onit-process-builder": { width: 1920, height: 1200, d: "M144 228.7Q144 198 174.7 198L1673.3 198Q1704 198 1704 228.7L1704 977.3Q1704 1008 1673.3 1008L174.7 1008Q144 1008 144 977.3Z" },
 }

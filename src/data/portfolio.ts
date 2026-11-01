@@ -135,7 +135,7 @@ export type HomeTile = HomeTilePlacement & (
 )
 
 export type HomeGroup = {
-  layout: "opening" | "aside" | "featured" | "portraits" | "agency"
+  layout: "opening" | "aside" | "featured" | "portraits" | "embed" | "agency"
   columns: 2 | 3
   items: HomeTile[]
 }
@@ -199,18 +199,24 @@ export const homeGroups: HomeGroup[] = [
       { kind: "project", area: "protector", cardId: "preview-protector", share: 4 / 11, fit: "contain", compactWide: true },
       { kind: "project", area: "patrol", cardId: "preview-patrol", share: 3 / 11, fit: "contain" },
       { kind: "quote", area: "quote", source: "internet", share: 4 / 11, compactWide: true },
-      // Matcha's launch films lead the band under the projects, beside the
-      // photos, so personal life sits next to work rather than next to the
-      // résumé. The tile plays the relaunch film.
+      // Matcha's launch films lead the band under the projects. The tile plays
+      // the relaunch film.
       { kind: "project", area: "relaunch", cardId: "preview-matcha-relaunch-film", share: 4 / 11, fit: "cover", compactWide: true },
       // The marketing posts hang as a tilted wall sized from the tile's width,
-      // so the band's short slot under Patrol holds it at any ratio.
-      { kind: "project", area: "marketing", cardId: "preview-matcha-marketing", share: 3 / 11, fit: "contain", compactWide: true },
+      // so the band's short slot, running under Patrol and the quote, holds it
+      // at any ratio.
+      { kind: "project", area: "marketing", cardId: "preview-matcha-marketing", share: 7 / 11, fit: "contain", compactWide: true },
+    ],
+  },
+  // The Iframe Widget's dashboard is cut at 16:9, which seven twelfths of this
+  // band's height holds whole, so it takes the wide slot.
+  {
+    layout: "embed",
+    columns: 2,
+    items: [
       // The photos used to sit inside About, below the hobbies. They read
-      // better as a tile in the grid, and this group is where there was room
-      // for one: a band under Protector, Patrol, and the quote, beside the
-      // launch films and the marketing wall, so the slots above keep the
-      // shapes their artwork was cut for.
+      // better as a tile in the grid, beside work rather than next to the
+      // résumé, so they take the side of this band away from it.
       // The fan is a fixed 27rem centred in whatever tile it gets, so extra
       // width becomes margin rather than a banner of prints.
       //
@@ -218,7 +224,8 @@ export const homeGroups: HomeGroup[] = [
       // landed first: the takeover pins the last screenful while About slides
       // up over it, so a trailing band is behind the About sheet from roughly
       // halfway down the page and never reads on its own.
-      { kind: "photos", area: "photos", share: 4 / 11, compactWide: true },
+      { kind: "photos", area: "photos", share: 5 / 12, compactWide: true },
+      { kind: "project", area: "iframe", cardId: "preview-matcha-iframe-widget", share: 7 / 12, fit: "contain", compactWide: true },
     ],
   },
   // The rest of the agency years, 2018-2021: Turtle and Onit, with the résumé
@@ -590,6 +597,24 @@ const portfolioCardEntries: PortfolioCard[] = [
     galleryUsesHomeImages: true,
     ...matchaMeta,
     previewAspectRatio: 1540 / 1325,
+  },
+  {
+    id: "preview-matcha-iframe-widget",
+    slug: "matcha-iframe-widget",
+    year: "2025",
+    category: "Case study",
+    title: "Matcha Iframe Widget",
+    summary: "",
+    detail:
+      "I designed a self-serve builder for Matcha’s Iframe Widget and Referral URL. People pick the tokens, set a fee, match their brand, and get embed code beside a live preview. Publishing asks for fee wallets and an approved domain, and a dashboard then tracks earnings, volume, and traders.",
+    role: "I designed the builder, theming, publishing flow, error states, and dashboard, on desktop and phone.",
+    outcome:
+      "One tool takes a partner from choosing a token to an embedded swap or referral link, and on to tracking what it earns.",
+    image: "/Projects/matcha-iframe-widget.webp",
+    previewWidth: 2880,
+    previewHeight: 1620,
+    ...matchaMeta,
+    previewAspectRatio: 16 / 9,
   },
   {
     id: "preview-matcha-marketing",

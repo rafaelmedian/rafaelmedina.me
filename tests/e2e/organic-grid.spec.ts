@@ -8,10 +8,10 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
-    await expect(tiles).toHaveCount(17)
+    await expect(tiles).toHaveCount(18)
     // Twelve projects and the résumé: its reader has a page of its own now, so
     // its tile is a link on the grid like theirs.
-    await expect(page.locator("a.mosaic-row-card")).toHaveCount(13)
+    await expect(page.locator("a.mosaic-row-card")).toHaveCount(14)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect()
       return { x, y, width, height }
@@ -34,14 +34,14 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       return [area, { x, y, width, height }]
     })))
     const { wallet, homepage, writings, resume, protector, quote, photos, dealership,
-      quote2, duo, twilio, moodys, turtle, onit, relaunch, patrol, marketing } = byArea
+      quote2, duo, twilio, moodys, turtle, onit, relaunch, patrol, marketing, iframe } = byArea
     if (width < 900) {
       // The opening projects share a row, with the notes folder below them.
       expect(wallet.y).toBeCloseTo(homepage.y, 0)
       expect(wallet.height).toBeCloseTo(wallet.width, 0)
       expect(homepage.x).toBeGreaterThan(wallet.x + wallet.width)
       expect(protector.width).toBeCloseTo(homepage.x + homepage.width - wallet.x, 0)
-      for (const tile of [quote, photos, quote2, duo, dealership, moodys, twilio, turtle, onit, resume, relaunch, patrol, marketing]) {
+      for (const tile of [quote, photos, quote2, duo, dealership, moodys, twilio, turtle, onit, resume, relaunch, patrol, marketing, iframe]) {
         expect(tile.width).toBeCloseTo(protector.width, 0)
       }
       // The quote, Duo, and dealership band follows the notes, ahead of Protector.
@@ -49,8 +49,8 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(duo.y).toBeGreaterThan(quote2.y + quote2.height - 1)
       expect(dealership.y).toBeGreaterThan(duo.y + duo.height - 1)
       // Moody's and Twilio follow the dealership, ahead of Protector; films,
-      // marketing, and photos follow the two phone recordings.
-      const sequence = [dealership, moodys, twilio, protector, patrol, quote, relaunch, marketing, photos, turtle, onit, resume]
+      // marketing, photos, and the Iframe Widget follow the two phone recordings.
+      const sequence = [dealership, moodys, twilio, protector, patrol, quote, relaunch, marketing, photos, iframe, turtle, onit, resume]
       for (let index = 1; index < sequence.length; index++) {
         expect(sequence[index].y).toBeGreaterThan(sequence[index - 1].y + sequence[index - 1].height - 1)
       }
@@ -60,16 +60,21 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(quote.height).toBeCloseTo(protector.height, 0)
       expect(patrol.y).toBeCloseTo(protector.y, 0)
       expect(patrol.height).toBeCloseTo(protector.height, 0)
-      // Films, marketing, and photos share the band below the phones.
-      expect(relaunch.y).toBeCloseTo(photos.y, 0)
-      expect(marketing.y).toBeCloseTo(photos.y, 0)
-      expect(relaunch.height).toBeCloseTo(photos.height, 0)
-      expect(marketing.height).toBeCloseTo(photos.height, 0)
+      // Films and marketing share the band below the phones, the wall running
+      // under the last two columns.
+      expect(relaunch.y).toBeGreaterThan(protector.y + protector.height - 1)
+      expect(marketing.y).toBeCloseTo(relaunch.y, 0)
+      expect(marketing.height).toBeCloseTo(relaunch.height, 0)
       expect(relaunch.x).toBeCloseTo(protector.x, 0)
-      expect(marketing.x).toBeGreaterThan(relaunch.x + relaunch.width)
-      expect(photos.x).toBeGreaterThan(marketing.x + marketing.width)
-      expect(photos.x + photos.width).toBeCloseTo(quote.x + quote.width, 0)
-      expect(photos.y).toBeGreaterThan(protector.y + protector.height - 1)
+      expect(marketing.x).toBeCloseTo(patrol.x, 0)
+      expect(marketing.x + marketing.width).toBeCloseTo(quote.x + quote.width, 0)
+      // The photos and the Iframe Widget follow, the widget wide enough to hold
+      // its 16:9 artwork whole.
+      expect(photos.y).toBeGreaterThan(relaunch.y + relaunch.height - 1)
+      expect(iframe.y).toBeCloseTo(photos.y, 0)
+      expect(iframe.height).toBeCloseTo(photos.height, 0)
+      expect(iframe.x).toBeGreaterThan(photos.x + photos.width)
+      expect(iframe.width / iframe.height).toBeCloseTo(16 / 9, 0)
       // The quote, Duo, and dealership span a band between the opening row and
       // Protector, the Duo the fifth tile and the dealership widest.
       expect(quote2.x).toBeCloseTo(protector.x, 0)
@@ -80,7 +85,7 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(duo.x).toBeGreaterThan(quote2.x + quote2.width)
       expect(dealership.x).toBeGreaterThan(duo.x + duo.width)
       expect(dealership.width).toBeGreaterThan(duo.width)
-      expect(dealership.x + dealership.width).toBeCloseTo(photos.x + photos.width, 0)
+      expect(dealership.x + dealership.width).toBeCloseTo(iframe.x + iframe.width, 0)
       expect(quote2.y).toBeGreaterThan(homepage.y + homepage.height - 1)
       // Moody's leads the band under the dealership, the widest tile in it and
       // taller than the band above, with Twilio beside it.
@@ -89,13 +94,13 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(twilio.y).toBeCloseTo(moodys.y, 0)
       expect(twilio.height).toBeCloseTo(moodys.height, 0)
       expect(twilio.x).toBeGreaterThan(moodys.x + moodys.width)
-      expect(twilio.x + twilio.width).toBeCloseTo(photos.x + photos.width, 0)
+      expect(twilio.x + twilio.width).toBeCloseTo(iframe.x + iframe.width, 0)
       expect(moodys.width).toBeGreaterThan(twilio.width)
       expect(moodys.width).toBeGreaterThan(dealership.width)
       expect(moodys.height).toBeGreaterThan(dealership.height)
       expect(protector.y).toBeGreaterThan(moodys.y + moodys.height - 1)
       // The rest of the agency work closes the grid, the résumé ending the row.
-      expect(turtle.y).toBeGreaterThan(photos.y + photos.height - 1)
+      expect(turtle.y).toBeGreaterThan(iframe.y + iframe.height - 1)
       expect(turtle.x).toBeCloseTo(protector.x, 0)
       for (const tile of [onit, resume]) {
         expect(tile.y).toBeCloseTo(turtle.y, 0)
@@ -104,7 +109,7 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(onit.x).toBeGreaterThan(turtle.x + turtle.width)
       expect(resume.x).toBeGreaterThan(onit.x + onit.width)
       expect(onit.width).toBeGreaterThan(turtle.width)
-      expect(resume.x + resume.width).toBeCloseTo(photos.x + photos.width, 0)
+      expect(resume.x + resume.width).toBeCloseTo(iframe.x + iframe.width, 0)
     }
   })
 }
@@ -138,7 +143,7 @@ test("reserves the mosaic layout before scripts or media load", async ({ browser
   await page.route(/\.(webp|jpg|png|webm)(\?.*)?$/, route => route.abort())
   await page.goto("/")
   const cards = page.locator("a.mosaic-row-card")
-  await expect(cards).toHaveCount(13)
+  await expect(cards).toHaveCount(14)
   const first = await cards.nth(0).boundingBox()
   const second = await cards.nth(1).boundingBox()
   expect(first!.height).toBeGreaterThan(100)

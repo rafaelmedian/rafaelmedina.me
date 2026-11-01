@@ -157,6 +157,96 @@ export const projectCaseStudies = {
       "The checks offer context, not a promise that a token is safe.",
     ] },
   ]),
+  "matcha-iframe-widget": study("A swap any site can embed", [
+    "Plenty of apps need people to hold a token before they can use a service. Building on the 0x API means keys, a custom UI, and upkeep. An iframe avoids all that and picks up every Matcha improvement on its own, but someone still had to configure it.",
+    "I designed a builder for it: pick the tokens, set a fee, match the brand, publish, and track what it earns.",
+  ], [
+    { heading: "The real widget beside the form", paragraphs: [
+      "Controls sit on the left, a live preview on the right, and the embed code underneath.",
+      "USDC is already the sell token and swap fees are on, so the first preview works before anything is filled in.",
+      "Changing a token in the form or in the widget updates both, and the snippet follows, ready to copy.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-builder.webp", label: "The builder: configuration, live widget, and embed code", width: 2880, height: 1737 },
+      { source: "/Projects/matcha-iframe-notes.webp", label: "Notes from the Figma file: USDC by default, fees on, token search, and a selection that stays in sync", width: 2634, height: 1935 },
+    ] },
+    { heading: "Findable from the homepage", paragraphs: [
+      "“Integrate Matcha iFrame” sits in the homepage’s Learn more menu and in the footer, so people can reach it without starting in the developer docs.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-entry.webp", label: "The Learn more menu on the Matcha homepage", width: 2400, height: 1057 },
+    ] },
+    { heading: "The whole flow, wired up", paragraphs: [
+      "I wired the flow as a Figma prototype: log in, review, publish, read the guide, and land on the dashboard.",
+      "The board keeps every branch next to it, including the snippet’s hover state and a wallet that’s already taken.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-publish-flow.webp", video: "/Projects/matcha-iframe-publish-flow.webm", label: "The prototype, from the builder to the dashboard", width: 1600, height: 1000 },
+      { source: "/Projects/matcha-iframe-flow-map.webp", label: "The start of the flow board in Figma", width: 2880, height: 967 },
+    ] },
+    { heading: "What it takes to go live", paragraphs: [
+      "Publishing is a short review. The main wallet handles login and tracking, a secondary wallet collects fees, and an approved domain sets where the widget can run.",
+      "Until all three are in place, the button says what’s missing.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-review.webp", label: "The review step, from a missing wallet to ready to create", width: 2880, height: 1133 },
+    ] },
+    { heading: "When something’s off", paragraphs: [
+      "A wallet already tied to a widget can’t be reused, so the sheet offers a way out: disconnect, or go to its dashboard.",
+      "On an unapproved domain, the widget explains why it won’t load and links to the fix.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-edge-cases.webp", label: "A wallet already in use, and a domain that hasn’t been approved", width: 2880, height: 961 },
+    ] },
+    { heading: "One wallet at a time", paragraphs: [
+      "The header holds a single wallet at a time.",
+      "Log in with email and the menu shows the address above the smart wallet it generated. Connect a wallet directly and it shows just that.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-wallet.webp", label: "The wallet menu after an email login, and with a wallet only. The email is a placeholder", width: 2620, height: 1040 },
+    ] },
+    { heading: "After publishing", paragraphs: [
+      "The approved domain and fee wallet join the form, and Create becomes Re-publish, so changes stay in one place.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-configure.webp", label: "The builder after publishing, with a domain and fee wallet", width: 2880, height: 1737 },
+    ] },
+    { heading: "Help inside the builder", paragraphs: [
+      "How to implement and Example sites sit at the bottom of the side panel and open over the builder.",
+      "Publishing opens the guide too, so the next step is already on screen.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-guide.webp", label: "The guide, open over a dashboard that has no trades yet", width: 2880, height: 1736 },
+    ] },
+    { heading: "Two ways to partner", paragraphs: [
+      "Not everyone wants to embed a widget. Referral URL sits next to Iframe Widget in the header and publishes a link that earns rewards when people trade.",
+      "Referral IDs are generated rather than chosen, to head off impersonation, scams, and abuse. Vanity links come with the Partner Program.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-referral.webp", label: "A new referral URL, with the Partner Program beside it", width: 2880, height: 1738 },
+    ] },
+    { heading: "Made to look like the host site", paragraphs: [
+      "The Design tab covers what makes a widget feel native: font, card and button radius, light or dark, accent color, card background, and background tone.",
+      "Each control changes the widget beside it, and Reset returns to the defaults.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-themes-flow.webp", video: "/Projects/matcha-iframe-themes-flow.webm", label: "The theme prototype: appearance, accent, radius, font, and background, then Reset", width: 1600, height: 1000 },
+      { source: "/Projects/matcha-iframe-themes.webp", label: "The same widget in four themes", width: 2880, height: 1804 },
+    ] },
+    { heading: "What the embed earns", paragraphs: [
+      "Once published, the builder gains a dashboard: earnings, volume, transactions, and visitors, a chart by period, and breakdowns by token and trader.",
+      "Before any trades, the empty state tells partners what to do next.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-dashboard.webp", label: "The partner dashboard, shown with sample data", width: 2880, height: 1737 },
+    ] },
+    { heading: "On a phone", paragraphs: [
+      "The builder stacks into one column, with Preview and Create pinned to the bottom of the screen.",
+      "Preview, review, and the dashboard follow in the same order as on desktop.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-mobile.webp", label: "A first pass at the phone version: configure, review, dashboard, preview, and a referral URL", width: 2880, height: 1268 },
+    ] },
+    { heading: "Every state written down", paragraphs: [
+      "Fees, tokens, referral links, and approved domains have their states specified, from hover and pressed to copied and already registered.",
+      "The small behavior is spelled out too: removing a token brings back Select token, and a copied link shows a check for a few seconds before the copy icon returns.",
+    ], media: [
+      { source: "/Projects/matcha-iframe-states-controls.webp", label: "Swap fee and token controls, with their states and notes", width: 2000, height: 1220 },
+      { source: "/Projects/matcha-iframe-states-referral.webp", label: "Referral link and approved domain states", width: 2800, height: 900 },
+    ] },
+    { heading: "Where it stands", paragraphs: [
+      "The iframe and referral flows, theming, wallet states, and dashboard are designed. The mobile builder is still in progress, starting with settings.",
+      "After launch, the measures are widgets published, volume through embeds, and earnings per partner.",
+    ] },
+  ], { media: "wide" }),
   "matcha-rewards": study("A look for the weekly rewards", [
     "I designed Matcha Rewards: the campaign artwork and the rewards page itself, from the countdown to the final winners.",
   ], [
