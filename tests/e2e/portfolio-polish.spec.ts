@@ -4520,7 +4520,7 @@ test("adds breathing room above the about hobbies", async ({ page }) => {
   await expect(page.locator(".mosaic-about-hobbies")).toHaveCSS("margin-top", "8px")
 })
 
-test("gives the Chainlink work a fuller description", async ({ page }) => {
+test("gives the TM client work a line per client", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
@@ -4532,9 +4532,32 @@ test("gives the Chainlink work a fuller description", async ({ page }) => {
   // The two sentences are two bullets now, so the check is per point: joined
   // text would pass on a run-on paragraph that had lost the split.
   await expect(chainlinkEntry.locator(".mosaic-about-resume-description li")).toHaveText([
-    "Designed internal product tools and the brand system for Chainlink as the company scaled.",
-    "Made a complex oracle network clearer and more consistent across product and brand.",
+    "Chainlink: partnered with the Design Director on internal tools and the brand system.",
+    "Twilio: led a full redesign of the developer tools platform, grounded in user interviews.",
   ])
+})
+
+test("sets each résumé point on one line at desktop, as the PDF does", async ({ page }) => {
+  // At the old 34rem measure most points wrapped by 0-40px and left their last
+  // word or two alone on a second line.
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const reader = page.getByRole("dialog", { name: "Resume" })
+  await expect(reader.locator(".resume-experience").first()).toBeVisible()
+  // Polled, and read from layout (offsetHeight ignores transforms): the sheet
+  // grows to its full width as it opens, and text measured mid-open wraps.
+  await expect
+    .poll(() =>
+      reader.evaluate((root) =>
+        [...root.querySelectorAll<HTMLElement>(".resume-content .mosaic-about-resume-description")]
+          .flatMap((el) => (el.tagName === "UL" ? [...(el.children as HTMLCollectionOf<HTMLElement>)] : [el]))
+          .filter((el) => el.offsetHeight > parseFloat(getComputedStyle(el).lineHeight) * 1.5)
+          .map((el) => el.textContent),
+      ),
+    )
+    .toEqual([])
 })
 
 test("keeps one compact gap between the About closing line, companies, process, and services", async ({ page }) => {
@@ -5801,7 +5824,7 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)
   // Each entry's copy precedes its dates in the text layer, and the bullets
   // stay with their entry rather than being painted in a later pass.
-  expect(text).toMatch(/Freelance[\s\S]*End-to-end product design[\s\S]*2026 –[\s\S]*0x Project/)
+  expect(text).toMatch(/Freelance[\s\S]*End-to-end design for scaling products[\s\S]*2026 –[\s\S]*0x Project/)
   // The old Figma export advertised an address the site had already moved off,
   // so the PDF must carry the site's current one and no other: naming the stale
   // address would only catch the drift that already happened.

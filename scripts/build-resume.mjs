@@ -53,7 +53,10 @@ const work = [
     place: "Remote",
     dates: "2026 - Present",
     role: "Product Designer",
-    bullets: ["End-to-end product design for startups, from the first user interview to the shipped screen."],
+    bullets: [
+      "End-to-end design for scaling products, from the first user interview to the shipped screen.",
+      "Full-time or fractional designer for teams without in-house design.",
+    ],
   },
   {
     company: "0x Project",
@@ -228,8 +231,10 @@ const html = `<!doctype html>
       h1 { color: var(--title); }
       .contact { text-align: right; }
 
-      section { padding-top: 26px; }
-      section + section { margin-top: 26px; border-top: 1px solid var(--hairline); }
+      /* 22px, down from 26px, to make room for the second Freelance point
+         without spilling past the page's bottom margin. */
+      section { padding-top: 22px; }
+      section + section { margin-top: 22px; border-top: 1px solid var(--hairline); }
 
       /* Dates hang alone in a column of their own, the range broken over two
          lines, so the copy never shares a line with them. */

@@ -69,7 +69,7 @@ function ResumeExperience({ job, level }: { job: CvExperience; level: ResumeHead
           <p className="mosaic-about-resume-location">{job.location}</p>
         </div>
         {Array.isArray(job.highlight) ? (
-          <ul className="mosaic-about-resume-description resume-experience-points">
+          <ul className="mosaic-about-resume-description resume-experience-points" role="list">
             {job.highlight.map((point) => (
               <li key={point}>{point}</li>
             ))}
@@ -89,7 +89,6 @@ export function ResumeContent({ level = 3 }: { level?: ResumeHeadingLevel }) {
   return (
     <div className="resume-content">
       <div className="resume-section">
-        <SectionHeading className="mosaic-about-resume-heading">Experience</SectionHeading>
         <ol className="mosaic-about-resume mosaic-about-work-list resume-experience-list" aria-label="Work history">
           {cvExperience.map((job) => (
             <ResumeExperience key={`${job.company}-${job.dates}`} job={job} level={level} />
