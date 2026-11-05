@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { groupWritingsByCategory } from "../../src/lib/writings"
+import { writingSummaries } from "../../src/data/writingIndex"
 
 /* The notes are two surfaces. The list is a slide of the preview gallery, at
    the place the folder tile occupies on the grid, so the arrow keys walk from a
@@ -760,33 +761,25 @@ test("an article closes with its acknowledgements above More notes", async ({ pa
   expect(creditsBox.y + creditsBox.height).toBeLessThanOrEqual(more.y)
 })
 
-test("keeps marginalia to two notes an article, one in each gutter", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/notes/")
-  const dialog = sheet(page)
-  const entries = popup(page).locator(".writings-category li a")
-  await expect(entries.first()).toBeVisible()
-  const count = await entries.count()
-  expect(count).toBeGreaterThan(0)
-  for (let index = 0; index < count; index += 1) {
-    const id = await entries.nth(index).locator(".writing-entry-title").innerText()
-    await entries.nth(index).click()
+// Marginalia is an article-content contract. Visit each canonical article
+// independently so a rapid Back/list click cannot mask its content assertions;
+// the nested-reader tests above cover that navigation separately.
+for (const writing of writingSummaries) {
+  test(`keeps marginalia to two notes in separate gutters: ${writing.id}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto(`/notes/${writing.id}/`)
+    const dialog = sheet(page)
     await expect(dialog.locator(".writing-reader")).toBeVisible()
+    await expect(dialog.getByRole("heading", { name: writing.title, exact: true })).toBeVisible()
     const places = await dialog.locator(".writing-reader-prose .writing-margin-note")
       .evaluateAll((elements) => elements.map((element) => (element as HTMLElement).dataset.place))
-    // Marginalia is an aside, not a second column: past a couple an article a
-    // reader stops reading the page and starts reading the margin. One is
-    // written for each gutter, so neither edge ever grows a stack; where the
-    // contents float in the left one, both hang right, one early, one late.
-    expect(places.length, id).toBeLessThanOrEqual(2)
-    expect(new Set(places).size, id).toBe(places.length)
-    // The interjections that used to drop between paragraphs are gone with them.
+    // Marginalia is an aside, not a second column: keep at most one per gutter.
+    expect(places.length).toBeLessThanOrEqual(2)
+    expect(new Set(places).size).toBe(places.length)
     await expect(dialog.locator(".writing-aside")).toHaveCount(0)
-    await dialog.getByRole("button", { name: "Go back to Notes", exact: true }).click()
-    await expect(dialog).toBeHidden()
-  }
-})
+  })
+}
 
 test("prints a highlighted Markdown sample without a sideways read", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
@@ -844,7 +837,9 @@ test("a sideways drag inside a scrolling command does not page to another note",
   const context = await browser.newContext({ hasTouch: true, isMobile: true, reducedMotion: "reduce", viewport: { width: 390, height: 844 } })
   const page = await context.newPage()
   await page.goto("/notes/review-ready-pull-requests/")
-  const command = page.locator(".writing-tool-command code")
+  // The standalone article is replaced during hydration. Target the nested
+  // reader so scrolling cannot capture that outgoing command block.
+  const command = sheet(page).locator(".writing-tool-command code")
   await command.scrollIntoViewIfNeeded()
   expect(await command.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
 
