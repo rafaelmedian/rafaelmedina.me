@@ -359,9 +359,9 @@ const EASINGS_ENTRIES = [
   },
   {
     name: "Origin zoom",
-    css: "spring, damping 0.86 open / 1 close",
+    css: "cubic-bezier(0.3, 0.1, 0.2, 1)",
     duration: "360ms open and close",
-    use: "The preview gallery and notes zooming out of their tile and back, as iOS opens a card (--pg-zoom-open-ms, --pg-zoom-close-ms). Mid-flight the edge facing the tile pinches towards it (20% open, 30% close; originMorph* in originMotion.ts), flat again at both ends.",
+    use: "The preview gallery and notes zooming out of their tile and back, as iOS opens a card (--pg-zoom-open-ms, --pg-zoom-close-ms). No spring, no overshoot, no bend: the surface stays a rectangle.",
   },
   {
     name: "Photo carousel — --photo-motion-ease",

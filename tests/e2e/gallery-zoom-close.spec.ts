@@ -45,31 +45,27 @@ test("the card keeps its layout until the zoom back into the tile has finished",
   await expect(popup).toHaveAttribute("data-wide", "true")
 })
 
-// The zoom morphs on the way: mid-flight the surface is projected onto a quad
-// whose edge facing the tile is pinched, so its transform carries a
-// perspective row. It must be a plain rectangle at both ends, though: on the
-// tile, where its clip has to match the tile's outline, and at rest.
-test("the zoom bends towards its tile mid-flight and is flat at both ends", async ({ page }) => {
+// The zoom used to bend towards its tile mid-flight -- a projective
+// transform pinched the edge facing the tile -- and on a wide card that read
+// as the whole card tilting into a parallelogram. The surface is a rectangle
+// the whole way now: every keyframe is a plain translate and scale, with no
+// overshoot past rest on either leg.
+test("the zoom stays a flat rectangle and never overshoots", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await page.locator(".mosaic-rows").evaluate((element) =>
     Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
 
-  // Capture the flight as it is created. Under load it can finish before a
-  // later browser round-trip inspects document.getAnimations().
+  // Capture the flights as they are created. Under load one can finish
+  // before a later browser round-trip inspects document.getAnimations().
   await page.evaluate(() => {
-    const flights: number[][] = []
-    Object.assign(window, { morphFlights: flights })
+    const flights: string[][] = []
+    Object.assign(window, { zoomFlights: flights })
     const animate = Element.prototype.animate
     Element.prototype.animate = function (...args) {
       const animation = animate.apply(this, args)
       const frames = (animation.effect as KeyframeEffect).getKeyframes()
-      if (frames.some(frame => String(frame.transform ?? "").startsWith("matrix3d"))) {
-        flights.push(frames.map(frame => {
-          const matrix = new DOMMatrixReadOnly(String(frame.transform))
-          return Math.abs(matrix.m14) + Math.abs(matrix.m24)
-        }))
-      }
+      if (frames.some(frame => "clipPath" in frame)) flights.push(frames.map(frame => String(frame.transform)))
       return animation
     }
   })
@@ -80,14 +76,17 @@ test("the zoom bends towards its tile mid-flight and is flat at both ends", asyn
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toHaveCount(0)
   const [open, close] = await page.evaluate(() =>
-    (window as unknown as { morphFlights: number[][] }).morphFlights)
+    (window as unknown as { zoomFlights: string[][] }).zoomFlights)
 
   for (const frames of [open, close]) {
     expect(frames).toBeDefined()
-    expect(frames![0]).toBe(0)
-    expect(frames!.at(-1)).toBe(0)
-    expect(Math.max(...frames!)).toBeGreaterThan(0)
+    const scales = frames!.map(transform => {
+      expect(transform).toMatch(/^translate3d\(.*\) scale\([\d.]+\)$/)
+      return Number(/scale\(([\d.]+)\)/.exec(transform)![1])
+    })
+    expect(Math.max(...scales)).toBeLessThanOrEqual(1)
   }
+  expect(open![0]).not.toBe(open!.at(-1))
 })
 
 // A tile opens on a press; dragging one used to pull a translucent copy of
