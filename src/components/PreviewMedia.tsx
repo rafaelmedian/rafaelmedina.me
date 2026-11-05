@@ -151,8 +151,11 @@ function PreviewMediaSingle({ card, reducedMotion }: { card: PortfolioCard; redu
           ref={image => { if (image) void revealImage(image) }}
         />
       )}
+      {/* Loading is announced, not shown: a chip over the artwork while the
+          tile was still flying open read as the gallery stalling, and the
+          thumbnail beneath it already shows what is coming. */}
       {(pending || failed) && (
-        <div className="preview-gallery-media-status" role="status">
+        <div className={`preview-gallery-media-status${failed ? "" : " sr-only"}`} role="status">
           <span>{failed ? "Preview couldn’t load." : "Loading preview…"}</span>
           {failed && (
             <button type="button" onClick={() => {

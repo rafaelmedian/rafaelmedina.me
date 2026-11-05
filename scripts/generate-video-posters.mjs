@@ -17,7 +17,9 @@ function generatePoster(input, output) {
       "-frames:v",
       "1",
       "-vf",
-      "scale=640:-2:flags=lanczos",
+      // Decode with the same BT.709 matrix the browser uses for the video, so
+      // the poster's grey is the value playback shows when it takes over.
+      "scale=640:-2:flags=lanczos:in_color_matrix=bt709",
       "-c:v",
       "libwebp",
       "-quality",

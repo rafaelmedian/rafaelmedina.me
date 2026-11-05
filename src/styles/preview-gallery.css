@@ -25,6 +25,12 @@
   initial-value: 360ms;
 }
 
+@property --pg-zoom-handoff-ms {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 60ms;
+}
+
 .preview-gallery-backdrop {
   position: fixed;
   inset: 0;
@@ -82,9 +88,11 @@
   --preview-gallery-media-cap: min(42vh, 432px);
   --preview-gallery-width: min(490px, calc(var(--preview-gallery-media-cap) * 4 / 3));
   /* The card and the popup that traces it share one value so the two outlines
-     cannot drift. Authored rather than derived: the artwork band inside is
-     square, so there is no inner corner left to be concentric with. */
-  --preview-gallery-card-radius: calc(var(--radius-lg) + 0.75rem);
+     cannot drift. It is the tiles' own corner: a card opens out of a tile, and
+     with a rounder top (--radius-lg + 0.75rem) the corners swelled from the
+     tile's curve to the card's as it grew, a second shape change on top of the
+     zoom. */
+  --preview-gallery-card-radius: var(--radius-lg);
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog);
@@ -198,9 +206,9 @@
 
 /* The zoom out of a tile (lib/originMotion): the tile becomes the gallery, the
    way iOS opens an App Store card, instead of the gallery arriving from the
-   tile's direction. The surface's artwork lands exactly on the tile's, so it
-   cuts in over it with no fade; lib/originMotion dissolves the tile's frame
-   around it underneath. */
+   tile's direction. The surface starts as the tile's whole shape, its artwork
+   exactly on the tile's, so it cuts in over it with no fade; the tile itself
+   stays in the grid beneath. */
 .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion],
 .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-starting-style] {
   opacity: 1;
@@ -208,8 +216,8 @@
 }
 
 /* On the way back it stays solid while it shrinks, and over the flight's last
-   --pg-zoom-handoff-ms -- once it lies on the tile's artwork -- it fades as
-   the tile fades back in beneath it. A cut there showed any last-pixel or
+   --pg-zoom-handoff-ms -- once it lies on the tile's artwork -- it fades off
+   the tile it lies on. A cut there showed any last-pixel or
    video-frame difference as a flicker. Base UI unmounts on this transition's
    end, so the delay is also what keeps it mounted for the whole flight. */
 .preview-gallery-shell[data-origin-zoom] .preview-gallery-popup[data-origin-motion][data-ending-style] {
@@ -236,10 +244,11 @@
 /* Opening, the clip runs just outside the card's edges for most of the
    flight and only reaches past its shadow at the end, so the shadow showed as
    a dark band cut off flat along the clip. It waits for the clip to let go
-   and then settles in. A card that lands whole (the notes) has no clip and
-   keeps its shadow throughout. Paging can begin during the entrance, so
+   and then settles in. A card that lands whole (the notes, the résumé) has
+   no clip, but waits too: a shadow from the first frame lifted it off the
+   tile it was still growing out of. Paging can begin during the entrance, so
    preserve its phase-specific timing while holding the shadow. */
-.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup:not([data-ending-style]) .preview-gallery-card:has(.preview-gallery-media-frame) {
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-popup:not([data-ending-style]) .preview-gallery-card {
   box-shadow:
     0 1px 1px rgb(0 0 0 / 0),
     0 18px 44px -18px rgb(0 0 0 / 0),
@@ -248,9 +257,13 @@
 }
 
 /* The page stays in view under the growing card for most of its flight
-   rather than dimming before the card is a third of the way there. */
+   rather than dimming before the card is a third of the way there. The curve
+   barely moves through the flight's first third (15% at 30%): an ease-out
+   dimmed the page while the card still lay over its tile, which set the card
+   apart from the grid it was growing out of, so it read as lifted off the
+   tile rather than as the tile itself opening. */
 .preview-gallery-backdrop:has(+ .preview-gallery-shell[data-origin-zoom]) {
-  transition: opacity var(--pg-zoom-open-ms) ease-out;
+  transition: opacity var(--pg-zoom-open-ms) cubic-bezier(0.6, 0, 0.25, 1);
 }
 
 .preview-gallery-backdrop[data-ending-style]:has(+ .preview-gallery-shell[data-origin-zoom]) {
@@ -586,6 +599,13 @@
 .preview-gallery-media-pair img:last-child {
   right: 1.8%;
   bottom: 3%;
+}
+
+/* The Duo recording is shot on pure white (work-grid.css gives its tile the
+   same), so the band takes white too and the letterbox disappears into it. */
+.preview-gallery-popup[data-preview-id="preview-pokemon-duo"] .preview-gallery-media-frame {
+  border-color: #fff;
+  background: #fff;
 }
 
 /* Protector and Patrol open as their tiles show them (work-grid.css, keep the
@@ -1213,8 +1233,9 @@
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
 }
 
+/* Matches the résumé's measure in resume-content.css. */
 .preview-gallery-resume-heading-inner {
-  width: min(100%, 34rem);
+  width: min(100%, 37.5rem);
   margin-inline: auto;
   display: flex;
   align-items: baseline;
@@ -1295,6 +1316,10 @@
   justify-content: space-between;
   transform: translateY(-50%);
   pointer-events: none;
+  /* Comes in after the zoom lands; see the [data-origin-zoom] rule below. An
+     ease-in-out, not the expo-out entrances use: that one had them at 43% in
+     two frames, which is the flash this replaced. */
+  transition: opacity calc(var(--duration-slow) + var(--duration-fast)) cubic-bezier(0.4, 0, 0.2, 1) var(--duration-fast);
 }
 
 /* Same derivation in the wide layout, where the width is the cap's 4:3 width
@@ -1305,6 +1330,39 @@
 
 .preview-gallery-rail .preview-gallery-nav {
   pointer-events: auto;
+  /* `translate`, not `transform`, so the entrance below never fights the
+     press's scale. */
+  translate: 0 0;
+  transition:
+    background-color var(--duration-quick) ease-out,
+    color var(--duration-quick) ease-out,
+    transform var(--duration-quick) ease-out,
+    box-shadow var(--duration-quick) ease-out,
+    translate calc(var(--duration-slow) + var(--duration-base)) cubic-bezier(0.25, 1, 0.5, 1) var(--duration-fast);
+}
+
+/* The arrows sit outside the card's edges, inside the surface the zoom flies.
+   Mid-flight the clip on the tile's outline reached past the card and showed
+   them inside the growing shape; at the landing it let go of them in one
+   frame. They stay out of the flight, and once the card has landed they take
+   a beat, then fade in while drifting out from the card's sides into place.
+   A quick fade straight after the landing read as a flash: one more thing
+   arriving at the moment the card stopped. */
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-rail {
+  opacity: 0;
+  transition: none;
+}
+
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-rail .preview-gallery-nav {
+  transition: none;
+}
+
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-rail .preview-gallery-nav-prev {
+  translate: 10px 0;
+}
+
+.preview-gallery-shell[data-origin-zoom] .preview-gallery-rail .preview-gallery-nav-next {
+  translate: -10px 0;
 }
 
 .preview-gallery-title {

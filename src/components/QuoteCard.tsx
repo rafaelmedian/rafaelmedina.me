@@ -411,14 +411,6 @@ export function QuoteCard({ quotes }: { quotes: PortfolioQuote[] }) {
             <QuoteCredit quote={quote} active={index === activeIndex} interactive={inside} keysId={authorKeysId} />
           </figure>
         ))}
-        {(["left", "right"] as const).map((side) => (
-          <span key={side} className={`mosaic-quote-edge mosaic-quote-edge-${side}`} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <span />
-          </span>
-        ))}
       </div>
       <div className="mosaic-quote-dots" role="group" aria-label="Choose a quote">
           {quotes.map((quote, index) => (

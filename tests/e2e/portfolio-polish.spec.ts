@@ -3926,7 +3926,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
   const cardInner = page.locator(".preview-gallery-card-inner")
-  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([400])
+  // The zoom and the fill that carries the card out to the tile's outline.
+  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([400, 400])
   await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.4s")
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
@@ -4016,9 +4017,10 @@ for (const { layout, viewport } of [
     expect(firstFrame.media.y).toBeCloseTo(box.y, 0)
     expect(firstFrame.media.width).toBeCloseTo(box.width, 0)
     expect(firstFrame.media.height).toBeCloseTo(box.height, 0)
-    expect(firstFrame.clip).toMatch(/^inset\(/)
-    // The tile is still whole under the cut; it then dissolves rather than
-    // staying under the surface growing out of it (checked at rest below).
+    // A path, so its corners can be the tile's squircle; inset() only rounds.
+    expect(firstFrame.clip).toMatch(/^path\(/)
+    // The tile is whole under the cut, and stays so: the surface covers it
+    // completely from its first frame, so it never needs to step aside.
     expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("1")
 
     const finishFlights = () => page.evaluate(() => {
@@ -4034,12 +4036,12 @@ for (const { layout, viewport } of [
     await expect(shell).not.toHaveAttribute("data-origin-zoom")
     await expect(page.locator(clipped)).toHaveCSS("clip-path", "none")
     await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
-    // The artwork is hidden while the gallery is up; the tile's empty fill
-    // stays behind as the slot it came out of.
-    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("0")
+    // The tile stays in the grid behind the gallery rather than leaving an
+    // empty slot there.
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("1")
     expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
 
-    // And it comes back as the surface lands on it.
+    // And the surface lands back on it.
     await page.keyboard.press("Escape")
     await finishFlights()
     await expect(page.getByRole("dialog")).toBeHidden()
@@ -4141,27 +4143,30 @@ test("drags the mobile gallery card with the finger and pages from the release",
   await touch("touchmove", 250)
   await touch("touchmove", 200)
   expect(await card.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).e)).toBeCloseTo(-100, 0)
-  await card.evaluate((element) => {
+  // Inspect the outgoing transform on transitionrun, before its 160ms
+  // phase can finish between browser round-trips on a busy test runner.
+  const leaving = await card.evaluate((element) => new Promise<{ from: number; to: number }>(resolve => {
+    const onRun = (event: Event) => {
+      if (event.target !== element || (event as TransitionEvent).propertyName !== "transform") return
+      element.removeEventListener("transitionrun", onRun)
+      const transition = element.getAnimations()
+        .find((animation): animation is CSSTransition => animation instanceof CSSTransition && animation.transitionProperty === "transform")
+      if (!transition) return resolve({ from: NaN, to: NaN })
+      const offset = () => new DOMMatrixReadOnly(getComputedStyle(element).transform).e
+      const currentTime = transition.currentTime
+      transition.pause()
+      transition.currentTime = 0
+      const from = offset()
+      transition.currentTime = Number(transition.effect!.getTiming().duration) - 0.001
+      const to = offset()
+      transition.currentTime = currentTime
+      transition.play()
+      resolve({ from, to })
+    }
+    element.addEventListener("transitionrun", onRun)
     const point = new Touch({ identifier: 1, target: element, clientX: 200, clientY: 300 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [point] }))
-  })
-  await expect(card).toHaveClass(/preview-gallery-card-switch-out-next/)
-  const leaving = await card.evaluate((element) => {
-    const transition = element.getAnimations()
-      .filter((animation): animation is CSSTransition => animation instanceof CSSTransition && animation.transitionProperty === "transform")
-      .at(-1)
-    if (!transition) return { from: NaN, to: NaN }
-    // The far pose is a percentage of the card, so read both ends from the
-    // computed transform rather than the keyframes.
-    const offset = () => new DOMMatrixReadOnly(getComputedStyle(element).transform).e
-    transition.pause()
-    transition.currentTime = 0
-    const from = offset()
-    transition.currentTime = Number(transition.effect!.getTiming().duration) - 0.001
-    const to = offset()
-    transition.play()
-    return { from, to }
-  })
+  }))
   expect(leaving.from).toBeCloseTo(-100, 0)
   expect(leaving.to).toBeLessThan(-mobileViewport.width + 1)
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 15")
@@ -4520,7 +4525,7 @@ test("adds breathing room above the about hobbies", async ({ page }) => {
   await expect(page.locator(".mosaic-about-hobbies")).toHaveCSS("margin-top", "8px")
 })
 
-test("gives the Chainlink work a fuller description", async ({ page }) => {
+test("gives the TM client work a line per client", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: "Open résumé" }).click()
 
@@ -4532,9 +4537,32 @@ test("gives the Chainlink work a fuller description", async ({ page }) => {
   // The two sentences are two bullets now, so the check is per point: joined
   // text would pass on a run-on paragraph that had lost the split.
   await expect(chainlinkEntry.locator(".mosaic-about-resume-description li")).toHaveText([
-    "Designed internal product tools and the brand system for Chainlink as the company scaled.",
-    "Made a complex oracle network clearer and more consistent across product and brand.",
+    "Chainlink: partnered with the Design Director on internal tools and the brand system.",
+    "Twilio: led a full redesign of the developer tools platform, grounded in user interviews.",
   ])
+})
+
+test("sets each résumé point on one line at desktop, as the PDF does", async ({ page }) => {
+  // At the old 34rem measure most points wrapped by 0-40px and left their last
+  // word or two alone on a second line.
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.getByRole("link", { name: "Open résumé" }).click()
+
+  const reader = page.getByRole("dialog", { name: "Resume" })
+  await expect(reader.locator(".resume-experience").first()).toBeVisible()
+  // Polled, and read from layout (offsetHeight ignores transforms): the sheet
+  // grows to its full width as it opens, and text measured mid-open wraps.
+  await expect
+    .poll(() =>
+      reader.evaluate((root) =>
+        [...root.querySelectorAll<HTMLElement>(".resume-content .mosaic-about-resume-description")]
+          .flatMap((el) => (el.tagName === "UL" ? [...(el.children as HTMLCollectionOf<HTMLElement>)] : [el]))
+          .filter((el) => el.offsetHeight > parseFloat(getComputedStyle(el).lineHeight) * 1.5)
+          .map((el) => el.textContent),
+      ),
+    )
+    .toEqual([])
 })
 
 test("keeps one compact gap between the About closing line, companies, process, and services", async ({ page }) => {
@@ -5287,165 +5315,6 @@ test("keeps the work-history popover below its trigger while scrolling", async (
   expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(mobileViewport.height)
 })
 
-// Without hover the caption would have to sit on every tile at once, over
-// artwork that already carries each project's own wordmark. Both it and the
-// band that made it legible are gone entirely, not merely faded — and the name
-// still reaches assistive tech through the link itself.
-test("hides project card names where there is no hover to reveal them", async ({ page }) => {
-  await page.setViewportSize(mobileViewport)
-  await page.goto("/")
-
-  const firstCard = page.locator(".mosaic-row-card").first()
-  await expect(firstCard.locator(".mosaic-row-card-title")).toHaveCSS("display", "none")
-  await expect(firstCard.locator(".mosaic-row-card-scrim")).toHaveCSS("display", "none")
-  await expect(firstCard).toHaveAttribute("aria-label", /^Open .+ preview 1 of/)
-})
-
-test("ramps the blur radius behind desktop project captions", async ({ page }) => {
-  await page.setViewportSize({ width: 2446, height: 1239 })
-  await page.goto("/")
-
-  const card = page.getByRole("link", { name: /Open Matcha preview 2 of/ })
-  const scrim = card.locator(".mosaic-row-card-scrim")
-  await card.hover()
-
-  await expect.poll(() => scrim.evaluate((element) => getComputedStyle(element.children[0]).opacity)).toBe("1")
-
-  // The tint has to land ahead of the ramp. Fading both together meant the
-  // caption could not go legible until four backdrop rasters were ready, which
-  // is what made the whole effect feel like it arrived late.
-  const [tintMs, rampMs] = await scrim.evaluate((element) =>
-    [getComputedStyle(element, "::after"), getComputedStyle(element.children[0])].map((style) =>
-      Number.parseFloat(style.transitionDuration) * 1000,
-    ),
-  )
-
-  expect(tintMs).toBeGreaterThan(0)
-  expect(rampMs).toBeGreaterThan(tintMs)
-
-  // Four layers, each blurrier than the last. The ordering is the assertion
-  // that matters: a single blurred layer fading its opacity in looks similar in
-  // a screenshot but leaves the top of the band a blend of sharp and blurred
-  // rather than a gentler blur, and it would pass a mere "is there a blur" check.
-  const radii = await scrim.evaluate((element) =>
-    Array.from(element.children, (layer) =>
-      Number(getComputedStyle(layer).backdropFilter.match(/blur\(([\d.]+)px\)/)?.[1] ?? Number.NaN),
-    ),
-  )
-
-  expect(radii).toHaveLength(4)
-  expect(radii.every((radius) => Number.isFinite(radius) && radius > 0)).toBe(true)
-  expect([...radii].sort((first, second) => first - second)).toEqual(radii)
-  expect(radii.at(-1)).toBeCloseTo(40, 0)
-
-  // Blur cannot carry contrast by itself -- a blurred white screenshot is still
-  // white -- so a tint rides above the whole ramp.
-  const tint = await scrim.evaluate((element) => getComputedStyle(element, "::after").backgroundImage)
-  expect(tint).toContain("linear-gradient")
-})
-
-// The band is the caption's ground, and which way it has to move depends on the
-// tile. Most tiles letterbox their artwork against the pale card surface, so the
-// band washes toward that surface and the label is ink -- what it has to survive
-// there is dark artwork under the label, because the pale tint is the thing
-// doing the lifting. Full-bleed tiles and the tiles whose artwork runs dark to
-// the bottom edge keep the black band and the white label, where the worst case
-// is the opposite.
-// Both alphas are read off the eased stop list at the caption's own top edge
-// rather than assumed to fall in a straight line.
-test("keeps desktop project captions readable over the artwork underneath", async ({ page }) => {
-  await page.setViewportSize({ width: 700, height: 1000 })
-  await page.goto("/")
-
-  const captionGround = async (name: RegExp) => {
-    const card = page.getByRole("link", { name })
-    const title = card.locator(".mosaic-row-card-title")
-    await title.evaluate((element) => { (element as HTMLElement).style.maxWidth = "110px" })
-    await card.hover()
-    await title.evaluate(async (element) => {
-      await Promise.all(element.getAnimations().map((animation) => animation.finished))
-    })
-    await expect(title).toBeVisible()
-
-    return card.evaluate((element) => {
-      const scrim = element.querySelector(".mosaic-row-card-scrim")
-      const label = element.querySelector(".mosaic-row-card-title")
-
-      if (!(scrim instanceof HTMLElement) || !(label instanceof HTMLElement)) return null
-
-      const stops = Array.from(
-        getComputedStyle(scrim, "::after").backgroundImage.matchAll(
-          /rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\) ([\d.]+)%/g,
-        ),
-        (stop) => ({
-          alpha: stop[4] === undefined ? 1 : Number(stop[4]),
-          at: Number(stop[5]) / 100,
-        }),
-      )
-
-      if (stops.length < 2) return null
-
-      const scrimBox = scrim.getBoundingClientRect()
-      const labelBox = label.getBoundingClientRect()
-      const labelProgress = (scrimBox.bottom - labelBox.top) / scrimBox.height
-      const upper = stops.find((stop) => stop.at >= labelProgress) ?? stops[stops.length - 1]
-      const lower = [...stops].reverse().find((stop) => stop.at <= labelProgress) ?? stops[0]
-      const span = upper.at - lower.at
-      const tintChannels = getComputedStyle(element).getPropertyValue("--card-caption-tint")
-
-      return {
-        tint: tintChannels.split(/\s+/).map(Number),
-        alpha:
-          span === 0
-            ? lower.alpha
-            : lower.alpha + ((labelProgress - lower.at) / span) * (upper.alpha - lower.alpha),
-        ink: getComputedStyle(label).color,
-        lines: labelBox.height / Number.parseFloat(getComputedStyle(label).lineHeight),
-      }
-    })
-  }
-
-  const luminance = ([red, green, blue]: number[]) => {
-    const [r, g, b] = [red, green, blue].map((channel) => {
-      const ratio = channel / 255
-      return ratio <= 0.04045 ? ratio / 12.92 : ((ratio + 0.055) / 1.055) ** 2.4
-    })
-
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-  }
-
-  const contrast = (first: number[], second: number[]) => {
-    const [lighter, darker] = [luminance(first), luminance(second)].sort((one, two) => two - one)
-    return (lighter + 0.05) / (darker + 0.05)
-  }
-
-  // A short slot with a label long enough to wrap: the two-line case is the one
-  // whose top edge reaches highest into the band, where the tint is thinnest.
-  const pale = await captionGround(/Open Matcha multiwallet flow preview 1 of/)
-  expect(pale).not.toBeNull()
-  expect(pale!.lines).toBeGreaterThan(1.5)
-
-  const paleGround = pale!.tint.map((channel) => channel * pale!.alpha)
-  expect(contrast(paleGround, [20, 20, 20])).toBeGreaterThanOrEqual(4.5)
-
-  // A full-bleed film has no pale surface to wash toward; a pale band there
-  // read as grey fog over the dark footage.
-  const fullBleed = await captionGround(/Open Matcha launch films/)
-  expect(fullBleed).not.toBeNull()
-
-  const darkGround = fullBleed!.tint.map((channel) => channel * fullBleed!.alpha + 255 * (1 - fullBleed!.alpha))
-  expect(contrast(darkGround, [255, 255, 255])).toBeGreaterThanOrEqual(4.5)
-  expect(fullBleed!.tint).toEqual([0, 0, 0])
-  expect(fullBleed!.ink).toBe("rgb(255, 255, 255)")
-
-  // The Iframe Widget sits on the pale card, but its dark window fills the
-  // bottom of the tile, so a pale band would wash over that instead.
-  const darkWindow = await captionGround(/Open Matcha Iframe Widget/)
-  expect(darkWindow).not.toBeNull()
-  expect(darkWindow!.tint).toEqual([0, 0, 0])
-  expect(darkWindow!.ink).toBe("rgb(255, 255, 255)")
-})
-
 test("contains the featured Matcha previews inside their mobile cards", async ({ page }) => {
   await page.setViewportSize(mobileViewport)
   await page.goto("/")
@@ -5801,7 +5670,7 @@ test("serves a résumé PDF that matches the live profile", async ({ request }) 
   expect(text).toMatch(/0x Project[\s\S]*March 2026/)
   // Each entry's copy precedes its dates in the text layer, and the bullets
   // stay with their entry rather than being painted in a later pass.
-  expect(text).toMatch(/Freelance[\s\S]*End-to-end product design[\s\S]*2026 –[\s\S]*0x Project/)
+  expect(text).toMatch(/Freelance[\s\S]*End-to-end design for scaling products[\s\S]*2026 –[\s\S]*0x Project/)
   // The old Figma export advertised an address the site had already moved off,
   // so the PDF must carry the site's current one and no other: naming the stale
   // address would only catch the drift that already happened.

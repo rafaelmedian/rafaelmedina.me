@@ -19,12 +19,13 @@ export const galleryMotionVars = {
   // preview-gallery.css) so a token change retimes the zoom.
   "--pg-zoom-open-ms": "var(--duration-slow)",
   "--pg-zoom-close-ms": "var(--duration-slow)",
-  // How long the tile and the surface take to hand over at each end of the
-  // zoom. On the open only the tile fades: the surface's artwork lands on the
-  // tile's exactly, so it cuts in over it, and a crossfade of both overlapped
-  // the spring's fastest frames and showed two copies sliding apart. On the
-  // close both fade, over the flight's slow tail, where they lie together.
-  "--pg-zoom-handoff-ms": "var(--duration-fast)",
+  // How long the surface takes to fade off the tile at the end of a close.
+  // The open cuts in over the tile instead: the surface's artwork lands on the
+  // tile's exactly. Half the fast step, so the fade only starts once the
+  // close spring is within a pixel of the tile: over the full 120ms it began
+  // while the surface was still ~6px short, and the two copies of the artwork
+  // showed doubled as they crossed.
+  "--pg-zoom-handoff-ms": "calc(var(--duration-fast) / 2)",
   "--pg-content-in-ms": "var(--duration-base)",
   "--pg-content-out-ms": "var(--duration-quick)",
   "--pg-backdrop-in-ms": "var(--duration-base)",

@@ -8,10 +8,21 @@
   margin-bottom: 0;
 }
 
-/* The work keeps the site's 34rem reading measure, centred in the reader. */
+/* A touch wider than the site's 34rem reading measure, so each point sits on
+   one line as it does in the PDF: the longest bullet sets 550px of text, which
+   34rem wrapped onto a second line holding only its last word or two. 37.5rem
+   leaves it ~5% of slack for WebKit's wider raster. The gallery's sticky
+   heading (preview-gallery.css) shares this width so its edges line up. */
 .resume-content {
-  width: min(100%, 34rem);
+  width: min(100%, 37.5rem);
   margin-inline: auto;
+}
+
+/* Where a point does wrap -- narrower sheets and phones -- balance its lines
+   so neither ends on a lone word. */
+.resume-content .mosaic-about-resume-description,
+.resume-content .mosaic-about-resume-description > li {
+  text-wrap: balance;
 }
 
 /* Icon and label on one line, whichever surface the link sits on. */
@@ -111,13 +122,33 @@
   color: var(--muted-soft);
 }
 
-/* Keep multi-point descriptions visibly distinct with native bullet markers. */
+/* Multi-point descriptions take the PDF's small, quiet dot instead of the
+   native disc, which was body-sized and cost a 1.25rem indent. The 3px dot is
+   decorative, so it sits lighter than any text grey, like the PDF's, and
+   centres on the first line (line-height 1.5, so 0.75em down). The list
+   keeps role="list" in the markup, since Safari drops list semantics once
+   list-style is none. */
 .mosaic-about-body ul.mosaic-about-resume-description {
-  list-style: disc;
-  padding-left: 1.25rem;
+  list-style: none;
+  padding-left: 0.625rem;
   margin-bottom: 0;
   display: grid;
   gap: 0.6rem;
+}
+
+.mosaic-about-body ul.mosaic-about-resume-description > li {
+  position: relative;
+}
+
+.mosaic-about-body ul.mosaic-about-resume-description > li::before {
+  content: "";
+  position: absolute;
+  top: calc(0.75em - 1.5px);
+  left: -0.625rem;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.25);
 }
 
 /* Narrow screens stack the dates under the company; they belong to it, so

@@ -403,8 +403,12 @@ export function PreviewGalleryDialog({
     onFlight: flagOriginAnimating,
     getFadeNode: () => popupRef.current,
     getZoomAnchor: () => {
+      // The artwork itself, not the low-resolution stand-in drawn over it
+      // while it loads: that one has no width or height until it arrives, so
+      // a cold open measured its whole frame and flew the card in offset
+      // from the tile.
       const frame = popupRef.current?.querySelector(".preview-gallery-media-frame")
-      return frame?.querySelector(".preview-gallery-media") ?? frame ?? null
+      return frame?.querySelector(".preview-gallery-media:not(.preview-gallery-media-placeholder)") ?? frame ?? null
     },
     getZoomKeep: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
     getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
@@ -412,8 +416,8 @@ export function PreviewGalleryDialog({
     // The notes list and the résumé come out of a paper on their tiles -- a
     // page the size of a thumbnail -- so they land as a whole card rather
     // than clipped down to the paper.
-    getZoomWhole: () => activeItem?.kind === "writings" || activeItem?.kind === "resume" ? cardRef.current : null,
     handoffDurationProperty: "--pg-zoom-handoff-ms",
+    getZoomWhole: () => activeItem?.kind === "writings" || activeItem?.kind === "resume" ? cardRef.current : null,
     zoomOpenDurationProperty: "--pg-zoom-open-ms",
     zoomCloseDurationProperty: "--pg-zoom-close-ms",
   })

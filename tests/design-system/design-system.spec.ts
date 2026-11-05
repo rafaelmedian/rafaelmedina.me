@@ -9,18 +9,6 @@ const openDesignSystem = async (page: Page) => {
   await expect(page.getByRole("heading", { name: "Design system" })).toBeVisible()
 }
 
-test("documents the caption dropping out where there is no hover", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto("/")
-  await expect(page.locator(".mosaic-row-card-title").first()).toHaveCSS("display", "none")
-  await expect(page.locator(".mosaic-row-card-scrim").first()).toHaveCSS("display", "none")
-  await openDesignSystem(page)
-  const captionRule = page.locator("#elevation .ds-rule")
-  await expect(captionRule).toContainText("entire scrim is hidden")
-  await expect(captionRule).toContainText("and so is the caption")
-  await expect(captionRule).not.toContainText("rgb(20 20 20 / 0.82)")
-})
-
 test("uses continuous corners without reshaping circles and pills", async ({ page }) => {
   await page.goto("/?tune=off")
   await expect(page.locator(".mosaic-row-card").first()).toHaveCSS("corner-shape", "superellipse(2)")
@@ -31,7 +19,7 @@ test("uses continuous corners without reshaping circles and pills", async ({ pag
   await expect(page.locator("#space")).toContainText("superellipse(2)")
 })
 
-test("keeps the caption blur outside the card's squircle clip", async ({ page }) => {
+test("clips work-tile artwork inside the card's squircle", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/?tune=off")
 
@@ -42,7 +30,6 @@ test("keeps the caption blur outside the card's squircle clip", async ({ page })
   await expect(card).toHaveCSS("overflow", "visible")
   await expect(mediaClip).toHaveCSS("corner-shape", "superellipse(2)")
   await expect(mediaClip).toHaveCSS("overflow", "hidden")
-  await expect(card.locator(":scope > .mosaic-row-card-scrim")).toHaveCount(1)
 })
 
 test("does not mount the retired corner tuner on development pages", async ({ page }) => {

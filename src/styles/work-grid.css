@@ -1,39 +1,8 @@
-/* ------------------------------------------------ work-tile caption title --- */
-
-.mosaic-row-card-title {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(0.875rem, 1.4vw, 1.25rem);
-  z-index: 2;
-  max-width: calc(100% - clamp(1.75rem, 2.8vw, 2.5rem));
-  transform: translate(-50%, 0.25rem);
-  opacity: 0;
-  pointer-events: none;
-  color: var(--card-caption-ink);
-  font-size: clamp(var(--text-xs), 1vw, var(--text-sm));
-  font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: -0.025em;
-  text-align: center;
-  /* Only the dark band needs the halo -- it separates white type from the
-     highlights the tint cannot fully cover. Ink on the pale band has nothing
-     to separate itself from and a shadow there just reads as a smudge. */
-  text-shadow: var(--card-caption-ink-halo);
-  transition:
-    opacity var(--duration-quick) ease-out var(--card-caption-delay),
-    transform var(--duration-quick) var(--ease-standard) var(--card-caption-delay);
-}
-
-.mosaic-row-card:hover .mosaic-row-card-title,
-.mosaic-row-card:focus-visible .mosaic-row-card-title {
-  transform: translate(-50%, 0);
-  opacity: 1;
-}
-
-
 /* ------------------------------------------------------- work grid & rows --- */
 
 .mosaic-work {
+  /* The tiles' and quotes' hover ring. */
+  --tile-hover-ring: inset 0 0 0 1.5px rgb(0 0 0 / 0.22);
   border-radius: 0;
   overflow: visible;
   background: transparent;
@@ -147,6 +116,37 @@
   flex: 1;
   width: 100%;
   min-height: 0;
+}
+
+/* The quote clips its overflow, so a ring on the card itself would land 1px
+   inside its border on a tighter curve and read as a second line. The row
+   item is exactly the card's border box, so the hover ring hangs off it. */
+.mosaic-row-quote {
+  position: relative;
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 899.98px) {
+  .mosaic-row-quote {
+    border-radius: var(--radius-md);
+  }
+}
+
+.mosaic-row-quote::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  corner-shape: inherit;
+  box-shadow: var(--tile-hover-ring);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-row-quote:hover::after {
+  opacity: 1;
 }
 
 
@@ -343,6 +343,17 @@
   width: calc(100% + var(--quote-inline-padding) * 2);
   min-height: 12rem;
   overflow: clip;
+  /* Quotes passing through the gutters fade out from side to side; the copy
+     at rest sits inside the opaque middle, so it stays fully sharp. */
+  --quote-edge-mask: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--quote-inline-padding),
+    #000 calc(100% - var(--quote-inline-padding)),
+    transparent
+  );
+  -webkit-mask-image: var(--quote-edge-mask);
+  mask-image: var(--quote-edge-mask);
 }
 
 .mosaic-quote-slide {
@@ -368,68 +379,6 @@
 .mosaic-quote[data-dragging="true"] .mosaic-quote-slide,
 .mosaic-quote-slide[data-repositioning="true"] {
   transition: none;
-}
-
-/* As with the work-tile scrim, separate masked layers increase the actual
-   blur radius toward the edge. The final tint dissolves it into the card. */
-.mosaic-quote-edge {
-  position: absolute;
-  inset-block: 0;
-  width: var(--quote-inline-padding);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.mosaic-quote-edge-left {
-  left: 0;
-  --quote-edge-direction: to right;
-}
-
-.mosaic-quote-edge-right {
-  right: 0;
-  --quote-edge-direction: to left;
-}
-
-.mosaic-quote-edge > span {
-  position: absolute;
-  inset: 0;
-  -webkit-backdrop-filter: blur(var(--quote-edge-blur));
-  backdrop-filter: blur(var(--quote-edge-blur));
-  -webkit-mask-image: linear-gradient(var(--quote-edge-direction), #000, transparent var(--quote-edge-reach));
-  mask-image: linear-gradient(var(--quote-edge-direction), #000, transparent var(--quote-edge-reach));
-}
-
-.mosaic-quote-edge > span:nth-child(1) {
-  --quote-edge-blur: 1px;
-  --quote-edge-reach: 100%;
-}
-
-.mosaic-quote-edge > span:nth-child(2) {
-  --quote-edge-blur: 2px;
-  --quote-edge-reach: 75%;
-}
-
-.mosaic-quote-edge > span:nth-child(3) {
-  --quote-edge-blur: 4px;
-  --quote-edge-reach: 50%;
-}
-
-.mosaic-quote-edge > span:nth-child(4) {
-  --quote-edge-blur: 8px;
-  --quote-edge-reach: 25%;
-}
-
-.mosaic-quote-edge::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    var(--quote-edge-direction),
-    #fff,
-    rgb(255 255 255 / 0.95) 12%,
-    rgb(255 255 255 / 0.6) 45%,
-    rgb(255 255 255 / 0) 100%
-  );
 }
 
 .mosaic-quote-next {
@@ -927,7 +876,7 @@
   }
 }
 
-/* -------------------------------------------------- work tiles & captions --- */
+/* ------------------------------------------------------------- work tiles --- */
 
 .mosaic-row-item {
   min-height: 0;
@@ -935,41 +884,7 @@
   display: flex;
 }
 
-/* The caption band's colour, set here so the tint and the label it carries can
-   never disagree.
-
-   Most tiles letterbox their artwork against --mosaic-card-surface, and a black
-   band over that read as a grey bruise laid on the tile rather than as part of
-   it: the card is pale everywhere except the one strip the caption needs. These
-   wash toward the card's own surface instead, so the band is the tile colour
-   coming forward over the artwork and the label is ordinary ink.
-
-   --card-caption-weight scales every stop of the ramp below. The pale tint has
-   to work harder than black did for the same separation -- it is only a few
-   levels off the artwork it covers on a light screenshot, where black had the
-   full range to itself -- so it runs half again as heavy and reaches the tile
-   colour outright at the bottom edge.
-
-   Full-bleed tiles and the dark tiles whose backdrop runs to the bottom edge keep the
-   black band and the white label; they are listed directly below. */
 .mosaic-row-card {
-  --card-caption-tint: 236 236 238; /* --mosaic-card-surface */
-  --card-caption-weight: 1.5;
-  --card-caption-ink: var(--ink);
-  --card-caption-ink-halo: none;
-  /* How long the caption, its tint, and the blur ramp wait before fading, in
-     both directions. While a tile's loop plays and nothing else on the page
-     moves, Chrome paces the page at the video's 30fps. A hover from rest then
-     starts its transitions on a stale frame, and the first two frames that
-     move land 33ms and 67ms into them: the tint went 0 -> 32%, held a frame,
-     jumped to 59%, and only then eased. Each of those jumps is four ordinary
-     frames' worth of fade at once, which is what read as dropped frames. This
-     spends the 30fps ramp-up before the fade begins, so the first frame that
-     moves is 7ms in and no step exceeds the 8-9% of an ordinary 120Hz frame.
-     The first visible change lands 50-65ms after the hover instead of a jump
-     at 10-25ms. With no video on screen it is only a short hover intent. It is
-     the 60ms the page-entrance stagger already uses. */
-  --card-caption-delay: 60ms;
   /* Both darker than --mosaic-card-surface: a sheen lighter than the card it
      crosses reads as a white streak. */
   --card-skeleton-base: #d8d8dc;
@@ -983,9 +898,8 @@
   min-width: 0;
   min-height: 0;
   border-radius: var(--radius-lg);
-  /* Chromium turns a masked backdrop-filter inside a squircle overflow clip
-     into an opaque rectangular raster. Clip only the artwork below; the
-     caption blur stays a sibling and the card keeps the same visible curve. */
+  /* The artwork is clipped by .mosaic-row-card-media-clip below, so the card
+     itself does not need to clip. */
   overflow: visible;
   border: 1px solid rgb(0 0 0 / 0.08);
   background: var(--mosaic-card-surface);
@@ -997,6 +911,25 @@
     background-color var(--duration-quick) var(--ease-standard),
     border-color var(--duration-quick) var(--ease-standard),
     box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+/* Hover ring: a dark hairline drawn over the card's own border, painted once
+   and faded on opacity alone so the hover stays composited. */
+.mosaic-row-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 2;
+  border-radius: inherit;
+  corner-shape: inherit;
+  box-shadow: var(--tile-hover-ring);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+.mosaic-row-card:hover::after {
+  opacity: 1;
 }
 
 .mosaic-row-card-media-clip {
@@ -1013,227 +946,6 @@
   overflow: hidden;
   border-radius: inherit;
   corner-shape: inherit;
-}
-
-/* Full-bleed (cover) tiles -- the Matcha films --
-   have no pale card surface showing at all: the artwork is the tile, and the
-   films run dark. A pale wash over them read as grey fog, so they take the
-   black band like the dark tiles below. Token and Pro carry their own
-   rgb(63 62 68) backdrop to all four. There is no pale surface for the band to wash toward on any of them,
-   and ink would land on artwork it cannot beat. Admiral sits in a cover slot
-   but contains its export on the card's own grey, so it keeps the pale band.
-   The Iframe Widget is on that grey too, but its dark window runs off the bottom
-   of the tile, right where the band sits, so it takes the black one. */
-.mosaic-row-item-fit-cover .mosaic-row-card:not(.mosaic-row-card-preview-twilio-admiral),
-.mosaic-row-card-preview-matcha-iframe-widget,
-.mosaic-row-card-preview-shot-21,
-.mosaic-row-card-preview-shot-23 {
-  --card-caption-tint: 0 0 0;
-  --card-caption-weight: 1;
-  --card-caption-ink: white;
-  --card-caption-ink-halo: 0 1px 8px rgb(0 0 0 / 0.28);
-}
-
-/* The caption backdrop. Four separately masked layers step the blur radius from
-   a twelfth of `--card-caption-blur` up to all of it, so the artwork softens
-   progressively toward the bottom edge rather than stopping at a seam.
-
-   One masked blur layer is the obvious cheaper version of this and it does not
-   read the same: a mask fades the *opacity* of a uniformly blurred layer, so
-   the top of the band ends up a half-strength blend of sharp and blurred
-   instead of a gentler blur. This ramps the radius itself.
-
-   These have to be real nodes -- an element only gets ::before and ::after, and
-   the ramp needs four. */
-.mosaic-row-card-scrim {
-  --card-caption-blur: 2.5rem;
-
-  /* Every ramp in this band -- the four blur masks below and the tint at the
-     end -- dies out on the same eased curve rather than a straight line. A
-     linear alpha ramp changes slope abruptly at the point it reaches zero, and
-     the eye reads that break as an edge even though nothing is drawn there;
-     these stops flatten the approach so the band has no top. Only the span
-     differs between them. */
-  --card-caption-mask-1: linear-gradient(
-    to top,
-    #000 22%,
-    rgb(0 0 0 / 0.54) 30.2%,
-    rgb(0 0 0 / 0.28) 35.6%,
-    rgb(0 0 0 / 0.13) 39.5%,
-    rgb(0 0 0 / 0.04) 42.6%,
-    transparent 46%
-  );
-  --card-caption-mask-2: linear-gradient(
-    to top,
-    #000 14%,
-    rgb(0 0 0 / 0.54) 20.8%,
-    rgb(0 0 0 / 0.28) 25.3%,
-    rgb(0 0 0 / 0.13) 28.6%,
-    rgb(0 0 0 / 0.04) 31.2%,
-    transparent 34%
-  );
-  --card-caption-mask-3: linear-gradient(
-    to top,
-    #000 8%,
-    rgb(0 0 0 / 0.54) 13.4%,
-    rgb(0 0 0 / 0.28) 17%,
-    rgb(0 0 0 / 0.13) 19.7%,
-    rgb(0 0 0 / 0.04) 21.8%,
-    transparent 24%
-  );
-  --card-caption-mask-4: linear-gradient(
-    to top,
-    #000 0%,
-    rgb(0 0 0 / 0.54) 5.1%,
-    rgb(0 0 0 / 0.28) 8.5%,
-    rgb(0 0 0 / 0.13) 11%,
-    rgb(0 0 0 / 0.04) 12.9%,
-    transparent 15%
-  );
-
-  position: absolute;
-  inset: auto 0 0;
-  z-index: 1;
-  height: max(46%, 6rem);
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-/* The tint and the ramp fade on separate clocks, and the split is the point.
-   Fading the whole scrim as one meant the caption could not become legible
-   until the four backdrop rasters were ready, so the entire effect arrived at
-   once and read as a stall. The tint is an ordinary gradient that paints
-   immediately, so it carries the contrast on the hover beat while the blur
-   resolves behind it over the longer curve. */
-.mosaic-row-card-scrim > span {
-  position: absolute;
-  inset: 0;
-  display: block;
-  border-radius: inherit;
-  corner-shape: inherit;
-  opacity: 0;
-  /* var(--duration-slow) is the scale's "media un-blurring as it decodes" step. This is the
-     same event -- a blur resolving -- so it borrows that value rather than
-     adding one. It also means a raster that lands late lands mid-fade, which
-     reads as softening rather than as a pop. */
-  transition: opacity var(--duration-slow) ease-out var(--card-caption-delay);
-}
-
-.mosaic-row-card-scrim > span:nth-child(1) {
-  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.12));
-  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.12));
-  -webkit-mask-image: var(--card-caption-mask-1);
-  mask-image: var(--card-caption-mask-1);
-}
-
-.mosaic-row-card-scrim > span:nth-child(2) {
-  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.3));
-  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.3));
-  -webkit-mask-image: var(--card-caption-mask-2);
-  mask-image: var(--card-caption-mask-2);
-}
-
-.mosaic-row-card-scrim > span:nth-child(3) {
-  -webkit-backdrop-filter: blur(calc(var(--card-caption-blur) * 0.62));
-  backdrop-filter: blur(calc(var(--card-caption-blur) * 0.62));
-  -webkit-mask-image: var(--card-caption-mask-3);
-  mask-image: var(--card-caption-mask-3);
-}
-
-.mosaic-row-card-scrim > span:nth-child(4) {
-  -webkit-backdrop-filter: blur(var(--card-caption-blur));
-  backdrop-filter: blur(var(--card-caption-blur));
-  -webkit-mask-image: var(--card-caption-mask-4);
-  mask-image: var(--card-caption-mask-4);
-}
-
-/* The tint rides above the whole ramp rather than inside the blurriest layer.
-   Blur cannot promise contrast on its own -- a blurred white screenshot is
-   still white -- and folded into the bottom layer this only covered the lowest
-   fifteenth of the band, which is under the caption rather than behind it. */
-.mosaic-row-card-scrim::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  corner-shape: inherit;
-  /* On wide layouts this is nearly flat across the bottom seventh, where the
-     caption sits, then eased to nothing over the rest of the band. The plateau
-     is what buys the weight back: contrast is only owed at the label, so the
-     tint holds ~0.57 of its weight behind it -- on the black band, the same
-     composite the old 0.68 straight ramp put there -- and sheds about a third
-     of that through the middle of the band, which is the part you actually
-     read as heavy. Every stop is scaled by --card-caption-weight, so the two
-     bands share this shape and differ only in how hard they pull. It also has no top: a ramp that reaches
-     zero partway up changes slope there, and the eye reads that break as an
-     edge. Compact desktop overrides the stop positions below because its
-     labels can wrap inside a shorter band. */
-  background: linear-gradient(
-    to top,
-    rgb(var(--card-caption-tint) / calc(0.62 * var(--card-caption-weight))) 0%,
-    rgb(var(--card-caption-tint) / calc(0.595 * var(--card-caption-weight))) 8%,
-    rgb(var(--card-caption-tint) / calc(0.56 * var(--card-caption-weight))) 14%,
-    rgb(var(--card-caption-tint) / calc(0.475 * var(--card-caption-weight))) 21%,
-    rgb(var(--card-caption-tint) / calc(0.36 * var(--card-caption-weight))) 30%,
-    rgb(var(--card-caption-tint) / calc(0.27 * var(--card-caption-weight))) 38%,
-    rgb(var(--card-caption-tint) / calc(0.19 * var(--card-caption-weight))) 47%,
-    rgb(var(--card-caption-tint) / calc(0.13 * var(--card-caption-weight))) 56%,
-    rgb(var(--card-caption-tint) / calc(0.085 * var(--card-caption-weight))) 65%,
-    rgb(var(--card-caption-tint) / calc(0.05 * var(--card-caption-weight))) 74%,
-    rgb(var(--card-caption-tint) / calc(0.027 * var(--card-caption-weight))) 82%,
-    rgb(var(--card-caption-tint) / calc(0.012 * var(--card-caption-weight))) 89%,
-    rgb(var(--card-caption-tint) / calc(0.003 * var(--card-caption-weight))) 95%,
-    transparent 100%
-  );
-  opacity: 0;
-  /* The scale's default for opacity on hover, and the same curve the caption
-     itself uses -- tint and label arrive together, ahead of the blur. */
-  transition: opacity var(--duration-quick) ease-out var(--card-caption-delay);
-}
-
-/* Where the backdrop cannot be sampled, fall back to the staggered ramps this
-   replaced: translucent enough to keep the caption legible without leaving the
-   broad gray shelf a single multi-stop scrim left. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .mosaic-row-card-scrim::after {
-    background:
-      linear-gradient(to top, rgb(var(--card-caption-tint) / calc(0.34 * var(--card-caption-weight))) 0%, transparent 48%),
-      linear-gradient(to top, rgb(var(--card-caption-tint) / calc(0.2 * var(--card-caption-weight))) 0%, transparent 74%),
-      linear-gradient(to top, rgb(var(--card-caption-tint) / calc(0.1 * var(--card-caption-weight))) 0%, transparent 100%);
-  }
-}
-
-/* Compact desktop cards are short enough that long labels wrap above the
-   wide layout's bottom plateau. Hold the tint through the full two-line label,
-   then spend the remaining height on the same eased exit. This comes after the
-   no-backdrop fallback so contrast does not depend on blur support. */
-@media (max-width: 899.98px), (hover: none), (pointer: coarse) {
-  .mosaic-row-card-scrim::after {
-    background: linear-gradient(
-      to top,
-      rgb(var(--card-caption-tint) / calc(0.62 * var(--card-caption-weight))) 0%,
-      rgb(var(--card-caption-tint) / calc(0.595 * var(--card-caption-weight))) 18%,
-      rgb(var(--card-caption-tint) / calc(0.57 * var(--card-caption-weight))) 40%,
-      rgb(var(--card-caption-tint) / calc(0.475 * var(--card-caption-weight))) 48%,
-      rgb(var(--card-caption-tint) / calc(0.36 * var(--card-caption-weight))) 56%,
-      rgb(var(--card-caption-tint) / calc(0.27 * var(--card-caption-weight))) 64%,
-      rgb(var(--card-caption-tint) / calc(0.19 * var(--card-caption-weight))) 72%,
-      rgb(var(--card-caption-tint) / calc(0.13 * var(--card-caption-weight))) 80%,
-      rgb(var(--card-caption-tint) / calc(0.085 * var(--card-caption-weight))) 87%,
-      rgb(var(--card-caption-tint) / calc(0.05 * var(--card-caption-weight))) 92%,
-      rgb(var(--card-caption-tint) / calc(0.027 * var(--card-caption-weight))) 96%,
-      rgb(var(--card-caption-tint) / calc(0.012 * var(--card-caption-weight))) 98%,
-      rgb(var(--card-caption-tint) / calc(0.003 * var(--card-caption-weight))) 99%,
-      transparent 100%
-    );
-  }
-}
-
-.mosaic-row-card:hover .mosaic-row-card-scrim > span,
-.mosaic-row-card:focus-visible .mosaic-row-card-scrim > span,
-.mosaic-row-card:hover .mosaic-row-card-scrim::after,
-.mosaic-row-card:focus-visible .mosaic-row-card-scrim::after {
-  opacity: 1;
 }
 
 /* One ring, like every other control. This used to stack four -- the card's own
@@ -1456,6 +1168,18 @@
    Not cover: filling the slot would cut the tab row off the trade module. */
 .mosaic-row-card-preview-shot-1 {
   background: rgb(231 231 233);
+}
+
+/* The three Matcha recordings sit on a flat rgb(233 233 235) margin, three
+   levels under --mosaic-card-surface. The card takes that value so the
+   contained video has no edge against it. The files are tagged sRGB
+   (scripts/optimize-video-previews.mjs): with the BT.709 transfer ffmpeg
+   writes by default, Chrome lifted the margin to the card's value only while
+   the video played, so the tile visibly stepped once the poster handed over. */
+.mosaic-row-card-preview-shot-9,
+.mosaic-row-card-preview-shot-16,
+.mosaic-row-card-preview-shot-20 {
+  background: rgb(233 233 235);
 }
 
 /* The Protector and Patrol recordings are bare screens, so their tiles frame
@@ -1724,37 +1448,8 @@
   /* The work cards no longer carry a first-load entrance of their own -- the
      rows enter with the homepage stagger, which reduced-motion.css turns off
      beside the rest of it. */
-  .mosaic-row-card-title,
-  .mosaic-row-card-scrim > span,
-  .mosaic-row-card-scrim::after {
-    transition: none;
-  }
-
   .mosaic-row-media {
     opacity: 1;
     transition: none;
-  }
-
-  .mosaic-row-card:hover .mosaic-row-card-title,
-  .mosaic-row-card:focus-visible .mosaic-row-card-title {
-    transform: translate(-50%, 0);
-  }
-}
-
-@media (max-width: 699.98px), (hover: none), (pointer: coarse) {
-
-  /* Without hover there is nothing to reveal the caption on, so it would have
-     to sit on every tile at once -- and a permanent name on each one is a label
-     stacked over artwork that already carries the project's own wordmark and
-     interface. The tiles read as work rather than as a captioned catalogue, and
-     it costs a phone nothing to paint. The title stays in the link's
-     accessible name and in the prerendered description, so assistive tech and
-     crawlers still get it.
-
-     Dropping the caption takes the band with it: the scrim exists only to hold
-     the caption's ground, so on touch it was already a blur nobody read. */
-  .mosaic-row-card-title,
-  .mosaic-row-card-scrim {
-    display: none;
   }
 }

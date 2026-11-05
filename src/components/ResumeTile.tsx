@@ -1,6 +1,6 @@
 import { useId, type Ref } from "react";
 
-import { cvExperience } from "../data/cv";
+import { cvExperience, type CvExperience } from "../data/cv";
 import { resumePath } from "../lib/projectMetadata";
 
 const previewExperience = cvExperience.slice(0, 2);
@@ -13,7 +13,7 @@ function previewCompany(company: string) {
    point and nothing else: at a few millimetres of type per role, a second line
    is a wall nobody stops to read, and it pushes the roles below off the page.
    The reader shows the pair. */
-function previewHighlight(highlight: string | [string, string]) {
+function previewHighlight(highlight: CvExperience["highlight"]) {
   return Array.isArray(highlight) ? highlight[0] : highlight;
 }
 
