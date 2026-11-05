@@ -1458,6 +1458,18 @@
   background: rgb(231 231 233);
 }
 
+/* The three Matcha recordings sit on a flat rgb(233 233 235) margin, three
+   levels under --mosaic-card-surface. The card takes that value so the
+   contained video has no edge against it. The files are tagged sRGB
+   (scripts/optimize-video-previews.mjs): with the BT.709 transfer ffmpeg
+   writes by default, Chrome lifted the margin to the card's value only while
+   the video played, so the tile visibly stepped once the poster handed over. */
+.mosaic-row-card-preview-shot-9,
+.mosaic-row-card-preview-shot-16,
+.mosaic-row-card-preview-shot-20 {
+  background: rgb(233 233 235);
+}
+
 /* The Protector and Patrol recordings are bare screens, so their tiles frame
    them as phones: a black bezel (a border, so the
    screen meets it without an anti-aliased seam) inside a graphite frame with

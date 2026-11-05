@@ -11,6 +11,8 @@ const previews = [
   { name: "shot-small-20", width: 640, fps: 30, crf: 36 },
 ]
 
+const srgbTags = ["-color_primaries", "bt709", "-color_trc", "iec61966-2-1", "-colorspace", "bt709", "-color_range", "tv"]
+
 function transcode(input, output, { width, fps, crf }) {
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn(ffmpegPath, [
@@ -32,6 +34,11 @@ function transcode(input, output, { width, fps, crf }) {
       "2",
       "-row-mt",
       "1",
+      // Tag the files as sRGB. Left as ffmpeg's default BT.709 transfer, Chrome
+      // converts the curve while playing and lifts the light grey margin from
+      // e9 to ec, so the tile visibly brightens when the poster hands over to
+      // the video, and the margin no longer matches the card behind it.
+      ...srgbTags,
       output,
     ])
 
