@@ -40,6 +40,20 @@ function visibleOriginRect(element: Element | null | undefined): DOMRect | null 
   return rect.bottom > 0 && rect.top < window.innerHeight ? rect : null
 }
 
+// The tile inside its hairline border, the rounded box the surface stands in
+// for. The border stays the tile's: clipped to the outer edge, the surface
+// painted its own light fill in that 1px band, which over a full-bleed tile
+// (Turtle's purple) read as a white rim drawn over the tile as it came back.
+function insideBorder(element: Element, rect: DOMRect, radius: number) {
+  const style = getComputedStyle(element)
+  const [top, right, bottom, left] = [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth]
+    .map((value) => parseFloat(value) || 0)
+  return {
+    rect: new DOMRect(rect.left + left, rect.top + top, Math.max(rect.width - left - right, 0), Math.max(rect.height - top - bottom, 0)),
+    radius: Math.max(radius - Math.max(top, right, bottom, left), 0),
+  }
+}
+
 // The corner a tile shows, which is not always its own: several tiles round an
 // inner frame that fills them. The first element filling the tile's box with a
 // radius is the outline the eye reads.
@@ -106,9 +120,11 @@ function springEasing(dampingRatio: number, settle: number) {
 
 // Open: 0.86 damping, the bounce-free feel of a system sheet (a 0.5% overshoot
 // at most, under a pixel on a phone). Close: critically damped, because a
-// surface going back into its tile must not overshoot past the tile's edge.
+// surface going back into its tile must not overshoot past the tile's edge,
+// and settled within a pixel of it by the time it fades off the tile
+// (--pg-zoom-handoff-ms); at 8 time constants it was still ~6px short there.
 const zoomOpen = springEasing(0.86, 6.5)
-const zoomClose = springEasing(1, 8)
+const zoomClose = springEasing(1, 10)
 
 // Enough samples that the linear interpolation between them is invisible at
 // 120Hz over the longest of these animations.
@@ -142,6 +158,148 @@ function buildOriginKeyframes(
   return keyframes
 }
 
+// The morph. A tile opening into a card, or a card going back into its tile,
+// should not read as a rectangle that only scales: the surface takes a shape
+// on the way. The idea comes from the Dock's Genie, without its full funnel,
+// because the card is not minimising into an icon. Mid-flight, the edge facing
+// the tile pinches in and leans towards it while the far edge keeps its width.
+// The surface is briefly drawn towards the tile it came out of, and it is a
+// plain rectangle again before it lands.
+//
+// One projective transform (matrix3d) per keyframe maps the surface's visible
+// box onto that pinched quad, so the motion stays one transform on one element
+// and the content stays live DOM. A projective map draws straight sides, not
+// the Dock's cosine curves, and at these pinch amounts the difference is not
+// visible.
+type Point = { x: number; y: number }
+type Box = { left: number; top: number; right: number; bottom: number }
+
+export type OriginMorph = {
+  /** The tile's centre, relative to the surface's untransformed top-left. */
+  toward: Point
+  /** How much of the facing edge's width goes at the peak of the morph. */
+  pinch: number
+  /** How far the facing edge reaches towards the tile at the peak, as a share
+   *  of the surface's depth along that line. */
+  reach: number
+}
+
+// Opening, the card is pulled out of the tile; closing, it is drawn back in.
+// The close bends harder: it is the one that ends in a small target, the way a
+// window going into the Dock bends harder than one coming out of it.
+export const originMorphOpen = { pinch: 0.2, reach: 0.06 }
+export const originMorphClose = { pinch: 0.3, reach: 0.1 }
+
+// The morph lives in the middle of the flight and is gone at both ends: zero
+// on the tile, where the clip has to match the tile's outline exactly, and
+// zero at rest. It peaks a little past halfway out (`grown` 0.55), while the
+// card is still large enough for the bend to read.
+const morphPeak = 0.55
+const morphExponent = Math.log(0.5) / Math.log(morphPeak)
+const morphAmount = (grown: number) =>
+  grown <= 0 || grown >= 1 ? 0 : Math.sin(Math.PI * Math.pow(grown, morphExponent))
+
+// Heckbert's square-to-quad mapping: the projective matrix (row-major 3x3)
+// that takes the unit square's corners (0,0) (1,0) (1,1) (0,1) to `quad`.
+function squareToQuad([p0, p1, p2, p3]: readonly Point[]) {
+  const sx = p0.x - p1.x + p2.x - p3.x
+  const sy = p0.y - p1.y + p2.y - p3.y
+  let g = 0
+  let h = 0
+  if (Math.abs(sx) > 1e-9 || Math.abs(sy) > 1e-9) {
+    const dx1 = p1.x - p2.x
+    const dx2 = p3.x - p2.x
+    const dy1 = p1.y - p2.y
+    const dy2 = p3.y - p2.y
+    const det = dx1 * dy2 - dx2 * dy1
+    g = (sx * dy2 - dx2 * sy) / det
+    h = (dx1 * sy - sx * dy1) / det
+  }
+  return [
+    p1.x - p0.x + g * p1.x, p3.x - p0.x + h * p3.x, p0.x,
+    p1.y - p0.y + g * p1.y, p3.y - p0.y + h * p3.y, p0.y,
+    g, h, 1,
+  ]
+}
+
+// The transform that maps `box` (in the surface's own, untransformed
+// coordinates) onto `quad` (relative to the surface's layout position), with
+// the transform origin at the surface's top-left, written as a CSS matrix3d.
+function boxToQuadTransform(box: Box, quad: readonly Point[]) {
+  const [a, b, c, d, e, f, g, h, i] = squareToQuad(quad)
+  const width = box.right - box.left
+  const height = box.bottom - box.top
+  // Compose with local -> unit square: u = (x - left) / width, v likewise.
+  const m = [
+    a / width, b / height, c - (a * box.left) / width - (b * box.top) / height,
+    d / width, e / height, f - (d * box.left) / width - (e * box.top) / height,
+    g / width, h / height, i - (g * box.left) / width - (h * box.top) / height,
+  ]
+  const w = m[8]
+  const n = m.map((value) => value / w)
+  return {
+    matrix: n,
+    css: `matrix3d(${[n[0], n[3], 0, n[6], n[1], n[4], 0, n[7], 0, 0, 1, 0, n[2], n[5], 0, n[8]].map((value) => +value.toFixed(8)).join(", ")})`,
+  }
+}
+
+// The quad an affine pose (translate, then scale about the top-left) puts
+// `box` on, pinched towards `toward` by `amount` of the morph.
+function morphQuad(box: Box, pose: { dx: number; dy: number; scale: number }, morph: OriginMorph, amount: number) {
+  const place = (x: number, y: number): Point => ({ x: pose.dx + x * pose.scale, y: pose.dy + y * pose.scale })
+  const quad = [place(box.left, box.top), place(box.right, box.top), place(box.right, box.bottom), place(box.left, box.bottom)]
+  if (amount <= 0) return quad
+
+  const centre = { x: (quad[0].x + quad[2].x) / 2, y: (quad[0].y + quad[2].y) / 2 }
+  const lineX = morph.toward.x - centre.x
+  const lineY = morph.toward.y - centre.y
+  const distance = Math.hypot(lineX, lineY)
+  // A tile right under the card's centre gives no direction to bend in.
+  if (distance < 1) return quad
+  const ux = lineX / distance
+  const uy = lineY / distance
+  const depth = Math.max(...quad.map((point) => (point.x - centre.x) * ux + (point.y - centre.y) * uy))
+  if (depth <= 0) return quad
+
+  return quad.map((point) => {
+    const along = (point.x - centre.x) * ux + (point.y - centre.y) * uy
+    const across = (point.x - centre.x) * -uy + (point.y - centre.y) * ux
+    // 1 on the edge facing the tile, 0 on the far one, in between for the
+    // corners of a card the tile sits diagonally from.
+    const facing = (along / depth + 1) / 2
+    const pinched = across * (1 - morph.pinch * amount * facing)
+    const reached = along + morph.reach * amount * facing * depth
+    return {
+      x: centre.x + reached * ux - pinched * uy,
+      y: centre.y + reached * uy + pinched * ux,
+    }
+  })
+}
+
+// The surface's transform for one keyframe: the plain affine pose, or that
+// pose morphed. The projective map extends past the visible box to the whole
+// surface (the clip hides the rest), and a strong pinch sends that extension
+// through infinity; the morph eases off until every corner of the surface stays
+// well in front of it.
+function morphTransform(
+  visible: Box,
+  surface: Box,
+  pose: { dx: number; dy: number; scale: number },
+  morph: OriginMorph | null,
+  amount: number,
+) {
+  const affine = `translate3d(${pose.dx.toFixed(2)}px, ${pose.dy.toFixed(2)}px, 0) scale(${pose.scale.toFixed(5)})`
+  if (!morph || amount <= 0 || visible.right - visible.left <= 0 || visible.bottom - visible.top <= 0) return affine
+
+  for (let attempt = 0, scaled = amount; attempt < 5; attempt += 1, scaled /= 2) {
+    const { matrix, css } = boxToQuadTransform(visible, morphQuad(visible, pose, morph, scaled))
+    const corners = [[surface.left, surface.top], [surface.right, surface.top], [surface.right, surface.bottom], [surface.left, surface.bottom]]
+    const safe = corners.every(([x, y]) => matrix[6] * x + matrix[7] * y + matrix[8] > 0.5)
+    if (safe && matrix.every(Number.isFinite)) return css
+  }
+  return affine
+}
+
 type ZoomGeometry = {
   /** The tile's outline, relative to the viewport: where the clip starts. */
   origin: DOMRect
@@ -157,18 +315,54 @@ type ZoomGeometry = {
   anchor: DOMRect
   /** Artwork lands on artwork covering it, centred, the way the tile crops its
    *  own image; a surface with no artwork lands width-for-width, top-aligned,
-   *  so the tile turns into the top of the page. */
-  fit: "cover" | "top"
+   *  so the tile turns into the top of the page; a card that lands whole (a
+   *  note, the résumé) sits inside the tile, centred, as a page on it. */
+  fit: "cover" | "top" | "contain"
 }
 
 type Corners = [number, number, number, number]
 
-// How far past a floating card the clip ends up, so the card's shadow (which
-// reaches ~100px below it) is whole by the time the flight lets go of the clip.
-const cardClipBleed = 120
+// How far along a corner's tangent its cubic's control points sit, as a share
+// of the radius, for a `corner-shape: superellipse(K)` corner: the one cubic
+// that passes through the superellipse's own midpoint. 0.5523 is the circle
+// (`round`, K = 1); the site's `squircle` (K = 2) is 0.909, much squarer.
+export function cornerControl(shape: string) {
+  const keyword: Record<string, number> = { round: 1, squircle: 2, square: Infinity }
+  const parsed = /superellipse\(\s*(-?[\d.]+|infinity)\s*\)/i.exec(shape)
+  const k = parsed
+    ? (parsed[1].toLowerCase() === "infinity" ? Infinity : parseFloat(parsed[1]))
+    : keyword[shape.trim()] ?? 1
+  // Concave shapes (bevel, scoop, notch) have no convex cubic; keep a circle.
+  if (!(k >= 1)) return 0.5523
+  if (k === Infinity) return 1
+  const midpoint = Math.pow(2, -1 / Math.pow(2, k))
+  return (8 * midpoint - 4) / 3
+}
 
-const insetPath = (inset: Corners, radii: Corners) =>
-  `inset(${inset.map((value) => `${value.toFixed(2)}px`).join(" ")} round ${radii.map((value) => `${Math.max(value, 0).toFixed(2)}px`).join(" ")})`
+// The clip, as the rounded rectangle the browser draws for the same box and
+// radii. `inset(... round ...)` only draws circular corners, while every
+// corner on the site is a squircle: in flight the corners were visibly rounder
+// than the tile's and the card's, and swapped to the tighter squircle the
+// moment the clip let go. Same commands in every keyframe, so it interpolates.
+function roundedClip(inset: Corners, radii: Corners, size: { width: number; height: number }, control: number) {
+  const [top, right, bottom, left] = [inset[0], size.width - inset[1], size.height - inset[2], inset[3]]
+  const half = Math.max(Math.min(right - left, bottom - top) / 2, 0)
+  const [tl, tr, br, bl] = radii.map((value) => Math.min(Math.max(value, 0), half))
+  const n = (value: number) => +value.toFixed(2)
+  const pull = (radius: number) => radius * (1 - control)
+  return `path("${[
+    `M ${n(left + tl)} ${n(top)}`,
+    `L ${n(right - tr)} ${n(top)}`,
+    `C ${n(right - pull(tr))} ${n(top)} ${n(right)} ${n(top + pull(tr))} ${n(right)} ${n(top + tr)}`,
+    `L ${n(right)} ${n(bottom - br)}`,
+    `C ${n(right)} ${n(bottom - pull(br))} ${n(right - pull(br))} ${n(bottom)} ${n(right - br)} ${n(bottom)}`,
+    `L ${n(left + bl)} ${n(bottom)}`,
+    `C ${n(left + pull(bl))} ${n(bottom)} ${n(left)} ${n(bottom - pull(bl))} ${n(left)} ${n(bottom - bl)}`,
+    `L ${n(left)} ${n(top + tl)}`,
+    `C ${n(left)} ${n(top + pull(tl))} ${n(left + pull(tl))} ${n(top)} ${n(left + tl)} ${n(top)}`,
+    "Z",
+  ].join(" ")}")`
+}
 
 // The zoom, after iOS's App Store cards and Photos thumbnails: the tile becomes
 // the surface rather than the surface arriving from the tile's direction. Two
@@ -176,9 +370,12 @@ const insetPath = (inset: Corners, radii: Corners) =>
 //
 // - The surface scales so its artwork covers the tile's artwork, and grows from
 //   there to rest, pinned at its top-left corner.
-// - A clip starts on the tile's rounded rectangle and opens out to the surface's
-//   real outline, so the first frame shows the artwork and nothing around it:
-//   no title text, no toolbar, just the image the eye was already on.
+// - A clip starts on the tile's whole rounded rectangle and opens out to the
+//   surface's real outline, so the first frame is the tile: its shape, its
+//   fill, and the artwork the eye was already on. Where the tile reaches past
+//   the scaled card, the card's fill is carried out to the clip (see
+//   `buildReachKeyframes`), so the whole tile is covered from the first frame
+//   and none of it shows through as a second, ghosted copy.
 //
 // Both tracks are one keyframe list on one element, the clip in the surface's
 // own (pre-transform) coordinates. They used to be two -- the full-screen
@@ -190,26 +387,33 @@ const insetPath = (inset: Corners, radii: Corners) =>
 // with it, so a busy frame stutters both together instead of tearing them.
 //
 // The clip opens to the surface's resting outline: flush and square where the
-// gallery fills the screen, just past the card's rounded corners where it
-// floats.
+// gallery fills the screen, on the card's rounded corners where it floats. It
+// used to end 120px past a floating card so its shadow was whole as the clip
+// let go; the shadow now waits for the flight to end (preview-gallery.css),
+// and a clip out there showed the fill carried past the card as a halo.
 function buildZoomKeyframes(
   mode: "open" | "close",
   geometry: ZoomGeometry,
-  rest: { radii: Corners; bleed: number },
+  radiiTo: Corners,
+  morph: OriginMorph | null = null,
+  control = cornerControl("round"),
 ) {
   const { origin, radius, artwork, target, anchor, fit } = geometry
   const ease = mode === "open" ? zoomOpen : zoomClose
   const scaleFrom = fit === "cover"
     ? Math.max(artwork.width / anchor.width, artwork.height / anchor.height)
-    : artwork.width / anchor.width
+    : fit === "contain"
+      ? Math.min(artwork.width / anchor.width, artwork.height / anchor.height)
+      : artwork.width / anchor.width
   // Scaled about the surface's top-left corner, a point at `local` px into the
   // surface lands at target + translate + local * scale. These translates put
   // the anchor's centre on the tile's (cover) or its top-left corner on the
   // tile's (top).
-  const dx = fit === "cover"
+  const centred = fit !== "top"
+  const dx = centred
     ? artwork.left + artwork.width / 2 - target.left - (anchor.left - target.left + anchor.width / 2) * scaleFrom
     : artwork.left - target.left - (anchor.left - target.left) * scaleFrom
-  const dy = fit === "cover"
+  const dy = centred
     ? artwork.top + artwork.height / 2 - target.top - (anchor.top - target.top + anchor.height / 2) * scaleFrom
     : artwork.top - target.top - (anchor.top - target.top) * scaleFrom
 
@@ -224,12 +428,11 @@ function buildZoomKeyframes(
     target.height - localY(origin.bottom),
     localX(origin.left),
   ]
-  const insetTo: Corners = [-rest.bleed, -rest.bleed, -rest.bleed, -rest.bleed]
-  const local = radius / scaleFrom
-  const radiiFrom: Corners = [local, local, local, local]
-  const radiiTo = rest.radii.map((value) => value + rest.bleed) as Corners
+  const insetTo: Corners = [0, 0, 0, 0]
+  const radiiScreenFrom: Corners = [radius, radius, radius, radius]
 
   const keyframes: Keyframe[] = []
+  const reach: ReachSample[] = []
 
   for (let step = 0; step < originSampleCount; step += 1) {
     const time = step / (originSampleCount - 1)
@@ -244,61 +447,98 @@ function buildZoomKeyframes(
     // hand-off. Opening mirrors it: the image grows, then the card unfolds.
     const opened = grown * grown
     const mix = (from: Corners, to: Corners) => from.map((value, index) => value * (1 - opened) + to[index] * opened) as Corners
-    const transform = `translate3d(${(dx * rest).toFixed(2)}px, ${(dy * rest).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`
-    const clipPath = insetPath(mix(insetFrom, insetTo), mix(radiiFrom, radiiTo))
+    const inset = mix(insetFrom, insetTo)
+    // The corners are mixed as they are seen, then carried into the surface's
+    // own pixels. Mixed in those pixels, where the tile's corner starts out
+    // divided by the small starting scale, they ballooned mid-flight -- twice
+    // the tile's curve and well past the card's -- and then tightened as the
+    // card landed.
+    const radii = radiiScreenFrom.map((value, index) => (value * (1 - opened) + radiiTo[index] * opened) / scale) as Corners
+    const visible: Box = { left: inset[3], top: inset[0], right: target.width - inset[1], bottom: target.height - inset[2] }
+    const surface: Box = {
+      left: Math.min(0, visible.left),
+      top: Math.min(0, visible.top),
+      right: Math.max(target.width, visible.right),
+      bottom: Math.max(target.height, visible.bottom),
+    }
+    const transform = morphTransform(visible, surface, { dx: dx * rest, dy: dy * rest, scale }, morph, morphAmount(grown))
+    const clipPath = roundedClip(inset, radii, target, control)
 
     keyframes.push({ offset: time, easing: "linear", transformOrigin: "0 0", transform, clipPath })
+    // How far this frame's clip reaches past the card, in the card's own
+    // pixels: what the fill has to cover now, not at the flight's widest.
+    reach.push({ offset: time, spread: Math.max(0, ...inset.map((value) => -value)) })
   }
 
-  return keyframes
+  return { keyframes, reach }
 }
 
-// A surface that lands whole: its card scales down onto the tile, centred
-// and contained, corners and shadow and all, with nothing clipped. For a
-// tile whose artwork is itself a small page (a paper in the notes folder), a
-// clip that started on the page cut the card's shadow off and left its
-// bottom corners square while it grew.
-function buildWholeKeyframes(mode: "open" | "close", origin: DOMRect, target: DOMRect, card: DOMRect) {
-  const ease = mode === "open" ? zoomOpen : zoomClose
-  const scaleFrom = Math.min(origin.width / card.width, origin.height / card.height)
-  // Scaled about the surface's top-left corner: these put the card's centre
-  // on the tile's.
-  const dx = origin.left + origin.width / 2 - target.left - (card.left - target.left + card.width / 2) * scaleFrom
-  const dy = origin.top + origin.height / 2 - target.top - (card.top - target.top + card.height / 2) * scaleFrom
-  const keyframes: Keyframe[] = []
-  for (let step = 0; step < originSampleCount; step += 1) {
-    const time = step / (originSampleCount - 1)
-    const grown = mode === "open" ? ease(time) : 1 - ease(time)
-    const scale = scaleFrom + (1 - scaleFrom) * grown
-    const rest = 1 - grown
-    keyframes.push({
-      offset: time,
-      easing: "linear",
-      transformOrigin: "0 0",
-      transform: `translate3d(${(dx * rest).toFixed(2)}px, ${(dy * rest).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`,
-    })
-  }
-  return keyframes
+// The tile is often a different shape from the card at the scale the artwork
+// lands at -- wider, or taller below the artwork -- and the clip on the
+// tile's outline then reaches past the card's box, where nothing paints. The
+// tile showed through there: its own copy of the artwork under the card's, a
+// ghost, and the clip's rounded corners rounding empty space so the card's
+// own sides met its bottom edge square. A spread shadow carries the card's
+// fill out to the clip, so the tile's whole shape is the surface. It is the
+// tile's colour while the card stands in for the tile, and the card's by the
+// time the clip has closed onto the card's outline and hides it.
+//
+// The same fill goes behind the card as well, inside the surface's own box:
+// the card's rounded corners otherwise left notches between it and the
+// spread, which only ever runs square around that box.
+//
+// It is painted by the flying wrapper, outside the popup whose opacity the
+// close fades off the tile (preview-gallery.css), so closing it fades itself
+// on that same clock, from `fadeFrom` to the end. Held opaque, it stayed as a
+// blank tile-coloured shape over the tile while everything in it faded, and
+// the tile reappeared only when the dialog unmounted: a flash at the landing.
+//
+// It stays the tile's colour throughout: by the time the card has turned to
+// its own colours the clip has closed onto the card's outline and hides it.
+// Turning it the card's white with the card left a white rim round the
+// card's grey artwork frame while it was still growing.
+//
+// The part behind the card is gone before the popup starts to fade, though.
+// Under the fading artwork it showed through as a grey veil laid over the
+// tile's own artwork: a washed-out, flashing copy of it for the last frames.
+// It is only there for the card's corners mid-flight, and by now the clip has
+// closed inside them, so clearing it under a still-solid popup shows nothing.
+//
+// The spread follows the clip frame by frame, to just as far as the clip
+// reaches past the card, and is gone where the clip lies on the card's own
+// outline: the open's landing and the close's first frame. It used to stand
+// at the flight's widest the whole way and leave the clip to hide it, but
+// Chrome runs the clip on the compositor and can apply it a frame late, while
+// the spread paints at once: the first frame of a close showed the card at
+// rest in a tile-coloured box ~170px wider on each side, square-cornered, the
+// "wide version" of the card flashing on a quick open and close.
+type ReachSample = { offset: number; spread: number }
+
+function buildReachKeyframes(mode: "open" | "close", reach: readonly ReachSample[], tile: string, fadeFrom: number) {
+  const hold = mode === "open" ? 1 : Math.min(Math.max(fadeFrom, 0), 1)
+  const behindGone = Math.max(hold - 0.1, 0)
+  // 1 until `from`, 0 by `to`, linear between.
+  const fade = (offset: number, from: number, to: number) =>
+    offset <= from ? 1 : offset >= to ? 0 : 1 - (offset - from) / (to - from)
+  return reach.map(({ offset, spread }): Keyframe => {
+    const outer = mode === "open" ? 1 : fade(offset, hold, 1)
+    // Behind the card it only fills the notches its rounded corners leave
+    // under a clip that runs past them, so it goes with the spread too.
+    const behind = (mode === "open" ? 1 : fade(offset, behindGone, hold)) * Math.min(spread / 4, 1)
+    return {
+      offset,
+      boxShadow: `0 0 0 ${Math.ceil(spread)}px ${withAlpha(tile, outer)}`,
+      backgroundColor: withAlpha(tile, behind),
+    }
+  })
 }
 
-// The tile hands off to the surface rather than staying under it: two copies of
-// the same artwork, one growing out of the other, is what made the zoom read as
-// a surface flying over the page instead of the tile opening. It goes as the
-// surface appears, stays hidden while the surface is presented (the tile's
-// empty fill holds its place in the grid), and comes back under the surface
-// as it lands, before the surface fades off it. `handoff` is the share of the flight one fade takes.
-function buildSourceKeyframes(mode: "open" | "close", handoff: number): Keyframe[] {
-  return mode === "open"
-    ? [{ opacity: 1, offset: 0 }, { opacity: 0, offset: handoff }, { opacity: 0, offset: 1 }]
-    // Back in full before the surface on top of it starts to fade: crossing
-    // the two at once let the page show through both at the midpoint, a dip
-    // in the artwork right as it landed.
-    : [
-      { opacity: 0, offset: 0 },
-      { opacity: 0, offset: Math.max(1 - 2 * handoff, 0) },
-      { opacity: 1, offset: Math.max(1 - handoff, 0) },
-      { opacity: 1, offset: 1 },
-    ]
+// The same colour at a share of its alpha, so a fade does not pass through grey.
+function withAlpha(color: string, alpha: number) {
+  const channels = color.match(/[\d.]+/g)
+  if (!channels || channels.length < 3) return alpha >= 1 ? color : "transparent"
+  const own = channels.length >= 4 ? parseFloat(channels[3]) : 1
+  return `rgba(${channels.slice(0, 3).join(", ")}, ${+(own * alpha).toFixed(3)})`
 }
 
 const transparent = (color: string) => color === "transparent" || /rgba\(.*,\s*0\)$/.test(color)
@@ -318,7 +558,11 @@ function surroundings(root: Element, keep: Element) {
   let element: Element = keep
   while (element !== root && element.parentElement) {
     const parent: Element = element.parentElement
-    for (const sibling of Array.from(parent.children)) if (sibling !== element) chrome.push(sibling)
+    for (const sibling of Array.from(parent.children)) {
+      // The paging arrows have their own entrance (preview-gallery.css): they
+      // wait out the whole flight rather than fading in inside it.
+      if (sibling !== element && !sibling.matches(".preview-gallery-rail")) chrome.push(sibling)
+    }
     if (parent !== root) fill(parent)
     element = parent
   }
@@ -327,10 +571,13 @@ function surroundings(root: Element, keep: Element) {
 
 // Closing, the card's body and controls are gone and its fills are the tile's
 // a third of the way down, so what lands is the tile. Opening holds the
-// tile's look while the image grows, then unfolds the card around it.
-function buildMatchKeyframes(mode: "open" | "close", tile: string, rest: string, property: "opacity" | "backgroundColor"): Keyframe[] {
+// tile's look while the card grows -- the spring has covered nearly all of
+// its distance by 60% -- and only then settles into the card's own colours:
+// turning white while it was still growing showed a white band over the
+// tile's grey, a second card lifted over the tile rather than the tile itself.
+function buildMatchKeyframes(mode: "open" | "close", tile: string, rest: string, property: "opacity" | "backgroundColor" | "boxShadow"): Keyframe[] {
   return mode === "open"
-    ? [{ [property]: tile, offset: 0 }, { [property]: tile, offset: 0.25 }, { [property]: rest, offset: 0.7 }, { [property]: rest, offset: 1 }]
+    ? [{ [property]: tile, offset: 0 }, { [property]: tile, offset: 0.6 }, { [property]: rest, offset: 1 }]
     : [{ [property]: rest, offset: 0 }, { [property]: tile, offset: 0.35 }, { [property]: tile, offset: 1 }]
 }
 
@@ -431,6 +678,35 @@ function holdFrame(from: Element | null | undefined, to: Element | null | undefi
   to.addEventListener("error", drop, { once: true })
 }
 
+// Closing, the other way round, for clips `syncPlayback` cannot line up: the
+// tile and the gallery cut the Matcha homepage clip at different lengths (8s
+// and 10s), so they never show the same moment. The tile sits paused on the
+// frame it had when the gallery opened while the gallery's plays on, and the
+// hand-off faded one moment into the other over the tile -- a loaded table
+// through a half-loaded one, a flash of two pages at once. The tile's frame
+// fades in over the gallery's video while the card shrinks, on the same beat
+// as the card's body leaves, so what lands is what the tile shows.
+function handOverFrame(tile: Element | null | undefined, gallery: Element | null | undefined, timing: KeyframeAnimationOptions) {
+  if (!(tile instanceof HTMLVideoElement) || !(gallery instanceof HTMLVideoElement)) return null
+  if (Number.isFinite(tile.duration) && Math.abs(tile.duration - gallery.duration) <= 0.1) return null
+  if (tile.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !tile.videoWidth) return null
+  const canvas = document.createElement("canvas")
+  canvas.width = tile.videoWidth
+  canvas.height = tile.videoHeight
+  try {
+    canvas.getContext("2d")?.drawImage(tile, 0, 0)
+  } catch {
+    return null
+  }
+  canvas.className = "preview-gallery-media-hold"
+  canvas.setAttribute("aria-hidden", "true")
+  gallery.after(canvas)
+  const fade = canvas.animate(buildMatchKeyframes("close", "1", "0", "opacity"), timing)
+  // A reopen cancels the close; the gallery's own video is the picture again.
+  fade.addEventListener("cancel", () => canvas.remove())
+  return fade
+}
+
 // The tile's artwork: its one image or video when it has exactly one, else the
 // marked frame (a paired banner lands as a whole).
 function originArtwork(origin: Element | null) {
@@ -470,7 +746,8 @@ export type OriginTravelOptions = {
   /** A card to land whole on the tile instead of clipping the surface down
    *  to it; everything around the card fades. */
   getZoomWhole?: () => Element | null
-  /** Duration of the crossfade between the tile and the surface. */
+  /** Duration of the surface's fade off the tile at the end of a close,
+   *  read from the frame. The fill around the card fades with it. */
   handoffDurationProperty?: string
   /** Duration properties for the zoom, read from the frame. */
   zoomOpenDurationProperty?: string
@@ -542,10 +819,11 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // surface that both have artwork match the rest too (below); without,
       // the surface lands as a whole.
       const matched = Boolean(artwork && anchor)
+      const outline = insideBorder(origin!, originRect, originCornerRadius(origin))
       const geometry: ZoomGeometry = {
-        origin: originRect,
-        radius: originCornerRadius(origin),
-        artwork: matched ? paintedRect(artwork!.element) : originRect,
+        origin: outline.rect,
+        radius: outline.radius,
+        artwork: matched ? paintedRect(artwork!.element) : outline.rect,
         target,
         anchor: anchor ?? target,
         fit: anchor ? "cover" : "top",
@@ -574,16 +852,44 @@ export function useOriginTravel(options: OriginTravelOptions) {
         releaseScrollRef.current = null
       }
 
-      const outline = fullScreen ? null : getZoomOutline?.()
-      const style = outline ? getComputedStyle(outline) : null
+      const outlineElement = getZoomOutline?.()
+      const style = outlineElement && !fullScreen ? getComputedStyle(outlineElement) : null
       const radii = (style
         ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
         : [0, 0, 0, 0]) as Corners
+      // Bent towards the tile's middle, in the surface's own frame.
+      const morph: OriginMorph = {
+        ...(mode === "open" ? originMorphOpen : originMorphClose),
+        toward: { x: originRect.left + originRect.width / 2 - target.left, y: originRect.top + originRect.height / 2 - target.top },
+      }
+
+      // A card that lands whole (a note, the résumé) sits on the tile as a
+      // page, centred and contained; the rest land artwork on artwork. Both
+      // start on the tile's whole outline.
       const whole = getZoomWhole?.()
       const wholeRect = whole?.getBoundingClientRect()
-      if (whole && wholeRect && wholeRect.width > 0 && wholeRect.height > 0) {
-        flights = [node.animate(buildWholeKeyframes(mode, originRect, target, wholeRect), timing)]
-        const { chrome, fills } = surroundings(node, whole)
+      const landsWhole = Boolean(whole && wholeRect && wholeRect.width > 0 && wholeRect.height > 0)
+      const zoom = buildZoomKeyframes(
+        mode,
+        landsWhole ? { ...geometry, artwork: outline.rect, anchor: wholeRect!, fit: "contain" } : geometry,
+        radii,
+        morph,
+        // The card's own corner curve; the tile shares the token.
+        cornerControl(getComputedStyle(outlineElement ?? origin!).getPropertyValue("corner-top-left-shape")),
+      )
+      flights = [node.animate(zoom.keyframes, timing)]
+
+      const tileStyle = origin ? getComputedStyle(origin) : null
+      const tileFill = tileStyle && !transparent(tileStyle.backgroundColor)
+        ? tileStyle.backgroundColor
+        : getComputedStyle(document.body).backgroundColor
+      // The popup's own fade off the tile starts this far into the close.
+      const handoff = handoffDurationProperty ? durationOf(zoomFrame, handoffDurationProperty) : 0
+      const fadeFrom = duration > 0 ? 1 - handoff / duration : 1
+      flights.push(node.animate(buildReachKeyframes(mode, zoom.reach, tileFill, fadeFrom), timing))
+
+      if (landsWhole) {
+        const { chrome, fills } = surroundings(node, whole!)
         for (const element of chrome) {
           flights.push(element.animate(buildMatchKeyframes(mode, "0", "1", "opacity"), timing))
         }
@@ -592,13 +898,10 @@ export function useOriginTravel(options: OriginTravelOptions) {
           if (element === whole) continue
           flights.push(element.animate(buildMatchKeyframes(mode, "rgba(0, 0, 0, 0)", color, "backgroundColor"), timing))
         }
-      } else {
-        flights = [node.animate(buildZoomKeyframes(mode, geometry, { radii, bleed: fullScreen ? 0 : cardClipBleed }), timing)]
       }
 
-      const keep = matched && !whole ? getZoomKeep?.() : null
-      const tileFill = origin ? getComputedStyle(origin).backgroundColor : "transparent"
-      if (keep && !transparent(tileFill)) {
+      const keep = matched && !landsWhole ? getZoomKeep?.() : null
+      if (keep && tileStyle && !transparent(tileStyle.backgroundColor)) {
         const { chrome, fills } = surroundings(node, keep)
         for (const element of chrome) {
           flights.push(element.animate(buildMatchKeyframes(mode, "0", "1", "opacity"), timing))
@@ -613,24 +916,17 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // arriving starts where the one leaving is.
       syncPlayback(mode === "open" ? artwork?.element : anchorElement, mode === "open" ? anchorElement : artwork?.element)
       if (mode === "open") holdFrame(artwork?.element, anchorElement)
-
-      // Held hidden after the open (until the close's `cancel` lets go of it);
-      // back to its own CSS after the close, whose last frame is fully shown.
-      // Only what the tile holds goes: its own fill stays behind as an empty
-      // slot in the grid, so the page keeps its shape while the surface is up.
-      const handoff = handoffDurationProperty ? durationOf(zoomFrame, handoffDurationProperty) : 0
-      if (origin && duration > 0) {
-        const contents = Array.from(origin.children)
-        const sources = contents.length > 0 && !transparent(getComputedStyle(origin).backgroundColor) ? contents : [origin]
-        const keyframes = buildSourceKeyframes(mode, Math.min(handoff / duration, 1))
-        for (const source of sources) {
-          flights.push(source.animate(keyframes, {
-            duration,
-            easing: "linear",
-            fill: mode === "open" ? "forwards" : "none",
-          }))
-        }
+      else {
+        const handOver = handOverFrame(artwork?.element, anchorElement, timing)
+        if (handOver) flights.push(handOver)
       }
+
+      // The tile itself is left alone. It used to hand off -- its contents
+      // faded as the surface appeared and stayed hidden while the gallery was
+      // up -- which left an empty slot in the grid behind the dialog, and
+      // crossing the two fades showed both copies of the artwork at once. The
+      // surface covers the whole tile from its first frame instead, and on
+      // the way back fades off a tile that is already there.
     } else {
       const offset = fullScreen ? verticalOffset : originFallback
       const durationProperty = mode === "open" ? openDurationProperty : closeDurationProperty

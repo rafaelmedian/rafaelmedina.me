@@ -1186,6 +1186,12 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                     role="group"
                     aria-label="Selected work previews"
                     id="selected-work-previews"
+                    // A tile opens on a press. Dragging one pulled a translucent
+                    // copy of whichever image or link was under the pointer --
+                    // one post at a time off the marketing wall -- instead of
+                    // anything opening; nothing on the grid is meant to be
+                    // dropped anywhere.
+                    onDragStart={(event) => event.preventDefault()}
                   >
                     {groupsRender.map((group, groupIndex) => (
                       <div key={group.layout} className={`mosaic-group mosaic-group-${group.layout}`}>

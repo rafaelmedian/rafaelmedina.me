@@ -3926,7 +3926,8 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
   const cardInner = page.locator(".preview-gallery-card-inner")
-  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([400])
+  // The zoom and the fill that carries the card out to the tile's outline.
+  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([400, 400])
   await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.4s")
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
@@ -4016,9 +4017,10 @@ for (const { layout, viewport } of [
     expect(firstFrame.media.y).toBeCloseTo(box.y, 0)
     expect(firstFrame.media.width).toBeCloseTo(box.width, 0)
     expect(firstFrame.media.height).toBeCloseTo(box.height, 0)
-    expect(firstFrame.clip).toMatch(/^inset\(/)
-    // The tile is still whole under the cut; it then dissolves rather than
-    // staying under the surface growing out of it (checked at rest below).
+    // A path, so its corners can be the tile's squircle; inset() only rounds.
+    expect(firstFrame.clip).toMatch(/^path\(/)
+    // The tile is whole under the cut, and stays so: the surface covers it
+    // completely from its first frame, so it never needs to step aside.
     expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("1")
 
     const finishFlights = () => page.evaluate(() => {
@@ -4034,12 +4036,12 @@ for (const { layout, viewport } of [
     await expect(shell).not.toHaveAttribute("data-origin-zoom")
     await expect(page.locator(clipped)).toHaveCSS("clip-path", "none")
     await expect(page.locator(".preview-gallery-origin-wrap")).toHaveCSS("transform", "none")
-    // The artwork is hidden while the gallery is up; the tile's empty fill
-    // stays behind as the slot it came out of.
-    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("0")
+    // The tile stays in the grid behind the gallery rather than leaving an
+    // empty slot there.
+    expect(await tileHandle!.evaluate((element) => getComputedStyle(element.querySelector("[data-origin-artwork]")!).opacity)).toBe("1")
     expect(await tileHandle!.evaluate((element) => getComputedStyle(element).opacity)).toBe("1")
 
-    // And it comes back as the surface lands on it.
+    // And the surface lands back on it.
     await page.keyboard.press("Escape")
     await finishFlights()
     await expect(page.getByRole("dialog")).toBeHidden()
@@ -4141,27 +4143,30 @@ test("drags the mobile gallery card with the finger and pages from the release",
   await touch("touchmove", 250)
   await touch("touchmove", 200)
   expect(await card.evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).e)).toBeCloseTo(-100, 0)
-  await card.evaluate((element) => {
+  // Inspect the outgoing transform on transitionrun, before its 160ms
+  // phase can finish between browser round-trips on a busy test runner.
+  const leaving = await card.evaluate((element) => new Promise<{ from: number; to: number }>(resolve => {
+    const onRun = (event: Event) => {
+      if (event.target !== element || (event as TransitionEvent).propertyName !== "transform") return
+      element.removeEventListener("transitionrun", onRun)
+      const transition = element.getAnimations()
+        .find((animation): animation is CSSTransition => animation instanceof CSSTransition && animation.transitionProperty === "transform")
+      if (!transition) return resolve({ from: NaN, to: NaN })
+      const offset = () => new DOMMatrixReadOnly(getComputedStyle(element).transform).e
+      const currentTime = transition.currentTime
+      transition.pause()
+      transition.currentTime = 0
+      const from = offset()
+      transition.currentTime = Number(transition.effect!.getTiming().duration) - 0.001
+      const to = offset()
+      transition.currentTime = currentTime
+      transition.play()
+      resolve({ from, to })
+    }
+    element.addEventListener("transitionrun", onRun)
     const point = new Touch({ identifier: 1, target: element, clientX: 200, clientY: 300 })
     element.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [point] }))
-  })
-  await expect(card).toHaveClass(/preview-gallery-card-switch-out-next/)
-  const leaving = await card.evaluate((element) => {
-    const transition = element.getAnimations()
-      .filter((animation): animation is CSSTransition => animation instanceof CSSTransition && animation.transitionProperty === "transform")
-      .at(-1)
-    if (!transition) return { from: NaN, to: NaN }
-    // The far pose is a percentage of the card, so read both ends from the
-    // computed transform rather than the keyframes.
-    const offset = () => new DOMMatrixReadOnly(getComputedStyle(element).transform).e
-    transition.pause()
-    transition.currentTime = 0
-    const from = offset()
-    transition.currentTime = Number(transition.effect!.getTiming().duration) - 0.001
-    const to = offset()
-    transition.play()
-    return { from, to }
-  })
+  }))
   expect(leaving.from).toBeCloseTo(-100, 0)
   expect(leaving.to).toBeLessThan(-mobileViewport.width + 1)
   await expect(dialog.locator(".preview-gallery-count")).toHaveText("2 / 15")

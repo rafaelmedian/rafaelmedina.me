@@ -162,9 +162,17 @@ test("a press outside a note closes the gallery once, with the note still on it"
   // This test exercises dismissal. Let the list finish measuring and entering
   // before clicking a row, so its hit target cannot move during the press.
   await expect(popup(page).locator(".notes-gallery-card")).toHaveAttribute("style", /notes-list-height/)
-  await page.evaluate(() => document.getAnimations().forEach(animation => {
-    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
-  }))
+  // Finishing the zoom lets its flags go, which starts the paging arrows'
+  // entrance only then; finish that too. Sounds stay silent until the audio
+  // warms, and it waits for the surface to stop animating.
+  await page.evaluate(async () => {
+    for (let pass = 0; pass < 4; pass += 1) {
+      document.getAnimations().forEach(animation => {
+        if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish()
+      })
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    }
+  })
   await popup(page).getByRole("link", { name: "Designing Matcha", exact: true }).click()
   await expect(sheet(page).getByRole("heading", { name: "Designing Matcha", exact: true })).toBeFocused()
   await page.evaluate(() => document.getAnimations().forEach(animation => {
