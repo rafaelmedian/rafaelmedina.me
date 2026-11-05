@@ -45,12 +45,11 @@ test("the card keeps its layout until the zoom back into the tile has finished",
   await expect(popup).toHaveAttribute("data-wide", "true")
 })
 
-// The zoom used to bend towards its tile mid-flight -- a projective
-// transform pinched the edge facing the tile -- and on a wide card that read
-// as the whole card tilting into a parallelogram. The surface is a rectangle
-// the whole way now: every keyframe is a plain translate and scale, with no
-// overshoot past rest on either leg.
-test("the zoom stays a flat rectangle and never overshoots", async ({ page }) => {
+// The zoom morphs on the way: mid-flight the surface is projected onto a quad
+// whose edge facing the tile is pinched, so its transform carries a
+// perspective row. It must be a plain rectangle at both ends, though: on the
+// tile, where its clip has to match the tile's outline, and at rest.
+test("the zoom bends towards its tile mid-flight and is flat at both ends", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await page.locator(".mosaic-rows").evaluate((element) =>
@@ -76,25 +75,26 @@ test("the zoom stays a flat rectangle and never overshoots", async ({ page }) =>
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toHaveCount(0)
   const [open, close] = await page.evaluate(() =>
-    (window as unknown as { zoomFlights: string[][] }).zoomFlights)
+    (window as unknown as { zoomFlights: string[][] }).zoomFlights.map(frames => frames.map(transform => {
+      const matrix = new DOMMatrixReadOnly(transform)
+      return Math.abs(matrix.m14) + Math.abs(matrix.m24)
+    })))
 
-  for (const frames of [open, close]) {
-    expect(frames).toBeDefined()
-    const scales = frames!.map(transform => {
-      expect(transform).toMatch(/^translate3d\(.*\) scale\([\d.]+\)$/)
-      return Number(/scale\(([\d.]+)\)/.exec(transform)![1])
-    })
-    expect(Math.max(...scales)).toBeLessThanOrEqual(1)
+  for (const bends of [open, close]) {
+    expect(bends).toBeDefined()
+    expect(bends![0]).toBe(0)
+    expect(bends!.at(-1)).toBe(0)
+    expect(Math.max(...bends!)).toBeGreaterThan(0)
   }
-  expect(open![0]).not.toBe(open!.at(-1))
 })
 
-// The artwork lands first and the card's body unfolds under it. Opening the
-// body with the picture put a blank tile-coloured sheet the size of the screen
-// under a wide card, which read as a grey box appearing and then loading. So
-// the clip's bottom edge stays on the artwork's frame until the surface is
-// all but full size, and only the last keyframe reaches the card's bottom.
-test("the open lands the artwork before it unfolds the card's body", async ({ page }) => {
+// The artwork leads and the card's body unfolds under it. Opening the body
+// with the picture put a blank tile-coloured sheet the size of the screen
+// under a wide card, which read as a grey box appearing and then loading;
+// unfolding it only once the picture had landed read as the page loading a
+// beat after the zoom. So the body starts down while the picture is still
+// travelling and finishes after it has landed.
+test("the open unfolds the card's body while the artwork is still landing", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")
   await page.locator(".mosaic-rows").evaluate((element) =>
@@ -127,19 +127,18 @@ test("the open lands the artwork before it unfolds the card's body", async ({ pa
   })
   // The clip's lowest point: the largest y in its path.
   const bottomOf = (clip: string) => Math.max(...[...clip.matchAll(/-?[\d.]+ (-?[\d.]+)/g)].map(match => Number(match[1])))
-  const scaleOf = (transform: string) => Number(/scale\(([\d.]+)\)/.exec(transform)![1])
-  const scaleFrom = scaleOf(open[0].transform)
-  const grownOf = (transform: string) => (scaleOf(transform) - scaleFrom) / (1 - scaleFrom)
-  // Nine tenths of the way out the clip sits on the artwork's frame; with the
-  // surface all but at full size it has only begun to unfold; at rest it is
-  // the whole card.
-  const nearly = open.findIndex(frame => grownOf(frame.transform) >= 0.9)
-  const landed = open.findIndex(frame => grownOf(frame.transform) >= 0.98)
-  expect(nearly).toBeGreaterThan(0)
-  expect(landed).toBeGreaterThan(nearly)
-  expect(Math.abs(bottomOf(open[nearly].clip) - frameBottom)).toBeLessThan(cardHeight * 0.05)
-  expect(bottomOf(open[landed].clip)).toBeGreaterThan(frameBottom)
-  expect(bottomOf(open[landed].clip)).toBeLessThan(cardHeight - 20)
+  // The zoom has landed on the first frame whose transform is the resting
+  // one: from there on only the body moves.
+  const landed = open.findIndex(frame => frame.transform === open.at(-1)!.transform)
+  expect(landed).toBeGreaterThan(0)
+  // The clip's bottom edge closes in towards the artwork's frame and turns
+  // back down to unfold the body well before the zoom lands: the white card
+  // runs out under a picture that is still travelling.
+  const bottoms = open.map(frame => bottomOf(frame.clip))
+  const turn = bottoms.indexOf(Math.min(...bottoms))
+  expect(bottoms[turn]).toBeLessThan(cardHeight - (cardHeight - frameBottom) / 2)
+  expect(turn).toBeLessThan(landed * 0.6)
+  expect(bottoms[landed]).toBeGreaterThan(bottoms[turn] + 20)
   expect(bottomOf(open.at(-1)!.clip)).toBeCloseTo(cardHeight, 0)
 })
 

@@ -115,10 +115,12 @@ const zoomEase = cubicBezierEasing(zoomEasePoints)
 // close's first third, a white tail on the shrinking card.
 const unfoldEase = cubicBezierEasing([0.2, 0, 0, 1])
 const foldEase = unfoldEase
-// The body begins to unfold once the artwork is this far grown: late enough
-// that the picture reads as landing first, early enough that the two phases
-// are one motion rather than a pause and a second animation.
-const unfoldFrom = 0.9
+// The body begins to unfold once the artwork is this far grown: past the
+// tile, so the picture still leads, but well before it lands, so the white
+// card grows out under the picture as it travels. At nine tenths the body
+// started after the picture had all but stopped and read as the page
+// loading in a beat after the zoom.
+const unfoldFrom = 0.5
 
 // Enough samples that the linear interpolation between them is invisible at
 // 120Hz over the longest of these animations.
@@ -145,7 +147,7 @@ type ZoomDurations = { zoom: number; unfold: number; fold: number }
 const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1)
 const progress = (ms: number, duration: number) => clamp01(duration > 0 ? ms / duration : 1)
 
-// Open: the artwork grows, and once it is nearly there the body unfolds,
+// Open: the artwork grows, and half way out the body starts to unfold,
 // so the unfold's start is wherever the zoom crosses `unfoldFrom`. A card
 // with nothing to unfold (a note, the résumé) brings its chrome in over the
 // zoom's last stretch instead, as before. Close: the body folds while the
@@ -215,6 +217,148 @@ function buildOriginKeyframes(
   }
 
   return keyframes
+}
+
+// The morph. A tile opening into a card, or a card going back into its tile,
+// should not read as a rectangle that only scales: the surface takes a shape
+// on the way. The idea comes from the Dock's Genie, without its full funnel,
+// because the card is not minimising into an icon. Mid-flight, the edge facing
+// the tile pinches in and leans towards it while the far edge keeps its width.
+// The surface is briefly drawn towards the tile it came out of, and it is a
+// plain rectangle again before it lands.
+//
+// One projective transform (matrix3d) per keyframe maps the surface's visible
+// box onto that pinched quad, so the motion stays one transform on one element
+// and the content stays live DOM. A projective map draws straight sides, not
+// the Dock's cosine curves, and at these pinch amounts the difference is not
+// visible.
+type Point = { x: number; y: number }
+type Box = { left: number; top: number; right: number; bottom: number }
+
+export type OriginMorph = {
+  /** The tile's centre, relative to the surface's untransformed top-left. */
+  toward: Point
+  /** How much of the facing edge's width goes at the peak of the morph. */
+  pinch: number
+  /** How far the facing edge reaches towards the tile at the peak, as a share
+   *  of the surface's depth along that line. */
+  reach: number
+}
+
+// Opening, the card is pulled out of the tile; closing, it is drawn back in.
+// The close bends harder: it is the one that ends in a small target, the way a
+// window going into the Dock bends harder than one coming out of it.
+export const originMorphOpen = { pinch: 0.2, reach: 0.06 }
+export const originMorphClose = { pinch: 0.3, reach: 0.1 }
+
+// The morph lives in the middle of the flight and is gone at both ends: zero
+// on the tile, where the clip has to match the tile's outline exactly, and
+// zero at rest. It peaks a little past halfway out (`grown` 0.55), while the
+// card is still large enough for the bend to read.
+const morphPeak = 0.55
+const morphExponent = Math.log(0.5) / Math.log(morphPeak)
+const morphAmount = (grown: number) =>
+  grown <= 0 || grown >= 1 ? 0 : Math.sin(Math.PI * Math.pow(grown, morphExponent))
+
+// Heckbert's square-to-quad mapping: the projective matrix (row-major 3x3)
+// that takes the unit square's corners (0,0) (1,0) (1,1) (0,1) to `quad`.
+function squareToQuad([p0, p1, p2, p3]: readonly Point[]) {
+  const sx = p0.x - p1.x + p2.x - p3.x
+  const sy = p0.y - p1.y + p2.y - p3.y
+  let g = 0
+  let h = 0
+  if (Math.abs(sx) > 1e-9 || Math.abs(sy) > 1e-9) {
+    const dx1 = p1.x - p2.x
+    const dx2 = p3.x - p2.x
+    const dy1 = p1.y - p2.y
+    const dy2 = p3.y - p2.y
+    const det = dx1 * dy2 - dx2 * dy1
+    g = (sx * dy2 - dx2 * sy) / det
+    h = (dx1 * sy - sx * dy1) / det
+  }
+  return [
+    p1.x - p0.x + g * p1.x, p3.x - p0.x + h * p3.x, p0.x,
+    p1.y - p0.y + g * p1.y, p3.y - p0.y + h * p3.y, p0.y,
+    g, h, 1,
+  ]
+}
+
+// The transform that maps `box` (in the surface's own, untransformed
+// coordinates) onto `quad` (relative to the surface's layout position), with
+// the transform origin at the surface's top-left, written as a CSS matrix3d.
+function boxToQuadTransform(box: Box, quad: readonly Point[]) {
+  const [a, b, c, d, e, f, g, h, i] = squareToQuad(quad)
+  const width = box.right - box.left
+  const height = box.bottom - box.top
+  // Compose with local -> unit square: u = (x - left) / width, v likewise.
+  const m = [
+    a / width, b / height, c - (a * box.left) / width - (b * box.top) / height,
+    d / width, e / height, f - (d * box.left) / width - (e * box.top) / height,
+    g / width, h / height, i - (g * box.left) / width - (h * box.top) / height,
+  ]
+  const w = m[8]
+  const n = m.map((value) => value / w)
+  return {
+    matrix: n,
+    css: `matrix3d(${[n[0], n[3], 0, n[6], n[1], n[4], 0, n[7], 0, 0, 1, 0, n[2], n[5], 0, n[8]].map((value) => +value.toFixed(8)).join(", ")})`,
+  }
+}
+
+// The quad an affine pose (translate, then scale about the top-left) puts
+// `box` on, pinched towards `toward` by `amount` of the morph.
+function morphQuad(box: Box, pose: { dx: number; dy: number; scale: number }, morph: OriginMorph, amount: number) {
+  const place = (x: number, y: number): Point => ({ x: pose.dx + x * pose.scale, y: pose.dy + y * pose.scale })
+  const quad = [place(box.left, box.top), place(box.right, box.top), place(box.right, box.bottom), place(box.left, box.bottom)]
+  if (amount <= 0) return quad
+
+  const centre = { x: (quad[0].x + quad[2].x) / 2, y: (quad[0].y + quad[2].y) / 2 }
+  const lineX = morph.toward.x - centre.x
+  const lineY = morph.toward.y - centre.y
+  const distance = Math.hypot(lineX, lineY)
+  // A tile right under the card's centre gives no direction to bend in.
+  if (distance < 1) return quad
+  const ux = lineX / distance
+  const uy = lineY / distance
+  const depth = Math.max(...quad.map((point) => (point.x - centre.x) * ux + (point.y - centre.y) * uy))
+  if (depth <= 0) return quad
+
+  return quad.map((point) => {
+    const along = (point.x - centre.x) * ux + (point.y - centre.y) * uy
+    const across = (point.x - centre.x) * -uy + (point.y - centre.y) * ux
+    // 1 on the edge facing the tile, 0 on the far one, in between for the
+    // corners of a card the tile sits diagonally from.
+    const facing = (along / depth + 1) / 2
+    const pinched = across * (1 - morph.pinch * amount * facing)
+    const reached = along + morph.reach * amount * facing * depth
+    return {
+      x: centre.x + reached * ux - pinched * uy,
+      y: centre.y + reached * uy + pinched * ux,
+    }
+  })
+}
+
+// The surface's transform for one keyframe: the plain affine pose, or that
+// pose morphed. The projective map extends past the visible box to the whole
+// surface (the clip hides the rest), and a strong pinch sends that extension
+// through infinity; the morph eases off until every corner of the surface stays
+// well in front of it.
+function morphTransform(
+  visible: Box,
+  surface: Box,
+  pose: { dx: number; dy: number; scale: number },
+  morph: OriginMorph | null,
+  amount: number,
+) {
+  const affine = `translate3d(${pose.dx.toFixed(2)}px, ${pose.dy.toFixed(2)}px, 0) scale(${pose.scale.toFixed(5)})`
+  if (!morph || amount <= 0 || visible.right - visible.left <= 0 || visible.bottom - visible.top <= 0) return affine
+
+  for (let attempt = 0, scaled = amount; attempt < 5; attempt += 1, scaled /= 2) {
+    const { matrix, css } = boxToQuadTransform(visible, morphQuad(visible, pose, morph, scaled))
+    const corners = [[surface.left, surface.top], [surface.right, surface.top], [surface.right, surface.bottom], [surface.left, surface.bottom]]
+    const safe = corners.every(([x, y]) => matrix[6] * x + matrix[7] * y + matrix[8] > 0.5)
+    if (safe && matrix.every(Number.isFinite)) return css
+  }
+  return affine
 }
 
 type ZoomGeometry = {
@@ -354,6 +498,7 @@ function buildZoomKeyframes(
   timeline: ZoomTimeline,
   geometry: ZoomGeometry,
   radiiTo: Corners,
+  morph: OriginMorph | null = null,
   control = cornerControl("round"),
 ) {
   const { origin, radius, artwork, target, anchor, fit, frameBottom } = geometry
@@ -416,7 +561,14 @@ function buildZoomKeyframes(
     // the tile's curve and well past the card's -- and then tightened as the
     // card landed.
     const radii = radiiScreenFrom.map((value, index) => (value * (1 - opened) + radiiTo[index] * opened) / scale) as Corners
-    const transform = `translate3d(${(dx * rest).toFixed(2)}px, ${(dy * rest).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`
+    const visible: Box = { left: inset[3], top: inset[0], right: target.width - inset[1], bottom: target.height - inset[2] }
+    const surface: Box = {
+      left: Math.min(0, visible.left),
+      top: Math.min(0, visible.top),
+      right: Math.max(target.width, visible.right),
+      bottom: Math.max(target.height, visible.bottom),
+    }
+    const transform = morphTransform(visible, surface, { dx: dx * rest, dy: dy * rest, scale }, morph, morphAmount(grown))
     const clipPath = roundedClip(inset, radii, target, control)
 
     keyframes.push({ offset: time, easing: "linear", transformOrigin: "0 0", transform, clipPath })
@@ -537,8 +689,14 @@ function buildChromeKeyframes(timeline: ZoomTimeline): Keyframe[] {
 // stretch. Turning white while the card was still growing showed a white band
 // over the tile's grey, a second card lifted over the tile rather than the
 // tile itself; closing, they are the tile's again a third of the way down.
-function buildFillKeyframes(timeline: ZoomTimeline, tile: string, rest: string): Keyframe[] {
-  return sampleKeyframes(timeline, ({ grown }) => ({ backgroundColor: mixColor(tile, rest, clamp01((grown - 0.6) / 0.4)) }))
+//
+// A body that unfolds under the artwork takes its own colour as it starts to
+// show instead (`onUnfold`): the part that runs down is the white card from
+// its first pixels, not a grey sheet that turns white on the way.
+function buildFillKeyframes(timeline: ZoomTimeline, tile: string, rest: string, onUnfold = false): Keyframe[] {
+  return sampleKeyframes(timeline, ({ grown, unfolded }) => ({
+    backgroundColor: mixColor(tile, rest, onUnfold ? clamp01(unfolded / 0.15) : clamp01((grown - 0.6) / 0.4)),
+  }))
 }
 
 // A tile that hangs several pictures, opened into a single sheet, has no
@@ -786,7 +944,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
   const releaseScrollRef = useRef<(() => void) | null>(null)
   // The last zoom's path, so a flight that interrupts it can start where it
   // had got to.
-  const flightRef = useRef<{ mode: "open" | "close"; timeline: ZoomTimeline } | null>(null)
+  const flightRef = useRef<{ mode: "open" | "close"; timeline: ZoomTimeline; bend: { pinch: number; reach: number } } | null>(null)
 
   // A layout effect, so a click that re-aims the flight and opens in the same
   // commit animates from the new anchor.
@@ -882,7 +1040,11 @@ export function useOriginTravel(options: OriginTravelOptions) {
       }
       const from: ZoomPose = resumed ?? (mode === "open" ? { grown: 0, unfolded: 0 } : { grown: 1, unfolded: 1 })
       const timeline = buildTimeline(mode, from, durations, geometry.frameBottom !== null)
-      flightRef.current = { mode, timeline }
+      // A flight that turns another around keeps that one's bend: the close
+      // bends harder than the open, and switching mid-flight snapped the
+      // card's shape at the turn.
+      const bend = resumed && previous ? previous.bend : mode === "open" ? originMorphOpen : originMorphClose
+      flightRef.current = { mode, timeline, bend }
       const timing: KeyframeAnimationOptions = {
         duration: timeline.duration,
         easing: "linear",
@@ -912,10 +1074,17 @@ export function useOriginTravel(options: OriginTravelOptions) {
         ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
         : [0, 0, 0, 0]) as Corners
 
+      // Bent towards the tile's middle, in the surface's own frame.
+      const morph: OriginMorph = {
+        ...bend,
+        toward: { x: originRect.left + originRect.width / 2 - target.left, y: originRect.top + originRect.height / 2 - target.top },
+      }
+
       const zoom = buildZoomKeyframes(
         timeline,
         geometry,
         radii,
+        morph,
         // The card's own corner curve; the tile shares the token.
         cornerControl(getComputedStyle(outlineElement ?? origin!).getPropertyValue("corner-top-left-shape")),
       )
@@ -944,7 +1113,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
         const { chrome, fills } = surroundings(node, keep)
         for (const element of chrome) flights.push(element.animate(buildChromeKeyframes(timeline), timing))
         for (const { element, color } of fills) {
-          flights.push(element.animate(buildFillKeyframes(timeline, tileFill, color), timing))
+          flights.push(element.animate(buildFillKeyframes(timeline, tileFill, color, geometry.frameBottom !== null), timing))
         }
       }
 
