@@ -361,7 +361,7 @@ const EASINGS_ENTRIES = [
     name: "Origin zoom",
     css: "cubic-bezier(0.3, 0.1, 0.2, 1)",
     duration: "360ms open and close, then a 360ms unfold",
-    use: "The preview gallery and notes zooming out of their tile and back, as iOS opens a card (--pg-zoom-open-ms, --pg-zoom-close-ms). The artwork lands first; the card's body then unfolds under it on --ease-standard (--pg-zoom-unfold-ms) and folds back ahead of the close on --ease-exit (--pg-content-out-ms). No spring, no overshoot, no bend: the surface stays a rectangle.",
+    use: "The preview gallery and notes zooming out of their tile and back, as iOS opens a card (--pg-zoom-open-ms, --pg-zoom-close-ms). The artwork lands first; the card's body then unfolds under it on --ease-standard (--pg-zoom-unfold-ms) and folds back ahead of the close on --ease-exit (--pg-content-out-ms). A close pressed mid-open resumes from the card's current size. No spring, no overshoot, no bend: the surface stays a rectangle.",
   },
   {
     name: "Photo carousel — --photo-motion-ease",

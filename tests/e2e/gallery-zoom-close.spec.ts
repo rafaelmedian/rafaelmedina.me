@@ -143,6 +143,49 @@ test("the open lands the artwork before it unfolds the card's body", async ({ pa
   expect(bottomOf(open.at(-1)!.clip)).toBeCloseTo(cardHeight, 0)
 })
 
+// A close pressed while the card is still growing used to cancel the open,
+// which snapped the card to its full size, and shrink it from there: a jump
+// to rest and back. It shrinks from the size it had reached.
+test("a close mid-open resumes from the card's current size", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.locator(".mosaic-rows").evaluate((element) =>
+    Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ }).click()
+  const wrap = page.locator(".preview-gallery-origin-wrap")
+  await expect(wrap).toHaveCount(1)
+  // Hold the open a third of the way through, measure, then close.
+  const before = await wrap.evaluate((element) => {
+    const [flight] = element.getAnimations()
+    flight.pause()
+    flight.currentTime = Number((flight.effect as KeyframeEffect).getTiming().duration) / 3
+    return element.getBoundingClientRect().width
+  })
+  await page.evaluate(() => {
+    const widths: number[] = []
+    Object.assign(window, { closeWidths: widths })
+    const tick = () => {
+      const node = document.querySelector(".preview-gallery-origin-wrap")
+      if (!node) return
+      widths.push(node.getBoundingClientRect().width)
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
+  await page.keyboard.press("Escape")
+  await expect(page.locator(".preview-gallery-popup")).toHaveCount(0)
+  const widths = await page.evaluate(() => (window as unknown as { closeWidths: number[] }).closeWidths)
+  expect(widths.length).toBeGreaterThan(3)
+  const rest = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize))
+  // The first frame of the close is within a step of where the open was
+  // held, nowhere near the card's resting width, and from there it only
+  // shrinks.
+  expect(Math.abs(widths[0] - before)).toBeLessThan(rest * 4)
+  for (let index = 1; index < widths.length; index += 1) {
+    expect(widths[index]).toBeLessThanOrEqual(widths[index - 1] + 0.5)
+  }
+})
+
 // A tile opens on a press; dragging one used to pull a translucent copy of
 // the image under the pointer off the grid instead.
 test("tiles cannot be dragged off the grid", async ({ page }) => {

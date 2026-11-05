@@ -105,7 +105,8 @@ const easeClose = cubicBezierEasing(originCloseEasePoints)
 // settling rather than growing. This curve starts gently -- the tile is
 // seen to lift before it travels -- spends the middle half of its time on the
 // visible growth (27% at a fifth, 82% at half, 96% at three quarters), and
-// settles without overshoot. The close plays the same curve backwards.
+// settles without overshoot. The close plays the same curve, so a close that
+// interrupts an open retraces it.
 export const zoomEasePoints = [0.3, 0.1, 0.2, 1] as const
 const zoomEase = cubicBezierEasing(zoomEasePoints)
 // The card's body unfolds under the artwork, and folds back ahead of the
@@ -126,7 +127,10 @@ const originSampleCount = 64
 // Where the surface is, in two numbers: how far the artwork has grown out of
 // the tile (0 on the tile, 1 in its resting frame) and how far the card's
 // body has unfolded under it (0 clipped to the artwork, 1 the whole card).
-// A flight is a path through this space.
+// A flight is a path through this space, and a flight that interrupts
+// another starts from wherever that one was, so a close pressed mid-open
+// shrinks the card from the size it had reached instead of snapping it to
+// rest first.
 export type ZoomPose = { grown: number; unfolded: number }
 
 type ZoomTimeline = {
@@ -763,6 +767,9 @@ export function useOriginTravel(options: OriginTravelOptions) {
   const pendingStart = useRef<(() => void) | null>(null)
   const zoomFrameRef = useRef<HTMLElement | null>(null)
   const releaseScrollRef = useRef<(() => void) | null>(null)
+  // The last zoom's path, so a flight that interrupts it can start where it
+  // had got to.
+  const flightRef = useRef<{ mode: "open" | "close"; timeline: ZoomTimeline } | null>(null)
 
   // A layout effect, so a click that re-aims the flight and opens in the same
   // commit animates from the new anchor.
@@ -789,6 +796,17 @@ export function useOriginTravel(options: OriginTravelOptions) {
     } = inputs.current
     if (!node || !enabled) return
     if (typeof node.animate !== "function") return
+
+    // Where the zoom under way had got to, read before it is cancelled: a
+    // close pressed mid-open shrinks the card from the size it had reached,
+    // and a tile pressed again mid-close grows it back from where it is,
+    // instead of either snapping the card to rest first. A flight that has
+    // finished reads as rest, so this is the plain start otherwise.
+    const previous = flightRef.current
+    const [flying] = animations.current
+    const resumed = previous && previous.mode !== mode && flying && typeof flying.currentTime === "number"
+      ? previous.timeline.at(Math.min(Math.max(flying.currentTime, 0), previous.timeline.duration))
+      : null
 
     cancel()
 
@@ -845,8 +863,9 @@ export function useOriginTravel(options: OriginTravelOptions) {
         unfold: zoomUnfoldDurationProperty ? durationOf(zoomFrame, zoomUnfoldDurationProperty) : 0,
         fold: foldDurationProperty ? durationOf(zoomFrame, foldDurationProperty) : 0,
       }
-      const from: ZoomPose = mode === "open" ? { grown: 0, unfolded: 0 } : { grown: 1, unfolded: 1 }
+      const from: ZoomPose = resumed ?? (mode === "open" ? { grown: 0, unfolded: 0 } : { grown: 1, unfolded: 1 })
       const timeline = buildTimeline(mode, from, durations, geometry.frameBottom !== null)
+      flightRef.current = { mode, timeline }
       const timing: KeyframeAnimationOptions = {
         duration: timeline.duration,
         easing: "linear",
@@ -929,6 +948,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // surface covers the whole tile from its first frame instead, and on
       // the way back fades off a tile that is already there.
     } else {
+      flightRef.current = null
       const offset = fullScreen ? verticalOffset : originFallback
       const durationProperty = mode === "open" ? openDurationProperty : closeDurationProperty
 
