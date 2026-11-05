@@ -395,7 +395,7 @@ const DURATIONS_ENTRIES = [
   { value: "--duration-base", use: "Surface moves and overlay entrances: the gallery, hover cards, popovers, paging." },
   { value: "--duration-slow", use: "Big reveals: the avatar and page entrance, media resolving, the photo sheet opening." },
   { value: "160 / 260ms", use: "Hover intent before a card opens: hints, then rich profile cards. src/lib/hoverIntent.ts." },
-  { value: "60ms", use: "--card-caption-delay, and --entrance-stagger, the entrance step (four at most)." },
+  { value: "60ms", use: "--entrance-stagger, the entrance step (four at most)." },
   { value: "240–1260ms", use: "Scoped choreography — the live-time roll, the About copy rise, the photo deal, the page-end glow. Stays with its component." },
 ]
 
@@ -1025,19 +1025,6 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                   />
                 ))}
               </div>
-              <div
-                className="ds-rule"
-                id="project-caption-visibility"
-                data-ds-terms={terms("--card-caption-blur --card-caption-tint --card-caption-delay scrim backdrop ramp mask caption hidden touch")}
-              >
-                <strong>Work-tile captions sit on a blur ramp, not a single blur.</strong>
-                <p>
-                  Four masked layers step <code>--card-caption-blur</code> up toward the bottom edge under a tint in
-                  the tile&rsquo;s own colour (<code>--card-caption-tint</code>), so the label clears 4.5:1 without a
-                  seam. It shows on hover and focus only. Below 700px and on touch screens the entire scrim is hidden
-                  and so is the caption; the title still reaches assistive technology through the link&rsquo;s name.
-                </p>
-              </div>
             </div>
           </section>
 
@@ -1485,9 +1472,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 A <code>KeyboardHint</code> shows the keys, and the same words are its{" "}
                 <code>aria-describedby</code>.
               </li>
-              <li data-ds-terms={terms("hover none touch caption assistive")}>
-                <strong>Hover-only content has a non-hover fate.</strong> Hover cards are removed on touch, and tile
-                captions follow the <a href="#project-caption-visibility">caption rule</a>.
+              <li data-ds-terms={terms("hover none touch assistive")}>
+                <strong>Hover-only content has a non-hover fate.</strong> Hover cards are removed on touch.
               </li>
               <li data-ds-terms={terms("aria-live polite copy announcement asynchronous")}>
                 <strong>Asynchronous results are announced</strong> through an <code>aria-live=&quot;polite&quot;</code>{" "}

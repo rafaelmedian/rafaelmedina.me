@@ -42,6 +42,9 @@ const PhotoPrintTuner = import.meta.env.DEV
 const BookingButtonTuner = import.meta.env.DEV
   ? lazy(() => import("./components/BookingButtonTuner"))
   : null
+const TileHoverTuner = import.meta.env.DEV
+  ? lazy(() => import("./components/TileHoverTuner"))
+  : null
 
 function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/"
@@ -138,6 +141,11 @@ function App({ pathname }: { pathname?: string }) {
         {tuning === "booking" && BookingButtonTuner ? (
           <Suspense fallback={null}>
             <BookingButtonTuner />
+          </Suspense>
+        ) : null}
+        {tuning === "hover" && TileHoverTuner ? (
+          <Suspense fallback={null}>
+            <TileHoverTuner />
           </Suspense>
         ) : null}
     </div>

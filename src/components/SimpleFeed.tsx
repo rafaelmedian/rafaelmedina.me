@@ -1313,10 +1313,6 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
                                 <span className="mosaic-row-card-media-clip" data-origin-artwork="">
                                   {media}
                                 </span>
-                                <span className="mosaic-row-card-scrim" aria-hidden="true">
-                                  <span /><span /><span /><span />
-                                </span>
-                                <span className="mosaic-row-card-title" aria-hidden="true">{item.card.title}</span>
                                 <span id={`${itemKey}-description`} className="sr-only">{item.card.detail}</span>
                               </a>
                             </div>
