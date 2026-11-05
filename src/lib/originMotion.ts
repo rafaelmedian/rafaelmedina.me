@@ -107,12 +107,83 @@ const easeClose = cubicBezierEasing(originCloseEasePoints)
 // visible growth (27% at a fifth, 82% at half, 96% at three quarters), and
 // settles without overshoot. The close plays the same curve backwards.
 export const zoomEasePoints = [0.3, 0.1, 0.2, 1] as const
-const zoomOpen = cubicBezierEasing(zoomEasePoints)
-const zoomClose = zoomOpen
+const zoomEase = cubicBezierEasing(zoomEasePoints)
+// The card's body unfolds under the artwork, and folds back ahead of the
+// shrink, on the house state-change curve. The fold tried the exit curve
+// first, and its slow start left the body hanging under the picture for the
+// close's first third, a white tail on the shrinking card.
+const unfoldEase = cubicBezierEasing([0.2, 0, 0, 1])
+const foldEase = unfoldEase
+// The body begins to unfold once the artwork is this far grown: late enough
+// that the picture reads as landing first, early enough that the two phases
+// are one motion rather than a pause and a second animation.
+const unfoldFrom = 0.9
 
 // Enough samples that the linear interpolation between them is invisible at
 // 120Hz over the longest of these animations.
-const originSampleCount = 48
+const originSampleCount = 64
+
+// Where the surface is, in two numbers: how far the artwork has grown out of
+// the tile (0 on the tile, 1 in its resting frame) and how far the card's
+// body has unfolded under it (0 clipped to the artwork, 1 the whole card).
+// A flight is a path through this space.
+export type ZoomPose = { grown: number; unfolded: number }
+
+type ZoomTimeline = {
+  /** Total length, in ms. */
+  duration: number
+  /** The pose `ms` into the flight. */
+  at: (ms: number) => ZoomPose
+}
+
+type ZoomDurations = { zoom: number; unfold: number; fold: number }
+
+const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1)
+const progress = (ms: number, duration: number) => clamp01(duration > 0 ? ms / duration : 1)
+
+// Open: the artwork grows, and once it is nearly there the body unfolds,
+// so the unfold's start is wherever the zoom crosses `unfoldFrom`. A card
+// with nothing to unfold (a note, the résumé) brings its chrome in over the
+// zoom's last stretch instead, as before. Close: the body folds while the
+// artwork shrinks, both from the start, so the card is back to its picture
+// by the time it has travelled half way.
+function buildTimeline(mode: "open" | "close", from: ZoomPose, durations: ZoomDurations, unfolds: boolean): ZoomTimeline {
+  const { zoom, unfold, fold } = durations
+  if (mode === "close") {
+    const grown = (ms: number) => from.grown * (1 - zoomEase(progress(ms, zoom)))
+    const unfolded = (ms: number) => from.unfolded * (1 - foldEase(progress(ms, fold)))
+    return { duration: zoom, at: (ms) => ({ grown: grown(ms), unfolded: unfolded(ms) }) }
+  }
+
+  const grown = (ms: number) => from.grown + (1 - from.grown) * zoomEase(progress(ms, zoom))
+  if (!unfolds) {
+    return {
+      duration: zoom,
+      at: (ms) => {
+        const g = grown(ms)
+        return { grown: g, unfolded: Math.max(from.unfolded, clamp01((g - 0.6) / 0.4)) }
+      },
+    }
+  }
+  let start = 0
+  if (from.grown < unfoldFrom) {
+    let low = 0
+    let high = zoom
+    for (let round = 0; round < 24; round += 1) {
+      const mid = (low + high) / 2
+      if (grown(mid) < unfoldFrom) low = mid
+      else high = mid
+    }
+    start = high
+  }
+  return {
+    duration: Math.max(zoom, start + unfold),
+    at: (ms) => ({
+      grown: grown(ms),
+      unfolded: from.unfolded + (1 - from.unfolded) * unfoldEase(progress(ms - start, unfold)),
+    }),
+  }
+}
 
 // Bake the easing into sampled keyframes so the origin-aware translation and
 // scale remain one coordinated motion on the complete surface.
@@ -160,6 +231,11 @@ type ZoomGeometry = {
    *  so the tile turns into the top of the page; a card that lands whole (a
    *  note, the résumé) sits inside the tile, centred, as a page on it. */
   fit: "cover" | "top" | "contain"
+  /** The line under the artwork where the card's body begins, in the
+   *  surface's own pixels from its top: where the clip lands before the body
+   *  unfolds. Null for a surface that lands whole, or whose artwork has
+   *  scrolled away. */
+  frameBottom: number | null
 }
 
 type Corners = [number, number, number, number]
@@ -234,14 +310,49 @@ function roundedClip(inset: Corners, radii: Corners, size: { width: number; heig
 // let go; the shadow now waits for the flight to end (preview-gallery.css),
 // and a clip out there showed the fill carried past the card as a halo.
 
+// The zoom, after iOS's App Store cards and Photos thumbnails: the tile becomes
+// the surface rather than the surface arriving from the tile's direction. Two
+// coordinated tracks:
+//
+// - The surface scales so its artwork covers the tile's artwork, and grows from
+//   there to its resting size, pinned at its top-left corner.
+// - A clip starts on the tile's whole rounded rectangle and opens out with the
+//   artwork to the artwork's own frame -- the card's top, down to the line
+//   where its body begins -- so the first frame is the tile: its shape, its
+//   fill, and the artwork the eye was already on, and what grows out of it
+//   is that picture alone. Once the picture has landed the clip's bottom edge
+//   runs on down to the card's, unfolding the body under it. Where the tile
+//   reaches past the scaled card, the card's fill is carried out to the clip
+//   (see `buildReachKeyframes`), so the whole tile is covered from the first
+//   frame and none of it shows through as a second, ghosted copy.
+//
+// The body used to grow with the picture, as a blank tile-coloured sheet
+// under it that turned white and filled with text once the card was most of
+// the way there: on a wide card that sheet was most of the screen, and the
+// open read as a grey box appearing and loading rather than the picture
+// opening. It is clipped away until the picture has landed.
+//
+// Both tracks are one keyframe list on one element, the clip in the surface's
+// own (pre-transform) coordinates. They used to be two -- the full-screen
+// layout clipped the shell around the scaling surface -- and the browser ran
+// the transform on the compositor while the clip waited for the main thread,
+// which a close keeps busy (the dialog unmounting, the tile videos resuming):
+// the surface outran its clip and the bottom of the card flickered out past
+// it. A clip-path in the same effect keeps the transform on the main thread
+// with it, so a busy frame stutters both together instead of tearing them.
+//
+// The clip opens to the surface's resting outline: flush and square where the
+// gallery fills the screen, on the card's rounded corners where it floats. It
+// used to end 120px past a floating card so its shadow was whole as the clip
+// let go; the shadow now waits for the flight to end (preview-gallery.css),
+// and a clip out there showed the fill carried past the card as a halo.
 function buildZoomKeyframes(
-  mode: "open" | "close",
+  timeline: ZoomTimeline,
   geometry: ZoomGeometry,
   radiiTo: Corners,
   control = cornerControl("round"),
 ) {
-  const { origin, radius, artwork, target, anchor, fit } = geometry
-  const ease = mode === "open" ? zoomOpen : zoomClose
+  const { origin, radius, artwork, target, anchor, fit, frameBottom } = geometry
   const scaleFrom = fit === "cover"
     ? Math.max(artwork.width / anchor.width, artwork.height / anchor.height)
     : fit === "contain"
@@ -270,7 +381,10 @@ function buildZoomKeyframes(
     target.height - localY(origin.bottom),
     localX(origin.left),
   ]
-  const insetTo: Corners = [0, 0, 0, 0]
+  // Where the clip stands once the picture has landed: on the artwork's frame
+  // when there is a body to unfold under it, else on the card's outline.
+  const unfolds = frameBottom !== null
+  const insetGrown: Corners = [0, 0, unfolds ? target.height - frameBottom : 0, 0]
   const radiiScreenFrom: Corners = [radius, radius, radius, radius]
 
   const keyframes: Keyframe[] = []
@@ -278,18 +392,20 @@ function buildZoomKeyframes(
 
   for (let step = 0; step < originSampleCount; step += 1) {
     const time = step / (originSampleCount - 1)
-    // `grown` is 0 at the tile and 1 at rest.
-    const grown = mode === "open" ? ease(time) : 1 - ease(time)
+    const { grown, unfolded } = timeline.at(time * timeline.duration)
     const rest = 1 - grown
     const scale = scaleFrom + (1 - scaleFrom) * grown
-    // The clip runs ahead of the scale, on the square of the progress: closing,
-    // it is down to the artwork while the surface is still shrinking, so what
-    // lands is the image alone; at an even pace a band of the card's body hung
-    // under the tile until the last frames and then blinked out with the
-    // hand-off. Opening mirrors it: the image grows, then the card unfolds.
-    const opened = grown * grown
-    const mix = (from: Corners, to: Corners) => from.map((value, index) => value * (1 - opened) + to[index] * opened) as Corners
-    const inset = mix(insetFrom, insetTo)
+    // A card that lands whole, or one whose artwork has scrolled away, has
+    // its body in the clip throughout. There the clip runs ahead of the
+    // scale, on the square of the progress: closing, it is down to the
+    // artwork while the surface is still shrinking, so what lands is the
+    // image alone; at an even pace a band of the card's body hung under the
+    // tile until the last frames and then blinked out with the hand-off.
+    const opened = unfolds ? grown : grown * grown
+    const inset = insetFrom.map((value, index) => value * (1 - opened) + insetGrown[index] * opened) as Corners
+    // The body: the bottom edge runs from the frame's line down to the card's
+    // as it unfolds, and back up as it folds.
+    inset[2] *= 1 - unfolded
     // The corners are mixed as they are seen, then carried into the surface's
     // own pixels. Mixed in those pixels, where the tile's corner starts out
     // divided by the small starting scale, they ballooned mid-flight -- twice
@@ -404,16 +520,54 @@ function surroundings(root: Element, keep: Element) {
   return { chrome, fills }
 }
 
-// Closing, the card's body and controls are gone and its fills are the tile's
-// a third of the way down, so what lands is the tile. Opening holds the
-// tile's look while the card grows -- the spring has covered nearly all of
-// its distance by 60% -- and only then settles into the card's own colours:
-// turning white while it was still growing showed a white band over the
-// tile's grey, a second card lifted over the tile rather than the tile itself.
-function buildMatchKeyframes(mode: "open" | "close", tile: string, rest: string, property: "opacity" | "backgroundColor" | "boxShadow"): Keyframe[] {
-  return mode === "open"
-    ? [{ [property]: tile, offset: 0 }, { [property]: tile, offset: 0.6 }, { [property]: rest, offset: 1 }]
-    : [{ [property]: rest, offset: 0 }, { [property]: tile, offset: 0.35 }, { [property]: tile, offset: 1 }]
+// The card's chrome -- its body, its controls, everything that is not the
+// artwork -- is there as far as the body has unfolded, and gone as it folds:
+// it arrives under the clip that reveals it and leaves ahead of the shrink.
+function buildChromeKeyframes(timeline: ZoomTimeline): Keyframe[] {
+  return sampleKeyframes(timeline, ({ unfolded }) => ({ opacity: unfolded.toFixed(3) }))
+}
+
+// The fills between the artwork and the surface's edge are the tile's colour
+// while the card stands in for the tile -- the picture has covered nearly all
+// of its distance by 60% -- and settle into their own over the zoom's last
+// stretch. Turning white while the card was still growing showed a white band
+// over the tile's grey, a second card lifted over the tile rather than the
+// tile itself; closing, they are the tile's again a third of the way down.
+function buildFillKeyframes(timeline: ZoomTimeline, tile: string, rest: string): Keyframe[] {
+  return sampleKeyframes(timeline, ({ grown }) => ({ backgroundColor: mixColor(tile, rest, clamp01((grown - 0.6) / 0.4)) }))
+}
+
+// The tile's frame drawn over the gallery's video on the way back
+// (`handOverFrame`): in by a third of the way down, with the card's body.
+const handOverKeyframes: Keyframe[] = [{ opacity: "1", offset: 0 }, { opacity: "0", offset: 0.35 }, { opacity: "0", offset: 1 }]
+
+function sampleKeyframes(timeline: ZoomTimeline, value: (pose: ZoomPose) => Keyframe): Keyframe[] {
+  const keyframes: Keyframe[] = []
+  for (let step = 0; step < originSampleCount; step += 1) {
+    const time = step / (originSampleCount - 1)
+    keyframes.push({ ...value(timeline.at(time * timeline.duration)), offset: time, easing: "linear" })
+  }
+  return keyframes
+}
+
+function parseColor(color: string): [number, number, number, number] | null {
+  if (color === "transparent") return [0, 0, 0, 0]
+  const channels = color.match(/[\d.]+/g)
+  if (!channels || channels.length < 3) return null
+  return [Number(channels[0]), Number(channels[1]), Number(channels[2]), channels.length >= 4 ? parseFloat(channels[3]) : 1]
+}
+
+// `from` at 0, `to` at 1, premultiplied so a fade from transparent does not
+// pass through black.
+function mixColor(from: string, to: string, share: number) {
+  if (share <= 0) return from
+  if (share >= 1) return to
+  const a = parseColor(from)
+  const b = parseColor(to)
+  if (!a || !b) return share < 0.5 ? from : to
+  const alpha = a[3] * (1 - share) + b[3] * share
+  const channel = (index: number) => alpha > 0 ? Math.round((a[index] * a[3] * (1 - share) + b[index] * b[3] * share) / alpha) : 0
+  return `rgba(${channel(0)}, ${channel(1)}, ${channel(2)}, ${+alpha.toFixed(3)})`
 }
 
 // Marks the part of a tile its artwork occupies, so the surface's artwork can
@@ -536,7 +690,7 @@ function handOverFrame(tile: Element | null | undefined, gallery: Element | null
   canvas.className = "preview-gallery-media-hold"
   canvas.setAttribute("aria-hidden", "true")
   gallery.after(canvas)
-  const fade = canvas.animate(buildMatchKeyframes("close", "1", "0", "opacity"), timing)
+  const fade = canvas.animate(handOverKeyframes, timing)
   // A reopen cancels the close; the gallery's own video is the picture again.
   fade.addEventListener("cancel", () => canvas.remove())
   return fade
@@ -587,6 +741,10 @@ export type OriginTravelOptions = {
   /** Duration properties for the zoom, read from the frame. */
   zoomOpenDurationProperty?: string
   zoomCloseDurationProperty?: string
+  /** How long the card's body takes to unfold under the landed artwork, and
+   *  to fold back ahead of the close. Without them the body shows throughout. */
+  zoomUnfoldDurationProperty?: string
+  foldDurationProperty?: string
 }
 
 // Long enough for Base UI to lift `data-starting-style` and the fade to begin
@@ -598,6 +756,7 @@ const fadeWaitMs = 150
  * — Base UI keeps the popup mounted through its exit, so the close flight is
  * started from the same place the exit transition is.
  */
+
 export function useOriginTravel(options: OriginTravelOptions) {
   const inputs = useRef(options)
   const animations = useRef<Animation[]>([])
@@ -625,7 +784,8 @@ export function useOriginTravel(options: OriginTravelOptions) {
   const run = useCallback((mode: "open" | "close") => {
     const {
       node, getOrigin, enabled, onFlight, openDurationProperty, closeDurationProperty, getFadeNode,
-      getZoomAnchor, getZoomKeep, getZoomFrame, getZoomOutline, getZoomWhole, handoffDurationProperty, zoomOpenDurationProperty, zoomCloseDurationProperty,
+      getZoomAnchor, getZoomKeep, getZoomFrame, getZoomOutline, getZoomWhole, handoffDurationProperty,
+      zoomOpenDurationProperty, zoomCloseDurationProperty, zoomUnfoldDurationProperty, foldDurationProperty,
     } = inputs.current
     if (!node || !enabled) return
     if (typeof node.animate !== "function") return
@@ -655,17 +815,40 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // the surface lands as a whole.
       const matched = Boolean(artwork && anchor)
       const outline = insideBorder(origin!, originRect, originCornerRadius(origin))
-      const geometry: ZoomGeometry = {
-        origin: outline.rect,
-        radius: outline.radius,
-        artwork: matched ? paintedRect(artwork!.element) : outline.rect,
-        target,
-        anchor: anchor ?? target,
-        fit: anchor ? "cover" : "top",
+      // A card that lands whole (a note, the résumé) sits on the tile as a
+      // page, centred and contained; the rest land artwork on artwork. Both
+      // start on the tile's whole outline.
+      const whole = getZoomWhole?.()
+      const wholeRect = whole?.getBoundingClientRect()
+      const landsWhole = Boolean(whole && wholeRect && wholeRect.width > 0 && wholeRect.height > 0)
+      const keep = matched && !landsWhole ? getZoomKeep?.() : null
+      // The line under the artwork where the card's body begins, which the
+      // clip lands on before the body unfolds. Only a frame that is mostly in
+      // view: with the card scrolled past it the clip would land on a sliver.
+      const keepRect = keep?.getBoundingClientRect()
+      const frameBottom = keepRect && keepRect.height > 0 && keepRect.bottom - target.top >= keepRect.height / 2
+        ? Math.min(keepRect.bottom - target.top, target.height)
+        : null
+      const geometry: ZoomGeometry = landsWhole
+        ? { origin: outline.rect, radius: outline.radius, artwork: outline.rect, target, anchor: wholeRect!, fit: "contain", frameBottom: null }
+        : {
+          origin: outline.rect,
+          radius: outline.radius,
+          artwork: matched ? paintedRect(artwork!.element) : outline.rect,
+          target,
+          anchor: anchor ?? target,
+          fit: anchor ? "cover" : "top",
+          frameBottom,
+        }
+      const durations: ZoomDurations = {
+        zoom: durationOf(zoomFrame, mode === "open" ? zoomOpenDurationProperty : zoomCloseDurationProperty),
+        unfold: zoomUnfoldDurationProperty ? durationOf(zoomFrame, zoomUnfoldDurationProperty) : 0,
+        fold: foldDurationProperty ? durationOf(zoomFrame, foldDurationProperty) : 0,
       }
-      const duration = durationOf(zoomFrame, mode === "open" ? zoomOpenDurationProperty : zoomCloseDurationProperty)
+      const from: ZoomPose = mode === "open" ? { grown: 0, unfolded: 0 } : { grown: 1, unfolded: 1 }
+      const timeline = buildTimeline(mode, from, durations, geometry.frameBottom !== null)
       const timing: KeyframeAnimationOptions = {
-        duration,
+        duration: timeline.duration,
         easing: "linear",
         fill: mode === "open" ? "none" : "forwards",
       }
@@ -692,15 +875,10 @@ export function useOriginTravel(options: OriginTravelOptions) {
       const radii = (style
         ? [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius].map((value) => parseFloat(value) || 0)
         : [0, 0, 0, 0]) as Corners
-      // A card that lands whole (a note, the résumé) sits on the tile as a
-      // page, centred and contained; the rest land artwork on artwork. Both
-      // start on the tile's whole outline.
-      const whole = getZoomWhole?.()
-      const wholeRect = whole?.getBoundingClientRect()
-      const landsWhole = Boolean(whole && wholeRect && wholeRect.width > 0 && wholeRect.height > 0)
+
       const zoom = buildZoomKeyframes(
-        mode,
-        landsWhole ? { ...geometry, artwork: outline.rect, anchor: wholeRect!, fit: "contain" } : geometry,
+        timeline,
+        geometry,
         radii,
         // The card's own corner curve; the tile shares the token.
         cornerControl(getComputedStyle(outlineElement ?? origin!).getPropertyValue("corner-top-left-shape")),
@@ -713,29 +891,24 @@ export function useOriginTravel(options: OriginTravelOptions) {
         : getComputedStyle(document.body).backgroundColor
       // The popup's own fade off the tile starts this far into the close.
       const handoff = handoffDurationProperty ? durationOf(zoomFrame, handoffDurationProperty) : 0
-      const fadeFrom = duration > 0 ? 1 - handoff / duration : 1
+      const fadeFrom = timeline.duration > 0 ? 1 - handoff / timeline.duration : 1
       flights.push(node.animate(buildReachKeyframes(mode, zoom.reach, tileFill, fadeFrom), timing))
 
       if (landsWhole) {
         const { chrome, fills } = surroundings(node, whole!)
-        for (const element of chrome) {
-          flights.push(element.animate(buildMatchKeyframes(mode, "0", "1", "opacity"), timing))
-        }
+        for (const element of chrome) flights.push(element.animate(buildChromeKeyframes(timeline), timing))
         // The card keeps its own fill: it is the page that lands.
         for (const { element, color } of fills) {
           if (element === whole) continue
-          flights.push(element.animate(buildMatchKeyframes(mode, "rgba(0, 0, 0, 0)", color, "backgroundColor"), timing))
+          flights.push(element.animate(buildFillKeyframes(timeline, "rgba(0, 0, 0, 0)", color), timing))
         }
       }
 
-      const keep = matched && !landsWhole ? getZoomKeep?.() : null
       if (keep && tileStyle && !transparent(tileStyle.backgroundColor)) {
         const { chrome, fills } = surroundings(node, keep)
-        for (const element of chrome) {
-          flights.push(element.animate(buildMatchKeyframes(mode, "0", "1", "opacity"), timing))
-        }
+        for (const element of chrome) flights.push(element.animate(buildChromeKeyframes(timeline), timing))
         for (const { element, color } of fills) {
-          flights.push(element.animate(buildMatchKeyframes(mode, tileFill, color, "backgroundColor"), timing))
+          flights.push(element.animate(buildFillKeyframes(timeline, tileFill, color), timing))
         }
       }
 

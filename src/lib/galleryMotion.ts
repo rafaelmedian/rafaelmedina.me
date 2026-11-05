@@ -17,6 +17,10 @@ export const galleryMotionVars = {
   // preview-gallery.css) so a token change retimes the zoom.
   "--pg-zoom-open-ms": "var(--duration-slow)",
   "--pg-zoom-close-ms": "var(--duration-slow)",
+  // The card's body unfolding under the artwork once the zoom has landed it:
+  // the picture opens first, then the page. Opening it with the picture put
+  // a blank, tile-coloured sheet the size of the screen under a wide card.
+  "--pg-zoom-unfold-ms": "var(--duration-slow)",
   // How long the surface takes to fade off the tile at the end of a close.
   // The open cuts in over the tile instead: the surface's artwork lands on the
   // tile's exactly. Half the fast step, so the fade only starts once the

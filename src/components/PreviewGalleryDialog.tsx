@@ -420,6 +420,10 @@ export function PreviewGalleryDialog({
     getZoomWhole: () => activeItem?.kind === "writings" || activeItem?.kind === "resume" ? cardRef.current : null,
     zoomOpenDurationProperty: "--pg-zoom-open-ms",
     zoomCloseDurationProperty: "--pg-zoom-close-ms",
+    // The body unfolds under the landed artwork on the slow step, and folds
+    // back on the content's own exit step, ahead of the shrink.
+    zoomUnfoldDurationProperty: "--pg-zoom-unfold-ms",
+    foldDurationProperty: "--pg-content-out-ms",
   })
 
   const attachOriginWrap = useCallback((node: HTMLDivElement | null) => {

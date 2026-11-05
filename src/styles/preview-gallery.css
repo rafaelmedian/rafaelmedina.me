@@ -25,6 +25,12 @@
   initial-value: 360ms;
 }
 
+@property --pg-zoom-unfold-ms {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 360ms;
+}
+
 @property --pg-zoom-handoff-ms {
   syntax: "<time>";
   inherits: true;

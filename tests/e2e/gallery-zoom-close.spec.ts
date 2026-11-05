@@ -89,6 +89,60 @@ test("the zoom stays a flat rectangle and never overshoots", async ({ page }) =>
   expect(open![0]).not.toBe(open!.at(-1))
 })
 
+// The artwork lands first and the card's body unfolds under it. Opening the
+// body with the picture put a blank tile-coloured sheet the size of the screen
+// under a wide card, which read as a grey box appearing and then loading. So
+// the clip's bottom edge stays on the artwork's frame until the surface is
+// all but full size, and only the last keyframe reaches the card's bottom.
+test("the open lands the artwork before it unfolds the card's body", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.locator(".mosaic-rows").evaluate((element) =>
+    Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  await page.evaluate(() => {
+    const flights: { transform: string; clip: string }[][] = []
+    Object.assign(window, { zoomFlights: flights })
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      const frames = (animation.effect as KeyframeEffect).getKeyframes()
+      if (frames.some(frame => "clipPath" in frame)) {
+        flights.push(frames.map(frame => ({ transform: String(frame.transform), clip: String(frame.clipPath) })))
+      }
+      return animation
+    }
+  })
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ }).click()
+  const popup = page.locator(".preview-gallery-popup")
+  await expect(popup).toHaveAttribute("data-wide", "true")
+  const [open] = await page.evaluate(() =>
+    (window as unknown as { zoomFlights: { transform: string; clip: string }[][] }).zoomFlights)
+  // The card's geometry at rest, which the keyframes are written in.
+  await page.locator(".preview-gallery-shell").evaluate((shell) =>
+    Promise.allSettled(shell.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  const { cardHeight, frameBottom } = await page.locator(".preview-gallery-origin-wrap").evaluate((wrap) => {
+    const frame = wrap.querySelector(".preview-gallery-media-frame")!.getBoundingClientRect()
+    const card = wrap.getBoundingClientRect()
+    return { cardHeight: card.height, frameBottom: frame.bottom - card.top }
+  })
+  // The clip's lowest point: the largest y in its path.
+  const bottomOf = (clip: string) => Math.max(...[...clip.matchAll(/-?[\d.]+ (-?[\d.]+)/g)].map(match => Number(match[1])))
+  const scaleOf = (transform: string) => Number(/scale\(([\d.]+)\)/.exec(transform)![1])
+  const scaleFrom = scaleOf(open[0].transform)
+  const grownOf = (transform: string) => (scaleOf(transform) - scaleFrom) / (1 - scaleFrom)
+  // Nine tenths of the way out the clip sits on the artwork's frame; with the
+  // surface all but at full size it has only begun to unfold; at rest it is
+  // the whole card.
+  const nearly = open.findIndex(frame => grownOf(frame.transform) >= 0.9)
+  const landed = open.findIndex(frame => grownOf(frame.transform) >= 0.98)
+  expect(nearly).toBeGreaterThan(0)
+  expect(landed).toBeGreaterThan(nearly)
+  expect(Math.abs(bottomOf(open[nearly].clip) - frameBottom)).toBeLessThan(cardHeight * 0.05)
+  expect(bottomOf(open[landed].clip)).toBeGreaterThan(frameBottom)
+  expect(bottomOf(open[landed].clip)).toBeLessThan(cardHeight - 20)
+  expect(bottomOf(open.at(-1)!.clip)).toBeCloseTo(cardHeight, 0)
+})
+
 // A tile opens on a press; dragging one used to pull a translucent copy of
 // the image under the pointer off the grid instead.
 test("tiles cannot be dragged off the grid", async ({ page }) => {

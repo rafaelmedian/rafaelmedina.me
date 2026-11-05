@@ -3926,8 +3926,14 @@ test("opens the preview gallery as one coordinated surface", async ({ page }) =>
 
   const originWrap = page.locator(".preview-gallery-origin-wrap")
   const cardInner = page.locator(".preview-gallery-card-inner")
-  // The zoom and the fill that carries the card out to the tile's outline.
-  expect(await originWrap.evaluate((element) => element.getAnimations().map((animation) => animation.effect?.getTiming().duration))).toEqual([400, 400])
+  // The zoom and the fill that carries the card out to the tile's outline,
+  // on one clock: the zoom's 400ms, with the body's 400ms unfold starting
+  // nine tenths of the way out (--pg-zoom-unfold-ms is the same token).
+  const durations = await originWrap.evaluate((element) => element.getAnimations().map((animation) => Number(animation.effect?.getTiming().duration)))
+  expect(durations).toHaveLength(2)
+  expect(durations[1]).toBe(durations[0])
+  expect(durations[0]).toBeGreaterThan(600)
+  expect(durations[0]).toBeLessThan(700)
   await expect(page.locator(".preview-gallery-backdrop")).toHaveCSS("transition-duration", "0.4s")
   expect(await cardInner.evaluate((element) => element.getAnimations().length)).toBe(0)
 })
