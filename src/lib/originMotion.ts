@@ -541,15 +541,32 @@ function buildFillKeyframes(timeline: ZoomTimeline, tile: string, rest: string):
   return sampleKeyframes(timeline, ({ grown }) => ({ backgroundColor: mixColor(tile, rest, clamp01((grown - 0.6) / 0.4)) }))
 }
 
+// A tile that hangs several pictures, opened into a single sheet, has no
+// artwork for the card's to land on: the card's picture cut in over the
+// tile's on the first frame, and on the way back the two crossed in the
+// hand-off's 60ms, a flicker of one picture over the other. The card
+// dissolves instead: in over the zoom's first third, while it is still
+// close to the tile's size, and away over its last third, once it is back
+// near it. Timed on the zoom, not on how far the card has grown: tied to
+// the latter it faded out mid-air, half way back, and the rest of the
+// shrink went unseen.
+function buildDissolveKeyframes(timeline: ZoomTimeline, mode: "open" | "close", zoomMs: number): Keyframe[] {
+  const window = zoomMs * 0.35
+  return sampleKeyframes(timeline, (_, ms) => ({
+    opacity: (mode === "open" ? clamp01(ms / window) : 1 - clamp01((ms - (zoomMs - window)) / window)).toFixed(3),
+  }))
+}
+
 // The tile's frame drawn over the gallery's video on the way back
 // (`handOverFrame`): in by a third of the way down, with the card's body.
 const handOverKeyframes: Keyframe[] = [{ opacity: "1", offset: 0 }, { opacity: "0", offset: 0.35 }, { opacity: "0", offset: 1 }]
 
-function sampleKeyframes(timeline: ZoomTimeline, value: (pose: ZoomPose) => Keyframe): Keyframe[] {
+function sampleKeyframes(timeline: ZoomTimeline, value: (pose: ZoomPose, ms: number) => Keyframe): Keyframe[] {
   const keyframes: Keyframe[] = []
   for (let step = 0; step < originSampleCount; step += 1) {
     const time = step / (originSampleCount - 1)
-    keyframes.push({ ...value(timeline.at(time * timeline.duration)), offset: time, easing: "linear" })
+    const ms = time * timeline.duration
+    keyframes.push({ ...value(timeline.at(ms), ms), offset: time, easing: "linear" })
   }
   return keyframes
 }
@@ -930,6 +947,12 @@ export function useOriginTravel(options: OriginTravelOptions) {
           flights.push(element.animate(buildFillKeyframes(timeline, tileFill, color), timing))
         }
       }
+
+      // A tile that hangs several pictures (its marked frame stands in for
+      // them) opened into one picture: the two can only dissolve.
+      const fadeNode = getFadeNode?.()
+      const dissolves = matched && !landsWhole && artwork!.element === artwork!.frame && Boolean(anchorElement?.matches("img, video"))
+      if (dissolves && fadeNode) flights.push(fadeNode.animate(buildDissolveKeyframes(timeline, mode, durations.zoom), timing))
 
       // The two videos loop on their own clocks, so the one taking over shows
       // a different moment of the same loop and the hand-off jumped. The one
