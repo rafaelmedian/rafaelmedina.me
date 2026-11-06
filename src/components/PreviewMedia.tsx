@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import type { PortfolioCard } from "../data/portfolio"
-import { buildPreviewSrcSet, isVideoSource, previewSizes } from "../lib/media"
+import { avifSource, buildAvifSrcSet, buildPreviewSrcSet, hasAvif, isVideoSource, previewSizes } from "../lib/media"
+import { PreviewPicture } from "./PreviewPicture"
 import { useLightweightMedia } from "../lib/useLightweightMedia"
 
 /** Mounted per source, so late events from an old preview cannot reveal the next one. */
@@ -41,8 +42,9 @@ function PreviewMediaPair({ card }: { card: PortfolioCard }) {
         data-loaded={pending ? "false" : "true"}
       >
         {images.map(image => (
+          <PreviewPicture key={image.source} enabled={hasAvif(image.source)}
+            avifSrcSet={buildAvifSrcSet(image.source, image.width)} sizes={pairSizes}>
           <img
-            key={image.source}
             src={image.source}
             srcSet={buildPreviewSrcSet(image.source, image.width)}
             sizes={pairSizes}
@@ -55,6 +57,7 @@ function PreviewMediaPair({ card }: { card: PortfolioCard }) {
             onError={() => setFailed(true)}
             ref={element => { if (element) void revealImage(element) }}
           />
+          </PreviewPicture>
         ))}
       </span>
       {failed && (
@@ -106,6 +109,8 @@ function PreviewMediaSingle({ card, reducedMotion }: { card: PortfolioCard; redu
   return (
     <>
       {thumbnailSrcSet && (
+        <PreviewPicture enabled={hasAvif(thumbnail.source)}
+          avifSrcSet={buildAvifSrcSet(thumbnail.source, thumbnail.width)} sizes={previewSizes}>
         <img
           src={thumbnail.source}
           srcSet={thumbnailSrcSet}
@@ -115,6 +120,7 @@ function PreviewMediaSingle({ card, reducedMotion }: { card: PortfolioCard; redu
           className="preview-gallery-media preview-gallery-media-placeholder"
           data-hidden={loaded ? "true" : "false"}
         />
+        </PreviewPicture>
       )}
       {video ? (
         <video
@@ -136,8 +142,8 @@ function PreviewMediaSingle({ card, reducedMotion }: { card: PortfolioCard; redu
           onError={() => setFailed(true)}
         />
       ) : (
+        <PreviewPicture key={attempt} enabled={hasAvif(card.image)} avifSrcSet={avifSource(card.image)}>
         <img
-          key={attempt}
           src={card.image}
           alt=""
           width={card.previewWidth}
@@ -150,6 +156,7 @@ function PreviewMediaSingle({ card, reducedMotion }: { card: PortfolioCard; redu
           onError={() => setFailed(true)}
           ref={image => { if (image) void revealImage(image) }}
         />
+        </PreviewPicture>
       )}
       {/* Loading is announced, not shown: a chip over the artwork while the
           tile was still flying open read as the gallery stalling, and the

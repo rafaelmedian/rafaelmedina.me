@@ -1,3 +1,4 @@
+import { preferredFullSource } from "./media"
 import { prefersLightweightMedia } from "./useLightweightMedia"
 
 // A tile shows a small loop or a sized image, and opening it asks for the full
@@ -30,7 +31,9 @@ function pump() {
   const controller = new AbortController()
   current = { entry, controller }
   // One at a time and low priority, so this never competes with what is on screen.
-  void fetch(entry.source, { priority: "low", signal: controller.signal })
+  // The gallery's <picture> takes the AVIF where it decodes; warm that file.
+  void preferredFullSource(entry.source)
+    .then((url) => fetch(url, { priority: "low", signal: controller.signal }))
     // The body has to be read to the end for the cache to keep it.
     .then((response) => response.arrayBuffer())
     .catch(() => {

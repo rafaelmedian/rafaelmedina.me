@@ -1,3 +1,5 @@
+import { avifSources } from "../data/avifSources"
+
 /**
  * Media sources follow the convention documented beside the card data in
  * src/data/portfolio.ts: .webm/.mp4 render as autoplaying muted video,
@@ -214,6 +216,11 @@ const hiDpiPreviewSources = new Set([
   "/Projects/matcha-rewards-share-image.webp",
   "/Projects/matcha-rewards-ended.webp",
   "/Projects/matcha-rewards-ended-connected.webp",
+  // 1920px captures that sit in the home grid. Without the larger steps a
+  // ~560px tile on a 2x screen skipped from the 960w sibling to the full file.
+  "/Projects/twilio-admiral-overview.webp",
+  "/Projects/onit-process-builder.webp",
+  "/Projects/turtle.webp",
 ])
 const hasPreviewVariants = (source: string) =>
   /_shot-small-\d+\.jpg$/.test(source) || webpPreviewVariantSources.has(source)
@@ -259,4 +266,41 @@ export function buildPreviewSrcSet(source: string, intrinsicWidth?: number) {
     .map((width) => `${stem}-${width}w${extension} ${width}w`)
   if (intrinsicWidth) candidates.push(`${source} ${intrinsicWidth}w`)
   return candidates.join(", ")
+}
+
+// AVIF siblings, offered first through <picture> by PreviewPicture. They exist
+// only for sources scripts/generate-avif-variants.mjs judged visually equal to
+// their WebP and meaningfully smaller, at every width the WebP srcset lists.
+export const hasAvif = (source: string) => Object.hasOwn(avifSources, source)
+
+const toAvif = (url: string) => url.replace(/\.webp$/, ".avif")
+
+/** The AVIF twin of `buildPreviewSrcSet`, or undefined when there is none. */
+export function buildAvifSrcSet(source: string, intrinsicWidth?: number) {
+  if (!hasAvif(source)) return undefined
+  const srcSet = buildPreviewSrcSet(source, intrinsicWidth)
+  return srcSet?.replace(/\.webp(?= \d+w)/g, ".avif")
+}
+
+/** The full-size file alone, for an <img> that loads the original. */
+export const avifSource = (source: string) => hasAvif(source) ? toAvif(source) : undefined
+
+let avifSupport: Promise<boolean> | undefined
+/** Whether this browser decodes AVIF, for fetches that must match what a
+ *  <picture> would choose (warming the gallery's file ahead of a click). */
+export function supportsAvif() {
+  avifSupport ??= new Promise<boolean>((resolve) => {
+    const image = new Image()
+    image.onload = () => resolve(image.width > 0)
+    image.onerror = () => resolve(false)
+    // A 1x1 AVIF.
+    image.src = "data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAG1pZjFhdmlmbWlhZgAAANZtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAACJpbG9jAAAAAERAAAEAAQAAAAAA+gABAAAAAAAAAB0AAAAjaWluZgAAAAAAAQAAABVpbmZlAgAAAAABAABhdjAxAAAAAA5waXRtAAAAAAABAAAAVmlwcnAAAAA4aXBjbwAAAAxhdjFDgSACAAAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAABZpcG1hAAAAAAAAAAEAAQOBAgMAAAAlbWRhdBIACgc4AAaQENBpMhAZQmMEwAA0AACQQMkcYIpq"
+  })
+  return avifSupport
+}
+
+/** The URL a <picture> offering `source`'s AVIF would load here. */
+export async function preferredFullSource(source: string) {
+  const avif = avifSource(source)
+  return avif && await supportsAvif() ? avif : source
 }

@@ -55,21 +55,16 @@ test("the zoom bends towards its tile mid-flight and is flat at both ends", asyn
   await page.locator(".mosaic-rows").evaluate((element) =>
     Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
 
-  // Capture the flight as it is created. Under load it can finish before a
-  // later browser round-trip inspects document.getAnimations().
+  // Capture the flights as they are created. Under load one can finish
+  // before a later browser round-trip inspects document.getAnimations().
   await page.evaluate(() => {
-    const flights: number[][] = []
-    Object.assign(window, { morphFlights: flights })
+    const flights: string[][] = []
+    Object.assign(window, { zoomFlights: flights })
     const animate = Element.prototype.animate
     Element.prototype.animate = function (...args) {
       const animation = animate.apply(this, args)
       const frames = (animation.effect as KeyframeEffect).getKeyframes()
-      if (frames.some(frame => String(frame.transform ?? "").startsWith("matrix3d"))) {
-        flights.push(frames.map(frame => {
-          const matrix = new DOMMatrixReadOnly(String(frame.transform))
-          return Math.abs(matrix.m14) + Math.abs(matrix.m24)
-        }))
-      }
+      if (frames.some(frame => "clipPath" in frame)) flights.push(frames.map(frame => String(frame.transform)))
       return animation
     }
   })
@@ -80,13 +75,113 @@ test("the zoom bends towards its tile mid-flight and is flat at both ends", asyn
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toHaveCount(0)
   const [open, close] = await page.evaluate(() =>
-    (window as unknown as { morphFlights: number[][] }).morphFlights)
+    (window as unknown as { zoomFlights: string[][] }).zoomFlights.map(frames => frames.map(transform => {
+      const matrix = new DOMMatrixReadOnly(transform)
+      return Math.abs(matrix.m14) + Math.abs(matrix.m24)
+    })))
 
-  for (const frames of [open, close]) {
-    expect(frames).toBeDefined()
-    expect(frames![0]).toBe(0)
-    expect(frames!.at(-1)).toBe(0)
-    expect(Math.max(...frames!)).toBeGreaterThan(0)
+  for (const bends of [open, close]) {
+    expect(bends).toBeDefined()
+    expect(bends![0]).toBe(0)
+    expect(bends!.at(-1)).toBe(0)
+    expect(Math.max(...bends!)).toBeGreaterThan(0)
+  }
+})
+
+// The artwork leads and the card's body unfolds under it. Opening the body
+// with the picture put a blank tile-coloured sheet the size of the screen
+// under a wide card, which read as a grey box appearing and then loading;
+// unfolding it only once the picture had landed read as the page loading a
+// beat after the zoom. So the body starts down while the picture is still
+// travelling and finishes after it has landed.
+test("the open unfolds the card's body while the artwork is still landing", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.locator(".mosaic-rows").evaluate((element) =>
+    Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  await page.evaluate(() => {
+    const flights: { transform: string; clip: string }[][] = []
+    Object.assign(window, { zoomFlights: flights })
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      const frames = (animation.effect as KeyframeEffect).getKeyframes()
+      if (frames.some(frame => "clipPath" in frame)) {
+        flights.push(frames.map(frame => ({ transform: String(frame.transform), clip: String(frame.clipPath) })))
+      }
+      return animation
+    }
+  })
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ }).click()
+  const popup = page.locator(".preview-gallery-popup")
+  await expect(popup).toHaveAttribute("data-wide", "true")
+  const [open] = await page.evaluate(() =>
+    (window as unknown as { zoomFlights: { transform: string; clip: string }[][] }).zoomFlights)
+  // The card's geometry at rest, which the keyframes are written in.
+  await page.locator(".preview-gallery-shell").evaluate((shell) =>
+    Promise.allSettled(shell.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  const { cardHeight, frameBottom } = await page.locator(".preview-gallery-origin-wrap").evaluate((wrap) => {
+    const frame = wrap.querySelector(".preview-gallery-media-frame")!.getBoundingClientRect()
+    const card = wrap.getBoundingClientRect()
+    return { cardHeight: card.height, frameBottom: frame.bottom - card.top }
+  })
+  // The clip's lowest point: the largest y in its path.
+  const bottomOf = (clip: string) => Math.max(...[...clip.matchAll(/-?[\d.]+ (-?[\d.]+)/g)].map(match => Number(match[1])))
+  // The zoom has landed on the first frame whose transform is the resting
+  // one: from there on only the body moves.
+  const landed = open.findIndex(frame => frame.transform === open.at(-1)!.transform)
+  expect(landed).toBeGreaterThan(0)
+  // The clip's bottom edge closes in towards the artwork's frame and turns
+  // back down to unfold the body well before the zoom lands: the white card
+  // runs out under a picture that is still travelling.
+  const bottoms = open.map(frame => bottomOf(frame.clip))
+  const turn = bottoms.indexOf(Math.min(...bottoms))
+  expect(bottoms[turn]).toBeLessThan(cardHeight - (cardHeight - frameBottom) / 2)
+  expect(turn).toBeLessThan(landed * 0.6)
+  expect(bottoms[landed]).toBeGreaterThan(bottoms[turn] + 20)
+  expect(bottomOf(open.at(-1)!.clip)).toBeCloseTo(cardHeight, 0)
+})
+
+// A close pressed while the card is still growing used to cancel the open,
+// which snapped the card to its full size, and shrink it from there: a jump
+// to rest and back. It shrinks from the size it had reached.
+test("a close mid-open resumes from the card's current size", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.locator(".mosaic-rows").evaluate((element) =>
+    Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  await page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ }).click()
+  const wrap = page.locator(".preview-gallery-origin-wrap")
+  await expect(wrap).toHaveCount(1)
+  // Hold the open a third of the way through, measure, then close.
+  const before = await wrap.evaluate((element) => {
+    const [flight] = element.getAnimations()
+    flight.pause()
+    flight.currentTime = Number((flight.effect as KeyframeEffect).getTiming().duration) / 3
+    return element.getBoundingClientRect().width
+  })
+  await page.evaluate(() => {
+    const widths: number[] = []
+    Object.assign(window, { closeWidths: widths })
+    const tick = () => {
+      const node = document.querySelector(".preview-gallery-origin-wrap")
+      if (!node) return
+      widths.push(node.getBoundingClientRect().width)
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
+  await page.keyboard.press("Escape")
+  await expect(page.locator(".preview-gallery-popup")).toHaveCount(0)
+  const widths = await page.evaluate(() => (window as unknown as { closeWidths: number[] }).closeWidths)
+  expect(widths.length).toBeGreaterThan(3)
+  const rest = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize))
+  // The first frame of the close is within a step of where the open was
+  // held, nowhere near the card's resting width, and from there it only
+  // shrinks.
+  expect(Math.abs(widths[0] - before)).toBeLessThan(rest * 4)
+  for (let index = 1; index < widths.length; index += 1) {
+    expect(widths[index]).toBeLessThanOrEqual(widths[index - 1] + 0.5)
   }
 })
 
@@ -162,4 +257,30 @@ test("the fill around the card is gone wherever the card is at rest", async ({ p
   expect(close).not.toBeNull()
   expect(close![0].spread).toBe(0)
   expect(close![0].behind).toMatch(/rgba\(.*,\s*0\)$/)
+})
+
+// Base UI focused the card a frame into the open without preventScroll, and
+// from a tile low on the screen the card is drawn over the tile on that
+// frame, below the fold: the shell scrolled ~300px to show it and the card
+// flashed high above the tile before the flight's scroll hold put it back.
+test("opening a tile low on the screen never scrolls the gallery shell", async ({ page }) => {
+  await page.setViewportSize({ width: 2048, height: 1097 })
+  await page.goto("/")
+  await page.locator(".mosaic-rows").evaluate((element) =>
+    Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  const tile = page.locator(".mosaic-row-card-preview-moodys-sprints")
+  await tile.evaluate((element) => window.scrollBy(0, element.getBoundingClientRect().top - window.innerHeight + 60))
+  await page.evaluate(() => {
+    const scrolls: number[] = []
+    Object.assign(window, { shellScrolls: scrolls })
+    document.addEventListener("scroll", (event) => {
+      const target = event.target as Element
+      if (target instanceof Element && target.matches(".preview-gallery-shell")) scrolls.push(target.scrollTop)
+    }, true)
+  })
+  await tile.click()
+  await page.locator(".preview-gallery-shell").evaluate((shell) =>
+    Promise.allSettled(shell.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  await expect(page.locator(".preview-gallery-card")).toBeFocused()
+  expect(await page.evaluate(() => (window as unknown as { shellScrolls: number[] }).shellScrolls)).toEqual([])
 })

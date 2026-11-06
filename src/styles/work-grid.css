@@ -997,11 +997,11 @@
   transform-box: fill-box;
 }
 
-.mosaic-row-media-skeleton:has(+ .mosaic-row-media[data-pending="true"]) {
+.mosaic-row-media-skeleton:has(+ .mosaic-row-media[data-pending="true"], + .preview-picture > .mosaic-row-media[data-pending="true"]) {
   opacity: 1;
 }
 
-.mosaic-row-media-skeleton:has(+ .mosaic-row-media[data-pending="true"]) .mosaic-row-media-skeleton-sweep {
+.mosaic-row-media-skeleton:has(+ .mosaic-row-media[data-pending="true"], + .preview-picture > .mosaic-row-media[data-pending="true"]) .mosaic-row-media-skeleton-sweep {
   animation: mosaic-media-shimmer 1400ms steps(42) infinite;
 }
 
@@ -1039,7 +1039,8 @@
 
 /* Only over its own skeleton: the marketing wall's posts are items of a grid too,
    and each needs a cell of its own. */
-.mosaic-row-media-skeleton + .mosaic-row-media {
+.mosaic-row-media-skeleton + .mosaic-row-media,
+.mosaic-row-media-skeleton + .preview-picture > .mosaic-row-media {
   grid-area: 1 / 1;
 }
 

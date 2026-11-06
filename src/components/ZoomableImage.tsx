@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
 import type { PortfolioImage } from "../data/portfolio"
+import { avifSource, buildAvifSrcSet, hasAvif } from "../lib/media"
 import { useFinePointer } from "../lib/useFinePointer"
+import { PreviewPicture } from "./PreviewPicture"
 import { X } from "./NavigationIcons"
 
 // Case-study screenshots are dense UI shown at half a reading column, so a
@@ -176,7 +178,10 @@ export function ZoomableImage({ item, srcSet, sizes }: {
     }
   }, [animate, close, open])
 
+  const avif = hasAvif(item.source)
+  const avifSrcSet = srcSet ? buildAvifSrcSet(item.source, item.width) : avifSource(item.source)
   const still = (
+    <PreviewPicture enabled={avif} avifSrcSet={avifSrcSet} sizes={sizes}>
     <img
       src={item.source}
       srcSet={srcSet}
@@ -187,6 +192,7 @@ export function ZoomableImage({ item, srcSet, sizes }: {
       loading="lazy"
       decoding="async"
     />
+    </PreviewPicture>
   )
   const loopVideo = item.video && loop.mounted
     ? <LoopVideo source={item.video} poster={item.source} playing={loop.visible && !open} />
@@ -230,6 +236,7 @@ export function ZoomableImage({ item, srcSet, sizes }: {
           <div className="image-zoom-scrim" aria-hidden="true" />
           <figure>
             <div ref={zoomedRef} className="image-zoom-media">
+            <PreviewPicture enabled={avif} avifSrcSet={avifSrcSet} sizes={`min(84vw, 76rem, ${item.width}px)`}>
             <img
               ref={zoomedImageRef}
               src={item.source}
@@ -240,6 +247,7 @@ export function ZoomableImage({ item, srcSet, sizes }: {
               height={item.height}
               decoding="async"
             />
+            </PreviewPicture>
             {item.video && loop.mounted ? <LoopVideo source={item.video} poster={item.source} playing /> : null}
             </div>
             <p aria-hidden="true">{item.label}</p>

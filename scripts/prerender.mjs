@@ -38,6 +38,12 @@ for (const { pathname, metadata } of pages) {
     html = html.replace(pattern, () => `<meta ${attribute}="${key}" content="${escapeHtml(value)}" />`)
   }
 
+  const structuredSlot = /<script id="page-structured-data" type="application\/ld\+json">[\s\S]*?<\/script>/
+  if (!structuredSlot.test(html)) throw new Error("Missing structured data slot")
+  html = html.replace(structuredSlot, () =>
+    `<script id="page-structured-data" type="application/ld+json">${metadata.structuredData}</script>`,
+  )
+
   // The portfolio's first-row posters aren't critical resources on a project page.
   if (pathname !== "/") html = html.replace(/<link rel="preload" as="image"[^>]*>/g, "")
   html = html.replace('<div id="root"></div>', () =>

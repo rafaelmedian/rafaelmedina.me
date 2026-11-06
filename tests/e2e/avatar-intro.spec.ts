@@ -222,7 +222,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
     const offsets = await page.locator(".mosaic-row-media-skeleton").evaluateAll((skeletons) => skeletons.map((skeleton) => {
       const box = skeleton.getBoundingClientRect()
-      const media = skeleton.nextElementSibling!.getBoundingClientRect()
+      // An AVIF tile wraps its image in a box-less <picture>; measure the image.
+      const next = skeleton.nextElementSibling!
+      const media = (next.matches("picture") ? next.querySelector("img")! : next).getBoundingClientRect()
       return Math.max(
         Math.abs(box.x - media.x),
         Math.abs(box.y - media.y),

@@ -1,4 +1,4 @@
-import { portfolioCards, type PortfolioCard } from "../data/portfolio"
+import { portfolioCards, siteLinks, type PortfolioCard } from "../data/portfolio"
 import { writingSummaries, type WritingSummary } from "../data/writingIndex"
 
 export const siteOrigin = "https://rafaelmedina.me"
@@ -139,6 +139,65 @@ function describePage(target?: GalleryTarget) {
   return isCard(target) ? projectPage(target) : writingPage(target)
 }
 
+/** One entity graph for the static document and its enhanced gallery view.
+ * Use only facts already published on the site; unknown dates stay absent. */
+function structuredData(target: GalleryTarget | undefined, page: PageDescription) {
+  const canonical = `${siteOrigin}${page.path}`
+  const person = { "@id": `${siteOrigin}/#person` }
+  const website = { "@id": `${siteOrigin}/#website` }
+  const pageId = { "@id": `${canonical}#webpage` }
+  const writing = target && typeof target === "object" && !isCard(target) ? target : undefined
+  const project = target && typeof target === "object" && isCard(target) ? target : undefined
+  const entityId = { "@id": `${canonical}#content` }
+  const graph: Record<string, unknown>[] = [
+    {
+      ...person, "@type": "Person", name: "Rafael Medina", url: `${siteOrigin}/`,
+      image: `${siteOrigin}/profile-header.jpg`, jobTitle: "Senior Product Designer",
+      sameAs: [siteLinks.dribbble, siteLinks.x, siteLinks.github, siteLinks.linkedin],
+    },
+    {
+      ...website, "@type": "WebSite", name: "Rafael Medina", url: `${siteOrigin}/`,
+      inLanguage: "en", publisher: person,
+    },
+    {
+      ...pageId,
+      "@type": !target || target === resumeItemId ? "ProfilePage" : target === writingsItemId ? "CollectionPage" : "WebPage",
+      url: canonical, name: page.title, description: page.description,
+      inLanguage: "en", isPartOf: website,
+      primaryImageOfPage: {
+        "@type": "ImageObject", url: `${siteOrigin}${page.image}`,
+        width: page.imageWidth, height: page.imageHeight, caption: page.imageAlt,
+      },
+      ...(!target || target === resumeItemId ? { mainEntity: person } : { mainEntity: entityId }),
+    },
+  ]
+  if (writing) graph.push({
+    ...entityId, "@type": "BlogPosting", headline: writing.title,
+    description: writing.description, url: canonical, mainEntityOfPage: pageId,
+    author: person, inLanguage: "en", image: `${siteOrigin}${page.image}`,
+    ...(writing.publishedAt ? { datePublished: writing.publishedAt } : {}),
+  })
+  if (project) graph.push({
+    ...entityId, "@type": "CreativeWork", name: project.title,
+    description: project.detail, url: canonical, mainEntityOfPage: pageId,
+    creator: person, inLanguage: "en", image: `${siteOrigin}${page.image}`,
+    ...(project.industry ? { about: { "@type": "Thing", name: project.industry } } : {}),
+  })
+  if (target === writingsItemId) graph.push({
+    ...entityId, "@type": "ItemList", name: "Notes by Rafael Medina",
+    itemListElement: writingSummaries.map((writing, index) => ({
+      "@type": "ListItem", position: index + 1, name: writing.title,
+      url: `${siteOrigin}${writingPath(writing)}`,
+    })),
+  })
+  return { "@context": "https://schema.org", "@graph": graph }
+}
+
+/** Escaping '<' also prevents a title containing </script> ending the block. */
+export function serializeStructuredData(value: unknown) {
+  return JSON.stringify(value).replace(/</g, "\\u003c")
+}
+
 export function pageMetadata(target?: GalleryTarget) {
   const page = describePage(target)
   const canonical = `${siteOrigin}${page.path}`
@@ -148,8 +207,10 @@ export function pageMetadata(target?: GalleryTarget) {
   return {
     title: page.title,
     canonical,
+    structuredData: serializeStructuredData(structuredData(target, page)),
     meta: {
       description: page.description,
+      "og:type": target && typeof target === "object" && !isCard(target) ? "article" : "website",
       "og:title": page.title,
       "og:description": page.description,
       "og:url": canonical,
@@ -171,6 +232,8 @@ export function pageMetadata(target?: GalleryTarget) {
 export function updatePageMetadata(target?: GalleryTarget) {
   const metadata = pageMetadata(target)
   document.title = metadata.title
+  const structured = document.getElementById("page-structured-data")
+  if (structured) structured.textContent = metadata.structuredData
   document.querySelector('link[rel="canonical"]')?.setAttribute("href", metadata.canonical)
   for (const [key, value] of Object.entries(metadata.meta)) {
     document.querySelector(`meta[${key.startsWith("og:") ? "property" : "name"}="${key}"]`)
