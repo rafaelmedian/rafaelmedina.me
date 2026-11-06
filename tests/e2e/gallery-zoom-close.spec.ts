@@ -232,31 +232,45 @@ test("the fill around the card is gone wherever the card is at rest", async ({ p
   await page.goto("/")
   await page.locator(".mosaic-rows").evaluate((element) =>
     Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
-  const wrap = page.locator(".preview-gallery-origin-wrap")
-  const spreads = () => wrap.evaluate((element) => {
-    const fill = element.getAnimations().find((animation) =>
-      (animation.effect as KeyframeEffect).getKeyframes().some((frame) => "boxShadow" in frame))
-    return (fill?.effect as KeyframeEffect | undefined)?.getKeyframes().map((frame) => {
-      const lengths = String(frame.boxShadow).match(/-?[\d.]+px/g) ?? []
-      return { spread: parseFloat(lengths[3] ?? "0"), behind: String(frame.backgroundColor) }
-    }) ?? null
+  // A finished open is removed from getAnimations(). Capture its keyframes
+  // at creation so a slow browser round-trip cannot miss the fill entirely.
+  await page.evaluate(() => {
+    const flights: { spread: number; behind: string }[][] = []
+    Object.assign(window, { fillFlights: flights })
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args)
+      if (this.matches(".preview-gallery-origin-wrap")) {
+        const frames = (animation.effect as KeyframeEffect).getKeyframes()
+        if (frames.some(frame => "boxShadow" in frame)) {
+          flights.push(frames.map(frame => {
+            const lengths = String(frame.boxShadow).match(/-?[\d.]+px/g) ?? []
+            return { spread: parseFloat(lengths[3] ?? "0"), behind: String(frame.backgroundColor) }
+          }))
+        }
+      }
+      return animation
+    }
   })
 
   await page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ }).click()
-  const open = await spreads()
-  expect(open).not.toBeNull()
-  // It does reach past the card mid-flight: this tile is wider than the card.
-  expect(Math.max(...open!.map((frame) => frame.spread))).toBeGreaterThan(50)
-  expect(open!.at(-1)!.spread).toBe(0)
-  expect(open!.at(-1)!.behind).toMatch(/rgba\(.*,\s*0\)$/)
   await page.locator(".preview-gallery-shell").evaluate((shell) =>
     Promise.allSettled(shell.getAnimations({ subtree: true }).map((animation) => animation.finished)))
-
   await page.keyboard.press("Escape")
-  const close = await spreads()
-  expect(close).not.toBeNull()
-  expect(close![0].spread).toBe(0)
-  expect(close![0].behind).toMatch(/rgba\(.*,\s*0\)$/)
+  await expect(page.locator(".preview-gallery-popup")).toHaveCount(0)
+
+  // Deliberately inspect after both flights finish: neither a finished open
+  // nor an unmounted close needs to remain discoverable in the DOM.
+  const flights = await page.evaluate(() =>
+    (window as unknown as { fillFlights: { spread: number; behind: string }[][] }).fillFlights)
+  expect(flights).toHaveLength(2)
+  const [open, close] = flights
+  // It does reach past the card mid-flight: this tile is wider than the card.
+  expect(Math.max(...open.map((frame) => frame.spread))).toBeGreaterThan(50)
+  expect(open.at(-1)!.spread).toBe(0)
+  expect(open.at(-1)!.behind).toMatch(/rgba\(.*,\s*0\)$/)
+  expect(close[0].spread).toBe(0)
+  expect(close[0].behind).toMatch(/rgba\(.*,\s*0\)$/)
 })
 
 // Base UI focused the card a frame into the open without preventScroll, and
