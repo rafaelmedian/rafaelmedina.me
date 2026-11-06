@@ -258,3 +258,29 @@ test("the fill around the card is gone wherever the card is at rest", async ({ p
   expect(close![0].spread).toBe(0)
   expect(close![0].behind).toMatch(/rgba\(.*,\s*0\)$/)
 })
+
+// Base UI focused the card a frame into the open without preventScroll, and
+// from a tile low on the screen the card is drawn over the tile on that
+// frame, below the fold: the shell scrolled ~300px to show it and the card
+// flashed high above the tile before the flight's scroll hold put it back.
+test("opening a tile low on the screen never scrolls the gallery shell", async ({ page }) => {
+  await page.setViewportSize({ width: 2048, height: 1097 })
+  await page.goto("/")
+  await page.locator(".mosaic-rows").evaluate((element) =>
+    Promise.allSettled(element.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  const tile = page.locator(".mosaic-row-card-preview-moodys-sprints")
+  await tile.evaluate((element) => window.scrollBy(0, element.getBoundingClientRect().top - window.innerHeight + 60))
+  await page.evaluate(() => {
+    const scrolls: number[] = []
+    Object.assign(window, { shellScrolls: scrolls })
+    document.addEventListener("scroll", (event) => {
+      const target = event.target as Element
+      if (target instanceof Element && target.matches(".preview-gallery-shell")) scrolls.push(target.scrollTop)
+    }, true)
+  })
+  await tile.click()
+  await page.locator(".preview-gallery-shell").evaluate((shell) =>
+    Promise.allSettled(shell.getAnimations({ subtree: true }).map((animation) => animation.finished)))
+  await expect(page.locator(".preview-gallery-card")).toBeFocused()
+  expect(await page.evaluate(() => (window as unknown as { shellScrolls: number[] }).shellScrolls)).toEqual([])
+})

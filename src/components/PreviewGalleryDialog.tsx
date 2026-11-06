@@ -426,6 +426,23 @@ export function PreviewGalleryDialog({
     foldDurationProperty: "--pg-content-out-ms",
   })
 
+  // Base UI moves focus into the card a frame after it mounts, but only
+  // passes preventScroll when the target is the popup itself. The card was
+  // the target, so the browser scrolled the shell to show it -- and on that
+  // frame the card is drawn over its tile, so from a tile low on the screen
+  // it scrolled ~300px and the card flashed high above the tile for a frame
+  // before the flight's scroll hold put it back. Focus it here instead, on
+  // the same frame, without the scroll.
+  const focusOnOpen = useCallback(() => {
+    requestAnimationFrame(() => {
+      const target = writingId ? noteTitleRef.current ?? cardRef.current : cardRef.current
+      const popup = popupRef.current
+      if (!target?.isConnected || !popup || popup.contains(document.activeElement)) return
+      target.focus({ preventScroll: true })
+    })
+    return false
+  }, [writingId])
+
   const attachOriginWrap = useCallback((node: HTMLDivElement | null) => {
     originWrapRef.current = node
     setOriginWrapNode(node)
@@ -647,7 +664,7 @@ export function PreviewGalleryDialog({
             <Dialog.Popup
               className={`preview-gallery-popup${readingNote ? " writings-dialog" : ""}`}
               ref={popupRef}
-              initialFocus={() => writingId ? noteTitleRef.current ?? cardRef.current : cardRef.current}
+              initialFocus={focusOnOpen}
               finalFocus={finalFocus}
               data-preview-kind={activeItem.kind}
               data-reading-note={readingNote ? "true" : undefined}
