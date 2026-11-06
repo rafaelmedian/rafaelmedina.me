@@ -58,7 +58,7 @@ export const portfolioQuotes: PortfolioQuote[] = [
     emphasis: "onchain-literate people at the org.",
     attribution: "Phil Liao",
     caption: "Head of Engineering at 0x",
-    photo: "/quotes/phil-liao.png",
+    photo: "/quotes/phil-liao.webp",
   },
   {
     id: "simon",
