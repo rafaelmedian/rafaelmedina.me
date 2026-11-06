@@ -123,7 +123,7 @@ test("the full file behind a tile waits for intent, then for the visitor to stay
   const fullFiles: string[] = []
   page.on("request", request => {
     const name = new URL(request.url()).pathname
-    if (["/Projects/shot-small-9.webm", "/Projects/shot-small-16.webm", "/Projects/pokemon-duo.webm", "/Projects/onit-process-builder.webp"].includes(name)) fullFiles.push(name)
+    if (["/Projects/shot-small-9.webm", "/Projects/shot-small-16.webm", "/Projects/pokemon-duo.webm", "/Projects/onit-process-builder.webp", "/Projects/onit-process-builder.avif"].includes(name)) fullFiles.push(name)
   })
   await page.goto("/")
   await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
@@ -136,6 +136,7 @@ test("the full file behind a tile waits for intent, then for the visitor to stay
   // After the delay, only the tiles that have been on screen follow.
   await expect.poll(() => fullFiles.length, { timeout: 12_000 }).toBe(3)
   expect(fullFiles).not.toContain("/Projects/onit-process-builder.webp")
+  expect(fullFiles).not.toContain("/Projects/onit-process-builder.avif")
 })
 
 test("a slow connection never warms the full files", async ({ page }) => {

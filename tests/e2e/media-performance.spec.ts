@@ -81,7 +81,7 @@ test("uses posters on 3g and responds when the connection changes", async ({ pag
 test("keeps a thumbnail visible during a slow preview and offers retry after failure", async ({ page }) => {
   let release: () => void = () => {}
   const held = new Promise<void>(resolve => { release = resolve })
-  await page.route("**/Projects/dealership-lead-hub.webp", async route => {
+  await page.route("**/Projects/dealership-lead-hub.{webp,avif}", async route => {
     await held
     await route.abort("failed")
   })
@@ -97,7 +97,7 @@ test("keeps a thumbnail visible during a slow preview and offers retry after fai
   await expect.poll(() => thumbnail.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
   release()
   await expect(dialog.getByRole("button", { name: "Retry preview" })).toBeVisible()
-  await page.unroute("**/Projects/dealership-lead-hub.webp")
+  await page.unroute("**/Projects/dealership-lead-hub.{webp,avif}")
   await dialog.getByRole("button", { name: "Retry preview" }).click()
   await expect(dialog.locator(".preview-gallery-media[data-loaded='true']")).toBeVisible()
   await expect(mediaStatus).toHaveCount(0)

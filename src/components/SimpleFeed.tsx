@@ -36,7 +36,8 @@ import { contributionCalendar } from "../data/githubActivity"
 import { useHoverCard } from "../lib/hoverCard"
 import { revealGalleryEntry } from "../lib/galleryEntry"
 import { loadedPreviewGallery, loadPreviewGallery } from "../lib/previewGalleryModule"
-import { buildPreviewSrcSet, isVideoSource, previewSizesForShare } from "../lib/media"
+import { buildAvifSrcSet, buildPreviewSrcSet, hasAvif, isVideoSource, previewSizesForShare } from "../lib/media"
+import { PreviewPicture } from "./PreviewPicture"
 import { prefersLightweightMedia, useLightweightMedia } from "../lib/useLightweightMedia"
 import { pauseExpandedMediaWarming, startExpandedMediaWarming, warmExpandedMedia } from "../lib/warmExpandedMedia"
 import { usePrefersReducedMotion } from "../lib/usePrefersReducedMotion"
@@ -417,6 +418,7 @@ function RowImageMedia({ source, label, width, height, eager, sizes, loadMedia }
   }, [armed])
 
   return (
+    <PreviewPicture enabled={hasAvif(source)} avifSrcSet={loadMedia ? buildAvifSrcSet(source, width) : undefined} sizes={sizes}>
     <img
       src={loadMedia ? source : undefined}
       srcSet={loadMedia ? srcSet : undefined}
@@ -442,6 +444,7 @@ function RowImageMedia({ source, label, width, height, eager, sizes, loadMedia }
         if (el && el.complete && el.naturalWidth > 0) setLoaded(true)
       }}
     />
+    </PreviewPicture>
   )
 }
 

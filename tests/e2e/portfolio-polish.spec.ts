@@ -3801,7 +3801,7 @@ test("asks for a variant that matches the dealership hub's wide slot", async ({ 
   })
 
   expect(declared).toBeGreaterThanOrEqual(itemWidth * 0.9)
-  expect(chosen).toMatch(/dealership-lead-hub-\d+w\.webp$/)
+  expect(chosen).toMatch(/dealership-lead-hub-\d+w\.(?:avif|webp)$/)
 })
 
 test("follows the Pokédex with the dealership hub in the aside band", async ({ page }) => {

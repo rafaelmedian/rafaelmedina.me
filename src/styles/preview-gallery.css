@@ -597,12 +597,15 @@
   height: auto;
 }
 
-.preview-gallery-media-pair img:first-child {
+/* Each image may sit in a PreviewPicture of its own; count the pair's children. */
+.preview-gallery-media-pair > :first-child,
+.preview-gallery-media-pair > :first-child img {
   top: 3%;
   left: 1.7%;
 }
 
-.preview-gallery-media-pair img:last-child {
+.preview-gallery-media-pair > :last-child,
+.preview-gallery-media-pair > :last-child img {
   right: 1.8%;
   bottom: 3%;
 }
