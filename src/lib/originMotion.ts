@@ -708,10 +708,12 @@ function buildFillKeyframes(timeline: ZoomTimeline, tile: string, rest: string, 
 // near it. Timed on the zoom, not on how far the card has grown: tied to
 // the latter it faded out mid-air, half way back, and the rest of the
 // shrink went unseen.
-function buildDissolveKeyframes(timeline: ZoomTimeline, mode: "open" | "close", zoomMs: number): Keyframe[] {
+function buildDissolveKeyframes(timeline: ZoomTimeline, mode: "open" | "close", zoomMs: number, from: number): Keyframe[] {
   const window = zoomMs * 0.35
   return sampleKeyframes(timeline, (_, ms) => ({
-    opacity: (mode === "open" ? clamp01(ms / window) : 1 - clamp01((ms - (zoomMs - window)) / window)).toFixed(3),
+    opacity: (mode === "open"
+      ? from + (1 - from) * clamp01(ms / window)
+      : from * (1 - clamp01((ms - (zoomMs - window)) / window))).toFixed(3),
   }))
 }
 
@@ -982,6 +984,10 @@ export function useOriginTravel(options: OriginTravelOptions) {
     const resumed = previous && previous.mode !== mode && flying && typeof flying.currentTime === "number"
       ? previous.timeline.at(Math.min(Math.max(flying.currentTime, 0), previous.timeline.duration))
       : null
+    // Dissolves have their own clock. Read the painted opacity before cancel
+    // removes it, so reversing a partly faded card cannot flash it opaque.
+    const interruptedFade = resumed ? getFadeNode?.() : null
+    const opacityFrom = interruptedFade ? Number(getComputedStyle(interruptedFade).opacity) : mode === "open" ? 0 : 1
 
     cancel()
 
@@ -1121,7 +1127,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // them) opened into one picture: the two can only dissolve.
       const fadeNode = getFadeNode?.()
       const dissolves = matched && !landsWhole && artwork!.element === artwork!.frame && Boolean(anchorElement?.matches("img, video"))
-      if (dissolves && fadeNode) flights.push(fadeNode.animate(buildDissolveKeyframes(timeline, mode, durations.zoom), timing))
+      if (dissolves && fadeNode) flights.push(fadeNode.animate(buildDissolveKeyframes(timeline, mode, durations.zoom, opacityFrom), timing))
 
       // The two videos loop on their own clocks, so the one taking over shows
       // a different moment of the same loop and the hand-off jumped. The one
