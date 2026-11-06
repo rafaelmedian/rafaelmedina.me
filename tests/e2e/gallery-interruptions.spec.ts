@@ -1,5 +1,51 @@
 import { expect, test } from "@playwright/test"
 
+type RecordedFlight = { animation: Animation; frames: ComputedKeyframe[] }
+
+test("a finished opening animation does not change the closing bend", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const closes: string[][] = []
+  // Keeping or discarding a finished effect cannot change the next flight.
+  // Previously its retained currentTime made an ordinary close look like an
+  // interrupted open, so only discarding it restored the closing bend.
+  for (const discardFinished of [false, true]) {
+    await page.goto("/")
+    await page.evaluate(() => document.fonts.ready)
+    await page.locator(".mosaic-rows").evaluate(element =>
+      Promise.allSettled(element.getAnimations({ subtree: true }).map(animation => animation.finished)))
+    await page.evaluate(() => {
+      const flights: RecordedFlight[] = []
+      Object.assign(window, { recordedOriginFlights: flights })
+      const animate = Element.prototype.animate
+      Element.prototype.animate = function (...args) {
+        const animation = animate.apply(this, args)
+        const frames = (animation.effect as KeyframeEffect).getKeyframes()
+        if (this.matches(".preview-gallery-origin-wrap") && frames.some(frame => "clipPath" in frame)) {
+          flights.push({ animation, frames })
+        }
+        return animation
+      }
+    })
+    await page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ }).click()
+    await page.locator(".preview-gallery-shell").evaluate(element =>
+      Promise.allSettled(element.getAnimations({ subtree: true }).map(animation => animation.finished)))
+    const state = await page.evaluate(discard => {
+      const { recordedOriginFlights: [flight] } = window as unknown as { recordedOriginFlights: RecordedFlight[] }
+      const state = flight.animation.playState
+      if (discard) flight.animation.cancel()
+      return state
+    }, discardFinished)
+    expect(state).toBe("finished")
+    await page.keyboard.press("Escape")
+    await expect(page.locator(".preview-gallery-popup")).toHaveCount(0)
+    closes.push(await page.evaluate(() => {
+      const { recordedOriginFlights: flights } = window as unknown as { recordedOriginFlights: RecordedFlight[] }
+      return flights[1].frames.map(frame => String(frame.transform))
+    }))
+  }
+  expect(closes[0]).toEqual(closes[1])
+})
+
 test("closing a fading preview preserves its current opacity", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/")

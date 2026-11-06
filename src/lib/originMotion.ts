@@ -977,11 +977,13 @@ export function useOriginTravel(options: OriginTravelOptions) {
     // Where the zoom under way had got to, read before it is cancelled: a
     // close pressed mid-open shrinks the card from the size it had reached,
     // and a tile pressed again mid-close grows it back from where it is,
-    // instead of either snapping the card to rest first. A flight that has
-    // finished reads as rest, so this is the plain start otherwise.
+    // instead of either snapping the card to rest first. Finished animations
+    // retain currentTime, but must not carry their opening bend into a normal
+    // close: only a running or paused flight is being interrupted.
     const previous = flightRef.current
     const [flying] = animations.current
-    const resumed = previous && previous.mode !== mode && flying && typeof flying.currentTime === "number"
+    const resumed = previous && previous.mode !== mode && flying
+      && (flying.playState === "running" || flying.playState === "paused") && typeof flying.currentTime === "number"
       ? previous.timeline.at(Math.min(Math.max(flying.currentTime, 0), previous.timeline.duration))
       : null
     // Dissolves have their own clock. Read the painted opacity before cancel
