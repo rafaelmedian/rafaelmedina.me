@@ -85,6 +85,23 @@ test("a bookmarked project opens after hydration and refresh and closes locally"
   expect(errors).toEqual([])
 })
 
+for (const [id, slug, title] of [
+  ["preview-protector", "protector-booking", "Protector booking"],
+  ["preview-patrol", "patrol-booking", "Patrol booking"],
+]) {
+  test(`a legacy ${slug} bookmark opens its standalone page`, async ({ page }) => {
+    await page.goto("/?ref=previous")
+    await page.goto(`/?ref=shared&project=${id}`)
+    await expect(page).toHaveURL(`/work/${slug}/?ref=shared`)
+    await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible()
+    await expect(page.getByRole("dialog")).toHaveCount(0)
+    await page.reload()
+    await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible()
+    await page.goBack()
+    await expect(page).toHaveURL(/\/\?ref=previous$/)
+  })
+}
+
 test("a shared project path opens over the gallery and closes into it", async ({ page }) => {
   const errors: string[] = []
   page.on("pageerror", error => errors.push(error.message))

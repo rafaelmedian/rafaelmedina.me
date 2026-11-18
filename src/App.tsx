@@ -5,7 +5,7 @@ import { BottomOverscrollEffect } from "./components/BottomOverscrollEffect"
 import { SimpleFeed } from "./components/SimpleFeed"
 import { homeGroups, portfolioCards, siteLinks, siteProfile } from "./data/portfolio"
 import { revealGalleryEntry } from "./lib/galleryEntry"
-import { isNotesPath, isResumePath, projectAtPath, writingAtPath } from "./lib/projectMetadata"
+import { isNotesPath, isResumePath, projectAtPath, projectPath, writingAtPath } from "./lib/projectMetadata"
 import { DeferredProjectPage } from "./components/DeferredProjectPage"
 import { getProjectPage } from "./lib/projectPageSlot"
 import { ResumePage } from "./components/ResumePage"
@@ -70,6 +70,21 @@ function App({ pathname }: { pathname?: string }) {
   // that item over it. The article still renders on the first client pass,
   // so hydration matches the prerendered markup before the swap.
   const isHydrated = useIsHydrated()
+  useEffect(() => {
+    if (currentPath !== "/") return
+    const url = new URL(window.location.href)
+    // Notes take precedence when both legacy selections are present.
+    if (url.searchParams.has("writing")) return
+    const legacyProject = portfolioCards.find(card => card.id === url.searchParams.get("project"))
+    if (!legacyProject || homeGroups.some(group =>
+      group.items.some(item => item.kind === "project" && item.cardId === legacyProject.id),
+    )) return
+    // Off-grid projects no longer have a gallery slide. Load their published
+    // article instead, replacing the obsolete bookmark in browser history.
+    url.pathname = projectPath(legacyProject)
+    url.searchParams.delete("project")
+    window.location.replace(url.href)
+  }, [currentPath])
   const project = projectAtPath(currentPath)
   // The grid is a selection of work. Published projects outside that selection
   // retain their article: there is no gallery item to take over on hydration.
