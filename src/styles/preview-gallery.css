@@ -1244,7 +1244,7 @@
 
 /* Matches the resume's measure in resume-content.css. */
 .preview-gallery-resume-heading-inner {
-  width: min(100%, 37.5rem);
+  width: min(100%, 38.5rem);
   margin-inline: auto;
   display: flex;
   align-items: baseline;

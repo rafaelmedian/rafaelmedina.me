@@ -4548,28 +4548,37 @@ test("gives the TM client work a line per client", async ({ page }) => {
   ])
 })
 
-test("sets each resume point on one line at desktop, as the PDF does", async ({ page }) => {
-  // At the old 34rem measure most points wrapped by 0-40px and left their last
-  // word or two alone on a second line.
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/")
-  await page.getByRole("link", { name: "Open resume" }).click()
+for (const font of ["platform", "Inter"]) {
+  test(`sets each resume point on one line at desktop with ${font} type`, async ({ page }) => {
+    // At the old 34rem measure most points wrapped by 0-40px and left their last
+    // word or two alone on a second line.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/")
+    if (font === "Inter") {
+      await page.evaluate(async () => {
+        document.documentElement.style.setProperty("--font-ui", '"Inter Variable", sans-serif')
+        await document.fonts.load('14px "Inter Variable"')
+        await document.fonts.ready
+      })
+    }
+    await page.getByRole("link", { name: "Open resume" }).click()
 
-  const reader = page.getByRole("dialog", { name: "Resume" })
-  await expect(reader.locator(".resume-experience").first()).toBeVisible()
-  // Polled, and read from layout (offsetHeight ignores transforms): the sheet
-  // grows to its full width as it opens, and text measured mid-open wraps.
-  await expect
-    .poll(() =>
-      reader.evaluate((root) =>
-        [...root.querySelectorAll<HTMLElement>(".resume-content .mosaic-about-resume-description")]
-          .flatMap((el) => (el.tagName === "UL" ? [...(el.children as HTMLCollectionOf<HTMLElement>)] : [el]))
-          .filter((el) => el.offsetHeight > parseFloat(getComputedStyle(el).lineHeight) * 1.5)
-          .map((el) => el.textContent),
-      ),
-    )
-    .toEqual([])
-})
+    const reader = page.getByRole("dialog", { name: "Resume" })
+    await expect(reader.locator(".resume-experience").first()).toBeVisible()
+    // Polled, and read from layout (offsetHeight ignores transforms): the sheet
+    // grows to its full width as it opens, and text measured mid-open wraps.
+    await expect
+      .poll(() =>
+        reader.evaluate((root) =>
+          [...root.querySelectorAll<HTMLElement>(".resume-content .mosaic-about-resume-description")]
+            .flatMap((el) => (el.tagName === "UL" ? [...(el.children as HTMLCollectionOf<HTMLElement>)] : [el]))
+            .filter((el) => el.offsetHeight > parseFloat(getComputedStyle(el).lineHeight) * 1.5)
+            .map((el) => el.textContent),
+        ),
+      )
+      .toEqual([])
+  })
+}
 
 test("keeps one compact gap between the About closing line, companies, process, and services", async ({ page }) => {
   // The closing line, the worked-with wall, How I work and Services are four

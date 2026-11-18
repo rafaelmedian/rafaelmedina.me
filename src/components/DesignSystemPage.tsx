@@ -1197,7 +1197,8 @@ export function DesignSystemPage({ links, name }: DesignSystemPageProps) {
                 A standard work tile holding a folded sheet. On hover or focus the paper lifts and the corner peels
                 over <code>--duration-base</code> on <code>--ease-smooth</code>. It opens the resume as a slide of
                 the preview gallery, not a modal of its own, grown whole out of the paper. Its miniature type is the
-                one exception to the type scale.
+                one exception to the type scale. The reader and its heading share a <code>38.5rem</code> measure
+                so desktop bullets fit in both SF and Inter.
               </p>
               <div className="ds-resume-tile-specimen mosaic-row-item">
                 <ResumeTile />
