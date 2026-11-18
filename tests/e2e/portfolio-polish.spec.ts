@@ -5393,7 +5393,7 @@ test("renders intrinsic media dimensions and does not autoplay under reduced mot
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
   const previewVideo = page.getByRole("dialog").locator("video")
   expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.autoplay)).toBe(false)
-  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(false)
+  expect(await previewVideo.evaluate((element: HTMLVideoElement) => element.controls)).toBe(true)
 })
 
 test("autoplays gallery clips without native playback controls", async ({ page }) => {

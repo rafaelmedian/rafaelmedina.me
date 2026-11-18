@@ -85,17 +85,9 @@ export function ArticleContents({ sections, revealAfter, label = "Contents" }: {
     const dismissOutside = (event: PointerEvent) => {
       if (event.target instanceof Node && !navRef.current?.contains(event.target)) setIsOpen(false)
     }
-    const dismissWithEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return
-      event.preventDefault()
-      setIsOpen(false)
-      triggerRef.current?.focus({ preventScroll: true })
-    }
     document.addEventListener("pointerdown", dismissOutside)
-    document.addEventListener("keydown", dismissWithEscape)
     return () => {
       document.removeEventListener("pointerdown", dismissOutside)
-      document.removeEventListener("keydown", dismissWithEscape)
     }
   }, [isOpen])
 
@@ -155,7 +147,13 @@ export function ArticleContents({ sections, revealAfter, label = "Contents" }: {
       <span ref={sentinelRef} className="writing-contents-sentinel" aria-hidden="true" />
       <nav ref={navRef} className="writing-contents" aria-label={label} data-open={isOpen}
         data-revealed={isRevealed} inert={!isRevealed} aria-hidden={!isRevealed}
-        data-stuck={isStuck} onBlur={(event) => {
+        data-stuck={isStuck} onKeyDown={(event) => {
+          if (event.key !== "Escape" || !isOpen) return
+          event.preventDefault()
+          event.stopPropagation()
+          setIsOpen(false)
+          triggerRef.current?.focus({ preventScroll: true })
+        }} onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false)
         }}>
         <button ref={triggerRef} type="button" className="writing-contents-trigger" aria-expanded={isOpen}

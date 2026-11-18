@@ -133,6 +133,7 @@ function PreviewMediaSingle({ card, reducedMotion }: { card: PortfolioCard; redu
           muted
           loop={!reducedMotion}
           autoPlay={!manualPlayback}
+          controls={manualPlayback}
           playsInline
           preload={manualPlayback ? "none" : "metadata"}
           aria-label={card.title}

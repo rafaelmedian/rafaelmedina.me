@@ -148,6 +148,18 @@ test("releases prerendered content if the portrait and the bundle both stall", a
 
 test("the hero needs nothing but the HTML, and nothing gets ahead of it", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
+  // Record short phases in the browser: polling from the test process can
+  // miss an entire portrait/tiles beat when the machine is under load.
+  await page.addInitScript(() => {
+    const phases: string[] = []
+    Object.assign(window, { firstPaintPhases: phases })
+    new MutationObserver(() => {
+      const phase = document.documentElement.dataset.avatarIntro
+      if (phase && phases.at(-1) !== phase) phases.push(phase)
+    }).observe(document, { attributes: true, subtree: true, attributeFilter: ["data-avatar-intro"] })
+  })
+  const phases = () => page.evaluate(() =>
+    (window as unknown as { firstPaintPhases: string[] }).firstPaintPhases)
   let releaseStyles!: () => void
   const stylesReady = new Promise<void>((resolve) => { releaseStyles = resolve })
   const artwork: string[] = []
@@ -162,7 +174,7 @@ test("the hero needs nothing but the HTML, and nothing gets ahead of it", async 
   await page.goto("/", { waitUntil: "commit" })
 
   // No script, no stylesheet: the face and the top section still arrive in order.
-  await expect(page.locator("html")).toHaveAttribute("data-avatar-intro", "portrait")
+  await expect.poll(phases).toContain("portrait")
   await expect(page.locator(".mosaic-avatar-face-front .mosaic-avatar-portrait")).toBeVisible()
   await expect(page.locator(".mosaic-avatar-face-front .mosaic-avatar-portrait")).toHaveJSProperty("complete", true)
   await expect(page.locator("html")).toHaveAttribute("data-avatar-intro", "revealing")
@@ -180,7 +192,7 @@ test("the hero needs nothing but the HTML, and nothing gets ahead of it", async 
     .map((selector) => { const box = document.querySelector(selector)!.getBoundingClientRect(); return [box.x, box.y, box.width, box.height].map(Math.round) }))
   const before = await measure()
   releaseStyles()
-  await expect(page.locator("html")).toHaveAttribute("data-avatar-intro", "tiles")
+  await expect.poll(phases).toContain("tiles")
   await expect(page.locator("#work")).toBeVisible()
   // The inlined CSS laid the hero out exactly as the full stylesheet does.
   expect(await measure()).toEqual(before)
@@ -261,7 +273,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 
 for (const interrupt of ["keyboard", "resize", "reduced motion"] as const) {
   test(`ends a pending intro on ${interrupt} without replaying it`, async ({ page }) => {
-    // Keep the portrait pending instead of racing its decode and animation.
+    // Hold both decode and the four-second watchdog. This test exercises
+    // interruption, not whether a slow test runner beats the safety timeout.
+    const start = new Date("2026-01-01T12:00:00Z")
+    await page.clock.install({ time: start })
+    await page.clock.pauseAt(start)
     await holdPortrait(page)
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await expect(page.locator("#work")).toBeHidden()
@@ -270,6 +286,7 @@ for (const interrupt of ["keyboard", "resize", "reduced motion"] as const) {
     if (interrupt === "reduced motion") await page.emulateMedia({ reducedMotion: "reduce" })
     await expect(page.locator("#work")).toBeVisible()
     await releasePortrait(page)
+    await page.clock.resume()
     await page.waitForLoadState("load")
     await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro", "pending")
     if (interrupt === "keyboard") await expect(page.locator(".skip-link")).toBeFocused()
