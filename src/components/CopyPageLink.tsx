@@ -57,16 +57,23 @@ export function CopyPageLink({ href, subject, className }: {
           the way the address in the About sheet does. */}
       <a ref={linkRef} className={["writing-copy-link", className].filter(Boolean).join(" ")}
         href={href} data-copied={copied ? "true" : undefined}
-        onClick={(event) => {
+        onClick={async (event) => {
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
           event.preventDefault()
-          void navigator.clipboard?.writeText(href).then(() => {
+          try {
+            if (!navigator.clipboard) throw new Error("Clipboard unavailable")
+            await navigator.clipboard.writeText(href)
             showCopied(true)
             // Restart the window on every copy so a second press gets its own
             // full confirmation instead of the tail of the first.
             window.clearTimeout(resetRef.current)
             resetRef.current = window.setTimeout(() => showCopied(false), COPY_CONFIRMATION_MS)
-          }, () => undefined)
+          } catch {
+            showCopied(false)
+            // A native prompt supplies a focused, selectable URL even when
+            // the Clipboard API is unavailable or permission is denied.
+            window.prompt("Copy this link:", href)
+          }
         }}>
         {/* The pill is the heart's twin, so it is an icon alone: the link
             turning into a check is the confirmation. */}
