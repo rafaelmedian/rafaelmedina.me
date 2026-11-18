@@ -273,7 +273,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 
 for (const interrupt of ["keyboard", "resize", "reduced motion"] as const) {
   test(`ends a pending intro on ${interrupt} without replaying it`, async ({ page }) => {
-    // Keep the portrait pending instead of racing its decode and animation.
+    // Hold both decode and the four-second watchdog. This test exercises
+    // interruption, not whether a slow test runner beats the safety timeout.
+    const start = new Date("2026-01-01T12:00:00Z")
+    await page.clock.install({ time: start })
+    await page.clock.pauseAt(start)
     await holdPortrait(page)
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await expect(page.locator("#work")).toBeHidden()
@@ -282,6 +286,7 @@ for (const interrupt of ["keyboard", "resize", "reduced motion"] as const) {
     if (interrupt === "reduced motion") await page.emulateMedia({ reducedMotion: "reduce" })
     await expect(page.locator("#work")).toBeVisible()
     await releasePortrait(page)
+    await page.clock.resume()
     await page.waitForLoadState("load")
     await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro", "pending")
     if (interrupt === "keyboard") await expect(page.locator(".skip-link")).toBeFocused()
