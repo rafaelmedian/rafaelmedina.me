@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 test("long gallery cards keep equal top and bottom desktop gutters", async ({ page }) => {
   for (const viewport of [{ width: 2394, height: 1279 }, { width: 1024, height: 768 }]) {
     await page.setViewportSize(viewport)
-    await page.goto("/work/protector-booking/")
+    await page.goto("/work/twilio-admiral/")
     const card = page.locator(".preview-gallery-card")
     await expect(card).toBeVisible()
     await expect.poll(async () => card.evaluate((element) => {
@@ -75,10 +75,10 @@ test("browser Back during a preview switch keeps the gallery closed", async ({ p
 test("a bookmarked project opens after hydration and refresh and closes locally", async ({ page }) => {
   const errors: string[] = []
   page.on("pageerror", error => errors.push(error.message))
-  await page.goto("/?ref=shared&project=preview-protector")
-  await expect(page.getByRole("dialog")).toHaveAccessibleName("Protector booking")
+  await page.goto("/?ref=shared&project=preview-twilio-admiral")
+  await expect(page.getByRole("dialog")).toHaveAccessibleName("Twilio Admiral")
   await page.reload()
-  await expect(page.getByRole("dialog")).toHaveAccessibleName("Protector booking")
+  await expect(page.getByRole("dialog")).toHaveAccessibleName("Twilio Admiral")
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()
   await expect(page).toHaveURL(/\?ref=shared$/)
@@ -88,8 +88,8 @@ test("a bookmarked project opens after hydration and refresh and closes locally"
 test("a shared project path opens over the gallery and closes into it", async ({ page }) => {
   const errors: string[] = []
   page.on("pageerror", error => errors.push(error.message))
-  await page.goto("/work/protector-booking/?ref=shared")
-  await expect(page.getByRole("dialog")).toHaveAccessibleName("Protector booking")
+  await page.goto("/work/twilio-admiral/?ref=shared")
+  await expect(page.getByRole("dialog")).toHaveAccessibleName("Twilio Admiral")
   await expect(page.getByRole("button", { name: "Next preview", exact: true })).toBeVisible()
 
   await page.keyboard.press("Escape")

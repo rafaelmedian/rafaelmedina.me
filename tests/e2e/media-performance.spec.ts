@@ -31,7 +31,7 @@ test("reduced-motion visitors keep posters without requesting feed video data", 
   })
   await page.goto("/")
   const videos = page.locator("video.mosaic-row-media")
-  await expect(videos).toHaveCount(6)
+  await expect(videos).toHaveCount(4)
   // Visiting About crosses every feed row and lets its visibility observers run.
   await page.getByRole("link", { name: "About", exact: true }).click()
   await expect(page.locator("#about-panel")).toBeFocused()
@@ -60,7 +60,7 @@ test("uses posters on 3g and responds when the connection changes", async ({ pag
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/")
   const videos = page.locator("video.mosaic-row-media")
-  await expect(videos).toHaveCount(6)
+  await expect(videos).toHaveCount(4)
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).hover()
   expect(requests).toEqual([])
   await page.evaluate(() => {
@@ -147,7 +147,7 @@ test("resumes preview autoplay when the connection improves", async ({ page }) =
 test("reduced motion clears preview blur during loading and switching", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.getByRole("link", { name: /Open Protector booking preview/ }).click()
+  await page.getByRole("link", { name: /Open Twilio Admiral/ }).click()
   const dialog = page.getByRole("dialog")
   await expect(dialog).toHaveCSS("filter", "none")
   await expect(dialog.locator(".preview-gallery-media[data-loaded]")).toHaveCSS("filter", "none")

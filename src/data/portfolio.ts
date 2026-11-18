@@ -194,18 +194,12 @@ export const homeGroups: HomeGroup[] = [
     layout: "portraits",
     columns: 3,
     items: [
-      // Both sister apps show a phone recording -- Protector picking a dress
-      // code, Patrol booking a car -- framed as a phone on the grey mat.
-      { kind: "project", area: "protector", cardId: "preview-protector", share: 4 / 11, fit: "contain", compactWide: true },
-      { kind: "project", area: "patrol", cardId: "preview-patrol", share: 3 / 11, fit: "contain" },
-      { kind: "quote", area: "quote", source: "internet", share: 4 / 11, compactWide: true },
-      // Matcha's launch films lead the band under the projects. The tile plays
-      // the relaunch film.
-      { kind: "project", area: "relaunch", cardId: "preview-matcha-relaunch-film", share: 4 / 11, fit: "cover", compactWide: true },
+      // Matcha's launch films lead the band. The tile plays the relaunch film.
+      { kind: "project", area: "relaunch", cardId: "preview-matcha-relaunch-film", share: 4 / 15, fit: "cover", compactWide: true },
       // The marketing posts hang as a tilted wall sized from the tile's width,
-      // so the band's short slot, running under Patrol and the quote, holds it
-      // at any ratio.
-      { kind: "project", area: "marketing", cardId: "preview-matcha-marketing", share: 7 / 11, fit: "contain", compactWide: true },
+      // so the band's short slot holds it at any ratio.
+      { kind: "project", area: "marketing", cardId: "preview-matcha-marketing", share: 7 / 15, fit: "contain", compactWide: true },
+      { kind: "quote", area: "quote", source: "internet", share: 4 / 15, compactWide: true },
     ],
   },
   // The Iframe Widget's dashboard is cut at 16:9, which seven twelfths of this

@@ -23,7 +23,7 @@ test("clips work-tile artwork inside the card's squircle", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/?tune=off")
 
-  const card = page.getByRole("link", { name: /Open Protector booking preview/ })
+  const card = page.getByRole("link", { name: /Open Twilio Admiral/ })
   const mediaClip = card.locator(".mosaic-row-card-media-clip")
 
   await expect(card).toHaveCSS("corner-shape", "superellipse(2)")
