@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-/* A project, the résumé, the notes, and a note each own a prerendered page, and
+/* A project, the resume, the notes, and a note each own a prerendered page, and
    once React runs that address opens its dialog over the feed instead. Painted
    as-is, a shared link showed the article, swapped it for the bare feed, and
    only then opened the dialog. `index.html` holds the page back until the

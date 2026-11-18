@@ -1,5 +1,5 @@
 export type Service = {
-  /** Engagement shape, set in the About sheet's left column where the résumé
+  /** Engagement shape, set in the About sheet's left column where the resume
       entries carry their dates — so the two stacks read as siblings. */
   shape: string
   title: string

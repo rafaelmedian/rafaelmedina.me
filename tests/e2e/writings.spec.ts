@@ -5,7 +5,7 @@ import { writingSummaries } from "../../src/data/writingIndex"
 /* The notes are two surfaces. The list is a slide of the preview gallery, at
    the place the folder tile occupies on the grid, so the arrow keys walk from a
    project into the notes and out the other side the way they walk into the
-   résumé. A note opens in the reader's own sheet over that list, with the
+   resume. A note opens in the reader's own sheet over that list, with the
    hearts, the copy link, and the arrows that turn to the next note, and its
    back arrow returns to the slide. */
 

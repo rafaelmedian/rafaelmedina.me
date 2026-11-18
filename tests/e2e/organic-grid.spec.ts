@@ -9,7 +9,7 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
     await page.goto("/")
     const tiles = page.locator(".mosaic-row-item")
     await expect(tiles).toHaveCount(18)
-    // Twelve projects and the résumé: its reader has a page of its own now, so
+    // Twelve projects and the resume: its reader has a page of its own now, so
     // its tile is a link on the grid like theirs.
     await expect(page.locator("a.mosaic-row-card")).toHaveCount(14)
     const boxes = await tiles.evaluateAll(elements => elements.map(element => {
@@ -99,7 +99,7 @@ for (const width of [390, 699, 700, 899, 900, 1440, 1728]) {
       expect(moodys.width).toBeGreaterThan(dealership.width)
       expect(moodys.height).toBeGreaterThan(dealership.height)
       expect(protector.y).toBeGreaterThan(moodys.y + moodys.height - 1)
-      // The rest of the agency work closes the grid, the résumé ending the row.
+      // The rest of the agency work closes the grid, the resume ending the row.
       expect(turtle.y).toBeGreaterThan(iframe.y + iframe.height - 1)
       expect(turtle.x).toBeCloseTo(protector.x, 0)
       for (const tile of [onit, resume]) {

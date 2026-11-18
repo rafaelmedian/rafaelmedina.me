@@ -33,9 +33,9 @@ const CURL_OUTLINE =
 
 /**
  * The folded CV sheet on the work grid. It reads as one of the grid's tiles and
- * behaves like one: it links to the résumé's own prerendered page, and a plain
+ * behaves like one: it links to the resume's own prerendered page, and a plain
  * click opens that page as a slide of the preview gallery instead. `originRef`
- * is the paper the gallery's résumé grows out of, as a page taken off the tile.
+ * is the paper the gallery's resume grows out of, as a page taken off the tile.
  */
 export function ResumeTile({
   ref,
@@ -62,7 +62,7 @@ export function ResumeTile({
       href={resumePath}
       ref={ref}
       className="mosaic-row-card resume-tile"
-      aria-label="Open résumé"
+      aria-label="Open resume"
       onPointerEnter={onPrefetch}
       onPointerDown={onPrefetch}
       onFocus={onPrefetch}

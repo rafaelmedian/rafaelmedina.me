@@ -16,12 +16,12 @@ export function ResumePage() {
 
   return (
     <article className="standalone-page standalone-resume">
-      <nav aria-label="Résumé navigation" className="standalone-nav">
+      <nav aria-label="Resume navigation" className="standalone-nav">
         <a href="/#work">All work</a>
         <a href={emailHref()}>Contact Rafael</a>
       </nav>
       <header>
-        <h1 className="standalone-title">Résumé</h1>
+        <h1 className="standalone-title">Resume</h1>
         <p className="standalone-description">
           Ten years of product design across web3, fintech, and consumer products.
         </p>

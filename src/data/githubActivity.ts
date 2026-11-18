@@ -3,7 +3,7 @@
 // @rafaelmedian's contribution calendar, fetched once and committed rather than
 // requested at run time or at build time. The profile-wide graph is only
 // available through GitHub's authenticated GraphQL API, so a live read would
-// mean a token in CI; this is the same deal the résumé PDF makes, and it goes
+// mean a token in CI; this is the same deal the resume PDF makes, and it goes
 // stale the same way. Re-run the script and commit the result.
 //
 // Fetched 2026-09-09.

@@ -34,7 +34,7 @@ if (project) waits.push(loadProjectPage())
 // produce the same markup that is already in the document; hydrating without
 // it would throw the prerendered article away and rebuild it a moment later.
 if (root.hasChildNodes() && note) waits.push(loadWritingPage())
-// A gallery address -- a project, the résumé, the notes, a note -- opens its
+// A gallery address -- a project, the resume, the notes, a note -- opens its
 // dialog as soon as the feed mounts, and the page is held back until it does
 // (lib/galleryEntry). Hydrating before the dialog's chunk is here renders the
 // feed with the dialog suspended, and React then holds a revealed boundary

@@ -216,7 +216,7 @@ export const homeGroups: HomeGroup[] = [
     items: [
       // The photos used to sit inside About, below the hobbies. They read
       // better as a tile in the grid, beside work rather than next to the
-      // résumé, so they take the side of this band away from it.
+      // resume, so they take the side of this band away from it.
       // The fan is a fixed 27rem centred in whatever tile it gets, so extra
       // width becomes margin rather than a banner of prints.
       //
@@ -228,7 +228,7 @@ export const homeGroups: HomeGroup[] = [
       { kind: "project", area: "iframe", cardId: "preview-matcha-iframe-widget", share: 7 / 12, fit: "contain", compactWide: true },
     ],
   },
-  // The rest of the agency years, 2018-2021: Turtle and Onit, with the résumé
+  // The rest of the agency years, 2018-2021: Turtle and Onit, with the resume
   // closing the row, the career tile beside the companies it lists. They close
   // the grid: the About takeover slides over the last screenful, but the films
   // that used to sit under them read better high on the page.

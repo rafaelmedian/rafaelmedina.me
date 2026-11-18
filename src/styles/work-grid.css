@@ -74,7 +74,7 @@
 
 /* One row on a twelve-column track, its seams offset from the featured band
    above. Turtle and Onit are mockups with their own backdrops, so they run
-   full bleed. The résumé closes the row. */
+   full bleed. The resume closes the row. */
 .mosaic-group-agency {
   height: clamp(256px, 27.5cqw, 412px);
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -1361,7 +1361,7 @@
     display: contents;
   }
 
-  /* The résumé closes the grid on a row of its own, sized by its track
+  /* The resume closes the grid on a row of its own, sized by its track
      rather than a tile ratio. */
   .mosaic-tile-resume {
     aspect-ratio: auto;

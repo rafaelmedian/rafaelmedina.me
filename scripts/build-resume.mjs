@@ -1,6 +1,6 @@
 // Builds public/rafael-medina-resume.pdf and its hover-preview image.
 //
-// The résumé used to be a Figma export, which meant the downloadable PDF drifted
+// The resume used to be a Figma export, which meant the downloadable PDF drifted
 // away from the live site every time src/data/cv.ts changed. This script renders
 // the same content as HTML and prints it with Chromium, so the file is
 // regenerated from source instead of re-exported by hand.
@@ -9,7 +9,7 @@
 //
 // It is deliberately NOT part of `npm run build`: the PDF is a committed asset in
 // public/, and a build should not need a browser to produce it. Run this after
-// editing the résumé content below or src/data/cv.ts, then commit the result.
+// editing the resume content below or src/data/cv.ts, then commit the result.
 //
 // Work history, dates, and education mirror src/data/cv.ts. The contact address
 // is siteLinks.email in src/data/portfolio.ts — keep all three in step.
@@ -17,7 +17,7 @@
 // The sheet is set the way the site reads: Inter, one size, two weights, the
 // site's greys. Every bullet is written to fit a single line of the measure,
 // and the script refuses to write if one wraps or the content spills past the
-// first page -- a résumé that wraps or runs long is a regression, not a variant.
+// first page -- a resume that wraps or runs long is a regression, not a variant.
 
 import { mkdtemp, writeFile, rm } from "node:fs/promises"
 import { createRequire } from "node:module"
@@ -182,7 +182,7 @@ const html = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Rafael Medina — Product Designer — Résumé</title>
+    <title>Rafael Medina — Product Designer — Resume</title>
     <style>
       @font-face {
         font-family: "Inter Variable";
@@ -315,7 +315,7 @@ try {
     throw new Error(`Content reaches ${Math.round(bottom)}px, past the ${pageBottom}px bottom margin. Tighten the spacing or the copy.`)
   }
 
-  // `tagged` keeps the structure tree, so the résumé stays screen-reader
+  // `tagged` keeps the structure tree, so the resume stays screen-reader
   // navigable the way the previous PDF/UA export from Figma was.
   const pdf = await page.pdf({
     format: "Letter",
@@ -324,11 +324,11 @@ try {
     tagged: true,
   })
 
-  // A résumé that spills onto a second page is a regression, not a variant, so
+  // A resume that spills onto a second page is a regression, not a variant, so
   // check before overwriting the shipped file rather than after.
   const pageCount = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []).length
   if (pageCount !== 1) {
-    throw new Error(`Expected a single-page résumé, produced ${pageCount} pages. Tighten the content or type scale.`)
+    throw new Error(`Expected a single-page resume, produced ${pageCount} pages. Tighten the content or type scale.`)
   }
 
   await writeFile(outputPath, pdf)

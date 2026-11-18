@@ -167,10 +167,10 @@ export const AboutPanel = memo(function AboutPanel({ links, localTimeLabel }: Ab
             </div>
           </section>
 
-          {/* The dated entries this used to introduce now live in the résumé
+          {/* The dated entries this used to introduce now live in the resume
               reader, so the marks stand on their own: they are the fastest
               answer to "who has he worked with", and a visitor who wants the
-              engagement behind a name they recognise opens the résumé for it.
+              engagement behind a name they recognise opens the resume for it.
               Not a table-of-contents stop. */}
           <section
             className="mosaic-about-section mosaic-about-companies"

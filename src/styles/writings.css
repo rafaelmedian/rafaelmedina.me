@@ -90,7 +90,7 @@
 .writings-page-title { margin: 0; font-size: var(--text-lg); font-weight: 600; line-height: 1.35; letter-spacing: -0.02rem; overflow-wrap: anywhere; }
 
 /* ------------------------------------------------------- the list of notes --- */
-/* The list takes the résumé's measure inside whatever holds it -- the gallery
+/* The list takes the resume's measure inside whatever holds it -- the gallery
    card, or the standalone page -- and a note's marginalia hang in whatever
    width that surface leaves either side. The surface is the container the gutters are
    measured against: the gallery card has two widths and the window a third,

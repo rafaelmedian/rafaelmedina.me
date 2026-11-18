@@ -7,7 +7,7 @@ const COPY_CONFIRMATION_MS = 1600
 
 /**
  * A page's own address, offered rather than left in the URL bar. Every note,
- * project and the résumé has a page of its own -- prerendered, so the link
+ * project and the resume has a page of its own -- prerendered, so the link
  * opens straight into the same sheet -- but a visitor reading inside a sheet
  * has no reason to look up there, and the one thing they might want to do with
  * something they liked is send it to someone. Pass the absolute public URL
@@ -16,7 +16,7 @@ const COPY_CONFIRMATION_MS = 1600
  */
 export function CopyPageLink({ href, subject, className }: {
   href: string
-  /** What the link is to, for the spoken name: "note", "project", "résumé". */
+  /** What the link is to, for the spoken name: "note", "project", "resume". */
   subject: string
   className?: string
 }) {

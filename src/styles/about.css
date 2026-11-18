@@ -411,7 +411,7 @@
   gap: 0;
 }
 
-/* Hairline-separated rows, the same entry the résumé uses: a question in the
+/* Hairline-separated rows, the same entry the resume uses: a question in the
    title's ink over an answer in the description's, with the rule between them
    doing the work a disclosure arrow would otherwise do. Nothing here is
    collapsed -- five short answers are cheaper to read than to open. */
@@ -454,7 +454,7 @@
 /* --------------------------------------------- about sheet worked-with --- */
 
 /* A logo wall between the About lede and the dated work history: the same
-   companies the résumé spells out, read as marks first. It sits in the
+   companies the resume spells out, read as marks first. It sits in the
    sheet's 36rem column rather than breaking out of it, so it lines up with
    the copy above and the entries below instead of reading as a banner. */
 .mosaic-about-companies {
@@ -497,7 +497,7 @@
 
 /* No chip, no fill, no hairline: nine bordered boxes turn a quiet wall into
    a table, and the sheet already spends its only hard edges on the rules
-   between résumé entries. The lockups are held apart by whitespace, and the
+   between resume entries. The lockups are held apart by whitespace, and the
    one thing that moves on hover is the ink -- the same --muted-to---ink
    travel the hero's company chips make. */
 .mosaic-about-logo-link {

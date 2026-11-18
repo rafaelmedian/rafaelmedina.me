@@ -62,10 +62,10 @@ function App({ pathname }: { pathname?: string }) {
   // Select the document at mount. History changes within the homepage keep its
   // enhanced gallery mounted.
   const [currentPath] = useState(() => normalizePath(pathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)))
-  // Every project, the résumé, and every note is prerendered
+  // Every project, the resume, and every note is prerendered
   // as a standalone article, so a crawler or a visitor without JavaScript reads
   // the whole thing from the HTML. Once React is running the same URL belongs in
-  // the dialog it was shared from -- the gallery for a project or the résumé,
+  // the dialog it was shared from -- the gallery for a project or the resume,
   // the notes reader for a note: hand the feed the path and the dialog opens
   // that item over it. The article still renders on the first client pass,
   // so hydration matches the prerendered markup before the swap.
