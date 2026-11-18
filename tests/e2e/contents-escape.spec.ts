@@ -13,4 +13,3 @@ test('Escape closes Contents before leaving the note', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(page).toHaveURL(/\/notes\/$/)
 })
-

@@ -19,4 +19,3 @@ for (const mode of ['denied', 'unavailable'] as const) {
     await expect(page).toHaveURL(/\/notes\/designing-matcha\/$/)
   })
 }
-
