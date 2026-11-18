@@ -559,6 +559,10 @@ export function PreviewGalleryDialog({
       // moving a caret -- and only fall through to gallery paging otherwise.
       // Escape still closes from anywhere.
       const target = event.target
+      // An expanded Contents disclosure owns the first Escape. Let its
+      // local handler close it before this capture listener leaves the article.
+      if (event.key === "Escape" && target instanceof Element &&
+        target.closest('.writing-contents[data-open="true"]')) return
       // A zoomed case-study image owns its keys: Escape shrinks it back into
       // the card rather than closing the gallery behind it.
       if (target instanceof Element && target.closest("[data-image-zoom]")) return
