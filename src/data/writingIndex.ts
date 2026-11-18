@@ -6,7 +6,7 @@ export type WritingCategory = "Tools" | "Notes" | "Misc"
  * Every note's name, date, and blurb, without the article behind it.
  *
  * The notes are gallery items now -- they page with the projects and the
- * résumé, and each one owns `/notes/<id>/` -- so the sequence, the URLs, and
+ * resume, and each one owns `/notes/<id>/` -- so the sequence, the URLs, and
  * the social metadata are all needed on the first paint. The prose is not:
  * `writings.ts` is 34KB of it and belongs in the chunk that renders an article,
  * not in the bundle that draws the grid. This is the half that has to be eager,

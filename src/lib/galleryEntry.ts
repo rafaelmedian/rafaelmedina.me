@@ -1,7 +1,7 @@
 import { cssTimeToMilliseconds } from "./cssTime"
 
 /**
- * A project, the résumé, the notes list, and every note own a prerendered
+ * A project, the resume, the notes list, and every note own a prerendered
  * page, and once React runs that address opens its dialog over the feed
  * instead. Painted as-is, a shared link showed one page, swapped it for the
  * feed, and only then opened the dialog on top.

@@ -10,7 +10,12 @@ test("a finished opening animation does not change the closing bend", async ({ p
   // interrupted open, so only discarding it restored the closing bend.
   for (const discardFinished of [false, true]) {
     await page.goto("/")
+    await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
     await page.evaluate(() => document.fonts.ready)
+    // Both flights need the same origin. A repeated visit can restore scroll,
+    // and clicking an already-visible tile does not recenter it automatically.
+    const tile = page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ })
+    await tile.evaluate(element => element.scrollIntoView({ block: "center", behavior: "instant" }))
     await page.locator(".mosaic-rows").evaluate(element =>
       Promise.allSettled(element.getAnimations({ subtree: true }).map(animation => animation.finished)))
     await page.evaluate(() => {
@@ -26,7 +31,7 @@ test("a finished opening animation does not change the closing bend", async ({ p
         return animation
       }
     })
-    await page.getByRole("link", { name: /Open Matcha multiwallet flow preview/ }).click()
+    await tile.click()
     await page.locator(".preview-gallery-shell").evaluate(element =>
       Promise.allSettled(element.getAnimations({ subtree: true }).map(animation => animation.finished)))
     const state = await page.evaluate(discard => {

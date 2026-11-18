@@ -184,7 +184,7 @@ export function PreviewGalleryDialog({
     caseStudy: projectCaseStudies[activeItem.card.slug as keyof typeof projectCaseStudies],
   } : undefined, [activeItem])
   const isResumeSlide = activeItem?.kind === "resume"
-  // The résumé and the notes list are both pages of prose in a card taller
+  // The resume and the notes list are both pages of prose in a card taller
   // than the window, so both give the vertical arrows back to scrolling and
   // page on the horizontal pair alone.
   const isReaderSlide = isResumeSlide || activeItem?.kind === "writings"
@@ -413,7 +413,7 @@ export function PreviewGalleryDialog({
     getZoomKeep: () => popupRef.current?.querySelector(".preview-gallery-media-frame") ?? null,
     getZoomFrame: () => originWrapRef.current?.parentElement ?? null,
     getZoomOutline: () => cardRef.current,
-    // The notes list and the résumé come out of a paper on their tiles -- a
+    // The notes list and the resume come out of a paper on their tiles -- a
     // page the size of a thumbnail -- so they land as a whole card rather
     // than clipped down to the paper.
     handoffDurationProperty: "--pg-zoom-handoff-ms",
@@ -572,7 +572,7 @@ export function PreviewGalleryDialog({
       if (typingOrScrubbing && event.key !== "Escape") return
 
       // The stationary toolbar is outside the scrolling card, so native
-      // scrolling cannot reach the résumé from a focused paging/close button.
+      // scrolling cannot reach the resume from a focused paging/close button.
       // Forward those keys without moving focus away from the controls.
       const card = activeItem?.kind === "writings" ? notesScrollRef.current : cardRef.current
       if (isReaderSlide && card && target instanceof Element &&
@@ -593,7 +593,7 @@ export function PreviewGalleryDialog({
         }
       }
 
-      // The résumé slide is a document taller than the card that holds it, so
+      // The resume slide is a document taller than the card that holds it, so
       // there the vertical pair scrolls it and only the horizontal pair pages.
       // On a preview, where there is nothing to scroll, both pairs page.
       if (event.key === "ArrowLeft" || (!isReaderSlide && event.key === "ArrowUp")) {
@@ -644,7 +644,7 @@ export function PreviewGalleryDialog({
 
         <div
           className="preview-gallery-shell"
-          // The résumé slide is a page of prose rather than a 4:3 shot, so it
+          // The resume slide is a page of prose rather than a 4:3 shot, so it
           // takes the reader's own measure instead of the width the artwork
           // derives. Set on the shell because the width is a custom property
           // the wrap and the popup both inherit.
@@ -725,7 +725,7 @@ export function PreviewGalleryDialog({
                     control a thumb reaching for "next" could hit by mistake. */}
                 <Dialog.Close
                   className="preview-gallery-nav preview-gallery-close"
-                  aria-label={readingNote ? "Close note" : activeItem.kind === "resume" ? "Close résumé" : activeItem.kind === "writings" ? "Close notes" : "Close preview"}
+                  aria-label={readingNote ? "Close note" : activeItem.kind === "resume" ? "Close resume" : activeItem.kind === "writings" ? "Close notes" : "Close preview"}
                 >
                   <X aria-hidden="true" className="preview-gallery-nav-icon" />
                 </Dialog.Close>
@@ -940,7 +940,7 @@ export function PreviewGalleryDialog({
                         </div>
                       </header>
                       <Dialog.Description className="sr-only">
-                        Rafael Medina's work history and education, with a link to the PDF résumé.
+                        Rafael Medina's work history and education, with a link to the PDF resume.
                       </Dialog.Description>
                       <div className="preview-gallery-resume-body mosaic-about-body">
                         <ResumeContent />

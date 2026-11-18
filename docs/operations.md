@@ -48,7 +48,7 @@ node scripts/optimize-video-previews.mjs      # re-encoded preview videos
 python3 scripts/build-fonts.py                # public/fonts/ + src/styles/fonts.css, see docs/fonts.md
 ```
 
-Run the relevant one after editing its source, then commit the result. The résumé
+Run the relevant one after editing its source, then commit the result. The resume
 is rendered from `src/data/cv.ts` — it is not a Figma export any more, so it stops
 drifting from the live site. The social card is a screenshot of the homepage, so
 it needs a fresh `npm run build` before it and a re-run after any change to the

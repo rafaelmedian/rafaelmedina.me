@@ -1,5 +1,5 @@
 /* Company-led entries in the reader; About keeps its compact date column. The
-   reader is the gallery's résumé slide and the prerendered /resume/ page, and
+   reader is the gallery's resume slide and the prerendered /resume/ page, and
    the rules below are shared by both -- only the surface around them differs. */
 /* The standalone page keeps the PDF link after the document; the gallery puts
    it in the sticky heading where it remains available while the sheet scrolls. */
@@ -8,13 +8,12 @@
   margin-bottom: 0;
 }
 
-/* A touch wider than the site's 34rem reading measure, so each point sits on
-   one line as it does in the PDF: the longest bullet sets 550px of text, which
-   34rem wrapped onto a second line holding only its last word or two. 37.5rem
-   leaves it ~5% of slack for WebKit's wider raster. The gallery's sticky
-   heading (preview-gallery.css) shares this width so its edges line up. */
+/* Wider than the site's 34rem reading measure so each point fits one line
+   as in the PDF. The longest point needs about 595px in Inter, plus the 10px
+   bullet indent; 37.5rem fit SF but wrapped with Inter on Linux and Windows.
+   The gallery's sticky heading shares this width so its edges line up. */
 .resume-content {
-  width: min(100%, 37.5rem);
+  width: min(100%, 38.5rem);
   margin-inline: auto;
 }
 
@@ -96,7 +95,7 @@
   min-width: 0;
 }
 
-/* Company names retain the résumé's unadorned external-link treatment. */
+/* Company names retain the resume's unadorned external-link treatment. */
 .resume-content .mosaic-company-inline-link {
   text-decoration-line: none;
 }

@@ -5,7 +5,7 @@ import { writingSummaries } from "../../src/data/writingIndex"
 /* The notes are two surfaces. The list is a slide of the preview gallery, at
    the place the folder tile occupies on the grid, so the arrow keys walk from a
    project into the notes and out the other side the way they walk into the
-   résumé. A note opens in the reader's own sheet over that list, with the
+   resume. A note opens in the reader's own sheet over that list, with the
    hearts, the copy link, and the arrows that turn to the next note, and its
    back arrow returns to the slide. */
 
@@ -25,7 +25,7 @@ test("the notes list is a slide of the preview gallery", async ({ page }) => {
   await expect(page).toHaveURL(/\/notes\/$/)
   await expect(page).toHaveTitle("Notes — Rafael Medina")
   await expect(popup(page)).toHaveAttribute("data-preview-kind", "writings")
-  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 15")
+  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 13")
   await expect(popup(page).locator(".preview-gallery-notes-title")).toHaveText("Notes and tools")
   await expect(popup(page).locator(".writings-category > h3")).toHaveText(["Tools", "Notes"])
   await expect(popup(page).getByRole("link", { name: "Make pull requests easier to review", exact: true })
@@ -124,7 +124,7 @@ test("a row opens a nested note and Back returns within the same dialog", async 
   await expect(sheet(page)).toBeHidden()
   await expect(page).toHaveURL(/\/notes\/\?ref=portfolio$/)
   await expect(popup(page)).toBeVisible()
-  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 15")
+  await expect(popup(page).locator(".preview-gallery-count")).toHaveText("3 / 13")
   // The row the sheet was opened from is back, and focus is in the list's
   // popup rather than stranded on the tile behind it.
   await expect(entry).toBeVisible()

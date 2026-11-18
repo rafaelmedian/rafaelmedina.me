@@ -250,7 +250,7 @@
 /* Opening, the clip runs just outside the card's edges for most of the
    flight and only reaches past its shadow at the end, so the shadow showed as
    a dark band cut off flat along the clip. It waits for the clip to let go
-   and then settles in. A card that lands whole (the notes, the résumé) has
+   and then settles in. A card that lands whole (the notes, the resume) has
    no clip, but waits too: a shadow from the first frame lifted it off the
    tile it was still growing out of. Paging can begin during the entrance, so
    preserve its phase-specific timing while holding the shadow. */
@@ -1195,7 +1195,7 @@
   padding-top: clamp(0.8rem, 1.6vw, 1rem);
 }
 
-/* ------------------------------------------------------- the résumé slide --- */
+/* ------------------------------------------------------- the resume slide --- */
 
 /* The CV sheet is a tile on the work grid, so the reader it opens is a slide of
    this gallery rather than a modal of its own: it arrives in the same card, pages
@@ -1242,9 +1242,9 @@
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.05), 0 4px 10px -8px rgb(16 16 20 / 0.28);
 }
 
-/* Matches the résumé's measure in resume-content.css. */
+/* Matches the resume's measure in resume-content.css. */
 .preview-gallery-resume-heading-inner {
-  width: min(100%, 37.5rem);
+  width: min(100%, 38.5rem);
   margin-inline: auto;
   display: flex;
   align-items: baseline;
@@ -1297,10 +1297,10 @@
    between clicks is worse than one sitting a little off centre on the two
    previews whose artwork is not the common ratio.
 
-   That holds on the résumé and the notes too, which have no artwork to be
+   That holds on the resume and the notes too, which have no artwork to be
    level with. They used to take half their own card instead, and the pair
    jumped on every step into or out of them -- at 2560x1323, 280px lower on
-   the résumé, whose sheet runs to the viewport's foot, and 15px higher on the
+   the resume, whose sheet runs to the viewport's foot, and 15px higher on the
    notes list, which is shorter than the artwork, then down again as a note
    grew the card. The anchor is a fraction of the media cap, which is itself a
    fraction of the viewport, so it lands inside the card however short the
@@ -1391,7 +1391,7 @@
 /* The folder's slide, for the same reason the CV sheet has one: the tile is on
    the work grid, so what it opens pages with the projects, in the same card,
    with the same transition, one arrow press from the work either side of it.
-   The list inside takes the résumé's measure; the card's width either side of
+   The list inside takes the resume's measure; the card's width either side of
    that is where the pencil objects hang (see writings.css). */
 .preview-gallery-notes { padding-bottom: 1.5rem; }
 /* After the shared title rule, which sets the margin this reopens. The title

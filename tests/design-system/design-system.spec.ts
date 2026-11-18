@@ -23,7 +23,7 @@ test("clips work-tile artwork inside the card's squircle", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/?tune=off")
 
-  const card = page.getByRole("link", { name: /Open Protector booking preview/ })
+  const card = page.getByRole("link", { name: /Open Twilio Admiral/ })
   const mediaClip = card.locator(".mosaic-row-card-media-clip")
 
   await expect(card).toHaveCSS("corner-shape", "superellipse(2)")
@@ -197,7 +197,7 @@ test("documents the computed navigation hit area", async ({ page }) => {
 
 test("documents the computed resume-title weight", async ({ page }) => {
   await page.goto("/")
-  await page.getByRole("link", { name: "Open résumé" }).click()
+  await page.getByRole("link", { name: "Open resume" }).click()
   const resumeTitleWeight = await page
     .getByRole("dialog", { name: "Resume" })
     .locator(".mosaic-about-resume-title")
@@ -209,7 +209,7 @@ test("documents the computed resume-title weight", async ({ page }) => {
     .locator("#typography table tbody tr")
     .filter({ has: page.getByRole("cell", { name: resumeTitleWeight, exact: true }) })
 
-  await expect(weightRow).toContainText("résumé titles and companies")
+  await expect(weightRow).toContainText("resume titles and companies")
 })
 
 test("documents component-specific motion curves that still ship", async ({ page }) => {

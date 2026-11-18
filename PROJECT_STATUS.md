@@ -4,7 +4,7 @@ Last audited: 2026-09-09 against `53a3274`.
 
 ## Current state
 
-- The homepage renders `SimpleFeed` (`src/App.tsx` → `src/components/SimpleFeed.tsx`): profile hero, company history, selected-work mosaic, résumé gallery slide, notes reader, and About section. There is no longer a `showProjects` switch.
+- The homepage renders `SimpleFeed` (`src/App.tsx` → `src/components/SimpleFeed.tsx`): profile hero, company history, selected-work mosaic, resume gallery slide, notes reader, and About section. There is no longer a `showProjects` switch.
 - The corner holds the contact address. Punta Cana time appears in About and the hero's location hover card; the hero also shows the repository's build-time last-updated date.
 - Project cards, grid composition, and site links live in `src/data/portfolio.ts`; work history lives in `src/data/cv.ts`, and articles and notes in `src/data/writings.ts`.
 - `/design-system` renders `DesignSystemPage` in dev only, with `/styleguide` retained as an alias. Its component and stylesheet are excluded from production builds.
@@ -65,7 +65,7 @@ saves on departure, and the previous client's API contract;
 `tests/e2e/shared-likes.spec.ts` separately exercises the local D1 API, including
 that the two collections stay apart. `tests/e2e/project-likes-browser.spec.ts`
 covers what is the gallery's own: the pill's seat on the seam, paging reading the
-new project's count rather than carrying the last one's over, and the résumé
+new project's count rather than carrying the last one's over, and the resume
 slide carrying no pill at all.
 
 The original 2026-09-09 reachability audit found no other unreachable TypeScript
@@ -107,7 +107,7 @@ design-system tests.
 ## Remaining follow-ups
 
 - **Confirm mailbox delivery.** Contact is `hey@rafaelmedina.me`, set in
-  `siteLinks.email`. The résumé generator and PDF agree with it, verified by
+  `siteLinks.email`. The resume generator and PDF agree with it, verified by
   the passing suite. Actual receipt still needs a mailbox-side check; source
   consistency does not prove delivery. An address change must update
   `siteLinks.email`, `scripts/build-resume.mjs`, and the test's `contactEmail`

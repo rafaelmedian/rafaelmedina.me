@@ -73,7 +73,7 @@ test("the pill sits on the line where the artwork meets the prose", async ({ pag
   }).toPass({ timeout: 5000 })
 })
 
-test("the résumé slide carries no like pill", async ({ page }) => {
+test("the resume slide carries no like pill", async ({ page }) => {
   await page.goto("/resume/")
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect(page.getByRole("button", likeButton)).toBeHidden()

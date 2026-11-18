@@ -18,7 +18,7 @@
 // paint: `useAvatarIntro` drops straight to the revealed state, the tile
 // entrances are cancelled, and the reaction tiles swap their loops for stills.
 //
-// Like the résumé, this is deliberately NOT part of `npm run build`: the PNG is
+// Like the resume, this is deliberately NOT part of `npm run build`: the PNG is
 // a committed asset and a build should not need a browser. Re-run it when the
 // homepage changes — the card carries the "Last updated" line, so a stale image
 // is a visibly stale one.

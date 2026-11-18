@@ -79,8 +79,9 @@ for (const width of [390, 768, 1440]) {
 }
 
 test("a CV visible on initial load waits for the first scroll before loading chat", async ({ page }) => {
-  // Tall enough to reach the résumé tile, which closes the grid, on first paint.
-  await page.setViewportSize({ width: 1440, height: 3200 })
+  // Reach the resume on first paint without entering About's 200px preload
+  // range: the shorter grid now puts About inside the old 3200px viewport.
+  await page.setViewportSize({ width: 1440, height: 2700 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   const requests: string[] = []
   page.on("request", request => {
@@ -89,6 +90,9 @@ test("a CV visible on initial load waits for the first scroll before loading cha
   await page.goto("/")
   await expect(page.locator("html")).not.toHaveAttribute("data-avatar-intro")
   await expect(page.locator(".mosaic-tile-resume")).toBeInViewport({ ratio: 0.5 })
+  expect(await page.locator("#about-panel").evaluate(node =>
+    node.getBoundingClientRect().top - window.innerHeight,
+  )).toBeGreaterThan(200)
   expect(requests).toEqual([])
   await expect(page.locator(".about-intro")).toHaveCount(0)
   await page.evaluate(() => window.scrollTo(0, 97))

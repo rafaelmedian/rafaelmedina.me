@@ -4,7 +4,7 @@ import { writingSummaries, type WritingSummary } from "../data/writingIndex"
 export const siteOrigin = "https://rafaelmedina.me"
 
 /**
- * The résumé is a gallery item like a project is, so it needs an id to be
+ * The resume is a gallery item like a project is, so it needs an id to be
  * selected by and a path to be shared from. It has no card behind it, so this
  * sentinel stands in for one wherever the two travel together.
  */
@@ -19,7 +19,7 @@ export const resumePath = "/resume/"
 export const writingsItemId = "writings"
 export const notesPath = "/notes/"
 
-/** A project, a note, the notes list, the résumé, or the portfolio itself. */
+/** A project, a note, the notes list, the resume, or the portfolio itself. */
 export type GalleryTarget = PortfolioCard | WritingSummary | typeof resumeItemId | typeof writingsItemId
 
 /** Only a project carries a slug, which is what tells the two objects apart. */
@@ -81,16 +81,16 @@ const homePage: PageDescription = {
 }
 
 // The social image is the same sheet the hero's Resume link previews, at its
-// real pixel size: the résumé's own first page is a better card for a link to
-// the résumé than the site's portrait.
+// real pixel size: the resume's own first page is a better card for a link to
+// the resume than the site's portrait.
 const resumePage: PageDescription = {
-  title: "Résumé — Rafael Medina",
+  title: "Resume — Rafael Medina",
   description: "Rafael Medina's work history and education: ten years of product design across web3, fintech, and consumer products, with the projects each role shipped.",
   path: resumePath,
   image: "/rafael-medina-resume-preview.png",
   imageWidth: 816,
   imageHeight: 1056,
-  imageAlt: "The first page of Rafael Medina's résumé.",
+  imageAlt: "The first page of Rafael Medina's resume.",
 }
 
 // The list has no artwork at all, so it carries the site's own card.

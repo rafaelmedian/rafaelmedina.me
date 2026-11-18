@@ -63,14 +63,14 @@ test("Matcha case studies ship their complete narrative without JavaScript", asy
   await context.close()
 })
 
-// The résumé is a gallery item like a project, so it has a page of its own for
+// The resume is a gallery item like a project, so it has a page of its own for
 // the same reasons: a shared link has to answer for itself in HTML.
 test("the resume page ships its own metadata and the whole history without JavaScript", async ({ browser, request, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
   const page = await context.newPage()
 
   await page.goto("/resume/")
-  await expect(page).toHaveTitle("Résumé — Rafael Medina")
+  await expect(page).toHaveTitle("Resume — Rafael Medina")
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://rafaelmedina.me/resume/")
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", "https://rafaelmedina.me/resume/")
   const image = await page.locator('meta[property="og:image"]').getAttribute("content")
@@ -81,10 +81,10 @@ test("the resume page ships its own metadata and the whole history without JavaS
   // list of its own inside them.
   await expect(page.getByRole("list", { name: "Work history" }).locator(":scope > li")).toHaveCount(6)
   await expect(page.getByRole("list", { name: "Education" }).getByRole("listitem")).toHaveCount(2)
-  // The page's own h1 is "Résumé", so the entries under it are h2 and
+  // The page's own h1 is "Resume", so the entries under it are h2 and
   // the schools h3: the same component sits under an h2 in the About sheet,
   // where it renders one level down.
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Résumé")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Resume")
   await expect(page.getByRole("heading", { level: 2, name: "Senior Product Designer at 0x Project" })).toBeVisible()
   await expect(page.getByRole("heading", { level: 2, name: "Education" })).toBeVisible()
   await expect(page.getByRole("heading", { level: 3 })).toHaveCount(2)

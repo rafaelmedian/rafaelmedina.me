@@ -1,5 +1,5 @@
 export type ProcessStep = {
-  /** Left column of the entry grid, where the résumé carries dates and
+  /** Left column of the entry grid, where the resume carries dates and
       Services carries an engagement shape: here it is the step's place in the
       run, numbered the way the table of contents numbers the page. */
   step: string

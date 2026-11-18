@@ -13,8 +13,8 @@ policy last in this entry. Its important duration clamps also govern deferred CS
 - `profile.css`: page shell, hero, avatar, first-load intro, and profile metadata
   (including the location line's copy-to-clipboard address).
 - `navigation.css`: corner links, takeover close button, and mobile contents.
-- `local-time.css`: local time, map, and résumé preview.
-- `about.css`: About content and résumé layout.
+- `local-time.css`: local time, map, and resume preview.
+- `about.css`: About content and resume layout.
 - `about-intro.css`: the corner portrait and its looping teaser, shared send button, and mobile TOC dock.
 - `../components/about-intro-experiment.css`: A/C reply prototypes, loaded only
   by the development comparison and its optional dock variant.
@@ -23,7 +23,7 @@ policy last in this entry. Its important duration clamps also govern deferred CS
 - `work-history.css`: work-history popovers and inline company links.
 - `contact.css`: contact pills, the booking pill, and social hover cards.
 - `work-grid.css`: project rows, captions, media, and About takeover choreography.
-- `resume-tile.css`: folded-paper résumé tile artwork, reader modal, and responsive interaction.
+- `resume-tile.css`: folded-paper resume tile artwork, reader modal, and responsive interaction.
 - `resume-content.css`: work history and education entries in the reader.
 - `likes.css`: the like pill shared by the notes reader and the project preview.
 - `personal-photos.css`: photo stack, wall dialog, and photo details.

@@ -49,12 +49,12 @@ test("carries the team quotes as a band between the project groups", async ({ pa
   await expect(slide).toContainText("You did a great job!")
   // Named on the card but never linked: these came from Slack, not from X.
   await expect(card.getByRole("button", { name: /on X$/ })).toHaveCount(0)
-  // A band across the grid, above Protector and the portraits, shared with the
+  // A band across the grid, above the films and the portraits, shared with the
   // Pokédex experiment and Dealership Hub: it runs edge to edge across the row.
   const bounds = await page.evaluate(() => {
     const band = document.querySelector(".mosaic-tile-quote2")!.getBoundingClientRect()
     const dealership = document.querySelector(".mosaic-tile-dealership")!.getBoundingClientRect()
-    const closing = document.querySelector(".mosaic-tile-protector")!.getBoundingClientRect()
+    const closing = document.querySelector(".mosaic-tile-relaunch")!.getBoundingClientRect()
     const row = document.querySelector(".mosaic-group-portraits")!.getBoundingClientRect()
     return {
       bandBottom: Math.max(band.bottom, dealership.bottom), closingTop: closing.top,
@@ -311,7 +311,7 @@ test("the quote card is one Tab stop that the arrows browse", async ({ page }) =
   await openHome(page)
   const card = carousel(page)
   const hint = card.locator(".mosaic-quote-keys")
-  await page.getByRole("link", { name: /Open Patrol booking preview/ }).focus()
+  await page.getByRole("link", { name: /Open Matcha marketing materials/ }).focus()
   await page.keyboard.press("Tab")
   await expect(card).toBeFocused()
   // The keys it answers to, in the dots' place, and in words for a screen reader.
@@ -325,7 +325,7 @@ test("the quote card is one Tab stop that the arrows browse", async ({ page }) =
   // The name, the preview, and the dots are not stops of their own: the next
   // Tab is the next tile, and Shift+Tab comes straight back to the card.
   await page.keyboard.press("Tab")
-  await expect(page.getByRole("link", { name: /Open Matcha launch films/ })).toBeFocused()
+  await expect(page.getByRole("button", { name: "Personal life", exact: true })).toBeFocused()
   await page.keyboard.press("Shift+Tab")
   await expect(card).toBeFocused()
 })
@@ -335,7 +335,7 @@ test("Enter goes in to the author and Escape comes back out a level at a time", 
   const card = carousel(page)
   const author = active(page).getByRole("button", { name: "Michael Wong on X" })
   const preview = page.locator(".mosaic-quote-profile-popup .mosaic-x-card")
-  await page.getByRole("link", { name: /Open Patrol booking preview/ }).focus()
+  await page.getByRole("link", { name: /Open Matcha marketing materials/ }).focus()
   await page.keyboard.press("Tab")
   await page.keyboard.press("Enter")
   await expect(author).toBeFocused()

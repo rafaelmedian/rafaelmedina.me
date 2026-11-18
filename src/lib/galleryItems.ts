@@ -6,7 +6,7 @@ import { resumeItemId, writingsItemId } from "./projectMetadata"
  * folded CV sheet sits in the portraits group among them, and the notes folder
  * on the first row -- and a visitor arrowing across the gallery expects to meet
  * whatever the grid has, in the order the grid has it. So the sequence is items
- * rather than cards, and the résumé and the folder are among them.
+ * rather than cards, and the resume and the folder are among them.
  *
  * The folder's slide has a nested article view. Notes keep their own URLs,
  * but share the gallery's dialog, backdrop and controls; Back returns to

@@ -8,7 +8,7 @@ import { WritingArticle } from "./WritingArticle"
 
 /**
  * `/notes/<id>/` without hydration, and the markup the first client pass
- * matches before the reader takes the URL over. A project page and the résumé
+ * matches before the reader takes the URL over. A project page and the resume
  * are the same idea: the shared link has to answer for itself in HTML, so a
  * crawler and a visitor whose JavaScript never arrives still read the whole
  * note.

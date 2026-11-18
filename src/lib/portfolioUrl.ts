@@ -24,7 +24,7 @@ type PortfolioEntry = "about" | PortfolioItem
 let pendingPortfolioClose: PortfolioEntry | null = null
 let queuedSelection: { entry: PortfolioItem; id: string } | null = null
 
-// Every project, the résumé, and every note has a prerendered page of its own,
+// Every project, the resume, and every note has a prerendered page of its own,
 // so each one owns its path.
 type ItemLocation = {
   read: () => string | null

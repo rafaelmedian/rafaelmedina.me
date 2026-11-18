@@ -46,7 +46,7 @@ change the set. Reduced motion excludes animated video behavior.
 
 This was a file/metadata and browser-request audit, not a visual comparison of
 re-encoded candidates. Savings from responsive variants have not been measured
-because none were generated. Do not bulk recompress illustrations, résumé
+because none were generated. Do not bulk recompress illustrations, resume
 previews, or screenshots without checking text and fine-line quality.
 
 ## Implemented follow-up

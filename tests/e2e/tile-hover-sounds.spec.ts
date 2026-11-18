@@ -1,8 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-// The grid answers a mouse coming onto a tile with a soft tap. It never builds
-// the AudioContext itself: it starts once a gallery open has warmed it, and
-// then plays once per tile entered, not per pointer move.
+// Grid hover stays silent, including after gallery interaction warms audio.
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.addInitScript(() => {
@@ -23,14 +21,14 @@ const centre = async (page: import("@playwright/test").Page, name: RegExp) => {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
 }
 
-test("tiles tap softly on hover once audio is warm", async ({ page }) => {
+test("tiles stay silent on hover once audio is warm", async ({ page }) => {
   await page.goto("/")
-  const matcha = await centre(page, /Open Matcha multiwallet flow/)
-  const dealership = await centre(page, /Open Dealership Hub preview/)
+  const matcha = page.getByRole("link", { name: /Open Matcha multiwallet flow/ })
+  const dealership = page.getByRole("link", { name: /Open Dealership Hub preview/ })
 
   // Cold: moving across tiles builds nothing and plays nothing.
-  await page.mouse.move(matcha.x, matcha.y)
-  await page.mouse.move(dealership.x, dealership.y, { steps: 4 })
+  await matcha.hover()
+  await dealership.hover()
   expect(await page.evaluate(soundStarts)).toBe(0)
 
   await page.getByRole("link", { name: /Open Matcha multiwallet flow/ }).click()
@@ -45,14 +43,15 @@ test("tiles tap softly on hover once audio is warm", async ({ page }) => {
   await page.waitForTimeout(400)
 
   const before = await page.evaluate(soundStarts)
-  await page.mouse.move(matcha.x, matcha.y, { steps: 3 })
+  await matcha.hover()
   await page.waitForTimeout(120)
-  await page.mouse.move(dealership.x, dealership.y, { steps: 6 })
-  await expect.poll(() => page.evaluate(soundStarts)).toBeGreaterThan(before)
-  const afterEntering = await page.evaluate(soundStarts)
+  await dealership.hover()
+  await page.waitForTimeout(150)
+  expect(await page.evaluate(soundStarts)).toBe(before)
 
   // Moving around inside the same tile is not another tile.
-  await page.mouse.move(dealership.x + 20, dealership.y + 10, { steps: 5 })
+  const position = await centre(page, /Open Dealership Hub preview/)
+  await page.mouse.move(position.x + 20, position.y + 10, { steps: 5 })
   await page.waitForTimeout(150)
-  expect(await page.evaluate(soundStarts)).toBe(afterEntering)
+  expect(await page.evaluate(soundStarts)).toBe(before)
 })

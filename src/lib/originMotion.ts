@@ -149,7 +149,7 @@ const progress = (ms: number, duration: number) => clamp01(duration > 0 ? ms / d
 
 // Open: the artwork grows, and half way out the body starts to unfold,
 // so the unfold's start is wherever the zoom crosses `unfoldFrom`. A card
-// with nothing to unfold (a note, the résumé) brings its chrome in over the
+// with nothing to unfold (a note, the resume) brings its chrome in over the
 // zoom's last stretch instead, as before. Close: the body folds while the
 // artwork shrinks, both from the start, so the card is back to its picture
 // by the time it has travelled half way.
@@ -377,7 +377,7 @@ type ZoomGeometry = {
   /** Artwork lands on artwork covering it, centred, the way the tile crops its
    *  own image; a surface with no artwork lands width-for-width, top-aligned,
    *  so the tile turns into the top of the page; a card that lands whole (a
-   *  note, the résumé) sits inside the tile, centred, as a page on it. */
+   *  note, the resume) sits inside the tile, centred, as a page on it. */
   fit: "cover" | "top" | "contain"
   /** The line under the artwork where the card's body begins, in the
    *  surface's own pixels from its top: where the clip lands before the body
@@ -1016,7 +1016,7 @@ export function useOriginTravel(options: OriginTravelOptions) {
       // the surface lands as a whole.
       const matched = Boolean(artwork && anchor)
       const outline = insideBorder(origin!, originRect, originCornerRadius(origin))
-      // A card that lands whole (a note, the résumé) sits on the tile as a
+      // A card that lands whole (a note, the resume) sits on the tile as a
       // page, centred and contained; the rest land artwork on artwork. Both
       // start on the tile's whole outline.
       const whole = getZoomWhole?.()

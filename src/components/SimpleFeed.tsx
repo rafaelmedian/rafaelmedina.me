@@ -505,7 +505,7 @@ function SectionCorner({
 
   // The frame shows the top ~160px of a ~450px page, so an ordinary wheel
   // gesture would cover the whole travel in one flick and the middle of the
-  // résumé would never be on screen. Damping the delta turns the same gesture
+  // resume would never be on screen. Damping the delta turns the same gesture
   // into a slow pan. React registers its wheel listener passively, so this has
   // to be wired by hand to be allowed to preventDefault.
   useEffect(() => {
@@ -594,7 +594,7 @@ function SectionCorner({
             })
           }}
         >
-          Résumé
+          Resume
           <ExternalLink
             className="mosaic-social-link-external-icon"
             size={12}
@@ -697,7 +697,7 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
   // no gesture behind them. The dialog mounts already open either way and cannot
   // tell the two apart on its own, so the feed says which it was.
   const [openedByGesture, setOpenedByGesture] = useState(false)
-  // Keyed by gallery index, and the résumé tile is one of the keys: the sheet
+  // Keyed by gallery index, and the resume tile is one of the keys: the sheet
   // grows out of whichever tile the slide belongs to.
   const previewCardNodesRef = useRef(new Map<number, HTMLElement>())
   const writingsFolderTileRef = useRef<HTMLAnchorElement | null>(null)
@@ -735,13 +735,13 @@ export function SimpleFeed({ cards, profile, links, deferMedia = false }: Simple
     return homeGroups.map(group => ({
       ...group,
       items: group.items.map(item => {
-        // The résumé is a slide of the gallery as a project is, so it draws its
+        // The resume is a slide of the gallery as a project is, so it draws its
         // number from the same counter and in the order the group already
         // declares: the sequence the arrow keys walk has to be the one the grid
         // shows, or they page through tiles a visitor cannot see.
         if (item.kind === "resume") return { ...item, previewIndex: previewIndex++ }
         // The folder opens a slide too -- the list of notes -- so it draws a
-        // number from the same counter as the résumé does.
+        // number from the same counter as the resume does.
         if (item.kind === "writings") return { ...item, previewIndex: previewIndex++ }
         if (item.kind !== "project") return item
         const card = cards.find(candidate => candidate.id === item.cardId)
