@@ -148,6 +148,18 @@ test("releases prerendered content if the portrait and the bundle both stall", a
 
 test("the hero needs nothing but the HTML, and nothing gets ahead of it", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
+  // Record short phases in the browser: polling from the test process can
+  // miss an entire portrait/tiles beat when the machine is under load.
+  await page.addInitScript(() => {
+    const phases: string[] = []
+    Object.assign(window, { firstPaintPhases: phases })
+    new MutationObserver(() => {
+      const phase = document.documentElement.dataset.avatarIntro
+      if (phase && phases.at(-1) !== phase) phases.push(phase)
+    }).observe(document, { attributes: true, subtree: true, attributeFilter: ["data-avatar-intro"] })
+  })
+  const phases = () => page.evaluate(() =>
+    (window as unknown as { firstPaintPhases: string[] }).firstPaintPhases)
   let releaseStyles!: () => void
   const stylesReady = new Promise<void>((resolve) => { releaseStyles = resolve })
   const artwork: string[] = []
@@ -162,7 +174,7 @@ test("the hero needs nothing but the HTML, and nothing gets ahead of it", async 
   await page.goto("/", { waitUntil: "commit" })
 
   // No script, no stylesheet: the face and the top section still arrive in order.
-  await expect(page.locator("html")).toHaveAttribute("data-avatar-intro", "portrait")
+  await expect.poll(phases).toContain("portrait")
   await expect(page.locator(".mosaic-avatar-face-front .mosaic-avatar-portrait")).toBeVisible()
   await expect(page.locator(".mosaic-avatar-face-front .mosaic-avatar-portrait")).toHaveJSProperty("complete", true)
   await expect(page.locator("html")).toHaveAttribute("data-avatar-intro", "revealing")
@@ -180,7 +192,7 @@ test("the hero needs nothing but the HTML, and nothing gets ahead of it", async 
     .map((selector) => { const box = document.querySelector(selector)!.getBoundingClientRect(); return [box.x, box.y, box.width, box.height].map(Math.round) }))
   const before = await measure()
   releaseStyles()
-  await expect(page.locator("html")).toHaveAttribute("data-avatar-intro", "tiles")
+  await expect.poll(phases).toContain("tiles")
   await expect(page.locator("#work")).toBeVisible()
   // The inlined CSS laid the hero out exactly as the full stylesheet does.
   expect(await measure()).toEqual(before)
